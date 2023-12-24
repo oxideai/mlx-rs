@@ -1,6 +1,7 @@
 use autocxx::prelude::*;
 
 include_cpp! {
+    #include "mlx/mlx.h"
     #include "extras.h"
     // TODO: what safety option should be used here?
     safety!(unsafe)

@@ -14,30 +14,33 @@ namespace extra {
         return oss.str();
     }
 
-    using namespace mlx::core;
+    // Type alias seems to work. Add helper functions
+    using MlxArray = mlx::core::array;
 
-    class Foo {
-    private:
-    void* ptr_;
+    // using namespace mlx::core;
 
-    public:
-    Foo(void* ptr) : ptr_(ptr){};
+    // class Foo {
+    // private:
+    // void* ptr_;
 
-    // Get the raw data pointer from the buffer
-    void* raw_ptr();
+    // public:
+    // Foo(void* ptr) : ptr_(ptr){};
 
-    // Get the buffer pointer from the buffer
-    const void* ptr() const {
-        return ptr_;
-    };
-    void* ptr() {
-        return ptr_;
-    };
-    };
+    // // Get the raw data pointer from the buffer
+    // void* raw_ptr();
 
-    using foo = std::function<void(Foo)>;
+    // // Get the buffer pointer from the buffer
+    // const void* ptr() const {
+    //     return ptr_;
+    // };
+    // void* ptr() {
+    //     return ptr_;
+    // };
+    // };
 
-    std::string bar(foo f);
+    // using foo = std::function<void(Foo)>;
+
+    // std::string bar(foo f);
 
     // class array2 {
     //     public:

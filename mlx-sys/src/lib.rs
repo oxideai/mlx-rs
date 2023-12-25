@@ -2,12 +2,13 @@ use autocxx::prelude::*;
 
 include_cpp! {
     #include "mlx/mlx.h"
-    #include "extras.h"
+    #include "ext.h"
+    // #include "extras.h" // TODO: remove this later
     // TODO: what safety option should be used here?
     safety!(unsafe)
-    generate!("extra::hello")
-    // generate!("extra::array2")
-    generate!("extra::bar")
+
+    generate!("mlx::ext::hello")
+    generate_ns!("mlx::ext::array")
 
     // mlx/mlx/allocator.h
     generate!("mlx::core::allocator::Buffer")
@@ -62,14 +63,21 @@ include_cpp! {
     // generate!("mlx::core::TypeToDtype") // TODO: template specialization, see concrete!
     // generate!("mlx::core::default_device") // bindings cannot be generated
     // generate!("mlx::core::array") // TODO: array is not supported by autocxx
+
+
 }
 
 // TODO: add unit test for each ffi
 #[cfg(test)]
 mod tests {
+    use autocxx::WithinUniquePtr;
+
     #[test]
     fn extras_hello_works() {
-        let hello = super::ffi::extra::hello();
+        let hello = super::ffi::mlx::ext::hello();
         println!("ffi::hello: {}", hello);
+
+        let a = super::ffi::mlx::ext::array::new_scalar_array_bool(true).within_unique_ptr();
+
     }
 }

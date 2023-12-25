@@ -4,10 +4,12 @@
 
 #include <sstream>
 
-namespace mlx::ext {
+#include "mlx/mlx.h"
+
+namespace ext {
     inline std::string hello() {
         std::ostringstream oss;
-        oss << "hello";
+        oss << "Hello, world!";
         return oss.str();
     }
 

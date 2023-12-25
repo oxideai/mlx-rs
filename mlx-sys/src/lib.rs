@@ -7,8 +7,8 @@ include_cpp! {
     // TODO: what safety option should be used here?
     safety!(unsafe)
 
-    generate!("mlx::ext::hello")
-    generate_ns!("mlx::ext::array")
+    generate!("ext::hello")
+    generate_ns!("ext::array")
 
     // mlx/mlx/allocator.h
     generate!("mlx::core::allocator::Buffer")
@@ -67,17 +67,23 @@ include_cpp! {
 
 }
 
+pub use ffi::*;
+
 // TODO: add unit test for each ffi
 #[cfg(test)]
 mod tests {
-    use autocxx::WithinUniquePtr;
+    use super::*;
+
+    // #[test]
+    // fn test_hello() {
+    //     let hello = ffi::mlx::ext::hello();
+    //     assert_eq!(hello.as_bytes(), b"Hello, world!");
+    // }
 
     #[test]
-    fn extras_hello_works() {
-        let hello = super::ffi::mlx::ext::hello();
-        println!("ffi::hello: {}", hello);
-
-        let a = super::ffi::mlx::ext::array::new_scalar_array_bool(true).within_unique_ptr();
-
+    fn test_new_scalar_array_bool() {
+        let array = ffi::ext::array::new_scalar_array_bool(true)
+            .within_box();
+        // TODO: how to test this?
     }
 }

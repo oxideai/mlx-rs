@@ -10,7 +10,7 @@ namespace extra {
     // do something useful with it.
     inline std::string hello() {
         std::ostringstream oss;
-        oss << "hello";
+        oss << "Hello, world!";
         return oss.str();
     }
 

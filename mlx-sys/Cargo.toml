@@ -10,4 +10,5 @@ cxx = "1"
 
 [build-dependencies]
 cmake = "0.1"
+cxx-build = "1"
 miette = { version = "5", features = ["fancy"] }

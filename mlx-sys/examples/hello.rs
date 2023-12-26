@@ -1,3 +1,5 @@
+extern crate mlx_sys;
+
 use autocxx::WithinUniquePtr;
 
 fn main() {

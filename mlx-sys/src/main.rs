@@ -64,26 +64,11 @@ include_cpp! {
     // generate!("mlx::core::default_device") // bindings cannot be generated
     // generate!("mlx::core::array") // TODO: array is not supported by autocxx
 
-
 }
 
-pub use ffi::*;
+fn main() {
+    let hello = ffi::ext::hello();
+    println!("{}", hello);
 
-// TODO: add unit test for each ffi
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // #[test]
-    // fn test_hello() {
-    //     let hello = ffi::mlx::ext::hello();
-    //     assert_eq!(hello.as_bytes(), b"Hello, world!");
-    // }
-
-    #[test]
-    fn test_new_scalar_array_bool() {
-        let array = ffi::ext::array::new_scalar_array_bool(true)
-            .within_box();
-        // TODO: how to test this?
-    }
+    let key = ffi::mlx::core::random::key(1);
 }

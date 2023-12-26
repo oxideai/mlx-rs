@@ -6,13 +6,14 @@ fn main() -> miette::Result<()> {
     let mlx_sys_path = std::path::PathBuf::from("src");
 
     let mut builder =
-        autocxx_build::Builder::new("src/lib.rs", &[&mlx_source_path, &mlx_sys_path])
+        autocxx_build::Builder::new("src/main.rs", &[&mlx_source_path, &mlx_sys_path])
         .extra_clang_args(&["-xc++", "-std=c++17"])
         .build()?;
     builder
         .cpp(true)
         .std("c++17")
         .compile("mlx");
-    println!("cargo:rerun-if-changed=src/lib.rs");
+    // println!("cargo:rerun-if-changed=src/lib.rs");
+    println!("cargo:rerun-if-changed=main.rs");
     Ok(())
 }

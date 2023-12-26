@@ -9,7 +9,7 @@
 namespace ext {
     inline std::string hello() {
         std::ostringstream oss;
-        oss << "Hello, world!";
+        oss << "Hello, ffi!";
         return oss.str();
     }
 

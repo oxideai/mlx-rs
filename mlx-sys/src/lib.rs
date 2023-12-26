@@ -66,9 +66,4 @@ include_cpp! {
 
 }
 
-fn main() {
-    let hello = ffi::ext::hello();
-    println!("{}", hello);
-
-    let key = ffi::mlx::core::random::key(1);
-}
+pub use ffi::*;

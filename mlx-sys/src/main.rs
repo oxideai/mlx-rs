@@ -1,14 +1,15 @@
+use ffi::foobar;
 
-#[cxx::bridge(namespace = "mlx")]
+
+#[cxx::bridge]
 mod ffi {
     unsafe extern "C++" {
         include!("mlx/mlx.h");
 
-        #[namespace = "mlx::core::random"]
-        fn seed(seed: u64);
+        fn foobar();
     }
 }
 
 fn main() {
-    ffi::seed(1)
+    ffi::foobar();
 }

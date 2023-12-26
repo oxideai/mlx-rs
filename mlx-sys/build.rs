@@ -3,7 +3,8 @@ fn main() {
         // .file("mlx/mlx/random.cpp")
         .include("mlx")
         .flag_if_supported("-std=c++17")
-        .compile("random");
+        .compile("mlx");
 
     println!("cargo:rerun-if-changed=src/main.rs");
+    println!("cargo:rustc-link-lib=dylib=mlx");
 }

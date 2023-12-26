@@ -67,3 +67,8 @@ include_cpp! {
 }
 
 pub use ffi::*;
+
+fn main() {
+    // let key = mlx::core::random::key(1);
+    let key = mlx::core::random::key(1).within_box();
+}

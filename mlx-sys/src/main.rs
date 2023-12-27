@@ -1,15 +1,12 @@
-use ffi::foobar;
-
-
 #[cxx::bridge]
 mod ffi {
     unsafe extern "C++" {
         include!("mlx/mlx.h");
 
-        fn foobar();
+        fn say_something();
     }
 }
 
 fn main() {
-    ffi::foobar();
+    ffi::say_something();
 }

@@ -5,8 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = [
+    
+]
+
+accelerate = [] # TODO: not supported. there is bug right now.
+
 [dependencies]
 cxx = "1"
 
 [build-dependencies]
 cxx-build = "1"
+pkg-config = "0.3"

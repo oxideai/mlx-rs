@@ -7,10 +7,10 @@ edition = "2021"
 
 [features]
 default = [
-    
+    "accelerate",
 ]
 
-accelerate = [] # TODO: not supported. there is bug right now.
+accelerate = []
 
 [dependencies]
 cxx = "1"

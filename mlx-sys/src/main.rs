@@ -4,6 +4,9 @@ mod ffi {
         include!("mlx/mlx.h");
 
         fn say_something();
+
+        #[namespace = "mlx::core::random"]
+        fn seed(seed: u64);
     }
 }
 

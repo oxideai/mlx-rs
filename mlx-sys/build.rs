@@ -35,8 +35,6 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/threefry.cpp",
 ];
 
-const ENV_ACCELERATE_NEW_LAPACK: &str = "ACCELERATE_NEW_LAPACK";
-
 /// Files to compile for accelerate backend
 const FILES_MLX_BACKEND_ACCELERATE: &[&str] = &[
     "mlx/mlx/backend/accelerate/conv.cpp",
@@ -45,6 +43,24 @@ const FILES_MLX_BACKEND_ACCELERATE: &[&str] = &[
     "mlx/mlx/backend/accelerate/quantized.cpp",
     "mlx/mlx/backend/accelerate/reduce.cpp",
     "mlx/mlx/backend/accelerate/softmax.cpp",
+];
+
+const KERNELS: &[&str] = &[
+    "arange",
+    "arg_reduce",
+    "binary",
+    "conv",
+    "copy",
+    "gemm",
+    "gemv",
+    "quantized",
+    "random",
+    "reduce",
+    "scan",
+    "softmax",
+    "sort",
+    "unary",
+    "indexing",
 ];
 
 fn main() {
@@ -56,19 +72,25 @@ fn main() {
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
         .flag("-std=c++17")
         .flag("-framework").flag("vecLib")
-        .flag("-framework").flag("Accelerate")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON);
 
-
-    // #[cfg(feature = "accelerate")] // TODO: check if accelerate works with the original cmake build
-    // {
-    //     std::env::set_var(ENV_ACCELERATE_NEW_LAPACK, "1");
-    //     build.files(FILES_MLX_BACKEND_ACCELERATE); // TODO: this may require setting ACCELERATE_NEW_LAPACK
-    // }
+    // TODO: check if accelerate is available
+    #[cfg(feature = "accelerate")]
+    {
+        build
+            .flag("-framework").flag("Accelerate")
+            // mlx uses new lapack api if accelerate is available
+            .flag("-DACCELERATE_NEW_LAPACK") 
+            .files(FILES_MLX_BACKEND_ACCELERATE);
+    }
         
     build.compile("mlx");
 
     println!("cargo:rerun-if-changed=src/main.rs");
     // println!("cargo:rustc-link-lib=dylib=mlx");
+}
+
+fn build_kernel() {
+    todo!("build metal kernel")
 }

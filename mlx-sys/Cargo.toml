@@ -8,9 +8,11 @@ edition = "2021"
 [features]
 default = [
     "accelerate",
+    "metal",
 ]
 
 accelerate = []
+metal = []
 
 [dependencies]
 cxx = "1"

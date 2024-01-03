@@ -1,6 +1,9 @@
 use std::{path::{PathBuf, Path}, process::Command};
 
 const MLX_DIR: &str = "mlx";
+const METAL_CPP_MACOS_14_2_DIR: &str = "metal-cpp_macOS14.2_iOS17.2";
+const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
+const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
     "src/mlx.cpp", // TODO: remove this later if everything works
@@ -106,15 +109,14 @@ fn main() {
     build.include(MLX_DIR)
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
         .flag("-std=c++17")
-        .flag("-framework").flag("vecLib")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON);
 
     // TODO: check if accelerate is available
     #[cfg(feature = "accelerate")]
     {
+        println!("cargo:rustc-link-lib=framework=Accelerate");
         build
-            .flag("-framework").flag("Accelerate")
             // mlx uses new lapack api if accelerate is available
             .flag("-DACCELERATE_NEW_LAPACK") 
             .files(FILES_MLX_BACKEND_ACCELERATE);
@@ -123,11 +125,21 @@ fn main() {
     #[cfg(feature = "metal")]
     {
         let macos_version = get_macos_version();
+        if macos_version >= 14.2 {
+            build.include(METAL_CPP_MACOS_14_2_DIR);
+        } else if macos_version >= 14.0 {
+            build.include(METAL_CPP_MACOS_14_0_DIR);
+        } else if macos_version >= 13.3 {
+            build.include(METAL_CPP_MACOS_13_3_DIR);
+        } else {
+            panic!("MLX requires macOS >= 13.4 to be built with MLX_BUILD_METAL=ON");
+        }
 
         let metallib = build_metal_kernels(&out_dir);
+        println!("cargo:rustc-link-lib=framework=Metal");
+        println!("cargo:rustc-link-lib=framework=Foundation");
+        println!("cargo:rustc-link-lib=framework=QuartzCore");
         build
-            .flag("-framework").flag("Metal")
-            .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework/Headers")
             .files(FILES_MLX_BACKEND_METAL)
             .flag("-D").flag(&format!("METAL_PATH=\"{}\"", metallib.display()));
     }
@@ -135,7 +147,7 @@ fn main() {
     build.compile("mlx");
 
     println!("cargo:rerun-if-changed=src/main.rs");
-    // println!("cargo:rustc-link-lib=dylib=mlx");
+    println!("cargo:rustc-link-lib=mlx");
 }
 
 fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {

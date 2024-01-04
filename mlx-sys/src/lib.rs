@@ -2,6 +2,7 @@
 mod ffi {
     unsafe extern "C++" {
         include!("mlx/mlx.h");
+        include!("mlx-cxx/array.hpp");
 
         #[namespace = "mlx::core"]
         type array;
@@ -9,18 +10,17 @@ mod ffi {
         #[namespace = "mlx::core::random"]
         fn seed(seed: u64);
 
-        #[namespace = "mlx::core::random"]
-        fn key(seed: u64) -> array;
+        #[namespace = "mlx_cxx"]
+        fn hello();
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::ffi;
+
     #[test]
     fn it_works() {
-        unsafe {
-            let a = crate::ffi::key(0);
-        }
+        ffi::hello();
     }
-
 }

@@ -6,7 +6,6 @@ const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
 const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
-    "src/mlx.cpp", // TODO: remove this later if everything works
     "mlx/mlx/allocator.cpp",
     "mlx/mlx/array.cpp",
     "mlx/mlx/device.cpp",
@@ -114,8 +113,11 @@ fn main() {
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     println!("cargo:warning=out_dir: {}", out_dir.display());
     
-
-    let mut build = cxx_build::bridge("src/main.rs");
+    // let mut build = cxx_build::bridge("src/main.rs");
+    let mut build = autocxx_build::Builder::new(
+        "src/main.rs",
+        &[MLX_DIR, "src"],
+    ).extra_clang_args(&["-xc++", "-std=c++17"]).build().unwrap();
         
     build.include(MLX_DIR)
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
@@ -162,7 +164,8 @@ fn main() {
         
     build.compile("mlx");
 
-    println!("cargo:rerun-if-changed=src/main.rs");
+    println!("cargo:rerun-if-changed=mlx");
+    // println!("cargo:rerun-if-changed=src/main.rs");
     println!("cargo:rustc-link-lib=mlx");
 }
 

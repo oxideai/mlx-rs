@@ -1,15 +1,12 @@
-#[cxx::bridge]
-mod ffi {
-    unsafe extern "C++" {
-        include!("mlx/mlx.h");
+use autocxx::prelude::*;
 
-        fn say_something();
-
-        #[namespace = "mlx::core::random"]
-        fn seed(seed: u64);
-    }
+include_cpp! {
+    #include "mlx/mlx.h"
+    safety!(unsafe)
+    // mlx/mlx/random.h
+    generate_ns!("mlx::core::random")
 }
 
 fn main() {
-    ffi::say_something();
+    let key = ffi::mlx::core::random::key(1).within_box();
 }

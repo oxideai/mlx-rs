@@ -16,7 +16,7 @@ metal = []
 
 [dependencies]
 cxx = "1"
+autocxx = "0.26"
 
 [build-dependencies]
-cxx-build = "1"
-pkg-config = "0.3"
+autocxx-build = "0.26"

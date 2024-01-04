@@ -6,7 +6,6 @@ const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
 const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
-    "src/mlx.cpp", // TODO: remove this later if everything works
     "mlx/mlx/allocator.cpp",
     "mlx/mlx/array.cpp",
     "mlx/mlx/device.cpp",

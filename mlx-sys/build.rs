@@ -114,7 +114,7 @@ fn main() {
     println!("cargo:warning=out_dir: {}", out_dir.display());
     
 
-    let mut build = cxx_build::bridge("src/main.rs");
+    let mut build = cxx_build::bridge("src/lib.rs");
         
     build.include(MLX_DIR)
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")

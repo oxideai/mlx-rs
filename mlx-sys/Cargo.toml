@@ -8,7 +8,7 @@ edition = "2021"
 [features]
 default = [
     "accelerate",
-    "metal",
+    # "metal",
 ]
 
 accelerate = []

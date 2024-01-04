@@ -43,6 +43,7 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
 ];
 
 /// Files to compile for accelerate backend
+#[cfg(feature = "accelerate")]
 const FILES_MLX_BACKEND_ACCELERATE: &[&str] = &[
     "mlx/mlx/backend/accelerate/conv.cpp",
     "mlx/mlx/backend/accelerate/matmul.cpp",
@@ -52,6 +53,7 @@ const FILES_MLX_BACKEND_ACCELERATE: &[&str] = &[
     "mlx/mlx/backend/accelerate/softmax.cpp",
 ];
 
+#[cfg(feature = "metal")]
 const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/allocator.cpp",
     "mlx/mlx/backend/metal/conv.cpp",
@@ -69,16 +71,25 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/reduce.cpp",
 ];
 
-const METAL_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels";
-const KERNEL_HEADERS: &[&str] = &[
-    "bf16.h",
-    "bf16_math.h",
-    "complex.h",
-    "defines.h",
-    "erf.h",
-    "reduce.h",
-    "utils.h",
+#[cfg(not(feature = "metal"))]
+const FILES_MLX_BACKEND_NO_METAL: &[&str] = &[
+    "mlx/mlx/backend/no_metal/allocator.cpp",
+    "mlx/mlx/backend/no_metal/metal.cpp",
+    "mlx/mlx/backend/no_metal/primitives.cpp",
 ];
+
+#[cfg(feature = "metal")]
+const METAL_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels";
+// const KERNEL_HEADERS: &[&str] = &[
+//     "bf16.h",
+//     "bf16_math.h",
+//     "complex.h",
+//     "defines.h",
+//     "erf.h",
+//     "reduce.h",
+//     "utils.h",
+// ];
+#[cfg(feature = "metal")]
 const METAL_KERNELS: &[&str] = &[
     "arange",
     "arg_reduce",
@@ -143,6 +154,11 @@ fn main() {
             .files(FILES_MLX_BACKEND_METAL)
             .flag("-D").flag(&format!("METAL_PATH=\"{}\"", metallib.display()));
     }
+    #[cfg(not(feature = "metal"))]
+    {
+        build
+            .files(FILES_MLX_BACKEND_NO_METAL);
+    }
         
     build.compile("mlx");
 
@@ -150,6 +166,7 @@ fn main() {
     println!("cargo:rustc-link-lib=mlx");
 }
 
+#[cfg(feature = "metal")]
 fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
     // test build kernel air
     let kernel_build_dir = PathBuf::from(out_dir).join("kernels"); // MLX_METAL_PATH
@@ -166,6 +183,7 @@ fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
     build_kernel_metallib(&kernel_airs, out_dir)
 }
 
+#[cfg(feature = "metal")]
 fn build_kernel_air(
     kernel_build_dir: &PathBuf, 
     kernel_src_dir: &PathBuf,
@@ -190,6 +208,7 @@ fn build_kernel_air(
     kernel_air
 }
 
+#[cfg(feature = "metal")]
 fn build_kernel_metallib(
     kernel_airs: &[PathBuf],
     out_dir: &PathBuf,
@@ -208,6 +227,7 @@ fn build_kernel_metallib(
     kernel_metallib
 }
 
+#[cfg(feature = "metal")]
 fn get_macos_version() -> f32 {
     let output = Command::new("/usr/bin/xcrun")
         .arg("-sdk").arg("macosx")

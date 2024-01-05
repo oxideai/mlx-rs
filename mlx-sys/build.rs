@@ -1,8 +1,11 @@
-use std::{path::{PathBuf, Path}, process::Command};
+use std::path::PathBuf;
 
 const MLX_DIR: &str = "mlx";
+#[cfg(feature = "metal")]
 const METAL_CPP_MACOS_14_2_DIR: &str = "metal-cpp_macOS14.2_iOS17.2";
+#[cfg(feature = "metal")]
 const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
+#[cfg(feature = "metal")]
 const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
@@ -194,14 +197,14 @@ fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
 fn build_kernel_air(
     kernel_build_dir: &PathBuf, 
     kernel_src_dir: &PathBuf,
-    mlx_dir: impl AsRef<Path>,
+    mlx_dir: impl AsRef<std::path::Path>,
     kernel_name: &str
 ) -> PathBuf {
     let kernel_src = kernel_src_dir.join(format!("{}.metal", kernel_name));
     let kernel_air = kernel_build_dir.join(format!("{}.air", kernel_name));
     // let kernel_metallib = kernel_build_dir.join(format!("{}.metallib", kernel_name));
 
-    Command::new("xcrun")
+    std::process::Command::new("xcrun")
         .arg("-sdk").arg("macosx").arg("metal")
         .arg("-Wall")
         .arg("-Wextra")
@@ -225,7 +228,7 @@ fn build_kernel_metallib(
     // preprocessor constant ``METAL_PATH`` should be defined at build time and it
     // should point to the path to the built metal library.
     let kernel_metallib = out_dir.join("mlx.metallib");
-    Command::new("xcrun")
+    std::process::Command::new("xcrun")
         .arg("-sdk").arg("macosx").arg("metallib")
         .args(kernel_airs)
         .arg("-o").arg(&kernel_metallib)
@@ -236,7 +239,7 @@ fn build_kernel_metallib(
 
 #[cfg(feature = "metal")]
 fn get_macos_version() -> f32 {
-    let output = Command::new("/usr/bin/xcrun")
+    let output = std::process::Command::new("/usr/bin/xcrun")
         .arg("-sdk").arg("macosx")
         .arg("--show-sdk-version")
         .output()

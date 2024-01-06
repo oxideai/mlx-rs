@@ -114,6 +114,13 @@ const SHIM_DIR: &str = "shim";
 
 const FILES_SHIM_MLX: &[&str] = &[
     "src/array.cpp",
+    "src/types.cpp",
+];
+
+const RUST_SOURCE_FILES: &[&str] = &[
+    "src/lib.rs",
+    "src/array.rs",
+    "src/types.rs",
 ];
 
 fn main() {
@@ -123,7 +130,8 @@ fn main() {
     println!("cargo:warning=out_dir: {}", out_dir.display());
     
 
-    let mut build = cxx_build::bridge("src/lib.rs");
+    // let mut build = cxx_build::bridge("src/lib.rs");
+    let mut build = cxx_build::bridges(RUST_SOURCE_FILES);
         
     build.include(MLX_DIR)
         .include(SHIM_DIR)

@@ -110,10 +110,10 @@ const METAL_KERNELS: &[&str] = &[
     "indexing",
 ];
 
-const WRAPPER_DIR: &str = "wrapper";
+const SHIM_DIR: &str = "shim";
 
-const FILES_WRAPPER_MLX: &[&str] = &[
-    "wrapper/mlx-cxx/array.cpp",
+const FILES_SHIM_MLX: &[&str] = &[
+    "src/array.cpp",
 ];
 
 fn main() {
@@ -126,12 +126,12 @@ fn main() {
     let mut build = cxx_build::bridge("src/lib.rs");
         
     build.include(MLX_DIR)
-        .include(WRAPPER_DIR)
+        .include(SHIM_DIR)
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
         .flag("-std=c++17")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON)
-        .files(FILES_WRAPPER_MLX);
+        .files(FILES_SHIM_MLX);
 
     // TODO: check if accelerate is available
     #[cfg(feature = "accelerate")]
@@ -172,7 +172,8 @@ fn main() {
         
     build.compile("mlx");
 
-    println!("cargo:rerun-if-changed=src/main.rs");
+    println!("cargo:rerun-if-changed=shim/mlx-cxx/array.hpp");
+    println!("cargo:rerun-if-changed=shim/mlx-cxx/array.cpp");
     println!("cargo:rustc-link-lib=mlx");
 }
 

@@ -6,4 +6,8 @@ namespace mlx_cxx {
     void hello() {
         std::cout << "Hello, World!" << std::endl;
     }
+
+    std::unique_ptr<array> array_new_bool(bool value) {
+        return std::make_unique<array>(array(value));
+    }
 }

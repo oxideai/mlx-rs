@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "mlx/array.h"
 
 #include "mlx-cxx/types.hpp"
@@ -30,4 +32,7 @@ namespace mlx_cxx {
     std::unique_ptr<array> array_new_f16(mlx_cxx::f16 value);
     std::unique_ptr<array> array_new_bf16(mlx_cxx::bf16 value);
     std::unique_ptr<array> array_new_c64(mlx_cxx::c64 value);
+
+    const std::vector<int>& array_shape(const mlx::core::array& arr);
+    int array_shape_of_dim(const mlx::core::array& arr, int dim);
 }

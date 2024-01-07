@@ -8,6 +8,7 @@
 
 #include "mlx/types/half_types.h"
 #include "mlx/types/complex.h"
+#include "mlx/array.h"
 
 namespace mlx_cxx {
     // std::unique_ptr<array> array_new_bool(bool value) {
@@ -28,4 +29,12 @@ namespace mlx_cxx {
         mlx::core::complex64_t value2 = mlx_cxx::c64_to_complex64_t(value);
         return mlx_cxx::new_unique<array>(value2);
     }
+
+    // const std::vector<int>& array_shape(const mlx::core::array& arr) {
+    //     return arr.shape();
+    // }
+    
+    // int array_shape_of_dim(const mlx::core::array& arr, int dim) {
+    //     return arr.shape(dim);
+    // }
 }

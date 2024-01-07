@@ -67,10 +67,31 @@ mod ffi {
         #[namespace = "mlx_cxx"]
         fn array_new_c64(value: c64) -> UniquePtr<array>;
 
+        #[namespace = "mlx::core"]
+        fn itemsize(self: &array) -> usize;
+
+        #[namespace = "mlx::core"]
+        fn size(self: &array) -> usize;
+
+        #[namespace = "mlx::core"]
+        fn nbytes(self: &array) -> usize;
+
+        #[namespace = "mlx::core"]
+        fn ndim(self: &array) -> usize;
+
+        #[namespace = "mlx::core"]
+        #[rust_name = "shape"]
+        fn shape(self: &array) -> &CxxVector<i32>;
+
+        #[namespace = "mlx::core"]
+        #[rust_name = "shape_of_dim"]
+        fn shape(self: &array, dim: i32) -> i32;
+
+        #[namespace = "mlx::core"]
+        fn strides(self: &array) -> &CxxVector<usize>;
+
         // TODO: 
-        // - float16
-        // - bfloat16
-        // - complex64
+        // - Dtype
 
         // // extern function with generic parameters is not supported yet
         // #[namespace = "mlx_cxx"]
@@ -88,6 +109,8 @@ mod tests {
     fn test_array_new_bool() {
         let array = ffi::array_new_bool(true);
         assert!(!array.is_null());
+
+        assert_eq!(array.size(), 1);
     }
 
     #[test]

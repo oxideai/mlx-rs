@@ -6,6 +6,9 @@ mod ffi {
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
 
+        #[namespace = "mlx_cxx"]
+        type f16 = crate::types::float16::ffi::f16;
+
         #[namespace = "mlx::core"]
         type array;
 
@@ -48,6 +51,9 @@ mod ffi {
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
         fn array_new_f32(value: f32) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_new_f16(value: f16) -> UniquePtr<array>;
 
         // TODO: 
         // - float16
@@ -123,6 +129,12 @@ mod tests {
     #[test]
     fn test_array_new_f32() {
         let array = ffi::array_new_f32(1.0);
+        assert!(!array.is_null());
+    }
+
+    #[test]
+    fn test_array_new_f16() {
+        let array = ffi::array_new_f16(ffi::f16 { bits: 0x3c00 });
         assert!(!array.is_null());
     }
 }

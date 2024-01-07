@@ -8,15 +8,17 @@ edition = "2021"
 [features]
 default = [
     "accelerate",
-    "metal",
+    # "metal",
+    "float16",
 ]
 
 accelerate = []
 metal = []
+float16 = ["half"]
 
 [dependencies]
 cxx = "1"
-half = "2" # TODO: Should this be optional?
+half = { version = "2", optional = true }
 
 [build-dependencies]
 cxx-build = "1"

@@ -2,6 +2,9 @@
 
 #include "mlx/array.h"
 
+#include "mlx-cxx/types.hpp"
+#include "mlx-sys/src/types/float16.rs.h"
+
 using namespace mlx::core;
 
 namespace mlx_cxx {
@@ -21,4 +24,6 @@ namespace mlx_cxx {
 
     // // Naming convention: array_new_<dtype>(<value>)
     // std::unique_ptr<array> array_new_bool(bool value);
+
+    std::unique_ptr<array> array_new_f16(mlx_cxx::f16 value);
 }

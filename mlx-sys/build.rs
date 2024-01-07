@@ -120,7 +120,7 @@ const FILES_SHIM_MLX: &[&str] = &[
 const RUST_SOURCE_FILES: &[&str] = &[
     "src/lib.rs",
     "src/array.rs",
-    "src/types.rs",
+    "src/types/float16.rs",
 ];
 
 fn main() {

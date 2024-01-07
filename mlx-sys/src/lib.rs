@@ -5,6 +5,6 @@ mod ffi {
     }
 }
 
-mod types;
-mod array;
+pub(crate) mod types;
+pub(crate) mod array;
 

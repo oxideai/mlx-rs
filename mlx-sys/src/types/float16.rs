@@ -7,6 +7,7 @@ pub(crate) mod ffi {
     }
 
     extern "Rust" {
+        #[namespace = "mlx_cxx"]
         fn f16_to_bits(value: f16) -> u16;
     }
 
@@ -14,22 +15,26 @@ pub(crate) mod ffi {
         include!("mlx-cxx/types.hpp");
 
         #[namespace = "mlx_cxx"]
-        fn cxx_f16_to_bits(value: f16) -> u16;
+        fn test_f16_to_bits(value: f16) -> u16;
     }
-
-    // unsafe extern "C++" {
-    //     include!("mlx/types/fp16.h");
-    //     include!("mlx/types/half_types.h");
-
-    //     include!("mlx-cxx/types.hpp");
-
-    //     #[namespace = "mlx::core"]
-    //     type float16_t;
-    // }
 }
 
 fn f16_to_bits(value: ffi::f16) -> u16 {
     value.bits
+}
+
+#[cfg(feature = "half")]
+impl From<half::f16> for ffi::f16 {
+    fn from(value: half::f16) -> Self {
+        ffi::f16 { bits: value.to_bits() }
+    }
+}
+
+#[cfg(feature = "half")]
+impl From<ffi::f16> for half::f16 {
+    fn from(value: ffi::f16) -> Self {
+        half::f16::from_bits(value.bits)
+    }
 }
 
 #[cfg(test)]
@@ -38,9 +43,9 @@ mod tests {
 
     // TODO: remove later
     #[test]
-    fn test_cxx_f16_to_bits() {
+    fn test_f16_to_bits() {
         let value = ffi::f16 { bits: 0x3c00 };
-        let bits = unsafe { ffi::cxx_f16_to_bits(value) };
+        let bits = ffi::test_f16_to_bits(value);
         assert_eq!(bits, 0x3c00);
     }
 }

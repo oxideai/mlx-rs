@@ -9,12 +9,10 @@ edition = "2021"
 default = [
     "accelerate",
     # "metal",
-    "float16",
 ]
 
 accelerate = []
 metal = []
-float16 = ["half"]
 
 [dependencies]
 cxx = "1"

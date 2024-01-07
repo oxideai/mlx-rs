@@ -121,6 +121,8 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/lib.rs",
     "src/array.rs",
     "src/types/float16.rs",
+    "src/types/bfloat16.rs",
+    "src/types/complex64.rs",
 ];
 
 fn main() {

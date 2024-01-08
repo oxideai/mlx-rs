@@ -15,7 +15,7 @@ const FILES_MLX: &[&str] = &[
     "mlx/mlx/dtype.cpp",
     "mlx/mlx/fft.cpp",
     "mlx/mlx/graph_utils.cpp",
-    "mlx/mlx/load.cpp",
+    "mlx/mlx/linalg.cpp",
     "mlx/mlx/ops.cpp",
     "mlx/mlx/primitives.cpp",
     "mlx/mlx/random.cpp",
@@ -67,10 +67,10 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/metal.cpp",
     "mlx/mlx/backend/metal/primitives.cpp",
     "mlx/mlx/backend/metal/quantized.cpp",
+    "mlx/mlx/backend/metal/reduce.cpp",
     "mlx/mlx/backend/metal/scan.cpp",
     "mlx/mlx/backend/metal/softmax.cpp",
     "mlx/mlx/backend/metal/sort.cpp",
-    "mlx/mlx/backend/metal/reduce.cpp",
 ];
 
 #[cfg(not(feature = "metal"))]

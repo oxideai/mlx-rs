@@ -15,7 +15,7 @@ namespace mlx_cxx {
     //     return mlx_cxx::new_unique<array>(value);
     // }
 
-    std::unique_ptr<array> array_new_f16(mlx_cxx::f16 value) {
+    std::unique_ptr<array> array_new_f16(mlx_cxx::float16_t value) {
         mlx::core::float16_t value2 = mlx_cxx::f16_to_float16_t(value);
         return mlx_cxx::new_unique<array>(value2);
     }
@@ -30,11 +30,7 @@ namespace mlx_cxx {
         return mlx_cxx::new_unique<array>(value2);
     }
 
-    // const std::vector<int>& array_shape(const mlx::core::array& arr) {
-    //     return arr.shape();
-    // }
-    
-    // int array_shape_of_dim(const mlx::core::array& arr, int dim) {
-    //     return arr.shape(dim);
-    // }
+    bool array_item_bool(array& arr, bool retain_graph) {
+        return arr.item<bool>(retain_graph);
+    }
 }

@@ -7,7 +7,7 @@ mod ffi {
         include!("mlx-cxx/array.hpp");
 
         #[namespace = "mlx_cxx"]
-        type f16 = crate::types::float16::ffi::f16;
+        type float16_t = crate::types::float16::ffi::float16_t;
 
         #[namespace = "mlx_cxx"]
         type bf16 = crate::types::bfloat16::ffi::bf16;
@@ -59,7 +59,7 @@ mod ffi {
         fn array_new_f32(value: f32) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_new_f16(value: f16) -> UniquePtr<array>;
+        fn array_new_f16(value: float16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn array_new_bf16(value: bf16) -> UniquePtr<array>;
@@ -98,6 +98,9 @@ mod ffi {
 
         #[namespace = "mlx::core"]
         fn eval(self: Pin<&mut array>, retain_graph: bool);
+        
+        #[namespace = "mlx_cxx"]
+        fn array_item_bool(arr: &array, retain_graph: bool) -> bool;
 
         // // extern function with generic parameters is not supported yet
         // #[namespace = "mlx_cxx"]
@@ -181,7 +184,7 @@ mod tests {
 
     #[test]
     fn test_array_new_f16() {
-        let array = ffi::array_new_f16(ffi::f16 { bits: 0x3c00 });
+        let array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
         assert!(!array.is_null());
     }
 

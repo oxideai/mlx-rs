@@ -90,8 +90,14 @@ mod ffi {
         #[namespace = "mlx::core"]
         fn strides(self: &array) -> &CxxVector<usize>;
 
-        // TODO: 
-        // - Dtype
+        #[namespace = "mlx::core"]
+        type Dtype = crate::dtype::ffi::Dtype;
+
+        #[namespace = "mlx::core"]
+        fn dtype(self: &array) -> Dtype;
+
+        #[namespace = "mlx::core"]
+        fn eval(self: Pin<&mut array>, retain_graph: bool);
 
         // // extern function with generic parameters is not supported yet
         // #[namespace = "mlx_cxx"]
@@ -109,14 +115,20 @@ mod tests {
     fn test_array_new_bool() {
         let array = ffi::array_new_bool(true);
         assert!(!array.is_null());
-
         assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
     }
 
     #[test]
     fn test_array_new_i8() {
         let array = ffi::array_new_i8(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
     }
 
     #[test]

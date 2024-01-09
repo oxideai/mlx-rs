@@ -10,10 +10,10 @@ mod ffi {
         type float16_t = crate::types::float16::ffi::float16_t;
 
         #[namespace = "mlx_cxx"]
-        type bf16 = crate::types::bfloat16::ffi::bf16;
+        type bfloat16_t = crate::types::bfloat16::ffi::bfloat16_t;
 
         #[namespace = "mlx_cxx"]
-        type c64 = crate::types::complex64::ffi::c64;
+        type complex64_t = crate::types::complex64::ffi::complex64_t;
 
         #[namespace = "mlx::core"]
         type array;
@@ -62,10 +62,10 @@ mod ffi {
         fn array_new_f16(value: float16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_new_bf16(value: bf16) -> UniquePtr<array>;
+        fn array_new_bf16(value: bfloat16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_new_c64(value: c64) -> UniquePtr<array>;
+        fn array_new_c64(value: complex64_t) -> UniquePtr<array>;
 
         #[namespace = "mlx::core"]
         fn itemsize(self: &array) -> usize;
@@ -190,13 +190,13 @@ mod tests {
 
     #[test]
     fn test_array_new_bf16() {
-        let array = ffi::array_new_bf16(ffi::bf16 { bits: 0x3c00 });
+        let array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
         assert!(!array.is_null());
     }
 
     #[test]
     fn test_array_new_c64() {
-        let array = ffi::array_new_c64(ffi::c64 { re: 1.0, im: 1.0 });
+        let array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
         assert!(!array.is_null());
     }
 }

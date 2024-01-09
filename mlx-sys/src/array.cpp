@@ -20,12 +20,12 @@ namespace mlx_cxx {
         return mlx_cxx::new_unique<array>(value2);
     }
 
-    std::unique_ptr<array> array_new_bf16(mlx_cxx::bf16 value) {
+    std::unique_ptr<array> array_new_bf16(mlx_cxx::bfloat16_t value) {
         mlx::core::bfloat16_t value2 = mlx_cxx::bf16_to_bfloat16_t(value);
         return mlx_cxx::new_unique<array>(value2);
     }
 
-    std::unique_ptr<array> array_new_c64(mlx_cxx::c64 value) {
+    std::unique_ptr<array> array_new_c64(mlx_cxx::complex64_t value) {
         mlx::core::complex64_t value2 = mlx_cxx::c64_to_complex64_t(value);
         return mlx_cxx::new_unique<array>(value2);
     }

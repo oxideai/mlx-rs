@@ -2,17 +2,17 @@
 pub(crate) mod ffi {
     #[derive(Clone, Copy)]
     #[namespace = "mlx_cxx"]
-    pub struct c64 {
+    pub struct complex64_t {
         pub re: f32,
         pub im: f32,
     }
 
     extern "Rust" {
         #[namespace = "mlx_cxx"]
-        fn real(self: &c64) -> f32;
+        fn real(self: &complex64_t) -> f32;
 
         #[namespace = "mlx_cxx"]
-        fn imag(self: &c64) -> f32;
+        fn imag(self: &complex64_t) -> f32;
     }
 
     unsafe extern "C++" {
@@ -20,9 +20,9 @@ pub(crate) mod ffi {
     }
 }
 
-impl ffi::c64 {
+impl ffi::complex64_t {
     pub fn new(re: f32, im: f32) -> Self {
-        ffi::c64 { re, im }
+        ffi::complex64_t { re, im }
     }
 
     pub fn real(&self) -> f32 {

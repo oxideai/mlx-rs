@@ -31,7 +31,7 @@ namespace mlx_cxx {
         return bits;
     }
 
-    mlx::core::bfloat16_t bf16_to_bfloat16_t(bf16 value) {
+    mlx::core::bfloat16_t bf16_to_bfloat16_t(mlx_cxx::bfloat16_t value) {
         static_assert(sizeof(mlx::core::bfloat16_t) == sizeof(uint16_t), "Size of bfloat16_t is not equal to size of uint16_t");
         uint16_t bits = bf16_to_bits(value);
         mlx::core::bfloat16_t out;
@@ -39,12 +39,12 @@ namespace mlx_cxx {
         return out;
     }
 
-    uint16_t test_bf16_to_bits(bf16 value) {
+    uint16_t test_bf16_to_bits(mlx_cxx::bfloat16_t value) {
         uint16_t bits = bf16_to_bits(value);
         return bits;
     }
 
-    mlx::core::complex64_t c64_to_complex64_t(c64 value) {
+    mlx::core::complex64_t c64_to_complex64_t(complex64_t value) {
         float re = value.real();
         float im = value.imag();
         mlx::core::complex64_t out(re, im);
@@ -59,7 +59,7 @@ namespace mlx::core {
     }
 
     template<>
-    TypeToDtype<mlx_cxx::bf16>::operator Dtype() {
+    TypeToDtype<mlx_cxx::bfloat16_t>::operator Dtype() {
         return mlx::core::bfloat16;
     }
 }

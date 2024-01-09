@@ -29,7 +29,7 @@ namespace mlx_cxx {
     // // Naming convention: array_<method>_<dtype>(<value>)
     // std::unique_ptr<array> array_new_bool(bool value);
 
-    std::unique_ptr<array> array_new_f16(mlx_cxx::float16_t value);
+    std::unique_ptr<array> array_new_f16(float16_t value);
     std::unique_ptr<array> array_new_bf16(mlx_cxx::bfloat16_t value);
     std::unique_ptr<array> array_new_c64(mlx_cxx::complex64_t value);
 
@@ -42,5 +42,5 @@ namespace mlx_cxx {
     int16_t array_item_int16(const array& arr, bool retain_graph);
     int32_t array_item_int32(const array& arr, bool retain_graph);
     int64_t array_item_int64(const array& arr, bool retain_graph);
-    mlx_cxx::float16_t array_item_float64(const array& arr, bool retain_graph);
+    float16_t array_item_float64(const array& arr, bool retain_graph);
 }

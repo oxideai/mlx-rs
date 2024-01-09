@@ -1,21 +1,31 @@
+use cxx::{ExternType, type_id};
+
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct float16_t {
+    pub bits: u16, // Wrapping half::f16 is not supported
+}
+
+unsafe impl ExternType for float16_t {
+    type Id = type_id!("float16_t");
+    type Kind = cxx::kind::Trivial;
+}
+
 #[cxx::bridge]
 pub(crate) mod ffi {
-    #[derive(Clone, Copy)]
-    #[namespace = "mlx_cxx"]
-    pub struct float16_t {
-        pub bits: u16, // Wrapping half::f16 is not supported
+    unsafe extern "C++" {
+        include!("mlx-cxx/types.hpp");
+
+        type float16_t = super::float16_t;
+
+        #[namespace = "mlx_cxx"]
+        fn test_f16_to_bits(value: float16_t) -> u16;
     }
 
     extern "Rust" {
         #[namespace = "mlx_cxx"]
         fn f16_to_bits(value: float16_t) -> u16;
-    }
-
-    unsafe extern "C++" {
-        include!("mlx-cxx/types.hpp");
-
-        #[namespace = "mlx_cxx"]
-        fn test_f16_to_bits(value: float16_t) -> u16;
     }
 }
 
@@ -24,14 +34,14 @@ fn f16_to_bits(value: ffi::float16_t) -> u16 {
 }
 
 #[cfg(feature = "half")]
-impl From<half::f16> for ffi::float16_t {
+impl From<half::f16> for float16_t {
     fn from(value: half::f16) -> Self {
         ffi::f16 { bits: value.to_bits() }
     }
 }
 
 #[cfg(feature = "half")]
-impl From<ffi::float16_t> for half::f16 {
+impl From<float16_t> for half::f16 {
     fn from(value: ffi::f16) -> Self {
         half::f16::from_bits(value.bits)
     }

@@ -6,8 +6,7 @@ mod ffi {
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
 
-        #[namespace = "mlx_cxx"]
-        type float16_t = crate::types::float16::ffi::float16_t;
+        type float16_t = crate::types::float16::float16_t;
 
         #[namespace = "mlx_cxx"]
         type bfloat16_t = crate::types::bfloat16::ffi::bfloat16_t;

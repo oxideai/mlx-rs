@@ -7,7 +7,7 @@
 
 
 namespace mlx_cxx {
-    struct float16_t;
+    // struct float16_t;
     struct bfloat16_t;
     struct complex64_t;
 

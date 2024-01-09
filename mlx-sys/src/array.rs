@@ -6,8 +6,8 @@ mod ffi {
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
 
-        #[namespace = "mlx_cxx"]
-        type f16 = crate::types::float16::ffi::f16;
+        // #[namespace = "mlx_cxx"]
+        // type f16 = crate::types::float16::ffi::f16;
 
         #[namespace = "mlx_cxx"]
         type bf16 = crate::types::bfloat16::ffi::bf16;
@@ -58,8 +58,8 @@ mod ffi {
         #[cxx_name = "new_unique"]
         fn array_new_f32(value: f32) -> UniquePtr<array>;
 
-        #[namespace = "mlx_cxx"]
-        fn array_new_f16(value: f16) -> UniquePtr<array>;
+        // #[namespace = "mlx_cxx"]
+        // fn array_new_f16(value: f16) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn array_new_bf16(value: bf16) -> UniquePtr<array>;
@@ -92,6 +92,14 @@ mod ffi {
 
         // TODO: 
         // - Dtype
+        #[namespace = "mlx::core"]
+        type Dtype = crate::dtype::ffi::Dtype;
+
+        #[namespace = "mlx::core"]
+        fn dtype(self: &array) -> Dtype;
+
+        #[namespace = "mlx::core"]
+        fn eval(self: Pin<&mut array>, retain_graph: bool);
 
         // // extern function with generic parameters is not supported yet
         // #[namespace = "mlx_cxx"]
@@ -167,11 +175,11 @@ mod tests {
         assert!(!array.is_null());
     }
 
-    #[test]
-    fn test_array_new_f16() {
-        let array = ffi::array_new_f16(ffi::f16 { bits: 0x3c00 });
-        assert!(!array.is_null());
-    }
+    // #[test]
+    // fn test_array_new_f16() {
+    //     let array = ffi::array_new_f16(ffi::f16 { bits: 0x3c00 });
+    //     assert!(!array.is_null());
+    // }
 
     #[test]
     fn test_array_new_bf16() {

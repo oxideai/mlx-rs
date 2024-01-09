@@ -17,19 +17,19 @@ namespace mlx_cxx {
     //     return out;
     // }
 
-    mlx::core::float16_t f16_to_float16_t(f16 value) {
-        static_assert(sizeof(mlx::core::float16_t) == sizeof(uint16_t), "Size of float16_t is not equal to size of uint16_t");
-        uint16_t bits = f16_to_bits(value);
-        mlx::core::float16_t out;
-        std::memcpy(&out, &bits, sizeof(uint16_t));
-        return out;
-    }
+    // mlx::core::float16_t f16_to_float16_t(f16 value) {
+    //     static_assert(sizeof(mlx::core::float16_t) == sizeof(uint16_t), "Size of float16_t is not equal to size of uint16_t");
+    //     uint16_t bits = f16_to_bits(value);
+    //     mlx::core::float16_t out;
+    //     std::memcpy(&out, &bits, sizeof(uint16_t));
+    //     return out;
+    // }
 
-    // TODO: this is only a test. Remove later
-    uint16_t test_f16_to_bits(f16 value) {
-        uint16_t bits = f16_to_bits(value);
-        return bits;
-    }
+    // // TODO: this is only a test. Remove later
+    // uint16_t test_f16_to_bits(f16 value) {
+    //     uint16_t bits = f16_to_bits(value);
+    //     return bits;
+    // }
 
     mlx::core::bfloat16_t bf16_to_bfloat16_t(bf16 value) {
         static_assert(sizeof(mlx::core::bfloat16_t) == sizeof(uint16_t), "Size of bfloat16_t is not equal to size of uint16_t");

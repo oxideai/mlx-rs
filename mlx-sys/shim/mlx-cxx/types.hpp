@@ -15,7 +15,7 @@ namespace mlx_cxx {
 
     // mlx::core::float16_t f16_to_float16_t(f16 value);
 
-    // uint16_t test_f16_to_bits(f16 value);
+    uint16_t test_f16_to_bits(float16_t value);
 
     mlx::core::bfloat16_t bf16_to_bfloat16_t(bf16 value);
 

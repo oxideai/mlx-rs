@@ -53,20 +53,24 @@
 //     }
 // }
 
+use cxx::ExternType;
+
+#[repr(C)]
+pub struct float16_t {
+    pub bits: u16,
+}
+
+unsafe impl ExternType for float16_t {
+    type Id = cxx::type_id!("float16_t");
+    type Kind = cxx::kind::Trivial;
+}
+
 #[cxx::bridge]
 mod ffi {
-    #[namespace = "mlx_cxx"]
-    #[cxx_name = "mlx_float16_t"]
-    pub struct float16_t {
-        pub bits: u16,
-    }
-
     unsafe extern "C++" {
         include!("mlx-cxx/types.hpp");
 
-        #[namespace = "mlx_cxx"]
-        #[cxx_name = "mlx_float16_t"]
-        type float16_t;
+        type float16_t = super::float16_t;
     }
 }
 

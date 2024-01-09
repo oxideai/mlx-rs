@@ -25,11 +25,10 @@ namespace mlx_cxx {
     //     return out;
     // }
 
-    // // TODO: this is only a test. Remove later
-    // uint16_t test_f16_to_bits(f16 value) {
-    //     uint16_t bits = f16_to_bits(value);
-    //     return bits;
-    // }
+    // TODO: this is only a test. Remove later
+    uint16_t test_f16_to_bits(float16_t value) {
+        return 0; // TODO: testing
+    }
 
     mlx::core::bfloat16_t bf16_to_bfloat16_t(bf16 value) {
         static_assert(sizeof(mlx::core::bfloat16_t) == sizeof(uint16_t), "Size of bfloat16_t is not equal to size of uint16_t");
@@ -53,10 +52,10 @@ namespace mlx_cxx {
 }
 
 namespace mlx::core {
-    template<>
-    TypeToDtype<mlx_cxx::f16>::operator Dtype() {
-        return mlx::core::float16;
-    }
+    // template<>
+    // TypeToDtype<mlx_cxx::f16>::operator Dtype() {
+    //     return mlx::core::float16;
+    // }
 
     template<>
     TypeToDtype<mlx_cxx::bf16>::operator Dtype() {

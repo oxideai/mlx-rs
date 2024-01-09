@@ -6,13 +6,14 @@ mod ffi {
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
 
+        #[namespace = "mlx::core"]
         type float16_t = crate::types::float16::float16_t;
 
-        #[namespace = "mlx_cxx"]
-        type bfloat16_t = crate::types::bfloat16::ffi::bfloat16_t;
+        #[namespace = "mlx::core"]
+        type bfloat16_t = crate::types::bfloat16::bfloat16_t;
 
-        #[namespace = "mlx_cxx"]
-        type complex64_t = crate::types::complex64::ffi::complex64_t;
+        #[namespace = "mlx::core"]
+        type complex64_t = crate::types::complex64::complex64_t;
 
         #[namespace = "mlx::core"]
         type array;
@@ -58,12 +59,15 @@ mod ffi {
         fn array_new_f32(value: f32) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
+        #[cxx_name = "new_unique"]
         fn array_new_f16(value: float16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
+        #[cxx_name = "new_unique"]
         fn array_new_bf16(value: bfloat16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
+        #[cxx_name = "new_unique"]
         fn array_new_c64(value: complex64_t) -> UniquePtr<array>;
 
         #[namespace = "mlx::core"]

@@ -4,33 +4,21 @@ use cxx::{ExternType, type_id};
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct float16_t {
-    pub bits: u16, // Wrapping half::f16 is not supported
+    pub bits: u16,
 }
 
 unsafe impl ExternType for float16_t {
-    type Id = type_id!("float16_t");
+    type Id = type_id!("mlx::core::float16_t");
     type Kind = cxx::kind::Trivial;
 }
 
-#[cxx::bridge]
+#[cxx::bridge(namespace = "mlx::core")]
 pub(crate) mod ffi {
     unsafe extern "C++" {
-        include!("mlx-cxx/types.hpp");
+        include!("mlx/types/half_types.h");
 
-        type float16_t = super::float16_t;
-
-        #[namespace = "mlx_cxx"]
-        fn test_f16_to_bits(value: float16_t) -> u16;
+        type float16_t = crate::types::float16::float16_t;
     }
-
-    extern "Rust" {
-        #[namespace = "mlx_cxx"]
-        fn f16_to_bits(value: float16_t) -> u16;
-    }
-}
-
-fn f16_to_bits(value: ffi::float16_t) -> u16 {
-    value.bits
 }
 
 #[cfg(feature = "half")]
@@ -50,12 +38,4 @@ impl From<float16_t> for half::f16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // TODO: remove later
-    #[test]
-    fn test_f16_to_bits() {
-        let value = ffi::float16_t { bits: 0x3c00 };
-        let bits = ffi::test_f16_to_bits(value);
-        assert_eq!(bits, 0x3c00);
-    }
 }

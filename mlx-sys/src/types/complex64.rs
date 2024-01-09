@@ -1,35 +1,23 @@
-#[cxx::bridge]
-pub(crate) mod ffi {
-    #[derive(Clone, Copy)]
-    #[namespace = "mlx_cxx"]
-    pub struct complex64_t {
-        pub re: f32,
-        pub im: f32,
-    }
+use cxx::{ExternType, type_id};
 
-    extern "Rust" {
-        #[namespace = "mlx_cxx"]
-        fn real(self: &complex64_t) -> f32;
-
-        #[namespace = "mlx_cxx"]
-        fn imag(self: &complex64_t) -> f32;
-    }
-
-    unsafe extern "C++" {
-        include!("mlx-cxx/types.hpp");
-    }
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct complex64_t {
+    pub re: f32,
+    pub im: f32,
 }
 
-impl ffi::complex64_t {
-    pub fn new(re: f32, im: f32) -> Self {
-        ffi::complex64_t { re, im }
-    }
+unsafe impl ExternType for complex64_t {
+    type Id = type_id!("mlx::core::complex64_t");
+    type Kind = cxx::kind::Trivial;
+}
 
-    pub fn real(&self) -> f32 {
-        self.re
-    }
+#[cxx::bridge(namespace = "mlx::core")]
+pub(crate) mod ffi {
+    unsafe extern "C++" {
+        include!("mlx/types/complex.h");
 
-    pub fn imag(&self) -> f32 {
-        self.im
+        type complex64_t = crate::types::complex64::complex64_t;
     }
 }

@@ -115,11 +115,13 @@ const SHIM_DIR: &str = "shim";
 const FILES_SHIM_MLX: &[&str] = &[
     "src/array.cpp",
     "src/types.cpp",
+    "src/dtype.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
     "src/lib.rs",
     "src/array.rs",
+    "src/dtype.rs",
     "src/types/float16.rs",
     "src/types/bfloat16.rs",
     "src/types/complex64.rs",

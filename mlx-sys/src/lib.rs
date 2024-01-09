@@ -7,4 +7,4 @@ mod ffi {
 
 pub(crate) mod types;
 pub(crate) mod array;
-
+pub(crate) mod dtype;

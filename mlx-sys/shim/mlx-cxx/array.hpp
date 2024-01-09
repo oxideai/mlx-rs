@@ -35,5 +35,8 @@ namespace mlx_cxx {
     int16_t array_item_int16(const array& arr, bool retain_graph);
     int32_t array_item_int32(const array& arr, bool retain_graph);
     int64_t array_item_int64(const array& arr, bool retain_graph);
-    float16_t array_item_float64(const array& arr, bool retain_graph);
+    float16_t array_item_float16(const array& arr, bool retain_graph);
+    bfloat16_t array_item_bfloat16(const array& arr, bool retain_graph);
+    float array_item_float32(const array& arr, bool retain_graph);
+    complex64_t array_item_complex64(const array& arr, bool retain_graph);
 }

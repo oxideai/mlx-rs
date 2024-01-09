@@ -70,6 +70,8 @@ mod ffi {
         #[cxx_name = "new_unique"]
         fn array_new_c64(value: complex64_t) -> UniquePtr<array>;
 
+        // TODO: create array from vec and iterator
+
         #[namespace = "mlx::core"]
         fn itemsize(self: &array) -> usize;
 
@@ -105,10 +107,41 @@ mod ffi {
         #[namespace = "mlx_cxx"]
         fn array_item_bool(arr: &array, retain_graph: bool) -> bool;
 
-        // // extern function with generic parameters is not supported yet
-        // #[namespace = "mlx_cxx"]
-        // #[cxx_name = "new_unique"]
-        // fn new_scalar_array<T>(value: T) -> UniquePtr<array>;
+        #[namespace = "mlx_cxx"]
+        fn array_item_uint8(arr: &array, retain_graph: bool) -> u8;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_uint16(arr: &array, retain_graph: bool) -> u16;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_uint32(arr: &array, retain_graph: bool) -> u32;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_uint64(arr: &array, retain_graph: bool) -> u64;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_int8(arr: &array, retain_graph: bool) -> i8;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_int16(arr: &array, retain_graph: bool) -> i16;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_int32(arr: &array, retain_graph: bool) -> i32;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_int64(arr: &array, retain_graph: bool) -> i64;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_float16(arr: &array, retain_graph: bool) -> float16_t;
+        
+        #[namespace = "mlx_cxx"]
+        fn array_item_bfloat16(arr: &array, retain_graph: bool) -> bfloat16_t;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_float32(arr: &array, retain_graph: bool) -> f32;
+
+        #[namespace = "mlx_cxx"]
+        fn array_item_complex64(arr: &array, retain_graph: bool) -> complex64_t;
     }
 }
 
@@ -141,65 +174,112 @@ mod tests {
     fn test_array_new_i16() {
         let array = ffi::array_new_i16(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
     }
 
     #[test]
     fn test_array_new_i32() {
         let array = ffi::array_new_i32(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
     }
 
     #[test]
     fn test_array_new_i64() {
         let array = ffi::array_new_i64(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
     }
 
     #[test]
     fn test_array_new_u8() {
         let array = ffi::array_new_u8(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
     }
 
     #[test]
     fn test_array_new_u16() {
         let array = ffi::array_new_u16(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
     }
 
     #[test]
     fn test_array_new_u32() {
         let array = ffi::array_new_u32(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
     }
 
     #[test]
     fn test_array_new_u64() {
         let array = ffi::array_new_u64(1);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
     }
 
     #[test]
     fn test_array_new_f32() {
         let array = ffi::array_new_f32(1.0);
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::float32));
     }
 
     #[test]
     fn test_array_new_f16() {
         let array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::float16));
     }
 
     #[test]
     fn test_array_new_bf16() {
         let array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bfloat16));
     }
 
     #[test]
     fn test_array_new_c64() {
         let array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
         assert!(!array.is_null());
+        assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(
+            dtype.val,
+            crate::dtype::ffi::Val::complex64
+        ));
     }
 }

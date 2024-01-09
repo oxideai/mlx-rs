@@ -11,25 +11,55 @@
 #include "mlx/array.h"
 
 namespace mlx_cxx {
-    // std::unique_ptr<array> array_new_bool(bool value) {
-    //     return mlx_cxx::new_unique<array>(value);
-    // }
-
-    // std::unique_ptr<array> array_new_f16(float16_t value) {
-    //     mlx::core::float16_t value2 = mlx_cxx::f16_to_float16_t(value);
-    //     return mlx_cxx::new_unique<array>(value2);
-    // }
-
-    // std::unique_ptr<array> array_new_bf16(bfloat16_t value) {
-    //     mlx::core::bfloat16_t value2 = mlx_cxx::bf16_to_bfloat16_t(value);
-    //     return mlx_cxx::new_unique<array>(value2);
-    // }
-
-    // std::unique_ptr<array> array_new_c64(complex64_t value) {
-    //     return mlx_cxx::new_unique<array>(value);
-    // }
-
     bool array_item_bool(array& arr, bool retain_graph) {
         return arr.item<bool>(retain_graph);
+    }
+
+    uint8_t array_item_uint8(array& arr, bool retain_graph) {
+        return arr.item<uint8_t>(retain_graph);
+    }
+
+    uint16_t array_item_uint16(array& arr, bool retain_graph) {
+        return arr.item<uint16_t>(retain_graph);
+    }
+
+    uint32_t array_item_uint32(array& arr, bool retain_graph) {
+        return arr.item<uint32_t>(retain_graph);
+    }
+
+    uint64_t array_item_uint64(array& arr, bool retain_graph) {
+        return arr.item<uint64_t>(retain_graph);
+    }
+
+    int8_t array_item_int8(array& arr, bool retain_graph) {
+        return arr.item<int8_t>(retain_graph);
+    }
+
+    int16_t array_item_int16(array& arr, bool retain_graph) {
+        return arr.item<int16_t>(retain_graph);
+    }
+
+    int32_t array_item_int32(array& arr, bool retain_graph) {
+        return arr.item<int32_t>(retain_graph);
+    }
+
+    int64_t array_item_int64(array& arr, bool retain_graph) {
+        return arr.item<int64_t>(retain_graph);
+    }
+
+    float16_t array_item_float16(array& arr, bool retain_graph) {
+        return arr.item<mlx::core::float16_t>(retain_graph);
+    }
+
+    float array_item_float32(array& arr, bool retain_graph) {
+        return arr.item<float>(retain_graph);
+    }
+
+    bfloat16_t array_item_bfloat16(array& arr, bool retain_graph) {
+        return arr.item<mlx::core::bfloat16_t>(retain_graph);
+    }
+
+    complex64_t array_item_complex64(array& arr, bool retain_graph) {
+        return arr.item<mlx::core::complex64_t>(retain_graph);
     }
 }

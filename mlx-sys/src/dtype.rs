@@ -1,5 +1,5 @@
 #[cxx::bridge]
-pub(crate) mod ffi {
+pub mod ffi {
     #[namespace = "mlx_cxx"]
     #[cxx_name = "DtypeVal"]
     #[repr(i32)]

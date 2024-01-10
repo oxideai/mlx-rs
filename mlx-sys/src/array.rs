@@ -1,6 +1,6 @@
 
 #[cxx::bridge]
-mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
         include!("mlx/array.h");
         include!("mlx-cxx/mlx_cxx.hpp");
@@ -142,12 +142,55 @@ mod ffi {
 
         #[namespace = "mlx_cxx"]
         fn array_item_complex64(arr: &array, retain_graph: bool) -> complex64_t;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_bool(slice: &[bool], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_uint8(slice: &[u8], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_uint16(slice: &[u16], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_uint32(slice: &[u32], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_uint64(slice: &[u64], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_int8(slice: &[i8], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_int16(slice: &[i16], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_int32(slice: &[i32], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_int64(slice: &[i64], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_float16(slice: &[float16_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_bfloat16(slice: &[bfloat16_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_float32(slice: &[f32], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn array_from_slice_complex64(slice: &[complex64_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
     }
 }
 
 
 #[cfg(test)]
 mod tests {
+    use cxx::CxxVector;
+
+    use crate::cxx_vec;
+
     use super::*;
 
     #[test]
@@ -275,6 +318,161 @@ mod tests {
         let array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
+
+        let dtype = array.dtype();
+        assert!(matches!(
+            dtype.val,
+            crate::dtype::ffi::Val::complex64
+        ));
+    }
+
+    #[test]
+    fn test_array_from_slice_bool() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_bool(&[true, false], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+    }
+
+    #[test]
+    fn test_array_from_slice_uint8() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_uint8(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
+    }
+
+    #[test]
+    fn test_array_from_slice_uint16() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_uint16(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
+    }
+
+    #[test]
+    fn test_array_from_slice_uint32() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_uint32(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
+    }
+
+    #[test]
+    fn test_array_from_slice_uint64() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_uint64(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
+    }
+
+    #[test]
+    fn test_array_from_slice_int8() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_int8(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
+    }
+
+    #[test]
+    fn test_array_from_slice_int16() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_int16(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
+    }
+
+    #[test]
+    fn test_array_from_slice_int32() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_int32(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
+    }
+
+    #[test]
+    fn test_array_from_slice_int64() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_int64(&[1, 2], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
+    }
+
+    #[test]
+    fn test_array_from_slice_float16() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(
+            dtype.val,
+            crate::dtype::ffi::Val::float16
+        ));
+    }
+
+    #[test]
+    fn test_array_from_slice_bfloat16() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(
+            dtype.val,
+            crate::dtype::ffi::Val::bfloat16
+        ));
+    }
+
+    #[test]
+    fn test_array_from_slice_float32() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
+
+        let dtype = array.dtype();
+        assert!(matches!(
+            dtype.val,
+            crate::dtype::ffi::Val::float32
+        ));
+    }
+
+    #[test]
+    fn test_array_from_slice_complex64() {
+        let shape = cxx_vec![2];
+        let array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
+        assert!(!array.is_null());
+        assert_eq!(array.size(), 2);
 
         let dtype = array.dtype();
         assert!(matches!(

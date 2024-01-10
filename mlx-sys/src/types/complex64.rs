@@ -14,7 +14,7 @@ unsafe impl ExternType for complex64_t {
 }
 
 #[cxx::bridge(namespace = "mlx::core")]
-pub(crate) mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
         include!("mlx/types/complex.h");
 

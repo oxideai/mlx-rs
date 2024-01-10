@@ -1,5 +1,5 @@
 #[cxx::bridge]
-mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
 
     }
@@ -8,3 +8,4 @@ mod ffi {
 pub(crate) mod types;
 pub(crate) mod array;
 pub(crate) mod dtype;
+pub(crate) mod macros;

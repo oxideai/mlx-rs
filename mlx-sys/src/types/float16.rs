@@ -13,7 +13,7 @@ unsafe impl ExternType for float16_t {
 }
 
 #[cxx::bridge(namespace = "mlx::core")]
-pub(crate) mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
         include!("mlx/types/half_types.h");
 

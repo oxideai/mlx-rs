@@ -116,6 +116,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/array.cpp",
     "src/types.cpp",
     "src/dtype.cpp",
+    "src/fft.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
@@ -128,6 +129,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/backend/metal.rs",
     "src/device.rs",
     "src/stream.rs",
+    "src/fft.rs",
 ];
 
 fn main() {

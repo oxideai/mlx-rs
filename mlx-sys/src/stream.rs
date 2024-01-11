@@ -20,7 +20,7 @@ pub mod ffi {
         fn default_stream(d: Device) -> Stream;
 
         #[namespace = "mlx::core"]
-        fn set_default_device(s: Stream);
+        fn set_default_stream(s: Stream);
 
         #[namespace = "mlx::core"]
         fn new_stream(d: Device) -> Stream;

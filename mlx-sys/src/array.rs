@@ -70,8 +70,6 @@ pub mod ffi {
         #[cxx_name = "new_unique"]
         fn array_new_c64(value: complex64_t) -> UniquePtr<array>;
 
-        // TODO: create array from vec and iterator
-
         #[namespace = "mlx::core"]
         fn itemsize(self: &array) -> usize;
 
@@ -181,6 +179,8 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_complex64(slice: &[complex64_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+
+        // TODO: how to get data from cxx to rust?
     }
 }
 

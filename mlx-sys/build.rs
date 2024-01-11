@@ -125,6 +125,9 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/types/float16.rs",
     "src/types/bfloat16.rs",
     "src/types/complex64.rs",
+    "src/backend/metal.rs",
+    "src/device.rs",
+    "src/stream.rs",
 ];
 
 fn main() {

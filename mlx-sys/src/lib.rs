@@ -5,7 +5,10 @@ pub mod ffi {
     }
 }
 
-pub(crate) mod types;
-pub(crate) mod array;
-pub(crate) mod dtype;
-pub(crate) mod macros;
+pub mod types;
+pub mod array;
+pub mod dtype;
+pub mod macros;
+pub mod backend;
+pub mod device;
+pub mod stream;

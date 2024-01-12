@@ -11,6 +11,10 @@
 #include "mlx/array.h"
 
 namespace mlx_cxx {
+    mlx::core::array array_new_bool(bool value) {
+        return mlx::core::array(value);
+    }
+
     bool array_item_bool(array& arr) {
         return arr.item<bool>();
     }
@@ -165,5 +169,10 @@ namespace mlx_cxx {
     ) {
         array arr = array(slice.begin(), shape, mlx::core::complex64);
         return std::make_unique<array>(arr);
+    }
+
+    std::shared_ptr<array> shared_array_from_bool(bool value) {
+        array arr = array(value);
+        return std::make_shared<array>(arr);
     }
 }

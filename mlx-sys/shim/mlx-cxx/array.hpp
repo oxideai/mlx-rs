@@ -30,6 +30,8 @@ namespace mlx_cxx
     // bfloat16,
     // complex64,
 
+    mlx::core::array array_new_bool(bool value);
+
     bool array_item_bool(const array &arr);
     uint8_t array_item_uint8(const array &arr);
     uint16_t array_item_uint16(const array &arr);
@@ -57,4 +59,19 @@ namespace mlx_cxx
     std::unique_ptr<array> array_from_slice_bfloat16(rust::Slice<const bfloat16_t> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_float32(rust::Slice<const float> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_complex64(rust::Slice<const complex64_t> slice, const std::vector<int> &shape);
+
+    std::shared_ptr<array> shared_array_from_bool(bool value);
+
+    // void mlx_cxx$array_desc$null(::std::shared_ptr<::mlx::core::array> *ptr) noexcept {
+    // ::new (ptr) ::std::shared_ptr<::mlx::core::array>();
+    // }
+    // void mlx_cxx$array_desc$clone(::std::shared_ptr<::mlx::core::array> const &self, ::std::shared_ptr<::mlx::core::array> *ptr) noexcept {
+    // ::new (ptr) ::std::shared_ptr<::mlx::core::array>(self);
+    // }
+    // ::mlx::core::array const *mlx_cxx$array_desc$get(::std::shared_ptr<::mlx::core::array> const &self) noexcept {
+    // return self.get();
+    // }
+    // void mlx_cxx$array_desc$drop(::std::shared_ptr<::mlx::core::array> *self) noexcept {
+    // self->~shared_ptr();
+    // }
 }

@@ -5,6 +5,7 @@
 #include "mlx/array.h"
 
 #include "mlx-cxx/types.hpp"
+
 #include "mlx-sys/src/types/float16.rs.h"
 #include "mlx-sys/src/types/bfloat16.rs.h"
 #include "mlx-sys/src/types/complex64.rs.h"

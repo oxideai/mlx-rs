@@ -117,6 +117,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/types.cpp",
     "src/dtype.cpp",
     "src/fft.cpp",
+    "src/mlx_cxx.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[

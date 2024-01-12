@@ -1,3 +1,21 @@
+#[repr(C, u8)]
+pub enum StreamOrDevice {
+    Default,
+    Stream(ffi::Stream),
+    Device(ffi::Device),
+}
+
+impl Default for StreamOrDevice {
+    fn default() -> Self {
+        Self::Default
+    }
+}
+
+unsafe impl cxx::ExternType for StreamOrDevice {
+    type Id = cxx::type_id!("mlx_cxx::StreamOrDevice");
+    type Kind = cxx::kind::Trivial;
+}
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
@@ -5,10 +23,17 @@ pub mod ffi {
         include!("mlx/device.h");
 
         #[namespace = "mlx::core"]
-        type Stream;
+        type Stream = crate::stream::ffi::Stream;
 
         #[namespace = "mlx::core"]
-        type Device;
+        type Device = crate::device::ffi::Device;
+    }
+
+    unsafe extern "C++" {
+        include!("mlx-cxx/mlx_cxx.hpp");
+
+        #[namespace = "mlx_cxx"]
+        type StreamOrDevice = crate::StreamOrDevice;
     }
 }
 

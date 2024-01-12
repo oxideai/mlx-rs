@@ -100,46 +100,46 @@ pub mod ffi {
         fn dtype(self: &array) -> Dtype;
 
         #[namespace = "mlx::core"]
-        fn eval(self: Pin<&mut array>, retain_graph: bool);
+        fn eval(self: Pin<&mut array>);
         
         #[namespace = "mlx_cxx"]
-        fn array_item_bool(arr: &array, retain_graph: bool) -> bool;
+        fn array_item_bool(arr: &array) -> bool;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint8(arr: &array, retain_graph: bool) -> u8;
+        fn array_item_uint8(arr: &array) -> u8;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint16(arr: &array, retain_graph: bool) -> u16;
+        fn array_item_uint16(arr: &array) -> u16;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint32(arr: &array, retain_graph: bool) -> u32;
+        fn array_item_uint32(arr: &array) -> u32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint64(arr: &array, retain_graph: bool) -> u64;
+        fn array_item_uint64(arr: &array) -> u64;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int8(arr: &array, retain_graph: bool) -> i8;
+        fn array_item_int8(arr: &array) -> i8;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int16(arr: &array, retain_graph: bool) -> i16;
+        fn array_item_int16(arr: &array) -> i16;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int32(arr: &array, retain_graph: bool) -> i32;
+        fn array_item_int32(arr: &array) -> i32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int64(arr: &array, retain_graph: bool) -> i64;
+        fn array_item_int64(arr: &array) -> i64;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_float16(arr: &array, retain_graph: bool) -> float16_t;
+        fn array_item_float16(arr: &array) -> float16_t;
         
         #[namespace = "mlx_cxx"]
-        fn array_item_bfloat16(arr: &array, retain_graph: bool) -> bfloat16_t;
+        fn array_item_bfloat16(arr: &array) -> bfloat16_t;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_float32(arr: &array, retain_graph: bool) -> f32;
+        fn array_item_float32(arr: &array) -> f32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_complex64(arr: &array, retain_graph: bool) -> complex64_t;
+        fn array_item_complex64(arr: &array) -> complex64_t;
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_bool(slice: &[bool], shape: &CxxVector<i32>) -> UniquePtr<array>;

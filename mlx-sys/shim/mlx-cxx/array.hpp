@@ -30,19 +30,19 @@ namespace mlx_cxx
     // bfloat16,
     // complex64,
 
-    bool array_item_bool(const array &arr, bool retain_graph);
-    uint8_t array_item_uint8(const array &arr, bool retain_graph);
-    uint16_t array_item_uint16(const array &arr, bool retain_graph);
-    uint32_t array_item_uint32(const array &arr, bool retain_graph);
-    uint64_t array_item_uint64(const array &arr, bool retain_graph);
-    int8_t array_item_int8(const array &arr, bool retain_graph);
-    int16_t array_item_int16(const array &arr, bool retain_graph);
-    int32_t array_item_int32(const array &arr, bool retain_graph);
-    int64_t array_item_int64(const array &arr, bool retain_graph);
-    float16_t array_item_float16(const array &arr, bool retain_graph);
-    bfloat16_t array_item_bfloat16(const array &arr, bool retain_graph);
-    float array_item_float32(const array &arr, bool retain_graph);
-    complex64_t array_item_complex64(const array &arr, bool retain_graph);
+    bool array_item_bool(const array &arr);
+    uint8_t array_item_uint8(const array &arr);
+    uint16_t array_item_uint16(const array &arr);
+    uint32_t array_item_uint32(const array &arr);
+    uint64_t array_item_uint64(const array &arr);
+    int8_t array_item_int8(const array &arr);
+    int16_t array_item_int16(const array &arr);
+    int32_t array_item_int32(const array &arr);
+    int64_t array_item_int64(const array &arr);
+    float16_t array_item_float16(const array &arr);
+    bfloat16_t array_item_bfloat16(const array &arr);
+    float array_item_float32(const array &arr);
+    complex64_t array_item_complex64(const array &arr);
 
     std::unique_ptr<array> array_from_slice_bool(rust::Slice<const bool> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_uint8(rust::Slice<const uint8_t> slice, const std::vector<int> &shape);

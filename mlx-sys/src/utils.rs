@@ -10,14 +10,14 @@ mod ffi {
         #[namespace = "mlx::core"]
         type array = crate::array::ffi::array;
 
-        #[namespace = "mlx::core"]
-        fn result_type(arrays: &CxxVector<array>) -> Dtype;
+        #[namespace = "mlx_cxx"]
+        fn result_type(arrays: &[UniquePtr<array>]) -> Dtype;
 
         #[namespace = "mlx_cxx"]
         fn broadcast_shapes(s1: &CxxVector<i32>, s2: &CxxVector<i32>) -> UniquePtr<CxxVector<i32>>;
 
-        #[namespace = "mlx::core"]
-        fn is_same_shape(arrays: &CxxVector<array>) -> bool;
+        #[namespace = "mlx_cxx"]
+        fn is_same_shape(arrays: &[UniquePtr<array>]) -> bool;
 
         #[namespace = "mlx::core"]
         fn normalize_axis(axis: i32, ndim: i32) -> i32;

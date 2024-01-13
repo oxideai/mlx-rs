@@ -201,6 +201,9 @@ mod tests {
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+
+        let item = ffi::array_item_bool(&array);
+        assert_eq!(item, true);
     }
 
     #[test]

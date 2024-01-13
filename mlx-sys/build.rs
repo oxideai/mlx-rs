@@ -43,6 +43,7 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/threefry.cpp",
 ];
 
+#[cfg(not(feature = "accelerate"))]
 const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str = "mlx/mlx/backend/common/default_primitives.cpp";
 
 /// Files to compile for accelerate backend

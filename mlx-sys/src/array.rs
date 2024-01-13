@@ -103,43 +103,43 @@ pub mod ffi {
         fn eval(self: Pin<&mut array>);
         
         #[namespace = "mlx_cxx"]
-        fn array_item_bool(arr: &array) -> bool;
+        fn array_item_bool(arr: Pin<&mut array>) -> bool;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint8(arr: &array) -> u8;
+        fn array_item_uint8(arr: Pin<&mut array>) -> u8;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint16(arr: &array) -> u16;
+        fn array_item_uint16(arr: Pin<&mut array>) -> u16;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint32(arr: &array) -> u32;
+        fn array_item_uint32(arr: Pin<&mut array>) -> u32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_uint64(arr: &array) -> u64;
+        fn array_item_uint64(arr: Pin<&mut array>) -> u64;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int8(arr: &array) -> i8;
+        fn array_item_int8(arr: Pin<&mut array>) -> i8;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int16(arr: &array) -> i16;
+        fn array_item_int16(arr: Pin<&mut array>) -> i16;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int32(arr: &array) -> i32;
+        fn array_item_int32(arr: Pin<&mut array>) -> i32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_int64(arr: &array) -> i64;
+        fn array_item_int64(arr: Pin<&mut array>) -> i64;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_float16(arr: &array) -> float16_t;
+        fn array_item_float16(arr: Pin<&mut array>) -> float16_t;
         
         #[namespace = "mlx_cxx"]
-        fn array_item_bfloat16(arr: &array) -> bfloat16_t;
+        fn array_item_bfloat16(arr: Pin<&mut array>) -> bfloat16_t;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_float32(arr: &array) -> f32;
+        fn array_item_float32(arr: Pin<&mut array>) -> f32;
 
         #[namespace = "mlx_cxx"]
-        fn array_item_complex64(arr: &array) -> complex64_t;
+        fn array_item_complex64(arr: Pin<&mut array>) -> complex64_t;
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_bool(slice: &[bool], shape: &CxxVector<i32>) -> UniquePtr<array>;
@@ -195,130 +195,163 @@ mod tests {
 
     #[test]
     fn test_array_new_bool() {
-        let array = ffi::array_new_bool(true);
+        let mut array = ffi::array_new_bool(true);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
 
-        let item = ffi::array_item_bool(&array);
+        let item = ffi::array_item_bool(array.pin_mut());
         assert_eq!(item, true);
     }
 
     #[test]
     fn test_array_new_i8() {
-        let array = ffi::array_new_i8(1);
+        let mut array = ffi::array_new_i8(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
+
+        let item = ffi::array_item_int8(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_i16() {
-        let array = ffi::array_new_i16(1);
+        let mut array = ffi::array_new_i16(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
+
+        let item = ffi::array_item_int16(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_i32() {
-        let array = ffi::array_new_i32(1);
+        let mut array = ffi::array_new_i32(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
+
+        let item = ffi::array_item_int32(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_i64() {
-        let array = ffi::array_new_i64(1);
+        let mut array = ffi::array_new_i64(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
+
+        let item = ffi::array_item_int64(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_u8() {
-        let array = ffi::array_new_u8(1);
+        let mut array = ffi::array_new_u8(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
+
+        let item = ffi::array_item_uint8(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_u16() {
-        let array = ffi::array_new_u16(1);
+        let mut array = ffi::array_new_u16(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
+
+        let item = ffi::array_item_uint16(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_u32() {
-        let array = ffi::array_new_u32(1);
+        let mut array = ffi::array_new_u32(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
+
+        let item = ffi::array_item_uint32(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_u64() {
-        let array = ffi::array_new_u64(1);
+        let mut array = ffi::array_new_u64(1);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
+
+        let item = ffi::array_item_uint64(array.pin_mut());
+        assert_eq!(item, 1);
     }
 
     #[test]
     fn test_array_new_f32() {
-        let array = ffi::array_new_f32(1.0);
+        let mut array = ffi::array_new_f32(1.0);
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float32));
+
+        let item = ffi::array_item_float32(array.pin_mut());
+        assert_eq!(item, 1.0);
     }
 
     #[test]
     fn test_array_new_f16() {
-        let array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
+        let mut array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float16));
+
+        let item = ffi::array_item_float16(array.pin_mut());
+        assert_eq!(item.bits, 0x3c00);
     }
 
     #[test]
     fn test_array_new_bf16() {
-        let array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
+        let mut array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bfloat16));
+
+        let item = ffi::array_item_bfloat16(array.pin_mut());
+        assert_eq!(item.bits, 0x3c00);
     }
 
     #[test]
     fn test_array_new_c64() {
-        let array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
+        let mut array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
         assert!(!array.is_null());
         assert_eq!(array.size(), 1);
 
@@ -327,6 +360,10 @@ mod tests {
             dtype.val,
             crate::dtype::ffi::Val::complex64
         ));
+
+        let item = ffi::array_item_complex64(array.pin_mut());
+        assert_eq!(item.re, 1.0);
+        assert_eq!(item.im, 1.0);
     }
 
     #[test]

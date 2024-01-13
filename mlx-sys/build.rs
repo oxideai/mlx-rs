@@ -30,7 +30,6 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/binary.cpp",
     "mlx/mlx/backend/common/conv.cpp",
     "mlx/mlx/backend/common/copy.cpp",
-    "mlx/mlx/backend/common/default_primitives.cpp",
     "mlx/mlx/backend/common/erf.cpp",
     "mlx/mlx/backend/common/fft.cpp",
     "mlx/mlx/backend/common/indexing.cpp",
@@ -43,6 +42,8 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/sort.cpp",
     "mlx/mlx/backend/common/threefry.cpp",
 ];
+
+const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str = "mlx/mlx/backend/common/default_primitives.cpp";
 
 /// Files to compile for accelerate backend
 #[cfg(feature = "accelerate")]
@@ -119,6 +120,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/fft.cpp",
     "src/mlx_cxx.cpp",
     "src/utils.cpp",
+    "src/linalg.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
@@ -133,6 +135,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/stream.rs",
     "src/fft.rs",
     "src/utils.rs",
+    "src/linalg.rs",
 ];
 
 fn main() {
@@ -161,6 +164,11 @@ fn main() {
             // mlx uses new lapack api if accelerate is available
             .flag("-DACCELERATE_NEW_LAPACK") 
             .files(FILES_MLX_BACKEND_ACCELERATE);
+    }
+
+    #[cfg(not(feature = "accelerate"))]
+    {
+        build.file(FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES);
     }
 
     #[cfg(feature = "metal")]

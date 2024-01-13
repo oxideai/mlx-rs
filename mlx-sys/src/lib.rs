@@ -48,3 +48,4 @@ pub mod device;
 pub mod stream;
 pub mod fft;
 pub mod utils;
+pub mod linalg;

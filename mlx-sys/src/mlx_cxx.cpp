@@ -3,11 +3,11 @@
 namespace mlx_cxx {
     std::variant<std::monostate, mlx::core::Stream, mlx::core::Device> StreamOrDevice::to_variant() {
         switch (tag) {
-            case StreamOrDeviceTag::Default:
+            case StreamOrDevice::Tag::Default:
                 return payload.default_payload;
-            case StreamOrDeviceTag::Stream:
+            case StreamOrDevice::Tag::Stream:
                 return payload.stream;
-            case StreamOrDeviceTag::Device:
+            case StreamOrDevice::Tag::Device:
                 return payload.device;
         }
     }

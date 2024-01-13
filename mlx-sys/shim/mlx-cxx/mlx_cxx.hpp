@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include "mlx/stream.h"
 #include "mlx/device.h"
@@ -11,22 +12,38 @@ namespace mlx_cxx {
         return std::unique_ptr<T>(new T(args...));
     }
 
-    enum class StreamOrDeviceTag {
-        Default,
-        Stream,
-        Device,
-    };
-
-    union StreamOrDevicePayload {
-        std::monostate default_payload;
-        mlx::core::Stream stream;
-        mlx::core::Device device;
-    };
-
     struct StreamOrDevice {
-        StreamOrDeviceTag tag = StreamOrDeviceTag::Default;
-        StreamOrDevicePayload payload = StreamOrDevicePayload{ std::monostate{} };
+        enum class Tag: uint8_t {
+            Default,
+            Stream,
+            Device,
+        };
+
+        union Payload {
+            std::monostate default_payload;
+            mlx::core::Stream stream;
+            mlx::core::Device device;
+        };
+
+        Tag tag = Tag::Default;
+        Payload payload = Payload{ std::monostate{} };
 
         std::variant<std::monostate, mlx::core::Stream, mlx::core::Device> to_variant();
+    };
+
+    template <typename T>
+    struct Optional {
+        enum class Tag: uint8_t {
+            None,
+            Some
+        };
+
+        union Payload {
+            std::nullopt_t none;
+            T some;
+        };
+
+        Tag tag = Tag::None;
+        Payload payload = Payload{ std::nullopt };
     };
 }

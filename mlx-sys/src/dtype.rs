@@ -131,6 +131,12 @@ pub mod ffi {
     }
 }
 
+impl Default for ffi::Dtype {
+    fn default() -> Self {
+        ffi::dtype_float32()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

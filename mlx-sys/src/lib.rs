@@ -1,5 +1,3 @@
-use cxx::{UniquePtr, CxxVector};
-
 #[repr(C, u8)]
 pub enum StreamOrDevice {
     Default,
@@ -49,3 +47,4 @@ pub mod stream;
 pub mod fft;
 pub mod utils;
 pub mod linalg;
+pub mod ops;

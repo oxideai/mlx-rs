@@ -5,55 +5,55 @@ namespace mlx_cxx {
         return mlx::core::Dtype(val, size);
     }
 
-    constexpr mlx::core::Dtype dtype_bool_() {
+    mlx::core::Dtype dtype_bool_() {
         return mlx::core::bool_;
     }
 
-    constexpr mlx::core::Dtype dtype_uint8() {
+    mlx::core::Dtype dtype_uint8() {
         return mlx::core::uint8;
     }
 
-    constexpr mlx::core::Dtype dtype_uint16() {
+    mlx::core::Dtype dtype_uint16() {
         return mlx::core::uint16;
     }
 
-    constexpr mlx::core::Dtype dtype_uint32() {
+    mlx::core::Dtype dtype_uint32() {
         return mlx::core::uint32;
     }
 
-    constexpr mlx::core::Dtype dtype_uint64() {
+    mlx::core::Dtype dtype_uint64() {
         return mlx::core::uint64;
     }
 
-    constexpr mlx::core::Dtype dtype_int8() {
+    mlx::core::Dtype dtype_int8() {
         return mlx::core::int8;
     }
 
-    constexpr mlx::core::Dtype dtype_int16() {
+    mlx::core::Dtype dtype_int16() {
         return mlx::core::int16;
     }
 
-    constexpr mlx::core::Dtype dtype_int32() {
+    mlx::core::Dtype dtype_int32() {
         return mlx::core::int32;
     }
 
-    constexpr mlx::core::Dtype dtype_int64() {
+    mlx::core::Dtype dtype_int64() {
         return mlx::core::int64;
     }
 
-    constexpr mlx::core::Dtype dtype_float16() {
+    mlx::core::Dtype dtype_float16() {
         return mlx::core::float16;
     }
 
-    constexpr mlx::core::Dtype dtype_float32() {
+    mlx::core::Dtype dtype_float32() {
         return mlx::core::float32;
     }
 
-    constexpr mlx::core::Dtype dtype_bfloat16() {
+    mlx::core::Dtype dtype_bfloat16() {
         return mlx::core::bfloat16;
     }
 
-    constexpr mlx::core::Dtype dtype_complex64() {
+    mlx::core::Dtype dtype_complex64() {
         return mlx::core::complex64;
     }
 

@@ -1,16 +1,6 @@
 use cxx::{CxxVector, UniquePtr};
 
-#[repr(C, u8)]
-pub enum Optional<T> {
-    None,
-    Some(T),
-}
-
-impl<T> Default for Optional<T> {
-    fn default() -> Self {
-        Self::None
-    }
-}
+use crate::Optional;
 
 type OptionalAxis = Optional<UniquePtr<CxxVector<i32>>>;
 

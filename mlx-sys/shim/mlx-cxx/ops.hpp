@@ -7,8 +7,14 @@
 
 #include "mlx-cxx/mlx_cxx.hpp"
 
+#include "rust/cxx.h"
+
 namespace mlx_cxx
 {
+    using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;
+
+    std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt);
+
     /** Creation operations */
 
     mlx::core::Stream to_stream(mlx_cxx::StreamOrDevice s)
@@ -387,7 +393,7 @@ namespace mlx_cxx
     /** std::unique_ptr<mlx::core::array> manipulation */
 
     /** Reshape an std::unique_ptr<mlx::core::array> to the given shape. */
-    std::unique_ptr<mlx::core::array> reshape(const mlx::core::array &a, std::vector<int> shape, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> reshape(const mlx::core::array &a, std::unique_ptr<std::vector<int>> shape, mlx_cxx::StreamOrDevice s = {});
 
     /** Flatten the dimensions in the range `[start_axis, end_axis]` . */
     std::unique_ptr<mlx::core::array> flatten(
@@ -429,9 +435,9 @@ namespace mlx_cxx
     /** Slice an array. */
     std::unique_ptr<mlx::core::array> slice(
         const mlx::core::array &a,
-        std::vector<int> start,
-        std::vector<int> stop,
-        std::vector<int> strides,
+        std::unique_ptr<std::vector<int>> start,
+        std::unique_ptr<std::vector<int>> stop,
+        std::unique_ptr<std::vector<int>> strides,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Slice an std::unique_ptr<mlx::core::array> with a stride of 1 in each dimension. */
@@ -442,15 +448,15 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Split an std::unique_ptr<mlx::core::array> into sub-arrays along a given axis. */
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>>
+    std::unique_ptr<std::vector<mlx::core::array>>
     split(const mlx::core::array &a, int num_splits, int axis, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>> split(const mlx::core::array &a, int num_splits, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>> split(
+    std::unique_ptr<std::vector<mlx::core::array>> split(const mlx::core::array &a, int num_splits, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<std::vector<mlx::core::array>> split(
         const mlx::core::array &a,
         const std::vector<int> &indices,
         int axis,
         mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>>
+    std::unique_ptr<std::vector<mlx::core::array>>
     split(const mlx::core::array &a, const std::vector<int> &indices, mlx_cxx::StreamOrDevice s = {});
 
     /**
@@ -458,34 +464,34 @@ namespace mlx_cxx
      */
     std::unique_ptr<mlx::core::array> clip(
         const mlx::core::array &a,
-        const std::optional<mlx::core::array> &a_min = std::nullopt,
-        const std::optional<mlx::core::array> &a_max = std::nullopt,
+        const OptionalArray &a_min,
+        const OptionalArray &a_max,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Concatenate arrays along a given axis. */
     std::unique_ptr<mlx::core::array> concatenate(
-        const std::vector<std::unique_ptr<mlx::core::array>> &arrays,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> arrays,
         int axis,
         mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> concatenate(const std::vector<std::unique_ptr<mlx::core::array>> &arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> concatenate(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Stack arrays along a new axis. */
-    std::unique_ptr<mlx::core::array> stack(const std::vector<std::unique_ptr<mlx::core::array>> &arrays, int axis, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> stack(const std::vector<std::unique_ptr<mlx::core::array>> &arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, int axis, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Repeat an std::unique_ptr<mlx::core::array> along an axis. */
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, int axis, mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, mlx_cxx::StreamOrDevice s = {});
 
     /** Permutes the dimensions according to the given axes. */
-    std::unique_ptr<mlx::core::array> transpose(const mlx::core::array &a, std::vector<int> axes, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> transpose(
-        const mlx::core::array &a,
-        std::initializer_list<int> axes,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        return transpose(a, std::vector<int>(axes), s);
-    }
+    std::unique_ptr<mlx::core::array> transpose(const mlx::core::array &a, std::unique_ptr<std::vector<int>> axes, mlx_cxx::StreamOrDevice s = {});
+    // inline std::unique_ptr<mlx::core::array> transpose(
+    //     const mlx::core::array &a,
+    //     std::initializer_list<int> axes,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     return transpose(a, std::vector<int>(axes), s);
+    // }
 
     /** Swap two axes of an array. */
     std::unique_ptr<mlx::core::array> swapaxes(const mlx::core::array &a, int axis1, int axis2, mlx_cxx::StreamOrDevice s = {});
@@ -507,14 +513,24 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Pad an std::unique_ptr<mlx::core::array> with a constant value along all axes */
+    // std::unique_ptr<mlx::core::array> pad(
+    //     const mlx::core::array &a,
+    //     const std::vector<std::pair<int, int>> &pad_width,
+    //     const mlx::core::array &pad_value = mlx::core::array(0),
+    //     mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> pad(
         const mlx::core::array &a,
-        const std::vector<std::pair<int, int>> &pad_width,
+        rust::Slice<const std::array<int, 2>> pad_width, // std::pair<int, int>
         const mlx::core::array &pad_value = mlx::core::array(0),
         mlx_cxx::StreamOrDevice s = {});
+    // std::unique_ptr<mlx::core::array> pad(
+    //     const mlx::core::array &a,
+    //     const std::pair<int, int> &pad_width,
+    //     const mlx::core::array &pad_value = mlx::core::array(0),
+    //     mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> pad(
         const mlx::core::array &a,
-        const std::pair<int, int> &pad_width,
+        const std::array<int, 2> &pad_width, // std::pair<int, int>
         const mlx::core::array &pad_value = mlx::core::array(0),
         mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> pad(

@@ -182,6 +182,8 @@ pub mod ffi {
 
         // TODO: how to get data from cxx to rust?
     }
+
+    impl CxxVector<array> {} // Explicit instantiation
 }
 
 

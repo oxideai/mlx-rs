@@ -16,6 +16,18 @@ unsafe impl cxx::ExternType for StreamOrDevice {
     type Kind = cxx::kind::Trivial;
 }
 
+#[repr(C, u8)]
+pub enum Optional<T> {
+    None,
+    Some(T),
+}
+
+impl<T> Default for Optional<T> {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {

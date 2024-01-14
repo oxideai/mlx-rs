@@ -1,3 +1,15 @@
+use cxx::UniquePtr;
+
+use crate::{Optional, array::ffi::array};
+
+type OptionalArray = Optional<UniquePtr<array>>;
+
+unsafe impl cxx::ExternType for OptionalArray {
+    type Id = cxx::type_id!("mlx_cxx::OptionalArray");
+
+    type Kind = cxx::kind::Opaque;
+}
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
@@ -20,6 +32,9 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         type complex64_t = crate::types::complex64::complex64_t;
+
+        #[namespace = "mlx_cxx"]
+        type OptionalArray = crate::ops::OptionalArray;
 
         // A 1D std::unique_ptr<mlx::core::array> of numbers starting at `start` (optional),
         // stopping at stop, stepping by `step` (optional).
@@ -431,6 +446,230 @@ pub mod ffi {
         fn triu(
             x: UniquePtr<array>,
             k: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn reshape(
+            a: &array,
+            shape: UniquePtr<CxxVector<i32>>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "flatten_start_axis_end_axis"]
+        fn flatten(
+            a: &array,
+            start_axis: i32,
+            end_axis: i32,
+            s : StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn flatten(
+            a: &array,
+            s : StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "squeeze_axes"]
+        fn squeeze(
+            a: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "squeeze_axis"]
+        fn squeeze(
+            a: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn squeeze(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "expand_dims_at_axes"]
+        fn expand_dims(
+            a: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "expand_dims_at_axis"]
+        fn expand_dims(
+            a: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "slice_start_stop_strides"]
+        fn slice(
+            a: &array,
+            start: UniquePtr<CxxVector<i32>>,
+            stop: UniquePtr<CxxVector<i32>>,
+            strides: UniquePtr<CxxVector<i32>>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn slice(
+            a: &array,
+            start: &CxxVector<i32>,
+            stop: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "split_n_at_axis"]
+        fn split(
+            a: &array,
+            num_splits: i32,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "split_n"]
+        fn split(
+            a: &array,
+            num_splits: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "split_at_indices_along_axis"]
+        fn split(
+            a: &array,
+            indices: &CxxVector<i32>,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "split_at_indices"]
+        fn split(
+            a: &array,
+            indices: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn clip(
+            a: &array,
+            a_min: &OptionalArray,
+            a_max: &OptionalArray,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "concatenate_along_axis"]
+        fn concatenate(
+            arrays: &[UniquePtr<array>],
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn concatenate(
+            arrays: &[UniquePtr<array>],
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "stack_along_axis"]
+        fn stack(
+            arrays: &[UniquePtr<array>],
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn stack(
+            arrays: &[UniquePtr<array>],
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "repeat_along_axis"]
+        fn repeat(
+            arr: &array,
+            repeats: i32,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn repeat(
+            arr: &array,
+            repeats: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn transpose(
+            a: &array,
+            axes: UniquePtr<CxxVector<i32>>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+    
+        #[namespace = "mlx_cxx"]
+        fn swapaxes(
+            a: &array,
+            axis1: i32,
+            axis2: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn moveaxis(
+            a: &array,
+            source: i32,
+            destination: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "pad_axes"]
+        fn pad(
+            a: &array,
+            axes: &CxxVector<i32>,
+            low_pad_size: &CxxVector<i32>,
+            high_pad_size: &CxxVector<i32>,
+            pad_value: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "pad_unique_widths_for_each_axis"]
+        fn pad(
+            a: &array,
+            pad_width: &[[i32; 2]],
+            pad_value: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "pad_same_widths_for_each_axis"]
+        fn pad(
+            a: &array,
+            pad_width: &[i32; 2],
+            pad_value: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn pad(
+            a: &array,
+            pad_width: i32,
+            pad_value: &array,
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
     }

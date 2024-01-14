@@ -456,8 +456,8 @@ namespace mlx_cxx
     }
 
     /** Broadcast a vector of arrays against one another. */
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>> broadcast_arrays(
-        const std::vector<std::unique_ptr<mlx::core::array>> &inputs,
+    std::unique_ptr<std::vector<mlx::core::array>> broadcast_arrays(
+        rust::Slice<const std::unique_ptr<mlx::core::array>> inputs,
         mlx_cxx::StreamOrDevice s)
     {
         auto copy_constructed_inputs = std::vector<mlx::core::array>();
@@ -466,12 +466,7 @@ namespace mlx_cxx
             copy_constructed_inputs.push_back(*input);
         }
         auto arrays = mlx::core::broadcast_arrays(copy_constructed_inputs, s.to_variant());
-        std::vector<std::unique_ptr<mlx::core::array>> result;
-        for (auto &array : arrays)
-        {
-            result.push_back(std::make_unique<mlx::core::array>(array));
-        }
-        return std::make_unique<std::vector<std::unique_ptr<mlx::core::array>>>(std::move(result));
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 
     /** Comparison operations */
@@ -962,11 +957,6 @@ namespace mlx_cxx
         auto array = mlx::core::negative(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a)
-    {
-        auto array = mlx::core::negative(a);
-        return std::make_unique<mlx::core::array>(array);
-    }
 
     /** The sign of the elements in an array. */
     std::unique_ptr<mlx::core::array> sign(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
@@ -988,21 +978,11 @@ namespace mlx_cxx
         auto array = mlx::core::logical_and(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> operator&&(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::logical_and(a, b);
-        return std::make_unique<mlx::core::array>(array);
-    }
 
     /** Logical or of two arrays */
     std::unique_ptr<mlx::core::array> logical_or(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::logical_or(a, b, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
-    std::unique_ptr<mlx::core::array> operator||(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::logical_or(a, b);
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1019,21 +999,11 @@ namespace mlx_cxx
         auto array = mlx::core::add(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> operator+(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::add(a, b);
-        return std::make_unique<mlx::core::array>(array);
-    }
 
     /** Subtract two arrays. */
     std::unique_ptr<mlx::core::array> subtract(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::subtract(a, b, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
-    std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::subtract(a, b);
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1043,11 +1013,6 @@ namespace mlx_cxx
         auto array = mlx::core::multiply(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> operator*(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::multiply(a, b);
-        return std::make_unique<mlx::core::array>(array);
-    }
 
     /** Divide two arrays. */
     std::unique_ptr<mlx::core::array> divide(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
@@ -1055,33 +1020,13 @@ namespace mlx_cxx
         auto array = mlx::core::divide(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::divide(a, b);
-        return std::make_unique<mlx::core::array>(array);
-    }
-    std::unique_ptr<mlx::core::array> operator/(double a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::divide(mlx::core::array(a), b);
-        return std::make_unique<mlx::core::array>(array);
-    }
-    std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, double b)
-    {
-        auto array = mlx::core::divide(a, mlx::core::array(b));
-        return std::make_unique<mlx::core::array>(array);
-    }
 
     /** Compute the element-wise quotient and remainder. */
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>>
+    std::unique_ptr<std::vector<mlx::core::array>>
     divmod(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::divmod(a, b, s.to_variant());
-        std::vector<std::unique_ptr<mlx::core::array>> result;
-        for (auto &a : array)
-        {
-            result.push_back(std::make_unique<mlx::core::array>(a));
-        }
-        return std::make_unique<std::vector<std::unique_ptr<mlx::core::array>>>(std::move(result));
+        auto arrays = mlx::core::divmod(a, b, s.to_variant());
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 
     /** Compute integer division. Equivalent to doing floor(a / x). */
@@ -1095,11 +1040,6 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> remainder(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::remainder(a, b, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
-    std::unique_ptr<mlx::core::array> operator%(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        auto array = mlx::core::remainder(a, b);
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1309,7 +1249,7 @@ namespace mlx_cxx
     /** Gather std::unique_ptr<mlx::core::array> entries given indices and slices */
     std::unique_ptr<mlx::core::array> gather(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const std::vector<int> &axes,
         const std::vector<int> &slice_sizes,
         mlx_cxx::StreamOrDevice s)
@@ -1355,7 +1295,7 @@ namespace mlx_cxx
     /** Scatter updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
@@ -1372,7 +1312,7 @@ namespace mlx_cxx
     /** Scatter and add updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_add(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
@@ -1389,7 +1329,7 @@ namespace mlx_cxx
     /** Scatter and prod updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_prod(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
@@ -1406,7 +1346,7 @@ namespace mlx_cxx
     /** Scatter and max updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_max(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
@@ -1423,7 +1363,7 @@ namespace mlx_cxx
     /** Scatter and min updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_min(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)

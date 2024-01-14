@@ -549,113 +549,113 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Broadcast a vector of arrays against one another. */
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>> broadcast_arrays(
-        const std::vector<std::unique_ptr<mlx::core::array>> &inputs,
+    std::unique_ptr<std::vector<mlx::core::array>> broadcast_arrays(
+        rust::Slice<const std::unique_ptr<mlx::core::array>> inputs,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Comparison operations */
 
     /** Returns the bool std::unique_ptr<mlx::core::array> with (a == b) element-wise. */
     std::unique_ptr<mlx::core::array> equal(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator==(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::equal(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator==(T a, const mlx::core::array &b)
-    {
-        return equal(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator==(const mlx::core::array &a, T b)
-    {
-        return equal(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator==(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::equal(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator==(T a, const mlx::core::array &b)
+    // {
+    //     return equal(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator==(const mlx::core::array &a, T b)
+    // {
+    //     return equal(a, array(b));
+    // }
 
     /** Returns the bool std::unique_ptr<mlx::core::array> with (a != b) element-wise. */
     std::unique_ptr<mlx::core::array> not_equal(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator!=(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::not_equal(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator!=(T a, const mlx::core::array &b)
-    {
-        return not_equal(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator!=(const mlx::core::array &a, T b)
-    {
-        return not_equal(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator!=(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::not_equal(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator!=(T a, const mlx::core::array &b)
+    // {
+    //     return not_equal(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator!=(const mlx::core::array &a, T b)
+    // {
+    //     return not_equal(a, array(b));
+    // }
 
     /** Returns bool std::unique_ptr<mlx::core::array> with (a > b) element-wise. */
     std::unique_ptr<mlx::core::array> greater(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator>(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::greater(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator>(T a, const mlx::core::array &b)
-    {
-        return greater(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator>(const mlx::core::array &a, T b)
-    {
-        return greater(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator>(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::greater(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator>(T a, const mlx::core::array &b)
+    // {
+    //     return greater(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator>(const mlx::core::array &a, T b)
+    // {
+    //     return greater(a, array(b));
+    // }
 
     /** Returns bool std::unique_ptr<mlx::core::array> with (a >= b) element-wise. */
     std::unique_ptr<mlx::core::array> greater_equal(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator>=(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::greater_equal(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator>=(T a, const mlx::core::array &b)
-    {
-        return greater_equal(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator>=(const mlx::core::array &a, T b)
-    {
-        return greater_equal(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator>=(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::greater_equal(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator>=(T a, const mlx::core::array &b)
+    // {
+    //     return greater_equal(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator>=(const mlx::core::array &a, T b)
+    // {
+    //     return greater_equal(a, array(b));
+    // }
 
     /** Returns bool std::unique_ptr<mlx::core::array> with (a < b) element-wise. */
     std::unique_ptr<mlx::core::array> less(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator<(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::less(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator<(T a, const mlx::core::array &b)
-    {
-        return less(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator<(const mlx::core::array &a, T b)
-    {
-        return less(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator<(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::less(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator<(T a, const mlx::core::array &b)
+    // {
+    //     return less(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator<(const mlx::core::array &a, T b)
+    // {
+    //     return less(a, array(b));
+    // }
 
     /** Returns bool std::unique_ptr<mlx::core::array> with (a <= b) element-wise. */
     std::unique_ptr<mlx::core::array> less_equal(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator<=(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::less_equal(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator<=(T a, const mlx::core::array &b)
-    {
-        return less_equal(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator<=(const mlx::core::array &a, T b)
-    {
-        return less_equal(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator<=(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::less_equal(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator<=(T a, const mlx::core::array &b)
+    // {
+    //     return less_equal(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator<=(const mlx::core::array &a, T b)
+    // {
+    //     return less_equal(a, array(b));
+    // }
 
     /** True if two arrays have the same shape and elements. */
     std::unique_ptr<mlx::core::array> array_equal(
@@ -975,7 +975,7 @@ namespace mlx_cxx
 
     /** Negate an array. */
     std::unique_ptr<mlx::core::array> negative(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a);
+    // std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a);
 
     /** The sign of the elements in an array. */
     std::unique_ptr<mlx::core::array> sign(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
@@ -985,65 +985,65 @@ namespace mlx_cxx
 
     /** Logical and of two arrays */
     std::unique_ptr<mlx::core::array> logical_and(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator&&(const mlx::core::array &a, const mlx::core::array &b);
+    // std::unique_ptr<mlx::core::array> operator&&(const mlx::core::array &a, const mlx::core::array &b);
 
     /** Logical or of two arrays */
     std::unique_ptr<mlx::core::array> logical_or(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator||(const mlx::core::array &a, const mlx::core::array &b);
+    // std::unique_ptr<mlx::core::array> operator||(const mlx::core::array &a, const mlx::core::array &b);
 
     /** The reciprocal (1/x) of the elements in an array. */
     std::unique_ptr<mlx::core::array> reciprocal(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
 
     /** Add two arrays. */
     std::unique_ptr<mlx::core::array> add(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator+(const mlx::core::array &a, const mlx::core::array &b);
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator+(T a, const mlx::core::array &b)
-    {
-        return add(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator+(const mlx::core::array &a, T b)
-    {
-        return add(a, array(b));
-    }
+    // std::unique_ptr<mlx::core::array> operator+(const mlx::core::array &a, const mlx::core::array &b);
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator+(T a, const mlx::core::array &b)
+    // {
+    //     return add(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator+(const mlx::core::array &a, T b)
+    // {
+    //     return add(a, array(b));
+    // }
 
     /** Subtract two arrays. */
     std::unique_ptr<mlx::core::array> subtract(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a, const mlx::core::array &b);
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator-(T a, const mlx::core::array &b)
-    {
-        return subtract(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a, T b)
-    {
-        return subtract(a, array(b));
-    }
+    // std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a, const mlx::core::array &b);
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator-(T a, const mlx::core::array &b)
+    // {
+    //     return subtract(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator-(const mlx::core::array &a, T b)
+    // {
+    //     return subtract(a, array(b));
+    // }
 
     /** Multiply two arrays. */
     std::unique_ptr<mlx::core::array> multiply(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator*(const mlx::core::array &a, const mlx::core::array &b);
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator*(T a, const mlx::core::array &b)
-    {
-        return multiply(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator*(const mlx::core::array &a, T b)
-    {
-        return multiply(a, array(b));
-    }
+    // std::unique_ptr<mlx::core::array> operator*(const mlx::core::array &a, const mlx::core::array &b);
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator*(T a, const mlx::core::array &b)
+    // {
+    //     return multiply(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator*(const mlx::core::array &a, T b)
+    // {
+    //     return multiply(a, array(b));
+    // }
 
     /** Divide two arrays. */
     std::unique_ptr<mlx::core::array> divide(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, const mlx::core::array &b);
-    std::unique_ptr<mlx::core::array> operator/(double a, const mlx::core::array &b);
-    std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, double b);
+    // std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, const mlx::core::array &b);
+    // std::unique_ptr<mlx::core::array> operator/(double a, const mlx::core::array &b);
+    // std::unique_ptr<mlx::core::array> operator/(const mlx::core::array &a, double b);
 
     /** Compute the element-wise quotient and remainder. */
-    std::unique_ptr<std::vector<std::unique_ptr<mlx::core::array>>>
+    std::unique_ptr<std::vector<mlx::core::array>>
     divmod(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
 
     /** Compute integer division. Equivalent to doing floor(a / x). */
@@ -1051,17 +1051,17 @@ namespace mlx_cxx
 
     /** Compute the element-wise remainder of division */
     std::unique_ptr<mlx::core::array> remainder(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> operator%(const mlx::core::array &a, const mlx::core::array &b);
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator%(T a, const mlx::core::array &b)
-    {
-        return remainder(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator%(const mlx::core::array &a, T b)
-    {
-        return remainder(a, array(b));
-    }
+    // std::unique_ptr<mlx::core::array> operator%(const mlx::core::array &a, const mlx::core::array &b);
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator%(T a, const mlx::core::array &b)
+    // {
+    //     return remainder(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator%(const mlx::core::array &a, T b)
+    // {
+    //     return remainder(a, array(b));
+    // }
 
     /** Element-wise maximum between two arrays. */
     std::unique_ptr<mlx::core::array> maximum(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
@@ -1157,7 +1157,7 @@ namespace mlx_cxx
     /** Gather std::unique_ptr<mlx::core::array> entries given indices and slices */
     std::unique_ptr<mlx::core::array> gather(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const std::vector<int> &axes,
         const std::vector<int> &slice_sizes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1192,7 +1192,7 @@ namespace mlx_cxx
     /** Scatter updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1210,7 +1210,7 @@ namespace mlx_cxx
     /** Scatter and add updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_add(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1228,7 +1228,7 @@ namespace mlx_cxx
     /** Scatter and prod updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_prod(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1246,7 +1246,7 @@ namespace mlx_cxx
     /** Scatter and max updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_max(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1263,7 +1263,7 @@ namespace mlx_cxx
     /** Scatter and min updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_min(
         const mlx::core::array &a,
-        const std::vector<std::unique_ptr<mlx::core::array>> &indices,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1301,20 +1301,20 @@ namespace mlx_cxx
 
     /** Raise elements of a to the power of b element-wise */
     std::unique_ptr<mlx::core::array> power(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-    inline std::unique_ptr<mlx::core::array> operator^(const mlx::core::array &a, const mlx::core::array &b)
-    {
-        return mlx_cxx::power(a, b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator^(T a, const mlx::core::array &b)
-    {
-        return power(array(a), b);
-    }
-    template <typename T>
-    std::unique_ptr<mlx::core::array> operator^(const mlx::core::array &a, T b)
-    {
-        return power(a, array(b));
-    }
+    // inline std::unique_ptr<mlx::core::array> operator^(const mlx::core::array &a, const mlx::core::array &b)
+    // {
+    //     return mlx_cxx::power(a, b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator^(T a, const mlx::core::array &b)
+    // {
+    //     return power(array(a), b);
+    // }
+    // template <typename T>
+    // std::unique_ptr<mlx::core::array> operator^(const mlx::core::array &a, T b)
+    // {
+    //     return power(a, array(b));
+    // }
 
     /** Cumulative sum of an array. */
     std::unique_ptr<mlx::core::array> cumsum(

@@ -84,12 +84,12 @@ namespace mlx_cxx
     /** Create a view of an std::unique_ptr<mlx::core::array> with the given shape and strides. */
     std::unique_ptr<mlx::core::array> as_strided(
         const mlx::core::array &a,
-        std::vector<int> shape,
-        std::vector<size_t> strides,
+        std::unique_ptr<std::vector<int>> shape,
+        std::unique_ptr<std::vector<size_t>> strides,
         size_t offset,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::as_strided(a, shape, strides, offset, s.to_variant());
+        auto array = mlx::core::as_strided(a, *shape, *strides, offset, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

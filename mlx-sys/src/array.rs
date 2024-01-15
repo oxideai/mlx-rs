@@ -180,7 +180,8 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn array_from_slice_complex64(slice: &[complex64_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
 
-        // TODO: how to get data from cxx to rust?
+        // TODO: how to get data from cxx to rust? The method `data()` tho is public but is intended
+        // for use by the backend implementation
     }
 
     impl CxxVector<array> {} // Explicit instantiation

@@ -1364,9 +1364,9 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> conv2d(
         const mlx::core::array &input,
         const mlx::core::array &weight,
-        const std::pair<int, int> &stride = {1, 1},
-        const std::pair<int, int> &padding = {0, 0},
-        const std::pair<int, int> &dilation = {1, 1},
+        const std::array<int, 2> &stride = {1, 1},
+        const std::array<int, 2> &padding = {0, 0},
+        const std::array<int, 2> &dilation = {1, 1},
         int groups = 1,
         mlx_cxx::StreamOrDevice s = {});
 
@@ -1396,7 +1396,7 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Quantize a matrix along its last axis */
-    std::tuple<std::unique_ptr<mlx::core::array>, std::unique_ptr<mlx::core::array>, std::unique_ptr<mlx::core::array>> quantize(
+    std::array<std::unique_ptr<mlx::core::array>, 3> quantize(
         const mlx::core::array &w,
         int group_size = 64,
         int bits = 4,
@@ -1421,7 +1421,7 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const std::pair<std::vector<int>, std::vector<int>> &dims,
+        const std::array<std::unique_ptr<std::vector<int>>, 2> &dims,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Compute the outer product of two vectors. */

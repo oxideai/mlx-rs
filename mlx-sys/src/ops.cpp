@@ -1378,13 +1378,15 @@ namespace mlx_cxx
     }
 
     /** Square root the elements of an array. */
-    std::unique_ptr<mlx::core::array> sqrt(const mlx::core::array &a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> sqrt(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::sqrt(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Square root and reciprocal the elements of an array. */
-    std::unique_ptr<mlx::core::array> rsqrt(const mlx::core::array &a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> rsqrt(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::rsqrt(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
@@ -1393,19 +1395,22 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> softmax(
         const mlx::core::array &a,
         const std::vector<int> &axes,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::softmax(a, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Softmax of an array. */
-    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::softmax(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Raise elements of a to the power of b element-wise */
-    std::unique_ptr<mlx::core::array> power(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> power(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::power(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
@@ -1416,10 +1421,11 @@ namespace mlx_cxx
         int axis,
         bool reverse,
         bool inclusive,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::cumsum(a, axis, reverse, inclusive, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Cumulative product of an array. */
     std::unique_ptr<mlx::core::array> cumprod(
@@ -1427,10 +1433,11 @@ namespace mlx_cxx
         int axis,
         bool reverse,
         bool inclusive,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::cumprod(a, axis, reverse, inclusive, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Cumulative max of an array. */
     std::unique_ptr<mlx::core::array> cummax(
@@ -1438,10 +1445,11 @@ namespace mlx_cxx
         int axis,
         bool reverse,
         bool inclusive,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::cummax(a, axis, reverse, inclusive, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Cumulative min of an array. */
     std::unique_ptr<mlx::core::array> cummin(
@@ -1449,10 +1457,11 @@ namespace mlx_cxx
         int axis,
         bool reverse,
         bool inclusive,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::cummin(a, axis, reverse, inclusive, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Convolution operations */
 
@@ -1464,44 +1473,50 @@ namespace mlx_cxx
         int padding,
         int dilation,
         int groups,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::conv1d(input, weight, stride, padding, dilation, groups, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** 2D convolution with a filter */
     std::unique_ptr<mlx::core::array> conv2d(
         const mlx::core::array &input,
         const mlx::core::array &weight,
-        const std::pair<int, int> &stride,
-        const std::pair<int, int> &padding,
-        const std::pair<int, int> &dilation,
+        const std::array<int, 2> &stride,
+        const std::array<int, 2> &padding,
+        const std::array<int, 2> &dilation,
         int groups,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::conv2d(input, weight, stride, padding, dilation, groups, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Serialization operations */
 
     /** Save std::unique_ptr<mlx::core::array> to out stream in .npy format */
-    void save(std::shared_ptr<mlx::core::io::Writer> out_stream, std::unique_ptr<mlx::core::array> a) {
+    void save(std::shared_ptr<mlx::core::io::Writer> out_stream, std::unique_ptr<mlx::core::array> a)
+    {
         mlx::core::save(out_stream, *a);
     }
 
     /** Save std::unique_ptr<mlx::core::array> to file in .npy format */
-    void save(const std::string &file, std::unique_ptr<mlx::core::array> a) {
+    void save(const std::string &file, std::unique_ptr<mlx::core::array> a)
+    {
         mlx::core::save(file, *a);
     }
 
     /** Load std::unique_ptr<mlx::core::array> from reader in .npy format */
-    std::unique_ptr<mlx::core::array> load(std::shared_ptr<mlx::core::io::Reader> in_stream, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> load(std::shared_ptr<mlx::core::io::Reader> in_stream, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::load(in_stream, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Load std::unique_ptr<mlx::core::array> from file in .npy format */
-    std::unique_ptr<mlx::core::array> load(const std::string &file, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> load(const std::string &file, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::load(file, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
@@ -1515,23 +1530,25 @@ namespace mlx_cxx
         bool transpose,
         int group_size,
         int bits,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::quantized_matmul(x, w, scales, biases, transpose, group_size, bits, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Quantize a matrix along its last axis */
-    std::tuple<std::unique_ptr<mlx::core::array>, std::unique_ptr<mlx::core::array>, std::unique_ptr<mlx::core::array>> quantize(
+    std::array<std::unique_ptr<mlx::core::array>, 3> quantize(
         const mlx::core::array &w,
         int group_size,
         int bits,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::quantize(w, group_size, bits, s.to_variant());
-        return std::make_tuple(
+        return std::array<std::unique_ptr<mlx::core::array>, 3>{
             std::make_unique<mlx::core::array>(std::get<0>(array)),
             std::make_unique<mlx::core::array>(std::get<1>(array)),
-            std::make_unique<mlx::core::array>(std::get<2>(array)));
-        }
+            std::make_unique<mlx::core::array>(std::get<2>(array))};
+    }
 
     /** Dequantize a matrix produced by quantize() */
     std::unique_ptr<mlx::core::array> dequantize(
@@ -1540,38 +1557,44 @@ namespace mlx_cxx
         const mlx::core::array &biases,
         int group_size,
         int bits,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::dequantize(w, scales, biases, group_size, bits, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** TensorDot returns a contraction of a and b over multiple dimensions. */
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
         const int dims,
-        mlx_cxx::StreamOrDevice s) {
+        mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::tensordot(a, b, dims, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const std::pair<std::vector<int>, std::vector<int>> &dims,
-        mlx_cxx::StreamOrDevice s) {
-        auto array = mlx::core::tensordot(a, b, dims, s.to_variant());
+        const std::array<std::unique_ptr<std::vector<int>>, 2> &dims,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto pair_dims = std::pair<std::vector<int>, std::vector<int>>(*dims[0], *dims[1]);
+        auto array = mlx::core::tensordot(a, b, pair_dims, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-        }
+    }
 
     /** Compute the outer product of two vectors. */
-    std::unique_ptr<mlx::core::array> outer(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> outer(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::outer(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Compute the inner product of two vectors. */
-    std::unique_ptr<mlx::core::array> inner(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> inner(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::inner(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
@@ -1579,62 +1602,68 @@ namespace mlx_cxx
     /** Load std::unique_ptr<mlx::core::array> map from .safetensors file format */
     std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
         std::shared_ptr<mlx::core::io::Reader> in_stream,
-        mlx_cxx::StreamOrDevice s) {
-            auto map = mlx::core::load_safetensors(in_stream, s.to_variant());
-            std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-            for (auto &a : map)
-            {
-                result[a.first] = std::make_unique<mlx::core::array>(a.second);
-            }
-            return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto map = mlx::core::load_safetensors(in_stream, s.to_variant());
+        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
+        for (auto &a : map)
+        {
+            result[a.first] = std::make_unique<mlx::core::array>(a.second);
         }
+        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+    }
     std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
         const std::string &file,
-        mlx_cxx::StreamOrDevice s) {
-            auto map = mlx::core::load_safetensors(file, s.to_variant());
-            std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-            for (auto &a : map)
-            {
-                result[a.first] = std::make_unique<mlx::core::array>(a.second);
-            }
-            return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto map = mlx::core::load_safetensors(file, s.to_variant());
+        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
+        for (auto &a : map)
+        {
+            result[a.first] = std::make_unique<mlx::core::array>(a.second);
         }
+        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+    }
 
     void save_safetensors(
         std::shared_ptr<mlx::core::io::Writer> in_stream,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a) {
-            std::unordered_map<std::string, mlx::core::array> map;
-            for (auto &a : *a)
-            {
-                map.insert({a.first, *a.second});
-            }
-            mlx::core::save_safetensors(in_stream, map);
+        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
+    {
+        std::unordered_map<std::string, mlx::core::array> map;
+        for (auto &a : *a)
+        {
+            map.insert({a.first, *a.second});
         }
+        mlx::core::save_safetensors(in_stream, map);
+    }
     void save_safetensors(
         const std::string &file,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a) {
-            std::unordered_map<std::string, mlx::core::array> map;
-            for (auto &a : *a)
-            {
-                map.insert({a.first, *a.second});
-            }
-            mlx::core::save_safetensors(file, map);
+        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
+    {
+        std::unordered_map<std::string, mlx::core::array> map;
+        for (auto &a : *a)
+        {
+            map.insert({a.first, *a.second});
         }
+        mlx::core::save_safetensors(file, map);
+    }
 
     /** Load std::unique_ptr<mlx::core::array> map from .gguf file format */
     std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_gguf(
         const std::string &file,
-        mlx_cxx::StreamOrDevice s) {
-            auto map = mlx::core::load_gguf(file, s.to_variant());
-            std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-            for (auto &a : map)
-            {
-                result.insert({a.first, std::make_unique<mlx::core::array>(a.second)});
-            }
-            return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto map = mlx::core::load_gguf(file, s.to_variant());
+        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
+        for (auto &a : map)
+        {
+            result.insert({a.first, std::make_unique<mlx::core::array>(a.second)});
         }
+        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
+    }
 
-    void save_gguf(std::string file, std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a) {
+    void save_gguf(std::string file, std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
+    {
         std::unordered_map<std::string, mlx::core::array> map;
         for (auto &a : *a)
         {

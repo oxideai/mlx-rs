@@ -1512,6 +1512,274 @@ pub mod ffi {
             axis: i32,
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_along_axes"]
+        fn scatter(
+            a: &array,
+            indices: &[UniquePtr<array>],
+            updates: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_along_axis"]
+        fn scatter(
+            a: &array,
+            indices: &array,
+            updates: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_add_along_axes"]
+        fn scatter_add(
+            a: &array,
+            indices: &[UniquePtr<array>],
+            updates: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_add_along_axis"]
+        fn scatter_add(
+            a: &array,
+            indices: &array,
+            updates: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_prod_along_axes"]
+        fn scatter_prod(
+            a: &array,
+            indices: &[UniquePtr<array>],
+            updates: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_prod_along_axis"]
+        fn scatter_prod(
+            a: &array,
+            indices: &array,
+            updates: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_max_along_axes"]
+        fn scatter_max(
+            a: &array,
+            indices: &[UniquePtr<array>],
+            updates: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_max_along_axis"]
+        fn scatter_max(
+            a: &array,
+            indices: &array,
+            updates: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_min_along_axes"]
+        fn scatter_min(
+            a: &array,
+            indices: &[UniquePtr<array>],
+            updates: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "scatter_min_along_axis"]
+        fn scatter_min(
+            a: &array,
+            indices: &array,
+            updates: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn sqrt(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn rsqrt(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "softmax_along_axes"]
+        fn softmax(
+            a: &array,
+            axes: &CxxVector<i32>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn softmax(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "softmax_along_axis"]
+        fn softmax(
+            a: &array,
+            axis: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        /// Raise elements of a to the power of b element-wise
+        #[namespace = "mlx_cxx"]
+        fn power(
+            a: &array,
+            b: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn cumsum(
+            a: &array,
+            axis: i32,
+            reverse: bool,
+            inclusive: bool,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn cumprod(
+            a: &array,
+            axis: i32,
+            reverse: bool,
+            inclusive: bool,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn cummax(
+            a: &array,
+            axis: i32,
+            reverse: bool,
+            inclusive: bool,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn cummin(
+            a: &array,
+            axis: i32,
+            reverse: bool,
+            inclusive: bool,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn conv1d(
+            input: &array,
+            weight: &array,
+            stride: i32,
+            padding: i32,
+            dilation: i32,
+            groups: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn conv2d(
+            input: &array,
+            weight: &array,
+            stride: &[i32; 2],
+            padding: &[i32; 2],
+            dilation: &[i32; 2],
+            groups: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        // TODO: save(), load()
+
+        #[namespace = "mlx_cxx"]
+        fn quantized_matmul(
+            x: &array,
+            w: &array,
+            scales: &array,
+            biases: &array,
+            transpose: bool, // default: true
+            group_size: i32, // default: 64
+            bits: i32, // default: 4
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn quantize(
+            w: &array,
+            group_size: i32, // default: 64
+            bits: i32, // default: 4
+            s: StreamOrDevice,
+        ) -> [UniquePtr<array>; 3];
+
+        #[namespace = "mlx_cxx"]
+        fn dequantize(
+            w: &array,
+            scales: &array,
+            biases: &array,
+            group_size: i32, // default: 64
+            bits: i32, // default: 4
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "tensordot_ndims"]
+        fn tensordot(
+            a: &array,
+            b: &array,
+            dims: i32,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "tensordot_list_dims"]
+        fn tensordot(
+            a: &array,
+            b: &array,
+            dims: &[UniquePtr<CxxVector<i32>>; 2],
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn outer(
+            a: &array,
+            b: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn inner(
+            a: &array,
+            b: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        // TODO: load_safetensors, save_safetensors, load_gguf, save_gguf
+        // They use either io or unordered_map, which are not supported yet.
+
     }
 }
 

@@ -123,6 +123,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/utils.cpp",
     "src/linalg.cpp",
     "src/ops.cpp",
+    "src/transforms.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
@@ -140,6 +141,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/linalg.rs",
     "src/ops.rs",
     "src/io.rs",
+    "src/transforms.rs",
 ];
 
 fn main() {

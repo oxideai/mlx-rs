@@ -33,8 +33,7 @@ namespace mlx_cxx
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
-        // const std::function<std::vector<mlx::core::array>(const std::vector<mlx::core::array> &)> &fun,
-        const MultiaryFn &fun,
+        const MultiaryCxxFn &fun,
         rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
         rust::Slice<const std::unique_ptr<mlx::core::array>> cotangents)
     {
@@ -56,5 +55,54 @@ namespace mlx_cxx
         auto vjps = std::make_unique<std::vector<mlx::core::array>>(result.second);
 
         return {std::move(outputs), std::move(vjps)};
+    }
+
+    std::array<std::unique_ptr<mlx::core::array>, 2> vjp(
+        const UnaryCxxFn &fun,
+        const mlx::core::array &primal,
+        const mlx::core::array &cotangent)
+    {
+        auto result = mlx::core::vjp(fun, primal, cotangent);
+        auto first = std::make_unique<mlx::core::array>(result.first);
+        auto second = std::make_unique<mlx::core::array>(result.second);
+
+        return {std::move(first), std::move(second)};
+    }
+
+    std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> jvp(
+        const MultiaryCxxFn &fun,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
+        rust::Slice<const std::unique_ptr<mlx::core::array>> tangents)
+    {
+        auto primals_vec = std::vector<mlx::core::array>{};
+        for (auto &primal : primals)
+        {
+            primals_vec.push_back(*primal);
+        }
+
+        auto tangents_vec = std::vector<mlx::core::array>{};
+        for (auto &tangent : tangents)
+        {
+            tangents_vec.push_back(*tangent);
+        }
+
+        auto result = mlx::core::jvp(fun, primals_vec, tangents_vec);
+
+        auto outputs = std::make_unique<std::vector<mlx::core::array>>(result.first);
+        auto vjps = std::make_unique<std::vector<mlx::core::array>>(result.second);
+
+        return {std::move(outputs), std::move(vjps)};
+    }
+
+    std::array<std::unique_ptr<mlx::core::array>, 2> jvp(
+        const UnaryCxxFn &fun,
+        const mlx::core::array &primal,
+        const mlx::core::array &tangent)
+    {
+        auto result = mlx::core::jvp(fun, primal, tangent);
+        auto first = std::make_unique<mlx::core::array>(result.first);
+        auto second = std::make_unique<mlx::core::array>(result.second);
+
+        return {std::move(first), std::move(second)};
     }
 }

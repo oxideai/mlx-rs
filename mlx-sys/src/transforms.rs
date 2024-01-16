@@ -34,7 +34,11 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         type array = crate::array::ffi::array;
 
-        type MultiaryFn;
+        #[namespace = "mlx_cxx"]
+        type UnaryCxxFn;
+
+        #[namespace = "mlx_cxx"]
+        type MultiaryCxxFn;
 
         // TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
@@ -51,7 +55,20 @@ pub mod ffi {
         // fn execute_callback(f: &DynFn, args: i32) -> i32;
 
         #[namespace = "mlx_cxx"]
-        fn vjp(f: &MultiaryFn, primals: &[UniquePtr<array>], cotangents: &[UniquePtr<array>]) -> [UniquePtr<CxxVector<array>>; 2];
+        #[rust_name = "vjp_multiary"]
+        fn vjp(f: &MultiaryCxxFn, primals: &[UniquePtr<array>], cotangents: &[UniquePtr<array>]) -> [UniquePtr<CxxVector<array>>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vjp_unary"]
+        fn vjp(f: &UnaryCxxFn, primal: &array, cotangent: &array) -> [UniquePtr<array>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_multiary"]
+        fn jvp(f: &MultiaryCxxFn, primals: &[UniquePtr<array>], tangents: &[UniquePtr<array>]) -> [UniquePtr<CxxVector<array>>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_unary"]
+        fn jvp(f: &UnaryCxxFn, primal: &array, tangent: &array) -> [UniquePtr<array>; 2];
     }
 
     // TODO: this needs to be placed in a separate file

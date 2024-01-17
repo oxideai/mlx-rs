@@ -62,3 +62,4 @@ pub mod linalg;
 pub mod ops;
 pub mod io;
 pub mod transforms;
+pub mod function;

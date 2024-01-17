@@ -142,6 +142,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/ops.rs",
     "src/io.rs",
     "src/transforms.rs",
+    "src/function.rs",
 ];
 
 fn main() {

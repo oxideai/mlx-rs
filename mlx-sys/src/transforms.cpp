@@ -211,6 +211,24 @@ namespace mlx_cxx
         };
     }
 
+    CxxMultiInputSingleOutputFn make_multi_input_single_output_fn(const MultiInputSingleOutputFn *f)
+    {
+        return [fun = std::move(f)](const std::vector<mlx::core::array> &args)
+        {
+            auto ptr = mlx_cxx::execute_multi_input_single_output_fn(*fun, args);
+            return *ptr;
+        };
+    }
+
+    CxxPairInputSingleOutputFn make_pair_input_single_output_fn(const PairInputSingleOutputFn *f)
+    {
+        return [fun = std::move(f)](const mlx::core::array &a, const mlx::core::array &b)
+        {
+            auto ptr = mlx_cxx::execute_pair_input_single_output_fn(*fun, a, b);
+            return *ptr;
+        };
+    }
+
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
     const MultiaryFn* fun,
     rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
@@ -242,4 +260,78 @@ namespace mlx_cxx
     {
         return mlx_cxx::jvp(make_unary_fn(fun), primal, tangent);
     }
+
+    std::unique_ptr<mlx::core::ValueAndGradFn> value_and_grad(
+        const MultiaryFn* fun,
+        const std::vector<int> &argnums)
+    {
+        return mlx_cxx::value_and_grad(make_multiary_fn(fun), argnums);
+    }
+
+    std::unique_ptr<mlx::core::ValueAndGradFn> value_and_grad(
+        const MultiaryFn* fun,
+        int argnum)
+    {
+        return mlx_cxx::value_and_grad(make_multiary_fn(fun), argnum);
+    }
+
+    std::unique_ptr<CxxSingleInputPairOutputFn> value_and_grad(
+        const UnaryFn* fun)
+    {
+        return mlx_cxx::value_and_grad(make_unary_fn(fun));
+    }
+
+    std::unique_ptr<mlx::core::SimpleValueAndGradFn> value_and_grad(
+        const MultiInputSingleOutputFn* fun,
+        const std::vector<int> &argnums)
+    {
+        return mlx_cxx::value_and_grad(make_multi_input_single_output_fn(fun), argnums);
+    }
+
+    std::unique_ptr<CxxMultiaryFn> grad(
+        const MultiInputSingleOutputFn* fun,
+        const std::vector<int> &argnums)
+    {
+        return mlx_cxx::grad(make_multi_input_single_output_fn(fun), argnums);
+    }
+
+    std::unique_ptr<CxxMultiaryFn> grad(
+        const MultiInputSingleOutputFn* fun,
+        int argnum)
+    {
+        return mlx_cxx::grad(make_multi_input_single_output_fn(fun), argnum);
+    }
+
+    std::unique_ptr<CxxUnaryFn> grad(
+        const UnaryFn* fun)
+    {
+        return mlx_cxx::grad(make_unary_fn(fun));
+    }
+
+    std::unique_ptr<CxxUnaryFn> vmap(
+        const UnaryFn* fun,
+        int in_axis,
+        int out_axis)
+    {
+        return mlx_cxx::vmap(make_unary_fn(fun), in_axis, out_axis);
+    }
+
+    std::unique_ptr<CxxPairInputSingleOutputFn> vmap(
+        const PairInputSingleOutputFn* fun,
+        int in_axis_a,
+        int in_axis_b,
+        int out_axis)
+    {
+        return mlx_cxx::vmap(make_pair_input_single_output_fn(fun), in_axis_a, in_axis_b, out_axis);
+    }
+
+    std::unique_ptr<CxxMultiaryFn> vmap(
+        const MultiaryFn* fun,
+        const std::vector<int> &in_axes,
+        const std::vector<int> &out_axes)
+    {
+        return mlx_cxx::vmap(make_multiary_fn(fun), in_axes, out_axes);
+    }
+
+    /* -------------------------------------------------------------------------- */
 }

@@ -19,9 +19,8 @@ where
     }
 }
 
-// pub type UnaryFn = Box<dyn for<'a> Function<&'a array, Output=UniquePtr<array>> + 'static>;
-
-pub struct UnaryFn(Box<dyn for<'a> Function<&'a array, Output = UniquePtr<array>> + 'static>);
+#[repr(transparent)]
+pub struct UnaryFn(pub Box<dyn for<'a> Function<&'a array, Output = UniquePtr<array>> + 'static>);
 
 impl<F> From<F> for UnaryFn
 where
@@ -36,9 +35,8 @@ pub fn execute_unary_fn(f: &UnaryFn, args: &array) -> UniquePtr<array> {
     f.0.execute(args)
 }
 
-pub struct MultiaryFn(
-    Box<dyn for<'a> Function<&'a CxxVector<array>, Output = UniquePtr<CxxVector<array>>> + 'static>,
-);
+#[repr(transparent)]
+pub struct MultiaryFn(pub Box<dyn for<'a> Function<&'a CxxVector<array>, Output = UniquePtr<CxxVector<array>>> + 'static>);
 
 impl<F> From<F> for MultiaryFn
 where
@@ -90,6 +88,18 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_unary_fn"]
         unsafe fn vjp(f: *const UnaryFn, primal: &array, cotangent: &array) -> [UniquePtr<array>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vjp_multiary_fn"]
+        unsafe fn vjp(f: *const MultiaryFn, primal: &[UniquePtr<array>], cotangent: &[UniquePtr<array>]) -> [UniquePtr<CxxVector<array>>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_unary_fn"]
+        unsafe fn jvp(f: *const UnaryFn, primal: &array, tangent: &array) -> [UniquePtr<array>; 2];
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_multiary_fn"]
+        unsafe fn jvp(f: *const MultiaryFn, primal: &[UniquePtr<array>], tangent: &[UniquePtr<array>]) -> [UniquePtr<CxxVector<array>>; 2];
     }
 }
 
@@ -102,7 +112,7 @@ mod tests {
         let f = |x: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
             crate::array::ffi::array_new_bool(true)
         };
-        let f = crate::function::UnaryFn::from(f);
+        let f = super::UnaryFn::from(f);
         let o = super::ffi::accept_rust_unary_fn(&f);
         println!("{}", o);
     }
@@ -116,7 +126,7 @@ mod tests {
         let f = move |arr: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
             crate::ops::ffi::multiply(arr, &**b, Default::default())
         };
-        let f = crate::function::UnaryFn::from(f);
+        let f = super::UnaryFn::from(f);
 
         let primal = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
         let cotangent = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);

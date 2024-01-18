@@ -51,6 +51,50 @@ pub fn execute_multiary_fn(f: &MultiaryFn, args: &CxxVector<array>) -> UniquePtr
     f.0.execute(args)
 }
 
+#[repr(transparent)]
+pub struct MultiInputSingleOutputFn(
+    pub Box<dyn for<'a> Function<&'a CxxVector<array>, Output=UniquePtr<array>> + 'static>
+);
+
+impl<F> From<F> for MultiInputSingleOutputFn
+where
+    F: for<'a> Function<&'a CxxVector<array>, Output=UniquePtr<array>> + 'static,
+{
+    fn from(f: F) -> Self {
+        Self(Box::new(f))
+    }
+}
+
+fn execute_multi_input_single_output_fn(
+    f: &MultiInputSingleOutputFn,
+    args: &CxxVector<array>,
+) -> UniquePtr<array> {
+    f.0.execute(args)
+}
+
+#[repr(transparent)]
+pub struct PairInputSingleOutputFn(
+    pub Box<dyn for<'a> Function<[&'a array; 2], Output=UniquePtr<array>> + 'static>
+);
+
+impl<F> From<F> for PairInputSingleOutputFn
+where
+    F: for<'a> Function<[&'a array; 2], Output=UniquePtr<array>> + 'static,
+{
+    fn from(f: F) -> Self {
+        Self(Box::new(f))
+    }
+}
+
+// This runs into problem with the c++ binding if we use [&array; 2] as the input type
+fn execute_pair_input_single_output_fn(
+    f: &PairInputSingleOutputFn,
+    first: &array,
+    second: &array,
+) -> UniquePtr<array> {
+    f.0.execute([first, second])
+}
+
 // TODO: change visibility and then re-export
 #[cxx::bridge]
 pub mod ffi {
@@ -69,6 +113,12 @@ pub mod ffi {
         type MultiaryFn;
 
         #[namespace = "mlx_cxx"]
+        type MultiInputSingleOutputFn;
+
+        #[namespace = "mlx_cxx"]
+        type PairInputSingleOutputFn;
+
+        #[namespace = "mlx_cxx"]
         fn execute_unary_fn(f: &UnaryFn, x: &array) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
@@ -76,6 +126,19 @@ pub mod ffi {
             f: &MultiaryFn,
             xs: &CxxVector<array>,
         ) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn execute_multi_input_single_output_fn(
+            f: &MultiInputSingleOutputFn,
+            xs: &CxxVector<array>,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn execute_pair_input_single_output_fn(
+            f: &PairInputSingleOutputFn,
+            first: &array,
+            second: &array,
+        ) -> UniquePtr<array>;
     }
 
     unsafe extern "C++" {

@@ -38,7 +38,7 @@ namespace mlx_cxx
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
-        const MultiaryCxxFn &fun,
+        const CxxMultiaryFn &fun,
         rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
         rust::Slice<const std::unique_ptr<mlx::core::array>> cotangents)
     {
@@ -63,7 +63,7 @@ namespace mlx_cxx
     }
 
     std::array<std::unique_ptr<mlx::core::array>, 2> vjp(
-        const UnaryCxxFn &fun,
+        const CxxUnaryFn &fun,
         const mlx::core::array &primal,
         const mlx::core::array &cotangent)
     {
@@ -75,7 +75,7 @@ namespace mlx_cxx
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> jvp(
-        const MultiaryCxxFn &fun,
+        const CxxMultiaryFn &fun,
         rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
         rust::Slice<const std::unique_ptr<mlx::core::array>> tangents)
     {
@@ -100,7 +100,7 @@ namespace mlx_cxx
     }
 
     std::array<std::unique_ptr<mlx::core::array>, 2> jvp(
-        const UnaryCxxFn &fun,
+        const CxxUnaryFn &fun,
         const mlx::core::array &primal,
         const mlx::core::array &tangent)
     {
@@ -112,75 +112,75 @@ namespace mlx_cxx
     }
 
     std::unique_ptr<mlx::core::ValueAndGradFn> value_and_grad(
-        const MultiaryCxxFn &fun,
+        const CxxMultiaryFn &fun,
         const std::vector<int> &argnums)
     {
         return std::make_unique<mlx::core::ValueAndGradFn>(mlx::core::value_and_grad(fun, argnums));
     }
 
     std::unique_ptr<mlx::core::ValueAndGradFn> value_and_grad(
-        const MultiaryCxxFn &fun,
+        const CxxMultiaryFn &fun,
         int argnum)
     {
         return std::make_unique<mlx::core::ValueAndGradFn>(mlx::core::value_and_grad(fun, argnum));
     }
 
-    std::unique_ptr<SipoCxxFn> value_and_grad(
-        const UnaryCxxFn &fun)
+    std::unique_ptr<CxxSingleInputPairOutputFn> value_and_grad(
+        const CxxUnaryFn &fun)
     {
-        return std::make_unique<SipoCxxFn>(mlx::core::value_and_grad(fun));
+        return std::make_unique<CxxSingleInputPairOutputFn>(mlx::core::value_and_grad(fun));
     }
 
     std::unique_ptr<mlx::core::SimpleValueAndGradFn> value_and_grad(
-        const MisoCxxFn &fun,
+        const CxxMultiInputSingleOutputFn &fun,
         const std::vector<int> &argnums)
     {
         return std::make_unique<mlx::core::SimpleValueAndGradFn>(mlx::core::value_and_grad(fun, argnums));
     }
 
-    std::unique_ptr<MultiaryCxxFn> grad(
-        const MisoCxxFn &fun,
+    std::unique_ptr<CxxMultiaryFn> grad(
+        const CxxMultiInputSingleOutputFn &fun,
         const std::vector<int> &argnums)
     {
-        return std::make_unique<MultiaryCxxFn>(mlx::core::grad(fun, argnums));
+        return std::make_unique<CxxMultiaryFn>(mlx::core::grad(fun, argnums));
     }
 
-    std::unique_ptr<MultiaryCxxFn> grad(
-        const MisoCxxFn &fun,
+    std::unique_ptr<CxxMultiaryFn> grad(
+        const CxxMultiInputSingleOutputFn &fun,
         int argnum)
     {
-        return std::make_unique<MultiaryCxxFn>(mlx::core::grad(fun, argnum));
+        return std::make_unique<CxxMultiaryFn>(mlx::core::grad(fun, argnum));
     }
 
-    std::unique_ptr<UnaryCxxFn> grad(
-        const UnaryCxxFn &fun)
+    std::unique_ptr<CxxUnaryFn> grad(
+        const CxxUnaryFn &fun)
     {
-        return std::make_unique<UnaryCxxFn>(mlx::core::grad(fun));
+        return std::make_unique<CxxUnaryFn>(mlx::core::grad(fun));
     }
 
-    std::unique_ptr<UnaryCxxFn> vmap(
-        const UnaryCxxFn &fun,
+    std::unique_ptr<CxxUnaryFn> vmap(
+        const CxxUnaryFn &fun,
         int in_axis,
         int out_axis)
     {
-        return std::make_unique<UnaryCxxFn>(mlx::core::vmap(fun, in_axis, out_axis));
+        return std::make_unique<CxxUnaryFn>(mlx::core::vmap(fun, in_axis, out_axis));
     }
 
-    std::unique_ptr<PisoCxxFn> vmap(
-        const PisoCxxFn &fun,
+    std::unique_ptr<CxxPairInputSingleOutputFn> vmap(
+        const CxxPairInputSingleOutputFn &fun,
         int in_axis_a,
         int in_axis_b,
         int out_axis)
     {
-        return std::make_unique<PisoCxxFn>(mlx::core::vmap(fun, in_axis_a, in_axis_b, out_axis));
+        return std::make_unique<CxxPairInputSingleOutputFn>(mlx::core::vmap(fun, in_axis_a, in_axis_b, out_axis));
     }
 
-    std::unique_ptr<MultiaryCxxFn> vmap(
-        const MultiaryCxxFn &fun,
+    std::unique_ptr<CxxMultiaryFn> vmap(
+        const CxxMultiaryFn &fun,
         const std::vector<int> &in_axes,
         const std::vector<int> &out_axes)
     {
-        return std::make_unique<MultiaryCxxFn>(mlx::core::vmap(fun, in_axes, out_axes));
+        return std::make_unique<CxxMultiaryFn>(mlx::core::vmap(fun, in_axes, out_axes));
     }
 
     /* -------------------------------------------------------------------------- */
@@ -193,7 +193,7 @@ namespace mlx_cxx
         return 1;
     }
 
-    UnaryCxxFn make_unary_fn(const UnaryFn *f)
+    CxxUnaryFn make_unary_fn(const UnaryFn *f)
     {
         return [fun = std::move(f)](const mlx::core::array &arg)
         {
@@ -202,7 +202,7 @@ namespace mlx_cxx
         };
     }
 
-    MultiaryCxxFn make_multiary_fn(const MultiaryFn *f)
+    CxxMultiaryFn make_multiary_fn(const MultiaryFn *f)
     {
         return [fun = std::move(f)](const std::vector<mlx::core::array> &args)
         {

@@ -2,7 +2,7 @@ use cxx::UniquePtr;
 
 use crate::{Optional, array::ffi::array};
 
-type OptionalArray = Optional<UniquePtr<array>>;
+pub type OptionalArray = Optional<UniquePtr<array>>;
 
 unsafe impl cxx::ExternType for OptionalArray {
     type Id = cxx::type_id!("mlx_cxx::OptionalArray");

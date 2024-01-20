@@ -204,7 +204,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice s = {});
 
-    std::unique_ptr<mlx::core::array> radint_bool(
+    std::unique_ptr<mlx::core::array> randint_bool(
         bool low,
         bool high,
         const std::vector<int>& shape,
@@ -212,7 +212,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice s = {});
 
-    std::unique_ptr<mlx::core::array> radint_uint8(
+    std::unique_ptr<mlx::core::array> randint_uint8(
         uint8_t low,
         uint8_t high,
         const std::vector<int>& shape,
@@ -220,7 +220,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_uint16(
+    std::unique_ptr<mlx::core::array> randint_uint16(
         uint16_t low,
         uint16_t high,
         const std::vector<int>& shape,
@@ -228,7 +228,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_uint32(
+    std::unique_ptr<mlx::core::array> randint_uint32(
         uint32_t low,
         uint32_t high,
         const std::vector<int>& shape,
@@ -236,7 +236,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_uint64(
+    std::unique_ptr<mlx::core::array> randint_uint64(
         uint64_t low,
         uint64_t high,
         const std::vector<int>& shape,
@@ -244,7 +244,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_int8(
+    std::unique_ptr<mlx::core::array> randint_int8(
         int8_t low,
         int8_t high,
         const std::vector<int>& shape,
@@ -252,7 +252,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_int16(
+    std::unique_ptr<mlx::core::array> randint_int16(
         int16_t low,
         int16_t high,
         const std::vector<int>& shape,
@@ -260,7 +260,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_int32(
+    std::unique_ptr<mlx::core::array> randint_int32(
         int32_t low,
         int32_t high,
         const std::vector<int>& shape,
@@ -268,7 +268,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_int64(
+    std::unique_ptr<mlx::core::array> randint_int64(
         int64_t low,
         int64_t high,
         const std::vector<int>& shape,
@@ -276,7 +276,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_float16(
+    std::unique_ptr<mlx::core::array> randint_float16(
         mlx::core::float16_t low,
         mlx::core::float16_t high,
         const std::vector<int>& shape,
@@ -284,7 +284,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_bfloat16(
+    std::unique_ptr<mlx::core::array> randint_bfloat16(
         mlx::core::bfloat16_t low,
         mlx::core::bfloat16_t high,
         const std::vector<int>& shape,
@@ -292,7 +292,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_float32(
+    std::unique_ptr<mlx::core::array> randint_float32(
         float low,
         float high,
         const std::vector<int>& shape,
@@ -300,7 +300,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice = {});
 
-    std::unique_ptr<mlx::core::array> radint_complex64(
+    std::unique_ptr<mlx::core::array> randint_complex64(
         mlx::core::complex64_t low,
         mlx::core::complex64_t high,
         const std::vector<int>& shape,
@@ -463,6 +463,7 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice s = {});
 
+    // TODO: ignore this for now
     std::unique_ptr<mlx::core::array> bernoulli(
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice s = {});

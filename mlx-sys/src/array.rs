@@ -1,10 +1,6 @@
-type uintptr_t = libc::uintptr_t;
-
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
-        include!("cstdint");
-
         include!("mlx/array.h");
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
@@ -23,7 +19,7 @@ pub mod ffi {
 
         // TODO: is uintptr_t always usize?
         #[cxx_name = "size_t"]
-        type uintptr_t = crate::array::uintptr_t;
+        type uintptr_t = libc::uintptr_t;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
@@ -200,9 +196,6 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn array_from_slice_complex64(slice: &[complex64_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
 
-        // TODO: how to get data from cxx to rust? The method `data()` tho is public but is intended
-        // for use by the backend implementation
-
         #[namespace = "mlx::core"]
         fn id(self: &array) -> uintptr_t;
 
@@ -361,8 +354,6 @@ pub mod ffi {
 
 #[cfg(test)]
 mod tests {
-    use cxx::CxxVector;
-
     use crate::cxx_vec;
 
     use super::*;

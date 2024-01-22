@@ -6,6 +6,8 @@
 #include "rust/cxx.h"
 
 namespace mlx_cxx {
+    // TODO: add binding to print format?
+
     mlx::core::Dtype result_type(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays);
 
     std::unique_ptr<std::vector<int>> broadcast_shapes(

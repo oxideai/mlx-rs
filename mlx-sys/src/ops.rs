@@ -614,6 +614,13 @@ pub mod ffi {
         ) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
+        fn tile(
+            arr: &array,
+            reps: UniquePtr<CxxVector<i32>>,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
         #[rust_name = "transpose_axes"]
         fn transpose(
             a: &array,
@@ -749,6 +756,30 @@ pub mod ffi {
         fn array_equal(
             a: &array,
             b: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn isnan(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn isinf(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn isposinf(
+            a: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn isneginf(
+            a: &array,
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
 
@@ -1774,6 +1805,17 @@ pub mod ffi {
         fn inner(
             a: &array,
             b: &array,
+            s: StreamOrDevice,
+        ) -> UniquePtr<array>;
+
+        /// Compute D = beta * C + alpha * (A @ B)
+        #[namespace = "mlx_cxx"]
+        fn addmm(
+            c: UniquePtr<array>,
+            a: UniquePtr<array>,
+            b: UniquePtr<array>,
+            alpha: &f32,
+            beta: &f32,
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
 

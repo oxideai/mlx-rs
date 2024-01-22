@@ -14,6 +14,7 @@ pub mod ffi {
 
         include!("mlx-cxx/random.hpp");
 
+        // TODO: add constructor binding for KeySequence
         #[namespace = "mlx::core::random"]
         type KeySequence;
 
@@ -37,6 +38,12 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         type complex64_t = crate::types::complex64::complex64_t;
+
+        #[namespace = "mlx_cxx"]
+        fn key_sequence(seed: u64) -> UniquePtr<KeySequence>;
+
+        #[namespace = "mlx_cxx"]
+        fn default_key_sequence() -> &'static KeySequence;
 
         #[namespace = "mlx_cxx"]
         fn key(seed: u64) -> UniquePtr<array>;

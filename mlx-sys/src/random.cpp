@@ -19,6 +19,12 @@ namespace mlx_cxx
         }
     }
 
+    std::unique_ptr<mlx::core::random::KeySequence> key_sequence(uint64_t seed)
+    {
+        auto key_sequence = mlx::core::random::KeySequence(seed);
+        return std::make_unique<mlx::core::random::KeySequence>(key_sequence);
+    }
+
     std::unique_ptr<mlx::core::array> key(uint64_t seed)
     {
         auto array = mlx::core::random::key(seed);

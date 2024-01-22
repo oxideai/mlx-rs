@@ -363,6 +363,15 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<mlx::core::array> tile(
+        const mlx::core::array &arr,
+        std::unique_ptr<std::vector<int>> reps,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::tile(arr, *reps, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
     /** Permutes the dimensions according to the given axes. */
     std::unique_ptr<mlx::core::array> transpose(const mlx::core::array &a, std::unique_ptr<std::vector<int>> axes, mlx_cxx::StreamOrDevice s)
     {
@@ -521,6 +530,26 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::array_equal(a, b, equal_nan, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> isnan(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+        auto array = mlx::core::isnan(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> isinf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+        auto array = mlx::core::isinf(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> isposinf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+        auto array = mlx::core::isposinf(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> isneginf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+        auto array = mlx::core::isneginf(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1670,5 +1699,18 @@ namespace mlx_cxx
             map.insert({a.first, *a.second});
         }
         mlx::core::save_gguf(file, map);
+    }
+
+    /** Compute D = beta * C + alpha * (A @ B) */
+    std::unique_ptr<mlx::core::array> addmm(
+        std::unique_ptr<mlx::core::array> c,
+        std::unique_ptr<mlx::core::array> a,
+        std::unique_ptr<mlx::core::array> b,
+        const float& alpha,
+        const float& beta,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::addmm(*c, *a, *b, alpha, beta, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
     }
 }

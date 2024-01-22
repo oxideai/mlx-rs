@@ -150,6 +150,8 @@ const RUST_SOURCE_FILES: &[&str] = &[
 fn main() {
     // TODO: conditionally compile based on if accelerate is available
 
+    // TODO: panic if target is x86
+
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     println!("cargo:warning=out_dir: {}", out_dir.display());
     

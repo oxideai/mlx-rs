@@ -6,6 +6,12 @@ pub mod ffi {
         #[namespace = "mlx::core::metal"]
         fn is_available() -> bool;
 
+        #[namespace = "mlx::core::metal"]
+        fn cache_enabled() -> bool;
+
+        #[namespace = "mlx::core::metal"]
+        fn set_cache_enabled(enabled: bool);
+
         // TODO: it seems like other function are not supposed to be
         // exposed to the user. 
     }

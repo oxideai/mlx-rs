@@ -11,6 +11,15 @@ namespace mlx_cxx {
 
     std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt);
 
+    /// @brief Constructor binding for KeySequence
+    /// @param seed 
+    /// @return 
+    std::unique_ptr<mlx::core::random::KeySequence> key_sequence(uint64_t seed);
+
+    const mlx::core::random::KeySequence& default_key_sequence() {
+        return mlx::core::random::KeySequence::default_();
+    }
+
     /// @brief Get a PRNG key from a seed.
     /// @param seed 
     /// @return 

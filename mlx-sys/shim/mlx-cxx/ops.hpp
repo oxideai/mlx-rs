@@ -483,6 +483,8 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, int axis, mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, mlx_cxx::StreamOrDevice s = {});
 
+    std::unique_ptr<mlx::core::array> tile(const mlx::core::array &arr, std::unique_ptr<std::vector<int>> reps, mlx_cxx::StreamOrDevice s = {});
+
     /** Permutes the dimensions according to the given axes. */
     std::unique_ptr<mlx::core::array> transpose(const mlx::core::array &a, std::unique_ptr<std::vector<int>> axes, mlx_cxx::StreamOrDevice s = {});
     // inline std::unique_ptr<mlx::core::array> transpose(
@@ -668,6 +670,14 @@ namespace mlx_cxx
     {
         return array_equal(a, b, false, s);
     }
+
+    std::unique_ptr<mlx::core::array> isnan(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> isinf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> isposinf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> isneginf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
 
     /** Select from x or y depending on condition. */
     std::unique_ptr<mlx::core::array> where(
@@ -1451,5 +1461,14 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     void save_gguf(std::string file, std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a);
+
+    /** Compute D = beta * C + alpha * (A @ B) */
+    std::unique_ptr<mlx::core::array> addmm(
+        std::unique_ptr<mlx::core::array> c,
+        std::unique_ptr<mlx::core::array> a,
+        std::unique_ptr<mlx::core::array> b,
+        const float& alpha = 1.f,
+        const float& beta = 1.f,
+        mlx_cxx::StreamOrDevice s = {});
 
 }

@@ -17,6 +17,7 @@ metal = []
 [dependencies]
 cxx = "1"
 half = { version = "2", optional = true }
+libc = "0.2"
 
 [build-dependencies]
 cxx-build = "1"

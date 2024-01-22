@@ -30,20 +30,6 @@ namespace mlx_cxx
     // bfloat16,
     // complex64,
 
-    bool array_item_bool(array &arr);
-    uint8_t array_item_uint8(array &arr);
-    uint16_t array_item_uint16(array &arr);
-    uint32_t array_item_uint32(array &arr);
-    uint64_t array_item_uint64(array &arr);
-    int8_t array_item_int8(array &arr);
-    int16_t array_item_int16(array &arr);
-    int32_t array_item_int32(array &arr);
-    int64_t array_item_int64(array &arr);
-    float16_t array_item_float16(array &arr);
-    bfloat16_t array_item_bfloat16(array &arr);
-    float array_item_float32(array &arr);
-    complex64_t array_item_complex64(array &arr);
-
     std::unique_ptr<array> array_from_slice_bool(rust::Slice<const bool> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_uint8(rust::Slice<const uint8_t> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_uint16(rust::Slice<const uint16_t> slice, const std::vector<int> &shape);
@@ -57,4 +43,12 @@ namespace mlx_cxx
     std::unique_ptr<array> array_from_slice_bfloat16(rust::Slice<const bfloat16_t> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_float32(rust::Slice<const float> slice, const std::vector<int> &shape);
     std::unique_ptr<array> array_from_slice_complex64(rust::Slice<const complex64_t> slice, const std::vector<int> &shape);
+
+    void set_array_siblings(
+        array& arr,
+        std::unique_ptr<std::vector<array>> siblings,
+        uint16_t position
+    );
+
+    std::unique_ptr<std::vector<mlx::core::array>> array_outputs(mlx::core::array &arr);
 }

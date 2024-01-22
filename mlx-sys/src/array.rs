@@ -1,7 +1,10 @@
+type uintptr_t = libc::uintptr_t;
 
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
+        include!("cstdint");
+
         include!("mlx/array.h");
         include!("mlx-cxx/mlx_cxx.hpp");
         include!("mlx-cxx/array.hpp");
@@ -17,6 +20,10 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         type array;
+
+        // TODO: is uintptr_t always usize?
+        #[cxx_name = "size_t"]
+        type uintptr_t = crate::array::uintptr_t;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
@@ -102,44 +109,57 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         fn eval(self: Pin<&mut array>);
         
-        #[namespace = "mlx_cxx"]
-        fn array_item_bool(arr: Pin<&mut array>) -> bool;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_bool(self: Pin<&mut array>) -> bool;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_uint8(arr: Pin<&mut array>) -> u8;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint8(self: Pin<&mut array>) -> u8;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_uint16(arr: Pin<&mut array>) -> u16;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint16(self: Pin<&mut array>) -> u16;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_uint32(arr: Pin<&mut array>) -> u32;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint32(self: Pin<&mut array>) -> u32;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_uint64(arr: Pin<&mut array>) -> u64;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint64(self: Pin<&mut array>) -> u64;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_int8(arr: Pin<&mut array>) -> i8;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int8(self: Pin<&mut array>) -> i8;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_int16(arr: Pin<&mut array>) -> i16;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int16(self: Pin<&mut array>) -> i16;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_int32(arr: Pin<&mut array>) -> i32;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int32(self: Pin<&mut array>) -> i32;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_int64(arr: Pin<&mut array>) -> i64;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int64(self: Pin<&mut array>) -> i64;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_float16(arr: Pin<&mut array>) -> float16_t;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_float16(self: Pin<&mut array>) -> float16_t;
         
-        #[namespace = "mlx_cxx"]
-        fn array_item_bfloat16(arr: Pin<&mut array>) -> bfloat16_t;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_bfloat16(self: Pin<&mut array>) -> bfloat16_t;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_float32(arr: Pin<&mut array>) -> f32;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_float32(self: Pin<&mut array>) -> f32;
 
-        #[namespace = "mlx_cxx"]
-        fn array_item_complex64(arr: Pin<&mut array>) -> complex64_t;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_complex64(self: Pin<&mut array>) -> complex64_t;
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_bool(slice: &[bool], shape: &CxxVector<i32>) -> UniquePtr<array>;
@@ -182,6 +202,157 @@ pub mod ffi {
 
         // TODO: how to get data from cxx to rust? The method `data()` tho is public but is intended
         // for use by the backend implementation
+
+        #[namespace = "mlx::core"]
+        fn id(self: &array) -> uintptr_t;
+
+        #[namespace = "mlx::core"]
+        fn primitive_id(self: &array) -> uintptr_t;
+
+        // TODO: should method `primitive()` be exposed?
+
+        #[namespace = "mlx::core"]
+        fn has_primitive(self: &array) -> bool;
+
+        #[namespace = "mlx::core"]
+        fn inputs(self: &array) -> &CxxVector<array>;
+
+        #[namespace = "mlx::core"]
+        fn siblings(self: &array) -> &CxxVector<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn set_array_siblings(arr: Pin<&mut array>, siblings: UniquePtr<CxxVector<array>>, position: u16);
+
+        #[namespace = "mlx_cxx"]
+        fn array_outputs(arr: Pin<&mut array>) -> UniquePtr<CxxVector<array>>;
+
+        // TODO: expose Flags
+
+        #[namespace = "mlx::core"]
+        fn detach(self: Pin<&mut array>);
+
+        #[namespace = "mlx::core"]
+        fn data_size(self: &array) -> usize;
+
+        // TODO: expose allocator::Buffer
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_bool(self: Pin<&mut array>) -> *mut bool;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_uint8(self: Pin<&mut array>) -> *mut u8;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_uint16(self: Pin<&mut array>) -> *mut u16;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_uint32(self: Pin<&mut array>) -> *mut u32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_uint64(self: Pin<&mut array>) -> *mut u64;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_int8(self: Pin<&mut array>) -> *mut i8;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_int16(self: Pin<&mut array>) -> *mut i16;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_int32(self: Pin<&mut array>) -> *mut i32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_int64(self: Pin<&mut array>) -> *mut i64;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_float16(self: Pin<&mut array>) -> *mut float16_t;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_bfloat16(self: Pin<&mut array>) -> *mut bfloat16_t;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_float32(self: Pin<&mut array>) -> *mut f32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_mut_complex64(self: Pin<&mut array>) -> *mut complex64_t;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_bool(self: Pin<&mut array>) -> *const bool;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_uint8(self: Pin<&mut array>) -> *const u8;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_uint16(self: Pin<&mut array>) -> *const u16;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_uint32(self: Pin<&mut array>) -> *const u32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_uint64(self: Pin<&mut array>) -> *const u64;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_int8(self: Pin<&mut array>) -> *const i8;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_int16(self: Pin<&mut array>) -> *const i16;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_int32(self: Pin<&mut array>) -> *const i32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_int64(self: Pin<&mut array>) -> *const i64;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_float16(self: Pin<&mut array>) -> *const float16_t;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_bfloat16(self: Pin<&mut array>) -> *const bfloat16_t;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_float32(self: Pin<&mut array>) -> *const f32;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "data"]
+        fn data_complex64(self: Pin<&mut array>) -> *const complex64_t;
+
+        #[namespace = "mlx::core"]
+        fn is_evaled(self: &array) -> bool;
+
+        #[namespace = "mlx::core"]
+        fn set_tracer(self: Pin<&mut array>, is_tracer: bool);
+
+        #[namespace = "mlx::core"]
+        fn is_tracer(self: &array) -> bool;
+
+        // TODO: should these method be exposed? `set_data()`, `copy_shared_buffer()`
+
+        #[namespace = "mlx::core"]
+        fn overwrite_descriptor(self: Pin<&mut array>, other: &array);
     }
 
     impl CxxVector<array> {} // Explicit instantiation
@@ -205,7 +376,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
 
-        let item = ffi::array_item_bool(array.pin_mut());
+        let item = array.pin_mut().item_bool();
         assert_eq!(item, true);
     }
 
@@ -218,7 +389,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
 
-        let item = ffi::array_item_int8(array.pin_mut());
+        let item = array.pin_mut().item_int8();
         assert_eq!(item, 1);
     }
 
@@ -231,7 +402,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
 
-        let item = ffi::array_item_int16(array.pin_mut());
+        let item = array.pin_mut().item_int16();
         assert_eq!(item, 1);
     }
 
@@ -244,7 +415,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
 
-        let item = ffi::array_item_int32(array.pin_mut());
+        let item = array.pin_mut().item_int32();
         assert_eq!(item, 1);
     }
 
@@ -257,7 +428,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
 
-        let item = ffi::array_item_int64(array.pin_mut());
+        let item = array.pin_mut().item_int64();
         assert_eq!(item, 1);
     }
 
@@ -270,7 +441,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
 
-        let item = ffi::array_item_uint8(array.pin_mut());
+        let item = array.pin_mut().item_uint8();
         assert_eq!(item, 1);
     }
 
@@ -283,7 +454,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
 
-        let item = ffi::array_item_uint16(array.pin_mut());
+        let item = array.pin_mut().item_uint16();
         assert_eq!(item, 1);
     }
 
@@ -296,7 +467,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
 
-        let item = ffi::array_item_uint32(array.pin_mut());
+        let item = array.pin_mut().item_uint32();
         assert_eq!(item, 1);
     }
 
@@ -309,7 +480,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
 
-        let item = ffi::array_item_uint64(array.pin_mut());
+        let item = array.pin_mut().item_uint64();
         assert_eq!(item, 1);
     }
 
@@ -322,7 +493,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float32));
 
-        let item = ffi::array_item_float32(array.pin_mut());
+        let item = array.pin_mut().item_float32();
         assert_eq!(item, 1.0);
     }
 
@@ -335,7 +506,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float16));
 
-        let item = ffi::array_item_float16(array.pin_mut());
+        let item = array.pin_mut().item_float16();
         assert_eq!(item.bits, 0x3c00);
     }
 
@@ -348,7 +519,7 @@ mod tests {
         let dtype = array.dtype();
         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bfloat16));
 
-        let item = ffi::array_item_bfloat16(array.pin_mut());
+        let item = array.pin_mut().item_bfloat16();
         assert_eq!(item.bits, 0x3c00);
     }
 
@@ -364,7 +535,7 @@ mod tests {
             crate::dtype::ffi::Val::complex64
         ));
 
-        let item = ffi::array_item_complex64(array.pin_mut());
+        let item = array.pin_mut().item_complex64();
         assert_eq!(item.re, 1.0);
         assert_eq!(item.im, 1.0);
     }

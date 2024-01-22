@@ -11,58 +11,6 @@
 #include "mlx/array.h"
 
 namespace mlx_cxx {
-    bool array_item_bool(array& arr) {
-        return arr.item<bool>();
-    }
-
-    uint8_t array_item_uint8(array& arr) {
-        return arr.item<uint8_t>();
-    }
-
-    uint16_t array_item_uint16(array& arr) {
-        return arr.item<uint16_t>();
-    }
-
-    uint32_t array_item_uint32(array& arr) {
-        return arr.item<uint32_t>();
-    }
-
-    uint64_t array_item_uint64(array& arr) {
-        return arr.item<uint64_t>();
-    }
-
-    int8_t array_item_int8(array& arr) {
-        return arr.item<int8_t>();
-    }
-
-    int16_t array_item_int16(array& arr) {
-        return arr.item<int16_t>();
-    }
-
-    int32_t array_item_int32(array& arr) {
-        return arr.item<int32_t>();
-    }
-
-    int64_t array_item_int64(array& arr) {
-        return arr.item<int64_t>();
-    }
-
-    float16_t array_item_float16(array& arr) {
-        return arr.item<mlx::core::float16_t>();
-    }
-
-    float array_item_float32(array& arr) {
-        return arr.item<float>();
-    }
-
-    bfloat16_t array_item_bfloat16(array& arr) {
-        return arr.item<mlx::core::bfloat16_t>();
-    }
-
-    complex64_t array_item_complex64(array& arr) {
-        return arr.item<mlx::core::complex64_t>();
-    }
-
     std::unique_ptr<array> array_from_slice_bool(
         rust::Slice<const bool> slice,
         const std::vector<int>& shape
@@ -165,5 +113,17 @@ namespace mlx_cxx {
     ) {
         array arr = array(slice.begin(), shape, mlx::core::complex64);
         return std::make_unique<array>(arr);
+    }
+
+    void set_array_siblings(
+        array& arr,
+        std::unique_ptr<std::vector<array>> siblings,
+        uint16_t position
+    ) {
+        arr.set_siblings(*siblings, position);
+    }
+
+    std::unique_ptr<std::vector<mlx::core::array>> array_outputs(mlx::core::array &arr) {
+        return std::make_unique<std::vector<mlx::core::array>>(arr.outputs());
     }
 }

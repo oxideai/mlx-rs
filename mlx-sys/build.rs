@@ -145,6 +145,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/transforms.rs",
     "src/function.rs",
     "src/random.rs",
+    "src/primitives.rs",
 ];
 
 fn main() {

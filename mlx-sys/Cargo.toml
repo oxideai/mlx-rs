@@ -2,6 +2,13 @@
 name = "mlx-sys"
 version = "0.0.10-alpha"
 edition = "2021"
+description = "Rust bindings for mlx"
+readme = "README.md"
+authors = ["Minghua Wu"]
+license = "MIT"
+repository = "https://github.com/minghuaw/mlx-rs"
+homepage = "https://github.com/minghuaw/mlx-rs"
+documentation = "https://docs.rs/mlx-sys"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

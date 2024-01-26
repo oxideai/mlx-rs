@@ -1,5 +1,5 @@
 #[cxx::bridge]
-mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
         include!("mlx/utils.h");
         include!("mlx-cxx/utils.hpp");

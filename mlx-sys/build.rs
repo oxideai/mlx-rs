@@ -14,14 +14,15 @@ const FILES_MLX: &[&str] = &[
     "mlx/mlx/device.cpp",
     "mlx/mlx/dtype.cpp",
     "mlx/mlx/fft.cpp",
-    "mlx/mlx/graph_utils.cpp",
-    "mlx/mlx/linalg.cpp",
     "mlx/mlx/ops.cpp",
+    "mlx/mlx/graph_utils.cpp",
     "mlx/mlx/primitives.cpp",
     "mlx/mlx/random.cpp",
     "mlx/mlx/scheduler.cpp",
     "mlx/mlx/transforms.cpp",
     "mlx/mlx/utils.cpp",
+    "mlx/mlx/linalg.cpp",
+    "mlx/mlx/backend/metal/metal.h",
 ];
 
 /// Common files to compile for all backends
@@ -32,8 +33,6 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/copy.cpp",
     "mlx/mlx/backend/common/erf.cpp",
     "mlx/mlx/backend/common/fft.cpp",
-    "mlx/mlx/backend/common/indexing.cpp",
-    "mlx/mlx/backend/common/load.cpp",
     "mlx/mlx/backend/common/primitives.cpp",
     "mlx/mlx/backend/common/quantized.cpp",
     "mlx/mlx/backend/common/reduce.cpp",
@@ -41,6 +40,8 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/softmax.cpp",
     "mlx/mlx/backend/common/sort.cpp",
     "mlx/mlx/backend/common/threefry.cpp",
+    "mlx/mlx/backend/common/indexing.cpp",
+    "mlx/mlx/backend/common/load.cpp",
 ];
 
 #[cfg(not(feature = "accelerate"))]
@@ -69,10 +70,10 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/metal.cpp",
     "mlx/mlx/backend/metal/primitives.cpp",
     "mlx/mlx/backend/metal/quantized.cpp",
-    "mlx/mlx/backend/metal/reduce.cpp",
     "mlx/mlx/backend/metal/scan.cpp",
     "mlx/mlx/backend/metal/softmax.cpp",
     "mlx/mlx/backend/metal/sort.cpp",
+    "mlx/mlx/backend/metal/reduce.cpp",
 ];
 
 #[cfg(not(feature = "metal"))]
@@ -98,9 +99,9 @@ const METAL_KERNELS: &[&str] = &[
     "arange",
     "arg_reduce",
     "binary",
+    "binary_two",
     "conv",
     "copy",
-    "gemm",
     "gemv",
     "quantized",
     "random",
@@ -245,7 +246,7 @@ fn build_kernel_air(
     let kernel_air = kernel_build_dir.join(format!("{}.air", kernel_name));
     // let kernel_metallib = kernel_build_dir.join(format!("{}.metallib", kernel_name));
 
-    std::process::Command::new("xcrun")
+    let status = std::process::Command::new("xcrun")
         .arg("-sdk").arg("macosx").arg("metal")
         .arg("-Wall")
         .arg("-Wextra")
@@ -255,6 +256,7 @@ fn build_kernel_air(
         .arg("-o").arg(&kernel_air)
         .status()
         .unwrap();
+    assert!(status.success(), "Failed to build kernel air: {}", kernel_name);
 
     kernel_air
 }
@@ -269,12 +271,14 @@ fn build_kernel_metallib(
     // preprocessor constant ``METAL_PATH`` should be defined at build time and it
     // should point to the path to the built metal library.
     let kernel_metallib = out_dir.join("mlx.metallib");
-    std::process::Command::new("xcrun")
+    println!("cargo:warning=kernel_metallib: {}", kernel_metallib.display());
+    let status = std::process::Command::new("xcrun")
         .arg("-sdk").arg("macosx").arg("metallib")
         .args(kernel_airs)
         .arg("-o").arg(&kernel_metallib)
         .status()
         .unwrap();
+    assert!(status.success(), "Failed to build kernel metallib");
     kernel_metallib
 }
 

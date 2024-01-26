@@ -213,6 +213,7 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         fn siblings(self: &array) -> &CxxVector<array>;
 
+        // TODO: user cannot create `CxxVector<array>` directly.
         #[namespace = "mlx_cxx"]
         fn set_array_siblings(arr: Pin<&mut array>, siblings: UniquePtr<CxxVector<array>>, position: u16);
 
@@ -684,5 +685,112 @@ mod tests {
             dtype.val,
             crate::dtype::ffi::Val::complex64
         ));
+    }
+
+    #[test]
+    fn test_array_itemsize() {
+        let mut array = ffi::array_new_bool(true);
+        assert_eq!(array.itemsize(), 1);
+    }
+
+    #[test]
+    fn test_array_size() {
+        let mut array = ffi::array_new_bool(true);
+        assert_eq!(array.size(), 1);
+    }
+
+    #[test]
+    fn test_array_nbytes() {
+        let mut array = ffi::array_new_bool(true);
+        assert_eq!(array.nbytes(), 1);
+    }
+
+    #[test]
+    fn test_array_ndim() {
+        let mut array = ffi::array_new_bool(true);
+        let _ndim = array.ndim();
+    }
+
+    #[test]
+    fn test_array_shape() {
+        let array = ffi::array_new_bool(true);
+        let _shape = array.shape();
+    }
+
+    #[test]
+    fn test_array_strides() {
+        let array = ffi::array_new_bool(true);
+        let _strides = array.strides();
+    }
+
+    #[test]
+    fn test_array_dtype() {
+        let mut array = ffi::array_new_bool(true);
+        let dtype = array.dtype();
+        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+    }
+
+    #[test]
+    fn test_array_eval() {
+        let a = ffi::array_new_f32(1.0);
+        let b = ffi::array_new_f32(2.0);
+        let mut c = crate::ops::ffi::add(&a, &b, Default::default());
+        c.pin_mut().eval();
+        assert_eq!(c.pin_mut().item_float32(), 3.0);
+    }
+
+    #[test]
+    fn test_array_id() {
+        let array = ffi::array_new_bool(true);
+        let _id = array.id();
+    }
+
+    #[test]
+    fn test_array_primitive_id() {
+        let array = ffi::array_new_bool(true);
+        let _id = array.primitive_id();
+    }
+
+    #[test]
+    fn test_array_has_primitive() {
+        let array = ffi::array_new_bool(true);
+        let _has_primitive = array.has_primitive();
+    }
+
+    #[test]
+    fn test_array_inputs() {
+        let array = ffi::array_new_bool(true);
+        let _inputs = array.inputs();
+    }
+
+    #[test]
+    fn test_array_siblings() {
+        let array = ffi::array_new_bool(true);
+        let _siblings = array.siblings();
+    }
+
+    #[test]
+    fn test_array_set_siblings() {
+        let mut array = ffi::array_new_bool(true);
+        let siblings = cxx::CxxVector::new();
+        ffi::set_array_siblings(array.pin_mut(), siblings, 0);
+    }
+
+    #[test]
+    fn test_array_outputs() {
+        let mut array = ffi::array_new_bool(true);
+        let _outputs = ffi::array_outputs(array.pin_mut());
+    }
+
+    #[test]
+    fn test_array_detach() {
+        let mut array = ffi::array_new_bool(true);
+        array.pin_mut().detach();
+    }
+
+    #[test]
+    fn test_array_data_size() {
+        let mut array = ffi::array_new_bool(true);
+        let _data_size = array.data_size();
     }
 }

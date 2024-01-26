@@ -1380,20 +1380,6 @@ namespace mlx_cxx
         int groups = 1,
         mlx_cxx::StreamOrDevice s = {});
 
-    /** Serialization operations */
-
-    /** Save std::unique_ptr<mlx::core::array> to out stream in .npy format */
-    void save(std::shared_ptr<mlx::core::io::Writer> out_stream, std::unique_ptr<mlx::core::array> a);
-
-    /** Save std::unique_ptr<mlx::core::array> to file in .npy format */
-    void save(const std::string &file, std::unique_ptr<mlx::core::array> a);
-
-    /** Load std::unique_ptr<mlx::core::array> from reader in .npy format */
-    std::unique_ptr<mlx::core::array> load(std::shared_ptr<mlx::core::io::Reader> in_stream, mlx_cxx::StreamOrDevice s = {});
-
-    /** Load std::unique_ptr<mlx::core::array> from file in .npy format */
-    std::unique_ptr<mlx::core::array> load(const std::string &file, mlx_cxx::StreamOrDevice s = {});
-
     /** Quantized matmul multiplies x with a quantized matrix w*/
     std::unique_ptr<mlx::core::array> quantized_matmul(
         const mlx::core::array &x,
@@ -1439,28 +1425,6 @@ namespace mlx_cxx
 
     /** Compute the inner product of two vectors. */
     std::unique_ptr<mlx::core::array> inner(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});
-
-    /** Load std::unique_ptr<mlx::core::array> map from .safetensors file format */
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
-        std::shared_ptr<mlx::core::io::Reader> in_stream,
-        mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
-        const std::string &file,
-        mlx_cxx::StreamOrDevice s = {});
-
-    void save_safetensors(
-        std::shared_ptr<mlx::core::io::Writer> in_stream,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a);
-    void save_safetensors(
-        const std::string &file,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a);
-
-    /** Load std::unique_ptr<mlx::core::array> map from .gguf file format */
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_gguf(
-        const std::string &file,
-        mlx_cxx::StreamOrDevice s = {});
-
-    void save_gguf(std::string file, std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a);
 
     /** Compute D = beta * C + alpha * (A @ B) */
     std::unique_ptr<mlx::core::array> addmm(

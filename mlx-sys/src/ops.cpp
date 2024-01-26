@@ -1522,34 +1522,6 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    /** Serialization operations */
-
-    /** Save std::unique_ptr<mlx::core::array> to out stream in .npy format */
-    void save(std::shared_ptr<mlx::core::io::Writer> out_stream, std::unique_ptr<mlx::core::array> a)
-    {
-        mlx::core::save(out_stream, *a);
-    }
-
-    /** Save std::unique_ptr<mlx::core::array> to file in .npy format */
-    void save(const std::string &file, std::unique_ptr<mlx::core::array> a)
-    {
-        mlx::core::save(file, *a);
-    }
-
-    /** Load std::unique_ptr<mlx::core::array> from reader in .npy format */
-    std::unique_ptr<mlx::core::array> load(std::shared_ptr<mlx::core::io::Reader> in_stream, mlx_cxx::StreamOrDevice s)
-    {
-        auto array = mlx::core::load(in_stream, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
-
-    /** Load std::unique_ptr<mlx::core::array> from file in .npy format */
-    std::unique_ptr<mlx::core::array> load(const std::string &file, mlx_cxx::StreamOrDevice s)
-    {
-        auto array = mlx::core::load(file, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
-
     /** Quantized matmul multiplies x with a quantized matrix w*/
     std::unique_ptr<mlx::core::array> quantized_matmul(
         const mlx::core::array &x,
@@ -1626,79 +1598,6 @@ namespace mlx_cxx
     {
         auto array = mlx::core::inner(a, b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
-    }
-
-    /** Load std::unique_ptr<mlx::core::array> map from .safetensors file format */
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
-        std::shared_ptr<mlx::core::io::Reader> in_stream,
-        mlx_cxx::StreamOrDevice s)
-    {
-        auto map = mlx::core::load_safetensors(in_stream, s.to_variant());
-        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-        for (auto &a : map)
-        {
-            result[a.first] = std::make_unique<mlx::core::array>(a.second);
-        }
-        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
-    }
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_safetensors(
-        const std::string &file,
-        mlx_cxx::StreamOrDevice s)
-    {
-        auto map = mlx::core::load_safetensors(file, s.to_variant());
-        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-        for (auto &a : map)
-        {
-            result[a.first] = std::make_unique<mlx::core::array>(a.second);
-        }
-        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
-    }
-
-    void save_safetensors(
-        std::shared_ptr<mlx::core::io::Writer> in_stream,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
-    {
-        std::unordered_map<std::string, mlx::core::array> map;
-        for (auto &a : *a)
-        {
-            map.insert({a.first, *a.second});
-        }
-        mlx::core::save_safetensors(in_stream, map);
-    }
-    void save_safetensors(
-        const std::string &file,
-        std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
-    {
-        std::unordered_map<std::string, mlx::core::array> map;
-        for (auto &a : *a)
-        {
-            map.insert({a.first, *a.second});
-        }
-        mlx::core::save_safetensors(file, map);
-    }
-
-    /** Load std::unique_ptr<mlx::core::array> map from .gguf file format */
-    std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> load_gguf(
-        const std::string &file,
-        mlx_cxx::StreamOrDevice s)
-    {
-        auto map = mlx::core::load_gguf(file, s.to_variant());
-        std::unordered_map<std::string, std::unique_ptr<mlx::core::array>> result;
-        for (auto &a : map)
-        {
-            result.insert({a.first, std::make_unique<mlx::core::array>(a.second)});
-        }
-        return std::make_unique<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>>(std::move(result));
-    }
-
-    void save_gguf(std::string file, std::unique_ptr<std::unordered_map<std::string, std::unique_ptr<mlx::core::array>>> a)
-    {
-        std::unordered_map<std::string, mlx::core::array> map;
-        for (auto &a : *a)
-        {
-            map.insert({a.first, *a.second});
-        }
-        mlx::core::save_gguf(file, map);
     }
 
     /** Compute D = beta * C + alpha * (A @ B) */

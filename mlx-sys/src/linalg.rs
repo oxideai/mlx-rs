@@ -11,7 +11,7 @@ unsafe impl cxx::ExternType for OptionalAxis {
 }
 
 #[cxx::bridge]
-mod ffi {
+pub mod ffi {
     unsafe extern "C++" {
         include!("mlx-cxx/linalg.hpp");
 

@@ -1744,8 +1744,6 @@ pub mod ffi {
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
 
-        // TODO: save(), load()
-
         #[namespace = "mlx_cxx"]
         fn quantized_matmul(
             x: &array,
@@ -1818,10 +1816,6 @@ pub mod ffi {
             beta: &f32,
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
-
-        // TODO: load_safetensors, save_safetensors, load_gguf, save_gguf
-        // They use either io or unordered_map, which are not supported yet.
-
     }
 }
 

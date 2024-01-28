@@ -34,8 +34,3 @@ impl From<float16_t> for half::f16 {
         half::f16::from_bits(value.bits)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

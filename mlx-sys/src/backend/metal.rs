@@ -23,4 +23,15 @@ mod tests {
     fn test_is_available() {
         let _ = super::ffi::is_available();
     }
+
+    #[test]
+    fn test_cache_enabled() {
+        let _ = super::ffi::cache_enabled();
+    }
+
+    #[test]
+    fn test_set_cache_enabled() {
+        super::ffi::set_cache_enabled(true);
+        super::ffi::set_cache_enabled(false);
+    }
 }

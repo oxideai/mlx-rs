@@ -21,7 +21,16 @@ pub mod ffi {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[cfg(feature = "half")]
+impl From<half::bf16> for bfloat16_t {
+    fn from(value: half::bf16) -> Self {
+        ffi::bfloat16_t { bits: value.to_bits() }
+    }
+}
+
+#[cfg(feature = "half")]
+impl From<bfloat16_t> for half::bf16 {
+    fn from(value: ffi::bfloat16_t) -> Self {
+        half::bf16::from_bits(value.bits)
+    }
 }

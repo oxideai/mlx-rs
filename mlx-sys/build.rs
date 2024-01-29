@@ -175,7 +175,7 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=Accelerate");
         build
             // mlx uses new lapack api if accelerate is available
-            .flag("-DACCELERATE_NEW_LAPACK") 
+            .flag("-D") .flag("ACCELERATE_NEW_LAPACK")
             .files(FILES_MLX_BACKEND_ACCELERATE);
     }
 
@@ -186,6 +186,8 @@ fn main() {
 
     #[cfg(feature = "metal")]
     {
+        build.flag("-D").flag("_METAL_");
+
         let macos_version = get_macos_version();
         if macos_version >= 14.2 {
             build.include(METAL_CPP_MACOS_14_2_DIR);

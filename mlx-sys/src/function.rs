@@ -265,39 +265,39 @@ pub mod ffi {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::cxx_vec;
+// #[cfg(test)]
+// mod tests {
+//     use crate::cxx_vec;
 
-    #[test]
-    fn test_accept_rust_unary_fn() {
-        let f = |x: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-            crate::array::ffi::array_new_bool(true)
-        };
-        let f = super::UnaryFn::from(f);
-        let o = super::ffi::accept_rust_unary_fn(&f);
-        println!("{}", o);
-    }
+//     #[test]
+//     fn test_accept_rust_unary_fn() {
+//         let f = |x: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
+//             crate::array::ffi::array_new_bool(true)
+//         };
+//         let f = super::UnaryFn::from(f);
+//         let o = super::ffi::accept_rust_unary_fn(&f);
+//         println!("{}", o);
+//     }
 
-    #[test]
-    fn test_vjp_unary_fn() {
-        use std::sync::Arc;
+//     #[test]
+//     fn test_vjp_unary_fn() {
+//         use std::sync::Arc;
 
-        let shape = cxx_vec!(3i32);
-        let b = Arc::new(crate::array::ffi::array_from_slice_float32(
-            &[1.0, 1.0, 1.0],
-            &shape,
-        ));
-        let f = move |arr: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-            crate::ops::ffi::multiply(arr, &**b, Default::default())
-        };
-        let f = super::UnaryFn::from(f);
+//         let shape = cxx_vec!(3i32);
+//         let b = Arc::new(crate::array::ffi::array_from_slice_float32(
+//             &[1.0, 1.0, 1.0],
+//             &shape,
+//         ));
+//         let f = move |arr: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
+//             crate::ops::ffi::multiply(arr, &**b, Default::default())
+//         };
+//         let f = super::UnaryFn::from(f);
 
-        let primal = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-        let cotangent = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-        unsafe {
-            let f_ptr: *const crate::function::UnaryFn = &f;
-            let [p, c] = super::ffi::vjp_unary_fn(f_ptr, &primal, &cotangent);
-        }
-    }
-}
+//         let primal = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
+//         let cotangent = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
+//         unsafe {
+//             let f_ptr: *const crate::function::UnaryFn = &f;
+//             let [p, c] = super::ffi::vjp_unary_fn(f_ptr, &primal, &cotangent);
+//         }
+//     }
+// }

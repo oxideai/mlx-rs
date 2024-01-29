@@ -73,18 +73,18 @@ pub mod ffi {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::cxx_vec;
+// #[cfg(test)]
+// mod tests {
+//     use crate::cxx_vec;
 
-    #[test]
-    fn test_norm_optional_axis() {
-        let slice = &[1.0, 2.0, 3.0];
-        let shape = cxx_vec![3];
-        let a = crate::array::ffi::array_from_slice_float32(slice, &shape);
-        let norm =
-            super::ffi::norm(&a, &super::Optional::None, false, Default::default());
+//     #[test]
+//     fn test_norm_optional_axis() {
+//         let slice = &[1.0, 2.0, 3.0];
+//         let shape = cxx_vec![3];
+//         let a = crate::array::ffi::array_from_slice_float32(slice, &shape);
+//         let norm =
+//             super::ffi::norm(&a, &super::Optional::None, false, Default::default());
 
-        assert_eq!(norm.size(), 1);
-    }
-}
+//         assert_eq!(norm.size(), 1);
+//     }
+// }

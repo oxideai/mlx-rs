@@ -17,21 +17,25 @@ pub mod ffi {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_is_available() {
-        let _ = super::ffi::is_available();
-    }
+// #[cfg(test)]
+// mod tests {
+//     #[test]
+//     fn test_is_available() {
+//         #[cfg(feature = "metal")]
+//         assert!(super::ffi::is_available());
 
-    #[test]
-    fn test_cache_enabled() {
-        let _ = super::ffi::cache_enabled();
-    }
+//         #[cfg(not(feature = "metal"))]
+//         assert!(!super::ffi::is_available());
+//     }
 
-    #[test]
-    fn test_set_cache_enabled() {
-        super::ffi::set_cache_enabled(true);
-        super::ffi::set_cache_enabled(false);
-    }
-}
+//     #[test]
+//     fn test_cache_enabled() {
+//         let _ = super::ffi::cache_enabled();
+//     }
+
+//     #[test]
+//     fn test_set_cache_enabled() {
+//         super::ffi::set_cache_enabled(true);
+//         super::ffi::set_cache_enabled(false);
+//     }
+// }

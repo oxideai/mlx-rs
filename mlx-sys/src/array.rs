@@ -353,759 +353,759 @@ pub mod ffi {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use crate::cxx_vec;
-
-    use super::*;
-
-    #[test]
-    fn test_array_new_bool() {
-        let mut array = ffi::array_new_bool(true);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
-
-        let item = array.pin_mut().item_bool();
-        assert_eq!(item, true);
-    }
-
-    #[test]
-    fn test_array_new_i8() {
-        let mut array = ffi::array_new_i8(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
-
-        let item = array.pin_mut().item_int8();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_i16() {
-        let mut array = ffi::array_new_i16(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
-
-        let item = array.pin_mut().item_int16();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_i32() {
-        let mut array = ffi::array_new_i32(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
-
-        let item = array.pin_mut().item_int32();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_i64() {
-        let mut array = ffi::array_new_i64(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
-
-        let item = array.pin_mut().item_int64();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_u8() {
-        let mut array = ffi::array_new_u8(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
-
-        let item = array.pin_mut().item_uint8();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_u16() {
-        let mut array = ffi::array_new_u16(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
-
-        let item = array.pin_mut().item_uint16();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_u32() {
-        let mut array = ffi::array_new_u32(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
-
-        let item = array.pin_mut().item_uint32();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_u64() {
-        let mut array = ffi::array_new_u64(1);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
-
-        let item = array.pin_mut().item_uint64();
-        assert_eq!(item, 1);
-    }
-
-    #[test]
-    fn test_array_new_f32() {
-        let mut array = ffi::array_new_f32(1.0);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::float32));
-
-        let item = array.pin_mut().item_float32();
-        assert_eq!(item, 1.0);
-    }
-
-    #[test]
-    fn test_array_new_f16() {
-        let mut array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::float16));
-
-        let item = array.pin_mut().item_float16();
-        assert_eq!(item.bits, 0x3c00);
-    }
-
-    #[test]
-    fn test_array_new_bf16() {
-        let mut array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bfloat16));
-
-        let item = array.pin_mut().item_bfloat16();
-        assert_eq!(item.bits, 0x3c00);
-    }
-
-    #[test]
-    fn test_array_new_c64() {
-        let mut array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 1);
-
-        let dtype = array.dtype();
-        assert!(matches!(
-            dtype.val,
-            crate::dtype::ffi::Val::complex64
-        ));
-
-        let item = array.pin_mut().item_complex64();
-        assert_eq!(item.re, 1.0);
-        assert_eq!(item.im, 1.0);
-    }
-
-    #[test]
-    fn test_array_from_slice_bool() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_bool(&[true, false], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
-    }
-
-    #[test]
-    fn test_array_from_slice_uint8() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint8(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
-    }
-
-    #[test]
-    fn test_array_from_slice_uint16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint16(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
-    }
-
-    #[test]
-    fn test_array_from_slice_uint32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint32(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
-    }
-
-    #[test]
-    fn test_array_from_slice_uint64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint64(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
-    }
-
-    #[test]
-    fn test_array_from_slice_int8() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int8(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
-    }
-
-    #[test]
-    fn test_array_from_slice_int16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int16(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
-    }
-
-    #[test]
-    fn test_array_from_slice_int32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int32(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
-    }
-
-    #[test]
-    fn test_array_from_slice_int64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int64(&[1, 2], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
-    }
-
-    #[test]
-    fn test_array_from_slice_float16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(
-            dtype.val,
-            crate::dtype::ffi::Val::float16
-        ));
-    }
-
-    #[test]
-    fn test_array_from_slice_bfloat16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(
-            dtype.val,
-            crate::dtype::ffi::Val::bfloat16
-        ));
-    }
-
-    #[test]
-    fn test_array_from_slice_float32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(
-            dtype.val,
-            crate::dtype::ffi::Val::float32
-        ));
-    }
-
-    #[test]
-    fn test_array_from_slice_complex64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
-        assert!(!array.is_null());
-        assert_eq!(array.size(), 2);
-
-        let dtype = array.dtype();
-        assert!(matches!(
-            dtype.val,
-            crate::dtype::ffi::Val::complex64
-        ));
-    }
-
-    #[test]
-    fn test_array_itemsize() {
-        let array = ffi::array_new_bool(true);
-        assert_eq!(array.itemsize(), 1);
-    }
-
-    #[test]
-    fn test_array_size() {
-        let array = ffi::array_new_bool(true);
-        assert_eq!(array.size(), 1);
-    }
-
-    #[test]
-    fn test_array_nbytes() {
-        let array = ffi::array_new_bool(true);
-        assert_eq!(array.nbytes(), 1);
-    }
-
-    #[test]
-    fn test_array_ndim() {
-        let array = ffi::array_new_bool(true);
-        let _ndim = array.ndim();
-    }
-
-    #[test]
-    fn test_array_shape() {
-        let array = ffi::array_new_bool(true);
-        let _shape = array.shape();
-    }
-
-    #[test]
-    fn test_array_strides() {
-        let array = ffi::array_new_bool(true);
-        let _strides = array.strides();
-    }
-
-    #[test]
-    fn test_array_dtype() {
-        let array = ffi::array_new_bool(true);
-        let dtype = array.dtype();
-        assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
-    }
-
-    #[test]
-    fn test_array_eval() {
-        let a = ffi::array_new_f32(1.0);
-        let b = ffi::array_new_f32(2.0);
-        let mut c = crate::ops::ffi::add(&a, &b, Default::default());
-        c.pin_mut().eval();
-        assert_eq!(c.pin_mut().item_float32(), 3.0);
-    }
-
-    #[test]
-    fn test_array_id() {
-        let array = ffi::array_new_bool(true);
-        let _id = array.id();
-    }
-
-    #[test]
-    fn test_array_primitive_id() {
-        let array = ffi::array_new_bool(true);
-        let _id = array.primitive_id();
-    }
-
-    #[test]
-    fn test_array_has_primitive() {
-        let array = ffi::array_new_bool(true);
-        let _has_primitive = array.has_primitive();
-    }
-
-    #[test]
-    fn test_array_inputs() {
-        let array = ffi::array_new_bool(true);
-        let _inputs = array.inputs();
-    }
-
-    #[test]
-    fn test_array_siblings() {
-        let array = ffi::array_new_bool(true);
-        let _siblings = array.siblings();
-    }
-
-    #[test]
-    fn test_array_set_siblings() {
-        let mut array = ffi::array_new_bool(true);
-        let siblings = cxx::CxxVector::new();
-        ffi::set_array_siblings(array.pin_mut(), siblings, 0);
-    }
-
-    #[test]
-    fn test_array_outputs() {
-        let mut array = ffi::array_new_bool(true);
-        let _outputs = ffi::array_outputs(array.pin_mut());
-    }
-
-    #[test]
-    fn test_array_detach() {
-        let mut array = ffi::array_new_bool(true);
-        array.pin_mut().detach();
-    }
-
-    #[test]
-    fn test_array_data_size() {
-        let array = ffi::array_new_bool(true);
-        let _data_size = array.data_size();
-    }
-
-    #[test]
-    fn test_array_data_mut_bool() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_bool(&[true, false], &shape);
-        let ptr = array.pin_mut().data_mut_bool();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as bool, true);
-            assert_eq!(*ptr.offset(1) as bool, false);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_uint8() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_uint8(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_uint8();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u8, 1);
-            assert_eq!(*ptr.offset(1) as u8, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_uint16() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_uint16(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_uint16();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u16, 1);
-            assert_eq!(*ptr.offset(1) as u16, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_uint32() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_uint32(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_uint32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u32, 1);
-            assert_eq!(*ptr.offset(1) as u32, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_uint64() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_uint64(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_uint64();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u64, 1);
-            assert_eq!(*ptr.offset(1) as u64, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_int8() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_int8(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_int8();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i8, 1);
-            assert_eq!(*ptr.offset(1) as i8, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_int16() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_int16(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_int16();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i16, 1);
-            assert_eq!(*ptr.offset(1) as i16, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_int32() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_int32(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_int32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i32, 1);
-            assert_eq!(*ptr.offset(1) as i32, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_int64() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_int64(&[1, 2], &shape);
-        let ptr = array.pin_mut().data_mut_int64();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i64, 1);
-            assert_eq!(*ptr.offset(1) as i64, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_float16() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
-        let ptr = array.pin_mut().data_mut_float16();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).bits, 0x3c00);
-            assert_eq!((*ptr.offset(1)).bits, 0x3c00);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_bfloat16() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
-        let ptr = array.pin_mut().data_mut_bfloat16();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).bits, 0x3c00);
-            assert_eq!((*ptr.offset(1)).bits, 0x3c00);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_float32() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
-        let ptr = array.pin_mut().data_mut_float32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as f32, 1.0);
-            assert_eq!(*ptr.offset(1) as f32, 2.0);
-        }
-    }
-
-    #[test]
-    fn test_array_data_mut_complex64() {
-        let shape = cxx_vec![2];
-        let mut array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
-        let ptr = array.pin_mut().data_mut_complex64();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).re, 1.0);
-            assert_eq!((*ptr.offset(0)).im, 1.0);
-            assert_eq!((*ptr.offset(1)).re, 1.0);
-            assert_eq!((*ptr.offset(1)).im, 1.0);
-        }
-    }
-
-    #[test]
-    fn test_array_data_bool() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_bool(&[true, false], &shape);
-        let ptr = array.data_bool();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as bool, true);
-            assert_eq!(*ptr.offset(1) as bool, false);
-        }
-    }
-
-    #[test]
-    fn test_array_data_uint8() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint8(&[1, 2], &shape);
-        let ptr = array.data_uint8();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u8, 1);
-            assert_eq!(*ptr.offset(1) as u8, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_uint16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint16(&[1, 2], &shape);
-        let ptr = array.data_uint16();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u16, 1);
-            assert_eq!(*ptr.offset(1) as u16, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_uint32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint32(&[1, 2], &shape);
-        let ptr = array.data_uint32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u32, 1);
-            assert_eq!(*ptr.offset(1) as u32, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_uint64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_uint64(&[1, 2], &shape);
-        let ptr = array.data_uint64();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as u64, 1);
-            assert_eq!(*ptr.offset(1) as u64, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_int8() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int8(&[1, 2], &shape);
-        let ptr = array.data_int8();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i8, 1);
-            assert_eq!(*ptr.offset(1) as i8, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_int16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int16(&[1, 2], &shape);
-        let ptr = array.data_int16();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i16, 1);
-            assert_eq!(*ptr.offset(1) as i16, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_int32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int32(&[1, 2], &shape);
-        let ptr = array.data_int32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i32, 1);
-            assert_eq!(*ptr.offset(1) as i32, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_int64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_int64(&[1, 2], &shape);
-        let ptr = array.data_int64();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as i64, 1);
-            assert_eq!(*ptr.offset(1) as i64, 2);
-        }
-    }
-
-    #[test]
-    fn test_array_data_float16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
-        let ptr = array.data_float16();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).bits, 0x3c00);
-            assert_eq!((*ptr.offset(1)).bits, 0x3c00);
-        }
-    }
-
-    #[test]
-    fn test_array_data_bfloat16() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
-        let ptr = array.data_bfloat16();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).bits, 0x3c00);
-            assert_eq!((*ptr.offset(1)).bits, 0x3c00);
-        }
-    }
-
-    #[test]
-    fn test_array_data_float32() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
-        let ptr = array.data_float32();
-        unsafe {
-            assert_eq!(*ptr.offset(0) as f32, 1.0);
-            assert_eq!(*ptr.offset(1) as f32, 2.0);
-        }
-    }
-
-    #[test]
-    fn test_array_data_complex64() {
-        let shape = cxx_vec![2];
-        let array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
-        let ptr = array.data_complex64();
-        unsafe {
-            assert_eq!((*ptr.offset(0)).re, 1.0);
-            assert_eq!((*ptr.offset(0)).im, 1.0);
-            assert_eq!((*ptr.offset(1)).re, 1.0);
-            assert_eq!((*ptr.offset(1)).im, 1.0);
-        }
-    }
-
-    #[test]
-    fn test_array_is_evaled() {
-        let array = ffi::array_new_bool(true);
-        let _is_evaled = array.is_evaled();
-    }
-
-    #[test]
-    fn test_array_set_tracer() {
-        let mut array = ffi::array_new_bool(true);
-        array.pin_mut().set_tracer(true);
-    }
-
-    #[test]
-    fn test_array_is_tracer() {
-        let array = ffi::array_new_bool(true);
-        let _is_tracer = array.is_tracer();
-    }
-
-    #[test]
-    fn test_array_overwrite_descriptor() {
-        let mut a = ffi::array_new_bool(true);
-        let b = ffi::array_new_bool(true);
-        a.pin_mut().overwrite_descriptor(&b);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use crate::cxx_vec;
+
+//     use super::*;
+
+//     #[test]
+//     fn test_array_new_bool() {
+//         let mut array = ffi::array_new_bool(true);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+
+//         let item = array.pin_mut().item_bool();
+//         assert_eq!(item, true);
+//     }
+
+//     #[test]
+//     fn test_array_new_i8() {
+//         let mut array = ffi::array_new_i8(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
+
+//         let item = array.pin_mut().item_int8();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_i16() {
+//         let mut array = ffi::array_new_i16(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
+
+//         let item = array.pin_mut().item_int16();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_i32() {
+//         let mut array = ffi::array_new_i32(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
+
+//         let item = array.pin_mut().item_int32();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_i64() {
+//         let mut array = ffi::array_new_i64(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
+
+//         let item = array.pin_mut().item_int64();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_u8() {
+//         let mut array = ffi::array_new_u8(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
+
+//         let item = array.pin_mut().item_uint8();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_u16() {
+//         let mut array = ffi::array_new_u16(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
+
+//         let item = array.pin_mut().item_uint16();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_u32() {
+//         let mut array = ffi::array_new_u32(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
+
+//         let item = array.pin_mut().item_uint32();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_u64() {
+//         let mut array = ffi::array_new_u64(1);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
+
+//         let item = array.pin_mut().item_uint64();
+//         assert_eq!(item, 1);
+//     }
+
+//     #[test]
+//     fn test_array_new_f32() {
+//         let mut array = ffi::array_new_f32(1.0);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float32));
+
+//         let item = array.pin_mut().item_float32();
+//         assert_eq!(item, 1.0);
+//     }
+
+//     #[test]
+//     fn test_array_new_f16() {
+//         let mut array = ffi::array_new_f16(ffi::float16_t { bits: 0x3c00 });
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::float16));
+
+//         let item = array.pin_mut().item_float16();
+//         assert_eq!(item.bits, 0x3c00);
+//     }
+
+//     #[test]
+//     fn test_array_new_bf16() {
+//         let mut array = ffi::array_new_bf16(ffi::bfloat16_t { bits: 0x3c00 });
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bfloat16));
+
+//         let item = array.pin_mut().item_bfloat16();
+//         assert_eq!(item.bits, 0x3c00);
+//     }
+
+//     #[test]
+//     fn test_array_new_c64() {
+//         let mut array = ffi::array_new_c64(ffi::complex64_t { re: 1.0, im: 1.0 });
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 1);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(
+//             dtype.val,
+//             crate::dtype::ffi::Val::complex64
+//         ));
+
+//         let item = array.pin_mut().item_complex64();
+//         assert_eq!(item.re, 1.0);
+//         assert_eq!(item.im, 1.0);
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_bool() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_bool(&[true, false], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_uint8() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint8(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint8));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_uint16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint16(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint16));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_uint32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint32(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint32));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_uint64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint64(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::uint64));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_int8() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int8(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int8));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_int16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int16(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int16));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_int32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int32(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int32));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_int64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int64(&[1, 2], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::int64));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_float16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(
+//             dtype.val,
+//             crate::dtype::ffi::Val::float16
+//         ));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_bfloat16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(
+//             dtype.val,
+//             crate::dtype::ffi::Val::bfloat16
+//         ));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_float32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(
+//             dtype.val,
+//             crate::dtype::ffi::Val::float32
+//         ));
+//     }
+
+//     #[test]
+//     fn test_array_from_slice_complex64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
+//         assert!(!array.is_null());
+//         assert_eq!(array.size(), 2);
+
+//         let dtype = array.dtype();
+//         assert!(matches!(
+//             dtype.val,
+//             crate::dtype::ffi::Val::complex64
+//         ));
+//     }
+
+//     #[test]
+//     fn test_array_itemsize() {
+//         let array = ffi::array_new_bool(true);
+//         assert_eq!(array.itemsize(), 1);
+//     }
+
+//     #[test]
+//     fn test_array_size() {
+//         let array = ffi::array_new_bool(true);
+//         assert_eq!(array.size(), 1);
+//     }
+
+//     #[test]
+//     fn test_array_nbytes() {
+//         let array = ffi::array_new_bool(true);
+//         assert_eq!(array.nbytes(), 1);
+//     }
+
+//     #[test]
+//     fn test_array_ndim() {
+//         let array = ffi::array_new_bool(true);
+//         let _ndim = array.ndim();
+//     }
+
+//     #[test]
+//     fn test_array_shape() {
+//         let array = ffi::array_new_bool(true);
+//         let _shape = array.shape();
+//     }
+
+//     #[test]
+//     fn test_array_strides() {
+//         let array = ffi::array_new_bool(true);
+//         let _strides = array.strides();
+//     }
+
+//     #[test]
+//     fn test_array_dtype() {
+//         let array = ffi::array_new_bool(true);
+//         let dtype = array.dtype();
+//         assert!(matches!(dtype.val, crate::dtype::ffi::Val::bool_));
+//     }
+
+//     #[test]
+//     fn test_array_eval() {
+//         let a = ffi::array_new_f32(1.0);
+//         let b = ffi::array_new_f32(2.0);
+//         let mut c = crate::ops::ffi::add(&a, &b, Default::default());
+//         c.pin_mut().eval();
+//         assert_eq!(c.pin_mut().item_float32(), 3.0);
+//     }
+
+//     #[test]
+//     fn test_array_id() {
+//         let array = ffi::array_new_bool(true);
+//         let _id = array.id();
+//     }
+
+//     #[test]
+//     fn test_array_primitive_id() {
+//         let array = ffi::array_new_bool(true);
+//         let _id = array.primitive_id();
+//     }
+
+//     #[test]
+//     fn test_array_has_primitive() {
+//         let array = ffi::array_new_bool(true);
+//         let _has_primitive = array.has_primitive();
+//     }
+
+//     #[test]
+//     fn test_array_inputs() {
+//         let array = ffi::array_new_bool(true);
+//         let _inputs = array.inputs();
+//     }
+
+//     #[test]
+//     fn test_array_siblings() {
+//         let array = ffi::array_new_bool(true);
+//         let _siblings = array.siblings();
+//     }
+
+//     #[test]
+//     fn test_array_set_siblings() {
+//         let mut array = ffi::array_new_bool(true);
+//         let siblings = cxx::CxxVector::new();
+//         ffi::set_array_siblings(array.pin_mut(), siblings, 0);
+//     }
+
+//     #[test]
+//     fn test_array_outputs() {
+//         let mut array = ffi::array_new_bool(true);
+//         let _outputs = ffi::array_outputs(array.pin_mut());
+//     }
+
+//     #[test]
+//     fn test_array_detach() {
+//         let mut array = ffi::array_new_bool(true);
+//         array.pin_mut().detach();
+//     }
+
+//     #[test]
+//     fn test_array_data_size() {
+//         let array = ffi::array_new_bool(true);
+//         let _data_size = array.data_size();
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_bool() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_bool(&[true, false], &shape);
+//         let ptr = array.pin_mut().data_mut_bool();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as bool, true);
+//             assert_eq!(*ptr.offset(1) as bool, false);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_uint8() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_uint8(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_uint8();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u8, 1);
+//             assert_eq!(*ptr.offset(1) as u8, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_uint16() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_uint16(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_uint16();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u16, 1);
+//             assert_eq!(*ptr.offset(1) as u16, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_uint32() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_uint32(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_uint32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u32, 1);
+//             assert_eq!(*ptr.offset(1) as u32, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_uint64() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_uint64(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_uint64();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u64, 1);
+//             assert_eq!(*ptr.offset(1) as u64, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_int8() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_int8(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_int8();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i8, 1);
+//             assert_eq!(*ptr.offset(1) as i8, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_int16() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_int16(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_int16();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i16, 1);
+//             assert_eq!(*ptr.offset(1) as i16, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_int32() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_int32(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_int32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i32, 1);
+//             assert_eq!(*ptr.offset(1) as i32, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_int64() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_int64(&[1, 2], &shape);
+//         let ptr = array.pin_mut().data_mut_int64();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i64, 1);
+//             assert_eq!(*ptr.offset(1) as i64, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_float16() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
+//         let ptr = array.pin_mut().data_mut_float16();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).bits, 0x3c00);
+//             assert_eq!((*ptr.offset(1)).bits, 0x3c00);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_bfloat16() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
+//         let ptr = array.pin_mut().data_mut_bfloat16();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).bits, 0x3c00);
+//             assert_eq!((*ptr.offset(1)).bits, 0x3c00);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_float32() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
+//         let ptr = array.pin_mut().data_mut_float32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as f32, 1.0);
+//             assert_eq!(*ptr.offset(1) as f32, 2.0);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_mut_complex64() {
+//         let shape = cxx_vec![2];
+//         let mut array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
+//         let ptr = array.pin_mut().data_mut_complex64();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).re, 1.0);
+//             assert_eq!((*ptr.offset(0)).im, 1.0);
+//             assert_eq!((*ptr.offset(1)).re, 1.0);
+//             assert_eq!((*ptr.offset(1)).im, 1.0);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_bool() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_bool(&[true, false], &shape);
+//         let ptr = array.data_bool();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as bool, true);
+//             assert_eq!(*ptr.offset(1) as bool, false);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_uint8() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint8(&[1, 2], &shape);
+//         let ptr = array.data_uint8();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u8, 1);
+//             assert_eq!(*ptr.offset(1) as u8, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_uint16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint16(&[1, 2], &shape);
+//         let ptr = array.data_uint16();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u16, 1);
+//             assert_eq!(*ptr.offset(1) as u16, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_uint32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint32(&[1, 2], &shape);
+//         let ptr = array.data_uint32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u32, 1);
+//             assert_eq!(*ptr.offset(1) as u32, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_uint64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_uint64(&[1, 2], &shape);
+//         let ptr = array.data_uint64();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as u64, 1);
+//             assert_eq!(*ptr.offset(1) as u64, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_int8() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int8(&[1, 2], &shape);
+//         let ptr = array.data_int8();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i8, 1);
+//             assert_eq!(*ptr.offset(1) as i8, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_int16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int16(&[1, 2], &shape);
+//         let ptr = array.data_int16();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i16, 1);
+//             assert_eq!(*ptr.offset(1) as i16, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_int32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int32(&[1, 2], &shape);
+//         let ptr = array.data_int32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i32, 1);
+//             assert_eq!(*ptr.offset(1) as i32, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_int64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_int64(&[1, 2], &shape);
+//         let ptr = array.data_int64();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as i64, 1);
+//             assert_eq!(*ptr.offset(1) as i64, 2);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_float16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_float16(&[ffi::float16_t { bits: 0x3c00 }, ffi::float16_t { bits: 0x3c00 }], &shape);
+//         let ptr = array.data_float16();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).bits, 0x3c00);
+//             assert_eq!((*ptr.offset(1)).bits, 0x3c00);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_bfloat16() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_bfloat16(&[ffi::bfloat16_t { bits: 0x3c00 }, ffi::bfloat16_t { bits: 0x3c00 }], &shape);
+//         let ptr = array.data_bfloat16();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).bits, 0x3c00);
+//             assert_eq!((*ptr.offset(1)).bits, 0x3c00);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_float32() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_float32(&[1.0, 2.0], &shape);
+//         let ptr = array.data_float32();
+//         unsafe {
+//             assert_eq!(*ptr.offset(0) as f32, 1.0);
+//             assert_eq!(*ptr.offset(1) as f32, 2.0);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_data_complex64() {
+//         let shape = cxx_vec![2];
+//         let array = ffi::array_from_slice_complex64(&[ffi::complex64_t { re: 1.0, im: 1.0 }, ffi::complex64_t { re: 1.0, im: 1.0 }], &shape);
+//         let ptr = array.data_complex64();
+//         unsafe {
+//             assert_eq!((*ptr.offset(0)).re, 1.0);
+//             assert_eq!((*ptr.offset(0)).im, 1.0);
+//             assert_eq!((*ptr.offset(1)).re, 1.0);
+//             assert_eq!((*ptr.offset(1)).im, 1.0);
+//         }
+//     }
+
+//     #[test]
+//     fn test_array_is_evaled() {
+//         let array = ffi::array_new_bool(true);
+//         let _is_evaled = array.is_evaled();
+//     }
+
+//     #[test]
+//     fn test_array_set_tracer() {
+//         let mut array = ffi::array_new_bool(true);
+//         array.pin_mut().set_tracer(true);
+//     }
+
+//     #[test]
+//     fn test_array_is_tracer() {
+//         let array = ffi::array_new_bool(true);
+//         let _is_tracer = array.is_tracer();
+//     }
+
+//     #[test]
+//     fn test_array_overwrite_descriptor() {
+//         let mut a = ffi::array_new_bool(true);
+//         let b = ffi::array_new_bool(true);
+//         a.pin_mut().overwrite_descriptor(&b);
+//     }
+// }

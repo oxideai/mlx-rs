@@ -195,7 +195,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_unary_fn"]
-        unsafe fn jvp(f: *const UnaryFn, primal: &array, tangent: &array) -> Result<[UniquePtr<array>; 2]>;
+        unsafe fn jvp(
+            f: *const UnaryFn,
+            primal: &array,
+            tangent: &array,
+        ) -> Result<[UniquePtr<array>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_multiary_fn"]
@@ -214,12 +218,16 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multiary_fn_argnum"]
-        unsafe fn value_and_grad(f: *const MultiaryFn, argnum: i32)
-            -> Result<UniquePtr<CxxValueAndGradFn>>;
+        unsafe fn value_and_grad(
+            f: *const MultiaryFn,
+            argnum: i32,
+        ) -> Result<UniquePtr<CxxValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_unary_fn"]
-        unsafe fn value_and_grad(f: *const UnaryFn) -> Result<UniquePtr<CxxSingleInputPairOutputFn>>;
+        unsafe fn value_and_grad(
+            f: *const UnaryFn,
+        ) -> Result<UniquePtr<CxxSingleInputPairOutputFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multi_input_single_output_fn"]
@@ -237,8 +245,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_multi_input_single_output_fn_argnum"]
-        unsafe fn grad(f: *const MultiInputSingleOutputFn, argnum: i32)
-            -> Result<UniquePtr<CxxMultiaryFn>>;
+        unsafe fn grad(
+            f: *const MultiInputSingleOutputFn,
+            argnum: i32,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_unary_fn"]
@@ -246,7 +256,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_unary_fn"]
-        unsafe fn vmap(f: *const UnaryFn, in_axis: i32, out_axis: i32) -> Result<UniquePtr<CxxUnaryFn>>;
+        unsafe fn vmap(
+            f: *const UnaryFn,
+            in_axis: i32,
+            out_axis: i32,
+        ) -> Result<UniquePtr<CxxUnaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_pair_input_single_output_fn"]

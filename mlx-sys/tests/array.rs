@@ -132,9 +132,7 @@ fn test_array_new_f32() {
 
 #[test]
 fn test_array_new_f16() {
-    let val = mlx_sys::types::float16::float16_t {
-        bits: 0x00,
-    };
+    let val = mlx_sys::types::float16::float16_t { bits: 0x00 };
     let mut array = array_new_f16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
@@ -148,9 +146,7 @@ fn test_array_new_f16() {
 
 #[test]
 fn test_array_new_bf16() {
-    let val = mlx_sys::types::bfloat16::bfloat16_t {
-        bits: 0x00,
-    };
+    let val = mlx_sys::types::bfloat16::bfloat16_t { bits: 0x00 };
     let mut array = array_new_bf16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
@@ -164,19 +160,13 @@ fn test_array_new_bf16() {
 
 #[test]
 fn test_array_new_c64() {
-    let val = mlx_sys::types::complex64::complex64_t {
-        re: 0.0,
-        im: 0.0,
-    };
+    let val = mlx_sys::types::complex64::complex64_t { re: 0.0, im: 0.0 };
     let mut array = array_new_c64(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(
-        dtype.val,
-        mlx_sys::dtype::ffi::Val::complex64
-    ));
+    assert!(matches!(dtype.val, mlx_sys::dtype::ffi::Val::complex64));
 
     let item = array.pin_mut().item_complex64().unwrap();
     assert_eq!(item.re, 0.0);

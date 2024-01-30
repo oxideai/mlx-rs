@@ -14,7 +14,10 @@ pub mod ffi {
         fn result_type(arrays: &[UniquePtr<array>]) -> Dtype;
 
         #[namespace = "mlx_cxx"]
-        fn broadcast_shapes(s1: &CxxVector<i32>, s2: &CxxVector<i32>) -> Result<UniquePtr<CxxVector<i32>>>;
+        fn broadcast_shapes(
+            s1: &CxxVector<i32>,
+            s2: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxVector<i32>>>;
 
         #[namespace = "mlx_cxx"]
         fn is_same_shape(arrays: &[UniquePtr<array>]) -> bool;

@@ -104,7 +104,7 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         fn eval(self: Pin<&mut array>);
-        
+
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
         fn item_bool(self: Pin<&mut array>) -> Result<bool>;
@@ -144,7 +144,7 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
         fn item_float16(self: Pin<&mut array>) -> Result<float16_t>;
-        
+
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
         fn item_bfloat16(self: Pin<&mut array>) -> Result<bfloat16_t>;
@@ -185,16 +185,25 @@ pub mod ffi {
         fn array_from_slice_int64(slice: &[i64], shape: &CxxVector<i32>) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_from_slice_float16(slice: &[float16_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+        fn array_from_slice_float16(
+            slice: &[float16_t],
+            shape: &CxxVector<i32>,
+        ) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_from_slice_bfloat16(slice: &[bfloat16_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+        fn array_from_slice_bfloat16(
+            slice: &[bfloat16_t],
+            shape: &CxxVector<i32>,
+        ) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_float32(slice: &[f32], shape: &CxxVector<i32>) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_from_slice_complex64(slice: &[complex64_t], shape: &CxxVector<i32>) -> UniquePtr<array>;
+        fn array_from_slice_complex64(
+            slice: &[complex64_t],
+            shape: &CxxVector<i32>,
+        ) -> UniquePtr<array>;
 
         #[namespace = "mlx::core"]
         fn id(self: &array) -> uintptr_t;
@@ -215,7 +224,11 @@ pub mod ffi {
 
         // TODO: user cannot create `CxxVector<array>` directly.
         #[namespace = "mlx_cxx"]
-        fn set_array_siblings(arr: Pin<&mut array>, siblings: UniquePtr<CxxVector<array>>, position: u16);
+        fn set_array_siblings(
+            arr: Pin<&mut array>,
+            siblings: UniquePtr<CxxVector<array>>,
+            position: u16,
+        );
 
         #[namespace = "mlx_cxx"]
         fn array_outputs(arr: Pin<&mut array>) -> UniquePtr<CxxVector<array>>;
@@ -351,7 +364,6 @@ pub mod ffi {
 
     impl CxxVector<array> {} // Explicit instantiation
 }
-
 
 // #[cfg(test)]
 // mod tests {

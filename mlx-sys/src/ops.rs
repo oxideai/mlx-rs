@@ -1,6 +1,6 @@
 use cxx::UniquePtr;
 
-use crate::{Optional, array::ffi::array};
+use crate::{array::ffi::array, Optional};
 
 pub type OptionalArray = Optional<UniquePtr<array>>;
 
@@ -41,12 +41,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_f64"]
-        fn arange(
-            start: f64,
-            stop: f64,
-            step: f64,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arange(start: f64, stop: f64, step: f64, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_start_stop_dtype"]
@@ -71,12 +66,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_i32"]
-        fn arange(
-            start: i32,
-            stop: i32,
-            step: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arange(start: i32, stop: i32, step: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_start_stop_i32"]
@@ -99,11 +89,7 @@ pub mod ffi {
 
         // Convert an array to the given data type.
         #[namespace = "mlx_cxx"]
-        fn astype(
-            a: &array,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn astype(a: &array, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // Create a view of an array with the given shape and strides.
         #[namespace = "mlx_cxx"]
@@ -332,122 +318,65 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "zeros_dtype"]
-        fn zeros(
-            shape: &CxxVector<i32>,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn zeros(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn zeros(shape: &CxxVector<i32>, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn zeros_like(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn zeros_like(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ones_dtype"]
-        fn ones(
-            shape: &CxxVector<i32>,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn ones(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn ones(shape: &CxxVector<i32>, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn ones_like(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn ones_like(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m_k_dtype"]
-        fn eye(
-            n: i32,
-            m: i32,
-            k: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn eye(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_dtype"]
-        fn eye(
-            n: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn eye(n: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m"]
-        fn eye(
-            n: i32,
-            m: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn eye(n: i32, m: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m_k"]
-        fn eye(
-            n: i32,
-            m: i32,
-            k: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn eye(n: i32, m: i32, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n"]
-        fn eye(
-            n: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn eye(n: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "identity_dtype"]
-        fn identity(
-            n: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn identity(n: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         fn identity(n: i32, s: StreamOrDevice) -> UniquePtr<array>;
-        
+
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n_m_k_dtype"]
-        fn tri(
-            n: i32,
-            m: i32,
-            k: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n_dtype"]
-        fn tri(
-            n: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn tri(n: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn tril(
-            x: UniquePtr<array>,
-            k: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn tril(x: UniquePtr<array>, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn triu(
-            x: UniquePtr<array>,
-            k: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn triu(x: UniquePtr<array>, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn reshape(
@@ -462,36 +391,23 @@ pub mod ffi {
             a: &array,
             start_axis: i32,
             end_axis: i32,
-            s : StreamOrDevice,
+            s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn flatten(
-            a: &array,
-            s : StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn flatten(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "squeeze_axes"]
-        fn squeeze(
-            a: &array,
-            axes: &CxxVector<i32>,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn squeeze(a: &array, axes: &CxxVector<i32>, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "squeeze_axis"]
-        fn squeeze(
-            a: &array,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn squeeze(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn squeeze(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn squeeze(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "expand_dims_at_axes"]
@@ -503,11 +419,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "expand_dims_at_axis"]
-        fn expand_dims(
-            a: &array,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn expand_dims(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "slice_start_stop_strides"]
@@ -578,10 +490,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn concatenate(
-            arrays: &[UniquePtr<array>],
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn concatenate(arrays: &[UniquePtr<array>], s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "stack_along_axis"]
@@ -592,10 +501,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn stack(
-            arrays: &[UniquePtr<array>],
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn stack(arrays: &[UniquePtr<array>], s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "repeat_along_axis"]
@@ -607,11 +513,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn repeat(
-            arr: &array,
-            repeats: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn repeat(arr: &array, repeats: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn tile(
@@ -627,7 +529,7 @@ pub mod ffi {
             axes: UniquePtr<CxxVector<i32>>,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
-    
+
         #[namespace = "mlx_cxx"]
         fn swapaxes(
             a: &array,
@@ -682,10 +584,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn transpose(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn transpose(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn broadcast_to(
@@ -701,46 +600,22 @@ pub mod ffi {
         ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
-        fn equal(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn equal(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn not_equal(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn not_equal(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn greater(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn greater(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn greater_equal(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn greater_equal(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn less(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn less(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn less_equal(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn less_equal(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// True if two arrays have the same shape and elements.
         #[namespace = "mlx_cxx"]
@@ -753,35 +628,19 @@ pub mod ffi {
         ) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn array_equal(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn array_equal(a: &array, b: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn isnan(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn isnan(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn isinf(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn isinf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn isposinf(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn isposinf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn isneginf(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn isneginf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         /// Renamed to `where_condition` because `where` is a reserved keyword in Rust.
         #[namespace = "mlx_cxx"]
@@ -796,18 +655,11 @@ pub mod ffi {
         /// True if all elements in the std::unique_ptr<mlx::core::array> are true (or non-zero).
         #[namespace = "mlx_cxx"]
         #[rust_name = "all_keepdims"]
-        fn all(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn all(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// True if all elements in the std::unique_ptr<mlx::core::array> are true (or non-zero).
         #[namespace = "mlx_cxx"]
-        fn all(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn all(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// True if the two arrays are equal within the specified tolerance.
         #[namespace = "mlx_cxx"]
@@ -830,26 +682,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "all_along_axis_keepdims"]
-        fn all(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn all(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_keepdims"]
-        fn any(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn any(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn any(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn any(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_along_axes_keepdims"]
@@ -862,26 +703,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_along_axis_keepdims"]
-        fn any(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn any(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_keepdims"]
-        fn sum(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sum(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sum(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sum(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_along_axes_keepdims"]
@@ -894,26 +724,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_along_axis_keepdims"]
-        fn sum(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sum(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_keepdims"]
-        fn mean(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn mean(a: &array, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn mean(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn mean(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_along_axes_keepdims"]
@@ -926,27 +745,14 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_along_axis_keepdims"]
-        fn mean(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn mean(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_keepdims"]
-        fn var(
-            a: &array,
-            keepdims: bool,
-            ddof: i32,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn var(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn var(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn var(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_along_axes_keepdims"]
@@ -970,17 +776,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "prod_keepdims"]
-        fn prod(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn prod(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn prod(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn prod(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "prod_along_axes_keepdims"]
@@ -1002,17 +801,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_keepdims"]
-        fn max(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn max(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn max(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn max(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_along_axes_keepdims"]
@@ -1025,26 +817,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_along_axis_keepdims"]
-        fn max(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn max(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_keepdims"]
-        fn min(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn min(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn min(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn min(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_along_axes_keepdims"]
@@ -1057,26 +838,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_along_axis_keepdims"]
-        fn min(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn min(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmin_keepdims"]
-        fn argmin(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argmin(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn argmin(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argmin(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmin_along_axis_keepdims"]
@@ -1089,17 +859,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmax_keepdims"]
-        fn argmax(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argmax(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn argmax(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argmax(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmax_along_axis_keepdims"]
@@ -1111,55 +874,29 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sort(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sort(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sort_along_axis"]
-        fn sort(
-            a: &array,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sort(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn argsort(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argsort(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argsort_along_axis"]
-        fn argsort(
-            a: &array,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argsort(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn partition(
-            a: &array,
-            kth: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn partition(a: &array, kth: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "partition_along_axis"]
-        fn partition(
-            a: &array,
-            kth: i32,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn partition(a: &array, kth: i32, axis: i32, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn argpartition(
-            a: &array,
-            kth: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn argpartition(a: &array, kth: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argpartition_along_axis"]
@@ -1171,34 +908,18 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn topk(
-            a: &array,
-            k: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn topk(a: &array, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "topk_along_axis"]
-        fn topk(
-            a: &array,
-            k: i32,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn topk(a: &array, k: i32, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_keepdims"]
-        fn logsumexp(
-            a: &array,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn logsumexp(a: &array, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn logsumexp(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn logsumexp(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_along_axes_keepdims"]
@@ -1211,293 +932,142 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_along_axis_keepdims"]
-        fn logsumexp(
-            a: &array,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn logsumexp(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn abs(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn abs(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn negative(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn negative(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sign(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sign(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn logical_not(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn logical_not(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // Returns a Result because it calls broadcast_arrays
         #[namespace = "mlx_cxx"]
-        fn logical_and(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn logical_and(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // Returns a Result because it calls broadcast_arrays
         #[namespace = "mlx_cxx"]
-        fn logical_or(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn logical_or(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn reciprocal(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn reciprocal(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn add(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn add(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn subtract(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn subtract(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn multiply(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn multiply(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn divide(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn divide(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn divmod(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<CxxVector<array>>>;
+        fn divmod(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
-        fn floor_divide(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn floor_divide(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn remainder(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn remainder(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn maximum(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn maximum(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn minimum(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn minimum(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn floor(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn floor(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn ceil(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn ceil(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn square(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn square(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn exp(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn exp(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sin(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sin(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn cos(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn cos(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn tan(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn tan(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arcsin(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arcsin(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arccos(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arccos(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arctan(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arctan(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sinh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sinh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn cosh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn cosh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn tanh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn tanh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arcsinh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arcsinh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arccosh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arccosh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn arctanh(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn arctanh(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn log(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn log(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn log2(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn log2(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn log10(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn log10(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn log1p(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn log1p(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn logaddexp(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn logaddexp(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sigmoid(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sigmoid(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn erf(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn erf(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn erfinv(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn erfinv(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn stop_gradient(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn stop_gradient(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "round_to_decimals"]
-        fn round(
-            a: &array,
-            decimals: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn round(a: &array, decimals: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn round(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn round(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn matmul(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn matmul(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "gather_along_axes"]
@@ -1532,11 +1102,7 @@ pub mod ffi {
         /// std::unique_ptr<mlx::core::array> as flattened.
         #[namespace = "mlx_cxx"]
         #[rust_name = "take_flattened"]
-        fn take(
-            a: &array,
-            indices: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn take(a: &array, indices: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn take_along_axis(
@@ -1647,46 +1213,26 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn sqrt(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn sqrt(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn rsqrt(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn rsqrt(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axes"]
-        fn softmax(
-            a: &array,
-            axes: &CxxVector<i32>,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn softmax(a: &array, axes: &CxxVector<i32>, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn softmax(
-            a: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn softmax(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axis"]
-        fn softmax(
-            a: &array,
-            axis: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn softmax(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// Raise elements of a to the power of b element-wise
         #[namespace = "mlx_cxx"]
-        fn power(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn power(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cumsum(
@@ -1754,7 +1300,7 @@ pub mod ffi {
             biases: &array,
             transpose: bool, // default: true
             group_size: i32, // default: 64
-            bits: i32, // default: 4
+            bits: i32,       // default: 4
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
@@ -1762,7 +1308,7 @@ pub mod ffi {
         fn quantize(
             w: &array,
             group_size: i32, // default: 64
-            bits: i32, // default: 4
+            bits: i32,       // default: 4
             s: StreamOrDevice,
         ) -> Result<[UniquePtr<array>; 3]>;
 
@@ -1772,7 +1318,7 @@ pub mod ffi {
             scales: &array,
             biases: &array,
             group_size: i32, // default: 64
-            bits: i32, // default: 4
+            bits: i32,       // default: 4
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
@@ -1795,18 +1341,10 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn outer(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn outer(a: &array, b: &array, s: StreamOrDevice) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
-        fn inner(
-            a: &array,
-            b: &array,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn inner(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// Compute D = beta * C + alpha * (A @ B)
         #[namespace = "mlx_cxx"]

@@ -41,17 +41,17 @@ pub mod ffi {
 
     extern "C++" {
         include!("mlx-cxx/dtype.hpp");
-        
-        #[namespace = "mlx_cxx"] 
+
+        #[namespace = "mlx_cxx"]
         #[cxx_name = "DtypeVal"]
         type Val;
-        
+
         #[namespace = "mlx_cxx"]
         #[cxx_name = "DtypeKind"]
         type Kind;
-        
+
     }
-    
+
     unsafe extern "C++" {
         include!("mlx/dtype.h");
         include!("mlx-cxx/dtype.hpp");

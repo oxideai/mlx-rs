@@ -1,4 +1,4 @@
-use cxx::{ExternType, type_id};
+use cxx::{type_id, ExternType};
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]
@@ -24,7 +24,9 @@ pub mod ffi {
 #[cfg(feature = "half")]
 impl From<half::f16> for float16_t {
     fn from(value: half::f16) -> Self {
-        ffi::f16 { bits: value.to_bits() }
+        ffi::f16 {
+            bits: value.to_bits(),
+        }
     }
 }
 

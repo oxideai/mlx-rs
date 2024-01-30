@@ -1,4 +1,4 @@
-use cxx::{ExternType, type_id};
+use cxx::{type_id, ExternType};
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]

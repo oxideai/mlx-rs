@@ -69,7 +69,12 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn norm_axis(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn norm_axis(
+            a: &array,
+            axis: i32,
+            keepdims: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
     }
 }
 

@@ -28,10 +28,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fftn"]
-        fn fftn(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn fftn(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifftn_shape_axes"]
@@ -52,10 +49,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifftn"]
-        fn ifftn(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn ifftn(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fft_shape_axis"]
@@ -68,18 +62,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fft_axis"]
-        fn fft(
-            a: &array,
-            axis: i32,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn fft(a: &array, axis: i32, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fft"]
-        fn fft(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn fft(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifft_shape_axis"]
@@ -92,18 +79,12 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifft_axis"]
-        fn ifft(
-            a: &array,
-            axis: i32,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn ifft(a: &array, axis: i32, stream_or_device: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifft"]
-        fn ifft(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn ifft(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fft2_shape_axes"]
@@ -124,10 +105,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fft2"]
-        fn fft2(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn fft2(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifft2_shape_axes"]
@@ -148,10 +126,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ifft2"]
-        fn ifft2(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn ifft2(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfftn_shape_axes"]
@@ -172,10 +147,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfftn"]
-        fn rfftn(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn rfftn(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfftn_shape_axes"]
@@ -196,10 +168,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfftn"]
-        fn irfftn(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn irfftn(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfft_shape_axis"]
@@ -212,18 +181,12 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfft_axis"]
-        fn rfft(
-            a: &array,
-            axis: i32,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn rfft(a: &array, axis: i32, stream_or_device: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfft"]
-        fn rfft(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn rfft(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfft_shape_axis"]
@@ -244,10 +207,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfft"]
-        fn irfft(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn irfft(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfft2_shape_axes"]
@@ -268,10 +228,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "rfft2"]
-        fn rfft2(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn rfft2(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfft2_shape_axes"]
@@ -292,9 +249,6 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "irfft2"]
-        fn irfft2(
-            a: &array,
-            stream_or_device: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn irfft2(a: &array, stream_or_device: StreamOrDevice) -> Result<UniquePtr<array>>;
     }
 }

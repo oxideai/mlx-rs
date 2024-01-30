@@ -50,7 +50,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_multiary_cxx_fn"]
-        fn vjp(f: &CxxMultiaryFn, primals: &[UniquePtr<array>], cotangents: &[UniquePtr<array>]) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
+        fn vjp(
+            f: &CxxMultiaryFn,
+            primals: &[UniquePtr<array>],
+            cotangents: &[UniquePtr<array>],
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_unary_cxx_fn"]
@@ -58,7 +62,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_multiary_cxx_fn"]
-        fn jvp(f: &CxxMultiaryFn, primals: &[UniquePtr<array>], tangents: &[UniquePtr<array>]) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
+        fn jvp(
+            f: &CxxMultiaryFn,
+            primals: &[UniquePtr<array>],
+            tangents: &[UniquePtr<array>],
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_unary_cxx_fn"]
@@ -66,7 +74,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multiary_cxx_fn_argnums"]
-        fn value_and_grad(f: &CxxMultiaryFn, argnums: &CxxVector<i32>) -> Result<UniquePtr<CxxValueAndGradFn>>;
+        fn value_and_grad(
+            f: &CxxMultiaryFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multiary_cxx_fn_argnum"]
@@ -78,11 +89,17 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multi_input_single_output_cxx_fn"]
-        fn value_and_grad(f: &CxxMultiInputSingleOutputFn, argnums: &CxxVector<i32>) -> Result<UniquePtr<CxxSimpleValueAndGradFn>>;
+        fn value_and_grad(
+            f: &CxxMultiInputSingleOutputFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxSimpleValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_multi_input_single_output_cxx_fn_argnums"]
-        fn grad(f: &CxxMultiInputSingleOutputFn, argnums: &CxxVector<i32>) -> Result<UniquePtr<CxxMultiaryFn>>;
+        fn grad(
+            f: &CxxMultiInputSingleOutputFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_multi_input_single_output_cxx_fn_argnum"]
@@ -98,10 +115,19 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_pair_input_single_output_cxx_fn"]
-        fn vmap(f: &CxxPairInputSingleOutputFn, in_axis_a: i32, in_axis_b: i32, out_axis: i32) -> Result<UniquePtr<CxxPairInputSingleOutputFn>>;
+        fn vmap(
+            f: &CxxPairInputSingleOutputFn,
+            in_axis_a: i32,
+            in_axis_b: i32,
+            out_axis: i32,
+        ) -> Result<UniquePtr<CxxPairInputSingleOutputFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_multiary_cxx_fn"]
-        fn vmap(f: &CxxMultiaryFn, in_axes: &CxxVector<i32>, out_axes: &CxxVector<i32>) -> Result<UniquePtr<CxxMultiaryFn>>;
+        fn vmap(
+            f: &CxxMultiaryFn,
+            in_axes: &CxxVector<i32>,
+            out_axes: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

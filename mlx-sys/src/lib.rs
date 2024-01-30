@@ -49,18 +49,18 @@ pub mod ffi {
     }
 }
 
-pub mod types;
 pub mod array;
-pub mod dtype;
-pub mod macros;
 pub mod backend;
 pub mod device;
-pub mod stream;
+pub mod dtype;
 pub mod fft;
-pub mod utils;
-pub mod linalg;
-pub mod ops;
-pub mod io;
-pub mod transforms;
 pub mod function;
+pub mod io;
+pub mod linalg;
+pub mod macros;
+pub mod ops;
 pub mod random;
+pub mod stream;
+pub mod transforms;
+pub mod types;
+pub mod utils;

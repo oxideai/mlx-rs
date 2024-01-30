@@ -45,7 +45,8 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
 ];
 
 #[cfg(not(feature = "accelerate"))]
-const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str = "mlx/mlx/backend/common/default_primitives.cpp";
+const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str =
+    "mlx/mlx/backend/common/default_primitives.cpp";
 
 /// Files to compile for accelerate backend
 #[cfg(feature = "accelerate")]
@@ -155,11 +156,10 @@ fn main() {
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     println!("cargo:warning=out_dir: {}", out_dir.display());
-    
 
     // let mut build = cxx_build::bridge("src/lib.rs");
     let mut build = cxx_build::bridges(RUST_SOURCE_FILES);
-        
+
     build.include(MLX_DIR)
         .include(SHIM_DIR)
         .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
@@ -174,7 +174,8 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=Accelerate");
         build
             // mlx uses new lapack api if accelerate is available
-            .flag("-D") .flag("ACCELERATE_NEW_LAPACK")
+            .flag("-D")
+            .flag("ACCELERATE_NEW_LAPACK")
             .files(FILES_MLX_BACKEND_ACCELERATE);
     }
 
@@ -204,14 +205,14 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=QuartzCore");
         build
             .files(FILES_MLX_BACKEND_METAL)
-            .flag("-D").flag(&format!("METAL_PATH=\"{}\"", metallib.display()));
+            .flag("-D")
+            .flag(&format!("METAL_PATH=\"{}\"", metallib.display()));
     }
     #[cfg(not(feature = "metal"))]
     {
-        build
-            .files(FILES_MLX_BACKEND_NO_METAL);
+        build.files(FILES_MLX_BACKEND_NO_METAL);
     }
-        
+
     build.compile("mlx");
 
     println!("cargo:rerun-if-changed=shim/mlx-cxx/array.hpp");
@@ -225,58 +226,65 @@ fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
     let kernel_build_dir = PathBuf::from(out_dir).join("kernels"); // MLX_METAL_PATH
     let _ = std::fs::create_dir_all(&kernel_build_dir);
     let kernel_src_dir = PathBuf::from(METAL_KERNEL_DIR);
-    let kernel_airs = METAL_KERNELS.iter().map(|&k| {
-        build_kernel_air(
-            &kernel_build_dir, 
-            &kernel_src_dir,
-            MLX_DIR,
-            k
-        )
-    }).collect::<Vec<_>>();
+    let kernel_airs = METAL_KERNELS
+        .iter()
+        .map(|&k| build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, k))
+        .collect::<Vec<_>>();
     build_kernel_metallib(&kernel_airs, out_dir)
 }
 
 #[cfg(feature = "metal")]
 fn build_kernel_air(
-    kernel_build_dir: &PathBuf, 
+    kernel_build_dir: &PathBuf,
     kernel_src_dir: &PathBuf,
     mlx_dir: impl AsRef<std::path::Path>,
-    kernel_name: &str
+    kernel_name: &str,
 ) -> PathBuf {
     let kernel_src = kernel_src_dir.join(format!("{}.metal", kernel_name));
     let kernel_air = kernel_build_dir.join(format!("{}.air", kernel_name));
     // let kernel_metallib = kernel_build_dir.join(format!("{}.metallib", kernel_name));
 
     let status = std::process::Command::new("xcrun")
-        .arg("-sdk").arg("macosx").arg("metal")
+        .arg("-sdk")
+        .arg("macosx")
+        .arg("metal")
         .arg("-Wall")
         .arg("-Wextra")
         .arg("-fno-fast-math")
-        .arg("-c").arg(kernel_src)
+        .arg("-c")
+        .arg(kernel_src)
         .arg(format!("-I{}", mlx_dir.as_ref().display()))
-        .arg("-o").arg(&kernel_air)
+        .arg("-o")
+        .arg(&kernel_air)
         .status()
         .unwrap();
-    assert!(status.success(), "Failed to build kernel air: {}", kernel_name);
+    assert!(
+        status.success(),
+        "Failed to build kernel air: {}",
+        kernel_name
+    );
 
     kernel_air
 }
 
 #[cfg(feature = "metal")]
-fn build_kernel_metallib(
-    kernel_airs: &[PathBuf],
-    out_dir: &PathBuf,
-) -> PathBuf {
+fn build_kernel_metallib(kernel_airs: &[PathBuf], out_dir: &PathBuf) -> PathBuf {
     // Note that the built ``mlx.metallib`` file should be either at the same
     // directory as the executable statically linked to ``libmlx.a`` or the
     // preprocessor constant ``METAL_PATH`` should be defined at build time and it
     // should point to the path to the built metal library.
     let kernel_metallib = out_dir.join("mlx.metallib");
-    println!("cargo:warning=kernel_metallib: {}", kernel_metallib.display());
+    println!(
+        "cargo:warning=kernel_metallib: {}",
+        kernel_metallib.display()
+    );
     let status = std::process::Command::new("xcrun")
-        .arg("-sdk").arg("macosx").arg("metallib")
+        .arg("-sdk")
+        .arg("macosx")
+        .arg("metallib")
         .args(kernel_airs)
-        .arg("-o").arg(&kernel_metallib)
+        .arg("-o")
+        .arg(&kernel_metallib)
         .status()
         .unwrap();
     assert!(status.success(), "Failed to build kernel metallib");
@@ -286,10 +294,14 @@ fn build_kernel_metallib(
 #[cfg(feature = "metal")]
 fn get_macos_version() -> f32 {
     let output = std::process::Command::new("/usr/bin/xcrun")
-        .arg("-sdk").arg("macosx")
+        .arg("-sdk")
+        .arg("macosx")
         .arg("--show-sdk-version")
         .output()
         .expect("Failed to get macos version");
-    String::from_utf8(output.stdout).unwrap().trim()
-        .parse().unwrap()
+    String::from_utf8(output.stdout)
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap()
 }

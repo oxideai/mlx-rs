@@ -12,7 +12,7 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         type Device = crate::device::ffi::Device;
-        
+
         #[namespace = "mlx::core"]
         type Stream;
 

@@ -1,9 +1,3 @@
-use cxx::UniquePtr;
-
-use crate::{Optional, array::ffi::array};
-
-// pub type OptionalArray = Optional<UniquePtr<array>>;
-
 use crate::ops::OptionalArray;
 
 #[cxx::bridge]
@@ -68,18 +62,11 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn split(
-            key: &array,
-            s: StreamOrDevice,
-        ) -> [UniquePtr<array>; 2];
+        fn split(key: &array, s: StreamOrDevice) -> [UniquePtr<array>; 2];
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_n"]
-        fn split(
-            key: &array,
-            n: i32,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        fn split(key: &array, n: i32, s: StreamOrDevice) -> UniquePtr<array>;
 
         // "Can only generate uniform numbers with real floating point type."
         #[namespace = "mlx_cxx"]
@@ -391,11 +378,8 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli"]
-        fn bernoulli(
-            p: &array,
-            key: &OptionalArray,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn bernoulli(p: &array, key: &OptionalArray, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         // #[namespace = "mlx_cxx"]
         // fn bernoulli_bool(
@@ -403,7 +387,7 @@ pub mod ffi {
         //     key: &OptionalArray,
         //     s: StreamOrDevice,
         // ) -> UniquePtr<array>;
-        
+
         // #[namespace = "mlx_cxx"]
         // fn bernoulli_uint8(
         //     p: u8,

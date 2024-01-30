@@ -103,7 +103,7 @@ pub mod ffi {
             a: &array,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         // Create a view of an array with the given shape and strides.
         #[namespace = "mlx_cxx"]
@@ -113,10 +113,10 @@ pub mod ffi {
             strides: UniquePtr<CxxVector<usize>>,
             offset: usize,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn copy(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn copy(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "full_vals_dtype"]
@@ -125,7 +125,7 @@ pub mod ffi {
             vals: &array,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "full_vals"]
@@ -133,7 +133,7 @@ pub mod ffi {
             shape: &CxxVector<i32>,
             vals: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_bool_val_dtype(
@@ -141,7 +141,7 @@ pub mod ffi {
             val: bool,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint8_val_dtype(
@@ -149,7 +149,7 @@ pub mod ffi {
             val: u8,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint16_val_dtype(
@@ -157,7 +157,7 @@ pub mod ffi {
             val: u16,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint32_val_dtype(
@@ -165,7 +165,7 @@ pub mod ffi {
             val: u32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint64_val_dtype(
@@ -173,7 +173,7 @@ pub mod ffi {
             val: u64,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int8_val_dtype(
@@ -181,7 +181,7 @@ pub mod ffi {
             val: i8,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int16_val_dtype(
@@ -189,7 +189,7 @@ pub mod ffi {
             val: i16,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int32_val_dtype(
@@ -197,7 +197,7 @@ pub mod ffi {
             val: i32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int64_val_dtype(
@@ -205,7 +205,7 @@ pub mod ffi {
             val: i64,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_float16_val_dtype(
@@ -213,7 +213,7 @@ pub mod ffi {
             val: float16_t,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_bfloat16_val_dtype(
@@ -221,7 +221,7 @@ pub mod ffi {
             val: bfloat16_t,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_float32_val_dtype(
@@ -229,7 +229,7 @@ pub mod ffi {
             val: f32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_complex64_val_dtype(
@@ -237,98 +237,98 @@ pub mod ffi {
             val: complex64_t,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_bool_val(
             shape: &CxxVector<i32>,
             val: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint8_val(
             shape: &CxxVector<i32>,
             val: u8,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint16_val(
             shape: &CxxVector<i32>,
             val: u16,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint32_val(
             shape: &CxxVector<i32>,
             val: u32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_uint64_val(
             shape: &CxxVector<i32>,
             val: u64,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int8_val(
             shape: &CxxVector<i32>,
             val: i8,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int16_val(
             shape: &CxxVector<i32>,
             val: i16,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int32_val(
             shape: &CxxVector<i32>,
             val: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_int64_val(
             shape: &CxxVector<i32>,
             val: i64,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_float16_val(
             shape: &CxxVector<i32>,
             val: float16_t,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_bfloat16_val(
             shape: &CxxVector<i32>,
             val: bfloat16_t,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_float32_val(
             shape: &CxxVector<i32>,
             val: f32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full_complex64_val(
             shape: &CxxVector<i32>,
             val: complex64_t,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "zeros_dtype"]
@@ -604,14 +604,14 @@ pub mod ffi {
             repeats: i32,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn repeat(
             arr: &array,
             repeats: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn tile(
@@ -1222,7 +1222,7 @@ pub mod ffi {
         fn abs(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn negative(
@@ -1234,13 +1234,13 @@ pub mod ffi {
         fn sign(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn logical_not(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         // Returns a Result because it calls broadcast_arrays
         #[namespace = "mlx_cxx"]
@@ -1343,109 +1343,109 @@ pub mod ffi {
         fn square(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn exp(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sin(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cos(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn tan(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arcsin(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arccos(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arctan(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sinh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cosh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn tanh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arcsinh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arccosh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn arctanh(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn log(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn log2(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn log10(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn log1p(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn logaddexp(
@@ -1458,25 +1458,25 @@ pub mod ffi {
         fn sigmoid(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn erf(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn erfinv(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn stop_gradient(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "round_to_decimals"]
@@ -1484,13 +1484,13 @@ pub mod ffi {
             a: &array,
             decimals: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn round(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn matmul(
@@ -1650,7 +1650,7 @@ pub mod ffi {
         fn sqrt(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn rsqrt(
@@ -1664,13 +1664,13 @@ pub mod ffi {
             a: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn softmax(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axis"]
@@ -1678,7 +1678,7 @@ pub mod ffi {
             a: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// Raise elements of a to the power of b element-wise
         #[namespace = "mlx_cxx"]

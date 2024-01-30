@@ -14,12 +14,12 @@ pub mod ffi {
         fn result_type(arrays: &[UniquePtr<array>]) -> Dtype;
 
         #[namespace = "mlx_cxx"]
-        fn broadcast_shapes(s1: &CxxVector<i32>, s2: &CxxVector<i32>) -> UniquePtr<CxxVector<i32>>;
+        fn broadcast_shapes(s1: &CxxVector<i32>, s2: &CxxVector<i32>) -> Result<UniquePtr<CxxVector<i32>>>;
 
         #[namespace = "mlx_cxx"]
         fn is_same_shape(arrays: &[UniquePtr<array>]) -> bool;
 
         #[namespace = "mlx::core"]
-        fn normalize_axis(axis: i32, ndim: i32) -> i32;
+        fn normalize_axis(axis: i32, ndim: i32) -> Result<i32>;
     }
 }

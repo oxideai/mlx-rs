@@ -31,7 +31,7 @@ pub mod ffi {
             axis: &OptionalAxis,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn norm_ord_axis(
@@ -40,7 +40,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn norm_str_ord(
@@ -49,7 +49,7 @@ pub mod ffi {
             axis: &OptionalAxis,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn norm_str_ord_axis(
@@ -58,7 +58,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn norm(
@@ -66,10 +66,10 @@ pub mod ffi {
             axis: &OptionalAxis,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn norm_axis(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
+        fn norm_axis(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
     }
 }
 

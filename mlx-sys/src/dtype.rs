@@ -129,7 +129,7 @@ pub mod ffi {
         fn dtype_to_array_protocol(t: &Dtype) -> UniquePtr<CxxString>;
 
         #[namespace = "mlx::core"]
-        fn dtype_from_array_protocol(s: &CxxString) -> Dtype;
+        fn dtype_from_array_protocol(s: &CxxString) -> Result<Dtype>;
     }
 }
 

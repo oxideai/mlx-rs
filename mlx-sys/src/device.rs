@@ -32,7 +32,7 @@ pub mod ffi {
         fn default_device() -> &'static Device;
 
         #[namespace = "mlx::core"]
-        fn set_default_device(device: &Device);
+        fn set_default_device(device: &Device) -> Result<()>;
     }
 }
 

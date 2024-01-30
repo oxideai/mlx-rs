@@ -46,7 +46,7 @@ pub mod ffi {
             stop: f64,
             step: f64,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_start_stop_dtype"]
@@ -55,19 +55,19 @@ pub mod ffi {
             stop: f64,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_start_stop_f64"]
-        fn arange(start: f64, stop: f64, s: StreamOrDevice) -> UniquePtr<array>;
+        fn arange(start: f64, stop: f64, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_stop_dtype"]
-        fn arange(stop: f64, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn arange(stop: f64, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_stop_f64"]
-        fn arange(stop: f64, s: StreamOrDevice) -> UniquePtr<array>;
+        fn arange(stop: f64, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_i32"]
@@ -76,15 +76,15 @@ pub mod ffi {
             stop: i32,
             step: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_start_stop_i32"]
-        fn arange(start: i32, stop: i32, s: StreamOrDevice) -> UniquePtr<array>;
+        fn arange(start: i32, stop: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "arange_stop_i32"]
-        fn arange(stop: i32, s: StreamOrDevice) -> UniquePtr<array>;
+        fn arange(stop: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // A 1D std::unique_ptr<mlx::core::array> of `num` evenly spaced numbers in the range
         // `[start, stop]`
@@ -95,7 +95,7 @@ pub mod ffi {
             num: i32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         // Convert an array to the given data type.
         #[namespace = "mlx_cxx"]
@@ -372,7 +372,7 @@ pub mod ffi {
             k: i32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_dtype"]
@@ -380,7 +380,7 @@ pub mod ffi {
             n: i32,
             dtype: Dtype,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m"]
@@ -388,7 +388,7 @@ pub mod ffi {
             n: i32,
             m: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m_k"]
@@ -397,14 +397,14 @@ pub mod ffi {
             m: i32,
             k: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n"]
         fn eye(
             n: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "identity_dtype"]
@@ -440,21 +440,21 @@ pub mod ffi {
             x: UniquePtr<array>,
             k: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn triu(
             x: UniquePtr<array>,
             k: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn reshape(
             a: &array,
             shape: UniquePtr<CxxVector<i32>>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "flatten_start_axis_end_axis"]
@@ -463,13 +463,13 @@ pub mod ffi {
             start_axis: i32,
             end_axis: i32,
             s : StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn flatten(
             a: &array,
             s : StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "squeeze_axes"]
@@ -477,7 +477,7 @@ pub mod ffi {
             a: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "squeeze_axis"]
@@ -485,13 +485,13 @@ pub mod ffi {
             a: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn squeeze(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "expand_dims_at_axes"]
@@ -499,7 +499,7 @@ pub mod ffi {
             a: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "expand_dims_at_axis"]
@@ -507,7 +507,7 @@ pub mod ffi {
             a: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "slice_start_stop_strides"]
@@ -517,7 +517,7 @@ pub mod ffi {
             stop: UniquePtr<CxxVector<i32>>,
             strides: UniquePtr<CxxVector<i32>>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn slice(
@@ -525,7 +525,7 @@ pub mod ffi {
             start: &CxxVector<i32>,
             stop: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_n_at_axis"]
@@ -534,7 +534,7 @@ pub mod ffi {
             num_splits: i32,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_n"]
@@ -542,7 +542,7 @@ pub mod ffi {
             a: &array,
             num_splits: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_at_indices_along_axis"]
@@ -551,7 +551,7 @@ pub mod ffi {
             indices: &CxxVector<i32>,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_at_indices"]
@@ -559,7 +559,7 @@ pub mod ffi {
             a: &array,
             indices: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         fn clip(
@@ -567,7 +567,7 @@ pub mod ffi {
             a_min: &OptionalArray,
             a_max: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "concatenate_along_axis"]
@@ -575,13 +575,13 @@ pub mod ffi {
             arrays: &[UniquePtr<array>],
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn concatenate(
             arrays: &[UniquePtr<array>],
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "stack_along_axis"]
@@ -589,13 +589,13 @@ pub mod ffi {
             arrays: &[UniquePtr<array>],
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn stack(
             arrays: &[UniquePtr<array>],
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "repeat_along_axis"]
@@ -626,7 +626,7 @@ pub mod ffi {
             a: &array,
             axes: UniquePtr<CxxVector<i32>>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
     
         #[namespace = "mlx_cxx"]
         fn swapaxes(
@@ -634,7 +634,7 @@ pub mod ffi {
             axis1: i32,
             axis2: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn moveaxis(
@@ -642,7 +642,7 @@ pub mod ffi {
             source: i32,
             destination: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "pad_axes"]
@@ -653,7 +653,7 @@ pub mod ffi {
             high_pad_size: &CxxVector<i32>,
             pad_value: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "pad_unique_widths_for_each_axis"]
@@ -662,7 +662,7 @@ pub mod ffi {
             pad_width: &[[i32; 2]],
             pad_value: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "pad_same_widths_for_each_axis"]
@@ -671,7 +671,7 @@ pub mod ffi {
             pad_width: &[i32; 2],
             pad_value: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn pad(
@@ -679,68 +679,68 @@ pub mod ffi {
             pad_width: i32,
             pad_value: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn transpose(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn broadcast_to(
             a: &array,
             shape: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn broadcast_arrays(
             inputs: &[UniquePtr<array>],
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         fn equal(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn not_equal(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn greater(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn greater_equal(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn less(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn less_equal(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// True if two arrays have the same shape and elements.
         #[namespace = "mlx_cxx"]
@@ -800,14 +800,14 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// True if all elements in the std::unique_ptr<mlx::core::array> are true (or non-zero).
         #[namespace = "mlx_cxx"]
         fn all(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// True if the two arrays are equal within the specified tolerance.
         #[namespace = "mlx_cxx"]
@@ -817,7 +817,7 @@ pub mod ffi {
             rtol: f64,
             atol: f64,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "all_along_axes_keepdims"]
@@ -826,7 +826,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "all_along_axis_keepdims"]
@@ -835,7 +835,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_keepdims"]
@@ -843,13 +843,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn any(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_along_axes_keepdims"]
@@ -858,7 +858,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "any_along_axis_keepdims"]
@@ -867,7 +867,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_keepdims"]
@@ -875,13 +875,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sum(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_along_axes_keepdims"]
@@ -890,7 +890,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sum_along_axis_keepdims"]
@@ -899,7 +899,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_keepdims"]
@@ -974,13 +974,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn prod(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "prod_along_axes_keepdims"]
@@ -989,7 +989,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "prod_along_axis_keepdims"]
@@ -998,7 +998,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_keepdims"]
@@ -1006,13 +1006,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn max(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_along_axes_keepdims"]
@@ -1021,7 +1021,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "max_along_axis_keepdims"]
@@ -1030,7 +1030,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_keepdims"]
@@ -1038,13 +1038,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn min(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_along_axes_keepdims"]
@@ -1053,7 +1053,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "min_along_axis_keepdims"]
@@ -1062,7 +1062,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmin_keepdims"]
@@ -1070,13 +1070,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn argmin(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmin_along_axis_keepdims"]
@@ -1085,7 +1085,7 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmax_keepdims"]
@@ -1093,13 +1093,13 @@ pub mod ffi {
             a: &array,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn argmax(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argmax_along_axis_keepdims"]
@@ -1108,13 +1108,13 @@ pub mod ffi {
             axis: i32,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sort(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "sort_along_axis"]
@@ -1122,13 +1122,13 @@ pub mod ffi {
             a: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn argsort(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argsort_along_axis"]
@@ -1136,14 +1136,14 @@ pub mod ffi {
             a: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn partition(
             a: &array,
             kth: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "partition_along_axis"]
@@ -1152,14 +1152,14 @@ pub mod ffi {
             kth: i32,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn argpartition(
             a: &array,
             kth: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "argpartition_along_axis"]
@@ -1168,14 +1168,14 @@ pub mod ffi {
             kth: i32,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn topk(
             a: &array,
             k: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "topk_along_axis"]
@@ -1184,7 +1184,7 @@ pub mod ffi {
             k: i32,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_keepdims"]
@@ -1228,7 +1228,7 @@ pub mod ffi {
         fn negative(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sign(
@@ -1242,19 +1242,21 @@ pub mod ffi {
             s: StreamOrDevice,
         ) -> UniquePtr<array>;
 
+        // Returns a Result because it calls broadcast_arrays
         #[namespace = "mlx_cxx"]
         fn logical_and(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
+        // Returns a Result because it calls broadcast_arrays
         #[namespace = "mlx_cxx"]
         fn logical_or(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn reciprocal(
@@ -1267,75 +1269,75 @@ pub mod ffi {
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn subtract(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn multiply(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn divide(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn divmod(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<CxxVector<array>>;
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         fn floor_divide(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn remainder(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn maximum(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn minimum(
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn floor(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn ceil(
             a: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn square(
@@ -1450,7 +1452,7 @@ pub mod ffi {
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sigmoid(
@@ -1495,7 +1497,7 @@ pub mod ffi {
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "gather_along_axes"]
@@ -1505,7 +1507,7 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             slice_sizes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "gather_along_axis"]
@@ -1515,7 +1517,7 @@ pub mod ffi {
             axis: i32,
             slice_sizes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// Take std::unique_ptr<mlx::core::array> slices at the given indices of the specified axis.
         #[namespace = "mlx_cxx"]
@@ -1524,7 +1526,7 @@ pub mod ffi {
             indices: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// Take std::unique_ptr<mlx::core::array> entries at the given indices treating the
         /// std::unique_ptr<mlx::core::array> as flattened.
@@ -1534,7 +1536,7 @@ pub mod ffi {
             a: &array,
             indices: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn take_along_axis(
@@ -1542,7 +1544,7 @@ pub mod ffi {
             indices: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_along_axes"]
@@ -1552,7 +1554,7 @@ pub mod ffi {
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_along_axis"]
@@ -1562,7 +1564,7 @@ pub mod ffi {
             updates: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_add_along_axes"]
@@ -1572,7 +1574,7 @@ pub mod ffi {
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_add_along_axis"]
@@ -1582,7 +1584,7 @@ pub mod ffi {
             updates: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_prod_along_axes"]
@@ -1592,7 +1594,7 @@ pub mod ffi {
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_prod_along_axis"]
@@ -1602,7 +1604,7 @@ pub mod ffi {
             updates: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_max_along_axes"]
@@ -1612,7 +1614,7 @@ pub mod ffi {
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_max_along_axis"]
@@ -1622,7 +1624,7 @@ pub mod ffi {
             updates: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_min_along_axes"]
@@ -1632,7 +1634,7 @@ pub mod ffi {
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "scatter_min_along_axis"]
@@ -1642,7 +1644,7 @@ pub mod ffi {
             updates: &array,
             axis: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn sqrt(
@@ -1684,7 +1686,7 @@ pub mod ffi {
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cumsum(
@@ -1693,7 +1695,7 @@ pub mod ffi {
             reverse: bool,
             inclusive: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cumprod(
@@ -1702,7 +1704,7 @@ pub mod ffi {
             reverse: bool,
             inclusive: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cummax(
@@ -1711,7 +1713,7 @@ pub mod ffi {
             reverse: bool,
             inclusive: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn cummin(
@@ -1720,7 +1722,7 @@ pub mod ffi {
             reverse: bool,
             inclusive: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn conv1d(
@@ -1731,7 +1733,7 @@ pub mod ffi {
             dilation: i32,
             groups: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn conv2d(
@@ -1742,7 +1744,7 @@ pub mod ffi {
             dilation: &[i32; 2],
             groups: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn quantized_matmul(
@@ -1754,7 +1756,7 @@ pub mod ffi {
             group_size: i32, // default: 64
             bits: i32, // default: 4
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn quantize(
@@ -1762,7 +1764,7 @@ pub mod ffi {
             group_size: i32, // default: 64
             bits: i32, // default: 4
             s: StreamOrDevice,
-        ) -> [UniquePtr<array>; 3];
+        ) -> Result<[UniquePtr<array>; 3]>;
 
         #[namespace = "mlx_cxx"]
         fn dequantize(
@@ -1772,7 +1774,7 @@ pub mod ffi {
             group_size: i32, // default: 64
             bits: i32, // default: 4
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tensordot_ndims"]
@@ -1781,7 +1783,7 @@ pub mod ffi {
             b: &array,
             dims: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tensordot_list_dims"]
@@ -1790,7 +1792,7 @@ pub mod ffi {
             b: &array,
             dims: &[UniquePtr<CxxVector<i32>>; 2],
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn outer(
@@ -1804,7 +1806,7 @@ pub mod ffi {
             a: &array,
             b: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// Compute D = beta * C + alpha * (A @ B)
         #[namespace = "mlx_cxx"]
@@ -1815,7 +1817,7 @@ pub mod ffi {
             alpha: &f32,
             beta: &f32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
     }
 }
 

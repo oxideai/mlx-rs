@@ -17,12 +17,12 @@ pub mod ffi {
         type Stream;
 
         #[namespace = "mlx::core"]
-        fn default_stream(d: Device) -> Stream;
+        fn default_stream(d: Device) -> Result<Stream>;
 
         #[namespace = "mlx::core"]
-        fn set_default_stream(s: Stream);
+        fn set_default_stream(s: Stream) -> Result<()>;
 
         #[namespace = "mlx::core"]
-        fn new_stream(d: Device) -> Stream;
+        fn new_stream(d: Device) -> Result<Stream>;
     }
 }

@@ -1,3 +1,5 @@
+//! TODO: rename mod to something closer to transforms
+
 use cxx::{CxxVector, UniquePtr};
 
 use crate::array::ffi::array;
@@ -181,7 +183,7 @@ pub mod ffi {
             f: *const UnaryFn,
             primal: &array,
             cotangent: &array,
-        ) -> [UniquePtr<array>; 2];
+        ) -> Result<[UniquePtr<array>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_multiary_fn"]
@@ -189,11 +191,11 @@ pub mod ffi {
             f: *const MultiaryFn,
             primal: &[UniquePtr<array>],
             cotangent: &[UniquePtr<array>],
-        ) -> [UniquePtr<CxxVector<array>>; 2];
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_unary_fn"]
-        unsafe fn jvp(f: *const UnaryFn, primal: &array, tangent: &array) -> [UniquePtr<array>; 2];
+        unsafe fn jvp(f: *const UnaryFn, primal: &array, tangent: &array) -> Result<[UniquePtr<array>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "jvp_multiary_fn"]
@@ -201,50 +203,50 @@ pub mod ffi {
             f: *const MultiaryFn,
             primal: &[UniquePtr<array>],
             tangent: &[UniquePtr<array>],
-        ) -> [UniquePtr<CxxVector<array>>; 2];
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multiary_fn_argnums"]
         unsafe fn value_and_grad(
             f: *const MultiaryFn,
             argnums: &CxxVector<i32>,
-        ) -> UniquePtr<CxxValueAndGradFn>;
+        ) -> Result<UniquePtr<CxxValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multiary_fn_argnum"]
         unsafe fn value_and_grad(f: *const MultiaryFn, argnum: i32)
-            -> UniquePtr<CxxValueAndGradFn>;
+            -> Result<UniquePtr<CxxValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_unary_fn"]
-        unsafe fn value_and_grad(f: *const UnaryFn) -> UniquePtr<CxxSingleInputPairOutputFn>;
+        unsafe fn value_and_grad(f: *const UnaryFn) -> Result<UniquePtr<CxxSingleInputPairOutputFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "value_and_grad_multi_input_single_output_fn"]
         unsafe fn value_and_grad(
             f: *const MultiInputSingleOutputFn,
             argnums: &CxxVector<i32>,
-        ) -> UniquePtr<CxxSimpleValueAndGradFn>;
+        ) -> Result<UniquePtr<CxxSimpleValueAndGradFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_multi_input_single_output_fn_argnums"]
         unsafe fn grad(
             f: *const MultiInputSingleOutputFn,
             argnums: &CxxVector<i32>,
-        ) -> UniquePtr<CxxMultiaryFn>;
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_multi_input_single_output_fn_argnum"]
         unsafe fn grad(f: *const MultiInputSingleOutputFn, argnum: i32)
-            -> UniquePtr<CxxMultiaryFn>;
+            -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "grad_unary_fn"]
-        unsafe fn grad(f: *const UnaryFn) -> UniquePtr<CxxUnaryFn>;
+        unsafe fn grad(f: *const UnaryFn) -> Result<UniquePtr<CxxUnaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_unary_fn"]
-        unsafe fn vmap(f: *const UnaryFn, in_axis: i32, out_axis: i32) -> UniquePtr<CxxUnaryFn>;
+        unsafe fn vmap(f: *const UnaryFn, in_axis: i32, out_axis: i32) -> Result<UniquePtr<CxxUnaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_pair_input_single_output_fn"]
@@ -253,7 +255,7 @@ pub mod ffi {
             in_axis_a: i32,
             in_axis_b: i32,
             out_axis: i32,
-        ) -> UniquePtr<CxxPairInputSingleOutputFn>;
+        ) -> Result<UniquePtr<CxxPairInputSingleOutputFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vmap_multiary_fn"]
@@ -261,7 +263,7 @@ pub mod ffi {
             f: *const MultiaryFn,
             in_axes: &CxxVector<i32>,
             out_axes: &CxxVector<i32>,
-        ) -> UniquePtr<CxxMultiaryFn>;
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }
 

@@ -64,4 +64,3 @@ pub mod io;
 pub mod transforms;
 pub mod function;
 pub mod random;
-pub mod primitives;

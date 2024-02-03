@@ -533,22 +533,26 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> isnan(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> isnan(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::isnan(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> isinf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> isinf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::isinf(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> isposinf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> isposinf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::isposinf(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> isneginf(const mlx::core::array& a, mlx_cxx::StreamOrDevice s) {
+    std::unique_ptr<mlx::core::array> isneginf(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
         auto array = mlx::core::isneginf(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
@@ -579,9 +583,22 @@ namespace mlx_cxx
         const mlx::core::array &b,
         double rtol,
         double atol,
+        bool equal_nan,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::allclose(a, b, rtol, atol, s.to_variant());
+        auto array = mlx::core::allclose(a, b, rtol, atol, equal_nan, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> isclose(
+        const mlx::core::array &a,
+        const mlx::core::array &b,
+        double rtol,
+        double atol,
+        bool equal_nan,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::isclose(a, b, rtol, atol, equal_nan, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1605,11 +1622,43 @@ namespace mlx_cxx
         std::unique_ptr<mlx::core::array> c,
         std::unique_ptr<mlx::core::array> a,
         std::unique_ptr<mlx::core::array> b,
-        const float& alpha,
-        const float& beta,
+        const float &alpha,
+        const float &beta,
         mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::addmm(*c, *a, *b, alpha, beta, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
+    }
+
+    /** Extract a diagonal or construct a diagonal array */
+    std::unique_ptr<mlx::core::array> diagonal(
+        const mlx::core::array& a,
+        int offset,
+        int axis1,
+        int axis2,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::diagonal(a, offset, axis1, axis2, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    /** Extract diagonal from a 2d array or create a diagonal matrix. */
+    std::unique_ptr<mlx::core::array> diag(const mlx::core::array& a, int k, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::diag(a, k, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    /**
+     * Implements the identity function but allows injecting dependencies to other
+     * arrays. This ensures that these other arrays will have been computed
+     * when the outputs of this function are computed.
+     */
+    std::unique_ptr<std::vector<mlx::core::array>> depends(
+        const std::vector<mlx::core::array>& inputs,
+        const std::vector<mlx::core::array>& dependencies)
+    {
+        auto arrays = mlx::core::depends(inputs, dependencies);
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 }

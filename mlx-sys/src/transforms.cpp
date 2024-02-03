@@ -8,21 +8,9 @@
 
 namespace mlx_cxx
 {
-    // int execute_callback(const mlx_cxx::DynFn &f, int args)
-    // {
-    //     return mlx_cxx::execute_dyn_fn(f, args);
-    // }
-
-    // TODO: should this use a mutable Slice?
-    void simplify(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs)
+    std::unique_ptr<CxxMultiaryFn> compile(const CxxMultiaryFn &fun)
     {
-        auto outputs_vec = std::vector<mlx::core::array>{};
-        for (auto &output : outputs)
-        {
-            outputs_vec.push_back(*output);
-        }
-
-        mlx::core::simplify(outputs_vec);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::compile(fun));
     }
 
     // TODO: should this use a mutable Slice?
@@ -181,6 +169,19 @@ namespace mlx_cxx
         const std::vector<int> &out_axes)
     {
         return std::make_unique<CxxMultiaryFn>(mlx::core::vmap(fun, in_axes, out_axes));
+    }
+
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        std::unique_ptr<CxxMultiaryFn> fun,
+        std::unique_ptr<CxxVjpFn> fun_vjp)
+    {
+        return std::make_unique<CxxMultiaryFn>(mlx::core::custom_vjp(*fun, *fun_vjp));
+    }
+
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        std::unique_ptr<CxxMultiaryFn> fun)
+    {
+        return std::make_unique<CxxMultiaryFn>(mlx::core::checkpoint(*fun));
     }
 
     /* -------------------------------------------------------------------------- */

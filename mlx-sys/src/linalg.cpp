@@ -79,4 +79,12 @@ namespace mlx_cxx {
         auto array = mlx::core::linalg::norm(a, axis, keepdims, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
+
+    std::array<std::unique_ptr<mlx::core::array>, 2> qr(
+        const mlx::core::array& a,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto [q, r] = mlx::core::linalg::qr(a, s.to_variant());
+        return {std::make_unique<mlx::core::array>(q), std::make_unique<mlx::core::array>(r)};
+    }
 }

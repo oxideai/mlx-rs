@@ -49,4 +49,8 @@ namespace mlx_cxx
         int axis,
         bool keepdims = false,
         StreamOrDevice s = {});
+
+    std::array<std::unique_ptr<mlx::core::array>, 2> qr(
+        const mlx::core::array& a,
+        StreamOrDevice s = {});
 }

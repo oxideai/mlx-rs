@@ -57,10 +57,11 @@ pub mod fft;
 pub mod function;
 pub mod io;
 pub mod linalg;
-pub mod macros;
 pub mod ops;
 pub mod random;
 pub mod stream;
 pub mod transforms;
 pub mod types;
 pub mod utils;
+
+pub mod macros;

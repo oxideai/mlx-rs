@@ -26,6 +26,9 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         type CxxSingleInputPairOutputFn;
 
+        #[namespace = "mlx_cxx"]
+        type CxxVjpFn;
+
         #[namespace = "mlx::core"]
         #[cxx_name = "ValueAndGradFn"]
         type CxxValueAndGradFn;
@@ -34,10 +37,14 @@ pub mod ffi {
         #[cxx_name = "SimpleValueAndGradFn"]
         type CxxSimpleValueAndGradFn;
 
-        // TODO: This clearly changes internal states of the arrays. We should review if it should
-        // be put behind a mut reference.
         #[namespace = "mlx_cxx"]
-        fn simplify(outputs: &[UniquePtr<array>]);
+        fn compile(fun: &CxxMultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx::core"]
+        fn disable_compile();
+
+        #[namespace = "mlx::core"]
+        fn enable_compile();
 
         // TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
@@ -129,5 +136,14 @@ pub mod ffi {
             in_axes: &CxxVector<i32>,
             out_axes: &CxxVector<i32>,
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        fn custom_vjp(
+            fun: UniquePtr<CxxMultiaryFn>,
+            fun_vjp: UniquePtr<CxxVjpFn>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        fn checkpoint(fun: UniquePtr<CxxMultiaryFn>) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

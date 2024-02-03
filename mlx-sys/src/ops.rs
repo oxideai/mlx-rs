@@ -668,6 +668,17 @@ pub mod ffi {
             b: &array,
             rtol: f64,
             atol: f64,
+            equal_nan: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn isclose(
+            a: &array,
+            b: &array,
+            rtol: f64,
+            atol: f64,
+            equal_nan: bool,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
@@ -1356,6 +1367,29 @@ pub mod ffi {
             beta: &f32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn diagonal(
+            a: &array,
+            offset: i32,
+            axis1: i32,
+            axis2: i32,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn diag(
+            a: &array,
+            k: i32,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        // TODO: users can never get an owned CxxVector<array> from Rust
+        #[namespace = "mlx_cxx"]
+        fn depends(
+            inputs: &CxxVector<array>,
+            dependencies: &CxxVector<array>,
+        ) -> Result<UniquePtr<CxxVector<array>>>;
     }
 }
 

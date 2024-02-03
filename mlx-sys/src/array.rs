@@ -1,3 +1,5 @@
+//! TODO: add bindings to constructors that takes `Primitives`?
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
@@ -220,6 +222,9 @@ pub mod ffi {
         fn inputs(self: &array) -> &CxxVector<array>;
 
         #[namespace = "mlx::core"]
+        fn is_donatable(self: &array) -> bool;
+
+        #[namespace = "mlx::core"]
         fn siblings(self: &array) -> &CxxVector<array>;
 
         // TODO: user cannot create `CxxVector<array>` directly.
@@ -236,12 +241,17 @@ pub mod ffi {
         // TODO: expose Flags
 
         #[namespace = "mlx::core"]
+        fn graph_depth(self: &array) -> u16;
+
+        #[namespace = "mlx::core"]
         fn detach(self: Pin<&mut array>);
 
         #[namespace = "mlx::core"]
         fn data_size(self: &array) -> usize;
 
-        // TODO: expose allocator::Buffer
+        // TODO: expose allocator::Buffer?
+
+        // TODO: expose array::Data and data_shared_ptr()?
 
         #[namespace = "mlx::core"]
         #[cxx_name = "data"]
@@ -356,7 +366,10 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         fn is_tracer(self: &array) -> bool;
 
-        // TODO: should these method be exposed? `set_data()`, `copy_shared_buffer()`
+        // TODO: should these method be exposed? 
+        // 1. `set_data()`, 
+        // 2. `copy_shared_buffer()`
+        // 3. `move_shared_buffer()`
 
         #[namespace = "mlx::core"]
         fn overwrite_descriptor(self: Pin<&mut array>, other: &array);

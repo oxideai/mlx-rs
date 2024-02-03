@@ -13,6 +13,7 @@ const FILES_MLX: &[&str] = &[
     "mlx/mlx/array.cpp",
     "mlx/mlx/device.cpp",
     "mlx/mlx/dtype.cpp",
+    "mlx/mlx/compile.cpp",
     "mlx/mlx/fft.cpp",
     "mlx/mlx/ops.cpp",
     "mlx/mlx/graph_utils.cpp",
@@ -42,6 +43,7 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/threefry.cpp",
     "mlx/mlx/backend/common/indexing.cpp",
     "mlx/mlx/backend/common/load.cpp",
+    "mlx/mlx/backend/common/qrf.cpp",
 ];
 
 #[cfg(not(feature = "accelerate"))]
@@ -160,9 +162,9 @@ fn main() {
     // let mut build = cxx_build::bridge("src/lib.rs");
     let mut build = cxx_build::bridges(RUST_SOURCE_FILES);
 
-    build.include(MLX_DIR)
+    build
+        .include(MLX_DIR)
         .include(SHIM_DIR)
-        .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
         .flag("-std=c++17")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON)
@@ -173,6 +175,7 @@ fn main() {
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
         build
+            .include("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Headers")
             // mlx uses new lapack api if accelerate is available
             .flag("-D")
             .flag("ACCELERATE_NEW_LAPACK")
@@ -181,6 +184,15 @@ fn main() {
 
     #[cfg(not(feature = "accelerate"))]
     {
+        // Find the system's BLAS and LAPACK
+        let blas_include_dirs = find_non_accelerate_blas().expect("Must have BLAS installed");
+        build.include(blas_include_dirs);
+        println!("cargo:rustc-link-lib=cblas");
+
+        let lapack_include_dirs = find_non_accelerate_lapack().expect("Must have LAPACK installed");
+        build.include(lapack_include_dirs);
+        println!("cargo:rustc-link-lib=lapacke");
+
         build.file(FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES);
     }
 
@@ -304,4 +316,48 @@ fn get_macos_version() -> f32 {
         .trim()
         .parse()
         .unwrap()
+}
+
+#[cfg(not(feature = "accelerate"))]
+const NON_ACCELERATE_BLAS_HEADER: &str = "cblas.h";
+
+#[cfg(not(feature = "accelerate"))]
+const NON_ACCELERATE_LAPACK_HEADER: &str = "lapacke.h";
+
+#[cfg(not(feature = "accelerate"))]
+const NON_ACCELERATE_BLAS_LAPACK_SEARCH_DIRS: &[&str] = &["/usr/include", "/usr/local/include"];
+
+#[cfg(not(feature = "accelerate"))]
+fn find_non_accelerate_blas() -> Option<PathBuf> {
+    let blas_home = std::env::var("BLAS_HOME").ok().map(PathBuf::from);
+
+    let mut blas_dirs = NON_ACCELERATE_BLAS_LAPACK_SEARCH_DIRS
+        .iter()
+        .map(|&dir| PathBuf::from(dir))
+        .collect::<Vec<_>>();
+
+    if let Some(blas_home) = blas_home {
+        blas_dirs.push(blas_home.join("include"));
+    }
+
+    for dir in blas_dirs {
+        let blas_header = dir.join(NON_ACCELERATE_BLAS_HEADER);
+        if blas_header.exists() {
+            return Some(dir);
+        }
+    }
+
+    None
+}
+
+#[cfg(not(feature = "accelerate"))]
+fn find_non_accelerate_lapack() -> Option<PathBuf> {
+    for dir in NON_ACCELERATE_BLAS_LAPACK_SEARCH_DIRS {
+        let lapack_header = PathBuf::from(dir).join(NON_ACCELERATE_LAPACK_HEADER);
+        if lapack_header.exists() {
+            return Some(PathBuf::from(dir));
+        }
+    }
+
+    None
 }

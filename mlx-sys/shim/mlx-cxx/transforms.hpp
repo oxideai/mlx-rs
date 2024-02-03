@@ -21,6 +21,11 @@ namespace mlx_cxx
 
     using CxxSingleInputPairOutputFn = std::function<std::pair<mlx::core::array, mlx::core::array>(const mlx::core::array&)>;
 
+    using CxxVjpFn = std::function<std::vector<mlx::core::array>(
+            const std::vector<mlx::core::array>&,
+            const std::vector<mlx::core::array>&,
+            const std::vector<mlx::core::array>&)>;
+
     // using ValueAndGradFn = std::function<std::pair<std::vector<mlx::core::array>, std::vector<mlx::core::array>>(
     //     const std::vector<mlx::core::array> &)>;
     // using SimpleValueAndGradFn = std::function<std::pair<mlx::core::array, std::vector<mlx::core::array>>(
@@ -28,9 +33,8 @@ namespace mlx_cxx
 
     // int execute_callback(const mlx_cxx::DynFn &f, int args);
 
-    void simplify(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs);
-
-    // TODO: what about the templated simplify?
+    // TODO: add rust version of the following functions
+    std::unique_ptr<CxxMultiaryFn> compile(const CxxMultiaryFn &fun);
 
     void eval(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs);
 
@@ -97,6 +101,22 @@ namespace mlx_cxx
         const CxxMultiaryFn &fun,
         const std::vector<int> &in_axes = {},
         const std::vector<int> &out_axes = {});
+
+    /**
+     * Return the results of calling fun with args but if their vjp is computed it
+     * will be computed by fun_vjp.
+     */
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        std::unique_ptr<CxxMultiaryFn> fun,
+        std::unique_ptr<CxxVjpFn> fun_vjp);
+
+    /**
+     * Checkpoint the gradient of a function. Namely, discard all intermediate
+     * state and recalculate it when we need to compute the gradient.
+     */
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        std::unique_ptr<CxxMultiaryFn> fun);
+
 
     /* -------------------------------------------------------------------------- */
     /*                     Bindings that accept rust funcionts                    */

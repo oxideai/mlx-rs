@@ -15,4 +15,9 @@ namespace mlx_cxx {
         const std::vector<int>& s2);
 
     bool is_same_shape(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays);
+
+    template<typename T>
+    void push_opaque(
+        std::vector<T>& vec,
+        std::unique_ptr<T> item);
 }

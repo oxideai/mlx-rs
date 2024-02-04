@@ -26,4 +26,11 @@ namespace mlx_cxx {
         }
         return mlx::core::is_same_shape(copy_constructed_arrays);
     }
+
+    template<typename T>
+    void push_opaque(
+        std::vector<T>& vec,
+        std::unique_ptr<T> item) {
+        vec.push_back(*item);
+    }
 }

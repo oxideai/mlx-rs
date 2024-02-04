@@ -24,5 +24,9 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         fn normalize_axis(axis: i32, ndim: i32) -> Result<i32>;
+
+        #[namespace = "mlx_cxx"]
+        #[cxx_name = "push_opaque"]
+        fn push_back_array(vec: Pin<&mut CxxVector<array>>, array: UniquePtr<array>);
     }
 }

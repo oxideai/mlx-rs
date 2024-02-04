@@ -10,7 +10,7 @@ pub mod ffi {
 
     #[namespace = "mlx::core"]
     pub struct Device {
-        pub r#type: DeviceType,
+        pub device_type: DeviceType,
         pub index: i32,
     }
 
@@ -35,29 +35,3 @@ pub mod ffi {
         fn set_default_device(device: &Device) -> Result<()>;
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn test_default_deveice() {
-//         let device = super::ffi::default_device();
-//         println!("{:?}", device.index);
-//     }
-
-//     #[test]
-//     fn test_new_device() {
-//         let device = super::ffi::new_device(super::ffi::DeviceType::gpu, 0);
-//         println!("{:?}", device.index);
-//     }
-
-//     #[test]
-//     fn test_default_device() {
-//         let _device = super::ffi::default_device();
-//     }
-
-//     #[test]
-//     fn test_set_default_device() {
-//         let device = super::ffi::new_device(super::ffi::DeviceType::gpu, 0);
-//         super::ffi::set_default_device(&device);
-//     }
-// }

@@ -366,8 +366,8 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         fn is_tracer(self: &array) -> bool;
 
-        // TODO: should these method be exposed? 
-        // 1. `set_data()`, 
+        // TODO: should these method be exposed?
+        // 1. `set_data()`,
         // 2. `copy_shared_buffer()`
         // 3. `move_shared_buffer()`
 

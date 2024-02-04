@@ -1378,11 +1378,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn diag(
-            a: &array,
-            k: i32,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        fn diag(a: &array, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // TODO: users can never get an owned CxxVector<array> from Rust
         #[namespace = "mlx_cxx"]

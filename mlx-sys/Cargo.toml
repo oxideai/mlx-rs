@@ -1,6 +1,6 @@
 [package]
 name = "mlx-sys"
-version = "0.0.10-alpha"
+version = "0.1.0-alpha"
 edition = "2021"
 description = "Rust bindings for mlx"
 readme = "README.md"

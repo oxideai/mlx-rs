@@ -14,3 +14,4 @@ Cargo.lock
 *.pdb
 
 settings.json
+**.DS_Store

@@ -188,12 +188,6 @@ namespace mlx_cxx
     /*                     Bindings that accept rust funcionts                    */
     /* -------------------------------------------------------------------------- */
 
-
-    int accept_rust_unary_fn(const mlx_cxx::UnaryFn &f)
-    {
-        return 1;
-    }
-
     CxxUnaryFn make_unary_fn(const UnaryFn *f)
     {
         return [fun = std::move(f)](const mlx::core::array &arg)
@@ -228,6 +222,11 @@ namespace mlx_cxx
             auto ptr = mlx_cxx::execute_pair_input_single_output_fn(*fun, a, b);
             return *ptr;
         };
+    }
+
+    std::unique_ptr<CxxMultiaryFn> compile_multiary_fn(const MultiaryFn *fun)
+    {
+        return mlx_cxx::compile(make_multiary_fn(fun));
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(

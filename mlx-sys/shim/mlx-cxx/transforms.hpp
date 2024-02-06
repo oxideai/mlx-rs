@@ -122,12 +122,11 @@ namespace mlx_cxx
     /*                     Bindings that accept rust funcionts                    */
     /* -------------------------------------------------------------------------- */
 
-    // TODO: This is for test only. Remove later
-    int accept_rust_unary_fn(const mlx_cxx::UnaryFn &f);
-
     CxxUnaryFn make_unary_fn(UnaryFn* f);
 
     CxxMultiaryFn make_multiary_fn(MultiaryFn* f);
+
+    std::unique_ptr<CxxMultiaryFn> compile_multiary_fn(const MultiaryFn *fun);
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
         const MultiaryFn* fun,

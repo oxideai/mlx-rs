@@ -173,9 +173,9 @@ pub mod ffi {
         #[cxx_name = "SimpleValueAndGradFn"]
         type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
 
-        // TODO: This is for test only. Remove later
         #[namespace = "mlx_cxx"]
-        fn accept_rust_unary_fn(f: &UnaryFn) -> i32;
+        #[cxx_name = "compile_multiary_fn"]
+        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_unary_fn"]
@@ -280,40 +280,3 @@ pub mod ffi {
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::cxx_vec;
-
-//     #[test]
-//     fn test_accept_rust_unary_fn() {
-//         let f = |x: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-//             crate::array::ffi::array_new_bool(true)
-//         };
-//         let f = super::UnaryFn::from(f);
-//         let o = super::ffi::accept_rust_unary_fn(&f);
-//         println!("{}", o);
-//     }
-
-//     #[test]
-//     fn test_vjp_unary_fn() {
-//         use std::sync::Arc;
-
-//         let shape = cxx_vec!(3i32);
-//         let b = Arc::new(crate::array::ffi::array_from_slice_float32(
-//             &[1.0, 1.0, 1.0],
-//             &shape,
-//         ));
-//         let f = move |arr: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-//             crate::ops::ffi::multiply(arr, &**b, Default::default())
-//         };
-//         let f = super::UnaryFn::from(f);
-
-//         let primal = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-//         let cotangent = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-//         unsafe {
-//             let f_ptr: *const crate::function::UnaryFn = &f;
-//             let [p, c] = super::ffi::vjp_unary_fn(f_ptr, &primal, &cotangent);
-//         }
-//     }
-// }

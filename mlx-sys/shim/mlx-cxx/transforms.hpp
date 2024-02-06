@@ -194,5 +194,8 @@ namespace mlx_cxx
         const MultiaryFn* fun,
         const VjpFn* fun_vjp);
 
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        const MultiaryFn* fun);
+
     /* -------------------------------------------------------------------------- */
 }

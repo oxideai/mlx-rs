@@ -310,5 +310,10 @@ pub mod ffi {
             fun: *const MultiaryFn,
             fun_vjp: *const VjpFn,
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        unsafe fn checkpoint(
+            fun: *const MultiaryFn,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

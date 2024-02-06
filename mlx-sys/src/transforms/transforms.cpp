@@ -351,5 +351,12 @@ namespace mlx_cxx
         return std::make_unique<CxxMultiaryFn>(mlx::core::custom_vjp(cxx_fun, cxx_vjp_fun));
     }
 
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        const MultiaryFn* fun)
+    {
+        auto cxx_fun = make_multiary_fn(fun);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::checkpoint(cxx_fun));
+    }
+
     /* -------------------------------------------------------------------------- */
 }

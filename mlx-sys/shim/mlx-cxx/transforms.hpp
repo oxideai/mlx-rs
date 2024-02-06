@@ -5,7 +5,7 @@
 
 #include "rust/cxx.h"
 
-#include "mlx-sys/src/function.rs.h"
+#include "mlx-sys/src/transforms/compat.rs.h"
 
 namespace mlx_cxx
 {
@@ -122,12 +122,11 @@ namespace mlx_cxx
     /*                     Bindings that accept rust funcionts                    */
     /* -------------------------------------------------------------------------- */
 
-    // TODO: This is for test only. Remove later
-    int accept_rust_unary_fn(const mlx_cxx::UnaryFn &f);
-
     CxxUnaryFn make_unary_fn(UnaryFn* f);
 
     CxxMultiaryFn make_multiary_fn(MultiaryFn* f);
+
+    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun);
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
         const MultiaryFn* fun,
@@ -190,6 +189,13 @@ namespace mlx_cxx
         const MultiaryFn* fun,
         const std::vector<int> &in_axes = {},
         const std::vector<int> &out_axes = {});
+
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        const MultiaryFn* fun,
+        const VjpFn* fun_vjp);
+
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        const MultiaryFn* fun);
 
     /* -------------------------------------------------------------------------- */
 }

@@ -54,8 +54,6 @@ pub mod backend;
 pub mod device;
 pub mod dtype;
 pub mod fft;
-pub mod function;
-pub mod io;
 pub mod linalg;
 pub mod ops;
 pub mod random;

@@ -2,6 +2,8 @@
 //! eventually compute the output `array` which is then used to compute the gradient.
 //! So theoretically we could instead pass a rust function that is callable from C++.
 
+pub mod compat;
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
@@ -50,10 +52,6 @@ pub mod ffi {
         // be put behind a mut reference.
         #[namespace = "mlx_cxx"]
         fn eval(outputs: &[UniquePtr<array>]) -> Result<()>;
-
-        // // TODO: this needs to be placed in a separate file
-        // #[namespace = "mlx_cxx"]
-        // fn execute_callback(f: &DynFn, args: i32) -> i32;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_multiary_cxx_fn"]

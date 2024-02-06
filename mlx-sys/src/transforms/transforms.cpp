@@ -2,7 +2,7 @@
 
 #include "mlx-cxx/transforms.hpp"
 
-#include "mlx-sys/src/function.rs.h"
+#include "mlx-sys/src/transforms/compat.rs.h"
 
 #include "rust/cxx.h"
 
@@ -188,12 +188,6 @@ namespace mlx_cxx
     /*                     Bindings that accept rust funcionts                    */
     /* -------------------------------------------------------------------------- */
 
-
-    int accept_rust_unary_fn(const mlx_cxx::UnaryFn &f)
-    {
-        return 1;
-    }
-
     CxxUnaryFn make_unary_fn(const UnaryFn *f)
     {
         return [fun = std::move(f)](const mlx::core::array &arg)
@@ -228,6 +222,20 @@ namespace mlx_cxx
             auto ptr = mlx_cxx::execute_pair_input_single_output_fn(*fun, a, b);
             return *ptr;
         };
+    }
+
+    CxxVjpFn make_vjp_fn(const VjpFn *f)
+    {
+        return [fun = std::move(f)](const std::vector<mlx::core::array>& arg1, const std::vector<mlx::core::array>& arg2, const std::vector<mlx::core::array>& arg3)
+        {
+            auto ptr = mlx_cxx::execute_vjp_fn(*fun, arg1, arg2, arg3);
+            return *ptr;
+        };
+    }
+
+    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun)
+    {
+        return mlx_cxx::compile(make_multiary_fn(fun));
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
@@ -332,6 +340,22 @@ namespace mlx_cxx
         const std::vector<int> &out_axes)
     {
         return mlx_cxx::vmap(make_multiary_fn(fun), in_axes, out_axes);
+    }
+
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        const MultiaryFn* fun,
+        const VjpFn* fun_vjp)
+    {
+        auto cxx_fun = make_multiary_fn(fun);
+        auto cxx_vjp_fun = make_vjp_fn(fun_vjp);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::custom_vjp(cxx_fun, cxx_vjp_fun));
+    }
+
+    std::unique_ptr<CxxMultiaryFn> checkpoint(
+        const MultiaryFn* fun)
+    {
+        auto cxx_fun = make_multiary_fn(fun);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::checkpoint(cxx_fun));
     }
 
     /* -------------------------------------------------------------------------- */

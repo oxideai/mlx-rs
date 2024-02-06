@@ -101,6 +101,32 @@ fn execute_pair_input_single_output_fn(
     f.0.execute([first, second])
 }
 
+#[repr(transparent)]
+pub struct VjpFn(
+    pub  Box<
+        dyn for<'a> Function<[&'a CxxVector<array>; 3], Output = UniquePtr<CxxVector<array>>>
+            + 'static,
+    >,
+);
+
+impl<F> From<F> for VjpFn
+where
+    F: for<'a> Function<[&'a CxxVector<array>; 3], Output = UniquePtr<CxxVector<array>>> + 'static,
+{
+    fn from(f: F) -> Self {
+        Self(Box::new(f))
+    }
+}
+
+fn execute_vjp_fn(
+    f: &VjpFn,
+    arg1: &CxxVector<array>,
+    arg2: &CxxVector<array>,
+    arg3: &CxxVector<array>,
+) -> UniquePtr<CxxVector<array>> {
+    f.0.execute([arg1, arg2, arg3])
+}
+
 // TODO: change visibility and then re-export
 #[cxx::bridge]
 pub mod ffi {
@@ -125,6 +151,9 @@ pub mod ffi {
         type PairInputSingleOutputFn;
 
         #[namespace = "mlx_cxx"]
+        type VjpFn;
+
+        #[namespace = "mlx_cxx"]
         fn execute_unary_fn(f: &UnaryFn, x: &array) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
@@ -145,6 +174,14 @@ pub mod ffi {
             first: &array,
             second: &array,
         ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn execute_vjp_fn(
+            f: &VjpFn,
+            arg1: &CxxVector<array>,
+            arg2: &CxxVector<array>,
+            arg3: &CxxVector<array>,
+        ) -> UniquePtr<CxxVector<array>>;
     }
 
     unsafe extern "C++" {
@@ -173,9 +210,8 @@ pub mod ffi {
         #[cxx_name = "SimpleValueAndGradFn"]
         type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
 
-        // TODO: This is for test only. Remove later
         #[namespace = "mlx_cxx"]
-        fn accept_rust_unary_fn(f: &UnaryFn) -> i32;
+        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_unary_fn"]
@@ -278,42 +314,14 @@ pub mod ffi {
             in_axes: &CxxVector<i32>,
             out_axes: &CxxVector<i32>,
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        unsafe fn custom_vjp(
+            fun: *const MultiaryFn,
+            fun_vjp: *const VjpFn,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        unsafe fn checkpoint(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::cxx_vec;
-
-//     #[test]
-//     fn test_accept_rust_unary_fn() {
-//         let f = |x: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-//             crate::array::ffi::array_new_bool(true)
-//         };
-//         let f = super::UnaryFn::from(f);
-//         let o = super::ffi::accept_rust_unary_fn(&f);
-//         println!("{}", o);
-//     }
-
-//     #[test]
-//     fn test_vjp_unary_fn() {
-//         use std::sync::Arc;
-
-//         let shape = cxx_vec!(3i32);
-//         let b = Arc::new(crate::array::ffi::array_from_slice_float32(
-//             &[1.0, 1.0, 1.0],
-//             &shape,
-//         ));
-//         let f = move |arr: &crate::array::ffi::array| -> cxx::UniquePtr<crate::array::ffi::array> {
-//             crate::ops::ffi::multiply(arr, &**b, Default::default())
-//         };
-//         let f = super::UnaryFn::from(f);
-
-//         let primal = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-//         let cotangent = crate::array::ffi::array_from_slice_float32(&[1.0, 1.0, 1.0], &shape);
-//         unsafe {
-//             let f_ptr: *const crate::function::UnaryFn = &f;
-//             let [p, c] = super::ffi::vjp_unary_fn(f_ptr, &primal, &cotangent);
-//         }
-//     }
-// }

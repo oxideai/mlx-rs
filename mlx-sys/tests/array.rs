@@ -547,7 +547,10 @@ fn test_array_data_mut_int64() {
 #[test]
 fn test_array_data_mut_float16() {
     let shape = cxx_vec![2];
-    let mut array = array_from_slice_float16(&[float16_t { bits: 0x3c00 }, float16_t { bits: 0x3c00 }], &shape);
+    let mut array = array_from_slice_float16(
+        &[float16_t { bits: 0x3c00 }, float16_t { bits: 0x3c00 }],
+        &shape,
+    );
     let ptr = array.pin_mut().data_mut_float16();
     unsafe {
         assert_eq!((*ptr.offset(0)).bits, 0x3c00);
@@ -558,7 +561,10 @@ fn test_array_data_mut_float16() {
 #[test]
 fn test_array_data_mut_bfloat16() {
     let shape = cxx_vec![2];
-    let mut array = array_from_slice_bfloat16(&[bfloat16_t { bits: 0x3c00 }, bfloat16_t { bits: 0x3c00 }], &shape);
+    let mut array = array_from_slice_bfloat16(
+        &[bfloat16_t { bits: 0x3c00 }, bfloat16_t { bits: 0x3c00 }],
+        &shape,
+    );
     let ptr = array.pin_mut().data_mut_bfloat16();
     unsafe {
         assert_eq!((*ptr.offset(0)).bits, 0x3c00);
@@ -580,7 +586,13 @@ fn test_array_data_mut_float32() {
 #[test]
 fn test_array_data_mut_complex64() {
     let shape = cxx_vec![2];
-    let mut array = array_from_slice_complex64(&[complex64_t { re: 1.0, im: 1.0 }, complex64_t { re: 1.0, im: 1.0 }], &shape);
+    let mut array = array_from_slice_complex64(
+        &[
+            complex64_t { re: 1.0, im: 1.0 },
+            complex64_t { re: 1.0, im: 1.0 },
+        ],
+        &shape,
+    );
     let ptr = array.pin_mut().data_mut_complex64();
     unsafe {
         assert_eq!((*ptr.offset(0)).re, 1.0);
@@ -692,7 +704,10 @@ fn test_array_data_int64() {
 #[test]
 fn test_array_data_float16() {
     let shape = cxx_vec![2];
-    let array = array_from_slice_float16(&[float16_t { bits: 0x3c00 }, float16_t { bits: 0x3c00 }], &shape);
+    let array = array_from_slice_float16(
+        &[float16_t { bits: 0x3c00 }, float16_t { bits: 0x3c00 }],
+        &shape,
+    );
     let ptr = array.data_float16();
     unsafe {
         assert_eq!((*ptr.offset(0)).bits, 0x3c00);
@@ -703,7 +718,10 @@ fn test_array_data_float16() {
 #[test]
 fn test_array_data_bfloat16() {
     let shape = cxx_vec![2];
-    let array = array_from_slice_bfloat16(&[bfloat16_t { bits: 0x3c00 }, bfloat16_t { bits: 0x3c00 }], &shape);
+    let array = array_from_slice_bfloat16(
+        &[bfloat16_t { bits: 0x3c00 }, bfloat16_t { bits: 0x3c00 }],
+        &shape,
+    );
     let ptr = array.data_bfloat16();
     unsafe {
         assert_eq!((*ptr.offset(0)).bits, 0x3c00);
@@ -725,7 +743,13 @@ fn test_array_data_float32() {
 #[test]
 fn test_array_data_complex64() {
     let shape = cxx_vec![2];
-    let array = array_from_slice_complex64(&[complex64_t { re: 1.0, im: 1.0 }, complex64_t { re: 1.0, im: 1.0 }], &shape);
+    let array = array_from_slice_complex64(
+        &[
+            complex64_t { re: 1.0, im: 1.0 },
+            complex64_t { re: 1.0, im: 1.0 },
+        ],
+        &shape,
+    );
     let ptr = array.data_complex64();
     unsafe {
         assert_eq!((*ptr.offset(0)).re, 1.0);

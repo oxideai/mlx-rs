@@ -102,18 +102,28 @@ fn execute_pair_input_single_output_fn(
 }
 
 #[repr(transparent)]
-pub struct VjpFn(pub Box<dyn for<'a> Function<[&'a CxxVector<array>; 3], Output=UniquePtr<CxxVector<array>>> + 'static>);
+pub struct VjpFn(
+    pub  Box<
+        dyn for<'a> Function<[&'a CxxVector<array>; 3], Output = UniquePtr<CxxVector<array>>>
+            + 'static,
+    >,
+);
 
 impl<F> From<F> for VjpFn
 where
-    F: for<'a> Function<[&'a CxxVector<array>; 3], Output=UniquePtr<CxxVector<array>>> + 'static,
+    F: for<'a> Function<[&'a CxxVector<array>; 3], Output = UniquePtr<CxxVector<array>>> + 'static,
 {
     fn from(f: F) -> Self {
         Self(Box::new(f))
     }
 }
 
-fn execute_vjp_fn(f: &VjpFn, arg1: &CxxVector<array>, arg2: &CxxVector<array>, arg3: &CxxVector<array>) -> UniquePtr<CxxVector<array>> {
+fn execute_vjp_fn(
+    f: &VjpFn,
+    arg1: &CxxVector<array>,
+    arg2: &CxxVector<array>,
+    arg3: &CxxVector<array>,
+) -> UniquePtr<CxxVector<array>> {
     f.0.execute([arg1, arg2, arg3])
 }
 
@@ -312,8 +322,6 @@ pub mod ffi {
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
-        unsafe fn checkpoint(
-            fun: *const MultiaryFn,
-        ) -> Result<UniquePtr<CxxMultiaryFn>>;
+        unsafe fn checkpoint(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

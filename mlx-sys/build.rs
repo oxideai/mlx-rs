@@ -23,7 +23,6 @@ const FILES_MLX: &[&str] = &[
     "mlx/mlx/transforms.cpp",
     "mlx/mlx/utils.cpp",
     "mlx/mlx/linalg.cpp",
-    "mlx/mlx/backend/metal/metal.h",
 ];
 
 /// Common files to compile for all backends
@@ -138,10 +137,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/types/float16.rs",
     "src/types/bfloat16.rs",
     "src/types/complex64.rs",
-
-    #[cfg(feature = "metal")]
     "src/backend/metal.rs",
-
     "src/device.rs",
     "src/stream.rs",
     "src/fft.rs",

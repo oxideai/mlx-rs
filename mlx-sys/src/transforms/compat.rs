@@ -101,6 +101,22 @@ fn execute_pair_input_single_output_fn(
     f.0.execute([first, second])
 }
 
+#[repr(transparent)]
+pub struct VjpFn(pub Box<dyn for<'a> Function<[&'a CxxVector<array>; 3], Output=UniquePtr<CxxVector<array>>> + 'static>);
+
+impl<F> From<F> for VjpFn
+where
+    F: for<'a> Function<[&'a CxxVector<array>; 3], Output=UniquePtr<CxxVector<array>>> + 'static,
+{
+    fn from(f: F) -> Self {
+        Self(Box::new(f))
+    }
+}
+
+fn execute_vjp_fn(f: &VjpFn, arg1: &CxxVector<array>, arg2: &CxxVector<array>, arg3: &CxxVector<array>) -> UniquePtr<CxxVector<array>> {
+    f.0.execute([arg1, arg2, arg3])
+}
+
 // TODO: change visibility and then re-export
 #[cxx::bridge]
 pub mod ffi {
@@ -125,6 +141,9 @@ pub mod ffi {
         type PairInputSingleOutputFn;
 
         #[namespace = "mlx_cxx"]
+        type VjpFn;
+
+        #[namespace = "mlx_cxx"]
         fn execute_unary_fn(f: &UnaryFn, x: &array) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
@@ -145,6 +164,14 @@ pub mod ffi {
             first: &array,
             second: &array,
         ) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        fn execute_vjp_fn(
+            f: &VjpFn,
+            arg1: &CxxVector<array>,
+            arg2: &CxxVector<array>,
+            arg3: &CxxVector<array>,
+        ) -> UniquePtr<CxxVector<array>>;
     }
 
     unsafe extern "C++" {
@@ -174,7 +201,6 @@ pub mod ffi {
         type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
 
         #[namespace = "mlx_cxx"]
-        #[cxx_name = "compile_multiary_fn"]
         unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
@@ -277,6 +303,12 @@ pub mod ffi {
             f: *const MultiaryFn,
             in_axes: &CxxVector<i32>,
             out_axes: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        #[namespace = "mlx_cxx"]
+        unsafe fn custom_vjp(
+            fun: *const MultiaryFn,
+            fun_vjp: *const VjpFn,
         ) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

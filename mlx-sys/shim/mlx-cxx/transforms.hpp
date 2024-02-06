@@ -5,7 +5,7 @@
 
 #include "rust/cxx.h"
 
-#include "mlx-sys/src/function.rs.h"
+#include "mlx-sys/src/transforms/compat.rs.h"
 
 namespace mlx_cxx
 {
@@ -126,7 +126,7 @@ namespace mlx_cxx
 
     CxxMultiaryFn make_multiary_fn(MultiaryFn* f);
 
-    std::unique_ptr<CxxMultiaryFn> compile_multiary_fn(const MultiaryFn *fun);
+    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun);
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
         const MultiaryFn* fun,
@@ -189,6 +189,10 @@ namespace mlx_cxx
         const MultiaryFn* fun,
         const std::vector<int> &in_axes = {},
         const std::vector<int> &out_axes = {});
+
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        const MultiaryFn* fun,
+        const VjpFn* fun_vjp);
 
     /* -------------------------------------------------------------------------- */
 }

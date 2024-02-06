@@ -2,7 +2,7 @@
 
 #include "mlx-cxx/transforms.hpp"
 
-#include "mlx-sys/src/function.rs.h"
+#include "mlx-sys/src/transforms/compat.rs.h"
 
 #include "rust/cxx.h"
 
@@ -224,7 +224,16 @@ namespace mlx_cxx
         };
     }
 
-    std::unique_ptr<CxxMultiaryFn> compile_multiary_fn(const MultiaryFn *fun)
+    CxxVjpFn make_vjp_fn(const VjpFn *f)
+    {
+        return [fun = std::move(f)](const std::vector<mlx::core::array>& arg1, const std::vector<mlx::core::array>& arg2, const std::vector<mlx::core::array>& arg3)
+        {
+            auto ptr = mlx_cxx::execute_vjp_fn(*fun, arg1, arg2, arg3);
+            return *ptr;
+        };
+    }
+
+    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun)
     {
         return mlx_cxx::compile(make_multiary_fn(fun));
     }
@@ -331,6 +340,15 @@ namespace mlx_cxx
         const std::vector<int> &out_axes)
     {
         return mlx_cxx::vmap(make_multiary_fn(fun), in_axes, out_axes);
+    }
+
+    std::unique_ptr<CxxMultiaryFn> custom_vjp(
+        const MultiaryFn* fun,
+        const VjpFn* fun_vjp)
+    {
+        auto cxx_fun = make_multiary_fn(fun);
+        auto cxx_vjp_fun = make_vjp_fn(fun_vjp);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::custom_vjp(cxx_fun, cxx_vjp_fun));
     }
 
     /* -------------------------------------------------------------------------- */

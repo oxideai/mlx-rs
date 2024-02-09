@@ -109,55 +109,108 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_bool(self: Pin<&mut array>) -> Result<bool>;
+        fn item_mut_bool(self: Pin<&mut array>) -> Result<bool>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_uint8(self: Pin<&mut array>) -> Result<u8>;
+        fn item_mut_uint8(self: Pin<&mut array>) -> Result<u8>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_uint16(self: Pin<&mut array>) -> Result<u16>;
+        fn item_mut_uint16(self: Pin<&mut array>) -> Result<u16>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_uint32(self: Pin<&mut array>) -> Result<u32>;
+        fn item_mut_uint32(self: Pin<&mut array>) -> Result<u32>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_uint64(self: Pin<&mut array>) -> Result<u64>;
+        fn item_mut_uint64(self: Pin<&mut array>) -> Result<u64>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_int8(self: Pin<&mut array>) -> Result<i8>;
+        fn item_mut_int8(self: Pin<&mut array>) -> Result<i8>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_int16(self: Pin<&mut array>) -> Result<i16>;
+        fn item_mut_int16(self: Pin<&mut array>) -> Result<i16>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_int32(self: Pin<&mut array>) -> Result<i32>;
+        fn item_mut_int32(self: Pin<&mut array>) -> Result<i32>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_int64(self: Pin<&mut array>) -> Result<i64>;
+        fn item_mut_int64(self: Pin<&mut array>) -> Result<i64>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_float16(self: Pin<&mut array>) -> Result<float16_t>;
+        fn item_mut_float16(self: Pin<&mut array>) -> Result<float16_t>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_bfloat16(self: Pin<&mut array>) -> Result<bfloat16_t>;
+        fn item_mut_bfloat16(self: Pin<&mut array>) -> Result<bfloat16_t>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_float32(self: Pin<&mut array>) -> Result<f32>;
+        fn item_mut_float32(self: Pin<&mut array>) -> Result<f32>;
 
         #[namespace = "mlx::core"]
         #[cxx_name = "item"]
-        fn item_complex64(self: Pin<&mut array>) -> Result<complex64_t>;
+        fn item_mut_complex64(self: Pin<&mut array>) -> Result<complex64_t>;
+
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_bool(self: &array) -> Result<bool>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint8(self: &array) -> Result<u8>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint16(self: &array) -> Result<u16>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint32(self: &array) -> Result<u32>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_uint64(self: &array) -> Result<u64>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int8(self: &array) -> Result<i8>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int16(self: &array) -> Result<i16>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int32(self: &array) -> Result<i32>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_int64(self: &array) -> Result<i64>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_float16(self: &array) -> Result<float16_t>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_bfloat16(self: &array) -> Result<bfloat16_t>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_float32(self: &array) -> Result<f32>;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "item"]
+        fn item_complex64(self: &array) -> Result<complex64_t>;
 
         #[namespace = "mlx_cxx"]
         fn array_from_slice_bool(slice: &[bool], shape: &CxxVector<i32>) -> UniquePtr<array>;

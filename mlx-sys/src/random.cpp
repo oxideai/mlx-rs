@@ -271,25 +271,38 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> normal(
-        const std::vector<int> &shape,
-        mlx::core::Dtype dtype,
-        const OptionalArray &key,
-        mlx_cxx::StreamOrDevice s)
-    {
-        auto key_std = mlx_cxx::to_std_optional(key);
-        auto array = mlx::core::random::normal(shape, dtype, key_std, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int> &shape,
+    //     mlx::core::Dtype dtype,
+    //     const OptionalArray &key,
+    //     mlx_cxx::StreamOrDevice s)
+    // {
+    //     auto key_std = mlx_cxx::to_std_optional(key);
+    //     auto array = mlx::core::random::normal(shape, dtype, key_std, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    // Default to float32
+    // // Default to float32
+    // std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int> &shape,
+    //     const OptionalArray &key,
+    //     mlx_cxx::StreamOrDevice s)
+    // {
+    //     auto key_std = mlx_cxx::to_std_optional(key);
+    //     auto array = mlx::core::random::normal(shape, key_std, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
+
     std::unique_ptr<mlx::core::array> normal(
-        const std::vector<int> &shape,
+        const std::vector<int>& shape,
+        mlx::core::Dtype dtype,
+        const float loc,
+        const float scale,
         const OptionalArray &key,
         mlx_cxx::StreamOrDevice s)
     {
         auto key_std = mlx_cxx::to_std_optional(key);
-        auto array = mlx::core::random::normal(shape, key_std, s.to_variant());
+        auto array = mlx::core::random::normal(shape, dtype, loc, scale, key_std, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

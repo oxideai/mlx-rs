@@ -193,17 +193,49 @@ namespace mlx_cxx {
         const OptionalArray& key,
         mlx_cxx::StreamOrDevice s = {});
 
+    // std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int>& shape,
+    //     mlx::core::Dtype dtype,
+    //     const OptionalArray& key,
+    //     mlx_cxx::StreamOrDevice s = {});
+
+    // // Default to float32
+    // std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int>& shape,
+    //     const OptionalArray& key,
+    //     mlx_cxx::StreamOrDevice s = {});
+
+    /** Generate samples from the standard normal distribution. */
     std::unique_ptr<mlx::core::array> normal(
         const std::vector<int>& shape,
         mlx::core::Dtype dtype,
-        const OptionalArray& key,
-        mlx_cxx::StreamOrDevice s = {});
+        const float loc,
+        const float scale,
+        const OptionalArray &key,
+        mlx_cxx::StreamOrDevice s);
 
-    // Default to float32
-    std::unique_ptr<mlx::core::array> normal(
-        const std::vector<int>& shape,
-        const OptionalArray& key,
-        mlx_cxx::StreamOrDevice s = {});
+    // // TODO: generate bindings for these overloads?
+    // inline std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int>& shape,
+    //     const float loc,
+    //     const float scale,
+    //     const std::optional<mlx::core::array>& key = std::nullopt,
+    //     StreamOrDevice s = {}) {
+    // return normal(shape, mlx::core::float32, loc, scale, key, s);
+    // }
+    // inline std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int>& shape,
+    //     const mlx::core::Dtype dtype,
+    //     const std::optional<mlx::core::array>& key = std::nullopt,
+    //     StreamOrDevice s = {}) {
+    // return normal(shape, dtype, 0.0, 1.0, key, s);
+    // }
+    // inline std::unique_ptr<mlx::core::array> normal(
+    //     const std::vector<int>& shape,
+    //     const std::optional<mlx::core::array>& key = std::nullopt,
+    //     StreamOrDevice s = {}) {
+    // return normal(shape, mlx::core::float32, 0.0, 1.0, key, s);
+    // }
 
     std::unique_ptr<mlx::core::array> randint(
         const mlx::core::array& low,

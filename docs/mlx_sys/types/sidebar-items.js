@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["bfloat16","complex64","float16"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["default_device","new_device","set_default_device"],"struct":["Device","DeviceType"]};

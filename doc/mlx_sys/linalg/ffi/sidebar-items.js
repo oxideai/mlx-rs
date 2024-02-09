@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["norm","norm_axis","norm_ord","norm_ord_axis","norm_str_ord","norm_str_ord_axis"],"type":["OptionalAxis","StreamOrDevice","array"]};

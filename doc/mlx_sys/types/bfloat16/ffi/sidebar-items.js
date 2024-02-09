@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"type":["bfloat16_t"]};

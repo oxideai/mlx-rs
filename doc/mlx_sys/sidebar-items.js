@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Optional","StreamOrDevice"],"macro":["cxx_vec"],"mod":["array","backend","device","dtype","ffi","fft","linalg","macros","ops","random","stream","transforms","types","utils"]};

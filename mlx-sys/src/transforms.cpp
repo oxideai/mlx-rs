@@ -8,11 +8,6 @@
 
 namespace mlx_cxx
 {
-    std::unique_ptr<CxxMultiaryFn> compile(const CxxMultiaryFn &fun)
-    {
-        return std::make_unique<CxxMultiaryFn>(mlx::core::compile(fun));
-    }
-
     // TODO: should this use a mutable Slice?
     void eval(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs)
     {
@@ -231,11 +226,6 @@ namespace mlx_cxx
             auto ptr = mlx_cxx::execute_vjp_fn(*fun, arg1, arg2, arg3);
             return *ptr;
         };
-    }
-
-    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun)
-    {
-        return mlx_cxx::compile(make_multiary_fn(fun));
     }
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(

@@ -29,6 +29,7 @@ const FILES_MLX: &[&str] = &[
 const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/arg_reduce.cpp",
     "mlx/mlx/backend/common/binary.cpp",
+    "mlx/mlx/backend/common/compiled.cpp",
     "mlx/mlx/backend/common/conv.cpp",
     "mlx/mlx/backend/common/copy.cpp",
     "mlx/mlx/backend/common/erf.cpp",
@@ -126,7 +127,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/utils.cpp",
     "src/linalg.cpp",
     "src/ops.cpp",
-    "src/transforms/transforms.cpp",
+    "src/transforms.cpp",
     "src/random.cpp",
 ];
 
@@ -144,9 +145,10 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/utils.rs",
     "src/linalg.rs",
     "src/ops.rs",
-    "src/transforms/mod.rs",
-    "src/transforms/compat.rs",
+    "src/transforms.rs",
+    "src/compat.rs",
     "src/random.rs",
+    "src/compile.rs",
 ];
 
 fn main() {

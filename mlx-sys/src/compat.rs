@@ -129,7 +129,7 @@ fn execute_vjp_fn(
 
 // TODO: change visibility and then re-export
 #[cxx::bridge]
-pub mod ffi {
+pub(crate) mod ffi {
     extern "C++" {
         include!("mlx/array.h");
 
@@ -185,6 +185,10 @@ pub mod ffi {
     }
 
     unsafe extern "C++" {
+        /* -------------------------------------------------------------------------- */
+        /*                          bindings for transforms.h                         */
+        /* -------------------------------------------------------------------------- */
+
         include!("mlx-cxx/transforms.hpp");
 
         #[namespace = "mlx_cxx"]
@@ -209,9 +213,6 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         #[cxx_name = "SimpleValueAndGradFn"]
         type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
-
-        #[namespace = "mlx_cxx"]
-        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_unary_fn"]
@@ -323,5 +324,14 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         unsafe fn checkpoint(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+
+        /* -------------------------------------------------------------------------- */
+        /*                           bindings for compile.h                           */
+        /* -------------------------------------------------------------------------- */
+
+        include!("mlx-cxx/compile.hpp");
+
+        #[namespace = "mlx_cxx"]
+        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

@@ -33,9 +33,6 @@ namespace mlx_cxx
 
     // int execute_callback(const mlx_cxx::DynFn &f, int args);
 
-    // TODO: add rust version of the following functions
-    std::unique_ptr<CxxMultiaryFn> compile(const CxxMultiaryFn &fun);
-
     void eval(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs);
 
     // TODO: what about the templated eval?
@@ -122,11 +119,11 @@ namespace mlx_cxx
     /*                     Bindings that accept rust funcionts                    */
     /* -------------------------------------------------------------------------- */
 
-    CxxUnaryFn make_unary_fn(UnaryFn* f);
+    CxxUnaryFn make_unary_fn(const UnaryFn* f);
 
-    CxxMultiaryFn make_multiary_fn(MultiaryFn* f);
+    CxxMultiaryFn make_multiary_fn(const MultiaryFn* f);
 
-    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun);
+    CxxVjpFn make_vjp_fn(const VjpFn *f);
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
         const MultiaryFn* fun,

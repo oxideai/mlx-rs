@@ -26,13 +26,6 @@ namespace mlx_cxx
             const std::vector<mlx::core::array>&,
             const std::vector<mlx::core::array>&)>;
 
-    // using ValueAndGradFn = std::function<std::pair<std::vector<mlx::core::array>, std::vector<mlx::core::array>>(
-    //     const std::vector<mlx::core::array> &)>;
-    // using SimpleValueAndGradFn = std::function<std::pair<mlx::core::array, std::vector<mlx::core::array>>(
-    //     const std::vector<mlx::core::array> &)>;
-
-    // int execute_callback(const mlx_cxx::DynFn &f, int args);
-
     void eval(rust::Slice<const std::unique_ptr<mlx::core::array>> outputs);
 
     // TODO: what about the templated eval?

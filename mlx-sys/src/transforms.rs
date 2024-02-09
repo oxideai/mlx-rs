@@ -37,15 +37,6 @@ pub mod ffi {
         #[cxx_name = "SimpleValueAndGradFn"]
         type CxxSimpleValueAndGradFn;
 
-        // #[namespace = "mlx_cxx"]
-        // fn compile(fun: &CxxMultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
-
-        // #[namespace = "mlx::core"]
-        // fn disable_compile();
-
-        // #[namespace = "mlx::core"]
-        // fn enable_compile();
-
         // TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
         #[namespace = "mlx_cxx"]

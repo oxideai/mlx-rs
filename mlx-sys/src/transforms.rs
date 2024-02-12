@@ -135,19 +135,19 @@ pub mod ffi {
     }
 }
 
-pub mod compat {
-    pub mod ffi {
-        pub use crate::compat::{
-            ffi::{
-                checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
-                grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
-                jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
-                value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
-                value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
-                vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
-                CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
-            },
-            MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
-        };
-    }
-}
+// pub mod compat {
+//     pub mod ffi {
+//         pub use crate::compat::{
+//             ffi::{
+//                 checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
+//                 grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
+//                 jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
+//                 value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
+//                 value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
+//                 vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
+//                 CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
+//             },
+//             MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
+//         };
+//     }
+// }

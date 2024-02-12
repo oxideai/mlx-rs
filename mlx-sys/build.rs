@@ -129,6 +129,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/ops.cpp",
     "src/transforms.cpp",
     "src/random.cpp",
+    "src/compile.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[

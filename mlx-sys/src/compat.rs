@@ -187,141 +187,141 @@ pub(crate) mod ffi {
         /*                          bindings for transforms.h                         */
         /* -------------------------------------------------------------------------- */
 
-        // include!("mlx-cxx/transforms.hpp");
+        include!("mlx-cxx/transforms.hpp");
 
-        // #[namespace = "mlx_cxx"]
-        // type CxxUnaryFn = crate::transforms::ffi::CxxUnaryFn;
+        #[namespace = "mlx_cxx"]
+        type CxxUnaryFn = crate::transforms::ffi::CxxUnaryFn;
 
-        // #[namespace = "mlx_cxx"]
-        // type CxxMultiaryFn = crate::transforms::ffi::CxxMultiaryFn;
+        #[namespace = "mlx_cxx"]
+        type CxxMultiaryFn = crate::transforms::ffi::CxxMultiaryFn;
 
-        // #[namespace = "mlx_cxx"]
-        // type CxxMultiInputSingleOutputFn = crate::transforms::ffi::CxxMultiInputSingleOutputFn;
+        #[namespace = "mlx_cxx"]
+        type CxxMultiInputSingleOutputFn = crate::transforms::ffi::CxxMultiInputSingleOutputFn;
 
-        // #[namespace = "mlx_cxx"]
-        // type CxxPairInputSingleOutputFn = crate::transforms::ffi::CxxPairInputSingleOutputFn;
+        #[namespace = "mlx_cxx"]
+        type CxxPairInputSingleOutputFn = crate::transforms::ffi::CxxPairInputSingleOutputFn;
 
-        // #[namespace = "mlx_cxx"]
-        // type CxxSingleInputPairOutputFn = crate::transforms::ffi::CxxSingleInputPairOutputFn;
+        #[namespace = "mlx_cxx"]
+        type CxxSingleInputPairOutputFn = crate::transforms::ffi::CxxSingleInputPairOutputFn;
 
-        // #[namespace = "mlx::core"]
-        // #[cxx_name = "ValueAndGradFn"]
-        // type CxxValueAndGradFn = crate::transforms::ffi::CxxValueAndGradFn;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "ValueAndGradFn"]
+        type CxxValueAndGradFn = crate::transforms::ffi::CxxValueAndGradFn;
 
-        // #[namespace = "mlx::core"]
-        // #[cxx_name = "SimpleValueAndGradFn"]
-        // type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
+        #[namespace = "mlx::core"]
+        #[cxx_name = "SimpleValueAndGradFn"]
+        type CxxSimpleValueAndGradFn = crate::transforms::ffi::CxxSimpleValueAndGradFn;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "vjp_unary_fn"]
-        // unsafe fn vjp(
-        //     f: *const UnaryFn,
-        //     primal: &array,
-        //     cotangent: &array,
-        // ) -> Result<[UniquePtr<array>; 2]>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vjp_unary_fn"]
+        unsafe fn vjp(
+            f: *const UnaryFn,
+            primal: &array,
+            cotangent: &array,
+        ) -> Result<[UniquePtr<array>; 2]>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "vjp_multiary_fn"]
-        // unsafe fn vjp(
-        //     f: *const MultiaryFn,
-        //     primal: &[UniquePtr<array>],
-        //     cotangent: &[UniquePtr<array>],
-        // ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vjp_multiary_fn"]
+        unsafe fn vjp(
+            f: *const MultiaryFn,
+            primal: &[UniquePtr<array>],
+            cotangent: &[UniquePtr<array>],
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "jvp_unary_fn"]
-        // unsafe fn jvp(
-        //     f: *const UnaryFn,
-        //     primal: &array,
-        //     tangent: &array,
-        // ) -> Result<[UniquePtr<array>; 2]>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_unary_fn"]
+        unsafe fn jvp(
+            f: *const UnaryFn,
+            primal: &array,
+            tangent: &array,
+        ) -> Result<[UniquePtr<array>; 2]>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "jvp_multiary_fn"]
-        // unsafe fn jvp(
-        //     f: *const MultiaryFn,
-        //     primal: &[UniquePtr<array>],
-        //     tangent: &[UniquePtr<array>],
-        // ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "jvp_multiary_fn"]
+        unsafe fn jvp(
+            f: *const MultiaryFn,
+            primal: &[UniquePtr<array>],
+            tangent: &[UniquePtr<array>],
+        ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "value_and_grad_multiary_fn_argnums"]
-        // unsafe fn value_and_grad(
-        //     f: *const MultiaryFn,
-        //     argnums: &CxxVector<i32>,
-        // ) -> Result<UniquePtr<CxxValueAndGradFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "value_and_grad_multiary_fn_argnums"]
+        unsafe fn value_and_grad(
+            f: *const MultiaryFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxValueAndGradFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "value_and_grad_multiary_fn_argnum"]
-        // unsafe fn value_and_grad(
-        //     f: *const MultiaryFn,
-        //     argnum: i32,
-        // ) -> Result<UniquePtr<CxxValueAndGradFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "value_and_grad_multiary_fn_argnum"]
+        unsafe fn value_and_grad(
+            f: *const MultiaryFn,
+            argnum: i32,
+        ) -> Result<UniquePtr<CxxValueAndGradFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "value_and_grad_unary_fn"]
-        // unsafe fn value_and_grad(
-        //     f: *const UnaryFn,
-        // ) -> Result<UniquePtr<CxxSingleInputPairOutputFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "value_and_grad_unary_fn"]
+        unsafe fn value_and_grad(
+            f: *const UnaryFn,
+        ) -> Result<UniquePtr<CxxSingleInputPairOutputFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "value_and_grad_multi_input_single_output_fn"]
-        // unsafe fn value_and_grad(
-        //     f: *const MultiInputSingleOutputFn,
-        //     argnums: &CxxVector<i32>,
-        // ) -> Result<UniquePtr<CxxSimpleValueAndGradFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "value_and_grad_multi_input_single_output_fn"]
+        unsafe fn value_and_grad(
+            f: *const MultiInputSingleOutputFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxSimpleValueAndGradFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "grad_multi_input_single_output_fn_argnums"]
-        // unsafe fn grad(
-        //     f: *const MultiInputSingleOutputFn,
-        //     argnums: &CxxVector<i32>,
-        // ) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "grad_multi_input_single_output_fn_argnums"]
+        unsafe fn grad(
+            f: *const MultiInputSingleOutputFn,
+            argnums: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "grad_multi_input_single_output_fn_argnum"]
-        // unsafe fn grad(
-        //     f: *const MultiInputSingleOutputFn,
-        //     argnum: i32,
-        // ) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "grad_multi_input_single_output_fn_argnum"]
+        unsafe fn grad(
+            f: *const MultiInputSingleOutputFn,
+            argnum: i32,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "grad_unary_fn"]
-        // unsafe fn grad(f: *const UnaryFn) -> Result<UniquePtr<CxxUnaryFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "grad_unary_fn"]
+        unsafe fn grad(f: *const UnaryFn) -> Result<UniquePtr<CxxUnaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "vmap_unary_fn"]
-        // unsafe fn vmap(
-        //     f: *const UnaryFn,
-        //     in_axis: i32,
-        //     out_axis: i32,
-        // ) -> Result<UniquePtr<CxxUnaryFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vmap_unary_fn"]
+        unsafe fn vmap(
+            f: *const UnaryFn,
+            in_axis: i32,
+            out_axis: i32,
+        ) -> Result<UniquePtr<CxxUnaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "vmap_pair_input_single_output_fn"]
-        // unsafe fn vmap(
-        //     f: *const PairInputSingleOutputFn,
-        //     in_axis_a: i32,
-        //     in_axis_b: i32,
-        //     out_axis: i32,
-        // ) -> Result<UniquePtr<CxxPairInputSingleOutputFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vmap_pair_input_single_output_fn"]
+        unsafe fn vmap(
+            f: *const PairInputSingleOutputFn,
+            in_axis_a: i32,
+            in_axis_b: i32,
+            out_axis: i32,
+        ) -> Result<UniquePtr<CxxPairInputSingleOutputFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "vmap_multiary_fn"]
-        // unsafe fn vmap(
-        //     f: *const MultiaryFn,
-        //     in_axes: &CxxVector<i32>,
-        //     out_axes: &CxxVector<i32>,
-        // ) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "vmap_multiary_fn"]
+        unsafe fn vmap(
+            f: *const MultiaryFn,
+            in_axes: &CxxVector<i32>,
+            out_axes: &CxxVector<i32>,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // unsafe fn custom_vjp(
-        //     fun: *const MultiaryFn,
-        //     fun_vjp: *const VjpFn,
-        // ) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        unsafe fn custom_vjp(
+            fun: *const MultiaryFn,
+            fun_vjp: *const VjpFn,
+        ) -> Result<UniquePtr<CxxMultiaryFn>>;
 
-        // #[namespace = "mlx_cxx"]
-        // unsafe fn checkpoint(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        unsafe fn checkpoint(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         /* -------------------------------------------------------------------------- */
         /*                           bindings for compile.h                           */
@@ -329,7 +329,7 @@ pub(crate) mod ffi {
 
         // include!("mlx-cxx/compile.hpp");
 
-        // #[namespace = "mlx_cxx"]
-        // unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+        #[namespace = "mlx_cxx"]
+        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

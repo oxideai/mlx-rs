@@ -187,7 +187,8 @@ pub(crate) mod ffi {
         /*                          bindings for transforms.h                         */
         /* -------------------------------------------------------------------------- */
 
-        include!("mlx-cxx/transforms.hpp");
+        // include!("mlx-cxx/transforms.hpp");
+        include!("mlx-cxx/compat.hpp");
 
         #[namespace = "mlx_cxx"]
         type CxxUnaryFn = crate::transforms::ffi::CxxUnaryFn;

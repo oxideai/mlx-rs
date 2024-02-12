@@ -1,5 +1,3 @@
-//! TODO: rename mod to something closer to transforms
-
 use cxx::{CxxVector, UniquePtr};
 
 use crate::array::ffi::array;

@@ -1,5 +1,3 @@
-//! TODO: add bindings to constructors that takes `Primitives`?
-
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {

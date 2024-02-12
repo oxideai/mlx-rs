@@ -62,11 +62,11 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn split(key: &array, s: StreamOrDevice) -> [UniquePtr<array>; 2];
+        fn split(key: &array, s: StreamOrDevice) -> Result<[UniquePtr<array>; 2]>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "split_n"]
-        fn split(key: &array, n: i32, s: StreamOrDevice) -> UniquePtr<array>;
+        fn split(key: &array, n: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // "Can only generate uniform numbers with real floating point type."
         #[namespace = "mlx_cxx"]
@@ -78,96 +78,6 @@ pub mod ffi {
             key: &OptionalArray,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_bool(
-        //     low: bool,
-        //     high: bool,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_uint8(
-        //     low: u8,
-        //     high: u8,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_uint16(
-        //     low: u16,
-        //     high: u16,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_uint32(
-        //     low: u32,
-        //     high: u32,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_uint64(
-        //     low: u64,
-        //     high: u64,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_int8(
-        //     low: i8,
-        //     high: i8,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_int16(
-        //     low: i16,
-        //     high: i16,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_int32(
-        //     low: i32,
-        //     high: i32,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn uniform_int64(
-        //     low: i64,
-        //     high: i64,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn uniform_float16(
@@ -210,20 +120,14 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "normal_with_dtype"]
         fn normal(
             shape: &CxxVector<i32>,
             dtype: Dtype,
+            loc: f32,
+            scale: f32,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
-
-        #[namespace = "mlx_cxx"]
-        fn normal(
-            shape: &CxxVector<i32>,
-            key: &OptionalArray,
-            s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         // "[randint] randint only accepts integer dtypes and bool."
         #[namespace = "mlx_cxx"]
@@ -326,46 +230,6 @@ pub mod ffi {
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
-        // #[namespace = "mlx_cxx"]
-        // fn randint_float16(
-        //     low: float16_t,
-        //     high: float16_t,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn randint_bfloat16(
-        //     low: bfloat16_t,
-        //     high: bfloat16_t,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn randint_float32(
-        //     low: f32,
-        //     high: f32,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn randint_complex64(
-        //     low: complex64_t,
-        //     high: complex64_t,
-        //     shape: &CxxVector<i32>,
-        //     dtype: Dtype,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
         // "[bernoulli] bernoulli probability `p` must be a float type."
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli_with_shape"]
@@ -381,69 +245,6 @@ pub mod ffi {
         fn bernoulli(p: &array, key: &OptionalArray, s: StreamOrDevice)
             -> Result<UniquePtr<array>>;
 
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_bool(
-        //     p: bool,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_uint8(
-        //     p: u8,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_uint16(
-        //     p: u16,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_uint32(
-        //     p: u32,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_uint64(
-        //     p: u64,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_int8(
-        //     p: i8,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_int16(
-        //     p: i16,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_int32(
-        //     p: i32,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // fn bernoulli_int64(
-        //     p: i64,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
         #[namespace = "mlx_cxx"]
         fn bernoulli_float16(
             p: float16_t,
@@ -471,87 +272,6 @@ pub mod ffi {
             key: &OptionalArray,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_bool"]
-        // fn bernoulli_bool(
-        //     p: bool,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_uint8"]
-        // fn bernoulli_uint8(
-        //     p: u8,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_uint16"]
-        // fn bernoulli_uint16(
-        //     p: u16,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_uint32"]
-        // fn bernoulli_uint32(
-        //     p: u32,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_uint64"]
-        // fn bernoulli_uint64(
-        //     p: u64,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_int8"]
-        // fn bernoulli_int8(
-        //     p: i8,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_int16"]
-        // fn bernoulli_int16(
-        //     p: i16,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_int32"]
-        // fn bernoulli_int32(
-        //     p: i32,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
-
-        // #[namespace = "mlx_cxx"]
-        // #[rust_name = "bernoulli_with_shape_int64"]
-        // fn bernoulli_int64(
-        //     p: i64,
-        //     shape: &CxxVector<i32>,
-        //     key: &OptionalArray,
-        //     s: StreamOrDevice,
-        // ) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli_with_shape_float16"]
@@ -560,7 +280,7 @@ pub mod ffi {
             shape: &CxxVector<i32>,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli_with_shape_bfloat16"]
@@ -569,7 +289,7 @@ pub mod ffi {
             shape: &CxxVector<i32>,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli_with_shape_float32"]
@@ -578,7 +298,7 @@ pub mod ffi {
             shape: &CxxVector<i32>,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "bernoulli_with_shape_complex64"]
@@ -587,7 +307,7 @@ pub mod ffi {
             shape: &CxxVector<i32>,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         // TODO: ignore bernoulli with 0.5 probability for now
 
@@ -617,7 +337,7 @@ pub mod ffi {
             dtype: Dtype,
             key: &OptionalArray,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "categorical_with_shape"]

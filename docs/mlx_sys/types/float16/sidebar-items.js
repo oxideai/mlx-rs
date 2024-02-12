@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["ffi"],"struct":["float16_t"]};

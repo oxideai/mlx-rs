@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["execute_multiary_fn","execute_unary_fn"],"mod":["ffi"],"struct":["MultiInputSingleOutputFn","MultiaryFn","PairInputSingleOutputFn","UnaryFn","VjpFn"],"trait":["Function"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["default_stream","new_stream","set_default_stream"],"struct":["Stream"],"type":["Device"]};

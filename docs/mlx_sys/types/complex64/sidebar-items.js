@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["ffi"],"struct":["complex64_t"]};

@@ -1,5 +1,3 @@
-//! TODO: auto-generate this file from mlx/ops.h
-
 #include "mlx/ops.h"
 
 #include "mlx-cxx/ops.hpp"

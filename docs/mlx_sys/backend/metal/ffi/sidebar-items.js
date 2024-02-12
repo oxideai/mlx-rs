@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["cache_enabled","is_available","set_cache_enabled"]};

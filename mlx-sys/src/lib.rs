@@ -61,5 +61,7 @@ pub mod stream;
 pub mod transforms;
 pub mod types;
 pub mod utils;
+pub mod compat;
+pub mod compile;
 
 pub mod macros;

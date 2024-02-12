@@ -2,7 +2,7 @@ use mlx_sys::{array::ffi::*, cxx_vec, dtype::ffi::Val, ops::ffi::add};
 
 #[test]
 fn test_array_new_bool() {
-    let mut array = array_new_bool(false);
+    let array = array_new_bool(false);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -15,7 +15,7 @@ fn test_array_new_bool() {
 
 #[test]
 fn test_array_new_i8() {
-    let mut array = array_new_i8(1);
+    let array = array_new_i8(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -28,7 +28,7 @@ fn test_array_new_i8() {
 
 #[test]
 fn test_array_new_i16() {
-    let mut array = array_new_i16(1);
+    let array = array_new_i16(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -41,7 +41,7 @@ fn test_array_new_i16() {
 
 #[test]
 fn test_array_new_i32() {
-    let mut array = array_new_i32(1);
+    let array = array_new_i32(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -54,7 +54,7 @@ fn test_array_new_i32() {
 
 #[test]
 fn test_array_new_i64() {
-    let mut array = array_new_i64(1);
+    let array = array_new_i64(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -67,7 +67,7 @@ fn test_array_new_i64() {
 
 #[test]
 fn test_array_new_u8() {
-    let mut array = array_new_u8(1);
+    let array = array_new_u8(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -80,7 +80,7 @@ fn test_array_new_u8() {
 
 #[test]
 fn test_array_new_u16() {
-    let mut array = array_new_u16(1);
+    let array = array_new_u16(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -93,7 +93,7 @@ fn test_array_new_u16() {
 
 #[test]
 fn test_array_new_u32() {
-    let mut array = array_new_u32(1);
+    let array = array_new_u32(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -106,7 +106,7 @@ fn test_array_new_u32() {
 
 #[test]
 fn test_array_new_u64() {
-    let mut array = array_new_u64(1);
+    let array = array_new_u64(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -119,7 +119,7 @@ fn test_array_new_u64() {
 
 #[test]
 fn test_array_new_f32() {
-    let mut array = array_new_f32(1.0);
+    let array = array_new_f32(1.0);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -133,7 +133,7 @@ fn test_array_new_f32() {
 #[test]
 fn test_array_new_f16() {
     let val = mlx_sys::types::float16::float16_t { bits: 0x00 };
-    let mut array = array_new_f16(val);
+    let array = array_new_f16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -147,7 +147,7 @@ fn test_array_new_f16() {
 #[test]
 fn test_array_new_bf16() {
     let val = mlx_sys::types::bfloat16::bfloat16_t { bits: 0x00 };
-    let mut array = array_new_bf16(val);
+    let array = array_new_bf16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -161,7 +161,7 @@ fn test_array_new_bf16() {
 #[test]
 fn test_array_new_c64() {
     let val = mlx_sys::types::complex64::complex64_t { re: 0.0, im: 0.0 };
-    let mut array = array_new_c64(val);
+    let array = array_new_c64(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 

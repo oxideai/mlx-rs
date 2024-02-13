@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mlx/compile.h"
+
 #include "mlx-cxx/functions.hpp"
 
 #include "mlx-sys/src/compat.rs.h"

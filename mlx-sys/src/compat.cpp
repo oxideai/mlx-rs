@@ -1,4 +1,5 @@
 #include "mlx-cxx/transforms.hpp"
+#include "mlx-cxx/compile.hpp"
 #include "mlx-cxx/compat.hpp"
 
 namespace mlx_cxx
@@ -175,6 +176,7 @@ namespace mlx_cxx
     /* -------------------------------------------------------------------------- */
 
     std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun) {
-        throw std::runtime_error("Not implemented");
+        auto cxx_fun = make_multiary_fn(fun);
+        return std::make_unique<CxxMultiaryFn>(mlx::core::compile(cxx_fun));
     }
 }

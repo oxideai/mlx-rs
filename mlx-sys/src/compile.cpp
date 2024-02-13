@@ -3,10 +3,7 @@
 
 namespace mlx_cxx {
     std::unique_ptr<CxxMultiaryFn> compile(const CxxMultiaryFn &fun) {
-        throw std::runtime_error("Not implemented");
-    }
-
-    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun) {
-        throw std::runtime_error("Not implemented");
+        auto ret = mlx::core::compile(fun);
+        return std::make_unique<CxxMultiaryFn>(std::move(ret));
     }
 }

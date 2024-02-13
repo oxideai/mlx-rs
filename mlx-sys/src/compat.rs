@@ -187,7 +187,8 @@ pub(crate) mod ffi {
         /*                          bindings for transforms.h                         */
         /* -------------------------------------------------------------------------- */
 
-        include!("mlx-cxx/transforms.hpp");
+        // include!("mlx-cxx/transforms.hpp");
+        include!("mlx-cxx/compat.hpp");
 
         #[namespace = "mlx_cxx"]
         type CxxUnaryFn = crate::transforms::ffi::CxxUnaryFn;
@@ -327,7 +328,7 @@ pub(crate) mod ffi {
         /*                           bindings for compile.h                           */
         /* -------------------------------------------------------------------------- */
 
-        include!("mlx-cxx/compile.hpp");
+        // include!("mlx-cxx/compile.hpp");
 
         #[namespace = "mlx_cxx"]
         unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;

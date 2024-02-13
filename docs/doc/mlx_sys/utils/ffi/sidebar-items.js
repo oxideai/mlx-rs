@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["broadcast_shapes","is_same_shape","normalize_axis","push_back_array","result_type"],"type":["Dtype","array"]};

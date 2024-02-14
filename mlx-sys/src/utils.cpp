@@ -33,4 +33,21 @@ namespace mlx_cxx {
         std::unique_ptr<T> item) {
         vec.push_back(*item);
     }
+
+    template<typename T>
+    std::unique_ptr<T> pop_opaque(
+        std::vector<T>& vec) {
+        auto item = vec.pop_back();
+        return std::make_unique<T>(item);
+    }
+
+    template<typename T>
+    std::unique_ptr<std::vector<T>> std_vec_from_slice(
+        rust::Slice<const std::unique_ptr<T>> slice) {
+        std::vector<T> vec;
+        for (auto& item : slice) {
+            vec.push_back(*item);
+        }
+        return std::make_unique<std::vector<T>>(vec);
+    }
 }

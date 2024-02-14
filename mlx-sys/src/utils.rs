@@ -28,5 +28,13 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         #[cxx_name = "push_opaque"]
         fn push_back_array(vec: Pin<&mut CxxVector<array>>, array: UniquePtr<array>);
+
+        #[namespace = "mlx_cxx"]
+        #[cxx_name = "pop_opaque"]
+        fn pop_back_array(vec: Pin<&mut CxxVector<array>>) -> UniquePtr<array>;
+
+        #[namespace = "mlx_cxx"]
+        #[cxx_name = "std_vec_from_slice"]
+        fn new_cxx_vec_array_from_slice(slice: &[UniquePtr<array>]) -> UniquePtr<CxxVector<array>>;
     }
 }

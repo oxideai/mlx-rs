@@ -20,4 +20,12 @@ namespace mlx_cxx {
     void push_opaque(
         std::vector<T>& vec,
         std::unique_ptr<T> item);
+
+    template<typename T>
+    std::unique_ptr<T> pop_opaque(
+        std::vector<T>& vec);
+
+    template<typename T>
+    std::unique_ptr<std::vector<T>> std_vec_from_slice(
+        rust::Slice<const std::unique_ptr<T>> slice);
 }

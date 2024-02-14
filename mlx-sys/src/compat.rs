@@ -225,8 +225,8 @@ pub(crate) mod ffi {
         #[rust_name = "vjp_multiary_fn"]
         unsafe fn vjp(
             f: *const MultiaryFn,
-            primal: &[UniquePtr<array>],
-            cotangent: &[UniquePtr<array>],
+            primal: &CxxVector<array>,
+            cotangent: &CxxVector<array>,
         ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
@@ -241,8 +241,8 @@ pub(crate) mod ffi {
         #[rust_name = "jvp_multiary_fn"]
         unsafe fn jvp(
             f: *const MultiaryFn,
-            primal: &[UniquePtr<array>],
-            tangent: &[UniquePtr<array>],
+            primal: &CxxVector<array>,
+            tangent: &CxxVector<array>,
         ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]

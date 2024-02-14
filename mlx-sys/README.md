@@ -3,6 +3,10 @@
 DO NOT USE. This is an experimental crate for testing right now, and it is not intended
 to be used directly. A separate safe wrapper crate will be created in the future.
 
+---
+
+- [Documentation](https://minghuaw.github.io/mlx-rs/doc/mlx_sys/)
+
 ## Exception and Result
 
 The overall strategy for catching exceptions and turning them into Rust errors is

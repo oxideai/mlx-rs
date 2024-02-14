@@ -40,14 +40,14 @@ pub mod ffi {
         // TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
         #[namespace = "mlx_cxx"]
-        fn eval(outputs: &[UniquePtr<array>]) -> Result<()>;
+        fn eval(outputs: &CxxVector<array>) -> Result<()>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_multiary_cxx_fn"]
         fn vjp(
             f: &CxxMultiaryFn,
-            primals: &[UniquePtr<array>],
-            cotangents: &[UniquePtr<array>],
+            primals: &CxxVector<array>,
+            cotangents: &CxxVector<array>,
         ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
@@ -58,8 +58,8 @@ pub mod ffi {
         #[rust_name = "jvp_multiary_cxx_fn"]
         fn jvp(
             f: &CxxMultiaryFn,
-            primals: &[UniquePtr<array>],
-            tangents: &[UniquePtr<array>],
+            primals: &CxxVector<array>,
+            tangents: &CxxVector<array>,
         ) -> Result<[UniquePtr<CxxVector<array>>; 2]>;
 
         #[namespace = "mlx_cxx"]
@@ -135,19 +135,19 @@ pub mod ffi {
     }
 }
 
-// pub mod compat {
-//     pub mod ffi {
-//         pub use crate::compat::{
-//             ffi::{
-//                 checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
-//                 grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
-//                 jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
-//                 value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
-//                 value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
-//                 vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
-//                 CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
-//             },
-//             MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
-//         };
-//     }
-// }
+pub mod compat {
+    pub mod ffi {
+        pub use crate::compat::{
+            ffi::{
+                checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
+                grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
+                jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
+                value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
+                value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
+                vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
+                CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
+            },
+            MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
+        };
+    }
+}

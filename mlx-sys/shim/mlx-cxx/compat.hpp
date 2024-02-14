@@ -29,8 +29,8 @@ namespace mlx_cxx
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> vjp(
         const MultiaryFn* fun,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> cotangents);
+        const std::vector<mlx::core::array> &primals,
+        const std::vector<mlx::core::array> &cotangents);
 
     std::array<std::unique_ptr<mlx::core::array>, 2> vjp(
         const UnaryFn* fun,
@@ -39,8 +39,8 @@ namespace mlx_cxx
 
     std::array<std::unique_ptr<std::vector<mlx::core::array>>, 2> jvp(
         const MultiaryFn* fun,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> primals,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> tangents);
+        const std::vector<mlx::core::array> &primals,
+        const std::vector<mlx::core::array> &tangents);
 
     std::array<std::unique_ptr<mlx::core::array>, 2> jvp(
         const UnaryFn* fun,

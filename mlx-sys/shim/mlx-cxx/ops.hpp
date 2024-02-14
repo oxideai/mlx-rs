@@ -470,14 +470,14 @@ namespace mlx_cxx
 
     /** Concatenate arrays along a given axis. */
     std::unique_ptr<mlx::core::array> concatenate(
-        rust::Slice<const std::unique_ptr<mlx::core::array>> arrays,
+        const std::vector<mlx::core::array>& arrays,
         int axis,
         mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> concatenate(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> concatenate(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Stack arrays along a new axis. */
-    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, int axis, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, int axis, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Repeat an std::unique_ptr<mlx::core::array> along an axis. */
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, int axis, mlx_cxx::StreamOrDevice s = {});
@@ -552,7 +552,7 @@ namespace mlx_cxx
 
     /** Broadcast a vector of arrays against one another. */
     std::unique_ptr<std::vector<mlx::core::array>> broadcast_arrays(
-        rust::Slice<const std::unique_ptr<mlx::core::array>> inputs,
+        const std::vector<mlx::core::array>& inputs,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Comparison operations */
@@ -1176,7 +1176,7 @@ namespace mlx_cxx
     /** Gather std::unique_ptr<mlx::core::array> entries given indices and slices */
     std::unique_ptr<mlx::core::array> gather(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const std::vector<int> &axes,
         const std::vector<int> &slice_sizes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1211,7 +1211,7 @@ namespace mlx_cxx
     /** Scatter updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1229,7 +1229,7 @@ namespace mlx_cxx
     /** Scatter and add updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_add(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1247,7 +1247,7 @@ namespace mlx_cxx
     /** Scatter and prod updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_prod(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1265,7 +1265,7 @@ namespace mlx_cxx
     /** Scatter and max updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_max(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1282,7 +1282,7 @@ namespace mlx_cxx
     /** Scatter and min updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_min(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});

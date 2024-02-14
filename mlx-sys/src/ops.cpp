@@ -304,48 +304,28 @@ namespace mlx_cxx
 
     /** Concatenate arrays along a given axis. */
     std::unique_ptr<mlx::core::array> concatenate(
-        rust::Slice<const std::unique_ptr<mlx::core::array>> arrays,
+        const std::vector<mlx::core::array>& arrays,
         int axis,
         mlx_cxx::StreamOrDevice s)
     {
-        std::vector<mlx::core::array> copy_constructed_arrays;
-        for (auto &array : arrays)
-        {
-            copy_constructed_arrays.push_back(*array);
-        }
-        auto array = mlx::core::concatenate(copy_constructed_arrays, axis, s.to_variant());
+        auto array = mlx::core::concatenate(arrays, axis, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> concatenate(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> concatenate(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_arrays = std::vector<mlx::core::array>();
-        for (auto &array : arrays)
-        {
-            copy_constructed_arrays.push_back(*array);
-        }
-        auto array = mlx::core::concatenate(copy_constructed_arrays, s.to_variant());
+        auto array = mlx::core::concatenate(arrays, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Stack arrays along a new axis. */
-    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, int axis, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, int axis, mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_arrays = std::vector<mlx::core::array>();
-        for (auto &array : arrays)
-        {
-            copy_constructed_arrays.push_back(*array);
-        }
-        auto array = mlx::core::stack(copy_constructed_arrays, axis, s.to_variant());
+        auto array = mlx::core::stack(arrays, axis, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
-    std::unique_ptr<mlx::core::array> stack(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_arrays = std::vector<mlx::core::array>();
-        for (auto &array : arrays)
-        {
-            copy_constructed_arrays.push_back(*array);
-        }
-        auto array = mlx::core::stack(copy_constructed_arrays, s.to_variant());
+        auto array = mlx::core::stack(arrays, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -464,15 +444,10 @@ namespace mlx_cxx
 
     /** Broadcast a vector of arrays against one another. */
     std::unique_ptr<std::vector<mlx::core::array>> broadcast_arrays(
-        rust::Slice<const std::unique_ptr<mlx::core::array>> inputs,
+        const std::vector<mlx::core::array>& inputs,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_inputs = std::vector<mlx::core::array>();
-        for (auto &input : inputs)
-        {
-            copy_constructed_inputs.push_back(*input);
-        }
-        auto arrays = mlx::core::broadcast_arrays(copy_constructed_inputs, s.to_variant());
+        auto arrays = mlx::core::broadcast_arrays(inputs, s.to_variant());
         return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 
@@ -1293,17 +1268,12 @@ namespace mlx_cxx
     /** Gather std::unique_ptr<mlx::core::array> entries given indices and slices */
     std::unique_ptr<mlx::core::array> gather(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const std::vector<int> &axes,
         const std::vector<int> &slice_sizes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::gather(a, copy_constructed_indices, axes, slice_sizes, s.to_variant());
+        auto array = mlx::core::gather(a, indices, axes, slice_sizes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1339,85 +1309,60 @@ namespace mlx_cxx
     /** Scatter updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::scatter(a, copy_constructed_indices, updates, axes, s.to_variant());
+        auto array = mlx::core::scatter(a, indices, updates, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Scatter and add updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_add(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::scatter_add(a, copy_constructed_indices, updates, axes, s.to_variant());
+        auto array = mlx::core::scatter_add(a, indices, updates, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Scatter and prod updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_prod(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::scatter_prod(a, copy_constructed_indices, updates, axes, s.to_variant());
+        auto array = mlx::core::scatter_prod(a, indices, updates, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Scatter and max updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_max(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::scatter_max(a, copy_constructed_indices, updates, axes, s.to_variant());
+        auto array = mlx::core::scatter_max(a, indices, updates, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Scatter and min updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_min(
         const mlx::core::array &a,
-        rust::Slice<const std::unique_ptr<mlx::core::array>> indices,
+        const std::vector<mlx::core::array>& indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s)
     {
-        auto copy_constructed_indices = std::vector<mlx::core::array>();
-        for (auto &i : indices)
-        {
-            copy_constructed_indices.push_back(*i);
-        }
-        auto array = mlx::core::scatter_min(a, copy_constructed_indices, updates, axes, s.to_variant());
+        auto array = mlx::core::scatter_min(a, indices, updates, axes, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

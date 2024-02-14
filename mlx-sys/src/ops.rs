@@ -484,24 +484,24 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         #[rust_name = "concatenate_along_axis"]
         fn concatenate(
-            arrays: &[UniquePtr<array>],
+            arrays: &CxxVector<array>,
             axis: i32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn concatenate(arrays: &[UniquePtr<array>], s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn concatenate(arrays: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "stack_along_axis"]
         fn stack(
-            arrays: &[UniquePtr<array>],
+            arrays: &CxxVector<array>,
             axis: i32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn stack(arrays: &[UniquePtr<array>], s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn stack(arrays: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "repeat_along_axis"]
@@ -595,7 +595,7 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         fn broadcast_arrays(
-            inputs: &[UniquePtr<array>],
+            inputs: &CxxVector<array>,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<CxxVector<array>>>;
 
@@ -1084,7 +1084,7 @@ pub mod ffi {
         #[rust_name = "gather_along_axes"]
         fn gather(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             axes: &CxxVector<i32>,
             slice_sizes: &CxxVector<i32>,
             s: StreamOrDevice,
@@ -1127,7 +1127,7 @@ pub mod ffi {
         #[rust_name = "scatter_along_axes"]
         fn scatter(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
@@ -1147,7 +1147,7 @@ pub mod ffi {
         #[rust_name = "scatter_add_along_axes"]
         fn scatter_add(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
@@ -1167,7 +1167,7 @@ pub mod ffi {
         #[rust_name = "scatter_prod_along_axes"]
         fn scatter_prod(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
@@ -1187,7 +1187,7 @@ pub mod ffi {
         #[rust_name = "scatter_max_along_axes"]
         fn scatter_max(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,
@@ -1207,7 +1207,7 @@ pub mod ffi {
         #[rust_name = "scatter_min_along_axes"]
         fn scatter_min(
             a: &array,
-            indices: &[UniquePtr<array>],
+            indices: &CxxVector<array>,
             updates: &array,
             axes: &CxxVector<i32>,
             s: StreamOrDevice,

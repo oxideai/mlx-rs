@@ -34,8 +34,8 @@ pub mod ffi {
     }
 }
 
-// pub mod compat {
-//     pub mod ffi {
-//         pub use crate::compat::{ffi::compile, ffi::CxxMultiaryFn, MultiaryFn};
-//     }
-// }
+pub mod compat {
+    pub mod ffi {
+        pub use crate::compat::{ffi::compile, ffi::CxxMultiaryFn, MultiaryFn};
+    }
+}

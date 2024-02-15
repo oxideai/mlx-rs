@@ -1,12 +1,12 @@
 [package]
 name = "mlx-sys"
-version = "0.2.0-alpha.1"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 description = "Rust bindings for mlx"
 readme = "README.md"
 authors = ["Minghua Wu"]
-license = "MIT"
-repository = "https://github.com/minghuaw/mlx-rs"
+license.workspace = true
+repository.workspace = true
 homepage = "https://github.com/minghuaw/mlx-rs"
 documentation = "https://minghuaw.github.io/mlx-rs/doc/mlx_sys/"
 

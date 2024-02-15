@@ -6,3 +6,9 @@ members = [
     "mlx-rs",
     "mlx-sys",
 ]
+
+[workspace.package]
+version = "0.2.0-alpha.1"
+edition = "2021"
+repository = "https://github.com/minghuaw/mlx-rs"
+license = "MIT"

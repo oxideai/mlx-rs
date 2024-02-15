@@ -28,6 +28,15 @@ impl<T> Default for Optional<T> {
     }
 }
 
+impl<T> From<Option<T>> for Optional<T> {
+    fn from(opt: Option<T>) -> Self {
+        match opt {
+            Some(t) => Self::Some(t),
+            None => Self::None,
+        }
+    }
+}
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {

@@ -48,16 +48,16 @@ namespace mlx_cxx {
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> norm_str_ord_axis(
-        const mlx::core::array& a,
-        const std::string& ord,
-        int axis,
-        bool keepdims,
-        mlx_cxx::StreamOrDevice s)
-    {
-        auto array = mlx::core::linalg::norm(a, ord, axis, keepdims, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> norm_str_ord_axis(
+    //     const mlx::core::array& a,
+    //     const std::string& ord,
+    //     int axis,
+    //     bool keepdims,
+    //     mlx_cxx::StreamOrDevice s)
+    // {
+    //     auto array = mlx::core::linalg::norm(a, ord, axis, keepdims, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
     std::unique_ptr<mlx::core::array> norm(
         const mlx::core::array& a,

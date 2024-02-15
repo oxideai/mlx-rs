@@ -51,14 +51,14 @@ pub mod ffi {
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
-        #[namespace = "mlx_cxx"]
-        fn norm_str_ord_axis(
-            a: &array,
-            ord: &CxxString,
-            axis: i32,
-            keepdims: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
+        // #[namespace = "mlx_cxx"]
+        // fn norm_str_ord_axis(
+        //     a: &array,
+        //     ord: &CxxString,
+        //     axis: i32,
+        //     keepdims: bool,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn norm(
@@ -77,19 +77,3 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::cxx_vec;
-
-//     #[test]
-//     fn test_norm_optional_axis() {
-//         let slice = &[1.0, 2.0, 3.0];
-//         let shape = cxx_vec![3];
-//         let a = crate::array::ffi::array_from_slice_float32(slice, &shape);
-//         let norm =
-//             super::ffi::norm(&a, &super::Optional::None, false, Default::default());
-
-//         assert_eq!(norm.size(), 1);
-//     }
-// }

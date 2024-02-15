@@ -31,12 +31,12 @@ namespace mlx_cxx
         bool keepdims = false,
         StreamOrDevice s = {});
 
-    std::unique_ptr<mlx::core::array> norm_str_ord_axis(
-        const mlx::core::array& a,
-        const std::string& ord,
-        int axis,
-        bool keepdims = false,
-        StreamOrDevice s = {});
+    // std::unique_ptr<mlx::core::array> norm_str_ord_axis(
+    //     const mlx::core::array& a,
+    //     const std::string& ord,
+    //     int axis,
+    //     bool keepdims = false,
+    //     StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> norm(
         const mlx::core::array& a,

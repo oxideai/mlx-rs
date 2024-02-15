@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["ffi"]};
+window.SIDEBAR_ITEMS = {"mod":["compat","ffi"]};

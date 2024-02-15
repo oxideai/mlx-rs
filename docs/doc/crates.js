@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["mlx_sys"];
+window.ALL_CRATES = ["cxx","cxxbridge_macro","libc","link_cplusplus","mlx_sys","proc_macro2","quote","syn","unicode_ident"];

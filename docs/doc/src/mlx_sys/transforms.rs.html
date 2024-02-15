@@ -193,14 +193,14 @@
         <span class="comment">// TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
         </span><span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
-        </span><span class="kw">fn </span>eval(outputs: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+        </span><span class="kw">fn </span>eval(outputs: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         #[rust_name = <span class="string">&quot;vjp_multiary_cxx_fn&quot;</span>]
         </span><span class="kw">fn </span>vjp(
             f: <span class="kw-2">&amp;</span>CxxMultiaryFn,
-            primals: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
-            cotangents: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            primals: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
+            cotangents: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;[UniquePtr&lt;CxxVector&lt;array&gt;&gt;; <span class="number">2</span>]&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
@@ -211,8 +211,8 @@
         #[rust_name = <span class="string">&quot;jvp_multiary_cxx_fn&quot;</span>]
         </span><span class="kw">fn </span>jvp(
             f: <span class="kw-2">&amp;</span>CxxMultiaryFn,
-            primals: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
-            tangents: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            primals: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
+            tangents: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;[UniquePtr&lt;CxxVector&lt;array&gt;&gt;; <span class="number">2</span>]&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
@@ -288,20 +288,20 @@
     }
 }
 
-<span class="comment">// pub mod compat {
-//     pub mod ffi {
-//         pub use crate::compat::{
-//             ffi::{
-//                 checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
-//                 grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
-//                 jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
-//                 value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
-//                 value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
-//                 vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
-//                 CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
-//             },
-//             MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
-//         };
-//     }
-// }
-</span></code></pre></div></section></main></body></html>
+<span class="kw">pub mod </span>compat {
+    <span class="kw">pub mod </span>ffi {
+        <span class="kw">pub use </span><span class="kw">crate</span>::compat::{
+            ffi::{
+                checkpoint, custom_vjp, grad_multi_input_single_output_fn_argnum,
+                grad_multi_input_single_output_fn_argnums, grad_unary_fn, jvp_multiary_fn,
+                jvp_unary_fn, value_and_grad_multi_input_single_output_fn,
+                value_and_grad_multiary_fn_argnum, value_and_grad_multiary_fn_argnums,
+                value_and_grad_unary_fn, vjp_multiary_fn, vjp_unary_fn, vmap_multiary_fn,
+                vmap_pair_input_single_output_fn, vmap_unary_fn, CxxMultiInputSingleOutputFn,
+                CxxMultiaryFn, CxxPairInputSingleOutputFn, CxxUnaryFn,
+            },
+            MultiInputSingleOutputFn, MultiaryFn, PairInputSingleOutputFn, UnaryFn, VjpFn,
+        };
+    }
+}
+</code></pre></div></section></main></body></html>

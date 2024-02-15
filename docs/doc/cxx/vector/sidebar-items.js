@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Iter","IterMut"],"trait":["VectorElement"],"type":["Vector"]};

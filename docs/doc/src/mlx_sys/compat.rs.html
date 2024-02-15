@@ -561,8 +561,8 @@
         #[rust_name = <span class="string">&quot;vjp_multiary_fn&quot;</span>]
         </span><span class="kw">unsafe fn </span>vjp(
             f: <span class="kw-2">*const </span>MultiaryFn,
-            primal: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
-            cotangent: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            primal: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
+            cotangent: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;[UniquePtr&lt;CxxVector&lt;array&gt;&gt;; <span class="number">2</span>]&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
@@ -577,8 +577,8 @@
         #[rust_name = <span class="string">&quot;jvp_multiary_fn&quot;</span>]
         </span><span class="kw">unsafe fn </span>jvp(
             f: <span class="kw-2">*const </span>MultiaryFn,
-            primal: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
-            tangent: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            primal: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
+            tangent: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;[UniquePtr&lt;CxxVector&lt;array&gt;&gt;; <span class="number">2</span>]&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]

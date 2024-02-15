@@ -1946,24 +1946,24 @@
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         #[rust_name = <span class="string">&quot;concatenate_along_axis&quot;</span>]
         </span><span class="kw">fn </span>concatenate(
-            arrays: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            arrays: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             axis: i32,
             s: StreamOrDevice,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
-        </span><span class="kw">fn </span>concatenate(arrays: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;], s: StreamOrDevice) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
+        </span><span class="kw">fn </span>concatenate(arrays: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;, s: StreamOrDevice) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         #[rust_name = <span class="string">&quot;stack_along_axis&quot;</span>]
         </span><span class="kw">fn </span>stack(
-            arrays: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            arrays: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             axis: i32,
             s: StreamOrDevice,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
-        </span><span class="kw">fn </span>stack(arrays: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;], s: StreamOrDevice) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
+        </span><span class="kw">fn </span>stack(arrays: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;, s: StreamOrDevice) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;array&gt;&gt;;
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         #[rust_name = <span class="string">&quot;repeat_along_axis&quot;</span>]
@@ -2057,7 +2057,7 @@
 
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         </span><span class="kw">fn </span>broadcast_arrays(
-            inputs: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            inputs: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             s: StreamOrDevice,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;UniquePtr&lt;CxxVector&lt;array&gt;&gt;&gt;;
 
@@ -2546,7 +2546,7 @@
         #[rust_name = <span class="string">&quot;gather_along_axes&quot;</span>]
         </span><span class="kw">fn </span>gather(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             slice_sizes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,
@@ -2589,7 +2589,7 @@
         #[rust_name = <span class="string">&quot;scatter_along_axes&quot;</span>]
         </span><span class="kw">fn </span>scatter(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             updates: <span class="kw-2">&amp;</span>array,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,
@@ -2609,7 +2609,7 @@
         #[rust_name = <span class="string">&quot;scatter_add_along_axes&quot;</span>]
         </span><span class="kw">fn </span>scatter_add(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             updates: <span class="kw-2">&amp;</span>array,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,
@@ -2629,7 +2629,7 @@
         #[rust_name = <span class="string">&quot;scatter_prod_along_axes&quot;</span>]
         </span><span class="kw">fn </span>scatter_prod(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             updates: <span class="kw-2">&amp;</span>array,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,
@@ -2649,7 +2649,7 @@
         #[rust_name = <span class="string">&quot;scatter_max_along_axes&quot;</span>]
         </span><span class="kw">fn </span>scatter_max(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             updates: <span class="kw-2">&amp;</span>array,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,
@@ -2669,7 +2669,7 @@
         #[rust_name = <span class="string">&quot;scatter_min_along_axes&quot;</span>]
         </span><span class="kw">fn </span>scatter_min(
             a: <span class="kw-2">&amp;</span>array,
-            indices: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;],
+            indices: <span class="kw-2">&amp;</span>CxxVector&lt;array&gt;,
             updates: <span class="kw-2">&amp;</span>array,
             axes: <span class="kw-2">&amp;</span>CxxVector&lt;i32&gt;,
             s: StreamOrDevice,

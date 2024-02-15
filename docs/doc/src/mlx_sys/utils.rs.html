@@ -30,6 +30,14 @@
 <a href="#30" id="30">30</a>
 <a href="#31" id="31">31</a>
 <a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cxx::bridge]
 </span><span class="kw">pub mod </span>ffi {
     <span class="kw">unsafe extern </span><span class="string">&quot;C++&quot; </span>{
@@ -60,6 +68,14 @@
         <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
         #[cxx_name = <span class="string">&quot;push_opaque&quot;</span>]
         </span><span class="kw">fn </span>push_back_array(vec: Pin&lt;<span class="kw-2">&amp;mut </span>CxxVector&lt;array&gt;&gt;, array: UniquePtr&lt;array&gt;);
+
+        <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
+        #[cxx_name = <span class="string">&quot;pop_opaque&quot;</span>]
+        </span><span class="kw">fn </span>pop_back_array(vec: Pin&lt;<span class="kw-2">&amp;mut </span>CxxVector&lt;array&gt;&gt;) -&gt; UniquePtr&lt;array&gt;;
+
+        <span class="attr">#[namespace = <span class="string">&quot;mlx_cxx&quot;</span>]
+        #[cxx_name = <span class="string">&quot;std_vec_from_slice&quot;</span>]
+        </span><span class="kw">fn </span>new_cxx_vec_array_from_slice(slice: <span class="kw-2">&amp;</span>[UniquePtr&lt;array&gt;]) -&gt; UniquePtr&lt;CxxVector&lt;array&gt;&gt;;
     }
 }
 </code></pre></div></section></main></body></html>

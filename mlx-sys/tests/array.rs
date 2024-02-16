@@ -14,8 +14,8 @@ fn test_array_new_bool() {
 }
 
 #[test]
-fn test_array_new_i8() {
-    let array = array_new_i8(1);
+fn test_array_new_int8() {
+    let array = array_new_int8(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -27,8 +27,8 @@ fn test_array_new_i8() {
 }
 
 #[test]
-fn test_array_new_i16() {
-    let array = array_new_i16(1);
+fn test_array_new_int16() {
+    let array = array_new_int16(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -40,8 +40,8 @@ fn test_array_new_i16() {
 }
 
 #[test]
-fn test_array_new_i32() {
-    let array = array_new_i32(1);
+fn test_array_new_int32() {
+    let array = array_new_int32(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -53,8 +53,8 @@ fn test_array_new_i32() {
 }
 
 #[test]
-fn test_array_new_i64() {
-    let array = array_new_i64(1);
+fn test_array_new_int64() {
+    let array = array_new_int64(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -66,8 +66,8 @@ fn test_array_new_i64() {
 }
 
 #[test]
-fn test_array_new_u8() {
-    let array = array_new_u8(1);
+fn test_array_new_uint8() {
+    let array = array_new_uint8(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -79,8 +79,8 @@ fn test_array_new_u8() {
 }
 
 #[test]
-fn test_array_new_u16() {
-    let array = array_new_u16(1);
+fn test_array_new_uint16() {
+    let array = array_new_uint16(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -92,8 +92,8 @@ fn test_array_new_u16() {
 }
 
 #[test]
-fn test_array_new_u32() {
-    let array = array_new_u32(1);
+fn test_array_new_uint32() {
+    let array = array_new_uint32(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -105,8 +105,8 @@ fn test_array_new_u32() {
 }
 
 #[test]
-fn test_array_new_u64() {
-    let array = array_new_u64(1);
+fn test_array_new_uint64() {
+    let array = array_new_uint64(1);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -118,8 +118,8 @@ fn test_array_new_u64() {
 }
 
 #[test]
-fn test_array_new_f32() {
-    let array = array_new_f32(1.0);
+fn test_array_new_float32() {
+    let array = array_new_float32(1.0);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -131,9 +131,9 @@ fn test_array_new_f32() {
 }
 
 #[test]
-fn test_array_new_f16() {
+fn test_array_new_float16() {
     let val = mlx_sys::types::float16::float16_t { bits: 0x00 };
-    let array = array_new_f16(val);
+    let array = array_new_float16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -145,9 +145,9 @@ fn test_array_new_f16() {
 }
 
 #[test]
-fn test_array_new_bf16() {
+fn test_array_new_bfloat16() {
     let val = mlx_sys::types::bfloat16::bfloat16_t { bits: 0x00 };
-    let array = array_new_bf16(val);
+    let array = array_new_bfloat16(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 
@@ -159,9 +159,9 @@ fn test_array_new_bf16() {
 }
 
 #[test]
-fn test_array_new_c64() {
+fn test_array_new_complex64() {
     let val = mlx_sys::types::complex64::complex64_t { re: 0.0, im: 0.0 };
-    let array = array_new_c64(val);
+    let array = array_new_complex64(val);
     assert!(!array.is_null());
     assert_eq!(array.size(), 1);
 

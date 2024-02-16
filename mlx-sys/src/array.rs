@@ -27,51 +27,51 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_i8(value: i8) -> UniquePtr<array>;
+        fn array_new_int8(value: i8) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_i16(value: i16) -> UniquePtr<array>;
+        fn array_new_int16(value: i16) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_i32(value: i32) -> UniquePtr<array>;
+        fn array_new_int32(value: i32) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_i64(value: i64) -> UniquePtr<array>;
+        fn array_new_int64(value: i64) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_u8(value: u8) -> UniquePtr<array>;
+        fn array_new_uint8(value: u8) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_u16(value: u16) -> UniquePtr<array>;
+        fn array_new_uint16(value: u16) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_u32(value: u32) -> UniquePtr<array>;
+        fn array_new_uint32(value: u32) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_u64(value: u64) -> UniquePtr<array>;
+        fn array_new_uint64(value: u64) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_f32(value: f32) -> UniquePtr<array>;
+        fn array_new_float32(value: f32) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_f16(value: float16_t) -> UniquePtr<array>;
+        fn array_new_float16(value: float16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_bf16(value: bfloat16_t) -> UniquePtr<array>;
+        fn array_new_bfloat16(value: bfloat16_t) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]
-        fn array_new_c64(value: complex64_t) -> UniquePtr<array>;
+        fn array_new_complex64(value: complex64_t) -> UniquePtr<array>;
 
         #[namespace = "mlx::core"]
         fn itemsize(self: &array) -> usize;

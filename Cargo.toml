@@ -12,3 +12,9 @@ version = "0.2.0-alpha.1"
 edition = "2021"
 repository = "https://github.com/minghuaw/mlx-rs"
 license = "MIT"
+
+[workspace.dependencies]
+mlx-sys = { path = "mlx-sys", version = "0.2.0-alpha.1" }
+
+half = "2"
+cxx = "1"

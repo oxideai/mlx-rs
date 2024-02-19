@@ -22,9 +22,10 @@ accelerate = []
 metal = []
 
 [dependencies]
-cxx = "1"
-half = { version = "2", optional = true }
+cxx = { workspace = true}
 libc = "0.2"
+
+half = { workspace = true, optional = true }
 
 [build-dependencies]
 cxx-build = "1"

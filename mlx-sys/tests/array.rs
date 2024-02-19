@@ -383,8 +383,8 @@ fn test_array_dtype() {
 
 #[test]
 fn test_array_eval() {
-    let a = array_new_f32(1.0);
-    let b = array_new_f32(2.0);
+    let a = array_new_float32(1.0);
+    let b = array_new_float32(2.0);
     let mut c = add(&a, &b, Default::default()).unwrap();
     c.pin_mut().eval().unwrap();
     assert_eq!(c.item_float32().unwrap(), 3.0);

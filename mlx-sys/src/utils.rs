@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 #[repr(C, u8)]
 pub enum StreamOrDevice {
     Default,

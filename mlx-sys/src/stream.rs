@@ -1,6 +1,6 @@
 #[cxx::bridge]
 pub mod ffi {
-    #[derive(Clone)]
+    #[derive(Clone, Copy)]
     #[namespace = "mlx::core"]
     pub struct Stream {
         pub index: i32,

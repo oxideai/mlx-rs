@@ -364,11 +364,11 @@ pub mod ffi {
         fn identity(n: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "tri_n_m_k_dtype"]
+        #[rust_name = "tri_n_m_k"]
         fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "tri_n_dtype"]
+        #[rust_name = "tri_n"]
         fn tri(n: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]

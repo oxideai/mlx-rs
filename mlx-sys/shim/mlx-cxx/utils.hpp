@@ -35,16 +35,33 @@ namespace mlx_cxx {
 
     bool is_same_shape(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays);
 
+    // template<typename T>
+    // void push_opaque(
+    //     std::vector<T>& vec,
+    //     std::unique_ptr<T> item);
+
+    // template<typename T>
+    // std::unique_ptr<T> pop_opaque(
+    //     std::vector<T>& vec);
+
+    // template<typename T>
+    // std::unique_ptr<std::vector<T>> std_vec_from_slice(
+    //     rust::Slice<const std::unique_ptr<T>> slice);
+    
     template<typename T>
     void push_opaque(
         std::vector<T>& vec,
-        std::unique_ptr<T> item);
-
-    template<typename T>
-    std::unique_ptr<T> pop_opaque(
-        std::vector<T>& vec);
+        std::unique_ptr<T> item) {
+        vec.push_back(*item);
+    }
 
     template<typename T>
     std::unique_ptr<std::vector<T>> std_vec_from_slice(
-        rust::Slice<const std::unique_ptr<T>> slice);
+        rust::Slice<const std::unique_ptr<T>> slice) {
+        std::vector<T> vec;
+        for (auto& item : slice) {
+            vec.push_back(*item);
+        }
+        return std::make_unique<std::vector<T>>(vec);
+    }
 }

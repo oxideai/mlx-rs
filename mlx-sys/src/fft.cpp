@@ -1,5 +1,6 @@
 #include "mlx-cxx/mlx_cxx.hpp"
 #include "mlx-cxx/fft.hpp"
+#include "mlx-cxx/utils.hpp"
 
 #include "mlx/array.h"
 #include "mlx/device.h"

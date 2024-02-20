@@ -3,6 +3,7 @@
 #include "mlx/linalg.h"
 
 #include "mlx-cxx/mlx_cxx.hpp"
+#include "mlx-cxx/utils.hpp"
 
 namespace mlx_cxx
 {

@@ -12,25 +12,6 @@ namespace mlx_cxx {
         return std::unique_ptr<T>(new T(args...));
     }
 
-    struct StreamOrDevice {
-        enum class Tag: uint8_t {
-            Default,
-            Stream,
-            Device,
-        };
-
-        union Payload {
-            std::monostate default_payload;
-            mlx::core::Stream stream;
-            mlx::core::Device device;
-        };
-
-        Tag tag = Tag::Default;
-        Payload payload = Payload{ std::monostate{} };
-
-        std::variant<std::monostate, mlx::core::Stream, mlx::core::Device> to_variant();
-    };
-
     template <typename T>
     struct Optional {
         enum class Tag: uint8_t {

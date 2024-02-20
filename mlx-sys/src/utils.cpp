@@ -3,6 +3,17 @@
 #include "mlx-cxx/utils.hpp"
 
 namespace mlx_cxx {
+    std::variant<std::monostate, mlx::core::Stream, mlx::core::Device> StreamOrDevice::to_variant() {
+        switch (tag) {
+            case StreamOrDevice::Tag::Default:
+                return payload.default_payload;
+            case StreamOrDevice::Tag::Stream:
+                return payload.stream;
+            case StreamOrDevice::Tag::Device:
+                return payload.device;
+        }
+    }
+
     mlx::core::Dtype result_type(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays) {
         // Create a vector of arrays from the slice using the copy constructor
         std::vector<mlx::core::array> copy_constructed_arrays;

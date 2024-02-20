@@ -6,6 +6,7 @@
 #include "mlx/io/load.h"
 
 #include "mlx-cxx/mlx_cxx.hpp"
+#include "mlx-cxx/utils.hpp"
 
 #include "rust/cxx.h"
 

@@ -1,4 +1,5 @@
 #include "mlx-cxx/fast.hpp"
+#include "mlx-cxx/utils.hpp"
 
 namespace mlx_cxx::fast {
         std::unique_ptr<mlx::core::array> rope(

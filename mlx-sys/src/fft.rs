@@ -1,13 +1,14 @@
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
+        include!("mlx-cxx/utils.hpp");
         include!("mlx-cxx/fft.hpp");
 
         #[namespace = "mlx::core"]
         type array = crate::array::ffi::array;
 
         #[namespace = "mlx_cxx"]
-        type StreamOrDevice = crate::StreamOrDevice;
+        type StreamOrDevice = crate::utils::StreamOrDevice;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "fftn_shape_axes"]

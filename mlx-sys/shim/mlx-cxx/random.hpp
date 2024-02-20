@@ -5,6 +5,7 @@
 #include "mlx/array.h"
 
 #include "mlx-cxx/mlx_cxx.hpp"
+#include "mlx-cxx/utils.hpp"
 
 namespace mlx_cxx {
     using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;

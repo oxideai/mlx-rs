@@ -11,6 +11,11 @@
 #include "mlx/array.h"
 
 namespace mlx_cxx {
+    std::unique_ptr<array> array_empty(mlx::core::Dtype dtype) {
+        auto arr = mlx::core::array({}, dtype);
+        return std::make_unique<array>(arr);
+    }
+
     std::unique_ptr<array> array_from_slice_bool(
         rust::Slice<const bool> slice,
         const std::vector<int>& shape

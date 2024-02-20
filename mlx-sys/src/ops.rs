@@ -19,7 +19,7 @@ pub mod ffi {
         type array = crate::array::ffi::array;
 
         #[namespace = "mlx_cxx"]
-        type StreamOrDevice = crate::StreamOrDevice;
+        type StreamOrDevice = crate::utils::StreamOrDevice;
 
         #[namespace = "mlx::core"]
         type Dtype = crate::dtype::ffi::Dtype;

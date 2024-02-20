@@ -22,7 +22,7 @@ pub mod ffi {
         type OptionalAxis = crate::linalg::OptionalAxis;
 
         #[namespace = "mlx_cxx"]
-        type StreamOrDevice = crate::StreamOrDevice;
+        type StreamOrDevice = crate::utils::StreamOrDevice;
 
         #[namespace = "mlx_cxx"]
         fn norm_ord(

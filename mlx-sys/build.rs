@@ -112,11 +112,13 @@ const METAL_KERNELS: &[&str] = &[
     "quantized",
     "random",
     "reduce",
+    "rope",
     "scan",
     "softmax",
     "sort",
     "unary",
-    "indexing",
+    "gather",
+    "scatter",
 ];
 
 const SHIM_DIR: &str = "shim";

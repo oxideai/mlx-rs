@@ -19,7 +19,7 @@ pub mod ffi {
         type OptionalArray = crate::random::OptionalArray;
 
         #[namespace = "mlx_cxx"]
-        type StreamOrDevice = crate::StreamOrDevice;
+        type StreamOrDevice = crate::utils::StreamOrDevice;
 
         #[namespace = "mlx::core"]
         type Dtype = crate::dtype::ffi::Dtype;

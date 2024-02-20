@@ -8,6 +8,25 @@
 namespace mlx_cxx {
     // TODO: add binding to print format?
 
+    struct StreamOrDevice {
+        enum class Tag: uint8_t {
+            Default,
+            Stream,
+            Device,
+        };
+
+        union Payload {
+            std::monostate default_payload;
+            mlx::core::Stream stream;
+            mlx::core::Device device;
+        };
+
+        Tag tag = Tag::Default;
+        Payload payload = Payload{ std::monostate{} };
+
+        std::variant<std::monostate, mlx::core::Stream, mlx::core::Device> to_variant();
+    };
+
     mlx::core::Dtype result_type(rust::Slice<const std::unique_ptr<mlx::core::array>> arrays);
 
     std::unique_ptr<std::vector<int>> broadcast_shapes(

@@ -1,3 +1,5 @@
+use crate::dtype::ffi::Dtype;
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {
@@ -20,6 +22,9 @@ pub mod ffi {
         // TODO: is uintptr_t always usize?
         #[cxx_name = "size_t"]
         type uintptr_t = libc::uintptr_t;
+
+        #[namespace = "mlx_cxx"]
+        fn array_empty(dtype: Dtype) -> UniquePtr<array>;
 
         #[namespace = "mlx_cxx"]
         #[cxx_name = "new_unique"]

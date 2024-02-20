@@ -85,135 +85,136 @@ namespace mlx_cxx
     //     return full(shape, array(val, dtype), to_stream(s));
     // }
 
-    std::unique_ptr<mlx::core::array> full_bool_val_dtype(
-        const std::vector<int> &shape,
-        bool val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // // This first constructs a scalar array from val and dtype.
+    // std::unique_ptr<mlx::core::array> full_bool_val_dtype(
+    //     const std::vector<int> &shape,
+    //     bool val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_uint8_val_dtype(
-        const std::vector<int> &shape,
-        uint8_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_uint8_val_dtype(
+    //     const std::vector<int> &shape,
+    //     uint8_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_uint16_val_dtype(
-        const std::vector<int> &shape,
-        uint16_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_uint16_val_dtype(
+    //     const std::vector<int> &shape,
+    //     uint16_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_uint32_val_dtype(
-        const std::vector<int> &shape,
-        uint32_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_uint32_val_dtype(
+    //     const std::vector<int> &shape,
+    //     uint32_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_uint64_val_dtype(
-        const std::vector<int> &shape,
-        uint64_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_uint64_val_dtype(
+    //     const std::vector<int> &shape,
+    //     uint64_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_int8_val_dtype(
-        const std::vector<int> &shape,
-        int8_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_int8_val_dtype(
+    //     const std::vector<int> &shape,
+    //     int8_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_int16_val_dtype(
-        const std::vector<int> &shape,
-        int16_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_int16_val_dtype(
+    //     const std::vector<int> &shape,
+    //     int16_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_int32_val_dtype(
-        const std::vector<int> &shape,
-        int32_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_int32_val_dtype(
+    //     const std::vector<int> &shape,
+    //     int32_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_int64_val_dtype(
-        const std::vector<int> &shape,
-        int64_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_int64_val_dtype(
+    //     const std::vector<int> &shape,
+    //     int64_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_float16_val_dtype(
-        const std::vector<int> &shape,
-        mlx::core::float16_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_float16_val_dtype(
+    //     const std::vector<int> &shape,
+    //     mlx::core::float16_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_float32_val_dtype(
-        const std::vector<int> &shape,
-        float val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_float32_val_dtype(
+    //     const std::vector<int> &shape,
+    //     float val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_bfloat16_val_dtype(
-        const std::vector<int> &shape,
-        mlx::core::bfloat16_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_bfloat16_val_dtype(
+    //     const std::vector<int> &shape,
+    //     mlx::core::bfloat16_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
-    std::unique_ptr<mlx::core::array> full_complex64_val_dtype(
-        const std::vector<int> &shape,
-        mlx::core::complex64_t val,
-        mlx::core::Dtype dtype,
-        mlx_cxx::StreamOrDevice s = {})
-    {
-        auto array = mlx::core::full(shape, val, dtype, s.to_variant());
-        return std::make_unique<mlx::core::array>(array);
-    }
+    // std::unique_ptr<mlx::core::array> full_complex64_val_dtype(
+    //     const std::vector<int> &shape,
+    //     mlx::core::complex64_t val,
+    //     mlx::core::Dtype dtype,
+    //     mlx_cxx::StreamOrDevice s = {})
+    // {
+    //     auto array = mlx::core::full(shape, val, dtype, s.to_variant());
+    //     return std::make_unique<mlx::core::array>(array);
+    // }
 
     // template <typename T>
     // std::unique_ptr<mlx::core::array> full(const std::vector<int> &shape, T val, mlx_cxx::StreamOrDevice s = {})
@@ -221,7 +222,7 @@ namespace mlx_cxx
     //     return full(shape, array(val), to_stream(s));
     // }
 
-    std::unique_ptr<mlx::core::array> full_bool_val(
+    std::unique_ptr<mlx::core::array> full_bool(
         const std::vector<int> &shape,
         bool val,
         mlx_cxx::StreamOrDevice s = {})
@@ -230,7 +231,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_uint8_val(
+    std::unique_ptr<mlx::core::array> full_uint8(
         const std::vector<int> &shape,
         uint8_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -239,7 +240,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_uint16_val(
+    std::unique_ptr<mlx::core::array> full_uint16(
         const std::vector<int> &shape,
         uint16_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -248,7 +249,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_uint32_val(
+    std::unique_ptr<mlx::core::array> full_uint32(
         const std::vector<int> &shape,
         uint32_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -257,7 +258,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_uint64_val(
+    std::unique_ptr<mlx::core::array> full_uint64(
         const std::vector<int> &shape,
         uint64_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -266,7 +267,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_int8_val(
+    std::unique_ptr<mlx::core::array> full_int8(
         const std::vector<int> &shape,
         int8_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -275,7 +276,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_int16_val(
+    std::unique_ptr<mlx::core::array> full_int16(
         const std::vector<int> &shape,
         int16_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -284,7 +285,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_int32_val(
+    std::unique_ptr<mlx::core::array> full_int32(
         const std::vector<int> &shape,
         int32_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -293,7 +294,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_int64_val(
+    std::unique_ptr<mlx::core::array> full_int64(
         const std::vector<int> &shape,
         int64_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -302,7 +303,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_float16_val(
+    std::unique_ptr<mlx::core::array> full_float16(
         const std::vector<int> &shape,
         mlx::core::float16_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -311,7 +312,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_float32_val(
+    std::unique_ptr<mlx::core::array> full_float32(
         const std::vector<int> &shape,
         float val,
         mlx_cxx::StreamOrDevice s = {})
@@ -320,7 +321,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_bfloat16_val(
+    std::unique_ptr<mlx::core::array> full_bfloat16(
         const std::vector<int> &shape,
         mlx::core::bfloat16_t val,
         mlx_cxx::StreamOrDevice s = {})
@@ -329,7 +330,7 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
-    std::unique_ptr<mlx::core::array> full_complex64_val(
+    std::unique_ptr<mlx::core::array> full_complex64(
         const std::vector<int> &shape,
         mlx::core::complex64_t val,
         mlx_cxx::StreamOrDevice s = {})

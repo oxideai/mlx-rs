@@ -105,7 +105,7 @@ pub mod ffi {
         fn copy(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "full_vals_dtype"]
+        #[rust_name = "full_dtype"]
         fn full(
             shape: &CxxVector<i32>,
             vals: &array,
@@ -114,203 +114,202 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "full_vals"]
         fn full(
             shape: &CxxVector<i32>,
             vals: &array,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
+        // #[namespace = "mlx_cxx"]
+        // fn full_bool_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: bool,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_uint8_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: u8,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_uint16_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: u16,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_uint32_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: u32,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_uint64_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: u64,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_int8_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: i8,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_int16_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: i16,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_int32_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: i32,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_int64_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: i64,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_float16_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: float16_t,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_bfloat16_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: bfloat16_t,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_float32_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: f32,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
+        // #[namespace = "mlx_cxx"]
+        // fn full_complex64_val_dtype(
+        //     shape: &CxxVector<i32>,
+        //     val: complex64_t,
+        //     dtype: Dtype,
+        //     s: StreamOrDevice,
+        // ) -> Result<UniquePtr<array>>;
+
         #[namespace = "mlx_cxx"]
-        fn full_bool_val_dtype(
+        fn full_bool(
             shape: &CxxVector<i32>,
             val: bool,
-            dtype: Dtype,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_uint8_val_dtype(
-            shape: &CxxVector<i32>,
-            val: u8,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_uint16_val_dtype(
-            shape: &CxxVector<i32>,
-            val: u16,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_uint32_val_dtype(
-            shape: &CxxVector<i32>,
-            val: u32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_uint64_val_dtype(
-            shape: &CxxVector<i32>,
-            val: u64,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_int8_val_dtype(
-            shape: &CxxVector<i32>,
-            val: i8,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_int16_val_dtype(
-            shape: &CxxVector<i32>,
-            val: i16,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_int32_val_dtype(
-            shape: &CxxVector<i32>,
-            val: i32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_int64_val_dtype(
-            shape: &CxxVector<i32>,
-            val: i64,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_float16_val_dtype(
-            shape: &CxxVector<i32>,
-            val: float16_t,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_bfloat16_val_dtype(
-            shape: &CxxVector<i32>,
-            val: bfloat16_t,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_float32_val_dtype(
-            shape: &CxxVector<i32>,
-            val: f32,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_complex64_val_dtype(
-            shape: &CxxVector<i32>,
-            val: complex64_t,
-            dtype: Dtype,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_bool_val(
-            shape: &CxxVector<i32>,
-            val: bool,
-            s: StreamOrDevice,
-        ) -> Result<UniquePtr<array>>;
-
-        #[namespace = "mlx_cxx"]
-        fn full_uint8_val(
+        fn full_uint8(
             shape: &CxxVector<i32>,
             val: u8,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_uint16_val(
+        fn full_uint16(
             shape: &CxxVector<i32>,
             val: u16,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_uint32_val(
+        fn full_uint32(
             shape: &CxxVector<i32>,
             val: u32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_uint64_val(
+        fn full_uint64(
             shape: &CxxVector<i32>,
             val: u64,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_int8_val(
+        fn full_int8(
             shape: &CxxVector<i32>,
             val: i8,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_int16_val(
+        fn full_int16(
             shape: &CxxVector<i32>,
             val: i16,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_int32_val(
+        fn full_int32(
             shape: &CxxVector<i32>,
             val: i32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_int64_val(
+        fn full_int64(
             shape: &CxxVector<i32>,
             val: i64,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_float16_val(
+        fn full_float16(
             shape: &CxxVector<i32>,
             val: float16_t,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_bfloat16_val(
+        fn full_bfloat16(
             shape: &CxxVector<i32>,
             val: bfloat16_t,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_float32_val(
+        fn full_float32(
             shape: &CxxVector<i32>,
             val: f32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn full_complex64_val(
+        fn full_complex64(
             shape: &CxxVector<i32>,
             val: complex64_t,
             s: StreamOrDevice,
@@ -318,23 +317,23 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "zeros_dtype"]
-        fn zeros(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn zeros(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn zeros(shape: &CxxVector<i32>, s: StreamOrDevice) -> UniquePtr<array>;
+        fn zeros(shape: &CxxVector<i32>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn zeros_like(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn zeros_like(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ones_dtype"]
-        fn ones(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn ones(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn ones(shape: &CxxVector<i32>, s: StreamOrDevice) -> UniquePtr<array>;
+        fn ones(shape: &CxxVector<i32>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn ones_like(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn ones_like(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "eye_n_m_k_dtype"]
@@ -359,18 +358,18 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "identity_dtype"]
-        fn identity(n: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn identity(n: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn identity(n: i32, s: StreamOrDevice) -> UniquePtr<array>;
+        fn identity(n: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n_m_k_dtype"]
-        fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n_dtype"]
-        fn tri(n: i32, dtype: Dtype, s: StreamOrDevice) -> UniquePtr<array>;
+        fn tri(n: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn tril(x: UniquePtr<array>, k: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -520,7 +519,7 @@ pub mod ffi {
             arr: &array,
             reps: UniquePtr<CxxVector<i32>>,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "transpose_axes"]
@@ -625,22 +624,22 @@ pub mod ffi {
             b: &array,
             equal_nan: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn array_equal(a: &array, b: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn array_equal(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn isnan(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn isnan(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn isinf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn isinf(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn isposinf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn isposinf(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn isneginf(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn isneginf(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// Renamed to `where_condition` because `where` is a reserved keyword in Rust.
         #[namespace = "mlx_cxx"]
@@ -650,7 +649,7 @@ pub mod ffi {
             x: &array,
             y: &array,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         /// True if all elements in the std::unique_ptr<mlx::core::array> are true (or non-zero).
         #[namespace = "mlx_cxx"]
@@ -740,10 +739,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_keepdims"]
-        fn mean(a: &array, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
+        fn mean(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn mean(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn mean(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_along_axes_keepdims"]
@@ -752,18 +751,18 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_along_axis_keepdims"]
-        fn mean(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
+        fn mean(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_keepdims"]
-        fn var(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice) -> UniquePtr<array>;
+        fn var(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn var(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn var(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_along_axes_keepdims"]
@@ -773,7 +772,7 @@ pub mod ffi {
             keepdims: bool,
             ddof: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_along_axis_keepdims"]
@@ -783,7 +782,7 @@ pub mod ffi {
             keepdims: bool,
             ddof: i32,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "prod_keepdims"]
@@ -927,10 +926,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_keepdims"]
-        fn logsumexp(a: &array, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
+        fn logsumexp(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn logsumexp(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn logsumexp(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_along_axes_keepdims"]
@@ -939,11 +938,11 @@ pub mod ffi {
             axes: &CxxVector<i32>,
             keepdims: bool,
             s: StreamOrDevice,
-        ) -> UniquePtr<array>;
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_along_axis_keepdims"]
-        fn logsumexp(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> UniquePtr<array>;
+        fn logsumexp(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn abs(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -966,7 +965,7 @@ pub mod ffi {
         fn logical_or(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn reciprocal(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn reciprocal(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn add(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -1227,7 +1226,7 @@ pub mod ffi {
         fn sqrt(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn rsqrt(a: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn rsqrt(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axes"]
@@ -1352,7 +1351,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn outer(a: &array, b: &array, s: StreamOrDevice) -> UniquePtr<array>;
+        fn outer(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn inner(a: &array, b: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;

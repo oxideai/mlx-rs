@@ -1,8 +1,8 @@
 #[cxx::bridge]
 pub mod ffi {
+    #[derive(Clone, Copy)]
     #[namespace = "mlx_cxx"]
     #[cxx_name = "DtypeVal"]
-    #[derive(Clone)]
     #[repr(i32)]
     enum Val {
         #[cxx_name = "bool_"]
@@ -45,9 +45,9 @@ pub mod ffi {
         Complex64,
     }
 
+    #[derive(Clone, Copy)]
     #[namespace = "mlx_cxx"]
     #[cxx_name = "DtypeKind"]
-    #[derive(Clone)]
     #[repr(i32)]
     enum Kind {
         #[cxx_name = "b"]
@@ -69,6 +69,7 @@ pub mod ffi {
         Void,
     }
 
+    #[derive(Clone, Copy)]
     #[namespace = "mlx::core"]
     struct Dtype {
         val: Val,

@@ -134,6 +134,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/random.cpp",
     "src/compile.cpp",
     "src/compat.cpp",
+    "src/fast.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
@@ -154,6 +155,7 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/compat.rs",
     "src/random.rs",
     "src/compile.rs",
+    "src/fast.rs",
 ];
 
 fn main() {

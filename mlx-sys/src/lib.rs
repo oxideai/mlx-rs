@@ -72,5 +72,6 @@ pub mod types;
 pub mod utils;
 pub mod compat;
 pub mod compile;
+pub mod fast;
 
 pub mod macros;

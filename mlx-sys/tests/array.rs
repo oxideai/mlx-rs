@@ -7,7 +7,7 @@ fn test_array_new_bool() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::bool_));
+    assert!(matches!(dtype.val, Val::Bool));
 
     let item = array.item_bool().unwrap();
     assert_eq!(item, false);
@@ -20,7 +20,7 @@ fn test_array_new_int8() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int8));
+    assert!(matches!(dtype.val, Val::Int8));
 
     let item = array.item_int8().unwrap();
     assert_eq!(item, 1);
@@ -33,7 +33,7 @@ fn test_array_new_int16() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int16));
+    assert!(matches!(dtype.val, Val::Int16));
 
     let item = array.item_int16().unwrap();
     assert_eq!(item, 1);
@@ -46,7 +46,7 @@ fn test_array_new_int32() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int32));
+    assert!(matches!(dtype.val, Val::Int32));
 
     let item = array.item_int32().unwrap();
     assert_eq!(item, 1);
@@ -59,7 +59,7 @@ fn test_array_new_int64() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int64));
+    assert!(matches!(dtype.val, Val::Int64));
 
     let item = array.item_int64().unwrap();
     assert_eq!(item, 1);
@@ -72,7 +72,7 @@ fn test_array_new_uint8() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint8));
+    assert!(matches!(dtype.val, Val::Uint8));
 
     let item = array.item_uint8().unwrap();
     assert_eq!(item, 1);
@@ -85,7 +85,7 @@ fn test_array_new_uint16() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint16));
+    assert!(matches!(dtype.val, Val::Uint16));
 
     let item = array.item_uint16().unwrap();
     assert_eq!(item, 1);
@@ -98,7 +98,7 @@ fn test_array_new_uint32() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint32));
+    assert!(matches!(dtype.val, Val::Uint32));
 
     let item = array.item_uint32().unwrap();
     assert_eq!(item, 1);
@@ -111,7 +111,7 @@ fn test_array_new_uint64() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint64));
+    assert!(matches!(dtype.val, Val::Uint64));
 
     let item = array.item_uint64().unwrap();
     assert_eq!(item, 1);
@@ -124,7 +124,7 @@ fn test_array_new_float32() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::float32));
+    assert!(matches!(dtype.val, Val::Float32));
 
     let item = array.item_float32().unwrap();
     assert_eq!(item, 1.0);
@@ -138,7 +138,7 @@ fn test_array_new_float16() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::float16));
+    assert!(matches!(dtype.val, Val::Float16));
 
     let item = array.item_float16().unwrap();
     assert_eq!(item.bits, 0x00);
@@ -152,7 +152,7 @@ fn test_array_new_bfloat16() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::bfloat16));
+    assert!(matches!(dtype.val, Val::Bfloat16));
 
     let item = array.item_bfloat16().unwrap();
     assert_eq!(item.bits, 0x00);
@@ -166,7 +166,7 @@ fn test_array_new_complex64() {
     assert_eq!(array.size(), 1);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::complex64));
+    assert!(matches!(dtype.val, Val::Complex64));
 
     let item = array.item_complex64().unwrap();
     assert_eq!(item.re, 0.0);
@@ -182,7 +182,7 @@ fn test_array_from_slice_bool() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::bool_));
+    assert!(matches!(dtype.val, Val::Bool));
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn test_array_from_slice_i8() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int8));
+    assert!(matches!(dtype.val, Val::Int8));
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn test_array_from_slice_i16() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int16));
+    assert!(matches!(dtype.val, Val::Int16));
 }
 
 #[test]
@@ -218,7 +218,7 @@ fn test_array_from_slice_i32() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int32));
+    assert!(matches!(dtype.val, Val::Int32));
 }
 
 #[test]
@@ -230,7 +230,7 @@ fn test_array_from_slice_i64() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::int64));
+    assert!(matches!(dtype.val, Val::Int64));
 }
 
 #[test]
@@ -242,7 +242,7 @@ fn test_array_from_slice_u8() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint8));
+    assert!(matches!(dtype.val, Val::Uint8));
 }
 
 #[test]
@@ -254,7 +254,7 @@ fn test_array_from_slice_u16() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint16));
+    assert!(matches!(dtype.val, Val::Uint16));
 }
 
 #[test]
@@ -266,7 +266,7 @@ fn test_array_from_slice_u32() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint32));
+    assert!(matches!(dtype.val, Val::Uint32));
 }
 
 #[test]
@@ -278,7 +278,7 @@ fn test_array_from_slice_u64() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::uint64));
+    assert!(matches!(dtype.val, Val::Uint64));
 }
 
 #[test]
@@ -293,7 +293,7 @@ fn test_array_from_slice_f16() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::float16));
+    assert!(matches!(dtype.val, Val::Float16));
 }
 
 #[test]
@@ -308,7 +308,7 @@ fn test_array_from_slice_bf16() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::bfloat16));
+    assert!(matches!(dtype.val, Val::Bfloat16));
 }
 
 #[test]
@@ -320,7 +320,7 @@ fn test_array_from_slice_f32() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::float32));
+    assert!(matches!(dtype.val, Val::Float32));
 }
 
 #[test]
@@ -335,7 +335,7 @@ fn test_array_from_slice_c64() {
     assert_eq!(array.size(), 2);
 
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::complex64));
+    assert!(matches!(dtype.val, Val::Complex64));
 }
 
 #[test]
@@ -378,7 +378,7 @@ fn test_array_strides() {
 fn test_array_dtype() {
     let array = array_new_bool(false);
     let dtype = array.dtype();
-    assert!(matches!(dtype.val, Val::bool_));
+    assert!(matches!(dtype.val, Val::Bool));
 }
 
 #[test]

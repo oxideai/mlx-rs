@@ -1,5 +1,3 @@
-use crate::dtype::ffi::Dtype;
-
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {

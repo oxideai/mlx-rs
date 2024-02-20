@@ -1,13 +1,17 @@
 #[cxx::bridge]
 pub mod ffi {
+    #[derive(Clone)]
     #[namespace = "mlx_cxx"]
     #[cxx_name = "DeviceDeviceType"]
     #[repr(i32)]
     pub enum DeviceType {
-        cpu,
-        gpu,
+        #[cxx_name = "cpu"]
+        Cpu,
+        #[cxx_name = "gpu"]
+        Gpu,
     }
 
+    #[derive(Clone)]
     #[namespace = "mlx::core"]
     pub struct Device {
         pub device_type: DeviceType,

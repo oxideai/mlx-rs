@@ -3,10 +3,17 @@ pub mod ffi {
     #[namespace = "mlx::core"]
     #[repr(i32)]
     enum CompileMode {
-        disabled,
-        no_simplify,
-        no_fuse,
-        enabled,
+        #[cxx_name = "disabled"]
+        Disabled,
+
+        #[cxx_name = "no_simplify"]
+        NoSimplify,
+
+        #[cxx_name = "no_fuse"]
+        NoFuse,
+
+        #[cxx_name = "enabled"]
+        Enabled,
     }
 
     unsafe extern "C++" {

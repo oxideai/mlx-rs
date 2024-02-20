@@ -5,19 +5,44 @@ pub mod ffi {
     #[derive(Clone)]
     #[repr(i32)]
     enum Val {
-        bool_,
-        uint8,
-        uint16,
-        uint32,
-        uint64,
-        int8,
-        int16,
-        int32,
-        int64,
-        float16,
-        float32,
-        bfloat16,
-        complex64,
+        #[cxx_name = "bool_"]
+        Bool,
+
+        #[cxx_name = "uint8"]
+        Uint8,
+
+        #[cxx_name = "uint16"]
+        Uint16,
+
+        #[cxx_name = "uint32"]
+        Uint32,
+
+        #[cxx_name = "uint64"]
+        Uint64,
+
+        #[cxx_name = "int8"]
+        Int8,
+
+        #[cxx_name = "int16"]
+        Int16,
+
+        #[cxx_name = "int32"]
+        Int32,
+
+        #[cxx_name = "int64"]
+        Int64,
+
+        #[cxx_name = "float16"]
+        Float16,
+
+        #[cxx_name = "float32"]
+        Float32,
+
+        #[cxx_name = "bfloat16"]
+        Bfloat16,
+
+        #[cxx_name = "complex64"]
+        Complex64,
     }
 
     #[namespace = "mlx_cxx"]
@@ -25,12 +50,23 @@ pub mod ffi {
     #[derive(Clone)]
     #[repr(i32)]
     enum Kind {
-        b, /* bool */
-        u, /* unsigned int */
-        i, /* signed int */
-        f, /* float */
-        c, /* complex */
-        V, /* void - used for brain float */
+        #[cxx_name = "b"]
+        Bool,
+
+        #[cxx_name = "u"]
+        UnsignedInt,
+
+        #[cxx_name = "i"]
+        SignedInt,
+
+        #[cxx_name = "f"]
+        Float,
+
+        #[cxx_name = "c"]
+        Complex,
+
+        #[cxx_name = "V"]
+        Void,
     }
 
     #[namespace = "mlx::core"]

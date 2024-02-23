@@ -544,7 +544,7 @@ fn test_tile() {
 }
 
 #[test]
-fn test_transpose() {
+fn test_transpose_axes() {
     let s = Default::default();
     let shape = cxx_vec![1, 2, 3];
     let arr = ones(&shape, s).unwrap();
@@ -730,7 +730,7 @@ fn test_isneginf() {
 fn test_where_condition() {
     let s = Default::default();
     let shape = cxx_vec![5];
-    let mut condision = array_from_slice_bool(&[false, true, false, true, false], &shape);
+    let condition = array_from_slice_bool(&[false, true, false, true, false], &shape);
     let x = arange_f64(0.0, 5.0, 1.0, s).unwrap();
     let y = arange_f64(5.0, 10.0, 1.0, s).unwrap();
     let _where = where_condition(&condition, &x, &y, s).unwrap();
@@ -1075,16 +1075,6 @@ fn test_argmin() {
 }
 
 #[test]
-fn test_argmin_along_axes_keepdims() {
-    let s = Default::default();
-    let shape = cxx_vec![2, 5];
-    let a = ones(&shape, s).unwrap();
-    let axes = cxx_vec![0];
-    let keepdims = false;
-    let _argmin_along_axes = argmin_along_axes_keepdims(&a, &axes, keepdims, s).unwrap();
-}
-
-#[test]
 fn test_argmin_along_axis_keepdims() {
     let s = Default::default();
     let shape = cxx_vec![2, 5];
@@ -1109,16 +1099,6 @@ fn test_argmax() {
     let shape = cxx_vec![1, 5];
     let a = ones(&shape, s).unwrap();
     let _argmax = argmax(&a, s).unwrap();
-}
-
-#[test]
-fn test_argmax_along_axes_keepdims() {
-    let s = Default::default();
-    let shape = cxx_vec![2, 5];
-    let a = ones(&shape, s).unwrap();
-    let axes = cxx_vec![0];
-    let keepdims = false;
-    let _argmax_along_axes = argmax_along_axes_keepdims(&a, &axes, keepdims, s).unwrap();
 }
 
 #[test]

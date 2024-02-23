@@ -557,7 +557,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "pad_unique_widths_for_each_axis"]
+        #[rust_name = "pad_each"]
         fn pad(
             a: &array,
             pad_width: &[[i32; 2]],
@@ -566,7 +566,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "pad_same_widths_for_each_axis"]
+        #[rust_name = "pad_same"]
         fn pad(
             a: &array,
             pad_width: &[i32; 2],

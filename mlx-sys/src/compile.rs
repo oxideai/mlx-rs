@@ -28,7 +28,7 @@ pub mod ffi {
         type CxxMultiaryFn = crate::transforms::ffi::CxxMultiaryFn;
 
         #[namespace = "mlx_cxx"]
-        fn compile(fun: &CxxMultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+        fn compile(fun: &CxxMultiaryFn, shapeless: bool) -> Result<UniquePtr<CxxMultiaryFn>>;
 
         #[namespace = "mlx::core"]
         fn disable_compile();

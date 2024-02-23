@@ -1604,4 +1604,22 @@ namespace mlx_cxx
         auto arrays = mlx::core::depends(inputs, dependencies);
         return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
+
+    std::unique_ptr<mlx::core::array> atleast_1d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::atleast_1d(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> atleast_2d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::atleast_2d(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> atleast_3d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::atleast_3d(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
 }

@@ -98,5 +98,5 @@ namespace mlx_cxx
 
     // /* -------------------------------------------------------------------------- */
 
-    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun);
+    std::unique_ptr<CxxMultiaryFn> compile(const MultiaryFn *fun, bool shapeless = false);
 }

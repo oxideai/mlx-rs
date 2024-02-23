@@ -1465,4 +1465,8 @@ namespace mlx_cxx
     std::unique_ptr<std::vector<mlx::core::array>> depends(
         const std::vector<mlx::core::array>& inputs,
         const std::vector<mlx::core::array>& dependencies);
+
+    std::unique_ptr<mlx::core::array> atleast_1d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> atleast_2d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> atleast_3d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
 }

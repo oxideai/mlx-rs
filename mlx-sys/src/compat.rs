@@ -331,6 +331,6 @@ pub(crate) mod ffi {
         // include!("mlx-cxx/compile.hpp");
 
         #[namespace = "mlx_cxx"]
-        unsafe fn compile(fun: *const MultiaryFn) -> Result<UniquePtr<CxxMultiaryFn>>;
+        unsafe fn compile(fun: *const MultiaryFn, shapeless: bool) -> Result<UniquePtr<CxxMultiaryFn>>;
     }
 }

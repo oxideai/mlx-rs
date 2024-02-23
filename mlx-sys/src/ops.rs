@@ -1385,77 +1385,14 @@ pub mod ffi {
             inputs: &CxxVector<array>,
             dependencies: &CxxVector<array>,
         ) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
+        fn atleast_1d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn atleast_2d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn atleast_3d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::cxx_vec;
-
-//     use super::ffi;
-
-//     #[test]
-//     fn test_arange() {
-//         let array = ffi::arange_f64(0.0, 10.0, 1.0, Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_i32(0, 10, 1, Default::default());
-//         assert_eq!(array.size(), 10);
-//     }
-
-//     #[test]
-//     fn test_arange_start_stop() {
-//         let array = ffi::arange_start_stop_dtype(0.0, 10.0, crate::dtype::ffi::dtype_float32(), Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_start_stop_dtype(0.0, 10.0, crate::dtype::ffi::dtype_int32(), Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_start_stop_f64(0.0, 10.0, Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_start_stop_i32(0, 10, Default::default());
-//         assert_eq!(array.size(), 10);
-//     }
-
-//     #[test]
-//     fn test_arange_stop() {
-//         let array = ffi::arange_stop_dtype(10.0, crate::dtype::ffi::dtype_float32(), Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_stop_dtype(10.0, crate::dtype::ffi::dtype_int32(), Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_stop_f64(10.0, Default::default());
-//         assert_eq!(array.size(), 10);
-
-//         let array = ffi::arange_stop_i32(10, Default::default());
-//         assert_eq!(array.size(), 10);
-//     }
-
-//     #[test]
-//     fn test_linspace() {
-//         let array = ffi::linspace(0.0, 10.0, 10, crate::dtype::ffi::dtype_float32(), Default::default());
-//         assert_eq!(array.size(), 10);
-//     }
-
-//     #[test]
-//     fn test_astype() {
-//         let array = ffi::arange_f64(0.0, 10.0, 1.0, Default::default());
-//         let array = ffi::astype(&array, crate::dtype::ffi::dtype_int32(), Default::default());
-//         assert_eq!(array.size(), 10);
-//     }
-
-//     #[test]
-//     fn test_as_strided() {
-//         let array = ffi::arange_f64(0.0, 10.0, 1.0, Default::default());
-//         let array = ffi::as_strided(
-//             &array,
-//             cxx_vec![2, 5],
-//             cxx_vec![1, 5], // TODO: Is this correct?
-//             0,
-//             Default::default(),
-//         );
-//         // TODO: how to check
-//     }
-// }

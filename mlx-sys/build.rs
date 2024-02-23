@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 const MLX_DIR: &str = "mlx";
 #[cfg(feature = "metal")]
@@ -160,6 +160,8 @@ const RUST_SOURCE_FILES: &[&str] = &[
     "src/fast.rs",
 ];
 
+const MAKE_COMPILED_PREAMBLE_SH: &str = "mlx/mlx/backend/common/make_compiled_preamble.sh";
+
 fn main() {
     // TODO: conditionally compile based on if accelerate is available
 
@@ -178,6 +180,9 @@ fn main() {
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON)
         .files(FILES_SHIM_MLX);
+
+    let compiled_preamble_cpp = cpu_compiled_preamble(&out_dir);
+    build.file(compiled_preamble_cpp);
 
     // TODO: check if accelerate is available
     #[cfg(feature = "accelerate")]
@@ -239,6 +244,40 @@ fn main() {
     println!("cargo:rerun-if-changed=shim/mlx-cxx/array.hpp");
     println!("cargo:rerun-if-changed=shim/mlx-cxx/array.cpp");
     println!("cargo:rustc-link-lib=mlx");
+}
+
+/// Equivalent to the cpu_compiled_preamble in backend/common/CMakeLists.txt
+fn cpu_compiled_preamble(out_dir: &PathBuf) -> PathBuf {
+    generate_compiled_preamble_cpp(out_dir)
+}
+
+fn get_cxx_compiler() -> String {
+    let output = Command::new("xcrun")
+        .arg("-find")
+        .arg("c++")
+        .output().unwrap();
+
+    assert!(output.status.success(), "Failed to find c++ compiler");
+
+    String::from_utf8(output.stdout).unwrap().trim().to_string()
+}
+
+fn generate_compiled_preamble_cpp(out_dir: &PathBuf) -> PathBuf {
+    let source_dir = PathBuf::from(MLX_DIR);
+    let source_dir = std::fs::canonicalize(source_dir).unwrap();
+    let preamble_cpp = out_dir.join("compiled_preamble.cpp");
+    let cxx_compiler = get_cxx_compiler();
+    let status = Command::new("/bin/bash")
+        .arg(MAKE_COMPILED_PREAMBLE_SH)
+        .arg(&preamble_cpp)
+        .arg(&cxx_compiler)
+        .arg(&source_dir)
+        .arg("TRUE")
+        .status()
+        .unwrap();
+
+    assert!(status.success(), "Failed to generate compiled preamble");
+    preamble_cpp
 }
 
 #[cfg(feature = "metal")]

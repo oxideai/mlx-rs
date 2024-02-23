@@ -534,3 +534,38 @@ fn test_repeat() {
     let repeats = 2;
     let _repeated = repeat(&arr, repeats, s).unwrap();
 }
+
+#[test]
+fn test_tile() {
+    let s = Default::default();
+    let arr = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let reps = cxx_vec![2, 2];
+    let _tiled = tile(&arr, reps, s).unwrap();
+}
+
+#[test]
+fn test_transpose() {
+    let s = Default::default();
+    let shape = cxx_vec![1, 2, 3];
+    let arr = ones(&shape, s).unwrap();
+    let axes = cxx_vec![1, 0, 2];
+    let _transposed = transpose_axes(&arr, axes, s).unwrap();
+}
+
+#[test]
+fn test_swapaxes() {
+    let s = Default::default();
+    let shape = cxx_vec![1, 2, 3];
+    let arr = ones(&shape, s).unwrap();
+    let axis1 = 0;
+    let axis2 = 1;
+    let _swapped = swapaxes(&arr, axis1, axis2, s).unwrap();
+}
+
+#[test]
+fn test_moveaxis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 4, 5];
+    let arr = ones(&shape, s).unwrap();
+    let _moved = moveaxis(&arr, 0, -1, s).unwrap();
+}

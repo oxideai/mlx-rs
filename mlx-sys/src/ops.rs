@@ -1333,7 +1333,7 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "tensordot_ndims"]
+        #[rust_name = "tensordot"]
         fn tensordot(
             a: &array,
             b: &array,

@@ -1,6 +1,6 @@
 use cxx::CxxVector;
 use mlx_sys::{
-    array::ffi::{array_from_slice_bool, array_new_float32}, cxx_vec, dtype::ffi::*, ops::ffi::*, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}, utils::ffi::push_array, Optional
+    array::ffi::{array_from_slice_bool, array_from_slice_int32, array_new_float32}, cxx_vec, dtype::ffi::*, ops::ffi::*, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}, utils::ffi::push_array, Optional
 };
 
 #[test]
@@ -1109,4 +1109,881 @@ fn test_argmax_along_axis_keepdims() {
     let axis = 0;
     let keepdims = false;
     let _argmax_along_axis = argmax_along_axis_keepdims(&a, axis, keepdims, s).unwrap();
+}
+
+#[test]
+fn test_sort() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let _sorted = sort(&a, s).unwrap();
+}
+
+#[test]
+fn test_sort_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _sorted = sort_along_axis(&a, axis, s).unwrap();
+}
+
+#[test]
+fn test_argsort() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let _argsorted = argsort(&a, s).unwrap();
+}
+
+#[test]
+fn test_argsort_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _argsorted = argsort_along_axis(&a, axis, s).unwrap();
+}
+
+#[test]
+fn test_partition() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let kth = 3;
+    let _partitioned = partition(&a, kth, s).unwrap();
+}
+
+#[test]
+fn test_partition_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let kth = 3;
+    let axis = 0;
+    let _partitioned = partition_along_axis(&a, kth, axis, s).unwrap();
+}
+
+#[test]
+fn test_argpartition() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let kth = 3;
+    let _argpartitioned = argpartition(&a, kth, s).unwrap();
+}
+
+#[test]
+fn test_argpartition_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let kth = 3;
+    let axis = 0;
+    let _argpartitioned = argpartition_along_axis(&a, kth, axis, s).unwrap();
+}
+
+#[test]
+fn test_topk() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let k = 3;
+    let _topk = topk(&a, k, s).unwrap();
+}
+
+#[test]
+fn test_topk_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let k = 3;
+    let axis = 0;
+    let _topk = topk_along_axis(&a, k, axis, s).unwrap();
+}
+
+#[test]
+fn test_logsumexp_keepdims() {
+    let s = Default::default();
+    let shape = cxx_vec![1, 5];
+    let a = ones(&shape, s).unwrap();
+    let keepdims = false;
+    let _logsumexp = logsumexp_keepdims(&a, keepdims, s).unwrap();
+}
+
+#[test]
+fn test_logsumexp() {
+    let s = Default::default();
+    let shape = cxx_vec![1, 5];
+    let a = ones(&shape, s).unwrap();
+    let _logsumexp = logsumexp(&a, s).unwrap();
+}
+
+#[test]
+fn test_logsumexp_along_axes_keepdims() {
+    let s = Default::default();
+    let shape = cxx_vec![2, 5];
+    let a = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let keepdims = false;
+    let _logsumexp_along_axes = logsumexp_along_axes_keepdims(&a, &axes, keepdims, s).unwrap();
+}
+
+#[test]
+fn test_logsumexp_along_axis_keepdims() {
+    let s = Default::default();
+    let shape = cxx_vec![2, 5];
+    let a = ones(&shape, s).unwrap();
+    let axis = 0;
+    let keepdims = false;
+    let _logsumexp_along_axis = logsumexp_along_axis_keepdims(&a, axis, keepdims, s).unwrap();
+}
+
+#[test]
+fn test_abs() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _abs = abs(&a, s).unwrap();
+}
+
+#[test]
+fn test_negative() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _negative = negative(&a, s).unwrap();
+}
+
+#[test]
+fn test_sign() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _sign = sign(&a, s).unwrap();
+}
+
+#[test]
+fn test_logical_not() {
+    let s = Default::default();
+    let shape = cxx_vec![5];
+    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
+    let _logical_not = logical_not(&a, s).unwrap();
+}
+
+#[test]
+fn test_logical_and() {
+    let s = Default::default();
+    let shape = cxx_vec![5];
+    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
+    let b = array_from_slice_bool(&[true, true, false, false, true], &shape);
+    let _logical_and = logical_and(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_logical_or() {
+    let s = Default::default();
+    let shape = cxx_vec![5];
+    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
+    let b = array_from_slice_bool(&[true, true, false, false, true], &shape);
+    let _logical_or = logical_or(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_reciprocal() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    let _reciprocal = reciprocal(&a, s).unwrap();
+}
+
+#[test]
+fn test_add() {
+    let s = Default::default();
+    let a = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let b = arange_f64(5.0, 10.0, 1.0, s).unwrap();
+    let _added = add(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_subtract() {
+    let s = Default::default();
+    let a = arange_f64(5.0, 10.0, 1.0, s).unwrap();
+    let b = arange_f64(0.0, 5.0, 1.0, s).unwrap();
+    let _subtracted = subtract(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_multiply() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _multiplied = multiply(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_divide() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _divided = divide(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_divmod() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _divmod = divmod(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_floor_divide() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _floor_divided = floor_divide(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_remainder() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _remainder = remainder(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_maximum() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _maximum = maximum(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_minimum() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _minimum = minimum(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_floor() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _floored = floor(&a, s).unwrap();
+}
+
+#[test]
+fn test_ceil() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _ceiled = ceil(&a, s).unwrap();
+}
+
+#[test]
+fn test_square() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _squared = square(&a, s).unwrap();
+}
+
+#[test]
+fn test_exp() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _exponentiated = exp(&a, s).unwrap();
+}
+
+#[test]
+fn test_sin() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _sined = sin(&a, s).unwrap();
+}
+
+#[test]
+fn test_cos() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _cosined = cos(&a, s).unwrap();
+}
+
+#[test]
+fn test_tan() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _taned = tan(&a, s).unwrap();
+}
+
+#[test]
+fn test_arcsin() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _arcsined = arcsin(&a, s).unwrap();
+}
+
+#[test]
+fn test_arccos() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _arccosed = arccos(&a, s).unwrap();
+}
+
+#[test]
+fn test_arctan() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _arctaned = arctan(&a, s).unwrap();
+}
+
+#[test]
+fn test_sinh() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _sinhed = sinh(&a, s).unwrap();
+}
+
+#[test]
+fn test_cosh() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 1.0, s).unwrap();
+    let _coshed = cosh(&a, s).unwrap();
+}
+
+#[test]
+fn test_tanh() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _tanhed = tanh(&a, s).unwrap();
+}
+
+#[test]
+fn test_arcsinh() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _arcsinhed = arcsinh(&a, s).unwrap();
+}
+
+#[test]
+fn test_arccosh() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _arccoshed = arccosh(&a, s).unwrap();
+}
+
+#[test]
+fn test_arctanh() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _arctanhed = arctanh(&a, s).unwrap();
+}
+
+#[test]
+fn test_log() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _logarithmed = log(&a, s).unwrap();
+}
+
+#[test]
+fn test_log2() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _log2ed = log2(&a, s).unwrap();
+}
+
+#[test]
+fn test_log10() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _log10ed = log10(&a, s).unwrap();
+}
+
+#[test]
+fn test_log1p() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _log1ped = log1p(&a, s).unwrap();
+}
+
+#[test]
+fn test_logaddexp() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let b = arange_f64(1.0, 5.0, 0.1, s).unwrap();
+    let _logaddexped = logaddexp(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_sigmoid() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 0.1, s).unwrap();
+    let _sigmoided = sigmoid(&a, s).unwrap();
+}
+
+#[test]
+fn test_erf() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 0.1, s).unwrap();
+    let _erfed = erf(&a, s).unwrap();
+}
+
+#[test]
+fn test_erfinv() {
+    let s = Default::default();
+    let a = arange_f64(-1.0, 1.0, 0.1, s).unwrap();
+    let _erfinved = erfinv(&a, s).unwrap();
+}
+
+#[test]
+fn test_stop_gradient() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 0.1, s).unwrap();
+    let _stop_gradient = stop_gradient(&a, s).unwrap();
+}
+
+#[test]
+fn test_round() {
+    let s = Default::default();
+    let a = arange_f64(-5.0, 5.0, 0.1, s).unwrap();
+    let _rounded = round(&a, s).unwrap();
+}
+
+#[test]
+fn test_matmaul() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let b = ones(&shape, s).unwrap();
+    let _matmauled = matmul(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_gather_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let axes = cxx_vec![0];
+    let slice_sizes = cxx_vec![3, 3];
+    let _gathered = gather_along_axes(&a, &indices, &axes, &slice_sizes, s).unwrap();
+}
+
+#[test]
+fn test_gather_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let axis = 0;
+    let slice_sizes = cxx_vec![3, 3];
+    let _gathered = gather_along_axis(&a, &indices, axis, &slice_sizes, s).unwrap();
+}
+
+#[test]
+fn test_take() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let axis = 0;
+    let _taken = take(&a, &indices, axis, s).unwrap();
+}
+
+#[test]
+fn test_take_flattened() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let _taken = take_flattened(&a, &indices, s).unwrap();
+}
+
+#[test]
+fn test_take_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let indices = ones_dtype(&shape, dtype_uint32(), s).unwrap();
+    let axis = 0;
+    let _taken = take_along_axis(&a, &indices, axis, s).unwrap();
+}
+
+#[test]
+fn test_scatter_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = zeros(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let _scattered = scatter_along_axes(&a, &indices, &updates, &axes, s).unwrap();
+}
+
+#[test]
+fn test_scatter_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = zeros(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axis = 0;
+    let _scattered = scatter_along_axis(&a, &indices, &updates, axis, s).unwrap();
+}
+
+#[test]
+fn test_scatter_add_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = zeros(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let _scattered = scatter_add_along_axes(&a, &indices, &updates, &axes, s).unwrap();
+}
+
+#[test]
+fn test_scatter_add_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = zeros(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axis = 0;
+    let _scattered = scatter_add_along_axis(&a, &indices, &updates, axis, s).unwrap();
+}
+
+#[test]
+fn test_scatter_prod_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let _scattered = scatter_prod_along_axes(&a, &indices, &updates, &axes, s).unwrap();
+}
+
+#[test]
+fn test_scatter_prod_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axis = 0;
+    let _scattered = scatter_prod_along_axis(&a, &indices, &updates, axis, s).unwrap();
+}
+
+#[test]
+fn test_scatter_max_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let _scattered = scatter_max_along_axes(&a, &indices, &updates, &axes, s).unwrap();
+}
+
+#[test]
+fn test_scatter_max_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axis = 0;
+    let _scattered = scatter_max_along_axis(&a, &indices, &updates, axis, s).unwrap();
+}
+
+#[test]
+fn test_scatter_min_along_axes() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let mut indices = CxxVector::new();
+    push_array(indices.pin_mut(), index);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axes = cxx_vec![0];
+    let _scattered = scatter_min_along_axes(&a, &indices, &updates, &axes, s).unwrap();
+}
+
+#[test]
+fn test_scatter_min_along_axis() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let shape = cxx_vec![3];
+    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let shape = cxx_vec![3, 3, 3];
+    let updates = ones(&shape, s).unwrap();
+    let axis = 0;
+    let _scattered = scatter_min_along_axis(&a, &indices, &updates, axis, s).unwrap();
+}
+
+#[test]
+fn test_sqrt() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _sqrted = sqrt(&a, s).unwrap();
+}
+
+#[test]
+fn test_rsqrt() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _rsqrted = rsqrt(&a, s).unwrap();
+}
+
+#[test]
+fn test_softmax_along_axes() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axes = cxx_vec![0];
+    let _softmaxed = softmax_along_axes(&a, &axes, s).unwrap();
+}
+
+#[test]
+fn test_softmax() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _softmaxed = softmax(&a, s).unwrap();
+}
+
+#[test]
+fn test_softmax_along_axis() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _softmaxed = softmax_along_axis(&a, axis, s).unwrap();
+}
+
+#[test]
+fn test_power() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let _powered = power(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_cumsum() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _cumsumed = cumsum(&a, axis, false, false, s).unwrap();
+}
+
+#[test]
+fn test_cumprod() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _cumproded = cumprod(&a, axis, false, false, s).unwrap();
+}
+
+#[test]
+fn test_cummax() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _cummaxed = cummax(&a, axis, false, false, s).unwrap();
+}
+
+#[test]
+fn test_cummin() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
+    let axis = 0;
+    let _cummined = cummin(&a, axis, false, false, s).unwrap();
+}
+
+#[test]
+fn test_conv1d() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3, 3];
+    let input = ones(&shape, s).unwrap();
+    let kernel = ones(&shape, s).unwrap();
+    let _conv1d = conv1d(&input, &kernel, 1, 0, 1, 1, s).unwrap();
+}
+
+#[test]
+fn test_conv2d() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3, 3, 3];
+    let input = ones(&shape, s).unwrap();
+    let kernel = ones(&shape, s).unwrap();
+
+    let stride = [1, 1];
+    let padding = [0, 0];
+    let dilation = [1, 1];
+    let groups = 1;
+
+    let _conv2d = conv2d(&input, &kernel, &stride, &padding, &dilation, groups, s).unwrap();
+}
+
+#[test]
+fn test_quantized_matmul() {
+    let s = Default::default();
+    let shape = cxx_vec![512, 512];
+
+    // quantize matrices
+    let x = ones(&shape, s).unwrap();
+    let w = ones(&shape, s).unwrap();
+
+    let group_size = 64;
+    let bits = 4;
+
+    let [quantized_w, scales_w, biases_w] = quantize(&w, group_size, bits, s).unwrap();
+
+    let _quantized_matmul = quantized_matmul(&x, &quantized_w, &scales_w, &biases_w, false, group_size, bits, s).unwrap();
+}
+
+#[test]
+fn test_quantize() {
+    let s = Default::default();
+    let shape = cxx_vec![512, 512];
+    let dtype = dtype_float32();
+    let w = ones_dtype(&shape, dtype, s).unwrap();
+    let _quantized = quantize(&w, 64, 4, s).unwrap();
+}
+
+#[test]
+fn test_dequantize() {
+    let s = Default::default();
+    let shape = cxx_vec![512, 512];
+    let a = ones(&shape, s).unwrap();
+    let group_size = 64;
+    let bits = 4;
+
+    let [quantized_a, scales_a, biases_a] = quantize(&a, group_size, bits, s).unwrap();
+
+    let _dequantized = dequantize(&quantized_a, &scales_a, &biases_a, group_size, bits, s).unwrap();
+}
+
+#[test]
+fn test_tensordot() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let b = ones(&shape, s).unwrap();
+    let dims = 1;
+    let _tensordotted = tensordot(&a, &b, dims, s).unwrap();
+}
+
+#[test]
+fn test_tensordot_list_dims() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let b = ones(&shape, s).unwrap();
+    let dims = [cxx_vec![0], cxx_vec![0]];
+    let _tensordotted = tensordot_list_dims(&a, &b, &dims, s).unwrap();
+}
+
+#[test]
+fn test_outer() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let _outered = outer(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_inner() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let b = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let _innered = inner(&a, &b, s).unwrap();
+}
+
+#[test]
+fn test_addmm() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let b = ones(&shape, s).unwrap();
+    let c = ones(&shape, s).unwrap();
+    let alpha = 1.0;
+    let beta = 1.0;
+    let _addmmed = addmm(a, b, c, &alpha, &beta, s).unwrap();
+}
+
+#[test]
+fn test_diagonal() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let offset = 0;
+    let axis1 = 0;
+    let axis2 = 1;
+    let _diagonaled = diagonal(&a, offset, axis1, axis2, s).unwrap();
+}
+
+#[test]
+fn test_diag() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let k = 0;
+    let _diaged = diag(&a, k, s).unwrap();
+}
+
+#[test]
+fn test_depends() {
+    let s = Default::default();
+    let mut inputs = CxxVector::new();
+    let arr = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    push_array(inputs.pin_mut(), arr);
+
+    let mut dependencies = CxxVector::new();
+    let arr = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    push_array(dependencies.pin_mut(), arr);
+
+    let _depended = depends(&inputs, &dependencies).unwrap();
+}
+
+#[test]
+fn test_atleast_1d() {
+    let s = Default::default();
+    let a = arange_f64(1.0, 4.0, 1.0, s).unwrap();
+    let _atleast_1d = atleast_1d(&a, s).unwrap();
+}
+
+#[test]
+fn test_atleast_2d() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3];
+    let a = ones(&shape, s).unwrap();
+    let _atleast_2d = atleast_2d(&a, s).unwrap();
+}
+
+#[test]
+fn test_atleast_3d() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3, 3];
+    let a = ones(&shape, s).unwrap();
+    let _atleast_3d = atleast_3d(&a, s).unwrap();
 }

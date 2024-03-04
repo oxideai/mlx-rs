@@ -1822,6 +1822,37 @@ fn test_cummin() {
 }
 
 #[test]
+fn test_conv_general_pad_lo_hi() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3, 3, 3];
+    let input = ones(&shape, s).unwrap();
+    let weight = ones(&shape, s).unwrap();
+    let stride = cxx_vec![];
+    let padding_lo = cxx_vec![];
+    let padding_hi = cxx_vec![];
+    let kernel_dilation = cxx_vec![];
+    let input_dilation = cxx_vec![];
+    let groups = 1;
+    let flip = false;
+    let _outcome = conv_general_pad_lo_hi(input, weight, stride, padding_lo, padding_hi, kernel_dilation, input_dilation, groups, flip, s).unwrap();
+}
+
+#[test]
+fn test_conv_general() {
+    let s = Default::default();
+    let shape = cxx_vec![3, 3, 3, 3];
+    let input = ones(&shape, s).unwrap();
+    let weight = ones(&shape, s).unwrap();
+    let stride = cxx_vec![];
+    let padding = cxx_vec![];
+    let kernel_dilation = cxx_vec![];
+    let input_dilation = cxx_vec![];
+    let groups = 1;
+    let flip = false;
+    let _outcome = conv_general(&input, &weight, stride, padding, kernel_dilation, input_dilation, groups, flip, s).unwrap();
+}
+
+#[test]
 fn test_conv1d() {
     let s = Default::default();
     let shape = cxx_vec![3, 3, 3];
@@ -1973,6 +2004,15 @@ fn test_atleast_1d() {
 }
 
 #[test]
+fn test_atleast_1d_all() {
+    let s = Default::default();
+    let mut inputs = CxxVector::new();
+    let arr = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    push_array(inputs.pin_mut(), arr);
+    let _atleast_1d_all = atleast_1d_all(&inputs, s).unwrap();
+}
+
+#[test]
 fn test_atleast_2d() {
     let s = Default::default();
     let shape = cxx_vec![3, 3];
@@ -1981,9 +2021,27 @@ fn test_atleast_2d() {
 }
 
 #[test]
+fn test_atleast_2d_all() {
+    let s = Default::default();
+    let mut inputs = CxxVector::new();
+    let arr = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    push_array(inputs.pin_mut(), arr);
+    let _atleast_2d_all = atleast_2d_all(&inputs, s).unwrap();
+}
+
+#[test]
 fn test_atleast_3d() {
     let s = Default::default();
     let shape = cxx_vec![3, 3, 3];
     let a = ones(&shape, s).unwrap();
     let _atleast_3d = atleast_3d(&a, s).unwrap();
+}
+
+#[test]
+fn test_atleast_3d_all() {
+    let s = Default::default();
+    let mut inputs = CxxVector::new();
+    let arr = arange_f64(1.0, 5.0, 1.0, s).unwrap();
+    push_array(inputs.pin_mut(), arr);
+    let _atleast_3d_all = atleast_3d_all(&inputs, s).unwrap();
 }

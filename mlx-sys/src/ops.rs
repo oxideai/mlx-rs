@@ -1281,6 +1281,33 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
+        fn conv_general_pad_lo_hi(
+            input: UniquePtr<array>,
+            weight: UniquePtr<array>,
+            stride: UniquePtr<CxxVector<i32>>,
+            padding_lo: UniquePtr<CxxVector<i32>>,
+            padding_hi: UniquePtr<CxxVector<i32>>,
+            kernel_dilation: UniquePtr<CxxVector<i32>>,
+            input_dilation: UniquePtr<CxxVector<i32>>,
+            groups: i32,
+            flip: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn conv_general(
+            input: &array,
+            weight: &array,
+            stride: UniquePtr<CxxVector<i32>>,
+            padding: UniquePtr<CxxVector<i32>>,
+            kernel_dilation: UniquePtr<CxxVector<i32>>,
+            input_dilation: UniquePtr<CxxVector<i32>>,
+            groups: i32,
+            flip: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
         fn conv1d(
             input: &array,
             weight: &array,
@@ -1390,9 +1417,21 @@ pub mod ffi {
         fn atleast_1d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
+        #[rust_name = "atleast_1d_all"]
+        fn atleast_1d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
         fn atleast_2d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
+        #[rust_name = "atleast_2d_all"]
+        fn atleast_2d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
         fn atleast_3d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "atleast_3d_all"]
+        fn atleast_3d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
     }
 }

@@ -389,8 +389,8 @@ namespace mlx_cxx
         return tri(n, n, 0, type, s);
     }
 
-    std::unique_ptr<mlx::core::array> tril(std::unique_ptr<mlx::core::array> x, int k=0, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> triu(std::unique_ptr<mlx::core::array> x, int k=0, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> tril(std::unique_ptr<mlx::core::array> x, int k = 0, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> triu(std::unique_ptr<mlx::core::array> x, int k = 0, mlx_cxx::StreamOrDevice s = {});
 
     /** std::unique_ptr<mlx::core::array> manipulation */
 
@@ -472,14 +472,14 @@ namespace mlx_cxx
 
     /** Concatenate arrays along a given axis. */
     std::unique_ptr<mlx::core::array> concatenate(
-        const std::vector<mlx::core::array>& arrays,
+        const std::vector<mlx::core::array> &arrays,
         int axis,
         mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> concatenate(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> concatenate(const std::vector<mlx::core::array> &arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Stack arrays along a new axis. */
-    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, int axis, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array>& arrays, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array> &arrays, int axis, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> stack(const std::vector<mlx::core::array> &arrays, mlx_cxx::StreamOrDevice s = {});
 
     /** Repeat an std::unique_ptr<mlx::core::array> along an axis. */
     std::unique_ptr<mlx::core::array> repeat(const mlx::core::array &arr, int repeats, int axis, mlx_cxx::StreamOrDevice s = {});
@@ -554,7 +554,7 @@ namespace mlx_cxx
 
     /** Broadcast a vector of arrays against one another. */
     std::unique_ptr<std::vector<mlx::core::array>> broadcast_arrays(
-        const std::vector<mlx::core::array>& inputs,
+        const std::vector<mlx::core::array> &inputs,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Comparison operations */
@@ -708,8 +708,8 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> isclose(
-        const mlx::core::array& a,
-        const mlx::core::array& b,
+        const mlx::core::array &a,
+        const mlx::core::array &b,
         double rtol = 1e-5,
         double atol = 1e-8,
         bool equal_nan = false,
@@ -1178,7 +1178,7 @@ namespace mlx_cxx
     /** Gather std::unique_ptr<mlx::core::array> entries given indices and slices */
     std::unique_ptr<mlx::core::array> gather(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const std::vector<int> &axes,
         const std::vector<int> &slice_sizes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1213,7 +1213,7 @@ namespace mlx_cxx
     /** Scatter updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1231,7 +1231,7 @@ namespace mlx_cxx
     /** Scatter and add updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_add(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1249,7 +1249,7 @@ namespace mlx_cxx
     /** Scatter and prod updates to given indices */
     std::unique_ptr<mlx::core::array> scatter_prod(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1267,7 +1267,7 @@ namespace mlx_cxx
     /** Scatter and max updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_max(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1284,7 +1284,7 @@ namespace mlx_cxx
     /** Scatter and min updates to given linear indices */
     std::unique_ptr<mlx::core::array> scatter_min(
         const mlx::core::array &a,
-        const std::vector<mlx::core::array>& indices,
+        const std::vector<mlx::core::array> &indices,
         const mlx::core::array &updates,
         const std::vector<int> &axes,
         mlx_cxx::StreamOrDevice s = {});
@@ -1370,6 +1370,28 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Convolution operations */
+    std::unique_ptr<mlx::core::array> conv_general_pad_lo_hi(
+        std::unique_ptr<mlx::core::array> input,
+        std::unique_ptr<mlx::core::array> weight,
+        std::unique_ptr<std::vector<int>> stride,
+        std::unique_ptr<std::vector<int>> padding_lo,
+        std::unique_ptr<std::vector<int>> padding_hi,
+        std::unique_ptr<std::vector<int>> kernel_dilation,
+        std::unique_ptr<std::vector<int>> input_dilation,
+        int groups = 1,
+        bool flip = false,
+        StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> conv_general(
+        const mlx::core::array &input,
+        const mlx::core::array &weight,
+        std::unique_ptr<std::vector<int>> stride,
+        std::unique_ptr<std::vector<int>> padding,
+        std::unique_ptr<std::vector<int>> kernel_dilation,
+        std::unique_ptr<std::vector<int>> input_dilation,
+        int groups = 1,
+        bool flip = false,
+        StreamOrDevice s = {});
 
     /** 1D convolution with a filter */
     std::unique_ptr<mlx::core::array> conv1d(
@@ -1442,20 +1464,20 @@ namespace mlx_cxx
         std::unique_ptr<mlx::core::array> c,
         std::unique_ptr<mlx::core::array> a,
         std::unique_ptr<mlx::core::array> b,
-        const float& alpha = 1.f,
-        const float& beta = 1.f,
+        const float &alpha = 1.f,
+        const float &beta = 1.f,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Extract a diagonal or construct a diagonal array */
     std::unique_ptr<mlx::core::array> diagonal(
-        const mlx::core::array& a,
+        const mlx::core::array &a,
         int offset = 0,
         int axis1 = 0,
         int axis2 = 1,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Extract diagonal from a 2d array or create a diagonal matrix. */
-    std::unique_ptr<mlx::core::array> diag(const mlx::core::array& a, int k = 0, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> diag(const mlx::core::array &a, int k = 0, mlx_cxx::StreamOrDevice s = {});
 
     /**
      * Implements the identity function but allows injecting dependencies to other
@@ -1463,10 +1485,19 @@ namespace mlx_cxx
      * when the outputs of this function are computed.
      */
     std::unique_ptr<std::vector<mlx::core::array>> depends(
-        const std::vector<mlx::core::array>& inputs,
-        const std::vector<mlx::core::array>& dependencies);
+        const std::vector<mlx::core::array> &inputs,
+        const std::vector<mlx::core::array> &dependencies);
 
-    std::unique_ptr<mlx::core::array> atleast_1d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> atleast_2d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
-    std::unique_ptr<mlx::core::array> atleast_3d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> atleast_1d(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_1d(
+        const std::vector<mlx::core::array> &a,
+        StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> atleast_2d(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_2d(
+        const std::vector<mlx::core::array>& a,
+        StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> atleast_3d(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_3d(
+        const std::vector<mlx::core::array>& a,
+        StreamOrDevice s = {});
 }

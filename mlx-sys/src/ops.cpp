@@ -1453,6 +1453,38 @@ namespace mlx_cxx
     }
 
     /** Convolution operations */
+    std::unique_ptr<mlx::core::array> conv_general_pad_lo_hi(
+        std::unique_ptr<mlx::core::array> input,
+        std::unique_ptr<mlx::core::array> weight,
+        std::unique_ptr<std::vector<int>> stride,
+        std::unique_ptr<std::vector<int>> padding_lo,
+        std::unique_ptr<std::vector<int>> padding_hi,
+        std::unique_ptr<std::vector<int>> kernel_dilation,
+        std::unique_ptr<std::vector<int>> input_dilation,
+        int groups,
+        bool flip,
+        StreamOrDevice s)
+    {
+        auto array = mlx::core::conv_general(
+            *input, *weight, *stride, *padding_lo, *padding_hi, *kernel_dilation, *input_dilation, groups, flip, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> conv_general(
+        const mlx::core::array &input,
+        const mlx::core::array &weight,
+        std::unique_ptr<std::vector<int>> stride,
+        std::unique_ptr<std::vector<int>> padding,
+        std::unique_ptr<std::vector<int>> kernel_dilation,
+        std::unique_ptr<std::vector<int>> input_dilation,
+        int groups,
+        bool flip,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::conv_general(
+            input, weight, *stride, *padding, *kernel_dilation, *input_dilation, groups, flip, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
 
     /** 1D convolution with a filter */
     std::unique_ptr<mlx::core::array> conv1d(
@@ -1611,15 +1643,39 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_1d(
+        const std::vector<mlx::core::array> &a,
+        StreamOrDevice s)
+    {
+        auto arrays = mlx::core::atleast_1d(a, s.to_variant());
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
+    }
+
     std::unique_ptr<mlx::core::array> atleast_2d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::atleast_2d(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_2d(
+        const std::vector<mlx::core::array>& a,
+        StreamOrDevice s)
+    {
+        auto arrays = mlx::core::atleast_2d(a, s.to_variant());
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
+    }
+
     std::unique_ptr<mlx::core::array> atleast_3d(const mlx::core::array& a, mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::atleast_3d(a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<std::vector<mlx::core::array>> atleast_3d(
+        const std::vector<mlx::core::array>& a,
+        StreamOrDevice s)
+    {
+        auto arrays = mlx::core::atleast_3d(a, s.to_variant());
+        return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 }

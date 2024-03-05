@@ -1,3 +1,5 @@
+use crate::array::ffi::{bfloat16_t, complex64_t, float16_t};
+
 #[cxx::bridge]
 pub mod ffi {
     #[derive(Clone, Copy)]
@@ -173,5 +175,91 @@ pub mod ffi {
 impl Default for ffi::Dtype {
     fn default() -> Self {
         ffi::dtype_float32()
+    }
+}
+
+pub trait DataType {
+    fn dtype() -> ffi::Dtype;
+
+    fn dtype_of_val(&self) -> ffi::Dtype {
+        Self::dtype()
+    }
+}
+
+impl DataType for bool {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_bool_()
+    }
+}
+
+impl DataType for u8 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_uint8()
+    }
+}
+
+impl DataType for u16 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_uint16()
+    }
+}
+
+impl DataType for u32 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_uint32()
+    }
+}
+
+impl DataType for u64 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_uint64()
+    }
+}
+
+impl DataType for i8 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_int8()
+    }
+}
+
+impl DataType for i16 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_int16()
+    }
+}
+
+impl DataType for i32 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_int32()
+    }
+}
+
+impl DataType for i64 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_int64()
+    }
+}
+
+impl DataType for float16_t {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_float16()
+    }
+}
+
+impl DataType for f32 {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_float32()
+    }
+}
+
+impl DataType for bfloat16_t {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_bfloat16()
+    }
+}
+
+impl DataType for complex64_t {
+    fn dtype() -> ffi::Dtype {
+        ffi::dtype_complex64()
     }
 }

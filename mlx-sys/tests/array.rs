@@ -199,9 +199,8 @@ fn test_array_from_slice_i8() {
 
 #[test]
 fn test_array_from_slice_i16() {
-    let shape = cxx_vec![2];
     let data = [1, 2];
-    let array = array_from_slice_int16(&data[..], &shape);
+    let array = array_from_slice_int16(&data[..], &cxx_vec![2]);
     assert!(!array.is_null());
     assert_eq!(array.size(), 2);
 

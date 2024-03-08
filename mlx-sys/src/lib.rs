@@ -42,3 +42,6 @@ pub mod compile;
 pub mod fast;
 
 pub mod macros;
+
+// Re-export cxx
+pub use cxx;

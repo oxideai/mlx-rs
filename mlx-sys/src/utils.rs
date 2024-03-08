@@ -1,3 +1,5 @@
+use cxx::{kind::Trivial, vector::VectorElement, ExternType};
+
 #[derive(Clone, Copy)]
 #[repr(C, u8)]
 pub enum StreamOrDevice {
@@ -63,5 +65,51 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         #[cxx_name = "std_vec_from_slice"]
         fn new_cxx_vec_array_from_slice(slice: &[UniquePtr<array>]) -> UniquePtr<CxxVector<array>>;
+    }
+}
+
+pub trait IntoCxxVector<T> 
+where
+    T: ExternType<Kind = Trivial> + VectorElement,
+{
+    fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>>;
+}
+
+impl<T> IntoCxxVector<T> for Vec<T> 
+where
+    T: ExternType<Kind = Trivial> + VectorElement,
+{
+    fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>> {
+        let mut v = cxx::CxxVector::new();
+        for x in self {
+            v.pin_mut().push(x);
+        }
+        v
+    }
+}
+
+impl<T, const N: usize> IntoCxxVector<T> for [T; N] 
+where
+    T: ExternType<Kind = Trivial> + VectorElement,
+{
+    fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>> {
+        let mut v = cxx::CxxVector::new();
+        for x in self {
+            v.pin_mut().push(x);
+        }
+        v
+    }
+}
+
+impl<'a, T> IntoCxxVector<T> for &'a [T] 
+where
+    T: ExternType<Kind = Trivial> + VectorElement + Clone,
+{
+    fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>> {
+        let mut v = cxx::CxxVector::new();
+        for x in self {
+            v.pin_mut().push(x.clone());
+        }
+        v
     }
 }

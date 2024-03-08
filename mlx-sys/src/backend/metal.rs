@@ -7,13 +7,22 @@ pub mod ffi {
         fn is_available() -> bool;
 
         #[namespace = "mlx::core::metal"]
-        fn cache_enabled() -> bool;
+        fn get_active_memory() -> usize;
 
         #[namespace = "mlx::core::metal"]
-        fn set_cache_enabled(enabled: bool);
+        fn get_peak_memory() -> usize;
 
-        // TODO: it seems like other function are not supposed to be
-        // exposed to the user.
+        #[namespace = "mlx::core::metal"]
+        fn get_cache_memory() -> usize;
+
+        #[namespace = "mlx::core::metal"]
+        fn set_memory_limit(limit: usize, relaxed: bool) -> usize;
+
+        #[namespace = "mlx::core::metal"]
+        fn set_cache_limit(limit: usize) -> usize;
+
+        // TODO: should these be exported? `new_stream()`, `new_scoped_memory_pool()`, and
+        // `make_task()`
     }
 }
 

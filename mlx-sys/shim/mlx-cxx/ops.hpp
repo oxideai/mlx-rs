@@ -12,10 +12,6 @@
 
 namespace mlx_cxx
 {
-    using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;
-
-    std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt);
-
     /** Creation operations */
 
     mlx::core::Stream to_stream(mlx_cxx::StreamOrDevice s)
@@ -1444,13 +1440,14 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const int dims = 2,
+        const int axis = 2,
         mlx_cxx::StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const std::array<std::unique_ptr<std::vector<int>>, 2> &dims,
+        const std::vector<int> &axes_a,
+        const std::vector<int> &axes_b,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Compute the outer product of two vectors. */

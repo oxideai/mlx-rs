@@ -1,20 +1,9 @@
 #include "mlx/ops.h"
 
-#include "mlx-cxx/ops.hpp"
+#include "mlx-cxx/ops.hpp""
 
 namespace mlx_cxx
 {
-    std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt)
-    {
-        switch (opt.tag)
-        {
-        case OptionalArray::Tag::None:
-            return std::nullopt;
-        case OptionalArray::Tag::Some:
-            return *opt.payload.some;
-        }
-    }
-
     /**
      * A 1D std::unique_ptr<mlx::core::array> of numbers starting at `start` (optional),
      * stopping at stop, stepping by `step` (optional). */
@@ -1560,21 +1549,21 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const int dims,
+        const int axis,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::tensordot(a, b, dims, s.to_variant());
+        auto array = mlx::core::tensordot(a, b, axis, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     std::unique_ptr<mlx::core::array> tensordot(
         const mlx::core::array &a,
         const mlx::core::array &b,
-        const std::array<std::unique_ptr<std::vector<int>>, 2> &dims,
+        const std::vector<int> &axes_a,
+        const std::vector<int> &axes_b,
         mlx_cxx::StreamOrDevice s)
     {
-        auto pair_dims = std::pair<std::vector<int>, std::vector<int>>(*dims[0], *dims[1]);
-        auto array = mlx::core::tensordot(a, b, pair_dims, s.to_variant());
+        auto array = mlx::core::tensordot(a, b, axes_a, axes_b, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

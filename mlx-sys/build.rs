@@ -117,9 +117,9 @@ const METAL_KERNELS: &[&str] = &[
     "gemv",
     "quantized",
     "random",
-    "reduce",
     "rope",
     "scan",
+    "scaled_dot_product_attention",
     "softmax",
     "sort",
     "ternary",
@@ -286,6 +286,8 @@ fn generate_compiled_preamble_cpp(out_dir: &PathBuf) -> PathBuf {
     preamble_cpp
 }
 
+// TODO: recursively search for .metal files in steels directory and reduction directory
+// and build them
 #[cfg(feature = "metal")]
 fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
     // test build kernel air

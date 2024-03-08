@@ -7,6 +7,8 @@
 #include "mlx-cxx/utils.hpp"
 
 namespace mlx_cxx::fast {
+    using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;
+
     std::unique_ptr<mlx::core::array> rope(
         const mlx::core::array& x,
         int dims,
@@ -15,4 +17,13 @@ namespace mlx_cxx::fast {
         float scale,
         int offset,
         mlx_cxx::StreamOrDevice s);
+
+    std::unique_ptr<mlx::core::array> scaled_dot_product_attention(
+        const mlx::core::array & queries,
+        const mlx::core::array & keys,
+        const mlx::core::array & values,
+        const float scale,
+        const OptionalArray & mask,
+        mlx_cxx::StreamOrDevice s
+    );
 }

@@ -1364,16 +1364,17 @@ pub mod ffi {
         fn tensordot(
             a: &array,
             b: &array,
-            dims: i32,
+            axis: i32,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        #[rust_name = "tensordot_list_dims"]
+        #[rust_name = "tensordot_axes"]
         fn tensordot(
             a: &array,
             b: &array,
-            dims: &[UniquePtr<CxxVector<i32>>; 2],
+            axes_a: &CxxVector<i32>,
+            axes_b: &CxxVector<i32>,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 

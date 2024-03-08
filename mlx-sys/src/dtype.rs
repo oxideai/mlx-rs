@@ -101,9 +101,6 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn dtype_new(val: Val, size: u8) -> Dtype;
 
-        #[namespace = "mlx::core"]
-        fn is_available(dtype: &Dtype) -> bool;
-
         #[namespace = "mlx_cxx"]
         fn dtype_bool_() -> Dtype;
 

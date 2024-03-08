@@ -61,4 +61,16 @@ namespace mlx_cxx {
     //     }
     //     return std::make_unique<std::vector<T>>(vec);
     // }
+
+    std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt)
+    {
+        switch (opt.tag)
+        {
+        case OptionalArray::Tag::None:
+            return std::nullopt;
+        case OptionalArray::Tag::Some:
+            return *opt.payload.some;
+        }
+    }
+
 }

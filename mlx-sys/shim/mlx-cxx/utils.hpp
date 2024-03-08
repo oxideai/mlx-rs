@@ -3,6 +3,8 @@
 #include "mlx/dtype.h"
 #include "mlx/utils.h"
 
+#include "mlx-cxx/mlx_cxx.hpp"
+
 #include "rust/cxx.h"
 
 namespace mlx_cxx {
@@ -64,4 +66,8 @@ namespace mlx_cxx {
         }
         return std::make_unique<std::vector<T>>(vec);
     }
+
+    using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;
+
+    std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt);
 }

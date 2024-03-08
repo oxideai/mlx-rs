@@ -295,7 +295,7 @@ pub mod ffi {
         // TODO: expose Flags
 
         #[namespace = "mlx::core"]
-        fn graph_depth(self: &array) -> u16;
+        fn graph_depth(self: &array) -> u32;
 
         #[namespace = "mlx::core"]
         fn detach(self: Pin<&mut array>);

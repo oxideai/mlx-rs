@@ -5,8 +5,6 @@ const MLX_DIR: &str = "mlx";
 const METAL_CPP_MACOS_14_2_DIR: &str = "metal-cpp_macOS14.2_iOS17.2";
 #[cfg(feature = "metal")]
 const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
-#[cfg(feature = "metal")]
-const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
     "mlx/mlx/allocator.cpp",
@@ -49,6 +47,12 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/qrf.cpp",
 ];
 
+#[cfg(target_os = "ios")]
+const FILES_MLX_BACKEND_COMPILED: &str = "mlx/mlx/backend/common/compiled_nocpu.cpp";
+
+#[cfg(not(target_os = "ios"))]
+const FILES_MLX_BACKEND_COMPILED: &str = "mlx/mlx/backend/common/compiled_cpu.cpp";
+
 #[cfg(not(feature = "accelerate"))]
 const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str =
     "mlx/mlx/backend/common/default_primitives.cpp";
@@ -73,6 +77,7 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/fft.cpp",
     "mlx/mlx/backend/metal/indexing.cpp",
     "mlx/mlx/backend/metal/matmul.cpp",
+    "mlx/mlx/backend/metal/scaled_dot_product_attention.cpp",
     "mlx/mlx/backend/metal/metal.cpp",
     "mlx/mlx/backend/metal/primitives.cpp",
     "mlx/mlx/backend/metal/quantized.cpp",
@@ -112,9 +117,9 @@ const METAL_KERNELS: &[&str] = &[
     "gemv",
     "quantized",
     "random",
-    "reduce",
     "rope",
     "scan",
+    "scaled_dot_product_attention",
     "softmax",
     "sort",
     "ternary",
@@ -122,6 +127,9 @@ const METAL_KERNELS: &[&str] = &[
     "gather",
     "scatter",
 ];
+
+const METAL_STEEL_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels/steel";
+const METAL_REDUCTION_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels/reduction";
 
 const SHIM_DIR: &str = "shim";
 
@@ -181,6 +189,7 @@ fn main() {
         .flag("-std=c++17")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON)
+        .file(FILES_MLX_BACKEND_COMPILED)
         .files(FILES_SHIM_MLX);
 
     let compiled_preamble_cpp = cpu_compiled_preamble(&out_dir);
@@ -221,10 +230,8 @@ fn main() {
             build.include(METAL_CPP_MACOS_14_2_DIR);
         } else if macos_version >= 14.0 {
             build.include(METAL_CPP_MACOS_14_0_DIR);
-        } else if macos_version >= 13.3 {
-            build.include(METAL_CPP_MACOS_13_3_DIR);
         } else {
-            panic!("MLX requires macOS >= 13.4 to be built with MLX_BUILD_METAL=ON");
+            panic!("MLX requires macOS >= 14.0 to be built with MLX_BUILD_METAL=ON");
         }
 
         let metallib = build_metal_kernels(&out_dir);
@@ -282,17 +289,52 @@ fn generate_compiled_preamble_cpp(out_dir: &PathBuf) -> PathBuf {
     preamble_cpp
 }
 
+// TODO: recursively search for .metal files in steels directory and reduction directory
+// and build them
 #[cfg(feature = "metal")]
 fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
-    // test build kernel air
+    let steel_kernels = recursive_search_metal_kernels(METAL_STEEL_KERNEL_DIR);
+    let reduction_kernels = recursive_search_metal_kernels(METAL_REDUCTION_KERNEL_DIR);
+
     let kernel_build_dir = PathBuf::from(out_dir).join("kernels"); // MLX_METAL_PATH
     let _ = std::fs::create_dir_all(&kernel_build_dir);
     let kernel_src_dir = PathBuf::from(METAL_KERNEL_DIR);
-    let kernel_airs = METAL_KERNELS
+    let mut kernel_airs = METAL_KERNELS
         .iter()
         .map(|&k| build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, k))
         .collect::<Vec<_>>();
+
+    for (kernel_src_dir, kernel_name) in steel_kernels {
+        let kernel_air = build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, &kernel_name);
+        kernel_airs.push(kernel_air);
+    }
+
+    for (kernel_src_dir, kernel_name) in reduction_kernels {
+        let kernel_air = build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, &kernel_name);
+        kernel_airs.push(kernel_air);
+    }
+
     build_kernel_metallib(&kernel_airs, out_dir)
+}
+
+#[cfg(feature = "metal")]
+fn recursive_search_metal_kernels(root: impl AsRef<std::path::Path>) -> Vec<(PathBuf, String)> {
+    use walkdir::WalkDir;
+
+    let mut kernels = Vec::new();
+    for entry in WalkDir::new(root) 
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let filename = entry.file_name().to_string_lossy();
+        if filename.ends_with(".metal") {
+            let dir = entry.path().parent().unwrap().to_path_buf();
+            let kernel_name = filename.trim_end_matches(".metal").to_string();
+            kernels.push((dir, kernel_name));
+        }
+    }
+
+    kernels
 }
 
 #[cfg(feature = "metal")]

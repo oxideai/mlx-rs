@@ -30,3 +30,4 @@ half = { workspace = true, optional = true }
 [build-dependencies]
 cxx-build = "1"
 pkg-config = "0.3"
+walkdir = "2"

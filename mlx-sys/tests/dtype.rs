@@ -7,12 +7,6 @@ fn test_dtype_new() {
 }
 
 #[test]
-fn test_is_available() {
-    let dtype = dtype_bool_();
-    assert!(is_available(&dtype));
-}
-
-#[test]
 fn test_dtype_bool_() {
     let dtype = dtype_bool_();
     assert!(matches!(dtype.val, Val::Bool));

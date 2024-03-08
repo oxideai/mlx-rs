@@ -128,6 +128,9 @@ const METAL_KERNELS: &[&str] = &[
     "scatter",
 ];
 
+const METAL_STEEL_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels/steel";
+const METAL_REDUCTION_KERNEL_DIR: &str = "mlx/mlx/backend/metal/kernels/reduction";
+
 const SHIM_DIR: &str = "shim";
 
 const FILES_SHIM_MLX: &[&str] = &[
@@ -290,15 +293,48 @@ fn generate_compiled_preamble_cpp(out_dir: &PathBuf) -> PathBuf {
 // and build them
 #[cfg(feature = "metal")]
 fn build_metal_kernels(out_dir: &PathBuf) -> PathBuf {
-    // test build kernel air
+    let steel_kernels = recursive_search_metal_kernels(METAL_STEEL_KERNEL_DIR);
+    let reduction_kernels = recursive_search_metal_kernels(METAL_REDUCTION_KERNEL_DIR);
+
     let kernel_build_dir = PathBuf::from(out_dir).join("kernels"); // MLX_METAL_PATH
     let _ = std::fs::create_dir_all(&kernel_build_dir);
     let kernel_src_dir = PathBuf::from(METAL_KERNEL_DIR);
-    let kernel_airs = METAL_KERNELS
+    let mut kernel_airs = METAL_KERNELS
         .iter()
         .map(|&k| build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, k))
         .collect::<Vec<_>>();
+
+    for (kernel_src_dir, kernel_name) in steel_kernels {
+        let kernel_air = build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, &kernel_name);
+        kernel_airs.push(kernel_air);
+    }
+
+    for (kernel_src_dir, kernel_name) in reduction_kernels {
+        let kernel_air = build_kernel_air(&kernel_build_dir, &kernel_src_dir, MLX_DIR, &kernel_name);
+        kernel_airs.push(kernel_air);
+    }
+
     build_kernel_metallib(&kernel_airs, out_dir)
+}
+
+#[cfg(feature = "metal")]
+fn recursive_search_metal_kernels(root: impl AsRef<std::path::Path>) -> Vec<(PathBuf, String)> {
+    use walkdir::WalkDir;
+
+    let mut kernels = Vec::new();
+    for entry in WalkDir::new(root) 
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let filename = entry.file_name().to_string_lossy();
+        if filename.ends_with(".metal") {
+            let dir = entry.path().parent().unwrap().to_path_buf();
+            let kernel_name = filename.trim_end_matches(".metal").to_string();
+            kernels.push((dir, kernel_name));
+        }
+    }
+
+    kernels
 }
 
 #[cfg(feature = "metal")]

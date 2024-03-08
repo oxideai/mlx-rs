@@ -1926,13 +1926,14 @@ fn test_tensordot() {
 }
 
 #[test]
-fn test_tensordot_list_dims() {
+fn test_tensordot_axes() {
     let s = Default::default();
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let b = ones(&shape, s).unwrap();
-    let dims = [cxx_vec![0], cxx_vec![0]];
-    let _tensordotted = tensordot_list_dims(&a, &b, &dims, s).unwrap();
+    let axes_a = cxx_vec![0];
+    let axes_b = cxx_vec![0];
+    let _tensordotted = tensordot_axes(&a, &b, &axes_a, &axes_b, s).unwrap();
 }
 
 #[test]

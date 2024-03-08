@@ -5,8 +5,6 @@ const MLX_DIR: &str = "mlx";
 const METAL_CPP_MACOS_14_2_DIR: &str = "metal-cpp_macOS14.2_iOS17.2";
 #[cfg(feature = "metal")]
 const METAL_CPP_MACOS_14_0_DIR: &str = "metal-cpp_macOS14_iOS17-beta";
-#[cfg(feature = "metal")]
-const METAL_CPP_MACOS_13_3_DIR: &str = "metal-cpp_macOS13.3_iOS16.4";
 
 const FILES_MLX: &[&str] = &[
     "mlx/mlx/allocator.cpp",
@@ -49,6 +47,12 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/qrf.cpp",
 ];
 
+#[cfg(target_os = "ios")]
+const FILES_MLX_BACKEND_COMPILED: &str = "mlx/mlx/backend/common/compiled_nocpu.cpp";
+
+#[cfg(not(target_os = "ios"))]
+const FILES_MLX_BACKEND_COMPILED: &str = "mlx/mlx/backend/common/compiled_cpu.cpp";
+
 #[cfg(not(feature = "accelerate"))]
 const FILE_MLX_BACKEND_COMMON_DEFAULT_PRIMITIVES: &str =
     "mlx/mlx/backend/common/default_primitives.cpp";
@@ -73,6 +77,7 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/fft.cpp",
     "mlx/mlx/backend/metal/indexing.cpp",
     "mlx/mlx/backend/metal/matmul.cpp",
+    "mlx/mlx/backend/metal/scaled_dot_product_attention.cpp",
     "mlx/mlx/backend/metal/metal.cpp",
     "mlx/mlx/backend/metal/primitives.cpp",
     "mlx/mlx/backend/metal/quantized.cpp",
@@ -181,6 +186,7 @@ fn main() {
         .flag("-std=c++17")
         .files(FILES_MLX)
         .files(FILES_MLX_BACKEND_COMMON)
+        .file(FILES_MLX_BACKEND_COMPILED)
         .files(FILES_SHIM_MLX);
 
     let compiled_preamble_cpp = cpu_compiled_preamble(&out_dir);
@@ -221,10 +227,8 @@ fn main() {
             build.include(METAL_CPP_MACOS_14_2_DIR);
         } else if macos_version >= 14.0 {
             build.include(METAL_CPP_MACOS_14_0_DIR);
-        } else if macos_version >= 13.3 {
-            build.include(METAL_CPP_MACOS_13_3_DIR);
         } else {
-            panic!("MLX requires macOS >= 13.4 to be built with MLX_BUILD_METAL=ON");
+            panic!("MLX requires macOS >= 14.0 to be built with MLX_BUILD_METAL=ON");
         }
 
         let metallib = build_metal_kernels(&out_dir);

@@ -1667,4 +1667,15 @@ namespace mlx_cxx
         auto arrays = mlx::core::atleast_3d(a, s.to_variant());
         return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
+
+    std::unique_ptr<mlx::core::array> number_of_elements(
+    const mlx::core::array& a,
+    std::unique_ptr<std::vector<int>> axes,
+    bool inverted,
+    mlx::core::Dtype dtype,
+    StreamOrDevice s)
+    {
+        auto array = mlx::core::number_of_elements(a, *axes, inverted, dtype, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
 }

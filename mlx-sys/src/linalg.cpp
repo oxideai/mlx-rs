@@ -87,4 +87,13 @@ namespace mlx_cxx {
         auto [q, r] = mlx::core::linalg::qr(a, s.to_variant());
         return {std::make_unique<mlx::core::array>(q), std::make_unique<mlx::core::array>(r)};
     }
+
+    std::unique_ptr<std::vector<mlx::core::array>> svd(
+        const mlx::core::array &a, 
+        mlx_cxx::StreamOrDevice s) 
+    {
+        auto svd_result = mlx::core::linalg::svd(a, s.to_variant());
+        auto result = std::make_unique<std::vector<mlx::core::array>>();
+        return result;
+    }
 }

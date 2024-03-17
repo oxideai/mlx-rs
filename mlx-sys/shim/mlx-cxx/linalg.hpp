@@ -19,15 +19,15 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> norm_ord_axis(
-        const mlx::core::array& a,
+        const mlx::core::array &a,
         const double ord,
         int axis,
         bool keepdims = false,
         StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> norm_str_ord(
-        const mlx::core::array& a,
-        const std::string& ord,
+        const mlx::core::array &a,
+        const std::string &ord,
         const OptionalAxis &axis,
         bool keepdims = false,
         StreamOrDevice s = {});
@@ -40,18 +40,22 @@ namespace mlx_cxx
     //     StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> norm(
-        const mlx::core::array& a,
+        const mlx::core::array &a,
         const OptionalAxis &axis,
         bool keepdims = false,
         StreamOrDevice s = {});
 
     std::unique_ptr<mlx::core::array> norm_axis(
-        const mlx::core::array& a,
+        const mlx::core::array &a,
         int axis,
         bool keepdims = false,
         StreamOrDevice s = {});
 
     std::array<std::unique_ptr<mlx::core::array>, 2> qr(
-        const mlx::core::array& a,
+        const mlx::core::array &a,
         StreamOrDevice s = {});
+
+    std::unique_ptr<std::vector<mlx::core::array>> svd(
+        const mlx::core::array &a, 
+        mlx_cxx::StreamOrDevice s = {});
 }

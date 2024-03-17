@@ -317,7 +317,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "zeros_dtype"]
-        fn zeros(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn zeros(
+            shape: &CxxVector<i32>,
+            dtype: Dtype,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn zeros(shape: &CxxVector<i32>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -327,7 +331,11 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "ones_dtype"]
-        fn ones(shape: &CxxVector<i32>, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn ones(
+            shape: &CxxVector<i32>,
+            dtype: Dtype,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn ones(shape: &CxxVector<i32>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -365,7 +373,8 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n_m_k"]
-        fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn tri(n: i32, m: i32, k: i32, dtype: Dtype, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "tri_n"]
@@ -755,11 +764,17 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "mean_along_axis_keepdims"]
-        fn mean(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn mean(
+            a: &array,
+            axis: i32,
+            keepdims: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "var_keepdims"]
-        fn var(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn var(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn var(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -942,7 +957,12 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "logsumexp_along_axis_keepdims"]
-        fn logsumexp(a: &array, axis: i32, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn logsumexp(
+            a: &array,
+            axis: i32,
+            keepdims: bool,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn abs(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
@@ -1419,20 +1439,38 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "atleast_1d_all"]
-        fn atleast_1d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+        fn atleast_1d(
+            a: &CxxVector<array>,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         fn atleast_2d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "atleast_2d_all"]
-        fn atleast_2d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+        fn atleast_2d(
+            a: &CxxVector<array>,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
         fn atleast_3d(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "atleast_3d_all"]
-        fn atleast_3d(a: &CxxVector<array>, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+        fn atleast_3d(
+            a: &CxxVector<array>,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
+        fn number_of_elements(
+            a: &array,
+            axes: UniquePtr<CxxVector<i32>>,
+            inverted: bool,
+            dtype: Dtype,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
     }
 }

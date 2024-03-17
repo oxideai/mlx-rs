@@ -45,6 +45,7 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/indexing.cpp",
     "mlx/mlx/backend/common/load.cpp",
     "mlx/mlx/backend/common/qrf.cpp",
+    "mlx/mlx/backend/common/svd.cpp",
 ];
 
 #[cfg(target_os = "ios")]

@@ -1497,4 +1497,15 @@ namespace mlx_cxx
     std::unique_ptr<std::vector<mlx::core::array>> atleast_3d(
         const std::vector<mlx::core::array>& a,
         StreamOrDevice s = {});
+
+    /**
+     * Extract the number of elements along some axes as a scalar array. Used to
+     * allow shape dependent shapeless compilation (pun intended).
+     */
+    std::unique_ptr<mlx::core::array> number_of_elements(
+        const mlx::core::array& a,
+        std::unique_ptr<std::vector<int>> axes,
+        bool inverted,
+        mlx::core::Dtype dtype = mlx::core::int32,
+        StreamOrDevice s = {});
 }

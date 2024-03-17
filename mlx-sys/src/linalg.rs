@@ -75,5 +75,8 @@ pub mod ffi {
             keepdims: bool,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn svd(a: &array, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
     }
 }

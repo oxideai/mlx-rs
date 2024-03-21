@@ -24,6 +24,7 @@ impl Array {
         self.inner.itemsize()
     }
 
+    // The number of elements in the array.
     pub fn size(&self) -> usize {
         self.inner.size()
     }
@@ -70,6 +71,24 @@ impl Array {
 
     pub fn overwrite_descriptor(&mut self, other: &Self) {
         self.inner.pin_mut().overwrite_descriptor(other.as_ref())
+    }
+
+    pub fn as_slice<T>(&self) -> &[T] 
+    where
+        Self: Data<T>,
+    {
+        unsafe {
+            std::slice::from_raw_parts(self.data(), self.size())
+        }
+    }
+
+    pub fn as_mut_slice<T>(&mut self) -> &mut [T] 
+    where
+        Self: DataMut<T>,
+    {
+        unsafe {
+            std::slice::from_raw_parts_mut(self.data_mut(), self.size())
+        }
     }
 }
 
@@ -313,6 +332,10 @@ impl AsRef<array> for Array {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                    Item                                    */
+/* -------------------------------------------------------------------------- */
+
 pub trait Item<T> {
     fn item(&self) -> Result<T, Exception>;
 }
@@ -395,6 +418,10 @@ impl Item<complex64_t> for Array {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                    Data                                    */
+/* -------------------------------------------------------------------------- */
+
 pub trait Data<T> {
     fn data(&self) -> *const T;
 }
@@ -476,6 +503,10 @@ impl Data<complex64_t> for Array {
         self.inner.data_complex64()
     }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                   DataMut                                  */
+/* -------------------------------------------------------------------------- */
 
 pub trait DataMut<T>: Data<T> {
     fn data_mut(&mut self) -> *mut T;

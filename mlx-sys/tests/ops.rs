@@ -1,6 +1,7 @@
 use cxx::CxxVector;
 use mlx_sys::{
-    array::ffi::{array_from_slice_bool, array_from_slice_int32, array_new_float32}, cxx_vec, dtype::ffi::*, ops::ffi::*, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}, utils::ffi::push_array, Optional
+    array::ffi::{array_from_slice_bool, array_from_slice_int32, array_new_float32}, cxx_vec, dtype::ffi::*, ops::ffi::*, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}, utils::ffi::push_array, Optional,
+    utils::CloneCxxVector,
 };
 
 #[test]
@@ -730,7 +731,7 @@ fn test_isneginf() {
 fn test_where_condition() {
     let s = Default::default();
     let shape = cxx_vec![5];
-    let condition = array_from_slice_bool(&[false, true, false, true, false], &shape);
+    let condition = array_from_slice_bool(&[false, true, false, true, false], shape.clone());
     let x = arange_f64(0.0, 5.0, 1.0, s).unwrap();
     let y = arange_f64(5.0, 10.0, 1.0, s).unwrap();
     let _where = where_condition(&condition, &x, &y, s).unwrap();
@@ -1254,7 +1255,7 @@ fn test_sign() {
 fn test_logical_not() {
     let s = Default::default();
     let shape = cxx_vec![5];
-    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
+    let a = array_from_slice_bool(&[true, false, true, false, true], shape.clone());
     let _logical_not = logical_not(&a, s).unwrap();
 }
 
@@ -1262,8 +1263,8 @@ fn test_logical_not() {
 fn test_logical_and() {
     let s = Default::default();
     let shape = cxx_vec![5];
-    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
-    let b = array_from_slice_bool(&[true, true, false, false, true], &shape);
+    let a = array_from_slice_bool(&[true, false, true, false, true], shape.clone());
+    let b = array_from_slice_bool(&[true, true, false, false, true], shape.clone());
     let _logical_and = logical_and(&a, &b, s).unwrap();
 }
 
@@ -1271,8 +1272,8 @@ fn test_logical_and() {
 fn test_logical_or() {
     let s = Default::default();
     let shape = cxx_vec![5];
-    let a = array_from_slice_bool(&[true, false, true, false, true], &shape);
-    let b = array_from_slice_bool(&[true, true, false, false, true], &shape);
+    let a = array_from_slice_bool(&[true, false, true, false, true], shape.clone());
+    let b = array_from_slice_bool(&[true, true, false, false, true], shape.clone());
     let _logical_or = logical_or(&a, &b, s).unwrap();
 }
 
@@ -1553,7 +1554,7 @@ fn test_gather_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let axes = cxx_vec![0];
@@ -1567,7 +1568,7 @@ fn test_gather_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let axis = 0;
     let slice_sizes = cxx_vec![3, 3];
     let _gathered = gather_along_axis(&a, &indices, axis, &slice_sizes, s).unwrap();
@@ -1579,7 +1580,7 @@ fn test_take() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let axis = 0;
     let _taken = take(&a, &indices, axis, s).unwrap();
 }
@@ -1590,7 +1591,7 @@ fn test_take_flattened() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let _taken = take_flattened(&a, &indices, s).unwrap();
 }
 
@@ -1610,7 +1611,7 @@ fn test_scatter_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = zeros(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let shape = cxx_vec![3, 3, 3];
@@ -1625,7 +1626,7 @@ fn test_scatter_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = zeros(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let shape = cxx_vec![3, 3, 3];
     let updates = ones(&shape, s).unwrap();
     let axis = 0;
@@ -1638,7 +1639,7 @@ fn test_scatter_add_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = zeros(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let shape = cxx_vec![3, 3, 3];
@@ -1653,7 +1654,7 @@ fn test_scatter_add_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = zeros(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let shape = cxx_vec![3, 3, 3];
     let updates = ones(&shape, s).unwrap();
     let axis = 0;
@@ -1666,7 +1667,7 @@ fn test_scatter_prod_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let shape = cxx_vec![3, 3, 3];
@@ -1681,7 +1682,7 @@ fn test_scatter_prod_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let shape = cxx_vec![3, 3, 3];
     let updates = ones(&shape, s).unwrap();
     let axis = 0;
@@ -1694,7 +1695,7 @@ fn test_scatter_max_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let shape = cxx_vec![3, 3, 3];
@@ -1709,7 +1710,7 @@ fn test_scatter_max_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let shape = cxx_vec![3, 3, 3];
     let updates = ones(&shape, s).unwrap();
     let axis = 0;
@@ -1722,7 +1723,7 @@ fn test_scatter_min_along_axes() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let index = array_from_slice_int32(&[0, 1, 2], &shape);
+    let index = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let mut indices = CxxVector::new();
     push_array(indices.pin_mut(), index);
     let shape = cxx_vec![3, 3, 3];
@@ -1737,7 +1738,7 @@ fn test_scatter_min_along_axis() {
     let shape = cxx_vec![3, 3];
     let a = ones(&shape, s).unwrap();
     let shape = cxx_vec![3];
-    let indices = array_from_slice_int32(&[0, 1, 2], &shape);
+    let indices = array_from_slice_int32(&[0, 1, 2], shape.clone());
     let shape = cxx_vec![3, 3, 3];
     let updates = ones(&shape, s).unwrap();
     let axis = 0;

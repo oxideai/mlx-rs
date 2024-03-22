@@ -113,3 +113,23 @@ where
         v
     }
 }
+
+pub trait CloneCxxVector<T>
+where
+    T: ExternType<Kind = Trivial> + VectorElement + Clone,
+{
+    fn clone(&self) -> cxx::UniquePtr<cxx::CxxVector<T>>;
+}
+
+impl<T> CloneCxxVector<T> for cxx::CxxVector<T> 
+where
+    T: ExternType<Kind = Trivial> + VectorElement + Clone,
+{
+    fn clone(&self) -> cxx::UniquePtr<cxx::CxxVector<T>> {
+        let mut v = cxx::CxxVector::new();
+        for x in self.iter() {
+            v.pin_mut().push(x.clone());
+        }
+        v
+    }
+}

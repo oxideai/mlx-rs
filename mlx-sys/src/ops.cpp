@@ -250,6 +250,29 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<mlx::core::array> slice_update(
+        const mlx::core::array &src,
+        const mlx::core::array &update,
+        std::unique_ptr<std::vector<int>> start,
+        std::unique_ptr<std::vector<int>> stop,
+        std::unique_ptr<std::vector<int>> strides,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::slice_update(src, update, *start, *stop, *strides, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> slice_update(
+        const mlx::core::array &src,
+        const mlx::core::array &update,
+        const std::unique_ptr<std::vector<int>> start,
+        const std::unique_ptr<std::vector<int>> stop,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::slice_update(src, update, *start, *stop, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
     /** Split an std::unique_ptr<mlx::core::array> into sub-arrays along a given axis. */
     std::unique_ptr<std::vector<mlx::core::array>>
     split(const mlx::core::array &a, int num_splits, int axis, mlx_cxx::StreamOrDevice s)

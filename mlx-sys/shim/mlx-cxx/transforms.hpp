@@ -11,7 +11,7 @@
 
 namespace mlx_cxx
 {
-    void eval(const std::vector<mlx::core::array> &outputs);
+    void eval(std::vector<mlx::core::array>& outputs);
 
     // TODO: what about the templated eval?
 

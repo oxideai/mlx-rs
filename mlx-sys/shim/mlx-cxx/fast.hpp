@@ -26,4 +26,19 @@ namespace mlx_cxx::fast {
         const OptionalArray & mask,
         mlx_cxx::StreamOrDevice s
     );
+
+    std::unique_ptr<mlx::core::array> rms_norm(
+        const mlx::core::array & x,
+        const mlx::core::array & weight,
+        float eps,
+        mlx_cxx::StreamOrDevice s
+    );
+
+    std::unique_ptr<mlx::core::array> layer_norm(
+        const mlx::core::array & x,
+        const OptionalArray & weight,
+        const OptionalArray & bias,
+        float eps,
+        mlx_cxx::StreamOrDevice s
+    );
 }

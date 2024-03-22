@@ -96,4 +96,10 @@ namespace mlx_cxx {
         auto result = std::make_unique<std::vector<mlx::core::array>>();
         return result;
     }
+
+    std::unique_ptr<mlx::core::array> inv(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::linalg::inv(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
 }

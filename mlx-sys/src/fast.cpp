@@ -42,4 +42,40 @@ namespace mlx_cxx::fast {
 
         return std::make_unique<mlx::core::array>(arr);
     }
+    
+
+    std::unique_ptr<mlx::core::array> rms_norm(
+        const mlx::core::array & x,
+        const mlx::core::array & weight,
+        float eps,
+        mlx_cxx::StreamOrDevice s
+    )
+    {
+        auto arr = mlx::core::fast::rms_norm(
+            x,
+            weight,
+            eps,
+            s.to_variant());
+        return std::make_unique<mlx::core::array>(arr);
+    }
+
+    std::unique_ptr<mlx::core::array> layer_norm(
+        const mlx::core::array & x,
+        const OptionalArray & weight,
+        const OptionalArray & bias,
+        float eps,
+        mlx_cxx::StreamOrDevice s
+    )
+    {
+        auto std_weight = mlx_cxx::to_std_optional(weight);
+        auto std_bias = mlx_cxx::to_std_optional(bias);
+
+        auto arr = mlx::core::fast::layer_norm(
+            x,
+            std_weight,
+            std_bias,
+            eps,
+            s.to_variant());
+        return std::make_unique<mlx::core::array>(arr);
+    }
 }

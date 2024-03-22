@@ -36,7 +36,6 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/primitives.cpp",
     "mlx/mlx/backend/common/quantized.cpp",
     "mlx/mlx/backend/common/reduce.cpp",
-    "mlx/mlx/backend/common/rope.cpp",
     "mlx/mlx/backend/common/scan.cpp",
     "mlx/mlx/backend/common/select.cpp",
     "mlx/mlx/backend/common/softmax.cpp",
@@ -46,6 +45,7 @@ const FILES_MLX_BACKEND_COMMON: &[&str] = &[
     "mlx/mlx/backend/common/load.cpp",
     "mlx/mlx/backend/common/qrf.cpp",
     "mlx/mlx/backend/common/svd.cpp",
+    "mlx/mlx/backend/common/inverse.cpp",
 ];
 
 #[cfg(target_os = "ios")]
@@ -82,6 +82,7 @@ const FILES_MLX_BACKEND_METAL: &[&str] = &[
     "mlx/mlx/backend/metal/metal.cpp",
     "mlx/mlx/backend/metal/primitives.cpp",
     "mlx/mlx/backend/metal/quantized.cpp",
+    "mlx/mlx/backend/metal/normalization.cpp",
     "mlx/mlx/backend/metal/rope.cpp",
     "mlx/mlx/backend/metal/scan.cpp",
     "mlx/mlx/backend/metal/softmax.cpp",
@@ -118,6 +119,8 @@ const METAL_KERNELS: &[&str] = &[
     "gemv",
     "quantized",
     "random",
+    "rms_norm",
+    "layer_norm",
     "rope",
     "scan",
     "scaled_dot_product_attention",

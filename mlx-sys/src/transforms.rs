@@ -40,7 +40,7 @@ pub mod ffi {
         // TODO: This clearly changes internal states of the arrays. We should review if it should
         // be put behind a mut reference.
         #[namespace = "mlx_cxx"]
-        fn eval(outputs: &CxxVector<array>) -> Result<()>;
+        fn eval(outputs: Pin<&mut CxxVector<array>>) -> Result<()>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "vjp_multiary_cxx_fn"]

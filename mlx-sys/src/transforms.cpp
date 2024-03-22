@@ -9,7 +9,7 @@
 namespace mlx_cxx
 {
     // TODO: should this use a mutable Slice?
-    void eval(const std::vector<mlx::core::array> &outputs)
+    void eval(std::vector<mlx::core::array>& outputs)
     {
         mlx::core::eval(outputs);
     }

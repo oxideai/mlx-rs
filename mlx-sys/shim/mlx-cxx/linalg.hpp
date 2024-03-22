@@ -56,6 +56,8 @@ namespace mlx_cxx
         StreamOrDevice s = {});
 
     std::unique_ptr<std::vector<mlx::core::array>> svd(
-        const mlx::core::array &a, 
+        const mlx::core::array &a,
         mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> inv(const mlx::core::array &a, mlx_cxx::StreamOrDevice s);
 }

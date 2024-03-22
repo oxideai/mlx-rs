@@ -78,5 +78,8 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         fn svd(a: &array, s: StreamOrDevice) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
+        fn inv(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
     }
 }

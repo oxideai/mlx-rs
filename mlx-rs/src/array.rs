@@ -1,12 +1,14 @@
 use std::pin::Pin;
 
-use cxx::{CxxVector, Exception, UniquePtr};
-use mlx_sys::{array::ffi::{self, array}, dtype::ffi::Dtype, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}};
+use cxx::{Exception, UniquePtr};
+use mlx_sys::{array::ffi::{self, array}, dtype::ffi::Dtype, types::{bfloat16::bfloat16_t, complex64::complex64_t, float16::float16_t}, utils::IntoCxxVector};
 
+#[repr(transparent)]
 pub struct Array {
-    inner: UniquePtr<ffi::array>,
+    pub(crate) inner: UniquePtr<ffi::array>,
 }
 
+// TODO: Functions that are not meant to be used by the user is not implemented.
 impl Array {
     pub fn inner(&self) -> &ffi::array {
         &self.inner
@@ -37,16 +39,16 @@ impl Array {
         self.inner.ndim()
     }
 
-    pub fn shape(&self) -> &CxxVector<i32> {
-        self.inner.shape()
+    pub fn shape(&self) -> &[i32] {
+        self.inner.shape().as_slice()
     }
 
     pub fn shape_of_dim(&self, dim: i32) -> i32 {
         self.inner.shape_of_dim(dim)
     }
 
-    pub fn strides(&self) -> &CxxVector<usize> {
-        self.inner.strides()
+    pub fn strides(&self) -> &[usize] {
+        self.inner.strides().as_slice()
     }
 
     pub fn dtype(&self) -> Dtype {
@@ -73,6 +75,7 @@ impl Array {
         self.inner.pin_mut().overwrite_descriptor(other.as_ref())
     }
 
+    /// Get the underlying data as a contiguous slice.
     pub fn as_slice<T>(&self) -> &[T] 
     where
         Self: Data<T>,
@@ -82,7 +85,8 @@ impl Array {
         }
     }
 
-    pub fn as_mut_slice<T>(&mut self) -> &mut [T] 
+    /// Get the underlying data as a mutable contiguous slice.
+    pub fn as_mut_slice<T>(&mut self) -> &mut [T]
     where
         Self: DataMut<T>,
     {
@@ -210,119 +214,110 @@ where
 }
 
 pub trait FromSlice<T> {
-    fn from_slice(slice: &[T], shape: &CxxVector<i32>) -> Self;
+    fn from_slice(slice: &[T], shape: impl IntoCxxVector<i32>) -> Self;
 }
 
 impl FromSlice<bool> for Array {
-    fn from_slice(slice: &[bool], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[bool], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_bool(slice, shape),
+            inner: ffi::array_from_slice_bool(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<i8> for Array {
-    fn from_slice(slice: &[i8], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[i8], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_int8(slice, shape),
+            inner: ffi::array_from_slice_int8(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<i16> for Array {
-    fn from_slice(slice: &[i16], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[i16], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_int16(slice, shape),
+            inner: ffi::array_from_slice_int16(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<i32> for Array {
-    fn from_slice(slice: &[i32], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[i32], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_int32(slice, shape),
+            inner: ffi::array_from_slice_int32(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<i64> for Array {
-    fn from_slice(slice: &[i64], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[i64], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_int64(slice, shape),
+            inner: ffi::array_from_slice_int64(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<u8> for Array {
-    fn from_slice(slice: &[u8], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[u8], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_uint8(slice, shape),
+            inner: ffi::array_from_slice_uint8(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<u16> for Array {
-    fn from_slice(slice: &[u16], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[u16], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_uint16(slice, shape),
+            inner: ffi::array_from_slice_uint16(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<u32> for Array {
-    fn from_slice(slice: &[u32], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[u32], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_uint32(slice, shape),
+            inner: ffi::array_from_slice_uint32(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<u64> for Array {
-    fn from_slice(slice: &[u64], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[u64], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_uint64(slice, shape),
+            inner: ffi::array_from_slice_uint64(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<float16_t> for Array {
-    fn from_slice(slice: &[float16_t], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[float16_t], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_float16(slice, shape),
+            inner: ffi::array_from_slice_float16(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<bfloat16_t> for Array {
-    fn from_slice(slice: &[bfloat16_t], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[bfloat16_t], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_bfloat16(slice, shape),
+            inner: ffi::array_from_slice_bfloat16(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<f32> for Array {
-    fn from_slice(slice: &[f32], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[f32], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_float32(slice, shape),
+            inner: ffi::array_from_slice_float32(slice, shape.into_cxx_vector()),
         }
     }
 }
 
 impl FromSlice<complex64_t> for Array {
-    fn from_slice(slice: &[complex64_t], shape: &CxxVector<i32>) -> Self {
+    fn from_slice(slice: &[complex64_t], shape: impl IntoCxxVector<i32>) -> Self {
         Self {
-            inner: ffi::array_from_slice_complex64(slice, shape),
+            inner: ffi::array_from_slice_complex64(slice, shape.into_cxx_vector()),
         }
-    }
-}
-
-impl<T> From<(&[T], &CxxVector<i32>)> for Array
-where
-    Array: FromSlice<T>,
-{
-    fn from((slice, shape): (&[T], &CxxVector<i32>)) -> Self {
-        Self::from_slice(slice, shape)
     }
 }
 

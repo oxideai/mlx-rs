@@ -2,6 +2,8 @@ use cxx::{CxxVector, UniquePtr};
 
 use crate::array::ffi::array;
 
+use self::ffi::CxxUnaryFn;
+
 pub trait Function<Args> {
     type Output;
 
@@ -19,8 +21,16 @@ where
     }
 }
 
+pub trait CompatFn {
+    type CxxFn;
+}
+
 #[repr(transparent)]
 pub struct UnaryFn(pub Box<dyn for<'a> Function<&'a array, Output = UniquePtr<array>> + 'static>);
+
+impl CompatFn for UnaryFn {
+    type CxxFn = CxxUnaryFn;
+}
 
 impl<F> From<F> for UnaryFn
 where
@@ -42,6 +52,10 @@ pub struct MultiaryFn(
     >,
 );
 
+impl CompatFn for MultiaryFn {
+    type CxxFn = ffi::CxxMultiaryFn;
+}
+
 impl<F> From<F> for MultiaryFn
 where
     F: for<'a> Function<&'a CxxVector<array>, Output = UniquePtr<CxxVector<array>>> + 'static,
@@ -59,6 +73,10 @@ pub fn execute_multiary_fn(f: &MultiaryFn, args: &CxxVector<array>) -> UniquePtr
 pub struct MultiInputSingleOutputFn(
     pub Box<dyn for<'a> Function<&'a CxxVector<array>, Output = UniquePtr<array>> + 'static>,
 );
+
+impl CompatFn for MultiInputSingleOutputFn {
+    type CxxFn = ffi::CxxMultiInputSingleOutputFn;
+}
 
 impl<F> From<F> for MultiInputSingleOutputFn
 where
@@ -80,6 +98,10 @@ fn execute_multi_input_single_output_fn(
 pub struct PairInputSingleOutputFn(
     pub Box<dyn for<'a> Function<[&'a array; 2], Output = UniquePtr<array>> + 'static>,
 );
+
+impl CompatFn for PairInputSingleOutputFn {
+    type CxxFn = ffi::CxxPairInputSingleOutputFn;
+}
 
 impl<F> From<F> for PairInputSingleOutputFn
 where
@@ -106,6 +128,10 @@ pub struct VjpFn(
             + 'static,
     >,
 );
+
+impl CompatFn for VjpFn {
+    type CxxFn = ffi::CxxMultiaryFn;
+}
 
 impl<F> From<F> for VjpFn
 where

@@ -75,6 +75,15 @@ where
     fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>>;
 }
 
+impl<T> IntoCxxVector<T> for cxx::UniquePtr<cxx::CxxVector<T>>
+where
+    T: ExternType<Kind = Trivial> + VectorElement,
+{
+    fn into_cxx_vector(self) -> cxx::UniquePtr<cxx::CxxVector<T>> {
+        self
+    }
+}
+
 impl<T> IntoCxxVector<T> for Vec<T> 
 where
     T: ExternType<Kind = Trivial> + VectorElement,

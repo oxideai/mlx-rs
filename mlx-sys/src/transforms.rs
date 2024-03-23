@@ -151,3 +151,35 @@ pub mod compat {
         };
     }
 }
+
+impl crate::compat::CompatFn for ffi::CxxUnaryFn {
+    type CxxFn = ffi::CxxUnaryFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxMultiaryFn {
+    type CxxFn = ffi::CxxMultiaryFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxMultiInputSingleOutputFn {
+    type CxxFn = ffi::CxxMultiInputSingleOutputFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxPairInputSingleOutputFn {
+    type CxxFn = ffi::CxxPairInputSingleOutputFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxSingleInputPairOutputFn {
+    type CxxFn = ffi::CxxSingleInputPairOutputFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxVjpFn {
+    type CxxFn = ffi::CxxVjpFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxValueAndGradFn {
+    type CxxFn = ffi::CxxValueAndGradFn;
+}
+
+impl crate::compat::CompatFn for ffi::CxxSimpleValueAndGradFn {
+    type CxxFn = ffi::CxxSimpleValueAndGradFn;
+}

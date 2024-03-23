@@ -261,6 +261,8 @@ pub mod ffi {
             shape: UniquePtr<CxxVector<i32>>,
         ) -> UniquePtr<array>;
 
+        // Functions below are not meant to be used by the user.
+
         #[namespace = "mlx::core"]
         fn id(self: &array) -> uintptr_t;
 

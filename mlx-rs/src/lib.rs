@@ -6,3 +6,4 @@ pub mod dtype;
 pub mod types;
 pub mod utils;
 pub mod fast;
+pub mod fft;

@@ -56,7 +56,7 @@ fn test_linspace() {
 fn test_astype() {
     let s = Default::default();
     let original = arange_start_stop_f64(0.0, 10.0, s).unwrap();
-    let _converted = astype(&original, dtype_int32(), s).unwrap();
+    let _converted = astype(original, dtype_int32(), s).unwrap();
 }
 
 #[test]
@@ -66,14 +66,14 @@ fn test_as_strided() {
     let shape = cxx_vec![2, 5];
     let strides = cxx_vec![1, 2];
     let offset = 0;
-    let _converted = as_strided(&original, shape, strides, offset, s).unwrap();
+    let _converted = as_strided(original, shape, strides, offset, s).unwrap();
 }
 
 #[test]
 fn test_copy() {
     let s = Default::default();
     let original = arange_start_stop_f64(0.0, 10.0, s).unwrap();
-    let _copied = copy(&original, s).unwrap();
+    let _copied = copy(original, s).unwrap();
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn test_full_dtype() {
     let dtype = dtype_float32();
     let s = Default::default();
     let vals = array_new_float32(1.0);
-    let _arr = full_dtype(&shape, &vals, dtype, s).unwrap();
+    let _arr = full_dtype(shape, vals, dtype, s).unwrap();
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn test_full() {
     let shape = cxx_vec![2, 5];
     let s = Default::default();
     let vals = array_new_float32(1.0);
-    let _arr = full(&shape, &vals, s).unwrap();
+    let _arr = full(shape, vals, s).unwrap();
 }
 
 #[test]

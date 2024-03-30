@@ -224,6 +224,21 @@ pub mod ffi {
 
         #[namespace = "mlx::core"]
         fn dtype_from_array_protocol(s: StringView) -> Result<Dtype>;
+
+        #[namespace = "mlx::core"]
+        fn issubdtype(a: &Dtype, b: &Dtype) -> bool;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "issubdtype"]
+        fn issubdtype_cat_dtype(a: &Category, b: &Dtype) -> bool;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "issubdtype"]
+        fn issubdtype_dtype_cat(a: &Dtype, b: &Category) -> bool;   
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "issubdtype"]
+        fn issubdtype_cat_cat(a: &Category, b: &Category) -> bool;
     }
 }
 

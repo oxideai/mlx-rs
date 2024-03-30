@@ -104,29 +104,5 @@ fn test_kindof() {
     assert!(matches!(kindof(&dtype), Kind::SignedInt));
 }
 
-#[test]
-fn test_is_unsigned() {
-    let dtype = dtype_uint32();
-    assert!(is_unsigned(&dtype));
-}
-
-#[test]
-fn test_is_floating_point() {
-    let dtype = dtype_float32();
-    assert!(is_floating_point(&dtype));
-}
-
-#[test]
-fn test_is_complex() {
-    let dtype = dtype_complex64();
-    assert!(is_complex(&dtype));
-}
-
-#[test]
-fn test_is_integral() {
-    let dtype = dtype_int32();
-    assert!(is_integral(&dtype));
-}
-
 // TODO: test dtype_to_array_protocol
 // TODO: test dtype_from_array_protocol

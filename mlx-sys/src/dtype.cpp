@@ -57,6 +57,31 @@ namespace mlx_cxx {
         return mlx::core::complex64;
     }
 
+    DtypeCategory dtype_category_complexfloating() {
+        return mlx::core::complexfloating;
+    }
+    DtypeCategory dtype_category_floating() {
+        return mlx::core::floating;
+    }
+    DtypeCategory dtype_category_inexact() {
+        return mlx::core::inexact;
+    }
+    DtypeCategory dtype_category_signedinteger() {
+        return mlx::core::signedinteger;
+    }
+    DtypeCategory dtype_category_unsignedinteger() {
+        return mlx::core::unsignedinteger;
+    }
+    DtypeCategory dtype_category_integer() {
+        return mlx::core::integer;
+    }
+    DtypeCategory dtype_category_number() {
+        return mlx::core::number;
+    }
+    DtypeCategory dtype_category_generic() {
+        return mlx::core::generic;
+    }
+
     std::unique_ptr<std::string> dtype_to_array_protocol(const mlx::core::Dtype& dtype) {
         return std::make_unique<std::string>(mlx::core::dtype_to_array_protocol(dtype));
     }

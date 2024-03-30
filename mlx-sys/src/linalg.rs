@@ -14,6 +14,7 @@ unsafe impl cxx::ExternType for OptionalAxis {
 pub mod ffi {
     unsafe extern "C++" {
         include!("mlx-cxx/linalg.hpp");
+        include!("mlx-cxx/utils.hpp");
 
         #[namespace = "mlx::core"]
         type array = crate::array::ffi::array;
@@ -23,6 +24,10 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         type StreamOrDevice = crate::utils::StreamOrDevice;
+
+        #[namespace = "std"]
+        #[cxx_name = "string_view"]
+        type StringView<'a> = crate::utils::StringView<'a>;
 
         #[namespace = "mlx_cxx"]
         fn norm_ord(
@@ -45,7 +50,7 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn norm_str_ord(
             a: &array,
-            ord: &CxxString,
+            ord: StringView,
             axis: &OptionalAxis,
             keepdims: bool,
             s: StreamOrDevice,

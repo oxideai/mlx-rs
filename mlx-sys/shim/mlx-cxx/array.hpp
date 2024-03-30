@@ -30,6 +30,8 @@ namespace mlx_cxx
     // bfloat16,
     // complex64,
 
+    // TODO: make_arrays() requires primitives
+
     std::unique_ptr<array> array_empty(mlx::core::Dtype dtype);
     std::unique_ptr<array> array_from_slice_bool(rust::Slice<const bool> slice, std::unique_ptr<std::vector<int>> shape);
     std::unique_ptr<array> array_from_slice_uint8(rust::Slice<const uint8_t> slice, std::unique_ptr<std::vector<int>> shape);

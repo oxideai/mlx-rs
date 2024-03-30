@@ -291,6 +291,10 @@ pub mod ffi {
             position: u16,
         );
 
+        // The i-th output of the array's primitive.
+        #[namespace = "mlx::core"]
+        fn output(self: &array, i: i32) -> &array;
+        
         #[namespace = "mlx_cxx"]
         fn array_outputs(arr: Pin<&mut array>) -> UniquePtr<CxxVector<array>>;
 

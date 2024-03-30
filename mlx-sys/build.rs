@@ -151,6 +151,7 @@ const FILES_SHIM_MLX: &[&str] = &[
     "src/compile.cpp",
     "src/compat.cpp",
     "src/fast.cpp",
+    "src/backend/metal.cpp",
 ];
 
 const RUST_SOURCE_FILES: &[&str] = &[
@@ -178,8 +179,10 @@ const MAKE_COMPILED_PREAMBLE_SH: &str = "mlx/mlx/backend/common/make_compiled_pr
 
 fn main() {
     // TODO: conditionally compile based on if accelerate is available
+    // TODO: how to use MLX_METAL_DEBUG flag?
 
-    // TODO: panic if target is x86
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+    panic!("Building for x86_64 on macOS is not supported.");
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     println!("cargo:warning=out_dir: {}", out_dir.display());
@@ -351,6 +354,8 @@ fn build_kernel_air(
     let kernel_src = kernel_src_dir.join(format!("{}.metal", kernel_name));
     let kernel_air = kernel_build_dir.join(format!("{}.air", kernel_name));
     // let kernel_metallib = kernel_build_dir.join(format!("{}.metallib", kernel_name));
+
+    // TODO: what to do with MLX_METAL_DEBUG flag?
 
     let status = std::process::Command::new("xcrun")
         .arg("-sdk")

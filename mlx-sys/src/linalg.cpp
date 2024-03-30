@@ -38,7 +38,7 @@ namespace mlx_cxx {
 
     std::unique_ptr<mlx::core::array> norm_str_ord(
         const mlx::core::array& a,
-        const std::string& ord,
+        std::string_view ord,
         const OptionalAxis &axis,
         bool keepdims,
         mlx_cxx::StreamOrDevice s)

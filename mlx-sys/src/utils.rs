@@ -1,3 +1,5 @@
+use std::os::raw::{c_char, c_void};
+
 use cxx::{kind::Trivial, vector::VectorElement, ExternType};
 
 #[derive(Clone, Copy)]
@@ -16,6 +18,18 @@ impl Default for StreamOrDevice {
 
 unsafe impl cxx::ExternType for StreamOrDevice {
     type Id = cxx::type_id!("mlx_cxx::StreamOrDevice");
+    type Kind = cxx::kind::Trivial;
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct StringView<'a> {
+    repr: core::mem::MaybeUninit<[*const c_void; 2]>,
+    borrow: core::marker::PhantomData<&'a [c_char]>,
+}
+
+unsafe impl<'a> ExternType for StringView<'a> {
+    type Id = cxx::type_id!("std::string_view");
     type Kind = cxx::kind::Trivial;
 }
 
@@ -43,8 +57,21 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         type array = crate::array::ffi::array;
 
+        #[namespace = "std"]
+        #[cxx_name = "string_view"]
+        type StringView<'a> = crate::utils::StringView<'a>;
+
         #[namespace = "mlx_cxx"]
         fn result_type(arrays: &[UniquePtr<array>]) -> Dtype;
+
+        /// The type from promoting the arrays' types with one another.
+        #[namespace = "mlx::core"]
+        #[cxx_name = "result_type"]
+        fn result_type2(a: &array, b: &array) -> Dtype;
+
+        #[namespace = "mlx::core"]
+        #[cxx_name = "result_type"]
+        fn result_type3(a: &array, b: &array, c: &array) -> Dtype;
 
         #[namespace = "mlx_cxx"]
         fn broadcast_shapes(
@@ -56,6 +83,9 @@ pub mod ffi {
         fn is_same_shape(arrays: &[UniquePtr<array>]) -> bool;
 
         #[namespace = "mlx::core"]
+        fn is_big_endian() -> bool;
+
+        #[namespace = "mlx::core"]
         fn normalize_axis(axis: i32, ndim: i32) -> Result<i32>;
 
         #[namespace = "mlx_cxx"]
@@ -65,6 +95,29 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         #[cxx_name = "std_vec_from_slice"]
         fn new_cxx_vec_array_from_slice(slice: &[UniquePtr<array>]) -> UniquePtr<CxxVector<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn string_view_from_str(s: &str) -> StringView;
+
+        #[namespace = "mlx_cxx"]
+        fn string_view_as_bytes(s: StringView) -> &[c_char];
+    }
+}
+
+impl<'a> StringView<'a> {
+    pub fn new(s: &'a str) -> Self {
+        ffi::string_view_from_str(s)
+    }
+
+    pub fn as_bytes(self) -> &'a [c_char] {
+        ffi::string_view_as_bytes(self)
+    }
+}
+
+impl<'a> core::ops::Deref for StringView<'a> {
+    type Target = [c_char];
+    fn deref(&self) -> &Self::Target {
+        self.as_bytes()
     }
 }
 

@@ -47,30 +47,32 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s = {});
 
     /** Convert an std::unique_ptr<mlx::core::array> to the given data type. */
-    std::unique_ptr<mlx::core::array> astype(const mlx::core::array &a, mlx::core::Dtype dtype, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> astype(std::unique_ptr<mlx::core::array> a, mlx::core::Dtype dtype, mlx_cxx::StreamOrDevice s = {});
 
     /** Create a view of an std::unique_ptr<mlx::core::array> with the given shape and strides. */
     std::unique_ptr<mlx::core::array> as_strided(
-        const mlx::core::array &a,
+        std::unique_ptr<mlx::core::array> a,
         std::unique_ptr<std::vector<int>> shape,
         std::unique_ptr<std::vector<size_t>> strides,
         size_t offset,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Copy another array. */
-    std::unique_ptr<mlx::core::array> copy(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+    // TODO: how is copy if everything is moved?
+    std::unique_ptr<mlx::core::array> copy(std::unique_ptr<mlx::core::array> a, mlx_cxx::StreamOrDevice s = {});
 
     /** Fill an std::unique_ptr<mlx::core::array> of the given shape with the given value(s). */
     std::unique_ptr<mlx::core::array> full(
-        const std::vector<int> &shape,
-        const mlx::core::array &vals,
+        std::unique_ptr<std::vector<int>> shape,
+        std::unique_ptr<mlx::core::array> vals,
         mlx::core::Dtype dtype,
         mlx_cxx::StreamOrDevice s = {});
     std::unique_ptr<mlx::core::array> full(
-        const std::vector<int> &shape,
-        const mlx::core::array &vals,
+        std::unique_ptr<std::vector<int>> shape,
+        std::unique_ptr<mlx::core::array> vals,
         mlx_cxx::StreamOrDevice s = {});
 
+    // TODO: full with scalar value
     // template <typename T>
     // std::unique_ptr<mlx::core::array> full(
     //     const std::vector<int> &shape,

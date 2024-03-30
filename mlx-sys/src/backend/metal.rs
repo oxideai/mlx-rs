@@ -2,6 +2,7 @@
 pub mod ffi {
     unsafe extern "C++" {
         include!("mlx/backend/metal/metal.h");
+        include!("mlx-cxx/backend/metal/metal.hpp");
 
         #[namespace = "mlx::core::metal"]
         fn is_available() -> bool;
@@ -20,6 +21,12 @@ pub mod ffi {
 
         #[namespace = "mlx::core::metal"]
         fn set_cache_limit(limit: usize) -> usize;
+
+        #[namespace = "mlx_cxx::metal"]
+        fn start_capture(path: UniquePtr<CxxString>) -> bool;
+
+        #[namespace = "mlx::core::metal"]
+        fn stop_capture();
 
         // TODO: should these be exported? `new_stream()`, `new_scoped_memory_pool()`, and
         // `make_task()`

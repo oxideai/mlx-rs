@@ -89,12 +89,12 @@ pub mod ffi {
 
         // Convert an array to the given data type.
         #[namespace = "mlx_cxx"]
-        fn astype(a: &array, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn astype(a: UniquePtr<array>, dtype: Dtype, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         // Create a view of an array with the given shape and strides.
         #[namespace = "mlx_cxx"]
         fn as_strided(
-            a: &array,
+            a: UniquePtr<array>,
             shape: UniquePtr<CxxVector<i32>>,
             strides: UniquePtr<CxxVector<usize>>,
             offset: usize,
@@ -102,21 +102,21 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn copy(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn copy(a: UniquePtr<array>, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "full_dtype"]
         fn full(
-            shape: &CxxVector<i32>,
-            vals: &array,
+            shape: UniquePtr<CxxVector<i32>>,
+            vals: UniquePtr<array>,
             dtype: Dtype,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         fn full(
-            shape: &CxxVector<i32>,
-            vals: &array,
+            shape: UniquePtr<CxxVector<i32>>,
+            vals: UniquePtr<array>,
             s: StreamOrDevice,
         ) -> Result<UniquePtr<array>>;
 

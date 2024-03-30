@@ -72,47 +72,47 @@ namespace mlx_cxx
     }
 
     /** Convert an std::unique_ptr<mlx::core::array> to the given data type. */
-    std::unique_ptr<mlx::core::array> astype(const mlx::core::array &a, mlx::core::Dtype dtype, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> astype(std::unique_ptr<mlx::core::array> a, mlx::core::Dtype dtype, mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::astype(a, dtype, s.to_variant());
+        auto array = mlx::core::astype(*a, dtype, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Create a view of an std::unique_ptr<mlx::core::array> with the given shape and strides. */
     std::unique_ptr<mlx::core::array> as_strided(
-        const mlx::core::array &a,
+        std::unique_ptr<mlx::core::array> a,
         std::unique_ptr<std::vector<int>> shape,
         std::unique_ptr<std::vector<size_t>> strides,
         size_t offset,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::as_strided(a, *shape, *strides, offset, s.to_variant());
+        auto array = mlx::core::as_strided(*a, *shape, *strides, offset, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Copy another array. */
-    std::unique_ptr<mlx::core::array> copy(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> copy(std::unique_ptr<mlx::core::array> a, mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::copy(a, s.to_variant());
+        auto array = mlx::core::copy(*a, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Fill an std::unique_ptr<mlx::core::array> of the given shape with the given value(s). */
     std::unique_ptr<mlx::core::array> full(
-        const std::vector<int> &shape,
-        const mlx::core::array &vals,
+        std::unique_ptr<std::vector<int>> shape,
+        std::unique_ptr<mlx::core::array> vals,
         mlx::core::Dtype dtype,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::full(shape, vals, dtype, s.to_variant());
+        auto array = mlx::core::full(*shape, *vals, dtype, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
     std::unique_ptr<mlx::core::array> full(
-        const std::vector<int> &shape,
-        const mlx::core::array &vals,
+        std::unique_ptr<std::vector<int>> shape,
+        std::unique_ptr<mlx::core::array> vals,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::full(shape, vals, s.to_variant());
+        auto array = mlx::core::full(*shape, *vals, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

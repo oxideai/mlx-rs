@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 #include "mlx/dtype.h"
 #include "mlx/utils.h"
 
@@ -70,4 +72,18 @@ namespace mlx_cxx {
     using OptionalArray = mlx_cxx::Optional<std::unique_ptr<mlx::core::array>>;
 
     std::optional<mlx::core::array> to_std_optional(const OptionalArray &opt);
+
+    /* -------------------------------------------------------------------------- */
+    /*                              string_view impl                              */
+    /* -------------------------------------------------------------------------- */
+    static_assert(sizeof(std::string_view) == 2 * sizeof(void *), "");
+    static_assert(alignof(std::string_view) == alignof(void *), "");
+
+    inline std::string_view string_view_from_str(rust::Str s) {
+        return {s.data(), s.size()};
+    }
+
+    inline rust::Slice<const char> string_view_as_bytes(std::string_view s) {
+        return {s.data(), s.size()};
+    }
 }

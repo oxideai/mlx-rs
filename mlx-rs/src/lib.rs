@@ -7,3 +7,4 @@ pub mod types;
 pub mod utils;
 pub mod fast;
 pub mod fft;
+pub mod linalg;

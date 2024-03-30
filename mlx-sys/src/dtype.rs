@@ -72,6 +72,44 @@ pub mod ffi {
     }
 
     #[derive(Clone, Copy)]
+    #[namespace = "mlx_cxx"]
+    #[cxx_name = "DtypeCategory"]
+    #[repr(i32)]
+    enum Category {
+        // complexfloating,
+        #[cxx_name = "complexfloating"]
+        ComplexFloating,
+
+        // floating,
+        #[cxx_name = "floating"]
+        Floating,
+        
+        // inexact,
+        #[cxx_name = "inexact"]
+        Inexact,
+        
+        // signedinteger,
+        #[cxx_name = "signedinteger"]
+        SignedInteger,
+
+        // unsignedinteger,
+        #[cxx_name = "unsignedinteger"]
+        UnsignedInteger,
+
+        // integer,
+        #[cxx_name = "integer"]
+        Integer,
+
+        // number,
+        #[cxx_name = "number"]
+        Number,
+
+        // generic
+        #[cxx_name = "generic"]
+        Generic,
+    }
+
+    #[derive(Clone, Copy)]
     #[namespace = "mlx::core"]
     struct Dtype {
         val: Val,
@@ -89,14 +127,22 @@ pub mod ffi {
         #[cxx_name = "DtypeKind"]
         type Kind;
 
+        #[namespace = "mlx_cxx"]
+        #[cxx_name = "DtypeCategory"]
+        type Category;
     }
 
     unsafe extern "C++" {
         include!("mlx/dtype.h");
         include!("mlx-cxx/dtype.hpp");
+        include!("mlx-cxx/utils.hpp");
 
         #[namespace = "mlx::core"]
         type Dtype;
+
+        #[namespace = "std"]
+        #[cxx_name = "string_view"]
+        type StringView<'a> = crate::utils::StringView<'a>;
 
         #[namespace = "mlx_cxx"]
         fn dtype_new(val: Val, size: u8) -> Dtype;
@@ -140,6 +186,30 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn dtype_complex64() -> Dtype;
 
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_complexfloating() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_floating() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_inexact() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_signedinteger() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_unsignedinteger() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_integer() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_number() -> Category;
+
+        #[namespace = "mlx_cxx"]
+        fn dtype_category_generic() -> Category;
+
         #[namespace = "mlx::core"]
         fn promote_types(t1: &Dtype, t2: &Dtype) -> Dtype;
 
@@ -149,23 +219,11 @@ pub mod ffi {
         #[namespace = "mlx::core"]
         fn kindof(t: &Dtype) -> Kind;
 
-        #[namespace = "mlx::core"]
-        fn is_unsigned(t: &Dtype) -> bool;
-
-        #[namespace = "mlx::core"]
-        fn is_floating_point(t: &Dtype) -> bool;
-
-        #[namespace = "mlx::core"]
-        fn is_complex(t: &Dtype) -> bool;
-
-        #[namespace = "mlx::core"]
-        fn is_integral(t: &Dtype) -> bool;
-
         #[namespace = "mlx_cxx"]
         fn dtype_to_array_protocol(t: &Dtype) -> UniquePtr<CxxString>;
 
         #[namespace = "mlx::core"]
-        fn dtype_from_array_protocol(s: &CxxString) -> Result<Dtype>;
+        fn dtype_from_array_protocol(s: StringView) -> Result<Dtype>;
     }
 }
 

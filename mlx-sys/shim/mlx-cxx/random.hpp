@@ -238,6 +238,15 @@ namespace mlx_cxx {
     // return normal(shape, mlx::core::float32, 0.0, 1.0, key, s);
     // }
 
+    std::unique_ptr<mlx::core::array> multivariate_normal(
+        const mlx::core::array& mean,
+        const mlx::core::array& cov,
+        const std::vector<int>& shape,
+        mlx::core::Dtype dtype,
+        const OptionalArray& key,
+        StreamOrDevice s = {}
+    );
+
     std::unique_ptr<mlx::core::array> randint(
         const mlx::core::array& low,
         const mlx::core::array& high,

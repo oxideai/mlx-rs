@@ -1764,14 +1764,14 @@ fn test_softmax_along_axes() {
     let s = Default::default();
     let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
     let axes = cxx_vec![0];
-    let _softmaxed = softmax_along_axes(&a, &axes, s).unwrap();
+    let _softmaxed = softmax_along_axes(&a, &axes, true, s).unwrap();
 }
 
 #[test]
 fn test_softmax() {
     let s = Default::default();
     let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
-    let _softmaxed = softmax(&a, s).unwrap();
+    let _softmaxed = softmax(&a, true, s).unwrap();
 }
 
 #[test]
@@ -1779,7 +1779,7 @@ fn test_softmax_along_axis() {
     let s = Default::default();
     let a = arange_f64(1.0, 6.0, 1.0, s).unwrap();
     let axis = 0;
-    let _softmaxed = softmax_along_axis(&a, axis, s).unwrap();
+    let _softmaxed = softmax_along_axis(&a, axis, true, s).unwrap();
 }
 
 #[test]

@@ -482,6 +482,14 @@ pub mod ffi {
         ) -> Result<UniquePtr<CxxVector<array>>>;
 
         #[namespace = "mlx_cxx"]
+        fn meshgrid(
+            arrays: &CxxVector<array>,
+            sparse: bool,
+            indexing: UniquePtr<CxxString>,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<CxxVector<array>>>;
+
+        #[namespace = "mlx_cxx"]
         fn clip(
             a: &array,
             a_min: &OptionalArray,
@@ -800,6 +808,34 @@ pub mod ffi {
         ) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
+        #[rust_name = "std_keepdims"]
+        fn std(a: &array, keepdims: bool, ddof: i32, s: StreamOrDevice)
+            -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        fn std(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "std_along_axes_keepdims"]
+        fn std(
+            a: &array,
+            axes: &CxxVector<i32>,
+            keepdims: bool,
+            ddof: i32,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
+        #[rust_name = "std_along_axis_keepdims"]
+        fn std(
+            a: &array,
+            axis: i32,
+            keepdims: bool,
+            ddof: i32,
+            s: StreamOrDevice,
+        ) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
         #[rust_name = "prod_keepdims"]
         fn prod(a: &array, keepdims: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
@@ -1087,6 +1123,9 @@ pub mod ffi {
         fn erfinv(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
+        fn expm1(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+
+        #[namespace = "mlx_cxx"]
         fn stop_gradient(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
@@ -1250,15 +1289,15 @@ pub mod ffi {
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axes"]
-        fn softmax(a: &array, axes: &CxxVector<i32>, s: StreamOrDevice)
+        fn softmax(a: &array, axes: &CxxVector<i32>, precise: bool, s: StreamOrDevice)
             -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
-        fn softmax(a: &array, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn softmax(a: &array, precise: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         #[namespace = "mlx_cxx"]
         #[rust_name = "softmax_along_axis"]
-        fn softmax(a: &array, axis: i32, s: StreamOrDevice) -> Result<UniquePtr<array>>;
+        fn softmax(a: &array, axis: i32, precise: bool, s: StreamOrDevice) -> Result<UniquePtr<array>>;
 
         /// Raise elements of a to the power of b element-wise
         #[namespace = "mlx_cxx"]

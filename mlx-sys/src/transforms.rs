@@ -2,6 +2,8 @@
 //! eventually compute the output `array` which is then used to compute the gradient.
 //! So theoretically we could instead pass a rust function that is callable from C++.
 
+// TODO: async_eval returns a std::shared_future, how to interop with that in Rust?
+
 #[cxx::bridge]
 pub mod ffi {
     unsafe extern "C++" {

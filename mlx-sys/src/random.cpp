@@ -306,6 +306,19 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<mlx::core::array> multivariate_normal(
+        const mlx::core::array& mean,
+        const mlx::core::array& cov,
+        const std::vector<int>& shape,
+        mlx::core::Dtype dtype,
+        const OptionalArray& key,
+        StreamOrDevice s)
+    {
+        auto key_std = mlx_cxx::to_std_optional(key);
+        auto array = mlx::core::random::multivariate_normal(mean, cov, shape, dtype, key_std, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
     std::unique_ptr<mlx::core::array> randint(
         const mlx::core::array &low,
         const mlx::core::array &high,

@@ -474,6 +474,12 @@ namespace mlx_cxx
     std::unique_ptr<std::vector<mlx::core::array>>
     split(const mlx::core::array &a, const std::vector<int> &indices, mlx_cxx::StreamOrDevice s = {});
 
+    std::unique_ptr<std::vector<mlx::core::array>> meshgrid(
+        const std::vector<mlx::core::array> &arrays,
+        bool sparse,
+        std::unique_ptr<std::string> indexing,
+        mlx_cxx::StreamOrDevice s = {});
+
     /**
      * Clip (limit) the values in an array.
      */
@@ -844,6 +850,30 @@ namespace mlx_cxx
         int ddof = 0,
         mlx_cxx::StreamOrDevice s = {});
 
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        const std::vector<int> &axes,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s = {});
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        int axis,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s = {});
+
     /** The product of all elements of the array. */
     std::unique_ptr<mlx::core::array> prod(const mlx::core::array &a, bool keepdims, mlx_cxx::StreamOrDevice s = {});
     inline std::unique_ptr<mlx::core::array> prod(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {})
@@ -1175,6 +1205,8 @@ namespace mlx_cxx
     /** Computes the inverse error function of the elements of an array. */
     std::unique_ptr<mlx::core::array> erfinv(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
 
+    std::unique_ptr<mlx::core::array> expm1(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+
     /** Stop the flow of gradients. */
     std::unique_ptr<mlx::core::array> stop_gradient(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
 
@@ -1322,16 +1354,14 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> softmax(
         const mlx::core::array &a,
         const std::vector<int> &axes,
+        bool precise,
         mlx_cxx::StreamOrDevice s = {});
 
     /** Softmax of an array. */
-    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, mlx_cxx::StreamOrDevice s = {});
+    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, bool precise, mlx_cxx::StreamOrDevice s = {});
 
     /** Softmax of an array. */
-    inline std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, int axis, mlx_cxx::StreamOrDevice s = {})
-    {
-        return softmax(a, std::vector<int>{axis}, s);
-    }
+    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, int axis, bool precise, mlx_cxx::StreamOrDevice s = {});
 
     /** Raise elements of a to the power of b element-wise */
     std::unique_ptr<mlx::core::array> power(const mlx::core::array &a, const mlx::core::array &b, mlx_cxx::StreamOrDevice s = {});

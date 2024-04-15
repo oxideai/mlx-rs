@@ -301,6 +301,16 @@ namespace mlx_cxx
         return std::make_unique<std::vector<mlx::core::array>>(arrays);
     }
 
+    std::unique_ptr<std::vector<mlx::core::array>> meshgrid(
+        const std::vector<mlx::core::array> &arrays,
+        bool sparse,
+        std::unique_ptr<std::string> indexing,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto arrays_out = mlx::core::meshgrid(arrays, sparse, *indexing, s.to_variant());
+        return std::make_unique<std::vector<mlx::core::array>>(arrays_out);
+    }
+
     /**
      * Clip (limit) the values in an array.
      */
@@ -736,6 +746,46 @@ namespace mlx_cxx
         mlx_cxx::StreamOrDevice s)
     {
         auto array = mlx::core::var(a, axis, keepdims, ddof, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::std(a, keepdims, ddof, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::std(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        const std::vector<int> &axes,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::std(a, axes, keepdims, ddof, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> std(
+        const mlx::core::array &a,
+        int axis,
+        bool keepdims,
+        int ddof,
+        mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::std(a, axis, keepdims, ddof, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
@@ -1256,6 +1306,12 @@ namespace mlx_cxx
         return std::make_unique<mlx::core::array>(array);
     }
 
+    std::unique_ptr<mlx::core::array> expm1(const mlx::core::array &a, mlx_cxx::StreamOrDevice s) {
+        auto array = mlx::core::expm1(a, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+
     /** Stop the flow of gradients. */
     std::unique_ptr<mlx::core::array> stop_gradient(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
     {
@@ -1396,16 +1452,23 @@ namespace mlx_cxx
     std::unique_ptr<mlx::core::array> softmax(
         const mlx::core::array &a,
         const std::vector<int> &axes,
+        bool precise,
         mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::softmax(a, axes, s.to_variant());
+        auto array = mlx::core::softmax(a, axes, precise, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 
     /** Softmax of an array. */
-    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, mlx_cxx::StreamOrDevice s)
+    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, bool precise, mlx_cxx::StreamOrDevice s)
     {
-        auto array = mlx::core::softmax(a, s.to_variant());
+        auto array = mlx::core::softmax(a, precise, s.to_variant());
+        return std::make_unique<mlx::core::array>(array);
+    }
+
+    std::unique_ptr<mlx::core::array> softmax(const mlx::core::array &a, int axis, bool precise, mlx_cxx::StreamOrDevice s)
+    {
+        auto array = mlx::core::softmax(a, axis, precise, s.to_variant());
         return std::make_unique<mlx::core::array>(array);
     }
 

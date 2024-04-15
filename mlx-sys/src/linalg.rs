@@ -50,7 +50,7 @@ pub mod ffi {
         #[namespace = "mlx_cxx"]
         fn norm_str_ord(
             a: &array,
-            ord: StringView,
+            ord: &CxxString,
             axis: &OptionalAxis,
             keepdims: bool,
             s: StreamOrDevice,

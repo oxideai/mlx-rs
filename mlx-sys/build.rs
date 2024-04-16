@@ -1,8 +1,8 @@
 extern crate cmake;
 
+use cmake::Config;
 use std::env;
 use std::path::PathBuf;
-use cmake::Config;
 
 fn main() {
     let mut config = Config::new("src/mlx-c");
@@ -11,11 +11,13 @@ fn main() {
     config.define("MLX_BUILD_METAL", "OFF");
     config.define("MLX_BUILD_ACCELERATE", "OFF");
 
-    #[cfg(feature = "metal")] {
+    #[cfg(feature = "metal")]
+    {
         config.define("MLX_BUILD_METAL", "ON");
     }
 
-    #[cfg(feature = "accelerate")] {
+    #[cfg(feature = "accelerate")]
+    {
         config.define("MLX_BUILD_ACCELERATE", "ON");
     }
 
@@ -30,7 +32,8 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=objc");
     println!("cargo:rustc-link-lib=framework=Foundation");
 
-    #[cfg(feature = "metal")] {
+    #[cfg(feature = "metal")]
+    {
         println!("cargo:rustc-link-lib=framework=Metal");
     }
 

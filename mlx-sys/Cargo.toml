@@ -1,14 +1,15 @@
 [package]
 name = "mlx-sys"
-version.workspace = true
-edition.workspace = true
-description = "Rust bindings for mlx"
+version = "0.10.0-alpha.0"
+authors = ["Ming-Hua Wang", "David Chavez <david@dcvz.io>"]
+edition = "2021"
+
+description = "Low-level interface and binding generation for the mlx library"
+repository = "https://github.com/minghuaw/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT"
 readme = "README.md"
-authors = ["Minghua Wu"]
-license.workspace = true
-repository.workspace = true
-homepage = "https://github.com/minghuaw/mlx-rs"
-documentation = "https://minghuaw.github.io/mlx-rs/doc/mlx_sys/"
 
 [features]
 default = ["accelerate", "metal"]

@@ -1,14 +1,26 @@
-[workspace]
-resolver = "2"
-members = [
-    "mlx-sys",
-]
-
-[workspace.package]
+[package]
+name = "mlx"
 version = "0.10.0-alpha.0"
+authors = ["Ming-Hua Wang", "David Chavez <david@dcvz.io>"]
 edition = "2021"
-repository = "https://github.com/minghuaw/mlx-rs"
-license = "MIT"
 
-[workspace.dependencies]
-mlx-sys = { path = "mlx-sys" }
+description = "Rust wrapper for Apple's mlx machine learning library."
+repository = "https://github.com/minghuaw/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
+
+[dev-dependencies]
+
+[workspace]
+members = ["mlx-sys"]
+
+[features]
+default = ["accelerate", "metal"]
+
+accelerate = ["mlx-sys/accelerate"]
+metal = ["mlx-sys/metal"]

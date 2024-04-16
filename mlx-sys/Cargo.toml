@@ -10,12 +10,8 @@ repository.workspace = true
 homepage = "https://github.com/minghuaw/mlx-rs"
 documentation = "https://minghuaw.github.io/mlx-rs/doc/mlx_sys/"
 
-
 [features]
-default = [
-    "accelerate",
-    "metal",
-]
+default = ["accelerate", "metal"]
 
 accelerate = []
 metal = []
@@ -23,3 +19,4 @@ metal = []
 [dependencies]
 
 [build-dependencies]
+cmake = "0.1.31"

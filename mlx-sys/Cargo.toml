@@ -19,4 +19,5 @@ metal = []
 [dependencies]
 
 [build-dependencies]
+bindgen = "0.69.4"
 cmake = "0.1.31"

@@ -1,3 +1,4 @@
+/// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     let mlx_description = unsafe { mlx_sys::mlx_tostring(ptr) };
     let c_str = unsafe { mlx_sys::mlx_string_data(mlx_description) };

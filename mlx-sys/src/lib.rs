@@ -3,9 +3,3 @@
 #![allow(non_snake_case)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-
-pub fn is_metal_available() -> bool {
-    unsafe {
-        mlx_metal_is_available()
-    }
-}

@@ -1,7 +1,5 @@
 [workspace]
-
 resolver = "2"
-
 members = [
     "mlx-rs",
     "mlx-sys",
@@ -15,6 +13,3 @@ license = "MIT"
 
 [workspace.dependencies]
 mlx-sys = { path = "mlx-sys" }
-
-half = "2"
-cxx = "1"

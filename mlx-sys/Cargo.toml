@@ -10,7 +10,6 @@ repository.workspace = true
 homepage = "https://github.com/minghuaw/mlx-rs"
 documentation = "https://minghuaw.github.io/mlx-rs/doc/mlx_sys/"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
 default = [
@@ -22,12 +21,5 @@ accelerate = []
 metal = []
 
 [dependencies]
-cxx = { workspace = true}
-libc = "0.2"
-
-half = { workspace = true, optional = true }
 
 [build-dependencies]
-cxx-build = "1"
-pkg-config = "0.3"
-walkdir = "2"

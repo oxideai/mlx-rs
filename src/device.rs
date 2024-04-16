@@ -40,7 +40,8 @@ impl Device {
     ///
     /// Example:
     /// ```rust
-    /// Device::set_default(Device::new(DeviceType::Cpu, 1));
+    /// use mlx::device::{Device, DeviceType};
+    /// Device::set_default(&Device::new(DeviceType::Cpu, 1));
     /// ```
     ///
     /// By default, this is `gpu()`.

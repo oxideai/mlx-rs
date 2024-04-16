@@ -1,33 +1,24 @@
 [package]
 name = "mlx-sys"
-version.workspace = true
-edition.workspace = true
-description = "Rust bindings for mlx"
-readme = "README.md"
-authors = ["Minghua Wu"]
-license.workspace = true
-repository.workspace = true
-homepage = "https://github.com/minghuaw/mlx-rs"
-documentation = "https://minghuaw.github.io/mlx-rs/doc/mlx_sys/"
+version = "0.10.0-alpha.0"
+authors = ["Ming-Hua Wang", "David Chavez <david@dcvz.io>"]
+edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Low-level interface and binding generation for the mlx library"
+repository = "https://github.com/minghuaw/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT"
+readme = "README.md"
 
 [features]
-default = [
-    "accelerate",
-    "metal",
-]
+default = ["accelerate", "metal"]
 
 accelerate = []
 metal = []
 
 [dependencies]
-cxx = { workspace = true}
-libc = "0.2"
-
-half = { workspace = true, optional = true }
 
 [build-dependencies]
-cxx-build = "1"
-pkg-config = "0.3"
-walkdir = "2"
+bindgen = "0.69.4"
+cmake = "0.1.31"

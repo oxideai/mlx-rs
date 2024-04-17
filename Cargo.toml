@@ -13,6 +13,7 @@ readme = "README.md"
 
 [dependencies]
 mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
+serde = { version = "1.0.198", features = ["derive"] }
 
 [dev-dependencies]
 

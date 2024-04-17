@@ -313,9 +313,6 @@ impl Array {
 
     /// Evaluate the array.
     pub fn eval(&mut self) {
-        // TODO: check below after ops are implemented
-        // Array must be evaluated, otherwise returns NULL.
-
         // This clearly modifies the array, so it should be mutable
         unsafe { mlx_sys::mlx_array_eval(self.ptr) };
     }
@@ -327,6 +324,9 @@ impl Array {
 
     /// Returns a pointer to the array data
     pub fn data<T: ArrayElement>(&self) -> &[T] {
+        // TODO: check below after ops are implemented
+        // Array must be evaluated, otherwise returns NULL.
+
         let data = T::array_data(self);
         let size = self.size();
         unsafe { std::slice::from_raw_parts(data, size) }

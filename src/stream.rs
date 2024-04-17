@@ -35,11 +35,6 @@ impl StreamOrDevice {
             stream: Stream::default_stream(&Device::gpu()),
         }
     }
-
-    #[allow(dead_code)]
-    fn as_ptr(&self) -> mlx_sys::mlx_stream {
-        self.stream.c_stream
-    }
 }
 
 impl Default for StreamOrDevice {

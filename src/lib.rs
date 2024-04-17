@@ -1,7 +1,7 @@
-#![deny(unused_unsafe, )]
+#![deny(unused_unsafe)]
 
-pub mod device;
 pub mod array;
+pub mod device;
 mod utils;
 
 pub(crate) mod sealed {

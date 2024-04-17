@@ -200,6 +200,12 @@ impl Drop for Array {
 }
 
 impl Array {
+    /// Create a new array from an existing mlx_array pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure the reference count of the array is properly incremented with
+    /// `mlx_sys::mlx_retain`.
     pub unsafe fn from_ptr(ptr: mlx_array) -> Array {
         Array { ptr }
     }

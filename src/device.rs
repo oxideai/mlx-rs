@@ -1,31 +1,23 @@
 use crate::utils::mlx_describe;
 
 ///Type of device.
+#[derive(num_enum::IntoPrimitive)]
+#[repr(u32)]
 pub enum DeviceType {
-    Cpu,
-    Gpu,
+    Cpu = mlx_sys::mlx_device_type__MLX_CPU,
+    Gpu = mlx_sys::mlx_device_type__MLX_GPU,
 }
 
 /// Representation of a Device in MLX.
 #[derive(Debug)]
 pub struct Device {
-    ctx: mlx_sys::mlx_device,
+    pub(crate) c_device: mlx_sys::mlx_device,
 }
 
 impl Device {
-    pub fn new_default() -> Device {
-        let ctx = unsafe { mlx_sys::mlx_default_device() };
-        Device { ctx }
-    }
-
     pub fn new(device_type: DeviceType, index: i32) -> Device {
-        let c_device_type: u32 = match device_type {
-            DeviceType::Cpu => mlx_sys::mlx_device_type__MLX_CPU,
-            DeviceType::Gpu => mlx_sys::mlx_device_type__MLX_GPU,
-        };
-
-        let ctx = unsafe { mlx_sys::mlx_device_new(c_device_type, index) };
-        Device { ctx }
+        let ctx = unsafe { mlx_sys::mlx_device_new(device_type.into(), index) };
+        Device { c_device: ctx }
     }
 
     pub fn cpu() -> Device {
@@ -45,20 +37,27 @@ impl Device {
     /// ```
     ///
     /// By default, this is `gpu()`.
-    pub fn set_default(&self) {
-        unsafe { mlx_sys::mlx_set_default_device(self.ctx) };
+    pub fn set_default(device: &Device) {
+        unsafe { mlx_sys::mlx_set_default_device(device.c_device) };
     }
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.ctx as *mut std::ffi::c_void) };
+        unsafe { mlx_sys::mlx_free(self.c_device as *mut std::ffi::c_void) };
+    }
+}
+
+impl Default for Device {
+    fn default() -> Self {
+        let ctx = unsafe { mlx_sys::mlx_default_device() };
+        Self { c_device: ctx }
     }
 }
 
 impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.ctx as *mut std::os::raw::c_void);
+        let description = mlx_describe(self.c_device as *mut std::os::raw::c_void);
         let description = description.unwrap_or_else(|| "Device".to_string());
 
         write!(f, "{}", description)
@@ -71,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_fmt() {
-        let device = Device::new_default();
+        let device = Device::default();
         let description = format!("{}", device);
         assert_eq!(description, "Device(gpu, 0)");
     }

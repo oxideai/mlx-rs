@@ -12,8 +12,7 @@ pub struct StreamOrDevice {
 }
 
 impl StreamOrDevice {
-    #[allow(dead_code)]
-    fn new(stream: Stream) -> StreamOrDevice {
+    pub fn new(stream: Stream) -> StreamOrDevice {
         StreamOrDevice { stream }
     }
 

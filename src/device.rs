@@ -58,7 +58,7 @@ impl Drop for Device {
 
 impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = unsafe { mlx_describe(self.ctx as *mut std::os::raw::c_void) };
+        let description = mlx_describe(self.ctx as *mut std::os::raw::c_void);
         let description = description.unwrap_or_else(|| "Device".to_string());
 
         write!(f, "{}", description)

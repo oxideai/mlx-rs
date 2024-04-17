@@ -13,6 +13,8 @@ readme = "README.md"
 
 [dependencies]
 mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
+half = "2"
+num-complex = "0.4"
 
 [dev-dependencies]
 

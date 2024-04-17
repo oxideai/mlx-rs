@@ -1,5 +1,7 @@
 /// Array element type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, num_enum::IntoPrimitive, num_enum::TryFromPrimitive,
+)]
 #[repr(u32)]
 pub enum Dtype {
     Bool = mlx_sys::mlx_array_dtype__MLX_BOOL,

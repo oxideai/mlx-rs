@@ -305,8 +305,10 @@ impl Array {
     ///
     /// # Panic
     ///
-    /// Panics if the array is scalar.
+    /// - Panics if the array is scalar.
+    /// - Panics if the dimension is out of bounds.
     pub fn dim(&self, dim: i32) -> i32 {
+        // Negative indexing is already handled by mlx
         // This will panic on a scalar array
         unsafe { mlx_sys::mlx_array_dim(self.c_array, dim) }
     }
@@ -444,6 +446,24 @@ mod tests {
         assert_eq!(array.ndim(), 1);
         assert_eq!(array.dim(0), 5);
         assert_eq!(array.shape(), &[5]);
+        assert_eq!(array.dtype(), Dtype::Int32);
+    }
+
+    #[test]
+    fn new_2d_array_from_slice() {
+        let data = [1i32, 2, 3, 4, 5, 6];
+        let array = Array::from_slice(&data, &[2, 3], 2);
+        assert_eq!(array.as_slice::<i32>(), &data);
+        assert_eq!(array.item_size(), 4);
+        assert_eq!(array.size(), 6);
+        assert_eq!(array.strides(), &[3, 1]);
+        assert_eq!(array.nbytes(), 24);
+        assert_eq!(array.ndim(), 2);
+        assert_eq!(array.dim(0), 2);
+        assert_eq!(array.dim(1), 3);
+        assert_eq!(array.dim(-1), 3); // negative index
+        assert_eq!(array.dim(-2), 2); // negative index
+        assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Int32);
     }
 

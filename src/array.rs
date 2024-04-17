@@ -9,10 +9,10 @@ use crate::sealed::Sealed;
 // TODO: camel case?
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
 #[allow(non_camel_case_types)]
-pub type c64 = Complex<f32>;
+pub type complex64 = Complex<f32>;
 
 /// Array element type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub enum Dtype {
     Bool = mlx_sys::mlx_array_dtype__MLX_BOOL,
@@ -155,22 +155,22 @@ impl ArrayElement for bf16 {
     }
 }
 
-impl Sealed for c64 {}
+impl Sealed for complex64 {}
 
-impl ArrayElement for c64 {
+impl ArrayElement for complex64 {
     const DTYPE: Dtype = Dtype::Complex64;
 
     fn scalar_array_item(array: &Array) -> Self {
-        let bindgen_c64 = unsafe { mlx_sys::mlx_array_item_complex64(array.ptr) };
+        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.ptr) };
 
         Self {
-            re: bindgen_c64.re,
-            im: bindgen_c64.im,
+            re: bindgen_complex64.re,
+            im: bindgen_complex64.im,
         }
     }
 
     fn array_data(array: &Array) -> *const Self {
-        // c64 has the same memory layout as __BindgenComplex<f32>
+        // complex64 has the same memory layout as __BindgenComplex<f32>
         unsafe { mlx_sys::mlx_array_data_complex64(array.ptr) as *const Self }
     }
 }
@@ -234,7 +234,7 @@ impl Array {
     }
 
     /// New array from a complex scalar.
-    pub fn from_complex(val: c64) -> Array {
+    pub fn from_complex(val: complex64) -> Array {
         let ptr = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
         Array { ptr }
     }
@@ -260,7 +260,7 @@ impl Array {
     }
 
     /// The size of the array’s datatype in bytes.
-    pub fn itemsize(&self) -> usize {
+    pub fn item_size(&self) -> usize {
         unsafe { mlx_sys::mlx_array_itemsize(self.ptr) }
     }
 
@@ -317,6 +317,7 @@ impl Array {
         Dtype::try_from(dtype).unwrap()
     }
 
+    // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&mut self) {
         // This clearly modifies the array, so it should be mutable
@@ -325,6 +326,7 @@ impl Array {
 
     /// Access the value of a scalar array.
     pub fn item<T: ArrayElement>(&self) -> T {
+        // TODO: check and perform type conversion from the inner type to the desired output type
         T::scalar_array_item(self)
     }
 
@@ -365,7 +367,7 @@ mod tests {
     fn new_scalar_array_from_bool() {
         let array = Array::from_bool(true);
         assert_eq!(array.item::<bool>(), true);
-        assert_eq!(array.itemsize(), 1);
+        assert_eq!(array.item_size(), 1);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());
         assert_eq!(array.nbytes(), 1);
@@ -378,7 +380,7 @@ mod tests {
     fn new_scalar_array_from_int() {
         let array = Array::from_int(42);
         assert_eq!(array.item::<i32>(), 42);
-        assert_eq!(array.itemsize(), 4);
+        assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());
         assert_eq!(array.nbytes(), 4);
@@ -391,7 +393,7 @@ mod tests {
     fn new_scalar_array_from_float() {
         let array = Array::from_float(3.14);
         assert_eq!(array.item::<f32>(), 3.14);
-        assert_eq!(array.itemsize(), 4);
+        assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());
         assert_eq!(array.nbytes(), 4);
@@ -402,10 +404,10 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_complex() {
-        let val = c64 { re: 1.0, im: 2.0 };
+        let val = complex64 { re: 1.0, im: 2.0 };
         let array = Array::from_complex(val);
-        assert_eq!(array.item::<c64>(), val);
-        assert_eq!(array.itemsize(), 8);
+        assert_eq!(array.item::<complex64>(), val);
+        assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());
         assert_eq!(array.nbytes(), 8);
@@ -420,7 +422,7 @@ mod tests {
         let array = Array::from_data(&data, &[1], 1);
         assert_eq!(array.data::<i32>(), &data);
         assert_eq!(array.item::<i32>(), 1);
-        assert_eq!(array.itemsize(), 4);
+        assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
         assert_eq!(array.strides(), &[1]);
         assert_eq!(array.nbytes(), 4);
@@ -435,7 +437,7 @@ mod tests {
         let data = [1i32, 2, 3, 4, 5];
         let array = Array::from_data(&data, &[5], 1);
         assert_eq!(array.data::<i32>(), &data);
-        assert_eq!(array.itemsize(), 4);
+        assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
         assert_eq!(array.strides(), &[1]);
         assert_eq!(array.nbytes(), 20);

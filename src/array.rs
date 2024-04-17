@@ -69,11 +69,11 @@ macro_rules! impl_array_element {
             const DTYPE: Dtype = $dtype;
 
             fn scalar_array_item(array: &Array) -> Self {
-                unsafe { mlx_sys::$mlx_item_fn(array.ptr) }
+                unsafe { mlx_sys::$mlx_item_fn(array.c_array) }
             }
 
             fn array_data(array: &Array) -> *const Self {
-                unsafe { mlx_sys::$mlx_data_fn(array.ptr) }
+                unsafe { mlx_sys::$mlx_data_fn(array.c_array) }
             }
         }
     };
@@ -131,12 +131,12 @@ impl ArrayElement for f16 {
     const DTYPE: Dtype = Dtype::Float16;
 
     fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_float16(array.ptr) };
+        let val = unsafe { mlx_sys::mlx_array_item_float16(array.c_array) };
         f16::from_bits(val.0)
     }
 
     fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_float16(array.ptr) as *const Self }
+        unsafe { mlx_sys::mlx_array_data_float16(array.c_array) as *const Self }
     }
 }
 
@@ -146,12 +146,12 @@ impl ArrayElement for bf16 {
     const DTYPE: Dtype = Dtype::Bfloat16;
 
     fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_bfloat16(array.ptr) };
+        let val = unsafe { mlx_sys::mlx_array_item_bfloat16(array.c_array) };
         bf16::from_bits(val)
     }
 
     fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_bfloat16(array.ptr) as *const Self }
+        unsafe { mlx_sys::mlx_array_data_bfloat16(array.c_array) as *const Self }
     }
 }
 
@@ -161,7 +161,7 @@ impl ArrayElement for complex64 {
     const DTYPE: Dtype = Dtype::Complex64;
 
     fn scalar_array_item(array: &Array) -> Self {
-        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.ptr) };
+        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.c_array) };
 
         Self {
             re: bindgen_complex64.re,
@@ -171,17 +171,17 @@ impl ArrayElement for complex64 {
 
     fn array_data(array: &Array) -> *const Self {
         // complex64 has the same memory layout as __BindgenComplex<f32>
-        unsafe { mlx_sys::mlx_array_data_complex64(array.ptr) as *const Self }
+        unsafe { mlx_sys::mlx_array_data_complex64(array.c_array) as *const Self }
     }
 }
 
 pub struct Array {
-    ptr: mlx_array,
+    c_array: mlx_array,
 }
 
 impl std::fmt::Debug for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let description = crate::utils::mlx_describe(self.ptr as *mut c_void)
+        let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
             .unwrap_or_else(|| "Array".to_string());
         write!(f, "{:?}", description)
     }
@@ -195,7 +195,7 @@ impl Drop for Array {
         // TODO: check memory leak with some tool?
 
         // Decrease the reference count
-        unsafe { mlx_sys::mlx_free(self.ptr as *mut c_void) };
+        unsafe { mlx_sys::mlx_free(self.c_array as *mut c_void) };
     }
 }
 
@@ -206,37 +206,37 @@ impl Array {
     ///
     /// The caller must ensure the reference count of the array is properly incremented with
     /// `mlx_sys::mlx_retain`.
-    pub unsafe fn from_ptr(ptr: mlx_array) -> Array {
-        Array { ptr }
+    pub unsafe fn from_ptr(c_array: mlx_array) -> Array {
+        Self { c_array }
     }
 
     // TODO: should this be unsafe?
     pub fn as_ptr(&self) -> mlx_array {
-        self.ptr
+        self.c_array
     }
 
     /// New array from a bool scalar.
     pub fn from_bool(val: bool) -> Array {
-        let ptr = unsafe { mlx_sys::mlx_array_from_bool(val) };
-        Array { ptr }
+        let c_array = unsafe { mlx_sys::mlx_array_from_bool(val) };
+        Array { c_array }
     }
 
     /// New array from a int scalar.
     pub fn from_int(val: i32) -> Array {
-        let ptr = unsafe { mlx_sys::mlx_array_from_int(val) };
-        Array { ptr }
+        let c_array = unsafe { mlx_sys::mlx_array_from_int(val) };
+        Array { c_array }
     }
 
     /// New array from a float scalar.
     pub fn from_float(val: f32) -> Array {
-        let ptr = unsafe { mlx_sys::mlx_array_from_float(val) };
-        Array { ptr }
+        let c_array = unsafe { mlx_sys::mlx_array_from_float(val) };
+        Array { c_array }
     }
 
     /// New array from a complex scalar.
     pub fn from_complex(val: complex64) -> Array {
-        let ptr = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
-        Array { ptr }
+        let c_array = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
+        Array { c_array }
     }
 
     /// New array from existing buffer.
@@ -247,7 +247,7 @@ impl Array {
     /// - `shape`: Shape of the array.
     /// - `dim`: Number of dimensions (size of shape).
     pub fn from_data<T: ArrayElement>(data: &[T], shape: &[i32], dim: i32) -> Self {
-        let ptr = unsafe {
+        let c_array = unsafe {
             mlx_sys::mlx_array_from_data(
                 data.as_ptr() as *const c_void,
                 shape.as_ptr(),
@@ -256,17 +256,17 @@ impl Array {
             )
         };
 
-        Array { ptr }
+        Array { c_array }
     }
 
     /// The size of the array’s datatype in bytes.
     pub fn item_size(&self) -> usize {
-        unsafe { mlx_sys::mlx_array_itemsize(self.ptr) }
+        unsafe { mlx_sys::mlx_array_itemsize(self.c_array) }
     }
 
     /// Number of elements in the array.
     pub fn size(&self) -> usize {
-        unsafe { mlx_sys::mlx_array_size(self.ptr) }
+        unsafe { mlx_sys::mlx_array_size(self.c_array) }
     }
 
     /// The strides of the array.
@@ -274,19 +274,19 @@ impl Array {
         let ndim = self.ndim();
 
         unsafe {
-            let data = mlx_sys::mlx_array_strides(self.ptr);
+            let data = mlx_sys::mlx_array_strides(self.c_array);
             std::slice::from_raw_parts(data, ndim)
         }
     }
 
     /// The number of bytes in the array.
     pub fn nbytes(&self) -> usize {
-        unsafe { mlx_sys::mlx_array_nbytes(self.ptr) }
+        unsafe { mlx_sys::mlx_array_nbytes(self.c_array) }
     }
 
     /// The array’s dimension.
     pub fn ndim(&self) -> usize {
-        unsafe { mlx_sys::mlx_array_ndim(self.ptr) }
+        unsafe { mlx_sys::mlx_array_ndim(self.c_array) }
     }
 
     /// The shape of the array.
@@ -296,7 +296,7 @@ impl Array {
         let ndim = self.ndim();
 
         unsafe {
-            let data = mlx_sys::mlx_array_shape(self.ptr);
+            let data = mlx_sys::mlx_array_shape(self.c_array);
             std::slice::from_raw_parts(data, ndim)
         }
     }
@@ -308,12 +308,12 @@ impl Array {
     /// Panics if the array is scalar.
     pub fn dim(&self, dim: i32) -> i32 {
         // This will panic on a scalar array
-        unsafe { mlx_sys::mlx_array_dim(self.ptr, dim) }
+        unsafe { mlx_sys::mlx_array_dim(self.c_array, dim) }
     }
 
     /// The array element type.
     pub fn dtype(&self) -> Dtype {
-        let dtype = unsafe { mlx_sys::mlx_array_get_dtype(self.ptr) };
+        let dtype = unsafe { mlx_sys::mlx_array_get_dtype(self.c_array) };
         Dtype::try_from(dtype).unwrap()
     }
 
@@ -321,7 +321,7 @@ impl Array {
     /// Evaluate the array.
     pub fn eval(&mut self) {
         // This clearly modifies the array, so it should be mutable
-        unsafe { mlx_sys::mlx_array_eval(self.ptr) };
+        unsafe { mlx_sys::mlx_array_eval(self.c_array) };
     }
 
     /// Access the value of a scalar array.

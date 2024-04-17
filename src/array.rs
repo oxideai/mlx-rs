@@ -12,7 +12,7 @@ use crate::sealed::Sealed;
 pub type complex64 = Complex<f32>;
 
 /// Array element type
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum Dtype {
     Bool = mlx_sys::mlx_array_dtype__MLX_BOOL,
@@ -246,7 +246,7 @@ impl Array {
     /// - `data`: A buffer which will be copied.
     /// - `shape`: Shape of the array.
     /// - `dim`: Number of dimensions (size of shape).
-    pub fn from_data<T: ArrayElement>(data: &[T], shape: &[i32], dim: i32) -> Self {
+    pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32], dim: i32) -> Self {
         let c_array = unsafe {
             mlx_sys::mlx_array_from_data(
                 data.as_ptr() as *const c_void,
@@ -331,7 +331,7 @@ impl Array {
     }
 
     /// Returns a pointer to the array data
-    pub fn data<T: ArrayElement>(&self) -> &[T] {
+    pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
         // TODO: check below after ops are implemented
         // Array must be evaluated, otherwise returns NULL.
 
@@ -419,8 +419,8 @@ mod tests {
     #[test]
     fn new_array_from_single_element_slice() {
         let data = [1i32];
-        let array = Array::from_data(&data, &[1], 1);
-        assert_eq!(array.data::<i32>(), &data);
+        let array = Array::from_slice(&data, &[1], 1);
+        assert_eq!(array.as_slice::<i32>(), &data);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -435,8 +435,8 @@ mod tests {
     #[test]
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
-        let array = Array::from_data(&data, &[5], 1);
-        assert_eq!(array.data::<i32>(), &data);
+        let array = Array::from_slice(&data, &[5], 1);
+        assert_eq!(array.as_slice::<i32>(), &data);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
         assert_eq!(array.strides(), &[1]);
@@ -452,7 +452,7 @@ mod tests {
     // #[should_panic]
     // fn get_item_from_multi_element_array_should_panic() {
     //     let data = [1, 2, 3, 4, 5];
-    //     let array = Array::from_data(&data, &[5], 1);
+    //     let array = Array::from_slice(&data, &[5], 1);
     //     array.item::<i32>();
     // }
 }

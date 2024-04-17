@@ -17,16 +17,6 @@ impl StreamOrDevice {
         StreamOrDevice { stream }
     }
 
-    /// The default stream on the default device.
-    ///
-    /// This will be [Device::gpu()] unless [Device::set_default()]
-    /// sets it otherwise.
-    pub fn default() -> StreamOrDevice {
-        StreamOrDevice {
-            stream: Stream::new(),
-        }
-    }
-
     pub fn new_with_device(device: &Device) -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::default_stream(device),
@@ -48,8 +38,20 @@ impl StreamOrDevice {
     }
 
     #[allow(dead_code)]
-    fn get_ctx(&self) -> mlx_sys::mlx_stream {
+    fn as_ptr(&self) -> mlx_sys::mlx_stream {
         self.stream.c_stream
+    }
+}
+
+impl Default for StreamOrDevice {
+    /// The default stream on the default device.
+    ///
+    /// This will be [Device::gpu()] unless [Device::set_default()]
+    /// sets it otherwise.
+    fn default() -> Self {
+        Self {
+            stream: Stream::new(),
+        }
     }
 }
 
@@ -92,6 +94,12 @@ impl Stream {
 impl Drop for Stream {
     fn drop(&mut self) {
         unsafe { mlx_sys::mlx_free(self.c_stream as *mut std::ffi::c_void) };
+    }
+}
+
+impl Default for Stream {
+    fn default() -> Self {
+        Stream::new()
     }
 }
 

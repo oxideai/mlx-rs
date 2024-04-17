@@ -179,7 +179,7 @@ impl Array {
         Array { c_array }
     }
 
-    /// New array from a int scalar.
+    /// New array from an int scalar.
     pub fn from_int(val: i32) -> Array {
         let c_array = unsafe { mlx_sys::mlx_array_from_int(val) };
         Array { c_array }

@@ -13,11 +13,6 @@ pub struct Device {
 }
 
 impl Device {
-    pub fn new_default() -> Device {
-        let ctx = unsafe { mlx_sys::mlx_default_device() };
-        Device { c_device: ctx }
-    }
-
     pub fn new(device_type: DeviceType, index: i32) -> Device {
         let c_device_type: u32 = match device_type {
             DeviceType::Cpu => mlx_sys::mlx_device_type__MLX_CPU,
@@ -56,6 +51,13 @@ impl Drop for Device {
     }
 }
 
+impl Default for Device {
+    fn default() -> Self {
+        let ctx = unsafe { mlx_sys::mlx_default_device() };
+        Self { c_device: ctx }
+    }
+}
+
 impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let description = mlx_describe(self.c_device as *mut std::os::raw::c_void);
@@ -71,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_fmt() {
-        let device = Device::new_default();
+        let device = Device::default();
         let description = format!("{}", device);
         assert_eq!(description, "Device(gpu, 0)");
     }

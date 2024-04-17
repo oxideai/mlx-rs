@@ -3,6 +3,7 @@
 pub mod array;
 pub mod device;
 pub mod dtype;
+pub mod stream;
 mod utils;
 
 pub(crate) mod sealed {

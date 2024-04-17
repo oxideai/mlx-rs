@@ -9,13 +9,13 @@ pub enum DeviceType {
 /// Representation of a Device in MLX.
 #[derive(Debug)]
 pub struct Device {
-    ctx: mlx_sys::mlx_device,
+    pub(crate) c_device: mlx_sys::mlx_device,
 }
 
 impl Device {
     pub fn new_default() -> Device {
         let ctx = unsafe { mlx_sys::mlx_default_device() };
-        Device { ctx }
+        Device { c_device: ctx }
     }
 
     pub fn new(device_type: DeviceType, index: i32) -> Device {
@@ -25,7 +25,7 @@ impl Device {
         };
 
         let ctx = unsafe { mlx_sys::mlx_device_new(c_device_type, index) };
-        Device { ctx }
+        Device { c_device: ctx }
     }
 
     pub fn cpu() -> Device {
@@ -45,20 +45,20 @@ impl Device {
     /// ```
     ///
     /// By default, this is `gpu()`.
-    pub fn set_default(&self) {
-        unsafe { mlx_sys::mlx_set_default_device(self.ctx) };
+    pub fn set_default(device: &Device) {
+        unsafe { mlx_sys::mlx_set_default_device(device.c_device) };
     }
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.ctx as *mut std::ffi::c_void) };
+        unsafe { mlx_sys::mlx_free(self.c_device as *mut std::ffi::c_void) };
     }
 }
 
 impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.ctx as *mut std::os::raw::c_void);
+        let description = mlx_describe(self.c_device as *mut std::os::raw::c_void);
         let description = description.unwrap_or_else(|| "Device".to_string());
 
         write!(f, "{}", description)

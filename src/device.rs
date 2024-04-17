@@ -1,9 +1,11 @@
 use crate::utils::mlx_describe;
 
 ///Type of device.
+#[derive(num_enum::IntoPrimitive)]
+#[repr(u32)]
 pub enum DeviceType {
-    Cpu,
-    Gpu,
+    Cpu = mlx_sys::mlx_device_type__MLX_CPU,
+    Gpu = mlx_sys::mlx_device_type__MLX_GPU,
 }
 
 /// Representation of a Device in MLX.
@@ -14,12 +16,7 @@ pub struct Device {
 
 impl Device {
     pub fn new(device_type: DeviceType, index: i32) -> Device {
-        let c_device_type: u32 = match device_type {
-            DeviceType::Cpu => mlx_sys::mlx_device_type__MLX_CPU,
-            DeviceType::Gpu => mlx_sys::mlx_device_type__MLX_GPU,
-        };
-
-        let ctx = unsafe { mlx_sys::mlx_device_new(c_device_type, index) };
+        let ctx = unsafe { mlx_sys::mlx_device_new(device_type.into(), index) };
         Device { c_device: ctx }
     }
 

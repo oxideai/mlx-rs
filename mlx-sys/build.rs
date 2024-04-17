@@ -37,6 +37,11 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=Metal");
     }
 
+    #[cfg(feature = "accelerate")]
+    {
+        println!("cargo:rustc-link-lib=framework=Accelerate");
+    }
+
     // generate bindings
     let bindings = bindgen::Builder::default()
         .header("src/mlx-c/mlx/c/mlx.h")

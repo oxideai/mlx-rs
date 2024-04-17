@@ -277,9 +277,15 @@ impl Array {
     /// # Panic
     ///
     /// - Panics if the array is scalar.
+    /// - Panics if `dim` is negative and `dim + ndim` overflows
     /// - Panics if the dimension is out of bounds.
     pub fn dim(&self, dim: i32) -> i32 {
-        // Negative indexing is already handled by mlx
+        let dim = if dim.is_negative() {
+            (self.ndim() as i32).checked_add(dim).unwrap()
+        } else {
+            dim
+        };
+
         // This will panic on a scalar array
         unsafe { mlx_sys::mlx_array_dim(self.c_array, dim) }
     }

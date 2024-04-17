@@ -1,4 +1,3 @@
-
 /// Array element type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

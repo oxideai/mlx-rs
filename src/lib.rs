@@ -1,8 +1,8 @@
 #![deny(unused_unsafe)]
 
-pub mod dtype;
 pub mod array;
 pub mod device;
+pub mod dtype;
 mod utils;
 
 pub(crate) mod sealed {

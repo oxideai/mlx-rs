@@ -203,8 +203,21 @@ impl Array {
     ///
     /// - `data`: A buffer which will be copied.
     /// - `shape`: Shape of the array.
-    /// - `dim`: Number of dimensions (size of shape).
-    pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32], dim: i32) -> Self {
+    ///
+    /// # Panic
+    ///
+    /// - Panics if the product of the shape is not equal to the length of the data.
+    /// - Panics if the shape is too large.
+    pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32]) -> Self {
+        let dim = if shape.len() > i32::MAX as usize {
+            panic!("Shape is too large")
+        } else {
+            shape.len() as i32
+        };
+
+        // Validate data size and shape
+        assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
+
         let c_array = unsafe {
             mlx_sys::mlx_array_from_data(
                 data.as_ptr() as *const c_void,
@@ -379,7 +392,7 @@ mod tests {
     #[test]
     fn new_array_from_single_element_slice() {
         let data = [1i32];
-        let array = Array::from_slice(&data, &[1], 1);
+        let array = Array::from_slice(&data, &[1]);
         assert_eq!(array.as_slice::<i32>(), &data);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
@@ -395,7 +408,7 @@ mod tests {
     #[test]
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
-        let array = Array::from_slice(&data, &[5], 1);
+        let array = Array::from_slice(&data, &[5]);
         assert_eq!(array.as_slice::<i32>(), &data);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
@@ -410,7 +423,7 @@ mod tests {
     #[test]
     fn new_2d_array_from_slice() {
         let data = [1i32, 2, 3, 4, 5, 6];
-        let array = Array::from_slice(&data, &[2, 3], 2);
+        let array = Array::from_slice(&data, &[2, 3]);
         assert_eq!(array.as_slice::<i32>(), &data);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 6);

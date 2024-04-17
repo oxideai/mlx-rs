@@ -32,5 +32,5 @@ mlx-rs is currently in active development, and is not yet complete.
 
 ## License
 
-mlx-rs is distributed under the terms of the MIT license. See [LICENSE-MIT](./LICENSE-MIT) for details.
+mlx-rs is distributed under the terms of the MIT license. See [LICENSE](./LICENSE) for details.
 Opening a pull request is assumed to signal agreement with these licensing terms.

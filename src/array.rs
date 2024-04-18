@@ -134,7 +134,7 @@ impl ArrayElement for complex64 {
 }
 
 pub struct Array {
-    c_array: mlx_array,
+    pub(crate) c_array: mlx_array,
 }
 
 impl std::fmt::Debug for Array {

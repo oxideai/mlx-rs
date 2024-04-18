@@ -2,9 +2,14 @@ use std::ffi::c_void;
 
 use half::{bf16, f16};
 use mlx_sys::mlx_array;
-use num_complex::Complex32;
+use num_complex::Complex;
 
 use crate::{dtype::Dtype, sealed::Sealed};
+
+// TODO: camel case?
+// Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
+#[allow(non_camel_case_types)]
+pub type complex64 = Complex<f32>;
 
 /// A marker trait for array elements.
 pub trait ArrayElement: Sealed {
@@ -108,9 +113,9 @@ impl ArrayElement for bf16 {
     }
 }
 
-impl Sealed for Complex32 {}
+impl Sealed for complex64 {}
 
-impl ArrayElement for Complex32 {
+impl ArrayElement for complex64 {
     const DTYPE: Dtype = Dtype::Complex64;
 
     fn scalar_array_item(array: &Array) -> Self {
@@ -187,7 +192,7 @@ impl Array {
     }
 
     /// New array from a complex scalar.
-    pub fn from_complex(val: Complex32) -> Array {
+    pub fn from_complex(val: complex64) -> Array {
         let c_array = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
         Array { c_array }
     }
@@ -382,9 +387,9 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_complex() {
-        let val = Complex32::new(1.0, 2.0);
+        let val = complex64::new(1.0, 2.0);
         let array = Array::from_complex(val);
-        assert_eq!(array.item::<Complex32>(), val);
+        assert_eq!(array.item::<complex64>(), val);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());

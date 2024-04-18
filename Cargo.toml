@@ -12,8 +12,9 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
+derive-new = "0.6.0"
 half = "2"
+mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
 num-complex = "0.4"
 num_enum = "0.7.2"
 

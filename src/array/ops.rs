@@ -14,7 +14,6 @@ impl<E: kind::Element, const D: usize> MLXArray<E, D> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

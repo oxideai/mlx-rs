@@ -147,7 +147,7 @@ impl Array {
     /// ```rust
     /// use mlx::{array::Array, stream::StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
-    /// let r = Array::linspace::<f32, i32>(0, 50, None, StreamOrDevice::default());
+    /// let r = Array::linspace::<f32, _>(0, 50, None, StreamOrDevice::default());
     /// ```
     ///
     /// # Parameters:

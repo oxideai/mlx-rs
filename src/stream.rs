@@ -35,6 +35,11 @@ impl StreamOrDevice {
             stream: Stream::default_stream(&Device::gpu()),
         }
     }
+
+    /// The underlying stream's pointer.
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_stream {
+        self.stream.c_stream
+    }
 }
 
 impl Default for StreamOrDevice {

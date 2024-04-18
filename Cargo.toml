@@ -16,6 +16,7 @@ mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
 half = "2"
 num-complex = "0.4"
 num_enum = "0.7.2"
+num-traits = "0.2.18"
 
 [dev-dependencies]
 

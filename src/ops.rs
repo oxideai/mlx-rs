@@ -1,5 +1,6 @@
 use crate::array::ArrayElement;
 use crate::{array::Array, stream::StreamOrDevice};
+use num_traits::NumCast;
 
 impl Array {
     /// Construct an array of zeros.
@@ -69,7 +70,12 @@ impl Array {
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
     /// - stream: stream or device to evaluate on
-    pub fn eye<T: ArrayElement>(n: i32, m: Option<i32>, k: Option<i32>, stream: StreamOrDevice) -> Array {
+    pub fn eye<T: ArrayElement>(
+        n: i32,
+        m: Option<i32>,
+        k: Option<i32>,
+        stream: StreamOrDevice,
+    ) -> Array {
         let ctx = stream.as_ptr();
 
         unsafe {
@@ -131,8 +137,121 @@ impl Array {
     pub fn identity<T: ArrayElement>(n: i32, stream: StreamOrDevice) -> Array {
         let ctx = stream.as_ptr();
 
+        unsafe { Array::from_ptr(mlx_sys::mlx_identity(n, T::DTYPE.into(), ctx)) }
+    }
+
+    /// Generate `num` evenly spaced numbers over interval `[start, stop]` for `BinaryInteger`.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// // Create a 50 element 1-D array with values from 0 to 50
+    /// let r = Array::linspace::<f32, i32>(0, 50, None, StreamOrDevice::default());
+    /// ```
+    ///
+    /// # Parameters:
+    /// - start: start value
+    /// - stop: stop value
+    /// - count: number of samples
+    /// - stream: stream or device to evaluate on
+    pub fn linspace<T, U>(start: U, stop: U, count: Option<i32>, stream: StreamOrDevice) -> Array
+    where
+        T: ArrayElement,
+        U: NumCast,
+    {
+        let ctx = stream.as_ptr();
+        let start_f32 = NumCast::from(start).unwrap();
+        let stop_f32 = NumCast::from(stop).unwrap();
+
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_identity(n, T::DTYPE.into(), ctx))
+            Array::from_ptr(mlx_sys::mlx_linspace(
+                start_f32,
+                stop_f32,
+                count.unwrap_or(50),
+                T::DTYPE.into(),
+                ctx,
+            ))
+        }
+    }
+
+    /// Repeat an array along a specified axis.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// // repeat a [2, 2] array 4 times along axis 1
+    /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+    /// let r = Array::repeat::<i32>(source, 4, 1, StreamOrDevice::default());
+    /// ```
+    ///
+    /// # Parameters:
+    /// - array: array to repeat
+    /// - count: number of times to repeat
+    /// - axis: axis to repeat along
+    /// - stream: stream or device to evaluate on
+    pub fn repeat<T: ArrayElement>(
+        array: Array,
+        count: i32,
+        axis: i32,
+        stream: StreamOrDevice,
+    ) -> Array {
+        let ctx = stream.as_ptr();
+        unsafe { Array::from_ptr(mlx_sys::mlx_repeat(array.c_array, count, axis, ctx)) }
+    }
+
+    /// Repeat a flattened array along axis 0.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// // repeat a 4 element array 4 times along axis 0
+    /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+    /// let r = Array::repeat_all::<i32>(source, 4, StreamOrDevice::default());
+    /// ```
+    ///
+    /// # Parameters:
+    /// - array: array to repeat
+    /// - count: number of times to repeat
+    /// - stream: stream or device to evaluate on
+    pub fn repeat_all<T: ArrayElement>(array: Array, count: i32, stream: StreamOrDevice) -> Array {
+        let ctx = stream.as_ptr();
+        unsafe { Array::from_ptr(mlx_sys::mlx_repeat_all(array.c_array, count, ctx)) }
+    }
+
+    /// An array with ones at and below the given diagonal and zeros elsewhere.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// // [5, 5] array with the lower triangle filled with 1s
+    /// let r = Array::tri::<f32>(5, None, None, StreamOrDevice::default());
+    /// ```
+    ///
+    /// # Parameters:
+    /// - n: number of rows in the output
+    /// - m: number of columns in the output -- equal to `n` if not specified
+    /// - k: index of the diagonal -- defaults to 0 if not specified
+    /// - stream: stream or device to evaluate on
+    pub fn tri<T: ArrayElement>(
+        n: i32,
+        m: Option<i32>,
+        k: Option<i32>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        let ctx = stream.as_ptr();
+
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_tri(
+                n,
+                m.unwrap_or(n),
+                k.unwrap_or(0),
+                T::DTYPE.into(),
+                ctx,
+            ))
         }
     }
 
@@ -143,17 +262,15 @@ impl Array {
     pub fn abs(&self, stream: StreamOrDevice) -> Array {
         let ctx = stream.as_ptr();
 
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_abs(self.c_array, ctx))
-        }
+        unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, ctx)) }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use half::f16;
     use super::*;
     use crate::dtype::Dtype;
+    use half::f16;
 
     #[test]
     fn test_zeros() {
@@ -220,6 +337,65 @@ mod tests {
         array.eval();
         let data: &[f32] = array.as_slice().unwrap();
         assert_eq!(data, &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    }
+
+    #[test]
+    fn test_linspace_int() {
+        let mut array = Array::linspace::<f32, _>(0, 50, None, StreamOrDevice::default());
+        assert_eq!(array.shape(), &[50]);
+        assert_eq!(array.dtype(), Dtype::Float32);
+
+        array.eval();
+        let data: &[f32] = array.as_slice().unwrap();
+        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        assert_eq!(data, expected.as_slice());
+    }
+
+    #[test]
+    fn test_linspace_float() {
+        let mut array = Array::linspace::<f32, _>(0., 50., None, StreamOrDevice::default());
+        assert_eq!(array.shape(), &[50]);
+        assert_eq!(array.dtype(), Dtype::Float32);
+
+        array.eval();
+        let data: &[f32] = array.as_slice().unwrap();
+        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        assert_eq!(data, expected.as_slice());
+    }
+
+    #[test]
+    fn test_repeat() {
+        let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let mut array = Array::repeat::<i32>(source, 4, 1, StreamOrDevice::default());
+        assert_eq!(array.shape(), &[2, 8]);
+        assert_eq!(array.dtype(), Dtype::Int32);
+
+        array.eval();
+        let data: &[i32] = array.as_slice().unwrap();
+        assert_eq!(data, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
+    }
+
+    #[test]
+    fn test_repeat_all() {
+        let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let mut array = Array::repeat_all::<i32>(source, 4, StreamOrDevice::default());
+        assert_eq!(array.shape(), &[16]);
+        assert_eq!(array.dtype(), Dtype::Int32);
+
+        array.eval();
+        let data: &[i32] = array.as_slice().unwrap();
+        assert_eq!(data, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
+    }
+
+    #[test]
+    fn test_tri() {
+        let mut array = Array::tri::<f32>(3, None, None, StreamOrDevice::default());
+        assert_eq!(array.shape(), &[3, 3]);
+        assert_eq!(array.dtype(), Dtype::Float32);
+
+        array.eval();
+        let data: &[f32] = array.as_slice().unwrap();
+        assert_eq!(data, &[1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
     }
 
     #[test]

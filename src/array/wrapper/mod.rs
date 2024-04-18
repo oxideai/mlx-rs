@@ -1,140 +1,13 @@
+mod ops;
+
+use crate::{array::kind, array::kind::Kind};
+use num_complex::Complex32;
 use std::ffi::c_void;
 
-use half::{bf16, f16};
-use mlx_sys::mlx_array;
-use num_complex::Complex;
-
-use crate::{dtype::Dtype, sealed::Sealed};
-
-// TODO: camel case?
-// Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
-#[allow(non_camel_case_types)]
-pub type complex64 = Complex<f32>;
-
-/// A marker trait for array elements.
-pub trait ArrayElement: Sealed {
-    const DTYPE: Dtype;
-
-    fn scalar_array_item(array: &Array) -> Self;
-
-    fn array_data(array: &Array) -> *const Self;
-}
-
-macro_rules! impl_array_element {
-    ($type:ty, $dtype:expr, $mlx_item_fn:ident, $mlx_data_fn:ident) => {
-        impl Sealed for $type {}
-        impl ArrayElement for $type {
-            const DTYPE: Dtype = $dtype;
-
-            fn scalar_array_item(array: &Array) -> Self {
-                unsafe { mlx_sys::$mlx_item_fn(array.c_array) }
-            }
-
-            fn array_data(array: &Array) -> *const Self {
-                unsafe { mlx_sys::$mlx_data_fn(array.c_array) }
-            }
-        }
-    };
-}
-
-impl_array_element!(bool, Dtype::Bool, mlx_array_item_bool, mlx_array_data_bool);
-impl_array_element!(u8, Dtype::Uint8, mlx_array_item_uint8, mlx_array_data_uint8);
-impl_array_element!(
-    u16,
-    Dtype::Uint16,
-    mlx_array_item_uint16,
-    mlx_array_data_uint16
-);
-impl_array_element!(
-    u32,
-    Dtype::Uint32,
-    mlx_array_item_uint32,
-    mlx_array_data_uint32
-);
-impl_array_element!(
-    u64,
-    Dtype::Uint64,
-    mlx_array_item_uint64,
-    mlx_array_data_uint64
-);
-impl_array_element!(i8, Dtype::Int8, mlx_array_item_int8, mlx_array_data_int8);
-impl_array_element!(
-    i16,
-    Dtype::Int16,
-    mlx_array_item_int16,
-    mlx_array_data_int16
-);
-impl_array_element!(
-    i32,
-    Dtype::Int32,
-    mlx_array_item_int32,
-    mlx_array_data_int32
-);
-impl_array_element!(
-    i64,
-    Dtype::Int64,
-    mlx_array_item_int64,
-    mlx_array_data_int64
-);
-impl_array_element!(
-    f32,
-    Dtype::Float32,
-    mlx_array_item_float32,
-    mlx_array_data_float32
-);
-
-impl Sealed for f16 {}
-
-impl ArrayElement for f16 {
-    const DTYPE: Dtype = Dtype::Float16;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_float16(array.c_array) };
-        f16::from_bits(val.0)
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_float16(array.c_array) as *const Self }
-    }
-}
-
-impl Sealed for bf16 {}
-
-impl ArrayElement for bf16 {
-    const DTYPE: Dtype = Dtype::Bfloat16;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_bfloat16(array.c_array) };
-        bf16::from_bits(val)
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_bfloat16(array.c_array) as *const Self }
-    }
-}
-
-impl Sealed for complex64 {}
-
-impl ArrayElement for complex64 {
-    const DTYPE: Dtype = Dtype::Complex64;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.c_array) };
-
-        Self {
-            re: bindgen_complex64.re,
-            im: bindgen_complex64.im,
-        }
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        // complex64 has the same memory layout as __BindgenComplex<f32>
-        unsafe { mlx_sys::mlx_array_data_complex64(array.c_array) as *const Self }
-    }
-}
-
+// TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
+// reference counted but not guarded by a mutex.
 pub struct Array {
-    c_array: mlx_array,
+    pub(super) c_array: mlx_sys::mlx_array,
 }
 
 impl std::fmt::Debug for Array {
@@ -144,9 +17,6 @@ impl std::fmt::Debug for Array {
         write!(f, "{:?}", description)
     }
 }
-
-// TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
-// reference counted but not guarded by a mutex.
 
 impl Drop for Array {
     fn drop(&mut self) {
@@ -164,12 +34,12 @@ impl Array {
     ///
     /// The caller must ensure the reference count of the array is properly incremented with
     /// `mlx_sys::mlx_retain`.
-    pub unsafe fn from_ptr(c_array: mlx_array) -> Array {
+    pub unsafe fn from_ptr(c_array: mlx_sys::mlx_array) -> Array {
         Self { c_array }
     }
 
     // TODO: should this be unsafe?
-    pub fn as_ptr(&self) -> mlx_array {
+    pub fn as_ptr(&self) -> mlx_sys::mlx_array {
         self.c_array
     }
 
@@ -192,7 +62,7 @@ impl Array {
     }
 
     /// New array from a complex scalar.
-    pub fn from_complex(val: complex64) -> Array {
+    pub fn from_complex(val: Complex32) -> Array {
         let c_array = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
         Array { c_array }
     }
@@ -208,7 +78,7 @@ impl Array {
     ///
     /// - Panics if the product of the shape is not equal to the length of the data.
     /// - Panics if the shape is too large.
-    pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32]) -> Self {
+    pub fn from_slice<T: kind::Element>(data: &[T], shape: &[i32]) -> Self {
         let dim = if shape.len() > i32::MAX as usize {
             panic!("Shape is too large")
         } else {
@@ -223,7 +93,7 @@ impl Array {
                 data.as_ptr() as *const c_void,
                 shape.as_ptr(),
                 dim,
-                T::DTYPE as u32,
+                T::KIND.into(),
             )
         };
 
@@ -291,9 +161,9 @@ impl Array {
     }
 
     /// The array element type.
-    pub fn dtype(&self) -> Dtype {
+    pub fn dtype(&self) -> Kind {
         let dtype = unsafe { mlx_sys::mlx_array_get_dtype(self.c_array) };
-        Dtype::try_from(dtype).unwrap()
+        Kind::try_from(dtype).unwrap()
     }
 
     // TODO: document that mlx is lazy
@@ -304,15 +174,15 @@ impl Array {
     }
 
     /// Access the value of a scalar array.
-    pub fn item<T: ArrayElement>(&self) -> T {
+    pub fn item<T: kind::Element>(&self) -> T {
         // TODO: check and perform type conversion from the inner type to the desired output type
-        T::scalar_array_item(self)
+        T::array_item(self)
     }
 
     /// Returns a pointer to the array data
     ///
     /// Returns `None` if the array is not evaluated.
-    pub fn as_slice<T: ArrayElement>(&self) -> Option<&[T]> {
+    pub fn as_slice<T: kind::Element>(&self) -> Option<&[T]> {
         // TODO: type conversion from the inner type to the desired output type
 
         let data = T::array_data(self);
@@ -356,7 +226,7 @@ mod tests {
         assert_eq!(array.nbytes(), 1);
         assert_eq!(array.ndim(), 0);
         assert!(array.shape().is_empty());
-        assert_eq!(array.dtype(), Dtype::Bool);
+        assert_eq!(array.dtype(), Kind::Bool);
     }
 
     #[test]
@@ -369,7 +239,7 @@ mod tests {
         assert_eq!(array.nbytes(), 4);
         assert_eq!(array.ndim(), 0);
         assert!(array.shape().is_empty());
-        assert_eq!(array.dtype(), Dtype::Int32);
+        assert_eq!(array.dtype(), Kind::Int32);
     }
 
     #[test]
@@ -382,21 +252,21 @@ mod tests {
         assert_eq!(array.nbytes(), 4);
         assert_eq!(array.ndim(), 0);
         assert!(array.shape().is_empty());
-        assert_eq!(array.dtype(), Dtype::Float32);
+        assert_eq!(array.dtype(), Kind::Float32);
     }
 
     #[test]
     fn new_scalar_array_from_complex() {
-        let val = complex64 { re: 1.0, im: 2.0 };
+        let val = Complex32::new(1.0, 2.0);
         let array = Array::from_complex(val);
-        assert_eq!(array.item::<complex64>(), val);
+        assert_eq!(array.item::<Complex32>(), val);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());
         assert_eq!(array.nbytes(), 8);
         assert_eq!(array.ndim(), 0);
         assert!(array.shape().is_empty());
-        assert_eq!(array.dtype(), Dtype::Complex64);
+        assert_eq!(array.dtype(), Kind::Complex64);
     }
 
     #[test]
@@ -412,7 +282,7 @@ mod tests {
         assert_eq!(array.ndim(), 1);
         assert_eq!(array.dim(0), 1);
         assert_eq!(array.shape(), &[1]);
-        assert_eq!(array.dtype(), Dtype::Int32);
+        assert_eq!(array.dtype(), Kind::Int32);
     }
 
     #[test]
@@ -427,7 +297,7 @@ mod tests {
         assert_eq!(array.ndim(), 1);
         assert_eq!(array.dim(0), 5);
         assert_eq!(array.shape(), &[5]);
-        assert_eq!(array.dtype(), Dtype::Int32);
+        assert_eq!(array.dtype(), Kind::Int32);
     }
 
     #[test]
@@ -445,7 +315,7 @@ mod tests {
         assert_eq!(array.dim(-1), 3); // negative index
         assert_eq!(array.dim(-2), 2); // negative index
         assert_eq!(array.shape(), &[2, 3]);
-        assert_eq!(array.dtype(), Dtype::Int32);
+        assert_eq!(array.dtype(), Kind::Int32);
     }
 
     // // TODO: fatal runtime error: Rust cannot catch foreign exceptions

@@ -18,22 +18,26 @@ impl StreamOrDevice {
 
     pub fn new_with_device(device: &Device) -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(device),
+            stream: Stream::default_stream_for_device(device),
         }
     }
 
     /// The `[Stream::default_stream()] on the [Device::cpu()]
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(&Device::cpu()),
+            stream: Stream::default_stream_for_device(&Device::cpu()),
         }
     }
 
     /// The `[Stream::default_stream()] on the [Device::gpu()]
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(&Device::gpu()),
+            stream: Stream::default_stream_for_device(&Device::gpu()),
         }
+    }
+
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_stream {
+        self.stream.c_stream
     }
 }
 
@@ -63,7 +67,7 @@ pub struct Stream {
 }
 
 impl Stream {
-    fn new_with_mlx_mlx_stream(stream: mlx_sys::mlx_stream) -> Stream {
+    fn new_with_mlx_stream(stream: mlx_sys::mlx_stream) -> Stream {
         Stream { c_stream: stream }
     }
 
@@ -79,9 +83,9 @@ impl Stream {
         Stream { c_stream }
     }
 
-    pub fn default_stream(device: &Device) -> Stream {
+    pub fn default_stream_for_device(device: &Device) -> Stream {
         let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
-        Stream::new_with_mlx_mlx_stream(default_stream)
+        Stream::new_with_mlx_stream(default_stream)
     }
 }
 

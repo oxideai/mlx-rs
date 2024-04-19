@@ -283,18 +283,6 @@ impl Array {
             ))
         }
     }
-
-    /// Element-wise absolute value.
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    #[default_device]
-    pub fn abs_device(&self, stream: StreamOrDevice) -> Array {
-        let ctx = stream.as_ptr();
-
-        unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, ctx)) }
-    }
 }
 
 #[cfg(test)]
@@ -427,20 +415,5 @@ mod tests {
         array.eval();
         let data: &[f32] = array.as_slice().unwrap();
         assert_eq!(data, &[1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
-    }
-
-    #[test]
-    fn test_abs() {
-        let data = [1i32, 2, -3, -4, -5];
-        let array = Array::from_slice(&data, &[5]);
-        let mut result = array.abs();
-
-        result.eval();
-        let data: &[i32] = result.as_slice().unwrap();
-        assert_eq!(data, [1, 2, 3, 4, 5]);
-
-        // test that previous array is not modified and valid
-        let data: &[i32] = array.as_slice().unwrap();
-        assert_eq!(data, [1, 2, -3, -4, -5]);
     }
 }

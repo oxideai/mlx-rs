@@ -1,7 +1,7 @@
 use crate::array::ArrayElement;
 use crate::{array::Array, stream::StreamOrDevice};
-use num_traits::NumCast;
 use mlx_macros::default_device;
+use num_traits::NumCast;
 
 impl Array {
     /// Construct an array of zeros.
@@ -113,7 +113,11 @@ impl Array {
     /// - values: values to be broadcast into the array
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn full_device<T: ArrayElement>(shape: &[i32], values: Array, stream: StreamOrDevice) -> Array {
+    pub fn full_device<T: ArrayElement>(
+        shape: &[i32],
+        values: Array,
+        stream: StreamOrDevice,
+    ) -> Array {
         let ctx = stream.as_ptr();
 
         unsafe {
@@ -165,7 +169,12 @@ impl Array {
     /// - count: number of samples
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn linspace_device<T, U>(start: U, stop: U, count: Option<i32>, stream: StreamOrDevice) -> Array
+    pub fn linspace_device<T, U>(
+        start: U,
+        stop: U,
+        count: Option<i32>,
+        stream: StreamOrDevice,
+    ) -> Array
     where
         T: ArrayElement,
         U: NumCast,
@@ -230,7 +239,11 @@ impl Array {
     /// - count: number of times to repeat
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn repeat_all_device<T: ArrayElement>(array: Array, count: i32, stream: StreamOrDevice) -> Array {
+    pub fn repeat_all_device<T: ArrayElement>(
+        array: Array,
+        count: i32,
+        stream: StreamOrDevice,
+    ) -> Array {
         let ctx = stream.as_ptr();
         unsafe { Array::from_ptr(mlx_sys::mlx_repeat_all(array.c_array, count, ctx)) }
     }

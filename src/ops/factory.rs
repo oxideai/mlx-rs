@@ -9,7 +9,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// Array::zeros_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
@@ -19,16 +19,31 @@ impl Array {
     /// - stream: Stream or device to evaluate on
     #[default_device]
     pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
+        // TODO: Can we make use of full() here?
+        Self::try_zeros_device::<T>(shape, stream).unwrap()
+    }
+
+    #[default_device]
+    pub unsafe fn zeros_device_unchecked<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
+        // TODO: Can we make use of full() here?
         let ctx = stream.as_ptr();
 
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_zeros(
-                shape.as_ptr(),
-                shape.len(),
-                T::DTYPE.into(),
-                ctx,
-            ))
+        Array::from_ptr(mlx_sys::mlx_zeros(
+            shape.as_ptr(),
+            shape.len(),
+            T::DTYPE.into(),
+            ctx,
+        ))
+    }
+
+    #[default_device]
+    pub fn try_zeros_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Result<Array, &'static str> {
+        // TODO: Can we make use of full() here?
+        if shape.iter().any(|&i| i < 0) {
+            return Err("[full] Negative dimensions not allowed.");
         }
+
+        Ok(unsafe { Self::zeros_device_unchecked::<T>(shape, stream) })
     }
 
     /// Construct an array of ones.
@@ -36,7 +51,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// Array::ones_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
@@ -63,7 +78,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::eye_device::<f32>(10, None, None, StreamOrDevice::default());
     /// ```
@@ -102,7 +117,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
     /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default());
     /// ```
@@ -118,25 +133,46 @@ impl Array {
         values: Array,
         stream: StreamOrDevice,
     ) -> Array {
+        Self::try_full_device::<T>(shape, values, stream).unwrap()
+    }
+
+    #[default_device]
+    pub unsafe fn full_device_unchecked<T: ArrayElement>(
+        shape: &[i32],
+        values: Array,
+        stream: StreamOrDevice,
+    ) -> Array {
         let ctx = stream.as_ptr();
 
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_full(
-                shape.as_ptr(),
-                shape.len(),
-                values.c_array,
-                T::DTYPE.into(),
-                ctx,
-            ))
-        }
+        Array::from_ptr(mlx_sys::mlx_full(
+            shape.as_ptr(),
+            shape.len(),
+            values.c_array,
+            T::DTYPE.into(),
+            ctx,
+        ))
     }
+
+    #[default_device]
+    pub fn try_full_device<T: ArrayElement>(
+        shape: &[i32],
+        values: Array,
+        stream: StreamOrDevice,
+    ) -> Result<Array, &'static str> {
+        if shape.iter().any(|&i| i < 0) {
+            return Err("[full] Negative dimensions not allowed.");
+        }
+
+        Ok(unsafe { Self::full_device_unchecked::<T>(shape, values, stream) })
+    }
+
 
     /// Create a square identity matrix.
     ///
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::identity_device::<f32>(10, StreamOrDevice::default());
     /// ```
@@ -157,7 +193,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
     /// let r = Array::linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default());
     /// ```
@@ -199,7 +235,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default());
@@ -227,7 +263,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default());
@@ -253,7 +289,7 @@ impl Array {
     /// # Example:
     ///
     /// ```rust
-    /// use mlx::{array::Array, stream::StreamOrDevice};
+    /// use mlx::{Array, StreamOrDevice};
     /// // [5, 5] array with the lower triangle filled with 1s
     /// let r = Array::tri_device::<f32>(5, None, None, StreamOrDevice::default());
     /// ```
@@ -300,6 +336,12 @@ mod tests {
         array.eval();
         let data: &[f32] = array.as_slice().unwrap();
         assert_eq!(data, &[0.0; 6]);
+    }
+
+    #[test]
+    fn test_zeros_try() {
+        let mut array = Array::try_zeros::<f32>(&[-1, 3]);
+        assert!(array.is_err());
     }
 
     #[test]

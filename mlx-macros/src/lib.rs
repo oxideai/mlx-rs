@@ -10,12 +10,12 @@ pub fn default_device(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let original_fn = input_fn.clone();
 
     // Ensure function name convention
-    if !input_fn.sig.ident.to_string().ends_with("_device") {
+    if !input_fn.sig.ident.to_string().contains("_device") {
         panic!("Function name must end with '_device'");
     }
     let new_fn_name = format_ident!(
         "{}",
-        &input_fn.sig.ident.to_string().trim_end_matches("_device")
+        &input_fn.sig.ident.to_string().replace("_device", "")
     );
     input_fn.sig.ident = new_fn_name;
 

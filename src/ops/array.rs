@@ -53,7 +53,7 @@ mod tests {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
-        let mut c = add(&a, &b);
+        let mut c = &a + &b;
         c.eval();
 
         let c_data: &[f32] = c.as_slice().unwrap();

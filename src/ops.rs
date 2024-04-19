@@ -13,12 +13,12 @@ impl Array {
     /// Array::zeros_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - shape: Desired shape
     /// - stream: Stream or device to evaluate on
     #[default_device]
-    pub fn zeros_device<T: ArrayElement>(shape: &[usize], stream: StreamOrDevice) -> Array {
-        let shape = shape.iter().map(|x| *x as i32).collect::<Vec<i32>>();
+    pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
         let ctx = stream.as_ptr();
 
         unsafe {
@@ -40,12 +40,12 @@ impl Array {
     /// Array::ones_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    /// 
     /// - shape: Desired shape
     /// - stream: Stream or device to evaluate on
     #[default_device]
-    pub fn ones_device<T: ArrayElement>(shape: &[usize], stream: StreamOrDevice) -> Array {
-        let shape = shape.iter().map(|x| *x as i32).collect::<Vec<i32>>();
+    pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
         let ctx = stream.as_ptr();
 
         unsafe {
@@ -68,7 +68,8 @@ impl Array {
     /// let r = Array::eye_device::<f32>(10, None, None, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
@@ -96,9 +97,9 @@ impl Array {
     /// Construct an array with the given value.
     ///
     /// Constructs an array of size `shape` filled with `values`. If `values`
-    /// is an :obj:`array` it must be <doc:broadcasting> to the given `shape`.
+    /// is an [Array] it must be <doc:broadcasting> to the given `shape`.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{array::Array, stream::StreamOrDevice};
@@ -106,13 +107,13 @@ impl Array {
     /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - shape: shape of the output array
     /// - values: values to be broadcast into the array
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn full_device<T: ArrayElement>(shape: &[usize], values: Array, stream: StreamOrDevice) -> Array {
-        let shape = shape.iter().map(|x| *x as i32).collect::<Vec<i32>>();
+    pub fn full_device<T: ArrayElement>(shape: &[i32], values: Array, stream: StreamOrDevice) -> Array {
         let ctx = stream.as_ptr();
 
         unsafe {
@@ -136,7 +137,8 @@ impl Array {
     /// let r = Array::identity_device::<f32>(10, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - n: number of rows and columns in the output
     /// - stream: stream or device to evaluate on
     #[default_device]
@@ -156,7 +158,8 @@ impl Array {
     /// let r = Array::linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - start: start value
     /// - stop: stop value
     /// - count: number of samples
@@ -193,7 +196,8 @@ impl Array {
     /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - axis: axis to repeat along
@@ -220,7 +224,8 @@ impl Array {
     /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - stream: stream or device to evaluate on
@@ -240,7 +245,8 @@ impl Array {
     /// let r = Array::tri_device::<f32>(5, None, None, StreamOrDevice::default());
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal -- defaults to 0 if not specified
@@ -267,7 +273,8 @@ impl Array {
 
     /// Element-wise absolute value.
     ///
-    /// # Parameters:
+    /// # Params
+    ///
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn abs_device(&self, stream: StreamOrDevice) -> Array {

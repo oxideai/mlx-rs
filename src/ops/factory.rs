@@ -7,7 +7,7 @@ use num_traits::NumCast;
 impl Array {
     /// Construct an array of zeros.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -26,7 +26,7 @@ impl Array {
 
     /// Construct an array of zeros without validating shape.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -53,7 +53,7 @@ impl Array {
 
     /// Construct an array of zeros returning an error if shape is invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -81,7 +81,7 @@ impl Array {
 
     /// Construct an array of ones.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -100,7 +100,7 @@ impl Array {
 
     /// Construct an array of ones without validating shape.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -127,7 +127,7 @@ impl Array {
 
     /// Construct an array of ones returning an error if shape is invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -154,7 +154,7 @@ impl Array {
 
     /// Create an identity matrix or a general diagonal matrix.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -180,7 +180,7 @@ impl Array {
 
     /// Create an identity matrix or a general diagonal matrix without validating params.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -212,7 +212,7 @@ impl Array {
 
     /// Create an identity matrix or a general diagonal matrix returning an error if params are invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -339,7 +339,7 @@ impl Array {
 
     /// Create a square identity matrix.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -358,7 +358,7 @@ impl Array {
 
     /// Create a square identity matrix without validating params.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -379,7 +379,7 @@ impl Array {
 
     /// Create a square identity matrix returning an error if params are invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -400,7 +400,7 @@ impl Array {
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]`.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -430,7 +430,7 @@ impl Array {
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]` without validating params.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -469,7 +469,7 @@ impl Array {
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]` returning an error if params are invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -507,7 +507,7 @@ impl Array {
 
     /// Repeat an array along a specified axis.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -534,7 +534,7 @@ impl Array {
 
     /// Repeat an array along a specified axis without validating params.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -566,7 +566,7 @@ impl Array {
 
     /// Repeat an array along a specified axis returning an error if params are invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -600,7 +600,7 @@ impl Array {
 
     /// Repeat a flattened array along axis 0.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -625,7 +625,7 @@ impl Array {
 
     /// Repeat a flattened array along axis 0 without validating params.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -651,7 +651,7 @@ impl Array {
 
     /// Repeat a flattened array along axis 0 returning an error if params are invalid.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
@@ -683,7 +683,7 @@ impl Array {
 
     /// An array with ones at and below the given diagonal and zeros elsewhere.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};

@@ -41,7 +41,7 @@ impl Array {
     /// ```
     ///
     /// # Params
-    /// 
+    ///
     /// - shape: Desired shape
     /// - stream: Stream or device to evaluate on
     #[default_device]
@@ -425,5 +425,9 @@ mod tests {
         result.eval();
         let data: &[i32] = result.as_slice().unwrap();
         assert_eq!(data, [1, 2, 3, 4, 5]);
+
+        // test that previous array is not modified and valid
+        let data: &[i32] = array.as_slice().unwrap();
+        assert_eq!(data, [1, 2, -3, -4, -5]);
     }
 }

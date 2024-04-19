@@ -13,10 +13,7 @@ pub fn default_device(_attr: TokenStream, item: TokenStream) -> TokenStream {
     if !input_fn.sig.ident.to_string().contains("_device") {
         panic!("Function name must end with '_device'");
     }
-    let new_fn_name = format_ident!(
-        "{}",
-        &input_fn.sig.ident.to_string().replace("_device", "")
-    );
+    let new_fn_name = format_ident!("{}", &input_fn.sig.ident.to_string().replace("_device", ""));
     input_fn.sig.ident = new_fn_name;
 
     // Filter out the `stream` parameter and reconstruct the Punctuated collection

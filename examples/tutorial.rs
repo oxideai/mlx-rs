@@ -1,4 +1,5 @@
 use mlx::{Array, Dtype};
+use std::ops::Add;
 
 fn scalar_basics() {
     // create a scalar array
@@ -39,9 +40,10 @@ fn array_basics() {
     let y = Array::ones::<f32>(&[2, 2]);
 
     // Pointwise add x and y:
-    let mut z = mlx::ops::add(&x, &y);
+    let mut z = x.add(&y);
 
-    // TODO: Support x + y
+    // Same thing:
+    z = &x + &y;
 
     // mlx is lazy by default. At this point `z` only
     // has a shape and a type but no actual data:

@@ -1,10 +1,11 @@
 use std::ffi::c_void;
+use std::ops::Add;
 
 use half::{bf16, f16};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 
-use crate::{dtype::Dtype, sealed::Sealed};
+use crate::{dtype::Dtype, sealed::Sealed, StreamOrDevice};
 
 // TODO: camel case?
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
@@ -339,6 +340,13 @@ impl From<i32> for Array {
 impl From<f32> for Array {
     fn from(val: f32) -> Self {
         Array::from_float(val)
+    }
+}
+
+impl<'a> Add for &'a Array {
+    type Output = Array;
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add_device(rhs, StreamOrDevice::default())
     }
 }
 

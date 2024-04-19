@@ -146,6 +146,13 @@ impl std::fmt::Display for Array {
     }
 }
 
+impl<'a> Add for &'a Array {
+    type Output = Array;
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add_device(rhs, StreamOrDevice::default())
+    }
+}
+
 // TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
 
@@ -340,13 +347,6 @@ impl From<i32> for Array {
 impl From<f32> for Array {
     fn from(val: f32) -> Self {
         Array::from_float(val)
-    }
-}
-
-impl<'a> Add for &'a Array {
-    type Output = Array;
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add_device(rhs, StreamOrDevice::default())
     }
 }
 

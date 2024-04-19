@@ -1,4 +1,5 @@
 use crate::array::ArrayElement;
+use crate::error::DataStoreError;
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_macros::default_device;
 use num_traits::NumCast;
@@ -67,10 +68,12 @@ impl Array {
     pub fn try_zeros_device<T: ArrayElement>(
         shape: &[i32],
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
-            return Err("[full] Negative dimensions not allowed.");
+            return Err(DataStoreError::NegativeDimensions(format!(
+                "negative dimensions in shape not allowed"
+            )));
         }
 
         Ok(unsafe { Self::zeros_device_unchecked::<T>(shape, stream) })
@@ -138,10 +141,12 @@ impl Array {
     pub fn try_ones_device<T: ArrayElement>(
         shape: &[i32],
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
-            return Err("[full] Negative dimensions not allowed.");
+            return Err(DataStoreError::NegativeDimensions(format!(
+                "negative dimensions in shape not allowed"
+            )));
         }
 
         Ok(unsafe { Self::ones_device_unchecked::<T>(shape, stream) })
@@ -227,9 +232,13 @@ impl Array {
         m: Option<i32>,
         k: Option<i32>,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         if n < 0 || m.unwrap_or(n) < 0 {
-            return Err("[eye] N and M must be positive integers.");
+            return Err(DataStoreError::NegativeInteger(format!(
+                "m and n must be positive, got m: {}, n: {}",
+                m.unwrap_or(n),
+                n
+            )));
         }
 
         Ok(unsafe { Self::eye_device_unsafe::<T>(n, m, k, stream) })
@@ -318,9 +327,11 @@ impl Array {
         shape: &[i32],
         values: Array,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         if shape.iter().any(|&i| i < 0) {
-            return Err("[full] Negative dimensions not allowed.");
+            return Err(DataStoreError::NegativeDimensions(format!(
+                "negative dimensions in shape not allowed"
+            )));
         }
 
         Ok(unsafe { Self::full_device_unchecked::<T>(shape, values, stream) })
@@ -383,7 +394,7 @@ impl Array {
     pub fn try_identity_device<T: ArrayElement>(
         n: i32,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         Self::try_eye_device::<T>(n, Some(n), None, stream)
     }
 
@@ -478,14 +489,17 @@ impl Array {
         stop: U,
         count: Option<i32>,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str>
+    ) -> Result<Array, DataStoreError>
     where
         T: ArrayElement,
         U: NumCast,
     {
         let count = count.unwrap_or(50);
         if count < 0 {
-            return Err("[linspace] number of samples, {count}, must be non-negative.");
+            return Err(DataStoreError::NegativeInteger(format!(
+                "count must be positive, got {}",
+                count
+            )));
         }
 
         Ok(unsafe { Self::linspace_device_unchecked::<T, U>(start, stop, Some(count), stream) })
@@ -573,9 +587,12 @@ impl Array {
         count: i32,
         axis: i32,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         if count < 0 {
-            return Err("[repeat] count cannot be negative.");
+            return Err(DataStoreError::NegativeInteger(format!(
+                "count must be positive, got {}",
+                count
+            )));
         }
 
         Ok(unsafe { Self::repeat_device_unchecked::<T>(array, count, axis, stream) })
@@ -653,9 +670,12 @@ impl Array {
         array: Array,
         count: i32,
         stream: StreamOrDevice,
-    ) -> Result<Array, &'static str> {
+    ) -> Result<Array, DataStoreError> {
         if count < 0 {
-            return Err("[repeat_all] count cannot be negative.");
+            return Err(DataStoreError::NegativeInteger(format!(
+                "count must be positive, got {}",
+                count
+            )));
         }
 
         Ok(unsafe { Self::repeat_all_device_unchecked::<T>(array, count, stream) })
@@ -770,11 +790,11 @@ mod tests {
     #[test]
     fn test_full_try() {
         let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::default());
-        let mut array = Array::try_full::<f32>(&[2, 3], source);
+        let array = Array::try_full::<f32>(&[2, 3], source);
         assert!(array.is_ok());
 
         let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::default());
-        let mut array = Array::try_full::<f32>(&[-1, 3], source);
+        let array = Array::try_full::<f32>(&[-1, 3], source);
         assert!(array.is_err());
     }
 

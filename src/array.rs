@@ -137,7 +137,7 @@ pub struct Array {
     pub(super) c_array: mlx_array,
 }
 
-impl std::fmt::Debug for Array {
+impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
             .unwrap_or_else(|| "Array".to_string());
@@ -223,7 +223,7 @@ impl Array {
                 data.as_ptr() as *const c_void,
                 shape.as_ptr(),
                 dim,
-                T::DTYPE as u32,
+                T::DTYPE.into(),
             )
         };
 

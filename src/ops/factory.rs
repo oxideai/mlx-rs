@@ -71,9 +71,9 @@ impl Array {
     ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
-            return Err(DataStoreError::NegativeDimensions(format!(
-                "negative dimensions in shape not allowed"
-            )));
+            return Err(DataStoreError::NegativeDimensions(
+                "negative dimensions in shape not allowed".to_string(),
+            ));
         }
 
         Ok(unsafe { Self::zeros_device_unchecked::<T>(shape, stream) })
@@ -144,9 +144,9 @@ impl Array {
     ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
-            return Err(DataStoreError::NegativeDimensions(format!(
-                "negative dimensions in shape not allowed"
-            )));
+            return Err(DataStoreError::NegativeDimensions(
+                "negative dimensions in shape not allowed".to_string(),
+            ));
         }
 
         Ok(unsafe { Self::ones_device_unchecked::<T>(shape, stream) })
@@ -329,9 +329,9 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
         if shape.iter().any(|&i| i < 0) {
-            return Err(DataStoreError::NegativeDimensions(format!(
-                "negative dimensions in shape not allowed"
-            )));
+            return Err(DataStoreError::NegativeDimensions(
+                "negative dimensions in shape not allowed".to_string(),
+            ));
         }
 
         Ok(unsafe { Self::full_device_unchecked::<T>(shape, values, stream) })

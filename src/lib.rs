@@ -3,7 +3,7 @@
 mod array;
 mod device;
 mod dtype;
-mod error;
+pub mod error;
 pub mod ops;
 mod stream;
 mod utils;

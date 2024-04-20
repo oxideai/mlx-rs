@@ -8,7 +8,7 @@ use crate::utils::mlx_describe;
 /// If omitted it will use the [default()], which will be [Device::gpu()] unless
 /// set otherwise.
 pub struct StreamOrDevice {
-    stream: Stream,
+    pub(crate) stream: Stream,
 }
 
 impl StreamOrDevice {
@@ -59,7 +59,7 @@ impl std::fmt::Display for StreamOrDevice {
 ///
 /// Typically, this is used via the `stream:` parameter on a method with a [StreamOrDevice]:
 pub struct Stream {
-    c_stream: mlx_sys::mlx_stream,
+    pub(crate) c_stream: mlx_sys::mlx_stream,
 }
 
 impl Stream {
@@ -79,6 +79,7 @@ impl Stream {
         Stream { c_stream }
     }
 
+    // TODO: document how this is different from `Default::default()`
     pub fn default_stream(device: &Device) -> Stream {
         let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
         Stream::new_with_mlx_mlx_stream(default_stream)

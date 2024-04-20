@@ -1,6 +1,6 @@
-use mlx_macros::default_device;
 use crate::array::Array;
 use crate::stream::StreamOrDevice;
+use mlx_macros::default_device;
 
 impl Array {
     /// Element-wise absolute value.

@@ -185,7 +185,7 @@ impl Array {
     /// ```rust
     /// use mlx::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
-    /// let r = unsafe { Array::eye_device_unsafe::<f32>(10, None, None, StreamOrDevice::default()) };
+    /// let r = unsafe { Array::eye_device_unchecked::<f32>(10, None, None, StreamOrDevice::default()) };
     /// ```
     ///
     /// # Params
@@ -195,7 +195,7 @@ impl Array {
     /// - k: index of the diagonal - defaults to 0 if not specified
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub unsafe fn eye_device_unsafe<T: ArrayElement>(
+    pub unsafe fn eye_device_unchecked<T: ArrayElement>(
         n: i32,
         m: Option<i32>,
         k: Option<i32>,
@@ -241,7 +241,7 @@ impl Array {
             )));
         }
 
-        Ok(unsafe { Self::eye_device_unsafe::<T>(n, m, k, stream) })
+        Ok(unsafe { Self::eye_device_unchecked::<T>(n, m, k, stream) })
     }
 
     /// Construct an array with the given value.
@@ -374,7 +374,7 @@ impl Array {
         n: i32,
         stream: StreamOrDevice,
     ) -> Array {
-        Self::eye_device_unsafe::<T>(n, Some(n), None, stream)
+        Self::eye_device_unchecked::<T>(n, Some(n), None, stream)
     }
 
     /// Create a square identity matrix returning an error if params are invalid.

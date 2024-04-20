@@ -33,7 +33,7 @@ impl Device {
     /// # Example:
     /// 
     /// ```rust
-    /// use mlx::device::{Device, DeviceType};
+    /// use mlx::{Device, DeviceType};
     /// Device::set_default(&Device::new(DeviceType::Cpu, 1));
     /// ```
     ///

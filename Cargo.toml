@@ -13,14 +13,17 @@ readme = "README.md"
 
 [dependencies]
 mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
+mlx-macros = { version = "0.10.0-alpha.0", path = "mlx-macros" }
 half = "2"
 num-complex = "0.4"
 num_enum = "0.7.2"
+num-traits = "0.2.18"
+thiserror = "1.0.58"
 
 [dev-dependencies]
 
 [workspace]
-members = ["mlx-sys"]
+members = ["mlx-macros", "mlx-sys", "mlx-macros"]
 
 [features]
 default = ["accelerate", "metal"]

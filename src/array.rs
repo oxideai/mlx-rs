@@ -1,10 +1,11 @@
 use std::ffi::c_void;
+use std::ops::Add;
 
 use half::{bf16, f16};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 
-use crate::{dtype::Dtype, sealed::Sealed};
+use crate::{dtype::Dtype, sealed::Sealed, StreamOrDevice};
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
 #[allow(non_camel_case_types)]
@@ -133,14 +134,21 @@ impl ArrayElement for complex64 {
 }
 
 pub struct Array {
-    c_array: mlx_array,
+    pub(crate) c_array: mlx_array,
 }
 
-impl std::fmt::Debug for Array {
+impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
             .unwrap_or_else(|| "Array".to_string());
         write!(f, "{:?}", description)
+    }
+}
+
+impl<'a> Add for &'a Array {
+    type Output = Array;
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add_device(rhs, StreamOrDevice::default())
     }
 }
 
@@ -222,7 +230,7 @@ impl Array {
                 data.as_ptr() as *const c_void,
                 shape.as_ptr(),
                 dim,
-                T::DTYPE as u32,
+                T::DTYPE.into(),
             )
         };
 
@@ -468,7 +476,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_complex() {
-        let val = complex64 { re: 1.0, im: 2.0 };
+        let val = complex64::new(1.0, 2.0);
         let array = Array::from_complex(val);
         assert_eq!(array.item::<complex64>(), val);
         assert_eq!(array.item_size(), 8);

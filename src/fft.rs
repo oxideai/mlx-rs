@@ -58,7 +58,7 @@ mod tests {
             complex64::new(-2.0, 0.0),
             complex64::new(-2.0, -2.0),
         ];
-        assert_eq!(result.as_slice::<complex64>(), Some(&expected[..]));
+        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
     }
 
     #[test]
@@ -76,6 +76,6 @@ mod tests {
             complex64::new(-2.0, 0.0),
             complex64::new(-2.0, -2.0),
         ];
-        assert_eq!(result.as_slice::<complex64>(), Some(&expected[..]));
+        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
     }
 }

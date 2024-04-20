@@ -40,11 +40,11 @@ mod tests {
         let mut result = array.abs();
 
         result.eval();
-        let data: &[i32] = result.as_slice().unwrap();
+        let data: &[i32] = result.as_slice();
         assert_eq!(data, [1, 2, 3, 4, 5]);
 
         // test that previous array is not modified and valid
-        let data: &[i32] = array.as_slice().unwrap();
+        let data: &[i32] = array.as_slice();
         assert_eq!(data, [1, 2, -3, -4, -5]);
     }
 
@@ -56,14 +56,14 @@ mod tests {
         let mut c = &a + &b;
         c.eval();
 
-        let c_data: &[f32] = c.as_slice().unwrap();
+        let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[5.0, 7.0, 9.0]);
 
         // check a and b are not modified
-        let a_data: &[f32] = a.as_slice().unwrap();
+        let a_data: &[f32] = a.as_slice();
         assert_eq!(a_data, &[1.0, 2.0, 3.0]);
 
-        let b_data: &[f32] = b.as_slice().unwrap();
+        let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[4.0, 5.0, 6.0]);
     }
 }

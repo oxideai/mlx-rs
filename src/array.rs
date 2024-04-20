@@ -6,7 +6,6 @@ use num_complex::Complex;
 
 use crate::{dtype::Dtype, sealed::Sealed};
 
-// TODO: camel case?
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
 #[allow(non_camel_case_types)]
 pub type complex64 = Complex<f32>;
@@ -309,19 +308,101 @@ impl Array {
         T::scalar_array_item(self)
     }
 
-    /// Returns a pointer to the array data
-    ///
-    /// Returns `None` if the array is not evaluated.
-    pub fn as_slice<T: ArrayElement>(&self) -> Option<&[T]> {
-        // TODO: type conversion from the inner type to the desired output type
+    // /// Returns a pointer to the array data
+    // ///
+    // /// Returns `None` if the array is not evaluated.
+    // pub fn as_slice<T: ArrayElement>(&self) -> Option<&[T]> {
+    //     // TODO: type conversion from the inner type to the desired output type
 
-        let data = T::array_data(self);
-        if data.is_null() {
-            return None;
+    //     let data = T::array_data(self);
+    //     if data.is_null() {
+    //         return None;
+    //     }
+    //     let size = self.size();
+    //     unsafe { Some(std::slice::from_raw_parts(data, size)) }
+    // }
+
+    /// Returns a slice of the array data.
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because the underlying data ptr is not checked for null or if the desired
+    /// dtype matches the actual dtype of the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::array::Array;
+    ///
+    /// let data = [1, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data, &[5]);
+    ///
+    /// unsafe {
+    ///    let slice = array.as_slice_unchecked::<i32>();
+    ///    assert_eq!(slice, &[1, 2, 3, 4, 5]);
+    /// }
+    /// ```
+    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&self) -> &[T] {
+        unsafe {
+            let data = T::array_data(self);
+            let size = self.size();
+            std::slice::from_raw_parts(data, size)
         }
-        let size = self.size();
-        unsafe { Some(std::slice::from_raw_parts(data, size)) }
     }
+
+    /// Returns a slice of the array data.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::array::Array;
+    ///
+    /// let data = [1, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data, &[5]);
+    ///
+    /// let slice = array.as_slice::<i32>();
+    /// assert_eq!(slice, Ok(&data[..]));
+    /// ```
+    pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
+        if self.size() == 0 {
+            return Err(AsSliceError::Null);
+        }
+
+        if self.dtype() != T::DTYPE {
+            return Err(AsSliceError::DtypeMismatch);
+        }
+
+        Ok(unsafe { self.as_slice_unchecked() })
+    }
+
+    /// Returns a slice of the array data.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the array is not evaluated or if the desired dtype does not match the actual dtype
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::array::Array;
+    ///
+    /// let data = [1, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data, &[5]);
+    ///
+    /// let slice = array.as_slice::<i32>();
+    /// assert_eq!(slice, &data[..]);
+    /// ```
+    pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
+        self.try_as_slice().unwrap()
+    }
+}
+
+// TODO: move to src/error.rs
+// TODO: impl Display and Error
+#[derive(Debug, PartialEq)]
+pub enum AsSliceError {
+    Null,
+    DtypeMismatch,
 }
 
 impl From<bool> for Array {
@@ -403,7 +484,7 @@ mod tests {
     fn new_array_from_single_element_slice() {
         let data = [1i32];
         let array = Array::from_slice(&data, &[1]);
-        assert_eq!(array.as_slice::<i32>(), Some(&data[..]));
+        assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -419,7 +500,7 @@ mod tests {
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
         let array = Array::from_slice(&data, &[5]);
-        assert_eq!(array.as_slice::<i32>(), Some(&data[..]));
+        assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
         assert_eq!(array.strides(), &[1]);
@@ -434,7 +515,7 @@ mod tests {
     fn new_2d_array_from_slice() {
         let data = [1i32, 2, 3, 4, 5, 6];
         let array = Array::from_slice(&data, &[2, 3]);
-        assert_eq!(array.as_slice::<i32>(), Some(&data[..]));
+        assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 6);
         assert_eq!(array.strides(), &[3, 1]);
@@ -447,13 +528,4 @@ mod tests {
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Int32);
     }
-
-    // // TODO: fatal runtime error: Rust cannot catch foreign exceptions
-    // #[test]
-    // #[should_panic]
-    // fn get_item_from_multi_element_array_should_panic() {
-    //     let data = [1, 2, 3, 4, 5];
-    //     let array = Array::from_slice(&data, &[5], 1);
-    //     array.item::<i32>();
-    // }
 }

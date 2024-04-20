@@ -72,7 +72,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = -a;
+    /// let mut b = -&a;
     ///
     /// b.eval();
     /// let b_data: &[f32] = b.as_slice();

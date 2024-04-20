@@ -316,20 +316,6 @@ impl Array {
         T::scalar_array_item(self)
     }
 
-    // /// Returns a pointer to the array data
-    // ///
-    // /// Returns `None` if the array is not evaluated.
-    // pub fn as_slice<T: ArrayElement>(&self) -> Option<&[T]> {
-    //     // TODO: type conversion from the inner type to the desired output type
-
-    //     let data = T::array_data(self);
-    //     if data.is_null() {
-    //         return None;
-    //     }
-    //     let size = self.size();
-    //     unsafe { Some(std::slice::from_raw_parts(data, size)) }
-    // }
-
     /// Returns a slice of the array data.
     ///
     /// # Safety
@@ -340,10 +326,10 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::array::Array;
+    /// use mlx::Array;
     ///
-    /// let data = [1, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data, &[5]);
+    /// let data = [1i32, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data[..], &[5]);
     ///
     /// unsafe {
     ///    let slice = array.as_slice_unchecked::<i32>();
@@ -363,12 +349,12 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::array::Array;
+    /// use mlx::Array;
     ///
-    /// let data = [1, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data, &[5]);
+    /// let data = [1i32, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data[..], &[5]);
     ///
-    /// let slice = array.as_slice::<i32>();
+    /// let slice = array.try_as_slice::<i32>();
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
     pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
@@ -392,10 +378,10 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::array::Array;
+    /// use mlx::Array;
     ///
-    /// let data = [1, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data, &[5]);
+    /// let data = [1i32, 2, 3, 4, 5];
+    /// let array = Array::from_slice(&data[..], &[5]);
     ///
     /// let slice = array.as_slice::<i32>();
     /// assert_eq!(slice, &data[..]);

@@ -295,7 +295,7 @@ impl Array {
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-    /// let mut c = a.all_close_device(&b, 1e-5, 1e-8, None, Default::default());
+    /// let mut c = a.all_close_device(&b, Some(1e-5), Some(1e-8), None, Default::default());
     ///
     /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
@@ -305,16 +305,16 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - rtol: relative tolerance
-    /// - atol: absolute tolerance
+    /// - rtol: relative tolerance = defaults to 1e-5 when None
+    /// - atol: absolute tolerance - defaults to 1e-8 when None
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn all_close_device(
         &self,
         other: &Array,
-        rtol: f64,
-        atol: f64,
+        rtol: Option<f64>,
+        atol: Option<f64>,
         equal_nan: Option<bool>,
         stream: StreamOrDevice,
     ) -> Array {
@@ -322,8 +322,47 @@ impl Array {
             Array::from_ptr(mlx_sys::mlx_allclose(
                 self.c_array,
                 other.c_array,
-                rtol,
-                atol,
+                rtol.unwrap_or(1e-5),
+                atol.unwrap_or(1e-8),
+                equal_nan.unwrap_or(false),
+                stream.as_ptr(),
+            ))
+        }
+    }
+
+    /// Array equality check.
+    ///
+    /// Compare two arrays for equality. Returns `True` if and only if the arrays
+    /// have the same shape and their values are equal. The arrays need not have
+    /// the same type to be considered equal.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[0, 1, 2, 3], &[4]);
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]);
+    ///
+    /// let c = a.array_eq(&b, None);
+    /// // c == [true]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn array_eq_device(
+        &self,
+        other: &Array,
+        equal_nan: Option<bool>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_array_equal(
+                self.c_array,
+                other.c_array,
                 equal_nan.unwrap_or(false),
                 stream.as_ptr(),
             ))
@@ -494,7 +533,18 @@ mod tests {
     fn test_all_close() {
         let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
         let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-        let mut c = a.all_close(&b, 1e-5, 1e-8, None);
+        let mut c = a.all_close(&b, Some(1e-5), Some(1e-8), None);
+
+        c.eval();
+        let c_data: &[bool] = c.as_slice();
+        assert_eq!(c_data, [true]);
+    }
+
+    #[test]
+    fn test_array_eq() {
+        let a = Array::from_slice(&[0, 1, 2, 3], &[4]);
+        let b = Array::from_slice(&[0., 1., 2., 3.], &[4]);
+        let mut c = a.array_eq(&b, None);
 
         c.eval();
         let c_data: &[bool] = c.as_slice();

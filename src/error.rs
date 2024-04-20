@@ -22,3 +22,12 @@ pub enum AsSliceError {
     #[error("Desired output dtype does not match the data type of the array.")]
     DtypeMismatch,
 }
+
+#[derive(Error, Debug)]
+pub enum FftError {
+    #[error("fftn requires at least one dimension")]
+    ScalarArray,
+
+    #[error("Invalid axis received for array with {0} dimensions")]
+    InvalidAxis(usize),
+}

@@ -5,7 +5,7 @@ use half::{bf16, f16};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 
-use crate::{dtype::Dtype, sealed::Sealed, StreamOrDevice};
+use crate::{dtype::Dtype, error::AsSliceError, sealed::Sealed, StreamOrDevice};
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
 #[allow(non_camel_case_types)]
@@ -403,14 +403,6 @@ impl Array {
     pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
         self.try_as_slice().unwrap()
     }
-}
-
-// TODO: move to src/error.rs
-// TODO: impl Display and Error
-#[derive(Debug, PartialEq)]
-pub enum AsSliceError {
-    Null,
-    DtypeMismatch,
 }
 
 impl From<bool> for Array {

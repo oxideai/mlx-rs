@@ -280,11 +280,42 @@ impl Array {
             ))
         }
     }
+
+    /// Approximate comparison of two arrays.
+    ///
+    /// The arrays are considered equal if:
+    ///
+    /// ```text
+    /// all(abs(a - b) <= (atol + rtol * abs(b)))
+    /// ```
+    ///
+    /// # Example
+    #[default_device]
+    pub fn all_close_device(
+        &self,
+        other: &Array,
+        rtol: f64,
+        atol: f64,
+        equal_nan: Option<bool>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_allclose(
+                self.c_array,
+                other.c_array,
+                rtol,
+                atol,
+                equal_nan.unwrap_or(false),
+                stream.as_ptr(),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use num_traits::Pow;
 
     #[test]
     fn test_logical_not() {
@@ -438,5 +469,16 @@ mod tests {
 
         let b_data: &[bool] = b.as_slice();
         assert_eq!(b_data, [true, true, false]);
+    }
+
+    #[test]
+    fn test_all_close() {
+        let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
+        let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
+        let mut c = a.all_close(&b, 1e-5, 1e-8, None);
+
+        c.eval();
+        let c_data: &[bool] = c.as_slice();
+        assert_eq!(c_data, [true]);
     }
 }

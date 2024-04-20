@@ -229,6 +229,12 @@ impl Array {
             ))
         }
     }
+
+    /// Element-wise square root
+    #[default_device]
+    pub fn sqrt_device(&self, stream: StreamOrDevice) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_sqrt(self.c_array, stream.as_ptr())) }
+    }
 }
 
 #[cfg(test)]
@@ -377,5 +383,19 @@ mod tests {
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[3.0, 4.0, 5.0]);
+    }
+
+    #[test]
+    fn test_sqrt() {
+        let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
+        let mut b = a.sqrt();
+        b.eval();
+
+        let b_data: &[f32] = b.as_slice();
+        assert_eq!(b_data, &[1.0, 2.0, 3.0]);
+
+        // check a is not modified
+        let a_data: &[f32] = a.as_slice();
+        assert_eq!(a_data, &[1.0, 4.0, 9.0]);
     }
 }

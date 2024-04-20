@@ -292,10 +292,11 @@ impl Array {
     /// # Example
     ///
     /// ```rust
+    /// use num_traits::Pow;
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-    /// let mut c = a.all_close_device(&b, Some(1e-5), Some(1e-8), None, Default::default());
+    /// let mut c = a.all_close_device(&b, None, None, None, Default::default());
     ///
     /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
@@ -313,18 +314,18 @@ impl Array {
     pub fn all_close_device(
         &self,
         other: &Array,
-        rtol: Option<f64>,
-        atol: Option<f64>,
-        equal_nan: Option<bool>,
+        rtol: impl Into<Option<f64>>,
+        atol: impl Into<Option<f64>>,
+        equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_allclose(
                 self.c_array,
                 other.c_array,
-                rtol.unwrap_or(1e-5),
-                atol.unwrap_or(1e-8),
-                equal_nan.unwrap_or(false),
+                rtol.into().unwrap_or(1e-5),
+                atol.into().unwrap_or(1e-8),
+                equal_nan.into().unwrap_or(false),
                 stream.as_ptr(),
             ))
         }
@@ -356,14 +357,14 @@ impl Array {
     pub fn array_eq_device(
         &self,
         other: &Array,
-        equal_nan: Option<bool>,
+        equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_array_equal(
                 self.c_array,
                 other.c_array,
-                equal_nan.unwrap_or(false),
+                equal_nan.into().unwrap_or(false),
                 stream.as_ptr(),
             ))
         }
@@ -533,7 +534,7 @@ mod tests {
     fn test_all_close() {
         let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
         let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-        let mut c = a.all_close(&b, Some(1e-5), Some(1e-8), None);
+        let mut c = a.all_close(&b, 1e-5, None, None);
 
         c.eval();
         let c_data: &[bool] = c.as_slice();

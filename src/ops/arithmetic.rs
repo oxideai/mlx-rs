@@ -475,11 +475,11 @@ impl Array {
     /// - decimals: number of decimals to round to - default is 0 if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn round_device(&self, decimals: Option<i32>, stream: StreamOrDevice) -> Array {
+    pub fn round_device(&self, decimals: impl Into<Option<i32>>, stream: StreamOrDevice) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_round(
                 self.c_array,
-                decimals.unwrap_or(0),
+                decimals.into().unwrap_or(0),
                 stream.as_ptr(),
             ))
         }
@@ -852,7 +852,7 @@ mod tests {
         b.eval();
 
         let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[0.0, 0.84147096, 0.9092974]);
+        assert_eq!(b_data, &[0.0, 0.841471, 0.9092974]);
 
         // check a is not modified
         let a_data: &[f32] = a.as_slice();

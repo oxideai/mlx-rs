@@ -1,9 +1,10 @@
 use std::ffi::c_void;
-use std::ops::Add;
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 use half::{bf16, f16};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
+use num_traits::Pow;
 
 use crate::{dtype::Dtype, error::AsSliceError, sealed::Sealed, StreamOrDevice};
 
@@ -137,18 +138,60 @@ pub struct Array {
     pub(crate) c_array: mlx_array,
 }
 
+impl<'a> Add for &'a Array {
+    type Output = Array;
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add_device(rhs, StreamOrDevice::default())
+    }
+}
+
+impl<'a> Sub for &'a Array {
+    type Output = Array;
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.sub_device(rhs, StreamOrDevice::default())
+    }
+}
+
+impl<'a> Neg for &'a Array {
+    type Output = Array;
+    fn neg(self) -> Self::Output {
+        self.neg_device(StreamOrDevice::default())
+    }
+}
+
+impl<'a> Mul for &'a Array {
+    type Output = Array;
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.mul_device(rhs, StreamOrDevice::default())
+    }
+}
+
+impl<'a> Div for &'a Array {
+    type Output = Array;
+    fn div(self, rhs: Self) -> Self::Output {
+        self.div_device(rhs, StreamOrDevice::default())
+    }
+}
+
+impl<'a> Pow<&'a Array> for &'a Array {
+    type Output = Array;
+    fn pow(self, rhs: &'a Array) -> Self::Output {
+        self.pow_device(rhs, StreamOrDevice::default())
+    }
+}
+
+impl<'a> Rem for &'a Array {
+    type Output = Array;
+    fn rem(self, rhs: Self) -> Self::Output {
+        self.rem_device(rhs, StreamOrDevice::default())
+    }
+}
+
 impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
             .unwrap_or_else(|| "Array".to_string());
         write!(f, "{:?}", description)
-    }
-}
-
-impl<'a> Add for &'a Array {
-    type Output = Array;
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add_device(rhs, StreamOrDevice::default())
     }
 }
 

@@ -290,6 +290,25 @@ impl Array {
     /// ```
     ///
     /// # Example
+    ///
+    /// ```rust
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
+    /// let mut c = a.all_close_device(&b, 1e-5, 1e-8, None, Default::default());
+    ///
+    /// c.eval();
+    /// let c_data: &[bool] = c.as_slice();
+    /// // c_data == [true]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    /// - rtol: relative tolerance
+    /// - atol: absolute tolerance
+    /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn all_close_device(
         &self,

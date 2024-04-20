@@ -37,18 +37,24 @@ impl Array {
     ///
     /// - shape: Desired shape
     /// - stream: Stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the shape has no negative dimensions.
     #[default_device]
     pub unsafe fn zeros_device_unchecked<T: ArrayElement>(
         shape: &[i32],
         stream: StreamOrDevice,
     ) -> Array {
         // TODO: Can we make use of full() here?
-        Array::from_ptr(mlx_sys::mlx_zeros(
-            shape.as_ptr(),
-            shape.len(),
-            T::DTYPE.into(),
-            stream.as_ptr(),
-        ))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_zeros(
+                shape.as_ptr(),
+                shape.len(),
+                T::DTYPE.into(),
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Construct an array of zeros returning an error if shape is invalid.
@@ -111,6 +117,10 @@ impl Array {
     ///
     /// - shape: Desired shape
     /// - stream: Stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the shape has no negative dimensions.
     #[default_device]
     pub unsafe fn ones_device_unchecked<T: ArrayElement>(
         shape: &[i32],
@@ -194,6 +204,10 @@ impl Array {
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that n and m are positive.
     #[default_device]
     pub unsafe fn eye_device_unchecked<T: ArrayElement>(
         n: i32,
@@ -201,13 +215,15 @@ impl Array {
         k: Option<i32>,
         stream: StreamOrDevice,
     ) -> Array {
-        Array::from_ptr(mlx_sys::mlx_eye(
-            n,
-            m.unwrap_or(n),
-            k.unwrap_or(0),
-            T::DTYPE.into(),
-            stream.as_ptr(),
-        ))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_eye(
+                n,
+                m.unwrap_or(n),
+                k.unwrap_or(0),
+                T::DTYPE.into(),
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Create an identity matrix or a general diagonal matrix returning an error if params are invalid.
@@ -289,19 +305,25 @@ impl Array {
     /// - shape: shape of the output array
     /// - values: values to be broadcast into the array
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the shape has no negative dimensions.
     #[default_device]
     pub unsafe fn full_device_unchecked<T: ArrayElement>(
         shape: &[i32],
         values: Array,
         stream: StreamOrDevice,
     ) -> Array {
-        Array::from_ptr(mlx_sys::mlx_full(
-            shape.as_ptr(),
-            shape.len(),
-            values.c_array,
-            T::DTYPE.into(),
-            stream.as_ptr(),
-        ))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_full(
+                shape.as_ptr(),
+                shape.len(),
+                values.c_array,
+                T::DTYPE.into(),
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Construct an array with the given value returning an error if shape is invalid.
@@ -370,11 +392,15 @@ impl Array {
     ///
     /// - n: number of rows and columns in the output
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that n is positive.
     pub unsafe fn identity_device_unchecked<T: ArrayElement>(
         n: i32,
         stream: StreamOrDevice,
     ) -> Array {
-        Self::eye_device_unchecked::<T>(n, Some(n), None, stream)
+        unsafe { Self::eye_device_unchecked::<T>(n, Some(n), None, stream) }
     }
 
     /// Create a square identity matrix returning an error if params are invalid.
@@ -412,7 +438,7 @@ impl Array {
     ///
     /// - start: start value
     /// - stop: stop value
-    /// - count: number of samples
+    /// - count: number of samples -- defaults to 50 if not specified
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn linspace_device<T, U>(
@@ -442,8 +468,12 @@ impl Array {
     ///
     /// - start: start value
     /// - stop: stop value
-    /// - count: number of samples
+    /// - count: number of samples -- defaults to 50 if not specified
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that count is positive.
     #[default_device]
     pub unsafe fn linspace_device_unchecked<T, U>(
         start: U,
@@ -458,13 +488,15 @@ impl Array {
         let start_f32 = NumCast::from(start).unwrap();
         let stop_f32 = NumCast::from(stop).unwrap();
 
-        Array::from_ptr(mlx_sys::mlx_linspace(
-            start_f32,
-            stop_f32,
-            count.unwrap_or(50),
-            T::DTYPE.into(),
-            stream.as_ptr(),
-        ))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_linspace(
+                start_f32,
+                stop_f32,
+                count.unwrap_or(50),
+                T::DTYPE.into(),
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]` returning an error if params are invalid.
@@ -481,7 +513,7 @@ impl Array {
     ///
     /// - start: start value
     /// - stop: stop value
-    /// - count: number of samples
+    /// - count: number of samples -- defaults to 50 if not specified
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_linspace_device<T, U>(
@@ -549,6 +581,10 @@ impl Array {
     /// - count: number of times to repeat
     /// - axis: axis to repeat along
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that count is positive.
     #[default_device]
     pub unsafe fn repeat_device_unchecked<T: ArrayElement>(
         array: Array,
@@ -556,12 +592,14 @@ impl Array {
         axis: i32,
         stream: StreamOrDevice,
     ) -> Array {
-        Array::from_ptr(mlx_sys::mlx_repeat(
-            array.c_array,
-            count,
-            axis,
-            stream.as_ptr(),
-        ))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_repeat(
+                array.c_array,
+                count,
+                axis,
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Repeat an array along a specified axis returning an error if params are invalid.
@@ -639,14 +677,23 @@ impl Array {
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that count is positive.
     #[default_device]
     pub unsafe fn repeat_all_device_unchecked<T: ArrayElement>(
         array: Array,
         count: i32,
         stream: StreamOrDevice,
     ) -> Array {
-        let ctx = stream.as_ptr();
-        Array::from_ptr(mlx_sys::mlx_repeat_all(array.c_array, count, ctx))
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_repeat_all(
+                array.c_array,
+                count,
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Repeat a flattened array along axis 0 returning an error if params are invalid.

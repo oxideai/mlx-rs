@@ -1,0 +1,19 @@
+[package]
+name = "mlx-macros"
+version = "0.10.0-alpha.0"
+authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
+edition = "2021"
+
+description = "Code generation crate for mlx-rs"
+repository = "https://github.com/minghuaw/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT"
+
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0.60", features = ["full"] }
+quote = "1.0"

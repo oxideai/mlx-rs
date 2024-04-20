@@ -1,10 +1,17 @@
 #![deny(unused_unsafe)]
 
-pub mod array;
-pub mod device;
-pub mod dtype;
-pub mod stream;
+mod array;
+mod device;
+mod dtype;
+mod error;
+pub mod ops;
+mod stream;
 mod utils;
+
+pub use array::*;
+pub use device::*;
+pub use dtype::*;
+pub use stream::*;
 
 pub(crate) mod sealed {
     /// A marker trait to prevent external implementations of the `Sealed` trait.

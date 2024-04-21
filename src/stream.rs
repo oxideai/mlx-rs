@@ -55,6 +55,12 @@ impl Default for StreamOrDevice {
     }
 }
 
+impl std::fmt::Debug for StreamOrDevice {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.stream)
+    }
+}
+
 impl std::fmt::Display for StreamOrDevice {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.stream)
@@ -92,7 +98,7 @@ impl Stream {
 }
 
 /// The `Stream` is a simple struct on the c++ side
-/// 
+///
 /// ```cpp
 /// struct Stream {
 ///     int index;
@@ -101,7 +107,7 @@ impl Stream {
 ///     // ... constructor
 /// };
 /// ```
-/// 
+///
 /// There is no function that mutates the stream, so we can implement `Clone` for it.
 impl Clone for Stream {
     fn clone(&self) -> Self {
@@ -124,6 +130,14 @@ impl Drop for Stream {
 impl Default for Stream {
     fn default() -> Self {
         Stream::new()
+    }
+}
+
+impl std::fmt::Debug for Stream {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
+        let description = description.unwrap_or_else(|| "Stream".to_string());
+        write!(f, "{}", description)
     }
 }
 

@@ -1,6 +1,6 @@
 use mlx_macros::default_device;
 
-use crate::{array::Array, error::FftError, stream::StreamOrDevice};
+use crate::{array::Array, error::FftError, stream::StreamOrDevice, utils::{resolve_index, resolve_index_unchecked}};
 
 /// One dimensional discrete Fourier Transform.
 ///
@@ -44,18 +44,8 @@ pub unsafe fn fft_device_unchecked(
 ) -> Array {
     let axis = axis.into().unwrap_or(-1);
     let n = n.into().unwrap_or_else(|| {
-        if axis.is_negative() {
-            // TODO: replace with unchecked_add when it's stable
-            let index = (a.ndim() as i32)
-                .checked_add(axis)
-                .unwrap()
-                // index may still be negative
-                .max(0) as usize;
-            a.shape()[index]
-        } else {
-            // # Safety: positive i32 is always smaller than usize::MAX
-            a.shape()[axis as usize]
-        }
+        let axis_index = resolve_index_unchecked(axis, a.ndim());
+        a.shape()[axis_index]
     });
     unsafe {
         let c_array = mlx_sys::mlx_fft_fft(a.c_array, n, axis, stream.stream.c_stream);
@@ -110,20 +100,8 @@ pub fn try_fft_device(
     }
 
     let axis = axis.into().unwrap_or(-1);
-    let (n, axis) = if axis.is_negative() {
-        if axis.abs() as usize > a.ndim() {
-            return Err(FftError::InvalidAxis(a.ndim()));
-        }
-        let index = a.ndim() - axis.abs() as usize;
-        let n = n.into().unwrap_or(a.shape()[index]);
-        (n, axis)
-    } else {
-        if axis as usize >= a.ndim() {
-            return Err(FftError::InvalidAxis(a.ndim()));
-        }
-        let n = n.into().unwrap_or(a.shape()[axis as usize]);
-        (n, axis)
-    };
+    let axis_index = resolve_index(axis, a.ndim());
+    let n = n.into().unwrap_or(a.shape()[axis_index]);
 
     Ok(unsafe { fft_device_unchecked(a, Some(n), Some(axis), stream) })
 }
@@ -145,6 +123,34 @@ pub fn fft_device(
     try_fft_device(a, n, axis, stream).unwrap()
 }
 
+#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+pub fn fft2_device_unchecked(
+    a: &Array,
+    n: &[i32],
+    axes: &[i32],
+    stream: StreamOrDevice,
+) -> Array {
+    let num_n = n.len();
+    let num_axes = axes.len();
+
+    let n_ptr = n.as_ptr();
+    let axes_ptr = axes.as_ptr();
+
+    unsafe {
+        let c_array = mlx_sys::mlx_fft_fft2(
+            a.c_array,
+            n_ptr,
+            num_n,
+            axes_ptr,
+            num_axes,
+            stream.as_ptr()
+        );
+
+        Array::from_ptr(c_array)
+    }
+}
+
+// TODO: test out of bound indexing
 #[cfg(test)]
 mod tests {
     #[test]

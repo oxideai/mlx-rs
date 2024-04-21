@@ -7,6 +7,7 @@ use crate::utils::mlx_describe;
 ///
 /// If omitted it will use the [default()], which will be [Device::gpu()] unless
 /// set otherwise.
+#[derive(Clone)]
 pub struct StreamOrDevice {
     stream: Stream,
 }
@@ -87,6 +88,30 @@ impl Stream {
     pub fn default_stream(device: &Device) -> Stream {
         let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
         Stream::new_with_mlx_mlx_stream(default_stream)
+    }
+}
+
+/// The `Stream` is a simple struct on the c++ side
+/// 
+/// ```cpp
+/// struct Stream {
+///     int index;
+///     Device device;
+///
+///     // ... constructor
+/// };
+/// ```
+/// 
+/// There is no function that mutates the stream, so we can implement `Clone` for it.
+impl Clone for Stream {
+    fn clone(&self) -> Self {
+        unsafe {
+            // Increment the reference count.
+            mlx_sys::mlx_retain(self.c_stream as *mut std::ffi::c_void);
+            Stream {
+                c_stream: self.c_stream,
+            }
+        }
     }
 }
 

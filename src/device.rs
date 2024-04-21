@@ -1,7 +1,9 @@
+use mlx_sys::mlx_retain;
+
 use crate::utils::mlx_describe;
 
 ///Type of device.
-#[derive(num_enum::IntoPrimitive)]
+#[derive(num_enum::IntoPrimitive, Clone, Copy)]
 #[repr(u32)]
 pub enum DeviceType {
     Cpu = mlx_sys::mlx_device_type__MLX_CPU,
@@ -39,6 +41,33 @@ impl Device {
     /// By default, this is `gpu()`.
     pub fn set_default(device: &Device) {
         unsafe { mlx_sys::mlx_set_default_device(device.c_device) };
+    }
+}
+
+/// The `Device` is a simple struct on the c++ side
+/// 
+/// ```cpp
+/// struct Device {
+///   enum class DeviceType {
+///     cpu,
+///     gpu,
+///   };
+/// 
+///   // ... other methods
+/// 
+///   DeviceType type;
+///   int index;
+/// };
+/// ```
+/// 
+/// There is no function that mutates the device, so we can implement `Clone` for it.
+impl Clone for Device {
+    fn clone(&self) -> Self {
+        unsafe {
+            // Increment the reference count.
+            mlx_retain(self.c_device as *mut std::ffi::c_void);
+            Self { c_device: self.c_device.clone() }
+        }
     }
 }
 

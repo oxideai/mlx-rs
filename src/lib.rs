@@ -1,4 +1,4 @@
-#![deny(unused_unsafe)]
+#![deny(unused_unsafe, missing_debug_implementations)]
 
 mod array;
 mod device;

@@ -29,6 +29,7 @@ fn scalar_basics() {
     assert_eq!(shape, vec![]);
 }
 
+#[allow(unused_variables)]
 fn array_basics() {
     // make a multidimensional array.
     let x: Array = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
@@ -40,10 +41,10 @@ fn array_basics() {
     let y = Array::ones::<f32>(&[2, 2]);
 
     // Pointwise add x and y:
-    let mut z = x.add(&y);
+    let z = x.add(&y);
 
     // Same thing:
-    z = &x + &y;
+    let mut z = &x + &y;
 
     // mlx is lazy by default. At this point `z` only
     // has a shape and a type but no actual data:

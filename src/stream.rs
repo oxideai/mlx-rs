@@ -7,6 +7,7 @@ use crate::utils::mlx_describe;
 ///
 /// If omitted it will use the [default()], which will be [Device::gpu()] unless
 /// set otherwise.
+#[derive(Clone)]
 pub struct StreamOrDevice {
     stream: Stream,
 }
@@ -54,6 +55,12 @@ impl Default for StreamOrDevice {
     }
 }
 
+impl std::fmt::Debug for StreamOrDevice {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.stream)
+    }
+}
+
 impl std::fmt::Display for StreamOrDevice {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.stream)
@@ -90,6 +97,30 @@ impl Stream {
     }
 }
 
+/// The `Stream` is a simple struct on the c++ side
+///
+/// ```cpp
+/// struct Stream {
+///     int index;
+///     Device device;
+///
+///     // ... constructor
+/// };
+/// ```
+///
+/// There is no function that mutates the stream, so we can implement `Clone` for it.
+impl Clone for Stream {
+    fn clone(&self) -> Self {
+        unsafe {
+            // Increment the reference count.
+            mlx_sys::mlx_retain(self.c_stream as *mut std::ffi::c_void);
+            Stream {
+                c_stream: self.c_stream,
+            }
+        }
+    }
+}
+
 impl Drop for Stream {
     fn drop(&mut self) {
         unsafe { mlx_sys::mlx_free(self.c_stream as *mut std::ffi::c_void) };
@@ -99,6 +130,14 @@ impl Drop for Stream {
 impl Default for Stream {
     fn default() -> Self {
         Stream::new()
+    }
+}
+
+impl std::fmt::Debug for Stream {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
+        let description = description.unwrap_or_else(|| "Stream".to_string());
+        write!(f, "{}", description)
     }
 }
 

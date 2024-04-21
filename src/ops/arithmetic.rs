@@ -1,5 +1,7 @@
 use crate::array::Array;
+use crate::error::DataStoreError;
 use crate::stream::StreamOrDevice;
+use crate::utils::is_broadcastable;
 use mlx_macros::default_device;
 
 impl Array {
@@ -22,9 +24,7 @@ impl Array {
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn abs_device(&self, stream: StreamOrDevice) -> Array {
-        let ctx = stream.as_ptr();
-
-        unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, ctx)) }
+        unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, stream.as_ptr())) }
     }
 
     /// Element-wise addition.
@@ -48,6 +48,35 @@ impl Array {
     /// - other: array to add
     /// - stream: stream or device to evaluate on
     pub fn add_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+        self.try_add_device(other, stream).unwrap()
+    }
+
+    /// Element-wise addition without shape checking.
+    ///
+    /// Add two arrays with <doc:broadcasting>.
+    ///
+    /// # Example
+    /// ```rust
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+    /// let mut c = a.add_device(&b, Default::default());
+    ///
+    /// c.eval();
+    /// let c_data: &[f32] = c.as_slice();
+    /// // c_data == [5.0, 7.0, 9.0]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to add
+    /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not check that the arrays have the same shape.
+    #[default_device]
+    pub unsafe fn add_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_add(
                 self.c_array,
@@ -55,6 +84,45 @@ impl Array {
                 stream.as_ptr(),
             ))
         }
+    }
+
+    /// Element-wise addition returning an error if shapes are not broadcastable.
+    ///
+    /// Add two arrays with <doc:broadcasting>.
+    ///
+    /// # Example
+    /// ```rust
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+    /// let mut c = a.add_device(&b, Default::default());
+    ///
+    /// c.eval();
+    /// let c_data: &[f32] = c.as_slice();
+    /// // c_data == [5.0, 7.0, 9.0]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to add
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn try_add_device(
+        &self,
+        other: &Array,
+        stream: StreamOrDevice,
+    ) -> Result<Array, DataStoreError> {
+        if !is_broadcastable(self, other) {
+            return Err(DataStoreError::BroadcastError);
+        }
+
+        Ok(unsafe {
+            Array::from_ptr(mlx_sys::mlx_add(
+                self.c_array,
+                other.c_array,
+                stream.as_ptr(),
+            ))
+        })
     }
 
     /// Element-wise subtraction.
@@ -541,6 +609,15 @@ mod tests {
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[4.0, 5.0, 6.0]);
+    }
+
+    #[test]
+    fn test_add_invalid_broadcast() {
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0], &[2]);
+
+        let c = a.try_add_device(&b, Default::default());
+        assert!(c.is_err());
     }
 
     #[test]

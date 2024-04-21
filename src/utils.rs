@@ -1,3 +1,5 @@
+use crate::Array;
+
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     let mlx_description = unsafe { mlx_sys::mlx_tostring(ptr) };
@@ -16,4 +18,70 @@ pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     unsafe { mlx_sys::mlx_free(mlx_description as *mut std::ffi::c_void) };
 
     description
+}
+
+/// Helper method to check if two arrays are broadcastable.
+///
+/// Uses the same broadcasting rules as numpy.
+/// https://numpy.org/doc/1.20/user/theory.broadcasting.html
+///
+/// "The size of the trailing axes for both arrays in an operation must
+/// either be the same size or one of them must be one."
+pub(crate) fn is_broadcastable(a: &Array, b: &Array) -> bool {
+    let shape_a = a.shape();
+    let shape_b = b.shape();
+
+    shape_a
+        .iter()
+        .rev()
+        .zip(shape_b.iter().rev())
+        .all(|(a, b)| *a == 1 || *b == 1 || a == b)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_broadcastable() {
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[2.0, 2.0, 2.0], &[3]);
+        assert!(is_broadcastable(&a, &b));
+
+        let a = Array::from_slice(
+            &[
+                0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 20.0, 20.0, 20.0, 30.0, 30.0, 30.0,
+            ],
+            &[4, 3],
+        );
+        let b = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        assert!(is_broadcastable(&a, &b));
+
+        let a = Array::from_slice(
+            &[
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+            ],
+            &[2, 2, 4],
+        );
+        let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[2, 4]);
+        assert!(is_broadcastable(&a, &b));
+    }
+
+    #[test]
+    fn test_is_broadcastable_scalar() {
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = 2.0.into();
+        assert!(is_broadcastable(&a, &b));
+    }
+
+    #[test]
+    fn test_not_broadcastable() {
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[2.0, 2.0, 2.0, 2.0], &[4]);
+        assert!(!is_broadcastable(&a, &b));
+
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[2.0, 2.0], &[1, 2]);
+        assert!(!is_broadcastable(&a, &b));
+    }
 }

@@ -7,6 +7,9 @@ pub enum DataStoreError {
 
     #[error("negative integer: {0}")]
     NegativeInteger(String),
+
+    #[error("broadcast error")]
+    BroadcastError,
 }
 
 /// Error associated with `Array::try_as_slice()`

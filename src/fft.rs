@@ -1,6 +1,11 @@
 use mlx_macros::default_device;
 
-use crate::{array::Array, error::FftError, stream::StreamOrDevice, utils::{resolve_index, resolve_index_unchecked}};
+use crate::{
+    array::Array,
+    error::FftError,
+    stream::StreamOrDevice,
+    utils::{resolve_index, resolve_index_unchecked},
+};
 
 /// One dimensional discrete Fourier Transform.
 ///
@@ -107,11 +112,11 @@ pub fn try_fft_device(
 }
 
 /// One dimensional discrete Fourier Transform.
-/// 
+///
 /// # Panic
-/// 
+///
 /// Panics if the input array is a scalar or if the axis is invalid.
-/// 
+///
 /// See [`try_fft_device`] for more details.
 #[default_device(device = "cpu")] // fft is not implemented on GPU yet
 pub fn fft_device(
@@ -124,12 +129,7 @@ pub fn fft_device(
 }
 
 #[default_device(device = "cpu")] // fft is not implemented on GPU yet
-pub fn fft2_device_unchecked(
-    a: &Array,
-    n: &[i32],
-    axes: &[i32],
-    stream: StreamOrDevice,
-) -> Array {
+pub fn fft2_device_unchecked(a: &Array, n: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
     let num_n = n.len();
     let num_axes = axes.len();
 
@@ -137,14 +137,8 @@ pub fn fft2_device_unchecked(
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = mlx_sys::mlx_fft_fft2(
-            a.c_array,
-            n_ptr,
-            num_n,
-            axes_ptr,
-            num_axes,
-            stream.as_ptr()
-        );
+        let c_array =
+            mlx_sys::mlx_fft_fft2(a.c_array, n_ptr, num_n, axes_ptr, num_axes, stream.as_ptr());
 
         Array::from_ptr(c_array)
     }
@@ -178,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_fft_device_unchecked() {
-        use crate::{Array, StreamOrDevice, complex64, fft::*};
+        use crate::{complex64, fft::*, Array, StreamOrDevice};
 
         let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
         let s = StreamOrDevice::cpu();
@@ -235,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_try_fft_device() {
-        use crate::{Array, StreamOrDevice, complex64, fft::*};
+        use crate::{complex64, fft::*, Array, StreamOrDevice};
 
         let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
 
@@ -293,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_fft_device() {
-        use crate::{Array, Dtype, StreamOrDevice, complex64, fft::*};
+        use crate::{complex64, fft::*, Array, Dtype, StreamOrDevice};
 
         let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
 

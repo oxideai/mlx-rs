@@ -10,19 +10,19 @@ use crate::{array::Array, error::FftError, stream::StreamOrDevice};
 /// - n: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - axis: Axis along which to perform the FFT. The default is -1.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-/// 
+///
 /// let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
 /// let s = StreamOrDevice::cpu();
 /// let mut result = unsafe { fft_device_unchecked(&array, 4, 0, s) };
 /// result.eval();
-/// 
+///
 /// assert_eq!(result.dtype(), Dtype::Complex64);
-/// 
+///
 /// let expected = &[
 ///     complex64::new(10.0, 0.0),
 ///     complex64::new(-2.0, 2.0),
@@ -30,7 +30,7 @@ use crate::{array::Array, error::FftError, stream::StreamOrDevice};
 ///     complex64::new(-2.0, -2.0),
 /// ];
 /// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// 
+///
 /// // test that previous array is not modified and valid
 /// let data: &[f32] = array.as_slice();
 /// assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
@@ -64,26 +64,26 @@ pub unsafe fn fft_device_unchecked(
 }
 
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-/// 
+///
 /// let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-/// 
+///
 /// // Error case
 /// let scalar_array = Array::from_float(1.0);
 /// let result = try_fft_device(&scalar_array, 0, 0, StreamOrDevice::cpu());
 /// assert!(result.is_err());
-/// 
+///
 /// let result = try_fft_device(&array, 4, 2, StreamOrDevice::cpu());
 /// assert!(result.is_err());
-/// 
+///
 /// // Success case
 /// let mut result = try_fft_device(&array, 4, 0, StreamOrDevice::cpu()).unwrap();
 /// result.eval();
-/// 
+///
 /// assert_eq!(result.dtype(), Dtype::Complex64);
-/// 
+///
 /// let expected = &[
 ///     complex64::new(10.0, 0.0),
 ///     complex64::new(-2.0, 2.0),
@@ -91,7 +91,7 @@ pub unsafe fn fft_device_unchecked(
 ///     complex64::new(-2.0, -2.0),
 /// ];
 /// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// 
+///
 /// // test that previous array is not modified and valid
 /// let data: &[f32] = array.as_slice();
 /// assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
@@ -130,7 +130,7 @@ pub fn try_fft_device(
 mod tests {
     #[test]
     fn test_fft_unchecked() {
-        use crate::{Dtype, Array, complex64, fft::*};
+        use crate::{complex64, fft::*, Array, Dtype};
 
         let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
         let mut result = unsafe { fft_unchecked(&array, 4, 0) };
@@ -177,10 +177,10 @@ mod tests {
 
     #[test]
     fn test_try_fft() {
-        use crate::{Dtype, Array, complex64, fft::*};
+        use crate::{complex64, fft::*, Array, Dtype};
 
         let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-        
+
         // Error case
         let scalar_array = Array::from_float(1.0);
         let result = try_fft(&scalar_array, 0, 0);

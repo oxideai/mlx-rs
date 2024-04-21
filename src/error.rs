@@ -1,6 +1,16 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, PartialEq, Debug)]
+pub enum MLXError {
+    #[error("data store error: {0}")]
+    DataStoreError(#[from] DataStoreError),
+    #[error("operation error: {0}")]
+    OperationError(#[from] OperationError),
+    #[error("as slice error: {0}")]
+    AsSliceError(#[from] AsSliceError),
+}
+
+#[derive(Error, PartialEq, Debug)]
 pub enum DataStoreError {
     #[error("negative dimension: {0}")]
     NegativeDimensions(String),
@@ -10,6 +20,18 @@ pub enum DataStoreError {
 
     #[error("broadcast error")]
     BroadcastError,
+}
+
+#[derive(Error, PartialEq, Debug)]
+pub enum OperationError {
+    #[error("operation not supported: {0}")]
+    NotSupported(String),
+
+    #[error("wrong input: {0}")]
+    WrongInput(String),
+
+    #[error("wrong dimensions: {0}")]
+    WrongDimensions(String),
 }
 
 /// Error associated with `Array::try_as_slice()`
@@ -22,6 +44,6 @@ pub enum AsSliceError {
     Null,
 
     /// The output dtype does not match the data type of the array.
-    #[error("Desired output dtype does not match the data type of the array.")]
-    DtypeMismatch,
+    #[error("dtype mismatch: {0}")]
+    DtypeMismatch(String),
 }

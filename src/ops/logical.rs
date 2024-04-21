@@ -3,28 +3,6 @@ use crate::stream::StreamOrDevice;
 use mlx_macros::default_device;
 
 impl Array {
-    /// Unary element-wise logical not.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx::Array;
-    /// let a: Array = false.into();
-    /// let mut b = a.logical_not_device(Default::default());
-    ///
-    /// b.eval();
-    /// let b_data: &[bool] = b.as_slice();
-    /// // b_data == [true]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    #[default_device]
-    pub fn logical_not_device(&self, stream: StreamOrDevice) -> Array {
-        unsafe { Array::from_ptr(mlx_sys::mlx_logical_not(self.c_array, stream.as_ptr())) }
-    }
-
     /// Element-wise equality.
     ///
     /// Equality comparison on two arrays with <doc:broadcasting>.
@@ -375,16 +353,6 @@ impl Array {
 mod tests {
     use super::*;
     use num_traits::Pow;
-
-    #[test]
-    fn test_logical_not() {
-        let a: Array = false.into();
-        let mut b = a.logical_not();
-
-        b.eval();
-        let b_data: &[bool] = b.as_slice();
-        assert_eq!(b_data, [true]);
-    }
 
     #[test]
     fn test_eq() {

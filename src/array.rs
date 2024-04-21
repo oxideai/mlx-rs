@@ -155,7 +155,7 @@ impl<'a> Sub for &'a Array {
 impl<'a> Neg for &'a Array {
     type Output = Array;
     fn neg(self) -> Self::Output {
-        self.neg_device(StreamOrDevice::default())
+        self.logical_not()
     }
 }
 
@@ -406,7 +406,11 @@ impl Array {
         }
 
         if self.dtype() != T::DTYPE {
-            return Err(AsSliceError::DtypeMismatch);
+            return Err(AsSliceError::DtypeMismatch(format!(
+                "expected {:?}, got {:?}",
+                T::DTYPE,
+                self.dtype()
+            )));
         }
 
         Ok(unsafe { self.as_slice_unchecked() })

@@ -153,6 +153,16 @@ mod tests {
     }
 
     #[test]
+    fn test_reshape_negative_dim() {
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        assert!(a.can_reshape_to(&[1, -1]));
+        assert!(a.can_reshape_to(&[-1, 1]));
+        assert!(a.can_reshape_to(&[-1]));
+        assert!(a.can_reshape_to(&[1, -1, 1]));
+        assert!(a.can_reshape_to(&[-1, 1, 1]));
+    }
+
+    #[test]
     fn test_cannot_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         assert!(!a.can_reshape_to(&[2]));

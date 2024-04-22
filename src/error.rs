@@ -1,13 +1,13 @@
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
-pub enum MLXError {
+pub enum MlxError {
     #[error("data store error: {0}")]
-    DataStoreError(#[from] DataStoreError),
+    DataStore(#[from] DataStoreError),
     #[error("operation error: {0}")]
-    OperationError(#[from] OperationError),
+    Operation(#[from] OperationError),
     #[error("as slice error: {0}")]
-    AsSliceError(#[from] AsSliceError),
+    AsSlice(#[from] AsSliceError),
 }
 
 #[derive(Error, PartialEq, Debug)]

@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::{DataStoreError, MLXError, OperationError};
+use crate::error::{DataStoreError, MlxError, OperationError};
 use crate::stream::StreamOrDevice;
 use crate::utils::is_broadcastable;
 use crate::Dtype;
@@ -908,15 +908,16 @@ impl Array {
         &self,
         other: &Array,
         stream: StreamOrDevice,
-    ) -> Result<Array, MLXError> {
+    ) -> Result<Array, MlxError> {
         if self.dtype() == Dtype::Complex64 {
-            return Err(MLXError::from(OperationError::NotSupported(
+            return Err(OperationError::NotSupported(
                 "Floor is not supported for complex64".to_string(),
-            )));
+            )
+            .into());
         }
 
         if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(MLXError::from(DataStoreError::BroadcastError));
+            return Err(DataStoreError::BroadcastError.into());
         }
 
         Ok(unsafe { self.floor_divide_device_unchecked(other, stream) })
@@ -1114,20 +1115,22 @@ impl Array {
             .into());
         }
 
-        // if we have a 1D array, it will be reshaped to 2D
-        let a_shape = if self.ndim() == 1 {
-            vec![1, self.size() as i32]
+        // get last dimension of first input and second to last dimension of second input
+        let a_last_dim: i32 =  if self.ndim() == 1 {
+            let new_shape = [1, self.size() as i32];
+            new_shape[new_shape.len() - 1]
         } else {
-            self.shape().to_vec()
+            self.shape()[self.shape().len() - 1]
         };
 
-        let b_shape = if other.ndim() == 1 {
-            vec![other.size() as i32, 1]
+        let b_semi_last_dim = if other.ndim() == 1 {
+            let new_shape = [other.size() as i32, 1];
+            new_shape[new_shape.len() - 2]
         } else {
-            other.shape().to_vec()
+            other.shape()[other.shape().len() - 2]
         };
 
-        if a_shape[a_shape.len() - 1] != b_shape[b_shape.len() - 2] {
+        if a_last_dim != b_semi_last_dim {
             return Err(OperationError::WrongDimensions(
                 format!("Last dimension of first input with shape {:?} must match second to last dimension of second input with shape {:?}",
                 self.shape(), other.shape())

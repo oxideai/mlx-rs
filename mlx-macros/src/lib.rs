@@ -52,7 +52,7 @@ pub fn default_device(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-#[proc_macro_derive(GenerateDTypeTestCases)]
+#[proc_macro_derive(GenerateDtypeTestCases)]
 pub fn generate_test_cases(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 

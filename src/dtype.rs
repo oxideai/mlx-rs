@@ -1,4 +1,4 @@
-use mlx_macros::GenerateDTypeTestCases;
+use mlx_macros::GenerateDtypeTestCases;
 use strum::EnumIter;
 
 /// Array element type
@@ -11,7 +11,7 @@ use strum::EnumIter;
     num_enum::IntoPrimitive,
     num_enum::TryFromPrimitive,
     EnumIter,
-    GenerateDTypeTestCases,
+    GenerateDtypeTestCases,
 )]
 #[repr(u32)]
 pub enum Dtype {

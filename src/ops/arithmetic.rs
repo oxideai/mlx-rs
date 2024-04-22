@@ -30,7 +30,7 @@ impl Array {
 
     /// Element-wise addition.
     ///
-    /// Add two arrays with <doc:broadcasting>.
+    /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust
@@ -54,7 +54,7 @@ impl Array {
 
     /// Element-wise addition without checking broadcastability.
     ///
-    /// Add two arrays with <doc:broadcasting>.
+    /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust
@@ -89,7 +89,7 @@ impl Array {
 
     /// Element-wise addition returning an error if arrays are not broadcastable.
     ///
-    /// Add two arrays with <doc:broadcasting>.
+    /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust
@@ -122,7 +122,7 @@ impl Array {
 
     /// Element-wise subtraction.
     ///
-    /// Subtract two arrays with <doc:broadcasting>.
+    /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -147,7 +147,7 @@ impl Array {
 
     /// Element-wise subtraction without checking broadcastability.
     ///
-    /// Subtract two arrays with <doc:broadcasting>.
+    /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -183,7 +183,7 @@ impl Array {
 
     /// Element-wise subtraction returning an error if arrays are not broadcastable.
     ///
-    /// Subtract two arrays with <doc:broadcasting>.
+    /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -325,7 +325,7 @@ impl Array {
 
     /// Element-wise multiplication.
     ///
-    /// Multiply two arrays with <doc:broadcasting>.
+    /// Multiply two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -345,7 +345,7 @@ impl Array {
 
     /// Element-wise multiplication without checking broadcastability.
     ///
-    /// Multiply two arrays with <doc:broadcasting>.
+    /// Multiply two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -376,7 +376,7 @@ impl Array {
 
     /// Element-wise multiplication returning an error if arrays are not broadcastable.
     ///
-    /// Multiply two arrays with <doc:broadcasting>.
+    /// Multiply two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -405,7 +405,7 @@ impl Array {
 
     /// Element-wise division.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -430,7 +430,7 @@ impl Array {
 
     /// Element-wise division without checking broadcastability.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -466,7 +466,7 @@ impl Array {
 
     /// Element-wise division returning an error if arrays are not broadcastable.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -597,7 +597,7 @@ impl Array {
 
     /// Element-wise remainder of division.
     ///
-    /// Computes the remainder of dividing `lhs` with `rhs` with <doc:broadcasting>.
+    /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -622,7 +622,7 @@ impl Array {
 
     /// Element-wise remainder of division without checking broadcastability.
     ///
-    /// Computes the remainder of dividing `lhs` with `rhs` with <doc:broadcasting>.
+    /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -658,7 +658,7 @@ impl Array {
 
     /// Element-wise remainder of division returning an error if arrays are not broadcastable.
     ///
-    /// Computes the remainder of dividing `lhs` with `rhs` with <doc:broadcasting>.
+    /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -812,7 +812,7 @@ impl Array {
 
     /// Element-wise integer division.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
     ///
@@ -840,7 +840,7 @@ impl Array {
 
     /// Element-wise integer division without checking the array type or for broadcastability.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
     ///
@@ -882,7 +882,7 @@ impl Array {
 
     /// Element-wise integer division returning an error if arrays are not broadcastable.
     ///
-    /// Divide two arrays with <doc:broadcasting>.
+    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
     ///
@@ -1008,7 +1008,7 @@ impl Array {
     ///   2 dimensions.  The matrix dimensions for the matrix product are the last
     ///   two dimensions of each input.
     /// - All but the last two dimensions of each input are broadcast with one another using
-    ///   standard <doc:broadcasting>.
+    ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust
@@ -1042,7 +1042,7 @@ impl Array {
     ///   2 dimensions.  The matrix dimensions for the matrix product are the last
     ///   two dimensions of each input.
     /// - All but the last two dimensions of each input are broadcast with one another using
-    ///   standard <doc:broadcasting>.
+    ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust
@@ -1086,7 +1086,7 @@ impl Array {
     ///   2 dimensions.  The matrix dimensions for the matrix product are the last
     ///   two dimensions of each input.
     /// - All but the last two dimensions of each input are broadcast with one another using
-    ///   standard <doc:broadcasting>.
+    ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     /// ```rust

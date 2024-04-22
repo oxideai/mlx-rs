@@ -7,7 +7,8 @@ use mlx_macros::default_device;
 impl Array {
     /// Element-wise equality.
     ///
-    /// Equality comparison on two arrays with <doc:broadcasting>.
+    /// Equality comparison on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -33,7 +34,8 @@ impl Array {
 
     /// Element-wise equality without broadcasting checks.
     ///
-    /// Equality comparison on two arrays with <doc:broadcasting>.
+    /// Equality comparison on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -69,7 +71,8 @@ impl Array {
 
     /// Element-wise equality returning an error if the arrays are not broadcastable.
     ///
-    /// Equality comparison on two arrays with <doc:broadcasting>.
+    /// Equality comparison on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -103,7 +106,8 @@ impl Array {
 
     /// Element-wise less than or equal.
     ///
-    /// Less than or equal on two arrays with <doc:broadcasting>.
+    /// Less than or equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -129,7 +133,8 @@ impl Array {
 
     /// Element-wise less than or equal without broadcasting checks.
     ///
-    /// Less than or equal on two arrays with <doc:broadcasting>.
+    /// Less than or equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -165,7 +170,8 @@ impl Array {
 
     /// Element-wise less than or equal returning an error if the arrays are not broadcastable.
     ///
-    /// Less than or equal on two arrays with <doc:broadcasting>.
+    /// Less than or equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -199,7 +205,8 @@ impl Array {
 
     /// Element-wise greater than or equal.
     ///
-    /// Greater than or equal on two arrays with <doc:broadcasting>.
+    /// Greater than or equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -225,7 +232,7 @@ impl Array {
 
     /// Element-wise greater than or equal without broadcasting checks.
     ///
-    /// Greater than or equal on two arrays with <doc:broadcasting>.
+    /// Greater than or equal on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -261,7 +268,8 @@ impl Array {
 
     /// Element-wise greater than or equal returning an error if the arrays are not broadcastable.
     ///
-    /// Greater than or equal on two arrays with <doc:broadcasting>.
+    /// Greater than or equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -295,7 +303,8 @@ impl Array {
 
     /// Element-wise not equal.
     ///
-    /// Not equal on two arrays with <doc:broadcasting>.
+    /// Not equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -321,7 +330,8 @@ impl Array {
 
     /// Element-wise not equal without broadcasting checks.
     ///
-    /// Not equal on two arrays with <doc:broadcasting>.
+    /// Not equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -357,7 +367,8 @@ impl Array {
 
     /// Element-wise not equal returning an error if the arrays are not broadcastable.
     ///
-    /// Not equal on two arrays with <doc:broadcasting>.
+    /// Not equal on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -391,7 +402,7 @@ impl Array {
 
     /// Element-wise less than.
     ///
-    /// Less than on two arrays with <doc:broadcasting>.
+    /// Less than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -417,7 +428,8 @@ impl Array {
 
     /// Element-wise less than without broadcasting checks.
     ///
-    /// Less than on two arrays with <doc:broadcasting>.
+    /// Less than on two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -453,7 +465,7 @@ impl Array {
 
     /// Element-wise less than returning an error if the arrays are not broadcastable.
     ///
-    /// Less than on two arrays with <doc:broadcasting>.
+    /// Less than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -487,7 +499,7 @@ impl Array {
 
     /// Element-wise greater than.
     ///
-    /// Greater than on two arrays with <doc:broadcasting>.
+    /// Greater than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -513,7 +525,7 @@ impl Array {
 
     /// Element-wise greater than without broadcasting checks.
     ///
-    /// Greater than on two arrays with <doc:broadcasting>.
+    /// Greater than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -549,7 +561,7 @@ impl Array {
 
     /// Element-wise greater than returning an error if the arrays are not broadcastable.
     ///
-    /// Greater than on two arrays with <doc:broadcasting>.
+    /// Greater than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -583,7 +595,7 @@ impl Array {
 
     /// Element-wise logical and.
     ///
-    /// Logical and on two arrays with <doc:broadcasting>.
+    /// Logical and on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -609,7 +621,7 @@ impl Array {
 
     /// Element-wise logical and without broadcasting checks.
     ///
-    /// Logical and on two arrays with <doc:broadcasting>.
+    /// Logical and on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -649,7 +661,7 @@ impl Array {
 
     /// Element-wise logical and returning an error if the arrays are not broadcastable.
     ///
-    /// Logical and on two arrays with <doc:broadcasting>.
+    /// Logical and on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -683,7 +695,7 @@ impl Array {
 
     /// Element-wise logical or.
     ///
-    /// Logical or on two arrays with <doc:broadcasting>.
+    /// Logical or on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -709,7 +721,7 @@ impl Array {
 
     /// Element-wise logical or without broadcasting checks.
     ///
-    /// Logical or on two arrays with <doc:broadcasting>.
+    /// Logical or on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -749,7 +761,7 @@ impl Array {
 
     /// Element-wise logical or returning an error if the arrays are not broadcastable.
     ///
-    /// Logical or on two arrays with <doc:broadcasting>.
+    /// Logical or on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Example
     ///
@@ -924,7 +936,7 @@ impl Array {
     /// abs(a - b) <= (atol + rtol * abs(b))
     /// ```
     ///
-    /// Unlike [self.array_eq] this function supports <doc:broadcasting>.
+    /// Unlike [self.array_eq] this function supports [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     #[default_device]
     pub fn is_close_device(
         &self,
@@ -949,7 +961,7 @@ impl Array {
     /// abs(a - b) <= (atol + rtol * abs(b))
     /// ```
     ///
-    /// Unlike [self.array_eq] this function supports <doc:broadcasting>.
+    /// Unlike [self.array_eq] this function supports [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
     /// # Safety
     ///
@@ -986,7 +998,7 @@ impl Array {
     /// abs(a - b) <= (atol + rtol * abs(b))
     /// ```
     ///
-    /// Unlike [self.array_eq] this function supports <doc:broadcasting>.
+    /// Unlike [self.array_eq] this function supports [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     #[default_device]
     pub fn try_is_close_device(
         &self,

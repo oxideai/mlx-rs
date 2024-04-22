@@ -263,7 +263,7 @@ impl Array {
     /// Construct an array with the given value.
     ///
     /// Constructs an array of size `shape` filled with `values`. If `values`
-    /// is an [Array] it must be <doc:broadcasting> to the given `shape`.
+    /// is an [Array] it must be [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting) to the given `shape`.
     ///
     /// # Example
     ///
@@ -290,7 +290,7 @@ impl Array {
     /// Construct an array with the given value without validating shape.
     ///
     /// Constructs an array of size `shape` filled with `values`. If `values`
-    /// is an [Array] it must be <doc:broadcasting> to the given `shape`.
+    /// is an [Array] it must be [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting) to the given `shape`.
     ///
     /// # Example
     ///
@@ -329,7 +329,7 @@ impl Array {
     /// Construct an array with the given value returning an error if shape is invalid.
     ///
     /// Constructs an array of size `shape` filled with `values`. If `values`
-    /// is an [Array] it must be <doc:broadcasting> to the given `shape`.
+    /// is an [Array] it must be [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting) to the given `shape`.
     ///
     /// # Example
     ///

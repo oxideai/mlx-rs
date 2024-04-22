@@ -414,11 +414,10 @@ impl Array {
         }
 
         if self.dtype() != T::DTYPE {
-            return Err(AsSliceError::DtypeMismatch(format!(
-                "expected {:?}, got {:?}",
-                T::DTYPE,
-                self.dtype()
-            )));
+            return Err(AsSliceError::DtypeMismatch {
+                expecting: T::DTYPE,
+                found: self.dtype(),
+            });
         }
 
         Ok(unsafe { self.as_slice_unchecked() })

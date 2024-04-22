@@ -1,3 +1,4 @@
+use crate::Dtype;
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
@@ -47,6 +48,6 @@ pub enum AsSliceError {
     Null,
 
     /// The output dtype does not match the data type of the array.
-    #[error("dtype mismatch: {0}")]
-    DtypeMismatch(String),
+    #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
+    DtypeMismatch { expecting: Dtype, found: Dtype },
 }

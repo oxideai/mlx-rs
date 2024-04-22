@@ -838,7 +838,7 @@ impl Array {
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-    /// let mut c = a.all_close(&b, None, None, None);
+    /// let mut c = unsafe { a.all_close_unchecked(&b, None, None, None) };
     ///
     /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
@@ -865,7 +865,7 @@ impl Array {
         equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        let is_close = self.is_close_device_unchecked(other, rtol, atol, equal_nan, stream);
+        let is_close = self.is_close_device_unchecked(other, rtol, atol, equal_nan, stream.clone());
         is_close.all_device(None, stream)
     }
 
@@ -884,7 +884,7 @@ impl Array {
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-    /// let mut c = a.all_close(&b, None, None, None);
+    /// let mut c = a.try_all_close(&b, None, None, None).unwrap();
     ///
     /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
@@ -907,7 +907,10 @@ impl Array {
         equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        Ok(unsafe { self.all_close_device_unchecked(other, rtol, atol, equal_nan, stream) })
+        let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
+        is_close
+            .map(|is_close| is_close.all_device(None, stream))
+            .map_err(|error| error)
     }
 
     /// Returns a boolean array where two arrays are element-wise equal within a tolerance.
@@ -993,17 +996,11 @@ impl Array {
         equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        // mul(array(rtol), abs(b))
+        // represents atol and rtol being broadcasted to operate on other
         if !is_broadcastable(&[], other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
-        // rhs = add(array(atol), mul(array(rtol), abs(b)))
-        if !is_broadcastable(&[], other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        // lhs = sub(a, b)
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
@@ -1273,6 +1270,44 @@ mod tests {
         c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
+    }
+
+    #[test]
+    fn test_all_close_invalid_broadcast() {
+        let a = Array::from_slice(&[0., 1., 2., 3.], &[4]);
+        let b = Array::from_slice(&[0., 1., 2., 3., 4.], &[5]);
+        let c = a.try_all_close(&b, 1e-5, None, None);
+        assert!(c.is_err());
+    }
+
+    #[test]
+    fn test_is_close_false() {
+        let a = Array::from_slice(&[1., 2., 3.], &[3]);
+        let b = Array::from_slice(&[1.1, 2.2, 3.3], &[3]);
+        let mut c = a.is_close(&b, None, None, false);
+
+        c.eval();
+        let c_data: &[bool] = c.as_slice();
+        assert_eq!(c_data, [false, false, false]);
+    }
+
+    #[test]
+    fn test_is_close_true() {
+        let a = Array::from_slice(&[1., 2., 3.], &[3]);
+        let b = Array::from_slice(&[1.1, 2.2, 3.3], &[3]);
+        let mut c = a.is_close(&b, 0.1, 0.2, true);
+
+        c.eval();
+        let c_data: &[bool] = c.as_slice();
+        assert_eq!(c_data, [true, true, true]);
+    }
+
+    #[test]
+    fn test_is_close_invalid_broadcast() {
+        let a = Array::from_slice(&[1., 2., 3.], &[3]);
+        let b = Array::from_slice(&[1.1, 2.2, 3.3, 4.4], &[4]);
+        let c = a.try_is_close(&b, None, None, false);
+        assert!(c.is_err());
     }
 
     #[test]

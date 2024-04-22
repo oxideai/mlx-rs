@@ -187,6 +187,14 @@ impl<'a> Rem for &'a Array {
     }
 }
 
+impl std::fmt::Debug for Array {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
+            .unwrap_or_else(|| "Array".to_string());
+        write!(f, "{:?}", description)
+    }
+}
+
 impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let description = crate::utils::mlx_describe(self.c_array as *mut c_void)

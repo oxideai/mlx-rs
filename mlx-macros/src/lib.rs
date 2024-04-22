@@ -55,11 +55,10 @@ pub fn default_device(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_derive(GenerateDtypeTestCases)]
 pub fn generate_test_cases(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
 
-    let name = &input.ident; // Assuming this is the enum
-
-    // Generate a test function for each pair of enum variants
     let tests = quote! {
+        /// MLX's rules for promoting two dtypes.
         #[rustfmt::skip]
         const TYPE_RULES: [[Dtype; 13]; 13] = [
             // bool             uint8               uint16              uint32              uint64              int8                int16               int32               int64               float16             float32             bfloat16            complex64

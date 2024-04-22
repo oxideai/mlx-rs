@@ -32,6 +32,9 @@ pub enum OperationError {
 
     #[error("wrong dimensions: {0}")]
     WrongDimensions(String),
+
+    #[error("axis out of bounds: {0}")]
+    AxisOutOfBounds(String),
 }
 
 /// Error associated with `Array::try_as_slice()`

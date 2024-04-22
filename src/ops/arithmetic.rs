@@ -113,7 +113,7 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
@@ -208,7 +208,7 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
@@ -224,7 +224,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = -&a;
+    /// let mut b = a.neg();
     ///
     /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
@@ -248,7 +248,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = -&a;
+    /// let mut b = unsafe { a.neg_unchecked() };
     ///
     /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
@@ -276,7 +276,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = -&a;
+    /// let mut b = a.try_neg().unwrap();
     ///
     /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
@@ -396,7 +396,7 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
@@ -491,7 +491,7 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
@@ -587,7 +587,7 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
         if self.shape() != other.shape() {
-            if !is_broadcastable(self, other) {
+            if !is_broadcastable(self.shape(), other.shape()) {
                 return Err(DataStoreError::BroadcastError);
             }
         }
@@ -683,7 +683,7 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
         }
 
@@ -915,7 +915,7 @@ impl Array {
             )));
         }
 
-        if !is_broadcastable(self, other) {
+        if !is_broadcastable(self.shape(), other.shape()) {
             return Err(MLXError::from(DataStoreError::BroadcastError));
         }
 

@@ -160,6 +160,8 @@ mod tests {
         assert!(a.can_reshape_to(&[-1]));
         assert!(a.can_reshape_to(&[1, -1, 1]));
         assert!(a.can_reshape_to(&[-1, 1, 1]));
+
+        assert!(!a.can_reshape_to(&[1, -2]));
     }
 
     #[test]

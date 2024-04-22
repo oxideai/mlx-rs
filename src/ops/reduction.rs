@@ -40,7 +40,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-    /// let mut b = unsafe { a.all_axes_unchecked(&[0][..], None) };
+    /// let mut b = unsafe { a.all_unchecked(&[0][..], None) };
     ///
     /// b.eval();
     /// let results: &[bool] = b.as_slice();
@@ -87,7 +87,7 @@ impl Array {
     /// ```rust
     /// use mlx::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-    /// let mut b = a.try_all_axes(&[0][..], None).unwrap();
+    /// let mut b = a.try_all(&[0][..], None).unwrap();
     ///
     /// b.eval();
     /// let results: &[bool] = b.as_slice();

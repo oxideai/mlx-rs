@@ -877,8 +877,16 @@ impl Array {
         equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        let is_close = self.is_close_device_unchecked(other, rtol, atol, equal_nan, stream.clone());
-        is_close.all_device(None, stream)
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_allclose(
+                self.c_array,
+                other.c_array,
+                rtol.into().unwrap_or(1e-5),
+                atol.into().unwrap_or(1e-8),
+                equal_nan.into().unwrap_or(false),
+                stream.as_ptr(),
+            ))
+        }
     }
 
     /// Approximate comparison of two arrays returning an error if the inputs aren't valid.
@@ -921,7 +929,7 @@ impl Array {
     ) -> Result<Array, DataStoreError> {
         let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
         is_close
-            .map(|is_close| is_close.all_device(None, stream))
+            .map(|is_close| is_close.all_device(None, None, stream))
             .map_err(|error| error)
     }
 

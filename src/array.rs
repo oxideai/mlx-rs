@@ -133,6 +133,12 @@ impl ArrayElement for complex64 {
     }
 }
 
+// TODO: `mlx` differs from `numpy` in the way it handles out of bounds indices. It's behavior is more
+// like `jax`. See the related issue here https://github.com/ml-explore/mlx/issues/206.
+//
+// The issue says it would use the last element if the index is out of bounds. But testing with
+// python seems more like undefined behavior. Here we will use the last element if the index is
+// is out of bounds.
 pub struct Array {
     pub(crate) c_array: mlx_array,
 }

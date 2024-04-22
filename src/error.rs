@@ -23,11 +23,17 @@ pub enum AsSliceError {
     DtypeMismatch,
 }
 
-#[derive(Error, Debug)]
-pub enum FftError {
+#[derive(Error, Debug, PartialEq)]
+pub enum FftnError {
     #[error("fftn requires at least one dimension")]
     ScalarArray,
 
-    #[error("Invalid axis received for array with {0} dimensions")]
-    InvalidAxis(usize),
+    #[error("Invalid axis received for array with {ndim} dimensions")]
+    InvalidAxis { ndim: usize },
+
+    #[error("Shape and axis have different sizes")]
+    ShapeAxisMismatch,
+
+    #[error("Duplcated axis received: {axis}")]
+    DuplicateAxis { axis: i32 },
 }

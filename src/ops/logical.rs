@@ -819,16 +819,95 @@ impl Array {
         equal_nan: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_allclose(
-                self.c_array,
-                other.c_array,
-                rtol.into().unwrap_or(1e-5),
-                atol.into().unwrap_or(1e-8),
-                equal_nan.into().unwrap_or(false),
-                stream.as_ptr(),
-            ))
-        }
+        self.try_all_close_device(other, rtol, atol, equal_nan, stream)
+            .unwrap()
+    }
+
+    /// Approximate comparison of two arrays without validating inputs.
+    ///
+    /// The arrays are considered equal if:
+    ///
+    /// ```text
+    /// all(abs(a - b) <= (atol + rtol * abs(b)))
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use num_traits::Pow;
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
+    /// let mut c = a.all_close(&b, None, None, None);
+    ///
+    /// c.eval();
+    /// let c_data: &[bool] = c.as_slice();
+    /// // c_data == [true]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    /// - rtol: relative tolerance = defaults to 1e-5 when None
+    /// - atol: absolute tolerance - defaults to 1e-8 when None
+    /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not validate inputs.
+    #[default_device]
+    pub unsafe fn all_close_device_unchecked(
+        &self,
+        other: &Array,
+        rtol: impl Into<Option<f64>>,
+        atol: impl Into<Option<f64>>,
+        equal_nan: impl Into<Option<bool>>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        let is_close = self.is_close_device_unchecked(other, rtol, atol, equal_nan, stream);
+        is_close.all_device(None, stream)
+    }
+
+    /// Approximate comparison of two arrays returning an error if the inputs aren't valid.
+    ///
+    /// The arrays are considered equal if:
+    ///
+    /// ```text
+    /// all(abs(a - b) <= (atol + rtol * abs(b)))
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use num_traits::Pow;
+    /// use mlx::Array;
+    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
+    /// let mut c = a.all_close(&b, None, None, None);
+    ///
+    /// c.eval();
+    /// let c_data: &[bool] = c.as_slice();
+    /// // c_data == [true]
+    /// ```
+    ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    /// - rtol: relative tolerance = defaults to 1e-5 when None
+    /// - atol: absolute tolerance - defaults to 1e-8 when None
+    /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn try_all_close_device(
+        &self,
+        other: &Array,
+        rtol: impl Into<Option<f64>>,
+        atol: impl Into<Option<f64>>,
+        equal_nan: impl Into<Option<bool>>,
+        stream: StreamOrDevice,
+    ) -> Result<Array, DataStoreError> {
+        Ok(unsafe { self.all_close_device_unchecked(other, rtol, atol, equal_nan, stream) })
     }
 
     /// Returns a boolean array where two arrays are element-wise equal within a tolerance.

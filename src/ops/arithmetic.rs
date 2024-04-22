@@ -1116,7 +1116,7 @@ impl Array {
         }
 
         // get last dimension of first input and second to last dimension of second input
-        let a_last_dim: i32 =  if self.ndim() == 1 {
+        let a_last_dim: i32 = if self.ndim() == 1 {
             let new_shape = [1, self.size() as i32];
             new_shape[new_shape.len() - 1]
         } else {

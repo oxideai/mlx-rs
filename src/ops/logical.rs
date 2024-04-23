@@ -1198,6 +1198,44 @@ impl Array {
     }
 }
 
+#[default_device]
+pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDevice) -> Array {
+    try_which_device(condition, a, b, stream).unwrap()
+}
+
+#[default_device]
+pub fn which_device_unchecked(
+    condition: &Array,
+    a: &Array,
+    b: &Array,
+    stream: StreamOrDevice,
+) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_where(
+            condition.c_array,
+            a.c_array,
+            b.c_array,
+            stream.as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn try_which_device(
+    condition: &Array,
+    a: &Array,
+    b: &Array,
+    stream: StreamOrDevice,
+) -> Result<Array, DataStoreError> {
+    if !is_broadcastable(condition.shape(), a.shape())
+        || !is_broadcastable(condition.shape(), b.shape())
+    {
+        return Err(DataStoreError::BroadcastError);
+    }
+
+    Ok(which_device_unchecked(condition, a, b, stream))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1506,5 +1544,26 @@ mod tests {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let result = array.try_any(&[0, 0][..], None);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_which() {
+        let condition = Array::from_slice(&[true, false, true], &[3]);
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let mut c = which(&condition, &a, &b);
+
+        c.eval();
+        let c_data: &[i32] = c.as_slice();
+        assert_eq!(c_data, [1, 5, 3]);
+    }
+
+    #[test]
+    fn test_which_invalid_broadcast() {
+        let condition = Array::from_slice(&[true, false, true], &[3]);
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let b = Array::from_slice(&[4, 5, 6, 7], &[4]);
+        let c = try_which(&condition, &a, &b);
+        assert!(c.is_err());
     }
 }

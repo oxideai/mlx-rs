@@ -1228,7 +1228,7 @@ pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDev
 ///
 /// This function is unsafe because it does not check if the arrays are broadcastable.
 #[default_device]
-pub fn which_device_unchecked(
+pub unsafe fn which_device_unchecked(
     condition: &Array,
     a: &Array,
     b: &Array,
@@ -1267,7 +1267,7 @@ pub fn try_which_device(
         return Err(DataStoreError::BroadcastError);
     }
 
-    Ok(which_device_unchecked(condition, a, b, stream))
+    Ok(unsafe { which_device_unchecked(condition, a, b, stream) })
 }
 
 #[cfg(test)]

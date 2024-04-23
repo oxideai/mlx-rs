@@ -347,6 +347,7 @@ fn test_equal_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), false);
 }
 
 #[test]
@@ -375,6 +376,7 @@ fn test_equal_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), false);
 }
 
 #[test]
@@ -421,6 +423,7 @@ fn test_not_equal_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -449,6 +452,7 @@ fn test_not_equal_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -495,6 +499,7 @@ fn test_less_than_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -523,6 +528,7 @@ fn test_less_than_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -569,6 +575,7 @@ fn test_less_than_equal_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -597,6 +604,7 @@ fn test_less_than_equal_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -643,6 +651,7 @@ fn test_greater_than_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -671,6 +680,7 @@ fn test_greater_than_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), false);
 }
 
 #[test]
@@ -717,6 +727,7 @@ fn test_greater_than_equal_op() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -745,6 +756,7 @@ fn test_greater_than_equal_op1() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -798,6 +810,7 @@ fn test_all() {
     assert_eq!(result.shape().is_empty(), true);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -825,6 +838,7 @@ fn test_all1() {
     assert_eq!(result.shape(), &[4]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -912,6 +926,7 @@ fn test_all2() {
     assert_eq!(result.shape(), &[3, 4]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 
 #[test]
@@ -1199,6 +1214,7 @@ fn test_logical_not() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), false);
 }
 
 #[test]
@@ -1359,6 +1375,7 @@ fn test_eq() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), false);
 }
 #[test]
 fn test_gt() {
@@ -1404,6 +1421,7 @@ fn test_gt() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 #[test]
 fn test_ge() {
@@ -1449,6 +1467,7 @@ fn test_ge() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 #[test]
 fn test_lt() {
@@ -1494,6 +1513,7 @@ fn test_lt() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 #[test]
 fn test_le() {
@@ -1539,6 +1559,7 @@ fn test_le() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), false);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 #[test]
 fn test_matmul() {
@@ -1832,6 +1853,7 @@ fn test_ne() {
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Bool);
     assert_eq!(result.all(None, None).item::<bool>(), true);
+    assert_eq!(result.any(None, None).item::<bool>(), true);
 }
 #[test]
 fn test_rem() {

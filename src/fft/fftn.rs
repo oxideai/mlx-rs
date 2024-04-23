@@ -12,32 +12,7 @@ use super::resolve_size_and_axis_unchecked;
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-/// let s = StreamOrDevice::cpu();
-/// let mut result = unsafe { fft_device_unchecked(&array, 4, 0, s) };
-/// result.eval();
-///
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-///
-/// let expected = &[
-///     complex64::new(10.0, 0.0),
-///     complex64::new(-2.0, 2.0),
-///     complex64::new(-2.0, 0.0),
-///     complex64::new(-2.0, -2.0),
-/// ];
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-///
-/// // test that previous array is not modified and valid
-/// let data: &[f32] = array.as_slice();
-/// assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub unsafe fn fft_device_unchecked(
     a: &Array,
     n: impl Into<Option<i32>>,
@@ -59,27 +34,7 @@ pub unsafe fn fft_device_unchecked(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-/// let mut result = try_fft_device(&array, 4, 0, StreamOrDevice::cpu()).unwrap();
-/// result.eval();
-///
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-///
-/// let expected = &[
-///     complex64::new(10.0, 0.0),
-///     complex64::new(-2.0, 2.0),
-///     complex64::new(-2.0, 0.0),
-///     complex64::new(-2.0, -2.0),
-/// ];
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub fn try_fft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
@@ -104,7 +59,7 @@ pub fn try_fft_device(
 /// Panics if the input array is a scalar or if the axis is invalid.
 ///
 /// See [`try_fft_device`] for more details.
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub fn fft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
@@ -136,29 +91,7 @@ fn fft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice)
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 ///  with zeros to match `n`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-/// let mut result = unsafe {
-///     fft2_device_unchecked(&array, &[2, 2][..], &[-2,-1][..], StreamOrDevice::cpu())
-/// };
-/// result.eval();
-///
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-///
-/// let expected = &[
-///    complex64::new(4.0, 0.0),
-///    complex64::new(0.0, 0.0),
-///    complex64::new(0.0, 0.0),
-///    complex64::new(0.0, 0.0),
-/// ];
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub unsafe fn fft2_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
@@ -178,25 +111,7 @@ pub unsafe fn fft2_device_unchecked<'a>(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-/// let mut result = try_fft2_device(&array, None, None, StreamOrDevice::cpu()).unwrap();
-/// result.eval();
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-/// let expected = &[
-///     complex64::new(4.0, 0.0),
-///     complex64::new(0.0, 0.0),
-///     complex64::new(0.0, 0.0),
-///     complex64::new(0.0, 0.0),
-/// ];
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub fn try_fft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
@@ -219,14 +134,8 @@ pub fn try_fft2_device<'a>(
 ///
 /// # Panic
 ///
-/// - if the input array is a scalar array
-/// - if the shape and axes have different sizes
-/// - if more axes are provided than the array has
-/// - if the output sizes are invalid (<= 0)
-/// - if the axes are not unique
-///
-/// See [`try_fft2_device`] for more details.
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+/// Panics if the input arguments are invalid. See [`try_fft2_device`] for more details.
+#[default_device(device = "cpu")]
 pub fn fft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
@@ -252,7 +161,7 @@ fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice)
     }
 }
 
-/// N-dimensional discrete Fourier Transform.
+/// n-dimensional discrete Fourier Transform.
 ///
 /// # Params
 ///
@@ -261,26 +170,8 @@ fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice)
 ///  padded with zeros to match the sizes in `s`. The default value is the sizes of `a` along `axes`
 ///  if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
-///   over the last `len(s)` axes are or all axes if `s` is also None.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::ones::<f32>(&[3, 3, 3]);
-///
-/// let mut result = unsafe { fftn_device_unchecked(&array, None, None, StreamOrDevice::cpu()) };
-/// result.eval();
-///
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-///
-/// let mut expected = vec![complex64::new(0.0, 0.0); 27];
-/// expected[0] = complex64::new(27.0, 0.0);
-///
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+///   over the last `len(s)` axes are or all axes if `s` is also `None`.
+#[default_device(device = "cpu")]
 pub unsafe fn fftn_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
@@ -291,7 +182,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     fftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
-/// N-dimensional discrete Fourier Transform.
+/// n-dimensional discrete Fourier Transform.
 ///
 /// # Params
 ///
@@ -301,25 +192,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
-///
-/// let array = Array::ones::<f32>(&[3, 3, 3]);
-///
-/// let mut result = try_fftn(&array, None, None).unwrap();
-/// result.eval();
-///
-/// assert_eq!(result.dtype(), Dtype::Complex64);
-///
-/// let mut expected = vec![complex64::new(0.0, 0.0); 27];
-/// expected[0] = complex64::new(27.0, 0.0);
-///
-/// assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-/// ```
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub fn try_fftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
@@ -330,7 +203,7 @@ pub fn try_fftn_device<'a>(
     Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
 
-/// N-dimensional discrete Fourier Transform.
+/// n-dimensional discrete Fourier Transform.
 ///
 /// # Params
 ///
@@ -350,7 +223,7 @@ pub fn try_fftn_device<'a>(
 /// - if more axes are provided than the array has
 ///
 /// See [`try_fftn_device`] for more details.
-#[default_device(device = "cpu")] // fft is not implemented on GPU yet
+#[default_device(device = "cpu")]
 pub fn fftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,

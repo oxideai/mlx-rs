@@ -1,7 +1,7 @@
 mod arithmetic;
+mod conversion;
 mod factory;
 mod logical;
 mod reduction;
-mod conversion;
 
 pub use logical::*;

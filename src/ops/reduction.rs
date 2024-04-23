@@ -1,6 +1,7 @@
 use crate::array::Array;
 use crate::error::OperationError;
 use crate::stream::StreamOrDevice;
+use crate::utils::can_reduce_shape;
 use mlx_macros::default_device;
 
 impl Array {
@@ -20,7 +21,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     #[default_device]
@@ -49,7 +50,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     ///
@@ -96,7 +97,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     #[default_device]
@@ -114,25 +115,11 @@ impl Array {
             }
         };
 
-        let ndim = self.shape().len() as i32;
-        let mut axes_set = std::collections::HashSet::new();
-        for axis in axes.clone() {
-            let ax = if axis < 0 { axis + ndim } else { axis };
-            if ax < 0 || ax >= ndim {
-                return Err(OperationError::AxisOutOfBounds(format!(
-                    "Invalid axis {} for array with {} dimensions",
-                    axis, ndim
-                )));
+        // verify reducing shape only if axes are provided
+        if !axes.is_empty() {
+            if let Err(error) = can_reduce_shape(self.shape(), &axes) {
+                return Err(error);
             }
-
-            axes_set.insert(ax);
-        }
-
-        if axes_set.len() != axes.len() {
-            return Err(OperationError::WrongInput(format!(
-                "Duplicate axes in {:?}",
-                axes
-            )));
         }
 
         Ok(unsafe {
@@ -152,7 +139,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_axes() {
+    fn test_all() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let mut all = array.all(&[0][..], None);
 
@@ -162,14 +149,27 @@ mod tests {
     }
 
     #[test]
-    fn test_all_axes_out_of_bounds() {
+    fn test_all_empty_axes() {
+        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+        let mut all = array.all(&[][..], None);
+
+        all.eval();
+        let results: &[bool] = all.as_slice();
+        assert_eq!(
+            results,
+            &[false, true, true, true, true, true, true, true, true, true, true, true]
+        );
+    }
+
+    #[test]
+    fn test_all_out_of_bounds() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[12]);
         let result = array.try_all(&[1][..], None);
         assert!(result.is_err());
     }
 
     #[test]
-    fn test_all_axes_duplicate_axes() {
+    fn test_all_duplicate_axes() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let result = array.try_all(&[0, 0][..], None);
         assert!(result.is_err());

@@ -1,7 +1,7 @@
 use crate::array::Array;
-use crate::error::DataStoreError;
+use crate::error::{DataStoreError, OperationError};
 use crate::stream::StreamOrDevice;
-use crate::utils::is_broadcastable;
+use crate::utils::{can_reduce_shape, is_broadcastable};
 use mlx_macros::default_device;
 
 impl Array {
@@ -1066,6 +1066,208 @@ impl Array {
             ))
         }
     }
+
+    /// An `or` reduction over the given axes.
+    ///
+    ///  # Example
+    /// ```rust
+    /// use mlx::Array;
+    ///
+    /// let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+    ///
+    /// // will produce a scalar Array with true -- some of the values are non-zero
+    /// let all = array.any(None, None);
+    ///
+    /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
+    /// let all_rows = array.any(&[0][..], None);
+    /// ```
+    ///
+    /// # Params
+    /// - axes: axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn any_device<'a>(
+        &'a self,
+        axes: impl Into<Option<&'a [i32]>>,
+        keep_dims: impl Into<Option<bool>>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        self.try_any_device(axes, keep_dims, stream).unwrap()
+    }
+
+    /// An `or` reduction over the given axes without validating axes are valid for the array.
+    ///
+    ///  # Example
+    /// ```rust
+    /// use mlx::Array;
+    ///
+    /// let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+    ///
+    /// // will produce a scalar Array with true -- some of the values are non-zero
+    /// let all = unsafe { array.any_unchecked(None, None) };
+    ///
+    /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
+    /// let all_rows = unsafe { array.any_unchecked(&[0][..], None) };
+    /// ```
+    ///
+    /// # Params
+    /// - axes: axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
+    /// - stream: stream or device to evaluate on
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not validate that the axes are valid for the array.
+    #[default_device]
+    pub unsafe fn any_device_unchecked<'a>(
+        &'a self,
+        axes: impl Into<Option<&'a [i32]>>,
+        keep_dims: impl Into<Option<bool>>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        let axes = match axes.into() {
+            Some(axes) => axes.to_vec(),
+            None => {
+                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
+                axes
+            }
+        };
+
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_any(
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ptr(),
+            ))
+        }
+    }
+
+    /// An `or` reduction over the given axes returning an error if the axes are invalid.
+    ///
+    ///  # Example
+    /// ```rust
+    /// use mlx::Array;
+    ///
+    /// let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+    ///
+    /// // will produce a scalar Array with true -- some of the values are non-zero
+    /// let all = array.try_any(None, None).unwrap();
+    ///
+    /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
+    /// let all_rows = array.try_any(&[0][..], None).unwrap();
+    /// ```
+    ///
+    /// # Params
+    /// - axes: axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn try_any_device<'a>(
+        &'a self,
+        axes: impl Into<Option<&'a [i32]>>,
+        keep_dims: impl Into<Option<bool>>,
+        stream: StreamOrDevice,
+    ) -> Result<Array, OperationError> {
+        let axes = match axes.into() {
+            Some(axes) => axes.to_vec(),
+            None => {
+                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
+                axes
+            }
+        };
+
+        // verify reducing shape only if axes are provided
+        if !axes.is_empty() {
+            if let Err(error) = can_reduce_shape(self.shape(), &axes) {
+                return Err(error);
+            }
+        }
+
+        Ok(unsafe {
+            Array::from_ptr(mlx_sys::mlx_any(
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ptr(),
+            ))
+        })
+    }
+}
+
+/// Select from `a` or `b` according to `condition`.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params:
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
+#[default_device]
+pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDevice) -> Array {
+    try_which_device(condition, a, b, stream).unwrap()
+}
+
+/// Select from `a` or `b` according to `condition` without broadcasting checks.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the arrays are broadcastable.
+#[default_device]
+pub unsafe fn which_device_unchecked(
+    condition: &Array,
+    a: &Array,
+    b: &Array,
+    stream: StreamOrDevice,
+) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_where(
+            condition.c_array,
+            a.c_array,
+            b.c_array,
+            stream.as_ptr(),
+        ))
+    }
+}
+
+/// Select from `a` or `b` according to `condition` returning an error if the arrays are not broadcastable.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
+#[default_device]
+pub fn try_which_device(
+    condition: &Array,
+    a: &Array,
+    b: &Array,
+    stream: StreamOrDevice,
+) -> Result<Array, DataStoreError> {
+    if !is_broadcastable(condition.shape(), a.shape())
+        || !is_broadcastable(condition.shape(), b.shape())
+    {
+        return Err(DataStoreError::BroadcastError);
+    }
+
+    Ok(unsafe { which_device_unchecked(condition, a, b, stream) })
 }
 
 #[cfg(test)]
@@ -1339,5 +1541,63 @@ mod tests {
         c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
+    }
+
+    #[test]
+    fn test_any() {
+        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+        let mut all = array.any(&[0][..], None);
+
+        all.eval();
+        let results: &[bool] = all.as_slice();
+        assert_eq!(results, &[true, true, true, true]);
+    }
+
+    #[test]
+    fn test_any_empty_axes() {
+        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+        let mut all = array.any(&[][..], None);
+
+        all.eval();
+        let results: &[bool] = all.as_slice();
+        assert_eq!(
+            results,
+            &[false, true, true, true, true, true, true, true, true, true, true, true]
+        );
+    }
+
+    #[test]
+    fn test_any_out_of_bounds() {
+        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[12]);
+        let result = array.try_any(&[1][..], None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_any_duplicate_axes() {
+        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
+        let result = array.try_any(&[0, 0][..], None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_which() {
+        let condition = Array::from_slice(&[true, false, true], &[3]);
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let mut c = which(&condition, &a, &b);
+
+        c.eval();
+        let c_data: &[i32] = c.as_slice();
+        assert_eq!(c_data, [1, 5, 3]);
+    }
+
+    #[test]
+    fn test_which_invalid_broadcast() {
+        let condition = Array::from_slice(&[true, false, true], &[3]);
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let b = Array::from_slice(&[4, 5, 6, 7], &[4]);
+        let c = try_which(&condition, &a, &b);
+        assert!(c.is_err());
     }
 }

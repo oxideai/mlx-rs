@@ -3,6 +3,7 @@
 import typing as t
 import mlx.core as mx
 import random
+import subprocess
 
 emittedTests = {}
 
@@ -555,3 +556,5 @@ def generate_integration_tests():
 
 if __name__ == "__main__":
     generate_integration_tests()
+    subprocess.run(["cargo", "fmt", "--", "tests/integration_test.rs"], cwd="../")
+

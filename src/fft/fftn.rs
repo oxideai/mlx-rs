@@ -2,7 +2,10 @@ use mlx_macros::default_device;
 
 use crate::{array::Array, error::FftError, stream::StreamOrDevice};
 
-use super::resolve_size_and_axis_unchecked;
+use super::{
+    resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked, try_resolve_size_and_axis,
+    try_resolve_sizes_and_axes,
+};
 
 /// One dimensional discrete Fourier Transform.
 ///
@@ -41,7 +44,7 @@ pub fn try_fft_device(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (n, axis) = super::try_resolve_size_and_axis(a, n, axis)?;
+    let (n, axis) = try_resolve_size_and_axis(a, n, axis)?;
     unsafe { Ok(fft_device_unchecked(a, Some(n), Some(axis), stream)) }
 }
 
@@ -99,7 +102,7 @@ pub unsafe fn fft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = super::resolve_sizes_and_axes_unchecked(a, s, axes);
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
     fft2_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
@@ -119,7 +122,7 @@ pub fn try_fft2_device<'a>(
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let valid_axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = super::try_resolve_sizes_and_axes(a, s, valid_axes)?;
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, valid_axes)?;
     Ok(fft2_device_inner(a, &valid_s, &valid_axes, stream))
 }
 
@@ -178,7 +181,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (valid_s, valid_axes) = super::resolve_sizes_and_axes_unchecked(a, s, axes);
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
     fftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
@@ -199,7 +202,7 @@ pub fn try_fftn_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (valid_s, valid_axes) = super::try_resolve_sizes_and_axes(a, s, axes)?;
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
     Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
 
@@ -233,201 +236,309 @@ pub fn fftn_device<'a>(
     try_fftn_device(a, s, axes, stream).unwrap()
 }
 
-// TODO: test out of bound indexing
+/// One dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: Input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///   with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
+#[default_device(device = "cpu")]
+pub unsafe fn ifft_device_unchecked(
+    a: &Array,
+    n: impl Into<Option<i32>>,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let (n, axis) = resolve_size_and_axis_unchecked(a, n, axis);
+    unsafe {
+        let c_array = mlx_sys::mlx_fft_ifft(a.c_array, n, axis, stream.stream.c_stream);
+        Array::from_ptr(c_array)
+    }
+}
+
+/// One dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: Input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
+#[default_device(device = "cpu")]
+pub fn try_ifft_device(
+    a: &Array,
+    n: impl Into<Option<i32>>,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Result<Array, FftError> {
+    let (n, axis) = try_resolve_size_and_axis(a, n, axis)?;
+    unsafe { Ok(ifft_device_unchecked(a, n, axis, stream)) }
+}
+
+/// One dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: Input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
+#[default_device(device = "cpu")]
+pub fn ifft_device(
+    a: &Array,
+    n: impl Into<Option<i32>>,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    try_ifft_device(a, n, axis, stream).unwrap()
+}
+
+/// Two dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
+/// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+fn ifft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
+    let num_s = s.len();
+    let num_axes = axes.len();
+
+    let s_ptr = s.as_ptr();
+    let axes_ptr = axes.as_ptr();
+
+    unsafe {
+        let c_array =
+            mlx_sys::mlx_fft_ifft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
+        Array::from_ptr(c_array)
+    }
+}
+
+/// Two dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
+/// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+#[default_device(device = "cpu")]
+pub unsafe fn ifft2_device_unchecked<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let axes = axes.into().unwrap_or(&[-2, -1]);
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
+    ifft2_device_inner(a, &valid_s, &valid_axes, stream)
+}
+
+/// Two dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
+/// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+#[default_device(device = "cpu")]
+pub fn try_ifft2_device<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Result<Array, FftError> {
+    let axes = axes.into().unwrap_or(&[-2, -1]);
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
+    Ok(ifft2_device_inner(a, &valid_s, &valid_axes, stream))
+}
+
+/// Two dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
+/// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+///
+/// # Panic
+///
+/// Panics if the input arguments are invalid. See [try_ifft2_device] for more details.
+#[default_device(device = "cpu")]
+pub fn ifft2_device<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    try_ifft2_device(a, s, axes, stream).unwrap()
+}
+
+fn ifftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
+    let num_s = s.len();
+    let num_axes = axes.len();
+
+    let s_ptr = s.as_ptr();
+    let axes_ptr = axes.as_ptr();
+
+    unsafe {
+        let c_array =
+            mlx_sys::mlx_fft_ifftn(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
+        Array::from_ptr(c_array)
+    }
+}
+
+/// n-dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///  padded with zeros to match the sizes in `s`. The default value is the sizes of `a` along `axes`
+///  if not specified.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+///   over the last `len(s)` axes are or all axes if `s` is also `None`.
+#[default_device(device = "cpu")]
+pub unsafe fn ifftn_device_unchecked<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
+    ifftn_device_inner(a, &valid_s, &valid_axes, stream)
+}
+
+/// n-dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+/// padded with zeros to match the sizes in `s`. The default value is the sizes of `a` along `axes`
+/// if not specified.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+/// over the last `len(s)` axes are or all axes if `s` is also `None`.
+#[default_device(device = "cpu")]
+pub fn try_ifftn_device<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Result<Array, FftError> {
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
+    Ok(ifftn_device_inner(a, &valid_s, &valid_axes, stream))
+}
+
+/// n-dimensional inverse discrete Fourier Transform.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+/// padded with zeros to match the sizes in `s`. The default value is the sizes of `a` along `axes`
+/// if not specified.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+/// over the last `len(s)` axes are or all axes if `s` is also `None`.
+///
+/// # Panic
+///
+/// Panics if the input arguments are invalid. See [try_ifftn_device] for more details.
+#[default_device(device = "cpu")]
+pub fn ifftn_device<'a>(
+    a: &'a Array,
+    s: impl Into<Option<&'a [i32]>>,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    try_ifftn_device(a, s, axes, stream).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_fft_unchecked() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-        let mut result = unsafe { fft_unchecked(&array, 4, 0) };
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
-            complex64::new(10.0, 0.0),
-            complex64::new(-2.0, 2.0),
-            complex64::new(-2.0, 0.0),
-            complex64::new(-2.0, -2.0),
-        ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
-        // The original array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
-    }
-
-    #[test]
-    fn test_try_fft() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-
-        // Error case
-        let scalar_array = Array::from_float(1.0);
-        let result = try_fft(&scalar_array, 0, 0);
-        assert!(result.is_err());
-
-        let result = try_fft(&array, 4, 2);
-        assert!(result.is_err());
-
-        // Success case
-        let mut result = try_fft(&array, 4, 0).unwrap();
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
-            complex64::new(10.0, 0.0),
-            complex64::new(-2.0, 2.0),
-            complex64::new(-2.0, 0.0),
-            complex64::new(-2.0, -2.0),
-        ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
-        // test that previous array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
-    }
+    use crate::{complex64, fft::*, Array, Dtype};
 
     #[test]
     fn test_fft() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[4]);
-
-        // Success case
-        let mut result = fft(&array, 4, 0);
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
+        const FFT_DATA: &[f32] = &[1.0, 2.0, 3.0, 4.0];
+        const FFT_SHAPE: &[i32] = &[4];
+        const FFT_EXPECTED: &[complex64; 4] = &[
             complex64::new(10.0, 0.0),
             complex64::new(-2.0, 2.0),
             complex64::new(-2.0, 0.0),
             complex64::new(-2.0, -2.0),
         ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
 
-        // test that previous array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 2.0, 3.0, 4.0]);
-    }
+        let array = Array::from_slice(FFT_DATA, FFT_SHAPE);
+        let mut fft = fft(&array, None, None);
+        fft.eval();
 
-    #[test]
-    fn test_fft2_unchecked() {
-        use crate::{complex64, fft::*, Array, Dtype};
+        assert_eq!(fft.dtype(), Dtype::Complex64);
+        assert_eq!(fft.as_slice::<complex64>(), FFT_EXPECTED);
 
-        let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let n = [2, 2];
-        let axes = [-2, -1];
-        let mut result = unsafe { fft2_unchecked(&array, &n[..], &axes[..]) };
-        result.eval();
+        let mut ifft = ifft(&fft, None, None);
+        ifft.eval();
 
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
-            complex64::new(4.0, 0.0),
-            complex64::new(0.0, 0.0),
-            complex64::new(0.0, 0.0),
-            complex64::new(0.0, 0.0),
-        ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
-        // test that previous array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 1.0, 1.0, 1.0]);
-    }
-
-    #[test]
-    fn test_try_fft2() {
-        use crate::{complex64, error::FftError, fft::*, Array};
-
-        let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-
-        // Error case
-        let scalar_array = Array::from_float(1.0);
-        let result = try_fft2(&scalar_array, None, None);
-        assert_eq!(result.unwrap_err(), FftError::ScalarArray);
-
-        let result = try_fft2(&array, &[2, 2, 2][..], &[0, 1, 2][..]);
-        assert_eq!(result.unwrap_err(), FftError::InvalidAxis { ndim: 2 });
-
-        let result = try_fft2(&array, &[2, 2][..], &[-1][..]);
+        assert_eq!(ifft.dtype(), Dtype::Complex64);
         assert_eq!(
-            result.unwrap_err(),
-            FftError::IncompatibleShapeAndAxes {
-                shape_size: 2,
-                axes_size: 1,
-            }
+            ifft.as_slice::<complex64>(),
+            FFT_DATA
+                .iter()
+                .map(|&x| complex64::new(x, 0.0))
+                .collect::<Vec<_>>()
         );
 
-        let result = try_fft2(&array, None, &[-2, -2][..]);
-        assert_eq!(result.unwrap_err(), FftError::DuplicateAxis { axis: -2 });
-
-        let result = try_fft2(&array, &[-2, 2][..], None);
-        assert_eq!(result.unwrap_err(), FftError::InvalidOutputSize);
-
-        // Success case
-        let mut result = try_fft2(&array, None, None).unwrap();
-        result.eval();
-
-        assert_eq!(result.dtype(), crate::dtype::Dtype::Complex64);
-
-        let expected = &[
-            complex64::new(4.0, 0.0),
-            complex64::new(0.0, 0.0),
-            complex64::new(0.0, 0.0),
-            complex64::new(0.0, 0.0),
-        ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
-        // test that previous array is not modified and valid
+        // The original array is not modified and valid
         let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(data, FFT_DATA);
     }
 
     #[test]
     fn test_fft2() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let n = [2, 2];
-        let axes = [-2, -1];
-        let mut result = fft2(&array, Some(&n[..]), Some(&axes[..]));
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
+        const FFT2_DATA: &[f32] = &[1.0, 1.0, 1.0, 1.0];
+        const FFT2_SHAPE: &[i32] = &[2, 2];
+        const FFT2_EXPECTED: &[complex64; 4] = &[
             complex64::new(4.0, 0.0),
             complex64::new(0.0, 0.0),
             complex64::new(0.0, 0.0),
             complex64::new(0.0, 0.0),
         ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
+
+        let array = Array::from_slice(FFT2_DATA, FFT2_SHAPE);
+        let mut fft2 = fft2(&array, None, None);
+        fft2.eval();
+
+        assert_eq!(fft2.dtype(), Dtype::Complex64);
+        assert_eq!(fft2.as_slice::<complex64>(), FFT2_EXPECTED);
+
+        let mut ifft2 = ifft2(&fft2, None, None);
+        ifft2.eval();
+
+        assert_eq!(ifft2.dtype(), Dtype::Complex64);
+        assert_eq!(
+            ifft2.as_slice::<complex64>(),
+            FFT2_DATA
+                .iter()
+                .map(|&x| complex64::new(x, 0.0))
+                .collect::<Vec<_>>()
+        );
 
         // test that previous array is not modified and valid
         let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(data, FFT2_DATA);
     }
 
     #[test]
-    fn test_fftn_unchecked() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::ones::<f32>(&[3, 3]);
-        let mut result = unsafe { fftn_unchecked(&array, None, None) };
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let expected = &[
-            complex64::new(9.0, 0.0),
-            complex64::new(0.0, 0.0),
+    fn test_fftn() {
+        const FFTN_DATA: &[f32] = &[1.0; 8];
+        const FFTN_SHAPE: &[i32] = &[2, 2, 2];
+        const FFTN_EXPECTED: &[complex64; 8] = &[
+            complex64::new(8.0, 0.0),
             complex64::new(0.0, 0.0),
             complex64::new(0.0, 0.0),
             complex64::new(0.0, 0.0),
@@ -436,75 +547,28 @@ mod tests {
             complex64::new(0.0, 0.0),
             complex64::new(0.0, 0.0),
         ];
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
 
-        // test that previous array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0; 9]);
-    }
+        let array = Array::from_slice(FFTN_DATA, FFTN_SHAPE);
+        let mut fftn = fftn(&array, None, None);
+        fftn.eval();
 
-    #[test]
-    fn test_try_fftn() {
-        use crate::{complex64, error::FftError, fft::*, Array};
+        assert_eq!(fftn.dtype(), Dtype::Complex64);
+        assert_eq!(fftn.as_slice::<complex64>(), FFTN_EXPECTED);
 
-        let array = Array::ones::<f32>(&[3, 3, 3]);
+        let mut ifftn = ifftn(&fftn, None, None);
+        ifftn.eval();
 
-        // Error case
-        let scalar_array = Array::from_float(1.0);
-        let result = try_fftn(&scalar_array, None, None);
-        assert_eq!(result.unwrap_err(), FftError::ScalarArray);
-
-        let result = try_fftn(&array, &[3, 3, 3, 3][..], &[0, 1, 2, 3][..]);
-        assert_eq!(result.unwrap_err(), FftError::InvalidAxis { ndim: 3 });
-
-        let result = try_fftn(&array, &[3, 3, 3][..], &[-1][..]);
+        assert_eq!(ifftn.dtype(), Dtype::Complex64);
         assert_eq!(
-            result.unwrap_err(),
-            FftError::IncompatibleShapeAndAxes {
-                shape_size: 3,
-                axes_size: 1,
-            }
+            ifftn.as_slice::<complex64>(),
+            FFTN_DATA
+                .iter()
+                .map(|&x| complex64::new(x, 0.0))
+                .collect::<Vec<_>>()
         );
 
-        let result = try_fftn(&array, None, &[-2, -2][..]);
-        assert_eq!(result.unwrap_err(), FftError::DuplicateAxis { axis: -2 });
-
-        let result = try_fftn(&array, &[-2, 2][..], None);
-        assert_eq!(result.unwrap_err(), FftError::InvalidOutputSize);
-
-        // Success case
-        let mut result = try_fftn(&array, None, None).unwrap();
-        result.eval();
-
-        assert_eq!(result.dtype(), crate::dtype::Dtype::Complex64);
-
-        let mut expected = vec![complex64::new(0.0, 0.0); 27];
-        expected[0] = complex64::new(27.0, 0.0);
-
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
         // test that previous array is not modified and valid
         let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0; 27]);
-    }
-
-    #[test]
-    fn test_fftn() {
-        use crate::{complex64, fft::*, Array, Dtype};
-
-        let array = Array::ones::<f32>(&[3, 3, 3]);
-        let mut result = fftn(&array, None, None);
-        result.eval();
-
-        assert_eq!(result.dtype(), Dtype::Complex64);
-
-        let mut expected = vec![complex64::new(0.0, 0.0); 27];
-        expected[0] = complex64::new(27.0, 0.0);
-
-        assert_eq!(result.as_slice::<complex64>(), &expected[..]);
-
-        // test that previous array is not modified and valid
-        let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[1.0; 27]);
+        assert_eq!(data, FFTN_DATA);
     }
 }

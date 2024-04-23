@@ -168,8 +168,6 @@
 //! ```
 
 mod fftn;
-mod ifftn;
-mod irfftn;
 mod rfftn;
 
 use smallvec::SmallVec;
@@ -180,7 +178,7 @@ use crate::{
     Array,
 };
 
-pub use self::{fftn::*, ifftn::*, irfftn::*, rfftn::*};
+pub use self::{fftn::*, rfftn::*};
 
 #[inline]
 fn resolve_size_and_axis_unchecked(

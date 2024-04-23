@@ -1,3 +1,4 @@
+use crate::error::OperationError;
 use crate::Array;
 
 /// Helper method to get a string representation of an mlx object.
@@ -69,6 +70,31 @@ pub(crate) fn is_broadcastable(a: &[i32], b: &[i32]) -> bool {
         .rev()
         .zip(b.iter().rev())
         .all(|(a, b)| *a == 1 || *b == 1 || a == b)
+}
+
+pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), OperationError> {
+    let ndim = shape.len() as i32;
+    let mut axes_set = std::collections::HashSet::new();
+    for &axis in axes {
+        let ax = if axis < 0 { axis + ndim } else { axis };
+        if ax < 0 || ax >= ndim {
+            return Err(OperationError::AxisOutOfBounds(format!(
+                "Invalid axis {} for array with {} dimensions",
+                axis, ndim
+            )));
+        }
+
+        axes_set.insert(ax);
+    }
+
+    if axes_set.len() != axes.len() {
+        return Err(OperationError::WrongInput(format!(
+            "Duplicate axes in {:?}",
+            axes
+        )));
+    }
+
+    Ok(())
 }
 
 impl Array {

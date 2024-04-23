@@ -46,6 +46,17 @@ pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
     }
 }
 
+pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
+    let mut unique = std::collections::HashSet::new();
+    for &x in arr {
+        if !unique.insert(x) {
+            return Err(x);
+        }
+    }
+
+    Ok(())
+}
+
 /// Helper method to check if two arrays are broadcastable.
 ///
 /// Uses the same broadcasting rules as numpy.

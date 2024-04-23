@@ -60,9 +60,12 @@ pub enum FftnError {
     #[error("Invalid axis received for array with {ndim} dimensions")]
     InvalidAxis { ndim: usize },
 
-    #[error("Shape and axis have different sizes")]
-    ShapeAxisMismatch,
+    #[error("Shape and axes/axis have different sizes")]
+    IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
 
     #[error("Duplcated axis received: {axis}")]
     DuplicateAxis { axis: i32 },
+
+    #[error("Invalid output size requested")]
+    InvalidOutputSize,
 }

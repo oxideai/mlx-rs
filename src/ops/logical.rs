@@ -1082,7 +1082,7 @@ impl Array {
     /// let all_rows = array.any(&[0][..], None);
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
     /// - axes: axes to reduce over
     /// - keep_dims: if `true` keep reduced axis as singleton dimension
     /// - stream: stream or device to evaluate on
@@ -1111,7 +1111,7 @@ impl Array {
     /// let all_rows = unsafe { array.any_unchecked(&[0][..], None) };
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
     /// - axes: axes to reduce over
     /// - keep_dims: if `true` keep reduced axis as singleton dimension
     /// - stream: stream or device to evaluate on
@@ -1160,7 +1160,7 @@ impl Array {
     /// let all_rows = array.try_any(&[0][..], None).unwrap();
     /// ```
     ///
-    /// # Parameters:
+    /// # Params
     /// - axes: axes to reduce over
     /// - keep_dims: if `true` keep reduced axis as singleton dimension
     /// - stream: stream or device to evaluate on
@@ -1198,11 +1198,35 @@ impl Array {
     }
 }
 
+/// Select from `a` or `b` according to `condition`.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params:
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDevice) -> Array {
     try_which_device(condition, a, b, stream).unwrap()
 }
 
+/// Select from `a` or `b` according to `condition` without broadcasting checks.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the arrays are broadcastable.
 #[default_device]
 pub fn which_device_unchecked(
     condition: &Array,
@@ -1220,6 +1244,16 @@ pub fn which_device_unchecked(
     }
 }
 
+/// Select from `a` or `b` according to `condition` returning an error if the arrays are not broadcastable.
+///
+/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// with each another.
+///
+/// # Params
+/// - condition: condition array
+/// - a: input selected from where condition is non-zero or `true`
+/// - b: input selected from where condition is zero or `false`
+/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn try_which_device(
     condition: &Array,

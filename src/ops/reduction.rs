@@ -21,7 +21,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     #[default_device]
@@ -50,7 +50,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     ///
@@ -97,7 +97,7 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: The axes to reduce over
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: The stream to execute the operation on
     #[default_device]

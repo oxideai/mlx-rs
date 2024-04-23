@@ -1084,7 +1084,7 @@ impl Array {
     ///
     /// # Params
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true` keep reduced axis as singleton dimension
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn any_device<'a>(
@@ -1113,7 +1113,7 @@ impl Array {
     ///
     /// # Params
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true` keep reduced axis as singleton dimension
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -1162,7 +1162,7 @@ impl Array {
     ///
     /// # Params
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true` keep reduced axis as singleton dimension
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_any_device<'a>(

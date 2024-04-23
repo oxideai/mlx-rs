@@ -53,7 +53,7 @@ pub enum AsSliceError {
 }
 
 #[derive(Error, Debug, PartialEq)]
-pub enum FftnError {
+pub enum FftError {
     #[error("fftn requires at least one dimension")]
     ScalarArray,
 

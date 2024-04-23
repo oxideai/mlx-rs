@@ -1,9 +1,8 @@
 use mlx_macros::default_device;
-use smallvec::SmallVec;
 
-use crate::{
-    array::Array, error::FftnError, stream::StreamOrDevice, utils::resolve_index_unchecked,
-};
+use crate::{array::Array, error::FftError, stream::StreamOrDevice};
+
+use super::resolve_size_and_axis_unchecked;
 
 /// One dimensional discrete Fourier Transform.
 ///
@@ -45,11 +44,7 @@ pub unsafe fn fft_device_unchecked(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let axis = axis.into().unwrap_or(-1);
-    let n = n.into().unwrap_or_else(|| {
-        let axis_index = resolve_index_unchecked(axis, a.ndim());
-        a.shape()[axis_index]
-    });
+    let (n, axis) = resolve_size_and_axis_unchecked(a, n, axis);
     unsafe {
         let c_array = mlx_sys::mlx_fft_fft(a.c_array, n, axis, stream.stream.c_stream);
         Array::from_ptr(c_array)
@@ -90,9 +85,9 @@ pub fn try_fft_device(
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
-) -> Result<Array, FftnError> {
+) -> Result<Array, FftError> {
     let (n, axis) = super::try_resolve_size_and_axis(a, n, axis)?;
-    Ok(unsafe { fft_device_unchecked(a, Some(n), Some(axis), stream) })
+    unsafe { Ok(fft_device_unchecked(a, Some(n), Some(axis), stream)) }
 }
 
 /// One dimensional discrete Fourier Transform.
@@ -119,16 +114,16 @@ pub fn fft_device(
     try_fft_device(a, n, axis, stream).unwrap()
 }
 
-fn fft2_device_inner(a: &Array, n: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
+fn fft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
+    let num_s = s.len();
     let num_axes = axes.len();
-    let num_n = n.len();
 
-    let n_ptr = n.as_ptr();
+    let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
     unsafe {
         let c_array =
-            mlx_sys::mlx_fft_fft2(a.c_array, n_ptr, num_n, axes_ptr, num_axes, stream.as_ptr());
+            mlx_sys::mlx_fft_fft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -171,18 +166,8 @@ pub unsafe fn fft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let mut valid_n = SmallVec::<[i32; 2]>::new();
-    match s.into() {
-        Some(s) => valid_n.extend_from_slice(&s),
-        None => {
-            for axis in axes {
-                let axis_index = resolve_index_unchecked(*axis, a.ndim());
-                valid_n.push(a.shape()[axis_index]);
-            }
-        }
-    }
-
-    fft2_device_inner(a, &valid_n, axes, stream)
+    let (valid_s, valid_axes) = super::resolve_sizes_and_axes_unchecked(a, s, axes);
+    fft2_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
 /// Two dimensional discrete Fourier Transform.
@@ -217,7 +202,7 @@ pub fn try_fft2_device<'a>(
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
-) -> Result<Array, FftnError> {
+) -> Result<Array, FftError> {
     let valid_axes = axes.into().unwrap_or(&[-2, -1]);
     let (valid_s, valid_axes) = super::try_resolve_sizes_and_axes(a, s, valid_axes)?;
     Ok(fft2_device_inner(a, &valid_s, &valid_axes, stream))
@@ -302,35 +287,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (valid_s, valid_axes) = match (s.into(), axes.into()) {
-        (Some(s), Some(axes)) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
-            (valid_s, valid_axes)
-        }
-        (Some(s), None) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
-            let valid_axes = (-(valid_s.len() as i32)..0).collect();
-            (valid_s, valid_axes)
-        }
-        (None, Some(axes)) => {
-            let valid_s = axes
-                .iter()
-                .map(|&axis| {
-                    let axis_index = resolve_index_unchecked(axis, a.ndim());
-                    a.shape()[axis_index]
-                })
-                .collect();
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
-            (valid_s, valid_axes)
-        }
-        (None, None) => {
-            let valid_s: SmallVec<[i32; 4]> = (0..a.ndim()).map(|axis| a.shape()[axis]).collect();
-            let valid_axes = (-(valid_s.len() as i32)..0).collect();
-            (valid_s, valid_axes)
-        }
-    };
-
+    let (valid_s, valid_axes) = super::resolve_sizes_and_axes_unchecked(a, s, axes);
     fftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
@@ -368,7 +325,7 @@ pub fn try_fftn_device<'a>(
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
-) -> Result<Array, FftnError> {
+) -> Result<Array, FftError> {
     let (valid_s, valid_axes) = super::try_resolve_sizes_and_axes(a, s, axes)?;
     Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
@@ -514,32 +471,32 @@ mod tests {
 
     #[test]
     fn test_try_fft2() {
-        use crate::{complex64, error::FftnError, fft::*, Array};
+        use crate::{complex64, error::FftError, fft::*, Array};
 
         let array = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
 
         // Error case
         let scalar_array = Array::from_float(1.0);
         let result = try_fft2(&scalar_array, None, None);
-        assert_eq!(result.unwrap_err(), FftnError::ScalarArray);
+        assert_eq!(result.unwrap_err(), FftError::ScalarArray);
 
         let result = try_fft2(&array, &[2, 2, 2][..], &[0, 1, 2][..]);
-        assert_eq!(result.unwrap_err(), FftnError::InvalidAxis { ndim: 2 });
+        assert_eq!(result.unwrap_err(), FftError::InvalidAxis { ndim: 2 });
 
         let result = try_fft2(&array, &[2, 2][..], &[-1][..]);
         assert_eq!(
             result.unwrap_err(),
-            FftnError::IncompatibleShapeAndAxes {
+            FftError::IncompatibleShapeAndAxes {
                 shape_size: 2,
                 axes_size: 1,
             }
         );
 
         let result = try_fft2(&array, None, &[-2, -2][..]);
-        assert_eq!(result.unwrap_err(), FftnError::DuplicateAxis { axis: -2 });
+        assert_eq!(result.unwrap_err(), FftError::DuplicateAxis { axis: -2 });
 
         let result = try_fft2(&array, &[-2, 2][..], None);
-        assert_eq!(result.unwrap_err(), FftnError::InvalidOutputSize);
+        assert_eq!(result.unwrap_err(), FftError::InvalidOutputSize);
 
         // Success case
         let mut result = try_fft2(&array, None, None).unwrap();
@@ -615,32 +572,32 @@ mod tests {
 
     #[test]
     fn test_try_fftn() {
-        use crate::{complex64, error::FftnError, fft::*, Array};
+        use crate::{complex64, error::FftError, fft::*, Array};
 
         let array = Array::ones::<f32>(&[3, 3, 3]);
 
         // Error case
         let scalar_array = Array::from_float(1.0);
         let result = try_fftn(&scalar_array, None, None);
-        assert_eq!(result.unwrap_err(), FftnError::ScalarArray);
+        assert_eq!(result.unwrap_err(), FftError::ScalarArray);
 
         let result = try_fftn(&array, &[3, 3, 3, 3][..], &[0, 1, 2, 3][..]);
-        assert_eq!(result.unwrap_err(), FftnError::InvalidAxis { ndim: 3 });
+        assert_eq!(result.unwrap_err(), FftError::InvalidAxis { ndim: 3 });
 
         let result = try_fftn(&array, &[3, 3, 3][..], &[-1][..]);
         assert_eq!(
             result.unwrap_err(),
-            FftnError::IncompatibleShapeAndAxes {
+            FftError::IncompatibleShapeAndAxes {
                 shape_size: 3,
                 axes_size: 1,
             }
         );
 
         let result = try_fftn(&array, None, &[-2, -2][..]);
-        assert_eq!(result.unwrap_err(), FftnError::DuplicateAxis { axis: -2 });
+        assert_eq!(result.unwrap_err(), FftError::DuplicateAxis { axis: -2 });
 
         let result = try_fftn(&array, &[-2, 2][..], None);
-        assert_eq!(result.unwrap_err(), FftnError::InvalidOutputSize);
+        assert_eq!(result.unwrap_err(), FftError::InvalidOutputSize);
 
         // Success case
         let mut result = try_fftn(&array, None, None).unwrap();

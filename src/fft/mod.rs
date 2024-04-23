@@ -28,6 +28,10 @@ fn try_resolve_size_and_axis(
         resolve_index(axis, a.ndim()).ok_or_else(|| FftnError::InvalidAxis { ndim: a.ndim() })?;
     let n = n.into().unwrap_or(a.shape()[axis_index]);
 
+    if n <= 0 {
+        return Err(FftnError::InvalidOutputSize);
+    }
+
     Ok((n, axis))
 }
 
@@ -94,4 +98,96 @@ fn try_resolve_sizes_and_axes<'a>(
     }
 
     Ok((valid_s, valid_axes))
+}
+
+#[cfg(test)]
+mod try_resolve_size_and_axis_tests {
+    use crate::Array;
+
+    use super::{try_resolve_size_and_axis, FftnError};
+
+    #[test]
+    fn scalar_array_returns_error() {
+        // Returns an error if the array is a scalar
+        let a = Array::from_float(1.0);
+        let result = try_resolve_size_and_axis(&a, 0, 0);
+        assert_eq!(result, Err(FftnError::ScalarArray));
+    }
+
+    #[test]
+    fn out_of_bound_axis_returns_error() {
+        // Returns an error if the axis is invalid (out of bounds)
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let result = try_resolve_size_and_axis(&a, 0, 1);
+        assert_eq!(result, Err(FftnError::InvalidAxis { ndim: 1 }));
+    }
+
+    #[test]
+    fn negative_output_size_returns_error() {
+        // Returns an error if the output size is negative
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let result = try_resolve_size_and_axis(&a, -1, 0);
+        assert_eq!(result, Err(FftnError::InvalidOutputSize));
+    }
+
+    #[test]
+    fn valid_input_returns_sizes_and_axis() {
+        // Returns the output size and axis if the input is valid
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let result = try_resolve_size_and_axis(&a, 4, 0);
+        assert_eq!(result, Ok((4, 0)));
+    }
+}
+
+#[cfg(test)]
+mod try_resolve_sizes_and_axes_tests {
+    use crate::Array;
+
+    use super::{try_resolve_sizes_and_axes, FftnError};
+
+    #[test]
+    fn scalar_array_returns_error() {
+        // Returns an error if the array is a scalar
+        let a = Array::from_float(1.0);
+        let result = try_resolve_sizes_and_axes(&a, None, None);
+        assert_eq!(result, Err(FftnError::ScalarArray));
+    }
+
+    #[test]
+    fn out_of_bound_axis_returns_error() {
+        // Returns an error if the axis is invalid (out of bounds)
+        let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
+        let result = try_resolve_sizes_and_axes(&a, &[2, 2, 2][..], &[0, 1, 2][..]);
+        assert_eq!(result, Err(FftnError::InvalidAxis { ndim: 2 }));
+    }
+
+    #[test]
+    fn different_num_sizes_and_num_axes_returns_error() {
+        // Returns an error if the number of sizes and axes are different
+        let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
+        let result = try_resolve_sizes_and_axes(&a, &[2, 2, 2][..], &[0, 1][..]);
+        assert_eq!(
+            result,
+            Err(FftnError::IncompatibleShapeAndAxes {
+                shape_size: 3,
+                axes_size: 2
+            })
+        );
+    }
+
+    #[test]
+    fn duplicate_axes_returns_error() {
+        // Returns an error if there are duplicate axes
+        let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
+        let result = try_resolve_sizes_and_axes(&a, &[2, 2][..], &[0, 0][..]);
+        assert_eq!(result, Err(FftnError::DuplicateAxis { axis: 0 }));
+    }
+
+    #[test]
+    fn negative_output_size_returns_error() {
+        // Returns an error if the output size is negative
+        let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
+        let result = try_resolve_sizes_and_axes(&a, &[-2, 2][..], None);
+        assert_eq!(result, Err(FftnError::InvalidOutputSize));
+    }
 }

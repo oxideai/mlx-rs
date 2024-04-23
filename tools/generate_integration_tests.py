@@ -67,11 +67,10 @@ def verify_array(indent, name: str, array: mx.array) -> str:
             indent, f"{name}.all(None, None).item::<bool>()", "true" if all else "false"
         )
 
-        # TODO: Add this check once we support any
-        # any = mx.any(array).item()
-        # result += assert_equal(
-        #     indent, f"{name}.any().item()", "true" if any else "false"
-        # )
+        any = mx.any(array).item()
+        result += assert_equal(
+            indent, f"{name}.any(None, None).item::<bool>()", "true" if any else "false"
+        )
 
     else:
         # TODO: update this once we support mean and sum

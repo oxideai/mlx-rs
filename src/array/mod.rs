@@ -1,153 +1,24 @@
-use std::ffi::c_void;
-use std::ops::Add;
-
-use half::{bf16, f16};
+use crate::{dtype::Dtype, error::AsSliceError};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
+use std::ffi::c_void;
 
-use crate::{dtype::Dtype, error::AsSliceError, sealed::Sealed, StreamOrDevice};
+mod element;
+mod operators;
+
+pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
 #[allow(non_camel_case_types)]
 pub type complex64 = Complex<f32>;
 
-/// A marker trait for array elements.
-pub trait ArrayElement: Sealed {
-    const DTYPE: Dtype;
-
-    fn scalar_array_item(array: &Array) -> Self;
-
-    fn array_data(array: &Array) -> *const Self;
-}
-
-macro_rules! impl_array_element {
-    ($type:ty, $dtype:expr, $mlx_item_fn:ident, $mlx_data_fn:ident) => {
-        impl Sealed for $type {}
-        impl ArrayElement for $type {
-            const DTYPE: Dtype = $dtype;
-
-            fn scalar_array_item(array: &Array) -> Self {
-                unsafe { mlx_sys::$mlx_item_fn(array.c_array) }
-            }
-
-            fn array_data(array: &Array) -> *const Self {
-                unsafe { mlx_sys::$mlx_data_fn(array.c_array) }
-            }
-        }
-    };
-}
-
-impl_array_element!(bool, Dtype::Bool, mlx_array_item_bool, mlx_array_data_bool);
-impl_array_element!(u8, Dtype::Uint8, mlx_array_item_uint8, mlx_array_data_uint8);
-impl_array_element!(
-    u16,
-    Dtype::Uint16,
-    mlx_array_item_uint16,
-    mlx_array_data_uint16
-);
-impl_array_element!(
-    u32,
-    Dtype::Uint32,
-    mlx_array_item_uint32,
-    mlx_array_data_uint32
-);
-impl_array_element!(
-    u64,
-    Dtype::Uint64,
-    mlx_array_item_uint64,
-    mlx_array_data_uint64
-);
-impl_array_element!(i8, Dtype::Int8, mlx_array_item_int8, mlx_array_data_int8);
-impl_array_element!(
-    i16,
-    Dtype::Int16,
-    mlx_array_item_int16,
-    mlx_array_data_int16
-);
-impl_array_element!(
-    i32,
-    Dtype::Int32,
-    mlx_array_item_int32,
-    mlx_array_data_int32
-);
-impl_array_element!(
-    i64,
-    Dtype::Int64,
-    mlx_array_item_int64,
-    mlx_array_data_int64
-);
-impl_array_element!(
-    f32,
-    Dtype::Float32,
-    mlx_array_item_float32,
-    mlx_array_data_float32
-);
-
-impl Sealed for f16 {}
-
-impl ArrayElement for f16 {
-    const DTYPE: Dtype = Dtype::Float16;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_float16(array.c_array) };
-        f16::from_bits(val.0)
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_float16(array.c_array) as *const Self }
-    }
-}
-
-impl Sealed for bf16 {}
-
-impl ArrayElement for bf16 {
-    const DTYPE: Dtype = Dtype::Bfloat16;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_bfloat16(array.c_array) };
-        bf16::from_bits(val)
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        unsafe { mlx_sys::mlx_array_data_bfloat16(array.c_array) as *const Self }
-    }
-}
-
-impl Sealed for complex64 {}
-
-impl ArrayElement for complex64 {
-    const DTYPE: Dtype = Dtype::Complex64;
-
-    fn scalar_array_item(array: &Array) -> Self {
-        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.c_array) };
-
-        Self {
-            re: bindgen_complex64.re,
-            im: bindgen_complex64.im,
-        }
-    }
-
-    fn array_data(array: &Array) -> *const Self {
-        // complex64 has the same memory layout as __BindgenComplex<f32>
-        unsafe { mlx_sys::mlx_array_data_complex64(array.c_array) as *const Self }
-    }
-}
-
-// TODO: `mlx` differs from `numpy` in the way it handles out of bounds indices. It's behavior is more
-// like `jax`. See the related issue here https://github.com/ml-explore/mlx/issues/206.
-//
-// The issue says it would use the last element if the index is out of bounds. But testing with
-// python seems more like undefined behavior. Here we will use the last element if the index is
-// is out of bounds.
 pub struct Array {
     pub(crate) c_array: mlx_array,
 }
 
 impl std::fmt::Debug for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
-            .unwrap_or_else(|| "Array".to_string());
-        write!(f, "{:?}", description)
+        write!(f, "{}", self)
     }
 }
 
@@ -156,13 +27,6 @@ impl std::fmt::Display for Array {
         let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
             .unwrap_or_else(|| "Array".to_string());
         write!(f, "{:?}", description)
-    }
-}
-
-impl<'a> Add for &'a Array {
-    type Output = Array;
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add_device(rhs, StreamOrDevice::default())
     }
 }
 
@@ -327,7 +191,7 @@ impl Array {
     /// Access the value of a scalar array.
     pub fn item<T: ArrayElement>(&self) -> T {
         // TODO: check and perform type conversion from the inner type to the desired output type
-        T::scalar_array_item(self)
+        T::array_item(self)
     }
 
     /// Returns a slice of the array data.
@@ -377,7 +241,10 @@ impl Array {
         }
 
         if self.dtype() != T::DTYPE {
-            return Err(AsSliceError::DtypeMismatch);
+            return Err(AsSliceError::DtypeMismatch {
+                expecting: T::DTYPE,
+                found: self.dtype(),
+            });
         }
 
         Ok(unsafe { self.as_slice_unchecked() })

@@ -185,11 +185,18 @@ pub fn try_conv_general_device<'a>(
         ));
     }
 
-    let spatial_dims = array.ndim() - 2;
+    let spatial_dims = array.ndim().checked_sub(2);
+    if spatial_dims.is_none() {
+        return Err(OperationError::WrongInput(
+            "Only 1d and 2d arrays are supported.".to_string(),
+        ));
+    }
+
+    let spatial_dims = spatial_dims.unwrap();
+
     if spatial_dims < 1 || spatial_dims > 2 {
         return Err(OperationError::WrongInput(
-            "Only 1d and 2d arrays are supported. The inputs must be in the format [N, ..., C_in]"
-                .to_string(),
+            "Only 1d and 2d arrays are supported.".to_string(),
         ));
     }
 
@@ -358,4 +365,131 @@ pub fn try_conv2d_device<'a>(
         false,
         stream,
     )
+}
+
+// TODO: Implement convolve once we have `reshape` and `slice`
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_conv1d_complex_device() {
+        // Define a 1D input with two channels
+        let input_data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let input_array = Array::from_slice(&input_data, &[1, 5, 2]);
+
+        // Define a 1D kernel with two input channels and two output channels
+        let weight_data = [0.5, 0.0, -0.5, 1.0, 0.0, 1.5, 2.0, 0.0, -2.0, 1.5, 0.0, 1.0];
+        let weight_array = Array::from_slice(&weight_data, &[2, 3, 2]);
+
+        let mut result = conv1d(
+            &input_array,
+            &weight_array,
+            Some(1), // stride
+            Some(0), // padding
+            Some(1), // dilation
+            Some(1), // groups
+        );
+
+        result.eval();
+        let expected_output = [12.0, 8.0, 17.0, 13.0, 22.0, 18.0];
+        assert_eq!(result.shape(), &[1, 3, 2]);
+        assert_eq!(result.as_slice::<f32>(), &expected_output);
+    }
+
+    #[test]
+    fn test_conv2d() {
+        // Define a 2x2 input with one channel (grayscale image or similar)
+        let input_data = [1.0, 2.0, 3.0, 4.0];
+        let input_shape = [1, 2, 2, 1]; // [N, H, W, C]
+        let input_array = Array::from_slice(&input_data, &input_shape);
+
+        // Define a 2x2 kernel with one input channel and one output channel
+        let weight_data = [1.0, 0.0, 0.0, 1.0];
+        let weight_shape = [1, 2, 2, 1]; // [C_out, H_k, W_k, C_in]
+        let weight_array = Array::from_slice(&weight_data, &weight_shape);
+
+        // Perform the convolution with no padding and stride of 1
+        let mut result = conv2d(
+            &input_array,
+            &weight_array,
+            Some((1, 1)), // stride
+            Some((0, 0)), // padding
+            Some((1, 1)), // dilation
+            Some(1),      // groups
+        );
+
+        result.eval();
+        // Expected result is the convolution of a 2x2 filter over a 2x2 input with valid padding, resulting in a single output value
+        let expected_output = 1.0 * 1.0 + 2.0 * 0.0 + 3.0 * 0.0 + 4.0 * 1.0; // = 1*1 + 4*1 = 5
+        assert_eq!(result.as_slice::<f32>(), &[expected_output]);
+    }
+
+    #[test]
+    fn test_conv_wrong_dimensions() {
+        let input_data = [1.0, 2.0, 3.0, 4.0];
+        let input_shape = [1, 2, 2, 1]; // [N, H, W, C]
+        let input_array = Array::from_slice(&input_data, &input_shape);
+
+        let weight_data = [1.0, 0.0, 0.0, 1.0];
+        let weight_shape = [1, 2, 2]; // [C_out, H_k, W_k]
+        let weight_array = Array::from_slice(&weight_data, &weight_shape);
+
+        let result = try_conv2d(
+            &input_array,
+            &weight_array,
+            Some((1, 1)), // stride
+            Some((0, 0)), // padding
+            Some((1, 1)), // dilation
+            Some(1),      // groups
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_conv_invalid_group_size() {
+        let input_data = [1.0, 2.0, 3.0, 4.0];
+        let input_shape = [1, 2, 2, 1]; // [N, H, W, C]
+        let input_array = Array::from_slice(&input_data, &input_shape);
+
+        let weight_data = [1.0, 0.0, 0.0, 1.0];
+        let weight_shape = [1, 2, 2, 1]; // [C_out, H_k, W_k, C_in]
+        let weight_array = Array::from_slice(&weight_data, &weight_shape);
+
+        let result = try_conv2d(
+            &input_array,
+            &weight_array,
+            Some((1, 1)), // stride
+            Some((0, 0)), // padding
+            Some((1, 1)), // dilation
+            Some(2),      // groups
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_conv_non_float() {
+        let input_data = [1, 2, 3, 4];
+        let input_shape = [1, 2, 2, 1]; // [N, H, W, C]
+        let input_array = Array::from_slice(&input_data, &input_shape);
+
+        let weight_data = [1, 0, 0, 1];
+        let weight_shape = [1, 2, 2, 1]; // [C_out, H_k, W_k, C_in]
+        let weight_array = Array::from_slice(&weight_data, &weight_shape);
+
+        let result = try_conv2d(
+            &input_array,
+            &weight_array,
+            Some((1, 1)), // stride
+            Some((0, 0)), // padding
+            Some((1, 1)), // dilation
+            Some(1),      // groups
+        );
+
+        assert!(result.is_err());
+    }
 }

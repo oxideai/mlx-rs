@@ -41,10 +41,10 @@ pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), Operat
     for &axis in axes {
         let ax = if axis < 0 { axis + ndim } else { axis };
         if ax < 0 || ax >= ndim {
-            return Err(OperationError::AxisOutOfBounds(format!(
-                "Invalid axis {} for array with {} dimensions",
-                axis, ndim
-            )));
+            return Err(OperationError::AxisOutOfBounds {
+                axis,
+                dim: shape.len(),
+            });
         }
 
         axes_set.insert(ax);

@@ -63,7 +63,7 @@ pub enum FftError {
     #[error("Shape and axes/axis have different sizes")]
     IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
 
-    #[error("Duplcated axis received: {axis}")]
+    #[error("Duplicate axis received: {axis}")]
     DuplicateAxis { axis: i32 },
 
     #[error("Invalid output size requested")]

@@ -41,10 +41,10 @@ pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), Operat
     for &axis in axes {
         let ax = if axis < 0 { axis + ndim } else { axis };
         if ax < 0 || ax >= ndim {
-            return Err(OperationError::AxisOutOfBounds(format!(
-                "Invalid axis {} for array with {} dimensions",
-                axis, ndim
-            )));
+            return Err(OperationError::AxisOutOfBounds {
+                axis,
+                dim: shape.len(),
+            });
         }
 
         axes_set.insert(ax);
@@ -96,6 +96,20 @@ impl Array {
         }
 
         return true;
+    }
+
+    /// Helper method to validate an axis is in bounds.
+    pub fn validate_axis_in_bounds(&self, axis: Option<i32>) -> Result<(), OperationError> {
+        if let Some(axis) = axis {
+            if axis >= self.ndim() as i32 || axis < -(self.ndim() as i32) {
+                return Err(OperationError::AxisOutOfBounds {
+                    axis,
+                    dim: self.ndim(),
+                });
+            }
+        }
+
+        Ok(())
     }
 }
 

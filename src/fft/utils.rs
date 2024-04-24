@@ -9,11 +9,11 @@ use crate::{
 #[inline]
 pub(super) fn resolve_size_and_axis_unchecked(
     a: &Array,
-    n: impl Into<Option<i32>>,
-    axis: impl Into<Option<i32>>,
+    n: Option<i32>,
+    axis: Option<i32>,
 ) -> (i32, i32) {
-    let axis = axis.into().unwrap_or(-1);
-    let n = n.into().unwrap_or_else(|| {
+    let axis = axis.unwrap_or(-1);
+    let n = n.unwrap_or_else(|| {
         let axis_index = resolve_index_unchecked(axis, a.ndim());
         a.shape()[axis_index]
     });
@@ -23,17 +23,17 @@ pub(super) fn resolve_size_and_axis_unchecked(
 #[inline]
 pub(super) fn try_resolve_size_and_axis(
     a: &Array,
-    n: impl Into<Option<i32>>,
-    axis: impl Into<Option<i32>>,
+    n: Option<i32>,
+    axis: Option<i32>,
 ) -> Result<(i32, i32), FftError> {
     if a.ndim() < 1 {
         return Err(FftError::ScalarArray);
     }
 
-    let axis = axis.into().unwrap_or(-1);
+    let axis = axis.unwrap_or(-1);
     let axis_index =
         resolve_index(axis, a.ndim()).ok_or_else(|| FftError::InvalidAxis { ndim: a.ndim() })?;
-    let n = n.into().unwrap_or(a.shape()[axis_index]);
+    let n = n.unwrap_or(a.shape()[axis_index]);
 
     if n <= 0 {
         return Err(FftError::InvalidOutputSize);
@@ -45,10 +45,10 @@ pub(super) fn try_resolve_size_and_axis(
 #[inline]
 pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: Option<&'a [i32]>,
+    axes: Option<&'a [i32]>,
 ) -> (SmallVec<[i32; 4]>, SmallVec<[i32; 4]>) {
-    match (s.into(), axes.into()) {
+    match (s, axes) {
         (Some(s), Some(axes)) => {
             let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
             let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
@@ -83,14 +83,14 @@ pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
 #[inline]
 pub(super) fn try_resolve_sizes_and_axes<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: Option<&'a [i32]>,
+    axes: Option<&'a [i32]>,
 ) -> Result<(SmallVec<[i32; 4]>, SmallVec<[i32; 4]>), FftError> {
     if a.ndim() < 1 {
         return Err(FftError::ScalarArray);
     }
 
-    let (valid_s, valid_axes) = match (s.into(), axes.into()) {
+    let (valid_s, valid_axes) = match (s, axes) {
         (Some(s), Some(axes)) => {
             let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
             let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
@@ -153,7 +153,7 @@ mod try_resolve_size_and_axis_tests {
     fn scalar_array_returns_error() {
         // Returns an error if the array is a scalar
         let a = Array::from_float(1.0);
-        let result = try_resolve_size_and_axis(&a, 0, 0);
+        let result = try_resolve_size_and_axis(&a, Some(0), Some(0));
         assert_eq!(result, Err(FftError::ScalarArray));
     }
 
@@ -161,7 +161,7 @@ mod try_resolve_size_and_axis_tests {
     fn out_of_bound_axis_returns_error() {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let result = try_resolve_size_and_axis(&a, 0, 1);
+        let result = try_resolve_size_and_axis(&a, Some(0), Some(1));
         assert_eq!(result, Err(FftError::InvalidAxis { ndim: 1 }));
     }
 
@@ -169,7 +169,7 @@ mod try_resolve_size_and_axis_tests {
     fn negative_output_size_returns_error() {
         // Returns an error if the output size is negative
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let result = try_resolve_size_and_axis(&a, -1, 0);
+        let result = try_resolve_size_and_axis(&a, Some(-1), Some(0));
         assert_eq!(result, Err(FftError::InvalidOutputSize));
     }
 
@@ -177,7 +177,7 @@ mod try_resolve_size_and_axis_tests {
     fn valid_input_returns_sizes_and_axis() {
         // Returns the output size and axis if the input is valid
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let result = try_resolve_size_and_axis(&a, 4, 0);
+        let result = try_resolve_size_and_axis(&a, Some(4), Some(0));
         assert_eq!(result, Ok((4, 0)));
     }
 }
@@ -200,7 +200,7 @@ mod try_resolve_sizes_and_axes_tests {
     fn out_of_bound_axis_returns_error() {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let result = try_resolve_sizes_and_axes(&a, &[2, 2, 2][..], &[0, 1, 2][..]);
+        let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2, 2][..]), Some(&[0, 1, 2][..]));
         assert_eq!(result, Err(FftError::InvalidAxis { ndim: 2 }));
     }
 
@@ -208,7 +208,7 @@ mod try_resolve_sizes_and_axes_tests {
     fn different_num_sizes_and_num_axes_returns_error() {
         // Returns an error if the number of sizes and axes are different
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let result = try_resolve_sizes_and_axes(&a, &[2, 2, 2][..], &[0, 1][..]);
+        let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2, 2][..]), Some(&[0, 1][..]));
         assert_eq!(
             result,
             Err(FftError::IncompatibleShapeAndAxes {
@@ -222,7 +222,7 @@ mod try_resolve_sizes_and_axes_tests {
     fn duplicate_axes_returns_error() {
         // Returns an error if there are duplicate axes
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let result = try_resolve_sizes_and_axes(&a, &[2, 2][..], &[0, 0][..]);
+        let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2][..]), Some(&[0, 0][..]));
         assert_eq!(result, Err(FftError::DuplicateAxis { axis: 0 }));
     }
 
@@ -230,7 +230,7 @@ mod try_resolve_sizes_and_axes_tests {
     fn negative_output_size_returns_error() {
         // Returns an error if the output size is negative
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
-        let result = try_resolve_sizes_and_axes(&a, &[-2, 2][..], None);
+        let result = try_resolve_sizes_and_axes(&a, Some(&[-2, 2][..]), None);
         assert_eq!(result, Err(FftError::InvalidOutputSize));
     }
 }

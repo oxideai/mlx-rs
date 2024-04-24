@@ -22,7 +22,7 @@ pub unsafe fn fft_device_unchecked(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (n, axis) = resolve_size_and_axis_unchecked(a, n, axis);
+    let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
         let c_array = mlx_sys::mlx_fft_fft(a.c_array, n, axis, stream.stream.c_stream);
         Array::from_ptr(c_array)
@@ -44,7 +44,7 @@ pub fn try_fft_device(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (n, axis) = try_resolve_size_and_axis(a, n, axis)?;
+    let (n, axis) = try_resolve_size_and_axis(a, n.into(), axis.into())?;
     unsafe { Ok(fft_device_unchecked(a, Some(n), Some(axis), stream)) }
 }
 
@@ -165,7 +165,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
     fftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
@@ -186,7 +186,7 @@ pub fn try_fftn_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
     Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
 
@@ -235,7 +235,7 @@ pub unsafe fn ifft_device_unchecked(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (n, axis) = resolve_size_and_axis_unchecked(a, n, axis);
+    let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
         let c_array = mlx_sys::mlx_fft_ifft(a.c_array, n, axis, stream.stream.c_stream);
         Array::from_ptr(c_array)
@@ -257,7 +257,7 @@ pub fn try_ifft_device(
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (n, axis) = try_resolve_size_and_axis(a, n, axis)?;
+    let (n, axis) = try_resolve_size_and_axis(a, n.into(), axis.into())?;
     unsafe { Ok(ifft_device_unchecked(a, n, axis, stream)) }
 }
 
@@ -370,7 +370,7 @@ pub unsafe fn ifftn_device_unchecked<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Array {
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
+    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
     ifftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
@@ -391,7 +391,7 @@ pub fn try_ifftn_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
+    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
     Ok(ifftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
 

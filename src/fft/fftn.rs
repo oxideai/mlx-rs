@@ -78,7 +78,7 @@ pub fn fft_device(
 ///
 /// - `a`: The input array.
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
-///  with zeros to match `n`. The default value is the sizes of `a` along `axes`.
+///  with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub unsafe fn fft2_device_unchecked<'a>(

@@ -42,9 +42,8 @@ mod tests {
                 #[test]
                 fn [<test_as_type_ $src_type _ $dst_type>]() {
                     let array = Array::from_slice(&[$src_val; $len], &[$len as i32]);
-                    let s = StreamOrDevice::default();
 
-                    let mut new_array = array.as_type_device::<$dst_type>(s);
+                    let mut new_array = array.as_type::<$dst_type>();
                     new_array.eval();
 
                     assert_eq!(new_array.dtype(), $dst_type::DTYPE);

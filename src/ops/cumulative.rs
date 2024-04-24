@@ -355,7 +355,7 @@ impl Array {
     /// use mlx::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
-    /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
+    /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns
     /// let result = array.cumsum(0, None, None);
     /// ```
     ///
@@ -382,7 +382,7 @@ impl Array {
     /// use mlx::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
-    /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
+    /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns
     /// let result = unsafe { array.cumsum_unchecked(0, None, None) };
     /// ```
     ///
@@ -442,7 +442,7 @@ impl Array {
     /// use mlx::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
-    /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
+    /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns
     /// let result = array.try_cumsum(0, None, None).unwrap();
     /// ```
     ///

@@ -2,7 +2,7 @@ use mlx_macros::default_device;
 
 use crate::{array::Array, error::FftError, stream::StreamOrDevice};
 
-use super::{
+use super::utils::{
     resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked, try_resolve_size_and_axis,
     try_resolve_sizes_and_axes,
 };

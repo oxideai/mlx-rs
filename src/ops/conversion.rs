@@ -22,7 +22,7 @@ impl Array {
     #[default_device]
     pub fn as_type_device<T: ArrayElement>(&self, stream: StreamOrDevice) -> Array {
         unsafe {
-            let new_array = mlx_sys::mlx_astype(self.c_array, T::DTYPE as u32, stream.as_ptr());
+            let new_array = mlx_sys::mlx_astype(self.c_array, T::DTYPE.into(), stream.as_ptr());
             Array::from_ptr(new_array)
         }
     }

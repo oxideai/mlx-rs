@@ -4,6 +4,7 @@ mod array;
 mod device;
 mod dtype;
 pub mod error;
+pub mod fft;
 pub mod ops;
 mod stream;
 mod utils;

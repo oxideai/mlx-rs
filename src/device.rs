@@ -31,7 +31,8 @@ impl Device {
 
     /// Set the default device.
     ///
-    /// Example:
+    /// # Example:
+    ///
     /// ```rust
     /// use mlx::{Device, DeviceType};
     /// Device::set_default(&Device::new(DeviceType::Cpu, 1));

@@ -21,6 +21,43 @@ pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     description
 }
 
+pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
+    if index.is_negative() {
+        (len as i32 + index) as usize
+    } else {
+        index as usize
+    }
+}
+
+pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
+    let abs_index = index.abs() as usize;
+
+    if index.is_negative() {
+        if abs_index <= len {
+            Some(len - abs_index)
+        } else {
+            None
+        }
+    } else {
+        if abs_index < len {
+            Some(abs_index)
+        } else {
+            None
+        }
+    }
+}
+
+pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
+    let mut unique = std::collections::HashSet::new();
+    for &x in arr {
+        if !unique.insert(x) {
+            return Err(x);
+        }
+    }
+
+    Ok(())
+}
+
 /// Helper method to check if two arrays are broadcastable.
 ///
 /// Uses the same broadcasting rules as numpy.

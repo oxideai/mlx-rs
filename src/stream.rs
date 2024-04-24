@@ -9,7 +9,7 @@ use crate::utils::mlx_describe;
 /// set otherwise.
 #[derive(Clone)]
 pub struct StreamOrDevice {
-    stream: Stream,
+    pub(crate) stream: Stream,
 }
 
 impl StreamOrDevice {
@@ -19,21 +19,21 @@ impl StreamOrDevice {
 
     pub fn new_with_device(device: &Device) -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(device),
+            stream: Stream::default_stream_on_device(device),
         }
     }
 
     /// The `[Stream::default_stream()] on the [Device::cpu()]
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(&Device::cpu()),
+            stream: Stream::default_stream_on_device(&Device::cpu()),
         }
     }
 
     /// The `[Stream::default_stream()] on the [Device::gpu()]
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream(&Device::gpu()),
+            stream: Stream::default_stream_on_device(&Device::gpu()),
         }
     }
 
@@ -71,7 +71,7 @@ impl std::fmt::Display for StreamOrDevice {
 ///
 /// Typically, this is used via the `stream:` parameter on a method with a [StreamOrDevice]:
 pub struct Stream {
-    c_stream: mlx_sys::mlx_stream,
+    pub(crate) c_stream: mlx_sys::mlx_stream,
 }
 
 impl Stream {
@@ -91,7 +91,7 @@ impl Stream {
         Stream { c_stream }
     }
 
-    pub fn default_stream(device: &Device) -> Stream {
+    pub fn default_stream_on_device(device: &Device) -> Stream {
         let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
         Stream::new_with_mlx_mlx_stream(default_stream)
     }

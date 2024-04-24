@@ -21,6 +21,7 @@ num-traits = "0.2.18"
 paste = "1.0.14"
 strum = { version = "0.26", features = ["derive"] }
 thiserror = "1.0.58"
+smallvec = "1"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

@@ -51,3 +51,21 @@ pub enum AsSliceError {
     #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
     DtypeMismatch { expecting: Dtype, found: Dtype },
 }
+
+#[derive(Error, Debug, PartialEq)]
+pub enum FftError {
+    #[error("fftn requires at least one dimension")]
+    ScalarArray,
+
+    #[error("Invalid axis received for array with {ndim} dimensions")]
+    InvalidAxis { ndim: usize },
+
+    #[error("Shape and axes/axis have different sizes")]
+    IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
+
+    #[error("Duplicate axis received: {axis}")]
+    DuplicateAxis { axis: i32 },
+
+    #[error("Invalid output size requested")]
+    InvalidOutputSize,
+}

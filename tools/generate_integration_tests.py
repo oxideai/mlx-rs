@@ -306,6 +306,7 @@ def test_array_function2(
 
     indent -= 4
     result += (" " * indent) + "}\n"
+    result += "\n"
 
     return result
 
@@ -360,6 +361,81 @@ def test_free_function2(
 
     indent -= 4
     result += (" " * indent) + "}\n"
+    result += "\n"
+
+    return result
+
+
+def test_fft(
+        function_name: str, n=None, s=None, axis=None, axes=None, *, value=None
+) -> str:
+    result = ""
+    indent = 0
+    result += "#[test]\n"
+    result += (" " * indent) + "fn " + test_name(function_name + "_") + "() {\n"
+
+    seed = new_seed()
+    indent += 4
+    # TODO: seed the random number generator in Rust
+    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    mx.random.seed(seed)
+
+    (r_decl, r) = create_argument(indent, "r", value)
+    (i_decl, i) = create_argument(indent, "i", value)
+
+    result += (" " * indent) + r_decl + "\n"
+    if isinstance(r, mx.array):
+        result += verify_array(indent, "r", r)
+
+    result += (" " * indent) + i_decl + "\n"
+    if isinstance(i, mx.array):
+        result += verify_array(indent, "i", i)
+
+    # combine into a complex array
+    result += (" " * indent) + f"let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));\n"
+    result += (" " * indent) + f"assert_eq!(c.dtype(), Dtype::Complex64);\n"
+    c = r + 1j * i
+
+    e = f"mx.fft.{function_name}(c"
+    result += (" " * indent) + f"let result = {function_name}_device(&c"
+    if n is not None:
+        result += f", {n}"
+        e += f", n=n"
+    if s is not None:
+        result += f", &{s}[..]"
+        e += f", s=s"
+    if n is None and s is None:
+        result += f", None"
+    if axis is not None:
+        result += f", {axis}"
+        e += f", axis=axis"
+    if axes is not None:
+        result += f", {tuple_to_rust_slice(axes)}[..]"
+        e += f", axes=axes"
+    if axis is None and axes is None:
+        result += f", None"
+
+    result += ", StreamOrDevice::cpu());\n"
+    e += ", stream=mx.cpu)"
+
+    c = eval(e)
+
+    if c.dtype == mx.complex64:
+        # split back out real and imaginary
+        result += (" " * indent) + f"let result_real = result.as_type::<f32>();\n"
+        result += (" " * indent) + f"let result_imaginary = (&result / &Array::from_complex(Complex32::new(0., 1.))).as_type::<f32>();\n"
+
+        r = c.astype(mx.float32)
+        i = (c / 1j).astype(mx.float32)
+
+        result += verify_array(indent, "result_real", r)
+        result += verify_array(indent, "result_imaginary", i)
+    else:
+        result += verify_array(indent, "result", c)
+
+    indent -= 4
+    result += (" " * indent) + "}\n"
+    result += "\n"
 
     return result
 
@@ -373,7 +449,8 @@ def generate_integration_tests():
         f.write("use std::ops::{Add, Div, Mul, Rem, Sub};\n")
         f.write("use num_traits::Pow;\n")
         f.write("use pretty_assertions::assert_eq;\n")
-        f.write("use mlx::{Array, Dtype};\n")
+        f.write("use num_complex::Complex32;\n")
+        f.write("use mlx::{Array, Dtype, StreamOrDevice, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
         f.write("\n")
 
         # TODO: test for random seed
@@ -544,7 +621,59 @@ def generate_integration_tests():
                     )
                 )
 
-        # TODO: Test fft
+        # FFTs
+        fft_functions = [
+            ("fft", (100, 100), [dict(n=80), dict(n=120), dict(axis=0)]),
+            ("ifft", (100,), [dict(n=80), dict(n=120), dict(axis=0)]),
+            ("rfft", (100,), [dict(n=80), dict(n=120), dict(axis=0)]),
+            ("irfft", (100,), [dict(n=80), dict(n=120), dict(axis=0)]),
+            (
+                "fft2",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "ifft2",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "fftn",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "ifftn",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "rfft2",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "irfft2",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "rfftn",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+            (
+                "irfftn",
+                (8, 8, 8),
+                [dict(s=[3, 4]), dict(axes=[0, 2]), dict(s=[10, 5], axes=[2, 1])],
+            ),
+        ]
+
+        for fft, shape, args_array in fft_functions:
+            f.write(test_fft(fft, value=shape))
+
+            for args in args_array:
+                f.write(test_fft(fft, value=shape, **args))
 
         # TODO: Test optimizers
 
@@ -555,5 +684,4 @@ def generate_integration_tests():
 
 if __name__ == "__main__":
     generate_integration_tests()
-    subprocess.run(["cargo", "fmt", "--", "tests/integration_test.rs"], cwd="../")
-
+    # subprocess.run(["cargo", "fmt", "--", "tests/integration_test.rs"], cwd="../")

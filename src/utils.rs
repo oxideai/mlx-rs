@@ -97,6 +97,20 @@ impl Array {
 
         return true;
     }
+
+    /// Helper method to validate an axis is in bounds.
+    pub fn validate_axis_in_bounds(&self, axis: Option<i32>) -> Result<(), OperationError> {
+        if let Some(axis) = axis {
+            if axis >= self.ndim() as i32 || axis < -(self.ndim() as i32) {
+                return Err(OperationError::AxisOutOfBounds {
+                    axis,
+                    dim: self.ndim(),
+                });
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

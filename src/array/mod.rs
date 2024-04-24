@@ -236,10 +236,6 @@ impl Array {
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
     pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
-        if self.size() == 0 {
-            return Err(AsSliceError::Null);
-        }
-
         if self.dtype() != T::DTYPE {
             return Err(AsSliceError::DtypeMismatch {
                 expecting: T::DTYPE,
@@ -247,7 +243,15 @@ impl Array {
             });
         }
 
-        Ok(unsafe { self.as_slice_unchecked() })
+        unsafe {
+            let size = self.size();
+            let data = T::array_data(self);
+            if data.is_null() || size == 0 {
+                return Err(AsSliceError::Null);
+            }
+
+            Ok(std::slice::from_raw_parts(data, size))
+        }
     }
 
     /// Returns a slice of the array data.

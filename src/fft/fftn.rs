@@ -72,20 +72,6 @@ pub fn fft_device(
     try_fft_device(a, n, axis, stream).unwrap()
 }
 
-fn fft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
-    let num_s = s.len();
-    let num_axes = axes.len();
-
-    let s_ptr = s.as_ptr();
-    let axes_ptr = axes.as_ptr();
-
-    unsafe {
-        let c_array =
-            mlx_sys::mlx_fft_fft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
-        Array::from_ptr(c_array)
-    }
-}
-
 /// Two dimensional discrete Fourier Transform.
 ///
 /// # Param
@@ -102,8 +88,7 @@ pub unsafe fn fft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
-    fft2_device_inner(a, &valid_s, &valid_axes, stream)
+    fftn_device_unchecked(a, s, axes, stream)
 }
 
 /// Two dimensional discrete Fourier Transform.
@@ -121,9 +106,8 @@ pub fn try_fft2_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
-    let valid_axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, valid_axes)?;
-    Ok(fft2_device_inner(a, &valid_s, &valid_axes, stream))
+    let axes = axes.into().unwrap_or(&[-2, -1]);
+    try_fftn_device(a, s, axes, stream)
 }
 
 /// Two dimensional discrete Fourier Transform.
@@ -303,28 +287,6 @@ pub fn ifft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-fn ifft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
-    let num_s = s.len();
-    let num_axes = axes.len();
-
-    let s_ptr = s.as_ptr();
-    let axes_ptr = axes.as_ptr();
-
-    unsafe {
-        let c_array =
-            mlx_sys::mlx_fft_ifft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
-        Array::from_ptr(c_array)
-    }
-}
-
-/// Two dimensional inverse discrete Fourier Transform.
-///
-/// # Params
-///
-/// - `a`: The input array.
-/// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
-/// with zeros to match `n`. The default value is the sizes of `a` along `axes`.
-/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub unsafe fn ifft2_device_unchecked<'a>(
     a: &'a Array,
@@ -333,8 +295,7 @@ pub unsafe fn ifft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
-    ifft2_device_inner(a, &valid_s, &valid_axes, stream)
+    ifftn_device_unchecked(a, s, axes, stream)
 }
 
 /// Two dimensional inverse discrete Fourier Transform.
@@ -353,8 +314,7 @@ pub fn try_ifft2_device<'a>(
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
-    Ok(ifft2_device_inner(a, &valid_s, &valid_axes, stream))
+    try_ifftn_device(a, s, axes, stream)
 }
 
 /// Two dimensional inverse discrete Fourier Transform.

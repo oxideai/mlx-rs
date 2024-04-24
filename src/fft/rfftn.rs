@@ -79,25 +79,11 @@ pub fn rfft_device(
     try_rfft_device(a, n, axis, stream).unwrap()
 }
 
-fn rfft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
-    let num_s = s.len();
-    let num_axes = axes.len();
-
-    let s_ptr = s.as_ptr();
-    let axes_ptr = axes.as_ptr();
-
-    unsafe {
-        let c_array =
-            mlx_sys::mlx_fft_rfft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
-        Array::from_ptr(c_array)
-    }
-}
-
 /// Two dimensional real discrete Fourier Transform.
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -113,15 +99,14 @@ pub unsafe fn rfft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
-    rfft2_device_inner(a, &valid_s, &valid_axes, stream)
+    rfftn_device_unchecked(a, s, axes, stream)
 }
 
 /// Two dimensional real discrete Fourier Transform.
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -137,15 +122,14 @@ pub fn try_rfft2_device<'a>(
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
-    Ok(rfft2_device_inner(a, &valid_s, &valid_axes, stream))
+    try_rfftn_device(a, s, axes, stream)
 }
 
 /// Two dimensional real discrete Fourier Transform.
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -185,7 +169,7 @@ fn rfftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -209,7 +193,7 @@ pub unsafe fn rfftn_device_unchecked<'a>(
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -233,7 +217,7 @@ pub fn try_rfftn_device<'a>(
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
-/// `s[-1] // 2 + 1`.
+/// `s[s.len()-1] // 2 + 1`.
 ///
 /// # Params
 ///
@@ -256,6 +240,16 @@ pub fn rfftn_device<'a>(
     try_rfftn_device(a, s, axes, stream).unwrap()
 }
 
+/// The inverse of [`rfft()`].
+///
+/// The output has the same shape as the input except along axis in which case it has size n.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1`.
 #[default_device(device = "cpu")]
 pub unsafe fn irfft_device_unchecked(
     a: &Array,
@@ -270,6 +264,16 @@ pub unsafe fn irfft_device_unchecked(
     }
 }
 
+/// The inverse of [`rfft()`].
+///
+/// The output has the same shape as the input except along axis in which case it has size n.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1`.
 #[default_device(device = "cpu")]
 pub fn try_irfft_device(
     a: &Array,
@@ -281,6 +285,16 @@ pub fn try_irfft_device(
     unsafe { Ok(irfft_device_unchecked(a, n, axis, stream)) }
 }
 
+/// The inverse of [`rfft()`].
+///
+/// The output has the same shape as the input except along axis in which case it has size n.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
+///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
+/// - `axis`: Axis along which to perform the FFT. The default is `-1`.
 #[default_device(device = "cpu")]
 pub fn irfft_device(
     a: &Array,
@@ -291,20 +305,19 @@ pub fn irfft_device(
     try_irfft_device(a, n, axis, stream).unwrap()
 }
 
-fn irfft2_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
-    let num_s = s.len();
-    let num_axes = axes.len();
-
-    let s_ptr = s.as_ptr();
-    let axes_ptr = axes.as_ptr();
-
-    unsafe {
-        let c_array =
-            mlx_sys::mlx_fft_irfft2(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
-        Array::from_ptr(c_array)
-    }
-}
-
+/// The inverse of [`rfft2()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub unsafe fn irfft2_device_unchecked<'a>(
     a: &'a Array,
@@ -313,10 +326,22 @@ pub unsafe fn irfft2_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s, axes);
-    irfft2_device_inner(a, &valid_s, &valid_axes, stream)
+    irfftn_device_unchecked(a, s, axes, stream)
 }
 
+/// The inverse of [`rfft2()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn try_irfft2_device<'a>(
     a: &'a Array,
@@ -325,10 +350,22 @@ pub fn try_irfft2_device<'a>(
     stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s, axes)?;
-    Ok(irfft2_device_inner(a, &valid_s, &valid_axes, stream))
+    try_irfftn_device(a, s, axes, stream)
 }
 
+/// The inverse of [`rfft2()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn irfft2_device<'a>(
     a: &'a Array,
@@ -353,6 +390,20 @@ fn irfftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevic
     }
 }
 
+/// The inverse of [`rfftn()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+///  over the last `len(s)` axes or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub unsafe fn irfftn_device_unchecked<'a>(
     a: &'a Array,
@@ -364,6 +415,20 @@ pub unsafe fn irfftn_device_unchecked<'a>(
     irfftn_device_inner(a, &valid_s, &valid_axes, stream)
 }
 
+/// The inverse of [`rfftn()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+///  over the last `len(s)` axes or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn try_irfftn_device<'a>(
     a: &'a Array,
@@ -375,6 +440,20 @@ pub fn try_irfftn_device<'a>(
     Ok(irfftn_device_inner(a, &valid_s, &valid_axes, stream))
 }
 
+/// The inverse of [`rfftn()`].
+///
+/// Note the input is generally complex. The dimensions of the input specified in `axes` are padded
+/// or truncated to match the sizes from `s`. The last axis in `axes` is treated as the real axis
+/// and will have size `s[s.len()-1] // 2 + 1`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
+///   padded with zeros to match the sizes in `s` except for the last axis which has size
+///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
+/// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
+///  over the last `len(s)` axes or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn irfftn_device<'a>(
     a: &'a Array,

@@ -213,7 +213,7 @@ pub fn try_conv_general_device<'a>(
         ));
     }
 
-    if  array.shape().get(spatial_dims + 1) != weight.shape().get(spatial_dims + 1) {
+    if array.shape().get(spatial_dims + 1) != weight.shape().get(spatial_dims + 1) {
         return Err(OperationError::WrongDimensions(
             "Input and weight arrays must have the same number of input channels".to_string(),
         ));

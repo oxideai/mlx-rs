@@ -6,6 +6,7 @@ mod dtype;
 pub mod error;
 pub mod fft;
 pub mod ops;
+mod random;
 mod stream;
 mod utils;
 

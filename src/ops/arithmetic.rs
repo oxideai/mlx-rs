@@ -1140,7 +1140,7 @@ impl Array {
 
         let result_type = Dtype::from_promoting_types(self.dtype(), other.dtype());
 
-        if !result_type.is_floating() {
+        if !result_type.is_float() {
             return Err(OperationError::WrongInput(
                 format!("Only real floating point types are supported but {:?} and {:?} where provided, which is not a real floating point type",
                 self.dtype(), other.dtype())

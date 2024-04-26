@@ -69,3 +69,24 @@ pub enum FftError {
     #[error("Invalid output size requested")]
     InvalidOutputSize,
 }
+
+#[derive(Error, Debug, PartialEq)]
+pub enum LinAlgError {
+    #[error("Too many axes for norm operation")]
+    TooManyAxes,
+
+    #[error("Singular value norms are not implemented")]
+    SingularValueNormNotImplemented,
+
+    #[error("Matrix norm with ord={ord} is not supported")]
+    InvalidMatrixF64Ord { ord: f64 },
+
+    #[error("Matrix norm with ord={ord} is not supported")]
+    InvalidMatrixStrOrd { ord: &'static str },
+
+    #[error("Norm ord={ord} only supported for matrices")]
+    RequiresMatrix { ord: &'static str },
+
+    #[error("Nuclear norm is not implemented")]
+    NotYetImplemented,
+}

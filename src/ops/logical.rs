@@ -1126,13 +1126,9 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes
+            .into()
+            .map_or_else(|| (0..self.ndim() as i32).collect(), |axes| axes.to_vec());
 
         unsafe {
             Array::from_ptr(mlx_sys::mlx_any(
@@ -1171,13 +1167,9 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Result<Array, OperationError> {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes
+            .into()
+            .map_or_else(|| (0..self.ndim() as i32).collect(), |axes| axes.to_vec());
 
         // verify reducing shape only if axes are provided
         if !axes.is_empty() {

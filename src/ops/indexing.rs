@@ -7,8 +7,16 @@
 //! 3. indexing with an iterator `impl Iterator<Item=i32>`
 
 use mlx_macros::default_device;
+use smallvec::SmallVec;
 
-use crate::{error::{InvalidAxisError, TakeAlongAxisError, TakeError}, Array, StreamOrDevice};
+use crate::{
+    error::{DuplicateAxisError, ExpandDimsError, InvalidAxisError, TakeAlongAxisError, TakeError},
+    utils::{all_unique, resolve_index},
+    Array, StreamOrDevice,
+};
+
+#[derive(Debug, Clone, Copy)]
+pub struct NewAxis;
 
 impl Array {
     #[default_device]
@@ -53,13 +61,17 @@ impl Array {
         if let Some(axis) = axis {
             // Check for valid axis
             if axis + ndim < 0 || axis >= ndim {
-                return Err(InvalidAxisError { axis, ndim: self.ndim() }.into())
+                return Err(InvalidAxisError {
+                    axis,
+                    ndim: self.ndim(),
+                }
+                .into());
             }
         }
 
         // Check for valid take
         if self.size() == 0 && indices.size() != 0 {
-            return Err(TakeError::NonEmptyTakeFromEmptyArray)
+            return Err(TakeError::NonEmptyTakeFromEmptyArray);
         }
 
         Ok(self.take_device_unchecked(indices, axis, stream))
@@ -86,7 +98,8 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Array {
         unsafe {
-            let c_array = mlx_sys::mlx_take_along_axis(self.c_array, indices.c_array, axis, stream.as_ptr());
+            let c_array =
+                mlx_sys::mlx_take_along_axis(self.c_array, indices.c_array, axis, stream.as_ptr());
             Array::from_ptr(c_array)
         }
     }
@@ -102,7 +115,11 @@ impl Array {
 
         // Check for valid axis
         if axis + ndim < 0 || axis >= ndim {
-            return Err(InvalidAxisError { axis, ndim: self.ndim() }.into())
+            return Err(InvalidAxisError {
+                axis,
+                ndim: self.ndim(),
+            }
+            .into());
         }
 
         // Check for dimension mismatch
@@ -110,7 +127,7 @@ impl Array {
             return Err(TakeAlongAxisError::IndicesDimensionMismatch {
                 array_ndim: self.ndim(),
                 indices_ndim: indices.ndim(),
-            })
+            });
         }
 
         Ok(self.take_along_axis_device_unchecked(indices, axis, stream))
@@ -123,7 +140,54 @@ impl Array {
         axis: i32,
         stream: StreamOrDevice,
     ) -> Array {
-        self.try_take_along_axis_device(indices, axis, stream).unwrap()
+        self.try_take_along_axis_device(indices, axis, stream)
+            .unwrap()
+    }
+
+    #[default_device]
+    pub fn expand_dims_device_unchecked(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
+        unsafe {
+            let c_array =
+                mlx_sys::mlx_expand_dims(self.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
+            Array::from_ptr(c_array)
+        }
+    }
+
+    #[default_device]
+    pub fn try_expand_dims_device(
+        &self,
+        axes: &[i32],
+        stream: StreamOrDevice,
+    ) -> Result<Array, ExpandDimsError> {
+        // Check for valid axes
+        // TODO: what is a good default capacity for SmallVec?
+        let out_ndim = self.size() + axes.len();
+        let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim as usize);
+        for axis in axes {
+            let valid_axis = resolve_index(*axis, out_ndim).ok_or_else(|| InvalidAxisError {
+                axis: *axis,
+                ndim: out_ndim,
+            })?;
+            if valid_axis > i32::MAX as usize {
+                // TODO: return a different error type?
+                return Err(InvalidAxisError {
+                    axis: *axis,
+                    ndim: out_ndim,
+                }
+                .into());
+            }
+            out_axes.push(valid_axis as i32);
+        }
+
+        // Check for duplicate axes
+        all_unique(&out_axes).map_err(|axis| DuplicateAxisError { axis })?;
+
+        Ok(self.expand_dims_device_unchecked(&out_axes, stream))
+    }
+
+    #[default_device]
+    pub fn expand_dims_device(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
+        self.try_expand_dims_device(axes, stream).unwrap()
     }
 }
 
@@ -131,21 +195,27 @@ pub trait IndexOp<Idx> {
     type Output;
 
     fn index(&self, index: Idx) -> Self::Output;
-
-    fn get(&self, index: Idx) -> Option<Self::Output>;
 }
 
-impl Array {
-    fn index_item<Idx>(&self, index: Idx) -> Array {
-        todo!()
-    }
+impl IndexOp<i32> for Array {
+    type Output = Array;
 
-    fn index_item_nd<Idx>(&self, index: Idx) -> Array {
-        todo!()
+    fn index(&self, index: i32) -> Self::Output {
+        let indices = index.into();
+        self.take(&indices, 0)
     }
 }
+
+// impl IndexOp<NewAxis> for Array {
+//     type Output = Array;
+
+//     fn index(&self, index: NewAxis) -> Self::Output {
+//         unsafe {
+//             let c_array = mlx_sys::mlx_expand_dims(a, axes, num_axes, s)
+//         }
+//     }
+
+// }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

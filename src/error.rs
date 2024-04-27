@@ -1,5 +1,3 @@
-use std::error;
-
 use crate::Dtype;
 use thiserror::Error;
 
@@ -79,6 +77,12 @@ pub struct InvalidAxisError {
     pub ndim: usize,
 }
 
+#[derive(Error, Debug, PartialEq)]
+#[error("Received duplicate axis {axis}")]
+pub struct DuplicateAxisError {
+    pub axis: i32,
+}
+
 #[derive(Debug, PartialEq, Error)]
 pub enum TakeError {
     #[error("Cannot do a non-empty take from an array with zero elements.")]
@@ -93,9 +97,20 @@ pub enum TakeAlongAxisError {
     #[error(transparent)]
     InvalidAxis(#[from] InvalidAxisError),
 
-    #[error("Indices of dimension {indices_ndim} does not match the array of dimension {array_ndim}")]
+    #[error(
+        "Indices of dimension {indices_ndim} does not match the array of dimension {array_ndim}"
+    )]
     IndicesDimensionMismatch {
         array_ndim: usize,
         indices_ndim: usize,
-    }
+    },
+}
+
+#[derive(Debug, PartialEq, Error)]
+pub enum ExpandDimsError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error(transparent)]
+    DuplicateAxis(#[from] DuplicateAxisError),
 }

@@ -20,7 +20,7 @@ pub struct NewAxis;
 
 impl Array {
     #[default_device]
-    pub fn take_device_unchecked(
+    pub unsafe fn take_device_unchecked(
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
@@ -74,7 +74,9 @@ impl Array {
             return Err(TakeError::NonEmptyTakeFromEmptyArray);
         }
 
-        Ok(self.take_device_unchecked(indices, axis, stream))
+        unsafe {
+            Ok(self.take_device_unchecked(indices, axis, stream))
+        }
     }
 
     #[default_device]
@@ -91,7 +93,7 @@ impl Array {
     // each other.
 
     #[default_device]
-    pub fn take_along_axis_device_unchecked(
+    pub unsafe fn take_along_axis_device_unchecked(
         &self,
         indices: &Array,
         axis: i32,
@@ -130,7 +132,9 @@ impl Array {
             });
         }
 
-        Ok(self.take_along_axis_device_unchecked(indices, axis, stream))
+        unsafe {
+            Ok(self.take_along_axis_device_unchecked(indices, axis, stream))
+        }
     }
 
     #[default_device]
@@ -145,7 +149,7 @@ impl Array {
     }
 
     #[default_device]
-    pub fn expand_dims_device_unchecked(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
+    pub unsafe fn expand_dims_device_unchecked(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
         unsafe {
             let c_array =
                 mlx_sys::mlx_expand_dims(self.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
@@ -182,7 +186,9 @@ impl Array {
         // Check for duplicate axes
         all_unique(&out_axes).map_err(|axis| DuplicateAxisError { axis })?;
 
-        Ok(self.expand_dims_device_unchecked(&out_axes, stream))
+        unsafe {
+            Ok(self.expand_dims_device_unchecked(&out_axes, stream))
+        }
     }
 
     #[default_device]
@@ -206,16 +212,16 @@ impl IndexOp<i32> for Array {
     }
 }
 
-// impl IndexOp<NewAxis> for Array {
-//     type Output = Array;
+impl IndexOp<NewAxis> for Array {
+    type Output = Array;
 
-//     fn index(&self, index: NewAxis) -> Self::Output {
-//         unsafe {
-//             let c_array = mlx_sys::mlx_expand_dims(a, axes, num_axes, s)
-//         }
-//     }
-
-// }
+    fn index(&self, _: NewAxis) -> Self::Output {
+        unsafe {
+            let axes =  &[0];
+            self.expand_dims_unchecked(axes)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {}

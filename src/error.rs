@@ -1,3 +1,5 @@
+use std::error;
+
 use crate::Dtype;
 use thiserror::Error;
 
@@ -57,8 +59,8 @@ pub enum FftError {
     #[error("fftn requires at least one dimension")]
     ScalarArray,
 
-    #[error("Invalid axis received for array with {ndim} dimensions")]
-    InvalidAxis { ndim: usize },
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
 
     #[error("Shape and axes/axis have different sizes")]
     IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
@@ -68,4 +70,32 @@ pub enum FftError {
 
     #[error("Invalid output size requested")]
     InvalidOutputSize,
+}
+
+#[derive(Error, Debug, PartialEq)]
+#[error("Invalid axis {axis} for array with {ndim} dimensions")]
+pub struct InvalidAxisError {
+    pub axis: i32,
+    pub ndim: usize,
+}
+
+#[derive(Debug, PartialEq, Error)]
+pub enum TakeError {
+    #[error("Cannot do a non-empty take from an array with zero elements.")]
+    NonEmptyTakeFromEmptyArray,
+
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+}
+
+#[derive(Debug, PartialEq, Error)]
+pub enum TakeAlongAxisError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("Indices of dimension {indices_ndim} does not match the array of dimension {array_ndim}")]
+    IndicesDimensionMismatch {
+        array_ndim: usize,
+        indices_ndim: usize,
+    }
 }

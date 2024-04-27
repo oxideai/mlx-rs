@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    error::FftError,
+    error::{FftError, InvalidAxisError},
     utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array,
 };
@@ -32,7 +32,7 @@ pub(super) fn try_resolve_size_and_axis(
 
     let axis = axis.unwrap_or(-1);
     let axis_index =
-        resolve_index(axis, a.ndim()).ok_or_else(|| FftError::InvalidAxis { ndim: a.ndim() })?;
+        resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {axis, ndim: a.ndim()})?;
     let n = n.unwrap_or(a.shape()[axis_index]);
 
     if n <= 0 {
@@ -90,7 +90,7 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
         return Err(FftError::ScalarArray);
     }
 
-    let (valid_s, valid_axes) = match (s, axes) {
+    let (mut valid_s, valid_axes) = match (s, axes) {
         (Some(s), Some(axes)) => {
             let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
             let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
@@ -106,7 +106,7 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
             let mut valid_s = SmallVec::<[i32; 4]>::new();
             for &axis in axes {
                 let axis_index = resolve_index(axis, a.ndim())
-                    .ok_or_else(|| FftError::InvalidAxis { ndim: a.ndim() })?;
+                    .ok_or_else(|| InvalidAxisError {axis, ndim: a.ndim()})?;
                 valid_s.push(a.shape()[axis_index]);
             }
             let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
@@ -132,7 +132,7 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
 
     // Check if more axes are provided than the array has
     if valid_s.len() > a.ndim() {
-        return Err(FftError::InvalidAxis { ndim: a.ndim() });
+        return Err(InvalidAxisError {axis: valid_s.len() as i32, ndim: a.ndim()}.into());
     }
 
     // Check if output sizes are valid
@@ -162,7 +162,7 @@ mod try_resolve_size_and_axis_tests {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let result = try_resolve_size_and_axis(&a, Some(0), Some(1));
-        assert_eq!(result, Err(FftError::InvalidAxis { ndim: 1 }));
+        assert!(matches!(result, Err(FftError::InvalidAxis(_))));
     }
 
     #[test]
@@ -201,7 +201,7 @@ mod try_resolve_sizes_and_axes_tests {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
         let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2, 2][..]), Some(&[0, 1, 2][..]));
-        assert_eq!(result, Err(FftError::InvalidAxis { ndim: 2 }));
+        assert!(matches!(result, Err(FftError::InvalidAxis(_))));
     }
 
     #[test]

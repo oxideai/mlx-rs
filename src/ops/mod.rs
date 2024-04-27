@@ -5,4 +5,6 @@ mod factory;
 mod logical;
 mod reduction;
 
+pub mod indexing;
+
 pub use logical::*;

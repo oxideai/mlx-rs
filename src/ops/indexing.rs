@@ -6,6 +6,8 @@
 //! 2. indexing with a slice `&[i32]`
 //! 3. indexing with an iterator `impl Iterator<Item=i32>`
 
+use std::ops::RangeBounds;
+
 use mlx_macros::default_device;
 use smallvec::{smallvec, SmallVec};
 
@@ -18,54 +20,59 @@ use crate::{
     Array, StreamOrDevice,
 };
 
+/* -------------------------------------------------------------------------- */
+/*                                Custom types                                */
+/* -------------------------------------------------------------------------- */
+
 #[derive(Debug, Clone, Copy)]
 pub struct NewAxis;
 
 #[derive(Debug, Clone, Copy)]
-pub struct StartStop {
-    pub start: i32,
-    pub stop: i32,
-}
-
-impl StartStop {
-    pub fn new(start: i32, stop: i32) -> Self {
-        Self { start, stop }
-    }
-}
-
-impl From<[i32; 2]> for StartStop {
-    fn from([start, stop]: [i32; 2]) -> Self {
-        Self { start, stop }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct StartStopStride {
-    pub start: i32,
-    pub stop: i32,
+pub struct Stride<I> {
+    pub iter: I,
     pub stride: i32,
 }
 
-impl StartStopStride {
-    pub fn new(start: i32, stop: i32, stride: i32) -> Self {
-        Self {
-            start,
-            stop,
-            stride,
-        }
+pub trait IntoStride: Sized {
+    fn stride(self, stride: i32) -> Stride<Self>;
+}
+
+impl<I> IntoStride for I
+where
+    I: Iterator<Item = i32>,
+{
+    fn stride(self, stride: i32) -> Stride<Self> {
+        Stride { iter: self, stride }
     }
 }
 
-impl From<[i32; 3]> for StartStopStride {
-    fn from([start, stop, stride]: [i32; 3]) -> Self {
-        Self {
-            start,
-            stop,
-            stride,
-        }
-    }
-}
+/* -------------------------------------------------------------------------- */
+/*                                Custom traits                               */
+/* -------------------------------------------------------------------------- */
 
+/// A marker trait for range bounds that are `i32`.
+pub trait IndexBounds: RangeBounds<i32> {}
+
+impl IndexBounds for std::ops::Range<i32> {}
+
+impl IndexBounds for std::ops::RangeFrom<i32> {}
+
+impl IndexBounds for std::ops::RangeFull {}
+
+impl IndexBounds for std::ops::RangeInclusive<i32> {}
+
+impl IndexBounds for std::ops::RangeTo<i32> {}
+
+impl IndexBounds for std::ops::RangeToInclusive<i32> {}
+
+/// A marker trait for iterators in `std` that yield `i32`.
+pub trait IndexIterator: Iterator<Item = i32> {}
+
+/* -------------------------------------------------------------------------- */
+/*                               Implementation                               */
+/* -------------------------------------------------------------------------- */
+
+// Implement public bindings
 impl Array {
     #[default_device]
     pub unsafe fn take_device_unchecked(
@@ -243,6 +250,7 @@ impl Array {
     }
 }
 
+// Implement private bindings
 impl Array {
     // This is exposed in the c api but not found in the swift or python api
     //
@@ -298,92 +306,109 @@ impl Array {
     }
 }
 
-pub trait IndexOp<Idx> {
-    type Output;
-
-    fn index(&self, index: Idx) -> Self::Output;
-}
-
-impl IndexOp<i32> for Array {
-    type Output = Array;
-
-    fn index(&self, index: i32) -> Self::Output {
-        let indices = index.into();
-        self.take(&indices, 0)
+// Implement additional public APIs
+impl Array {
+    pub fn index(&self, index: impl ArrayIndex) -> Array {
+        index.get(self)
     }
 }
 
-impl IndexOp<NewAxis> for Array {
-    type Output = Array;
+pub trait ArrayIndex {
+    /// `mlx` allows out of bounds indexing.
+    fn get(self, array: &Array) -> Array;
+}
 
-    fn index(&self, _: NewAxis) -> Self::Output {
+impl ArrayIndex for i32 {
+    fn get(self, array: &Array) -> Array {
+        let indices = self.into();
+        array.take(&indices, 0)
+    }
+}
+
+impl ArrayIndex for NewAxis {
+    fn get(self, array: &Array) -> Array {
         let axes = &[0];
 
         // SAFETY: 0 is always a valid axis
-        unsafe { self.expand_dims_unchecked(axes) }
+        unsafe { array.expand_dims_unchecked(axes) }
     }
 }
 
-impl IndexOp<Array> for Array {
-    type Output = Array;
-
-    fn index(&self, index: Array) -> Self::Output {
-        self.take(&index, 0)
+impl ArrayIndex for Array {
+    fn get(self, array: &Array) -> Array {
+        array.take(&self, 0)
     }
 }
 
-impl<'a> IndexOp<&Array> for Array {
-    type Output = Array;
-
-    fn index(&self, index: &Array) -> Self::Output {
-        self.take(index, 0)
+impl<'a> ArrayIndex for &'a Array {
+    fn get(self, array: &Array) -> Array {
+        array.take(self, 0)
     }
 }
 
-impl IndexOp<StartStopStride> for Array {
-    type Output = Array;
+impl<T> ArrayIndex for T
+where
+    T: IndexBounds,
+{
+    fn get(self, array: &Array) -> Array {
+        let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+        let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+        let strides: SmallVec<[i32; 4]> = smallvec![1; array.ndim()];
 
-    fn index(&self, index: StartStopStride) -> Self::Output {
-        let ndim = self.ndim();
+        for i in 0..array.ndim() {
+            let start_i = match self.start_bound() {
+                std::ops::Bound::Included(&start) => start,
+                std::ops::Bound::Excluded(&start) => start + 1,
+                std::ops::Bound::Unbounded => 0,
+            };
 
-        // TODO: what is a good value for SmallVec capacity?
-        let start: SmallVec<[i32; 4]> = smallvec![index.start; ndim];
-        let stop: SmallVec<[i32; 4]> = smallvec![index.stop; ndim];
-        let strides: SmallVec<[i32; 4]> = smallvec![index.stride; ndim];
+            let stop_i = match self.end_bound() {
+                std::ops::Bound::Included(&stop) => stop + 1,
+                std::ops::Bound::Excluded(&stop) => stop,
+                std::ops::Bound::Unbounded => array.shape()[i],
+            };
 
-        self.slice(&start, &stop, &strides)
+            start.push(start_i);
+            stop.push(stop_i);
+        }
+
+        array.slice(&start, &stop, &strides)
     }
 }
 
-impl<'a> IndexOp<&StartStopStride> for Array {
-    type Output = Array;
+impl<T> ArrayIndex for Stride<T>
+where
+    T: IndexBounds,
+{
+    fn get(self, array: &Array) -> Array {
+        let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+        let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+        let strides: SmallVec<[i32; 4]> = smallvec![self.stride; array.ndim()];
 
-    fn index(&self, index: &StartStopStride) -> Self::Output {
-        self.index(*index)
+        for i in 0..array.ndim() {
+            let start_i = match self.iter.start_bound() {
+                std::ops::Bound::Included(&start) => start,
+                std::ops::Bound::Excluded(&start) => start + 1,
+                std::ops::Bound::Unbounded => 0,
+            };
+
+            let stop_i = match self.iter.end_bound() {
+                std::ops::Bound::Included(&stop) => stop + 1,
+                std::ops::Bound::Excluded(&stop) => stop,
+                std::ops::Bound::Unbounded => array.shape()[i],
+            };
+
+            start.push(start_i);
+            stop.push(stop_i);
+        }
+
+        array.slice(&start, &stop, &strides)
     }
 }
 
-impl IndexOp<StartStop> for Array {
-    type Output = Array;
-
-    fn index(&self, index: StartStop) -> Self::Output {
-        let index = StartStopStride {
-            start: index.start,
-            stop: index.stop,
-            stride: 1,
-        };
-
-        self.index(index)
-    }
-}
-
-impl<'a> IndexOp<&StartStop> for Array {
-    type Output = Array;
-
-    fn index(&self, index: &StartStop) -> Self::Output {
-        self.index(*index)
-    }
-}
+/* -------------------------------------------------------------------------- */
+/*                                 Unit tests                                 */
+/* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {}

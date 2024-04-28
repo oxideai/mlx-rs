@@ -7,16 +7,32 @@
 //! 3. indexing with an iterator `impl Iterator<Item=i32>`
 
 use mlx_macros::default_device;
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    error::{DuplicateAxisError, ExpandDimsError, InvalidAxisError, TakeAlongAxisError, TakeError},
+    error::{
+        DuplicateAxisError, ExpandDimsError, InvalidAxisError, SliceError, TakeAlongAxisError,
+        TakeError,
+    },
     utils::{all_unique, resolve_index},
     Array, StreamOrDevice,
 };
 
 #[derive(Debug, Clone, Copy)]
 pub struct NewAxis;
+
+#[derive(Debug, Clone, Copy)]
+pub struct StartStop {
+    pub start: i32,
+    pub stop: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct StartStopStride {
+    pub start: i32,
+    pub stop: i32,
+    pub stride: i32,
+}
 
 impl Array {
     #[default_device]
@@ -74,9 +90,7 @@ impl Array {
             return Err(TakeError::NonEmptyTakeFromEmptyArray);
         }
 
-        unsafe {
-            Ok(self.take_device_unchecked(indices, axis, stream))
-        }
+        unsafe { Ok(self.take_device_unchecked(indices, axis, stream)) }
     }
 
     #[default_device]
@@ -132,9 +146,7 @@ impl Array {
             });
         }
 
-        unsafe {
-            Ok(self.take_along_axis_device_unchecked(indices, axis, stream))
-        }
+        unsafe { Ok(self.take_along_axis_device_unchecked(indices, axis, stream)) }
     }
 
     #[default_device]
@@ -149,7 +161,11 @@ impl Array {
     }
 
     #[default_device]
-    pub unsafe fn expand_dims_device_unchecked(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
+    pub unsafe fn expand_dims_device_unchecked(
+        &self,
+        axes: &[i32],
+        stream: StreamOrDevice,
+    ) -> Array {
         unsafe {
             let c_array =
                 mlx_sys::mlx_expand_dims(self.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
@@ -186,14 +202,67 @@ impl Array {
         // Check for duplicate axes
         all_unique(&out_axes).map_err(|axis| DuplicateAxisError { axis })?;
 
-        unsafe {
-            Ok(self.expand_dims_device_unchecked(&out_axes, stream))
-        }
+        unsafe { Ok(self.expand_dims_device_unchecked(&out_axes, stream)) }
     }
 
     #[default_device]
     pub fn expand_dims_device(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
         self.try_expand_dims_device(axes, stream).unwrap()
+    }
+}
+
+impl Array {
+    // This is exposed in the c api but not found in the swift or python api
+    //
+    // Thie is not the same as rust slice. Slice in python is more like `StepBy` iterator in rust
+    #[default_device]
+    pub(crate) unsafe fn slice_device_unchecked(
+        &self,
+        start: &[i32],
+        stop: &[i32],
+        strides: &[i32],
+        stream: StreamOrDevice,
+    ) -> Array {
+        unsafe {
+            let c_array = mlx_sys::mlx_slice(
+                self.c_array,
+                start.as_ptr(),
+                start.len(),
+                stop.as_ptr(),
+                stop.len(),
+                strides.as_ptr(),
+                strides.len(),
+                stream.as_ptr(),
+            );
+
+            Array::from_ptr(c_array)
+        }
+    }
+
+    #[default_device]
+    pub(crate) fn try_slice_device(
+        &self,
+        start: &[i32],
+        stop: &[i32],
+        strides: &[i32],
+        stream: StreamOrDevice,
+    ) -> Result<Array, SliceError> {
+        if start.len() != self.ndim() || stop.len() != self.ndim() || strides.len() != self.ndim() {
+            return Err(SliceError { ndim: self.ndim() });
+        }
+
+        unsafe { Ok(self.slice_device_unchecked(start, stop, strides, stream)) }
+    }
+
+    #[default_device]
+    pub(crate) fn slice_device(
+        &self,
+        start: &[i32],
+        stop: &[i32],
+        strides: &[i32],
+        stream: StreamOrDevice,
+    ) -> Array {
+        self.try_slice_device(start, stop, strides, stream).unwrap()
     }
 }
 
@@ -216,10 +285,72 @@ impl IndexOp<NewAxis> for Array {
     type Output = Array;
 
     fn index(&self, _: NewAxis) -> Self::Output {
-        unsafe {
-            let axes =  &[0];
-            self.expand_dims_unchecked(axes)
-        }
+        let axes = &[0];
+
+        // SAFETY: 0 is always a valid axis
+        unsafe { self.expand_dims_unchecked(axes) }
+    }
+}
+
+impl IndexOp<Array> for Array {
+    type Output = Array;
+
+    fn index(&self, index: Array) -> Self::Output {
+        self.take(&index, 0)
+    }
+}
+
+impl<'a> IndexOp<&Array> for Array {
+    type Output = Array;
+
+    fn index(&self, index: &Array) -> Self::Output {
+        self.take(index, 0)
+    }
+}
+
+impl IndexOp<StartStopStride> for Array {
+    type Output = Array;
+
+    fn index(&self, index: StartStopStride) -> Self::Output {
+        let ndim = self.ndim();
+
+        // TODO: what is a good value for SmallVec capacity?
+        let start: SmallVec<[i32; 4]> = smallvec![index.start; ndim];
+        let stop: SmallVec<[i32; 4]> = smallvec![index.stop; ndim];
+        let strides: SmallVec<[i32; 4]> = smallvec![index.stride; ndim];
+
+        self.slice(&start, &stop, &strides)
+    }
+}
+
+impl<'a> IndexOp<&StartStopStride> for Array {
+    type Output = Array;
+
+    fn index(&self, index: &StartStopStride) -> Self::Output {
+        self.index(*index)
+    }
+}
+
+impl IndexOp<StartStop> for Array {
+    type Output = Array;
+
+    fn index(&self, index: StartStop) -> Self::Output {
+        let ndim = self.ndim();
+
+        // TODO: what is a good value for SmallVec capacity?
+        let start: SmallVec<[i32; 4]> = smallvec![index.start; ndim];
+        let stop: SmallVec<[i32; 4]> = smallvec![index.stop; ndim];
+        let strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
+
+        self.slice(&start, &stop, &strides)
+    }
+}
+
+impl<'a> IndexOp<&StartStop> for Array {
+    type Output = Array;
+
+    fn index(&self, index: &StartStop) -> Self::Output {
+        self.index(*index)
     }
 }
 

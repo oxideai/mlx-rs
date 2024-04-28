@@ -114,3 +114,9 @@ pub enum ExpandDimsError {
     #[error(transparent)]
     DuplicateAxis(#[from] DuplicateAxisError),
 }
+
+#[derive(Debug, Error)]
+#[error("Invalid number of indices or strides for array with dimension {ndim}")]
+pub struct SliceError {
+    pub ndim: usize,
+}

@@ -27,11 +27,43 @@ pub struct StartStop {
     pub stop: i32,
 }
 
+impl StartStop {
+    pub fn new(start: i32, stop: i32) -> Self {
+        Self { start, stop }
+    }
+}
+
+impl From<[i32; 2]> for StartStop {
+    fn from([start, stop]: [i32; 2]) -> Self {
+        Self { start, stop }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct StartStopStride {
     pub start: i32,
     pub stop: i32,
     pub stride: i32,
+}
+
+impl StartStopStride {
+    pub fn new(start: i32, stop: i32, stride: i32) -> Self {
+        Self {
+            start,
+            stop,
+            stride,
+        }
+    }
+}
+
+impl From<[i32; 3]> for StartStopStride {
+    fn from([start, stop, stride]: [i32; 3]) -> Self {
+        Self {
+            start,
+            stop,
+            stride,
+        }
+    }
 }
 
 impl Array {
@@ -335,14 +367,13 @@ impl IndexOp<StartStop> for Array {
     type Output = Array;
 
     fn index(&self, index: StartStop) -> Self::Output {
-        let ndim = self.ndim();
+        let index = StartStopStride {
+            start: index.start,
+            stop: index.stop,
+            stride: 1,
+        };
 
-        // TODO: what is a good value for SmallVec capacity?
-        let start: SmallVec<[i32; 4]> = smallvec![index.start; ndim];
-        let stop: SmallVec<[i32; 4]> = smallvec![index.stop; ndim];
-        let strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
-
-        self.slice(&start, &stop, &strides)
+        self.index(index)
     }
 }
 

@@ -123,7 +123,7 @@ impl Array {
                 None => {
                     let shape = &[-1];
                     // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_unchecked(shape);
+                    let reshaped = self.reshape_device_unchecked(shape, stream.clone());
 
                     mlx_sys::mlx_take(reshaped.c_array, indices.c_array, 0, stream.as_ptr())
                 }

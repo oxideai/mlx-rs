@@ -16,7 +16,7 @@ use crate::{
         DuplicateAxisError, ExpandDimsError, InvalidAxisError, SliceError, TakeAlongAxisError,
         TakeError,
     },
-    utils::{all_unique, resolve_index},
+    utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array, StreamOrDevice,
 };
 
@@ -47,17 +47,13 @@ where
 }
 
 #[derive(Debug)]
-pub enum ArrayIndexOp<'a> {
+pub enum ArrayIndexOp {
     TakeIndex {
         index: i32,
         axis: i32,
     },
-    TakeIndicesOwned {
+    TakeArrayOwned {
         indices: Array,
-        axis: i32,
-    },
-    TakeIndicesRef {
-        indices: &'a Array,
         axis: i32,
     },
     Slice {
@@ -66,6 +62,23 @@ pub enum ArrayIndexOp<'a> {
         stride: i32,
     },
     ExpandDims,
+}
+
+impl ArrayIndexOp {
+    fn is_array_or_index(&self) -> bool {
+        matches!(
+            self,
+            ArrayIndexOp::TakeIndex { .. }
+                | ArrayIndexOp::TakeArrayOwned { .. }
+        )
+    }
+
+    fn is_array(&self) -> bool {
+        matches!(
+            self,
+            ArrayIndexOp::TakeArrayOwned { .. }
+        )
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -329,94 +342,238 @@ impl Array {
 }
 
 // Implement additional public APIs
-impl Array {
-    #[inline]
-    fn get_item_int(&self, index: i32, axis: i32) -> Array {
-        self.take(&index.into(), axis)
-    }
+//
+// TODO: rewrite this in a more rusty way
+#[inline]
+fn gather_nd(
+    src: &Array,
+    operations: impl Iterator<Item = ArrayIndexOp>,
+    gather_first: bool,
+) -> (i32, Array) {
+    let mut max_dims = 0;
+    let mut slice_count = 0;
+    let mut is_slice: Vec<bool> = Vec::new();
+    let mut gather_indices: Vec<Array> = Vec::new();
 
-    #[inline]
-    fn get_item_array(&self, indices: &Array, axis: i32) -> Array {
-        self.take(indices, axis)
-    }
+    let shape = src.shape();
 
-    #[inline]
-    fn get_item_slice(&self, start: Bound<i32>, stop: Bound<i32>, stride: i32) -> Array {
-        let start_i = match start {
-            Bound::Included(start) => start,
-            Bound::Excluded(start) => start + 1,
-            Bound::Unbounded => 0,
-        };
-        let starts: SmallVec<[i32; 4]> = smallvec![start_i; self.ndim()];
-
-        let mut stops = SmallVec::<[i32; 4]>::with_capacity(self.ndim());
-        for i in 0..self.ndim() {
-            let stop_i = match stop {
-                Bound::Included(stop) => stop + 1,
-                Bound::Excluded(stop) => stop,
-                Bound::Unbounded => self.shape()[i],
-            };
-
-            stops.push(stop_i);
-        }
-
-        let strides: SmallVec<[i32; 4]> = smallvec![stride; self.ndim()];
-
-        self.slice(&starts, &stops, &strides)
-    }
-
-    // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
-    // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-    fn get_item<'a>(&'a self, index: impl ArrayIndex<'a>) -> Array {
-        match index.index_op() {
-            ArrayIndexOp::TakeIndex { index, axis } => self.get_item_int(index, axis),
-            ArrayIndexOp::TakeIndicesOwned { indices, axis } => self.get_item_array(&indices, axis),
-            ArrayIndexOp::TakeIndicesRef { indices, axis } => self.get_item_array(indices, axis),
-            ArrayIndexOp::Slice {
-                start,
-                stop,
-                stride,
-            } => self.get_item_slice(start, stop, stride),
-            ArrayIndexOp::ExpandDims => unsafe {
-                // SAFETY: 0 is always a valid axis
-                self.expand_dims_unchecked(&[0])
+    // prepare the gather indices
+    for (i, op) in operations.enumerate() {
+        match op {
+            ArrayIndexOp::TakeIndex { index, axis } => {
+                let item = Array::from_int(resolve_index_unchecked(index, src.dim(axis) as usize) as i32);
+                gather_indices.push(item);
+                is_slice.push(false);
             },
+            ArrayIndexOp::Slice { start, stop, stride } => {
+                slice_count += 1;
+                is_slice.push(true);
+
+                let size = shape[i];
+
+                let absolute_start = {
+                    let start = match start {
+                        Bound::Included(start) => start,
+                        Bound::Excluded(start) => start + 1,
+                        Bound::Unbounded => if stride.is_negative() {
+                            size - 1
+                        } else {
+                            0
+                        },
+                    };
+                    if start < 0 {
+                        start + size
+                    } else {
+                        start
+                    }
+                };
+
+                let absolute_end = {
+                    let end = match stop {
+                        Bound::Included(end) => end + 1,
+                        Bound::Excluded(end) => end,
+                        Bound::Unbounded => if stride.is_negative() {
+                            -size-1
+                        } else {
+                            size
+                        },
+                    };
+                    if end < 0 {
+                        end + size
+                    } else {
+                        end
+                    }
+                };
+
+                // TODO: check if this is correct when stride is negative
+                let indices: Vec<i32> = (absolute_start..absolute_end).step_by(stride.abs() as usize).collect();
+                let item = Array::from_slice(&indices, &[indices.len() as i32]);
+
+                gather_indices.push(item);
+            },
+            ArrayIndexOp::TakeArrayOwned { indices, axis: _ } => {
+                is_slice.push(false);
+                max_dims = max_dims.max(indices.ndim());
+                gather_indices.push(indices);
+            },
+            ArrayIndexOp::ExpandDims => unreachable!("ExpandDims(ie. NewAxis) is already filtered out"),
         }
     }
 
-    fn get_item_nd(&self, indices: &[ArrayIndexOp]) -> Array {
-        todo!()
+    // reshape them so that the int/array indices are first
+    if gather_first {
+        if slice_count > 0 {
+            let mut slice_indx = 0;
+            for (i, item) in gather_indices.iter().enumerate() {
+                if is_slice[i] {
+                    let mut new_shape = vec![1; max_dims + slice_count];
+                    new_shape[max_dims + slice_indx] = item.dim(0);
+                    // gather_indices[i] = item.reshape(&new_shape);
+                    todo!("need to implement reshape")
+                } else {
+
+                }
+            }
+        }
+    }
+
+    todo!()
+}
+
+#[inline]
+fn get_item_int(src: &Array, index: i32, axis: i32) -> Array {
+    src.take(&index.into(), axis)
+}
+
+#[inline]
+fn get_item_array(src: &Array, indices: Array, axis: i32) -> Array {
+    src.take(&indices, axis)
+}
+
+#[inline]
+fn get_item_slice(src: &Array, start: Bound<i32>, stop: Bound<i32>, stride: i32) -> Array {
+    let start_i = match start {
+        Bound::Included(start) => start,
+        Bound::Excluded(start) => start + 1,
+        Bound::Unbounded => 0,
+    };
+    let starts: SmallVec<[i32; 4]> = smallvec![start_i; src.ndim()];
+
+    let mut stops = SmallVec::<[i32; 4]>::with_capacity(src.ndim());
+    for i in 0..src.ndim() {
+        let stop_i = match stop {
+            Bound::Included(stop) => stop + 1,
+            Bound::Excluded(stop) => stop,
+            Bound::Unbounded => src.shape()[i],
+        };
+
+        stops.push(stop_i);
+    }
+
+    let strides: SmallVec<[i32; 4]> = smallvec![stride; src.ndim()];
+
+    src.slice(&starts, &stops, &strides)
+}
+
+// See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
+// mlx-swift/Sources/MLX/MLXArray+Indexing.swift
+fn get_item(src: &Array, index: impl ArrayIndex) -> Array {
+    use ArrayIndexOp::*;
+
+    match index.index_op() {
+        TakeIndex { index, axis } => get_item_int(src, index, axis),
+        TakeArrayOwned { indices, axis } => get_item_array(src, indices, axis),
+        Slice {
+            start,
+            stop,
+            stride,
+        } => get_item_slice(src, start, stop, stride),
+        ExpandDims => unsafe {
+            // SAFETY: 0 is always a valid axis
+            src.expand_dims_unchecked(&[0])
+        },
     }
 }
 
-pub trait ArrayIndex<'a> {
+// See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
+// mlx-swift/Sources/MLX/MLXArray+Indexing.swift
+fn get_item_nd(src: &Array, indices: &[ArrayIndexOp]) -> Array {
+    // Gather handling
+
+    // compute gatherFirst -- this will be true if there is:
+    // - a leading array or index operation followed by
+    // - a non index/array (e.g. a slice)
+    // - an int/array operation
+    //
+    // - and there is at least one array operation (hanled below with haveArray)
+    let mut gather_first = false;
+    let mut have_array_or_index = false; // This is `haveArrayOrIndex` in the swift binding
+    let mut have_non_array = false;
+    for item in indices {
+        if item.is_array_or_index() {
+            if have_array_or_index && have_non_array {
+                gather_first = true;
+                break;
+            }
+            have_array_or_index = true;
+        } else {
+            have_non_array = have_non_array || have_array_or_index;
+        }
+    }
+
+    let array_count = indices.iter().filter(|op| op.is_array()).count();
+    let have_array = array_count > 0;
+
+    let mut remaining_indices: Vec<ArrayIndexOp> = Vec::new();
+    if have_array {
+        // apply all the operations (except for .newAxis) up to and including the
+        // final .array operation (array operations are implemented via gather)
+        let last_array_or_index = indices
+            .iter()
+            .rposition(|op| op.is_array_or_index())
+            .unwrap(); // safe because we know there is at least one array operation
+        let gather_indices = indices[..=last_array_or_index]
+            .iter()
+            .filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
+    }
+
+    todo!()
+}
+
+pub trait ArrayIndex {
     /// `mlx` allows out of bounds indexing.
-    fn index_op(self) -> ArrayIndexOp<'a>;
+    fn index_op(self) -> ArrayIndexOp;
 }
 
-impl<'a> ArrayIndex<'a> for i32 {
-    fn index_op(self) -> ArrayIndexOp<'a> {
-        ArrayIndexOp::TakeIndex { index: self, axis: 0 }
+impl ArrayIndex for i32 {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::TakeIndex {
+            index: self,
+            axis: 0,
+        }
     }
 }
 
-impl<'a> ArrayIndex<'a> for NewAxis {
-    fn index_op(self) -> ArrayIndexOp<'a> {
+impl ArrayIndex for NewAxis {
+    fn index_op(self) -> ArrayIndexOp {
         ArrayIndexOp::ExpandDims
     }
 }
 
-impl<'a> ArrayIndex<'a> for Array {
-    fn index_op(self) -> ArrayIndexOp<'a> {
-        ArrayIndexOp::TakeIndicesOwned { indices: self, axis: 0 }
+impl ArrayIndex for Array {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::TakeArrayOwned {
+            indices: self,
+            axis: 0,
+        }
     }
 }
 
-impl<'a, T> ArrayIndex<'a> for T
+impl<T> ArrayIndex for T
 where
     T: IndexBounds,
 {
-    fn index_op(self) -> ArrayIndexOp<'a> {
+    fn index_op(self) -> ArrayIndexOp {
         ArrayIndexOp::Slice {
             start: self.start_bound().cloned(),
             stop: self.end_bound().cloned(),
@@ -425,11 +582,11 @@ where
     }
 }
 
-impl<'a, T> ArrayIndex<'a> for Stride<T>
+impl<T> ArrayIndex for Stride<T>
 where
     T: IndexBounds,
 {
-    fn index_op(self) -> ArrayIndexOp<'a> {
+    fn index_op(self) -> ArrayIndexOp {
         ArrayIndexOp::Slice {
             start: self.iter.start_bound().cloned(),
             stop: self.iter.end_bound().cloned(),
@@ -532,12 +689,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::Array;
+    use super::*;
 
     #[test]
     fn test_get_item() {
         let a = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
-        let mut b = a.get_item(1);
+        let mut b = get_item(&a, 1);
         b.eval();
 
         assert_eq!(b.item::<f32>(), 2.0);

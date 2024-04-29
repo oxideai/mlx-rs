@@ -6,7 +6,7 @@
 //! 2. indexing with a slice `&[i32]`
 //! 3. indexing with an iterator `impl Iterator<Item=i32>`
 
-use std::ops::RangeBounds;
+use std::ops::{Bound, RangeBounds};
 
 use mlx_macros::default_device;
 use smallvec::{smallvec, SmallVec};
@@ -44,6 +44,28 @@ where
     fn stride(self, stride: i32) -> Stride<Self> {
         Stride { iter: self, stride }
     }
+}
+
+#[derive(Debug)]
+pub enum ArrayIndexOp<'a> {
+    TakeIndex {
+        index: i32,
+        axis: i32,
+    },
+    TakeIndicesOwned {
+        indices: Array,
+        axis: i32,
+    },
+    TakeIndicesRef {
+        indices: &'a Array,
+        axis: i32,
+    },
+    Slice {
+        start: Bound<i32>,
+        stop: Bound<i32>,
+        stride: i32,
+    },
+    ExpandDims,
 }
 
 /* -------------------------------------------------------------------------- */
@@ -308,107 +330,216 @@ impl Array {
 
 // Implement additional public APIs
 impl Array {
-    pub fn index(&self, index: impl ArrayIndex) -> Array {
-        index.get(self)
+    #[inline]
+    fn get_item_int(&self, index: i32, axis: i32) -> Array {
+        self.take(&index.into(), axis)
+    }
+
+    #[inline]
+    fn get_item_array(&self, indices: &Array, axis: i32) -> Array {
+        self.take(indices, axis)
+    }
+
+    #[inline]
+    fn get_item_slice(&self, start: Bound<i32>, stop: Bound<i32>, stride: i32) -> Array {
+        let start_i = match start {
+            Bound::Included(start) => start,
+            Bound::Excluded(start) => start + 1,
+            Bound::Unbounded => 0,
+        };
+        let starts: SmallVec<[i32; 4]> = smallvec![start_i; self.ndim()];
+
+        let mut stops = SmallVec::<[i32; 4]>::with_capacity(self.ndim());
+        for i in 0..self.ndim() {
+            let stop_i = match stop {
+                Bound::Included(stop) => stop + 1,
+                Bound::Excluded(stop) => stop,
+                Bound::Unbounded => self.shape()[i],
+            };
+
+            stops.push(stop_i);
+        }
+
+        let strides: SmallVec<[i32; 4]> = smallvec![stride; self.ndim()];
+
+        self.slice(&starts, &stops, &strides)
+    }
+
+    // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
+    // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
+    fn get_item<'a>(&'a self, index: impl ArrayIndex<'a>) -> Array {
+        match index.index_op() {
+            ArrayIndexOp::TakeIndex { index, axis } => self.get_item_int(index, axis),
+            ArrayIndexOp::TakeIndicesOwned { indices, axis } => self.get_item_array(&indices, axis),
+            ArrayIndexOp::TakeIndicesRef { indices, axis } => self.get_item_array(indices, axis),
+            ArrayIndexOp::Slice {
+                start,
+                stop,
+                stride,
+            } => self.get_item_slice(start, stop, stride),
+            ArrayIndexOp::ExpandDims => unsafe {
+                // SAFETY: 0 is always a valid axis
+                self.expand_dims_unchecked(&[0])
+            },
+        }
+    }
+
+    fn get_item_nd(&self, indices: &[ArrayIndexOp]) -> Array {
+        todo!()
     }
 }
 
-pub trait ArrayIndex {
+pub trait ArrayIndex<'a> {
     /// `mlx` allows out of bounds indexing.
-    fn get(self, array: &Array) -> Array;
+    fn index_op(self) -> ArrayIndexOp<'a>;
 }
 
-impl ArrayIndex for i32 {
-    fn get(self, array: &Array) -> Array {
-        let indices = self.into();
-        array.take(&indices, 0)
+impl<'a> ArrayIndex<'a> for i32 {
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::TakeIndex { index: self, axis: 0 }
     }
 }
 
-impl ArrayIndex for NewAxis {
-    fn get(self, array: &Array) -> Array {
-        let axes = &[0];
-
-        // SAFETY: 0 is always a valid axis
-        unsafe { array.expand_dims_unchecked(axes) }
+impl<'a> ArrayIndex<'a> for NewAxis {
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::ExpandDims
     }
 }
 
-impl ArrayIndex for Array {
-    fn get(self, array: &Array) -> Array {
-        array.take(&self, 0)
+impl<'a> ArrayIndex<'a> for Array {
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::TakeIndicesOwned { indices: self, axis: 0 }
     }
 }
 
-impl<'a> ArrayIndex for &'a Array {
-    fn get(self, array: &Array) -> Array {
-        array.take(self, 0)
-    }
-}
-
-impl<T> ArrayIndex for T
+impl<'a, T> ArrayIndex<'a> for T
 where
     T: IndexBounds,
 {
-    fn get(self, array: &Array) -> Array {
-        let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
-        let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
-        let strides: SmallVec<[i32; 4]> = smallvec![1; array.ndim()];
-
-        for i in 0..array.ndim() {
-            let start_i = match self.start_bound() {
-                std::ops::Bound::Included(&start) => start,
-                std::ops::Bound::Excluded(&start) => start + 1,
-                std::ops::Bound::Unbounded => 0,
-            };
-
-            let stop_i = match self.end_bound() {
-                std::ops::Bound::Included(&stop) => stop + 1,
-                std::ops::Bound::Excluded(&stop) => stop,
-                std::ops::Bound::Unbounded => array.shape()[i],
-            };
-
-            start.push(start_i);
-            stop.push(stop_i);
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::Slice {
+            start: self.start_bound().cloned(),
+            stop: self.end_bound().cloned(),
+            stride: 1,
         }
-
-        array.slice(&start, &stop, &strides)
     }
 }
 
-impl<T> ArrayIndex for Stride<T>
+impl<'a, T> ArrayIndex<'a> for Stride<T>
 where
     T: IndexBounds,
 {
-    fn get(self, array: &Array) -> Array {
-        let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
-        let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
-        let strides: SmallVec<[i32; 4]> = smallvec![self.stride; array.ndim()];
-
-        for i in 0..array.ndim() {
-            let start_i = match self.iter.start_bound() {
-                std::ops::Bound::Included(&start) => start,
-                std::ops::Bound::Excluded(&start) => start + 1,
-                std::ops::Bound::Unbounded => 0,
-            };
-
-            let stop_i = match self.iter.end_bound() {
-                std::ops::Bound::Included(&stop) => stop + 1,
-                std::ops::Bound::Excluded(&stop) => stop,
-                std::ops::Bound::Unbounded => array.shape()[i],
-            };
-
-            start.push(start_i);
-            stop.push(stop_i);
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::Slice {
+            start: self.iter.start_bound().cloned(),
+            stop: self.iter.end_bound().cloned(),
+            stride: self.stride,
         }
-
-        array.slice(&start, &stop, &strides)
     }
 }
+
+// impl ArrayIndex for i32 {
+//     fn get(self, array: &Array) -> Array {
+//         let indices = self.into();
+//         array.take(&indices, 0)
+//     }
+// }
+
+// impl ArrayIndex for NewAxis {
+//     fn get(self, array: &Array) -> Array {
+//         let axes = &[0];
+
+//         // SAFETY: 0 is always a valid axis
+//         unsafe { array.expand_dims_unchecked(axes) }
+//     }
+// }
+
+// impl ArrayIndex for Array {
+//     fn get(self, array: &Array) -> Array {
+//         array.take(&self, 0)
+//     }
+// }
+
+// impl<'a> ArrayIndex for &'a Array {
+//     fn get(self, array: &Array) -> Array {
+//         array.take(self, 0)
+//     }
+// }
+
+// impl<T> ArrayIndex for T
+// where
+//     T: IndexBounds,
+// {
+//     fn get(self, array: &Array) -> Array {
+//         let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+//         let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+//         let strides: SmallVec<[i32; 4]> = smallvec![1; array.ndim()];
+
+//         for i in 0..array.ndim() {
+//             let start_i = match self.start_bound() {
+//                 std::ops::Bound::Included(&start) => start,
+//                 std::ops::Bound::Excluded(&start) => start + 1,
+//                 std::ops::Bound::Unbounded => 0,
+//             };
+
+//             let stop_i = match self.end_bound() {
+//                 std::ops::Bound::Included(&stop) => stop + 1,
+//                 std::ops::Bound::Excluded(&stop) => stop,
+//                 std::ops::Bound::Unbounded => array.shape()[i],
+//             };
+
+//             start.push(start_i);
+//             stop.push(stop_i);
+//         }
+
+//         array.slice(&start, &stop, &strides)
+//     }
+// }
+
+// impl<T> ArrayIndex for Stride<T>
+// where
+//     T: IndexBounds,
+// {
+//     fn get(self, array: &Array) -> Array {
+//         let mut start = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+//         let mut stop = SmallVec::<[i32; 4]>::with_capacity(array.ndim());
+//         let strides: SmallVec<[i32; 4]> = smallvec![self.stride; array.ndim()];
+
+//         for i in 0..array.ndim() {
+//             let start_i = match self.iter.start_bound() {
+//                 std::ops::Bound::Included(&start) => start,
+//                 std::ops::Bound::Excluded(&start) => start + 1,
+//                 std::ops::Bound::Unbounded => 0,
+//             };
+
+//             let stop_i = match self.iter.end_bound() {
+//                 std::ops::Bound::Included(&stop) => stop + 1,
+//                 std::ops::Bound::Excluded(&stop) => stop,
+//                 std::ops::Bound::Unbounded => array.shape()[i],
+//             };
+
+//             start.push(start_i);
+//             stop.push(stop_i);
+//         }
+
+//         array.slice(&start, &stop, &strides)
+//     }
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                                 Unit tests                                 */
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::Array;
+
+    #[test]
+    fn test_get_item() {
+        let a = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
+        let mut b = a.get_item(1);
+        b.eval();
+
+        assert_eq!(b.item::<f32>(), 2.0);
+    }
+}

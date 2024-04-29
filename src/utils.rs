@@ -58,6 +58,7 @@ pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
     Ok(())
 }
 
+/// Helper method to convert an optional slice of axes to a Vec covering all axes.
 pub(crate) fn axes_or_default_to_all<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     ndim: i32,

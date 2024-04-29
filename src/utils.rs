@@ -1,4 +1,4 @@
-use crate::error::OperationError;
+use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 
 /// Helper method to get a string representation of an mlx object.
@@ -99,9 +99,9 @@ pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), Operat
 
 impl Array {
     /// Helper method to check if an array can be reshaped to a given shape.
-    pub fn can_reshape_to(&self, shape: &[i32]) -> bool {
+    pub fn can_reshape_to<'a>(&self, shape: &'a [i32]) -> Result<(), ReshapeError<'a>> {
         if self.shape() == shape {
-            return true;
+            return Ok(());
         }
 
         let mut size = 1;
@@ -109,7 +109,7 @@ impl Array {
         for i in 0..shape.len() {
             if shape[i] == -1 {
                 if infer_idx >= 0 {
-                    return false;
+                    return Err(ReshapeError::MultipleInferredDims);
                 }
 
                 infer_idx = i as isize;
@@ -124,15 +124,18 @@ impl Array {
                 size *= quotient as i32;
             }
         } else if infer_idx >= 0 {
-            return false;
+            return Err(ReshapeError::EmptyArray);
         }
 
         // validate the reshaping is valid
         if self.size() != size as usize {
-            return false;
+            return Err(ReshapeError::InvalidShape {
+                size: self.size(),
+                shape,
+            });
         }
 
-        return true;
+        Ok(())
     }
 
     /// Helper method to validate an axis is in bounds.
@@ -206,49 +209,49 @@ mod tests {
     #[test]
     fn test_can_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[3]));
-        assert!(a.can_reshape_to(&[1, 3]));
-        assert!(a.can_reshape_to(&[3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 3, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1, 1]));
+        assert!(a.can_reshape_to(&[3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1, 1]).is_ok());
     }
 
     #[test]
     fn test_reshape_negative_dim() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[1, -1]));
-        assert!(a.can_reshape_to(&[-1, 1]));
-        assert!(a.can_reshape_to(&[-1]));
-        assert!(a.can_reshape_to(&[1, -1, 1]));
-        assert!(a.can_reshape_to(&[-1, 1, 1]));
+        assert!(a.can_reshape_to(&[1, -1]).is_ok());
+        assert!(a.can_reshape_to(&[-1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[-1]).is_ok());
+        assert!(a.can_reshape_to(&[1, -1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[-1, 1, 1]).is_ok());
 
-        assert!(!a.can_reshape_to(&[1, -2]));
+        assert!(!a.can_reshape_to(&[1, -2]).is_ok());
     }
 
     #[test]
     fn test_cannot_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(!a.can_reshape_to(&[2]));
-        assert!(!a.can_reshape_to(&[2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]));
+        assert!(!a.can_reshape_to(&[2]).is_ok());
+        assert!(!a.can_reshape_to(&[2, 2]).is_ok());
+        assert!(!a.can_reshape_to(&[2, 2, 2]).is_ok());
+        assert!(!a.can_reshape_to(&[2, 2, 2, 2]).is_ok());
+        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]).is_ok());
+        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_ok());
     }
 }

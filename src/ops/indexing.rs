@@ -16,9 +16,12 @@ use crate::{
         DuplicateAxisError, ExpandDimsError, InvalidAxisError, SliceError, TakeAlongAxisError,
         TakeError,
     },
+    ops::expand_dims_unchecked,
     utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array, StreamOrDevice,
 };
+
+use super::reshape_unchecked;
 
 /* -------------------------------------------------------------------------- */
 /*                                Custom types                                */
@@ -68,16 +71,12 @@ impl ArrayIndexOp {
     fn is_array_or_index(&self) -> bool {
         matches!(
             self,
-            ArrayIndexOp::TakeIndex { .. }
-                | ArrayIndexOp::TakeArrayOwned { .. }
+            ArrayIndexOp::TakeIndex { .. } | ArrayIndexOp::TakeArrayOwned { .. }
         )
     }
 
     fn is_array(&self) -> bool {
-        matches!(
-            self,
-            ArrayIndexOp::TakeArrayOwned { .. }
-        )
+        matches!(self, ArrayIndexOp::TakeArrayOwned { .. })
     }
 }
 
@@ -123,12 +122,8 @@ impl Array {
                 }
                 None => {
                     let shape = &[-1];
-                    let reshaped = Array::from_ptr(mlx_sys::mlx_reshape(
-                        self.c_array,
-                        shape as *const _,
-                        shape.len(),
-                        stream.as_ptr(),
-                    ));
+                    // SAFETY: &[-1] is a valid shape
+                    let reshaped = reshape_unchecked(self, shape);
 
                     mlx_sys::mlx_take(reshaped.c_array, indices.c_array, 0, stream.as_ptr())
                 }
@@ -233,56 +228,6 @@ impl Array {
         self.try_take_along_axis_device(indices, axis, stream)
             .unwrap()
     }
-
-    #[default_device]
-    pub unsafe fn expand_dims_device_unchecked(
-        &self,
-        axes: &[i32],
-        stream: StreamOrDevice,
-    ) -> Array {
-        unsafe {
-            let c_array =
-                mlx_sys::mlx_expand_dims(self.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
-            Array::from_ptr(c_array)
-        }
-    }
-
-    #[default_device]
-    pub fn try_expand_dims_device(
-        &self,
-        axes: &[i32],
-        stream: StreamOrDevice,
-    ) -> Result<Array, ExpandDimsError> {
-        // Check for valid axes
-        // TODO: what is a good default capacity for SmallVec?
-        let out_ndim = self.size() + axes.len();
-        let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim as usize);
-        for axis in axes {
-            let valid_axis = resolve_index(*axis, out_ndim).ok_or_else(|| InvalidAxisError {
-                axis: *axis,
-                ndim: out_ndim,
-            })?;
-            if valid_axis > i32::MAX as usize {
-                // TODO: return a different error type?
-                return Err(InvalidAxisError {
-                    axis: *axis,
-                    ndim: out_ndim,
-                }
-                .into());
-            }
-            out_axes.push(valid_axis as i32);
-        }
-
-        // Check for duplicate axes
-        all_unique(&out_axes).map_err(|axis| DuplicateAxisError { axis })?;
-
-        unsafe { Ok(self.expand_dims_device_unchecked(&out_axes, stream)) }
-    }
-
-    #[default_device]
-    pub fn expand_dims_device(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
-        self.try_expand_dims_device(axes, stream).unwrap()
-    }
 }
 
 // Implement private bindings
@@ -361,11 +306,16 @@ fn gather_nd(
     for (i, op) in operations.enumerate() {
         match op {
             ArrayIndexOp::TakeIndex { index, axis } => {
-                let item = Array::from_int(resolve_index_unchecked(index, src.dim(axis) as usize) as i32);
+                let item =
+                    Array::from_int(resolve_index_unchecked(index, src.dim(axis) as usize) as i32);
                 gather_indices.push(item);
                 is_slice.push(false);
-            },
-            ArrayIndexOp::Slice { start, stop, stride } => {
+            }
+            ArrayIndexOp::Slice {
+                start,
+                stop,
+                stride,
+            } => {
                 slice_count += 1;
                 is_slice.push(true);
 
@@ -375,11 +325,13 @@ fn gather_nd(
                     let start = match start {
                         Bound::Included(start) => start,
                         Bound::Excluded(start) => start + 1,
-                        Bound::Unbounded => if stride.is_negative() {
-                            size - 1
-                        } else {
-                            0
-                        },
+                        Bound::Unbounded => {
+                            if stride.is_negative() {
+                                size - 1
+                            } else {
+                                0
+                            }
+                        }
                     };
                     if start < 0 {
                         start + size
@@ -392,11 +344,13 @@ fn gather_nd(
                     let end = match stop {
                         Bound::Included(end) => end + 1,
                         Bound::Excluded(end) => end,
-                        Bound::Unbounded => if stride.is_negative() {
-                            -size-1
-                        } else {
-                            size
-                        },
+                        Bound::Unbounded => {
+                            if stride.is_negative() {
+                                -size - 1
+                            } else {
+                                size
+                            }
+                        }
                     };
                     if end < 0 {
                         end + size
@@ -406,17 +360,21 @@ fn gather_nd(
                 };
 
                 // TODO: check if this is correct when stride is negative
-                let indices: Vec<i32> = (absolute_start..absolute_end).step_by(stride.abs() as usize).collect();
+                let indices: Vec<i32> = (absolute_start..absolute_end)
+                    .step_by(stride.abs() as usize)
+                    .collect();
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
 
                 gather_indices.push(item);
-            },
+            }
             ArrayIndexOp::TakeArrayOwned { indices, axis: _ } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
                 gather_indices.push(indices);
-            },
-            ArrayIndexOp::ExpandDims => unreachable!("ExpandDims(ie. NewAxis) is already filtered out"),
+            }
+            ArrayIndexOp::ExpandDims => {
+                unreachable!("ExpandDims(ie. NewAxis) is already filtered out")
+            }
         }
     }
 
@@ -431,7 +389,6 @@ fn gather_nd(
                     // gather_indices[i] = item.reshape(&new_shape);
                     todo!("need to implement reshape")
                 } else {
-
                 }
             }
         }
@@ -490,7 +447,7 @@ fn get_item(src: &Array, index: impl ArrayIndex) -> Array {
         } => get_item_slice(src, start, stop, stride),
         ExpandDims => unsafe {
             // SAFETY: 0 is always a valid axis
-            src.expand_dims_unchecked(&[0])
+            expand_dims_unchecked(src, &[0])
         },
     }
 }

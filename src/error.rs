@@ -120,3 +120,15 @@ pub enum ExpandDimsError {
 pub struct SliceError {
     pub ndim: usize,
 }
+
+#[derive(Debug, Error)]
+pub enum ReshapeError<'a> {
+    #[error("Can only infer one dimension")]
+    MultipleInferredDims,
+
+    #[error("Cannot infer the shape of an empty array")]
+    EmptyArray,
+
+    #[error("Cannot reshape array of size {size} into shape {shape:?}")]
+    InvalidShape { size: usize, shape: &'a [i32] },
+}

@@ -79,3 +79,25 @@ pub fn try_reshape_device<'a>(
 pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
     try_reshape_device(a, shape, stream).unwrap()
 }
+
+// Also provide reshape as a method on Array
+impl Array {
+    #[default_device]
+    pub fn reshape_device_unchecked(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
+        unsafe { reshape_device_unchecked(self, shape, stream) }
+    }
+
+    #[default_device]
+    pub fn try_reshape_device<'a>(
+        &self,
+        shape: &'a [i32],
+        stream: StreamOrDevice,
+    ) -> Result<Array, ReshapeError<'a>> {
+        try_reshape_device(self, shape, stream)
+    }
+
+    #[default_device]
+    pub fn reshape_device(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
+        reshape_device(self, shape, stream)
+    }
+}

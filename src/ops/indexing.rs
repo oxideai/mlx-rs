@@ -16,8 +16,8 @@ use crate::{
         DuplicateAxisError, ExpandDimsError, InvalidAxisError, SliceError, TakeAlongAxisError,
         TakeError,
     },
-    ops::expand_dims_unchecked,
-    utils::{all_unique, resolve_index, resolve_index_unchecked},
+    ops::{expand_dims_unchecked, reshape},
+    utils::{all_unique, new_mlx_vector_array, resolve_index, resolve_index_unchecked, BorrowOrOwned},
     Array, StreamOrDevice,
 };
 
@@ -286,15 +286,56 @@ impl Array {
     }
 }
 
+fn absolute_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
+    let start = match start {
+        Bound::Included(start) => start,
+        Bound::Excluded(start) => start + 1,
+        Bound::Unbounded => {
+            if stride.is_negative() {
+                size - 1
+            } else {
+                0
+            }
+        }
+    };
+    if start < 0 {
+        start + size
+    } else {
+        start
+    }
+}
+
+fn absolute_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
+    let end = match end {
+        Bound::Included(end) => end + 1,
+        Bound::Excluded(end) => end,
+        Bound::Unbounded => {
+            if stride.is_negative() {
+                -size - 1
+            } else {
+                size
+            }
+        }
+    };
+    if end < 0 {
+        end + size
+    } else {
+        end
+    }
+}
+
 // Implement additional public APIs
 //
 // TODO: rewrite this in a more rusty way
 #[inline]
-fn gather_nd(
-    src: &Array,
+fn gather_nd<'a>(
+    src: &'a Array,
     operations: impl Iterator<Item = ArrayIndexOp>,
     gather_first: bool,
-) -> (i32, Array) {
+    stream: StreamOrDevice,
+) -> (usize, Array) {
+    use ArrayIndexOp::*;
+
     let mut max_dims = 0;
     let mut slice_count = 0;
     let mut is_slice: Vec<bool> = Vec::new();
@@ -303,15 +344,19 @@ fn gather_nd(
     let shape = src.shape();
 
     // prepare the gather indices
+    let mut axes = Vec::new();
+    let mut operation_len: usize = 0;
     for (i, op) in operations.enumerate() {
+        axes.push(i as i32);
+        operation_len += 1;
         match op {
-            ArrayIndexOp::TakeIndex { index, axis } => {
+            TakeIndex { index, axis } => {
                 let item =
                     Array::from_int(resolve_index_unchecked(index, src.dim(axis) as usize) as i32);
                 gather_indices.push(item);
                 is_slice.push(false);
             }
-            ArrayIndexOp::Slice {
+            Slice {
                 start,
                 stop,
                 stride,
@@ -320,44 +365,8 @@ fn gather_nd(
                 is_slice.push(true);
 
                 let size = shape[i];
-
-                let absolute_start = {
-                    let start = match start {
-                        Bound::Included(start) => start,
-                        Bound::Excluded(start) => start + 1,
-                        Bound::Unbounded => {
-                            if stride.is_negative() {
-                                size - 1
-                            } else {
-                                0
-                            }
-                        }
-                    };
-                    if start < 0 {
-                        start + size
-                    } else {
-                        start
-                    }
-                };
-
-                let absolute_end = {
-                    let end = match stop {
-                        Bound::Included(end) => end + 1,
-                        Bound::Excluded(end) => end,
-                        Bound::Unbounded => {
-                            if stride.is_negative() {
-                                -size - 1
-                            } else {
-                                size
-                            }
-                        }
-                    };
-                    if end < 0 {
-                        end + size
-                    } else {
-                        end
-                    }
-                };
+                let absolute_start = absolute_start(start, stride, size);
+                let absolute_end = absolute_end(stop, stride, size);
 
                 // TODO: check if this is correct when stride is negative
                 let indices: Vec<i32> = (absolute_start..absolute_end)
@@ -367,12 +376,12 @@ fn gather_nd(
 
                 gather_indices.push(item);
             }
-            ArrayIndexOp::TakeArrayOwned { indices, axis: _ } => {
+            TakeArrayOwned { indices, axis: _ } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
                 gather_indices.push(indices);
             }
-            ArrayIndexOp::ExpandDims => {
+            ExpandDims => {
                 unreachable!("ExpandDims(ie. NewAxis) is already filtered out")
             }
         }
@@ -381,20 +390,54 @@ fn gather_nd(
     // reshape them so that the int/array indices are first
     if gather_first {
         if slice_count > 0 {
-            let mut slice_indx = 0;
-            for (i, item) in gather_indices.iter().enumerate() {
+            let mut slice_index = 0;
+            for (i, item) in gather_indices.iter_mut().enumerate() {
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
-                    new_shape[max_dims + slice_indx] = item.dim(0);
-                    // gather_indices[i] = item.reshape(&new_shape);
-                    todo!("need to implement reshape")
+                    new_shape[max_dims + slice_index] = item.dim(0);
+                    *item = reshape(&item, &new_shape);
+                    slice_index += 1;
                 } else {
+                    let mut new_shape = item.shape().to_vec();
+                    new_shape.extend((0..slice_count).map(|_| 1));
+                    *item = reshape(&item, &new_shape);
                 }
             }
         }
+    } else {
+        // reshape them so that the int/array indices are last
+        for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
+            let mut new_shape = vec![1; max_dims + slice_count];
+            new_shape[i] = item.dim(0);
+            *item = reshape(&item, &new_shape);
+        }
     }
 
-    todo!()
+    // Do the gather
+    let indices = new_mlx_vector_array(gather_indices);
+    let mut slice_sizes = shape.to_vec();
+    (0..operation_len).for_each(|i| slice_sizes[i] = 1);
+
+    let gathered = unsafe {
+        let c_array = mlx_sys::mlx_gather(
+            src.c_array,
+            indices,
+            axes.as_ptr(),
+            axes.len(),
+            slice_sizes.as_ptr(),
+            slice_sizes.len(),
+            stream.as_ptr(),
+        );
+        Array::from_ptr(c_array)
+    };
+    let gathered_shape = gathered.shape();
+
+    // Squeeze the dims
+    let mut output_shape: Vec<i32> = gathered_shape[0..(max_dims + slice_count)].iter()
+        .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter()).map(|i| *i).collect();
+    let result = gathered.reshape(&output_shape);
+
+    (max_dims, result)
 }
 
 #[inline]
@@ -454,7 +497,7 @@ fn get_item(src: &Array, index: impl ArrayIndex) -> Array {
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd(src: &Array, indices: &[ArrayIndexOp]) -> Array {
+fn get_item_nd(src: &Array, mut indices: Vec<ArrayIndexOp>, stream: StreamOrDevice) -> Array {
     // Gather handling
 
     // compute gatherFirst -- this will be true if there is:
@@ -466,7 +509,7 @@ fn get_item_nd(src: &Array, indices: &[ArrayIndexOp]) -> Array {
     let mut gather_first = false;
     let mut have_array_or_index = false; // This is `haveArrayOrIndex` in the swift binding
     let mut have_non_array = false;
-    for item in indices {
+    for item in indices.iter() {
         if item.is_array_or_index() {
             if have_array_or_index && have_non_array {
                 gather_first = true;
@@ -489,9 +532,20 @@ fn get_item_nd(src: &Array, indices: &[ArrayIndexOp]) -> Array {
             .iter()
             .rposition(|op| op.is_array_or_index())
             .unwrap(); // safe because we know there is at least one array operation
-        let gather_indices = indices[..=last_array_or_index]
-            .iter()
-            .filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
+        let remaining = indices.split_off(last_array_or_index + 1);
+        let gather_indices = indices.into_iter().filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
+        let (max_dims, gathered) = gather_nd(src, gather_indices, gather_first, stream);
+
+        // src = gathered;
+
+        // Reassemble the indices for the slicing or reshaping if there are any
+        if gather_first {
+            remaining_indices.extend((0..max_dims).map(|_| ArrayIndexOp::Slice {
+                start: Bound::Unbounded,
+                stop: Bound::Unbounded,
+                stride: 1,
+            }));
+        }
     }
 
     todo!()

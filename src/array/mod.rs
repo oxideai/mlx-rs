@@ -12,6 +12,7 @@ pub use element::ArrayElement;
 #[allow(non_camel_case_types)]
 pub type complex64 = Complex<f32>;
 
+#[repr(transparent)]
 pub struct Array {
     pub(crate) c_array: mlx_array,
 }

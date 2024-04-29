@@ -1,3 +1,8 @@
+use std::mem::ManuallyDrop;
+use std::ops::{Deref, DerefMut};
+
+use mlx_sys::mlx_array;
+
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 
@@ -150,6 +155,36 @@ impl Array {
         }
 
         Ok(())
+    }
+}
+
+// TODO: how to test if there is a memory leak for this function?
+pub(crate) fn new_mlx_vector_array(v: Vec<Array>) -> mlx_sys::mlx_vector_array {
+    // Do not drop the Arrays when Vec goes out of scope
+    let v = v.into_iter().map(ManuallyDrop::new).collect::<Vec<_>>();
+    let num_arrs = v.len();
+    unsafe {
+        let out_vec = mlx_sys::mlx_vector_array_new();
+
+        let arrs = v.as_ptr() as *const mlx_array;
+        mlx_sys::mlx_vector_array_add_arrays(out_vec, arrs, num_arrs);
+        out_vec
+    }
+}
+
+pub(crate) enum BorrowOrOwned<'a, T> {
+    Borrowed(&'a T),
+    Owned(T),
+}
+
+impl<'a, T> Deref for BorrowOrOwned<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            BorrowOrOwned::Borrowed(b) => *b,
+            BorrowOrOwned::Owned(o) => o,
+        }
     }
 }
 

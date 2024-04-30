@@ -1023,7 +1023,6 @@ mod tests {
         let mut result = x.min(&[1][..], None);
         result.eval();
         assert_eq!(result.as_slice::<i32>(), &[1, 3]);
-
     }
 
     #[test]

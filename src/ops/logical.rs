@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::{DataStoreError, OperationError};
 use crate::stream::StreamOrDevice;
-use crate::utils::{can_reduce_shape, is_broadcastable};
+use crate::utils::{axes_or_default_to_all, can_reduce_shape, is_broadcastable};
 use mlx_macros::default_device;
 
 impl Array {
@@ -1126,13 +1126,7 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
             Array::from_ptr(mlx_sys::mlx_any(
@@ -1171,13 +1165,7 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Result<Array, OperationError> {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         // verify reducing shape only if axes are provided
         if !axes.is_empty() {

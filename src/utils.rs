@@ -58,6 +58,20 @@ pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
     Ok(())
 }
 
+/// Helper method to convert an optional slice of axes to a Vec covering all axes.
+pub(crate) fn axes_or_default_to_all<'a>(
+    axes: impl Into<Option<&'a [i32]>>,
+    ndim: i32,
+) -> Vec<i32> {
+    match axes.into() {
+        Some(axes) => axes.to_vec(),
+        None => {
+            let axes: Vec<i32> = (0..ndim).collect();
+            axes
+        }
+    }
+}
+
 /// Helper method to check if two arrays are broadcastable.
 ///
 /// Uses the same broadcasting rules as numpy.
@@ -250,5 +264,26 @@ mod tests {
         assert!(!a.can_reshape_to(&[2, 2, 2, 2]));
         assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]));
         assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]));
+    }
+
+    #[test]
+    fn test_can_reduce_shape() {
+        let shape = [2, 3, 4];
+        can_reduce_shape(&shape, &[0, 1]).unwrap();
+        can_reduce_shape(&shape, &[0, 1, 2]).unwrap();
+    }
+
+    #[test]
+    fn test_can_reduce_shape_out_of_bounds() {
+        let shape = [2, 3, 4];
+        let result = can_reduce_shape(&shape, &[0, 1, 3]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_can_reduce_shape_duplicate_axes() {
+        let shape = [2, 3, 4];
+        let result = can_reduce_shape(&shape, &[0, 0]);
+        assert!(result.is_err());
     }
 }

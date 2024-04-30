@@ -34,6 +34,44 @@ impl std::fmt::Display for Array {
 // TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
 
+impl Clone for Array {
+    /// Clone the array by copying the data.
+    ///
+    /// TODO: test if this is actually a deep copy
+    fn clone(&self) -> Self {
+        unsafe {
+            let dtype = self.dtype();
+            let shape = self.shape();
+            let data = match dtype {
+                Dtype::Bool => mlx_sys::mlx_array_data_bool(self.c_array) as *const c_void,
+                Dtype::Uint8 => mlx_sys::mlx_array_data_uint8(self.c_array) as *const c_void,
+                Dtype::Uint16 => mlx_sys::mlx_array_data_uint16(self.c_array) as *const c_void,
+                Dtype::Uint32 => mlx_sys::mlx_array_data_uint32(self.c_array) as *const c_void,
+                Dtype::Uint64 => mlx_sys::mlx_array_data_uint64(self.c_array) as *const c_void,
+                Dtype::Int8 => mlx_sys::mlx_array_data_int8(self.c_array) as *const c_void,
+                Dtype::Int16 => mlx_sys::mlx_array_data_int16(self.c_array) as *const c_void,
+                Dtype::Int32 => mlx_sys::mlx_array_data_int32(self.c_array) as *const c_void,
+                Dtype::Int64 => mlx_sys::mlx_array_data_int64(self.c_array) as *const c_void,
+                Dtype::Float16 => mlx_sys::mlx_array_data_float16(self.c_array) as *const c_void,
+                Dtype::Float32 => mlx_sys::mlx_array_data_float32(self.c_array) as *const c_void,
+                Dtype::Bfloat16 => mlx_sys::mlx_array_data_bfloat16(self.c_array) as *const c_void,
+                Dtype::Complex64 => {
+                    mlx_sys::mlx_array_data_complex64(self.c_array) as *const c_void
+                }
+            };
+
+            let new_c_array = mlx_sys::mlx_array_from_data(
+                data,
+                shape.as_ptr(),
+                shape.len() as i32,
+                dtype.into(),
+            );
+
+            Array::from_ptr(new_c_array)
+        }
+    }
+}
+
 impl Drop for Array {
     fn drop(&mut self) {
         // TODO: check memory leak with some tool?
@@ -399,5 +437,24 @@ mod tests {
         assert_eq!(array.dim(-2), 2); // negative index
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Int32);
+    }
+
+    #[test]
+    fn cloned_array_has_different_ptr() {
+        let data = [1i32, 2, 3, 4, 5];
+        let orig = Array::from_slice(&data, &[5]);
+        let clone = orig.clone();
+
+        // Data should be the same
+        assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
+
+        // Addr of `mlx_array` should be different
+        assert_ne!(orig.as_ptr(), clone.as_ptr());
+
+        // Addr of data should be different
+        assert_ne!(
+            orig.as_slice::<i32>().as_ptr(),
+            clone.as_slice::<i32>().as_ptr()
+        );
     }
 }

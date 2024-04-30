@@ -6,7 +6,11 @@
 //! 2. indexing with a slice `&[i32]`
 //! 3. indexing with an iterator `impl Iterator<Item=i32>`
 
-use std::ops::{Bound, RangeBounds};
+use std::{
+    borrow::Cow,
+    ops::{Bound, RangeBounds},
+    rc::Rc,
+};
 
 use mlx_macros::default_device;
 use smallvec::{smallvec, SmallVec};
@@ -17,7 +21,7 @@ use crate::{
         TakeError,
     },
     ops::{expand_dims_unchecked, reshape},
-    utils::{all_unique, new_mlx_vector_array, resolve_index, resolve_index_unchecked, BorrowOrOwned},
+    utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array, StreamOrDevice,
 };
 
@@ -49,15 +53,13 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ArrayIndexOp {
     TakeIndex {
         index: i32,
-        axis: i32,
     },
-    TakeArrayOwned {
-        indices: Array,
-        axis: i32,
+    TakeArray {
+        indices: Rc<Array>,
     },
     Slice {
         start: Bound<i32>,
@@ -71,12 +73,20 @@ impl ArrayIndexOp {
     fn is_array_or_index(&self) -> bool {
         matches!(
             self,
-            ArrayIndexOp::TakeIndex { .. } | ArrayIndexOp::TakeArrayOwned { .. }
+            ArrayIndexOp::TakeIndex { .. } | ArrayIndexOp::TakeArray { .. }
         )
     }
 
     fn is_array(&self) -> bool {
-        matches!(self, ArrayIndexOp::TakeArrayOwned { .. })
+        matches!(self, ArrayIndexOp::TakeArray { .. })
+    }
+
+    pub fn range_full() -> Self {
+        ArrayIndexOp::Slice {
+            start: Bound::Unbounded,
+            stop: Bound::Unbounded,
+            stride: 1,
+        }
     }
 }
 
@@ -286,8 +296,9 @@ impl Array {
     }
 }
 
-fn absolute_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
-    let start = match start {
+#[inline]
+fn slice_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
+    match start {
         Bound::Included(start) => start,
         Bound::Excluded(start) => start + 1,
         Bound::Unbounded => {
@@ -297,7 +308,12 @@ fn absolute_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
                 0
             }
         }
-    };
+    }
+}
+
+#[inline]
+fn absolute_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
+    let start = slice_start(start, stride, size);
     if start < 0 {
         start + size
     } else {
@@ -305,8 +321,9 @@ fn absolute_start(start: Bound<i32>, stride: i32, size: i32) -> i32 {
     }
 }
 
-fn absolute_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
-    let end = match end {
+#[inline]
+fn slice_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
+    match end {
         Bound::Included(end) => end + 1,
         Bound::Excluded(end) => end,
         Bound::Unbounded => {
@@ -316,7 +333,12 @@ fn absolute_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
                 size
             }
         }
-    };
+    }
+}
+
+#[inline]
+fn absolute_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
+    let end = slice_end(end, stride, size);
     if end < 0 {
         end + size
     } else {
@@ -330,7 +352,7 @@ fn absolute_end(end: Bound<i32>, stride: i32, size: i32) -> i32 {
 #[inline]
 fn gather_nd<'a>(
     src: &'a Array,
-    operations: impl Iterator<Item = ArrayIndexOp>,
+    operations: impl Iterator<Item = &'a ArrayIndexOp>,
     gather_first: bool,
     stream: StreamOrDevice,
 ) -> (usize, Array) {
@@ -339,7 +361,7 @@ fn gather_nd<'a>(
     let mut max_dims = 0;
     let mut slice_count = 0;
     let mut is_slice: Vec<bool> = Vec::new();
-    let mut gather_indices: Vec<Array> = Vec::new();
+    let mut gather_indices: Vec<Rc<Array>> = Vec::new();
 
     let shape = src.shape();
 
@@ -350,10 +372,12 @@ fn gather_nd<'a>(
         axes.push(i as i32);
         operation_len += 1;
         match op {
-            TakeIndex { index, axis } => {
-                let item =
-                    Array::from_int(resolve_index_unchecked(index, src.dim(axis) as usize) as i32);
-                gather_indices.push(item);
+            TakeIndex { index } => {
+                let item = Array::from_int(resolve_index_unchecked(
+                    *index,
+                    src.dim(i as i32) as usize,
+                ) as i32);
+                gather_indices.push(Rc::new(item));
                 is_slice.push(false);
             }
             Slice {
@@ -365,8 +389,8 @@ fn gather_nd<'a>(
                 is_slice.push(true);
 
                 let size = shape[i];
-                let absolute_start = absolute_start(start, stride, size);
-                let absolute_end = absolute_end(stop, stride, size);
+                let absolute_start = absolute_start(*start, *stride, size);
+                let absolute_end = absolute_end(*stop, *stride, size);
 
                 // TODO: check if this is correct when stride is negative
                 let indices: Vec<i32> = (absolute_start..absolute_end)
@@ -374,12 +398,12 @@ fn gather_nd<'a>(
                     .collect();
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
 
-                gather_indices.push(item);
+                gather_indices.push(Rc::new(item));
             }
-            TakeArrayOwned { indices, axis: _ } => {
+            TakeArray { indices } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
-                gather_indices.push(indices);
+                gather_indices.push(Rc::clone(indices));
             }
             ExpandDims => {
                 unreachable!("ExpandDims(ie. NewAxis) is already filtered out")
@@ -395,12 +419,12 @@ fn gather_nd<'a>(
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(0);
-                    *item = reshape(&item, &new_shape);
+                    *item = Rc::new(reshape(&item, &new_shape));
                     slice_index += 1;
                 } else {
                     let mut new_shape = item.shape().to_vec();
                     new_shape.extend((0..slice_count).map(|_| 1));
-                    *item = reshape(&item, &new_shape);
+                    *item = Rc::new(reshape(&item, &new_shape));
                 }
             }
         }
@@ -409,12 +433,21 @@ fn gather_nd<'a>(
         for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
             let mut new_shape = vec![1; max_dims + slice_count];
             new_shape[i] = item.dim(0);
-            *item = reshape(&item, &new_shape);
+            *item = Rc::new(reshape(&item, &new_shape));
         }
     }
 
     // Do the gather
-    let indices = new_mlx_vector_array(gather_indices);
+    // let indices = new_mlx_vector_array(gather_indices);
+    // SAFETY: indices will be freed at the end of this function. The lifetime of the items in
+    // `gather_indices` is managed by the `gather_indices` vector.
+    let indices = unsafe {
+        let c_vec_array = mlx_sys::mlx_vector_array_new();
+        for item in gather_indices.iter() {
+            mlx_sys::mlx_vector_array_add(c_vec_array, item.c_array);
+        }
+        c_vec_array
+    };
     let mut slice_sizes = shape.to_vec();
     (0..operation_len).for_each(|i| slice_sizes[i] = 1);
 
@@ -428,14 +461,22 @@ fn gather_nd<'a>(
             slice_sizes.len(),
             stream.as_ptr(),
         );
+
         Array::from_ptr(c_array)
     };
     let gathered_shape = gathered.shape();
 
     // Squeeze the dims
-    let mut output_shape: Vec<i32> = gathered_shape[0..(max_dims + slice_count)].iter()
-        .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter()).map(|i| *i).collect();
+    let output_shape: Vec<i32> = gathered_shape[0..(max_dims + slice_count)]
+        .iter()
+        .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter())
+        .map(|i| *i)
+        .collect();
     let result = gathered.reshape(&output_shape);
+
+    unsafe {
+        mlx_sys::mlx_free(indices as *mut _);
+    }
 
     (max_dims, result)
 }
@@ -446,8 +487,8 @@ fn get_item_int(src: &Array, index: i32, axis: i32) -> Array {
 }
 
 #[inline]
-fn get_item_array(src: &Array, indices: Array, axis: i32) -> Array {
-    src.take(&indices, axis)
+fn get_item_array(src: &Array, indices: &Array, axis: i32) -> Array {
+    src.take(indices, axis)
 }
 
 #[inline]
@@ -481,8 +522,8 @@ fn get_item(src: &Array, index: impl ArrayIndex) -> Array {
     use ArrayIndexOp::*;
 
     match index.index_op() {
-        TakeIndex { index, axis } => get_item_int(src, index, axis),
-        TakeArrayOwned { indices, axis } => get_item_array(src, indices, axis),
+        TakeIndex { index } => get_item_int(src, index, 0),
+        TakeArray { indices } => get_item_array(src, &indices, 0),
         Slice {
             start,
             stop,
@@ -497,7 +538,11 @@ fn get_item(src: &Array, index: impl ArrayIndex) -> Array {
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd(src: &Array, mut indices: Vec<ArrayIndexOp>, stream: StreamOrDevice) -> Array {
+fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice) -> Array {
+    use ArrayIndexOp::*;
+
+    let mut src = Cow::Borrowed(src);
+
     // Gather handling
 
     // compute gatherFirst -- this will be true if there is:
@@ -509,7 +554,7 @@ fn get_item_nd(src: &Array, mut indices: Vec<ArrayIndexOp>, stream: StreamOrDevi
     let mut gather_first = false;
     let mut have_array_or_index = false; // This is `haveArrayOrIndex` in the swift binding
     let mut have_non_array = false;
-    for item in indices.iter() {
+    for item in operations.iter() {
         if item.is_array_or_index() {
             if have_array_or_index && have_non_array {
                 gather_first = true;
@@ -521,22 +566,24 @@ fn get_item_nd(src: &Array, mut indices: Vec<ArrayIndexOp>, stream: StreamOrDevi
         }
     }
 
-    let array_count = indices.iter().filter(|op| op.is_array()).count();
+    let array_count = operations.iter().filter(|op| op.is_array()).count();
     let have_array = array_count > 0;
 
     let mut remaining_indices: Vec<ArrayIndexOp> = Vec::new();
     if have_array {
         // apply all the operations (except for .newAxis) up to and including the
         // final .array operation (array operations are implemented via gather)
-        let last_array_or_index = indices
+        let last_array_or_index = operations
             .iter()
             .rposition(|op| op.is_array_or_index())
             .unwrap(); // safe because we know there is at least one array operation
-        let remaining = indices.split_off(last_array_or_index + 1);
-        let gather_indices = indices.into_iter().filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
-        let (max_dims, gathered) = gather_nd(src, gather_indices, gather_first, stream);
+                       // let remaining = indices.split_off(last_array_or_index + 1);
+        let gather_indices = operations[..=last_array_or_index]
+            .iter()
+            .filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
+        let (max_dims, gathered) = gather_nd(&*src, gather_indices, gather_first, stream.clone());
 
-        // src = gathered;
+        src = Cow::Owned(gathered);
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -545,10 +592,126 @@ fn get_item_nd(src: &Array, mut indices: Vec<ArrayIndexOp>, stream: StreamOrDevi
                 stop: Bound::Unbounded,
                 stride: 1,
             }));
+
+            // copy any newAxis in the gatherIndices through.  any slices get
+            // copied in as full range (already applied)
+            for item in &operations[..=last_array_or_index] {
+                match item {
+                    ExpandDims => remaining_indices.push(item.clone()),
+                    Slice { .. } => remaining_indices.push(ArrayIndexOp::range_full()),
+                    _ => {}
+                }
+            }
+
+            // append the remaining operations
+            remaining_indices.extend(operations[(last_array_or_index + 1)..].iter().cloned());
+        } else {
+            // !gather_first
+            for item in operations {
+                match item {
+                    TakeIndex { .. } | TakeArray { .. } => break,
+                    ExpandDims => remaining_indices.push(item.clone()),
+                    _ => remaining_indices.push(ArrayIndexOp::range_full()),
+                }
+            }
+
+            // handle the trailing gathers
+            remaining_indices.extend((0..max_dims).map(|_| ArrayIndexOp::range_full()));
+
+            // and the remaining operations
+            remaining_indices.extend(operations[(last_array_or_index + 1)..].iter().cloned());
         }
     }
 
-    todo!()
+    if have_array && remaining_indices.is_empty() {
+        // `clone` returns a new array with the same shape and data
+        match src {
+            Cow::Borrowed(src) => return src.clone(),
+            Cow::Owned(src) => return src,
+        }
+    }
+
+    if remaining_indices.is_empty() {
+        remaining_indices = operations.to_vec();
+    }
+
+    // Slice handling
+    let ndim = src.ndim();
+    let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
+    let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
+    let mut strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
+    let mut squeeze_needed = false;
+    let mut axis = 0;
+
+    for item in &remaining_indices {
+        match item {
+            ExpandDims => continue,
+            TakeIndex { mut index } => {
+                if !have_array {
+                    index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
+                    starts[axis as usize] = index;
+                    ends[axis as usize] = index + 1;
+                    squeeze_needed = true;
+                }
+            }
+            Slice {
+                start,
+                stop,
+                stride,
+            } => {
+                let size = src.dim(axis);
+                starts[axis as usize] = slice_start(*start, *stride, size);
+                ends[axis as usize] = slice_end(*stop, *stride, size);
+                strides[axis as usize] = *stride;
+            }
+            _ => unreachable!("Unexpected item in remaining_indices: {:?}", item),
+        }
+
+        axis += 1;
+    }
+
+    src = unsafe {
+        let c_array = mlx_sys::mlx_slice(
+            src.c_array,
+            starts.as_ptr(),
+            starts.len(),
+            ends.as_ptr(),
+            ends.len(),
+            strides.as_ptr(),
+            strides.len(),
+            stream.as_ptr(),
+        );
+
+        Cow::Owned(Array::from_ptr(c_array))
+    };
+
+    // Unsqueeze handling
+    if remaining_indices.len() > ndim || squeeze_needed {
+        let mut new_shape = SmallVec::<[i32; 4]>::new();
+        let mut axis_ = 0;
+        for item in remaining_indices {
+            match item {
+                ExpandDims => new_shape.push(1),
+                TakeIndex { .. } => {
+                    if squeeze_needed {
+                        axis_ += 1;
+                    }
+                }
+                _ => {
+                    new_shape.push(src.dim(axis_));
+                    axis_ += 1;
+                }
+            }
+        }
+        new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
+
+        src = Cow::Owned(src.reshape(&new_shape));
+    }
+
+    match src {
+        Cow::Borrowed(src) => src.clone(),
+        Cow::Owned(src) => src,
+    }
 }
 
 pub trait ArrayIndex {
@@ -558,10 +721,7 @@ pub trait ArrayIndex {
 
 impl ArrayIndex for i32 {
     fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeIndex {
-            index: self,
-            axis: 0,
-        }
+        ArrayIndexOp::TakeIndex { index: self }
     }
 }
 
@@ -573,9 +733,8 @@ impl ArrayIndex for NewAxis {
 
 impl ArrayIndex for Array {
     fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeArrayOwned {
-            indices: self,
-            axis: 0,
+        ArrayIndexOp::TakeArray {
+            indices: Rc::new(self),
         }
     }
 }

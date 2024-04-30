@@ -19,8 +19,8 @@ jobs:
           components: rustfmt
       - name: Run cargo fmt
         run: cargo fmt -- --check
-#      - name: Run cargo clippy
-#        run: cargo clippy -- -D warnings
+      - name: Run cargo clippy
+        run: cargo clippy -- -D warnings
 
   tests:
     runs-on: blaze/macos-14

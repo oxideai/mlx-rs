@@ -867,15 +867,23 @@ impl Array {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_all() {
-        let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let mut all = array.all(&[0][..], None);
+        let array = Array::from_slice(&[true, false, true, false], &[2, 2]);
 
-        all.eval();
-        let results: &[bool] = all.as_slice();
-        assert_eq!(results, &[false, true, true, true]);
+        assert_eq!(array.all(None, None).item::<bool>(), false);
+        assert_eq!(array.all(None, true).shape(), &[1, 1]);
+        assert_eq!(array.all(&[0, 1][..], None).item::<bool>(), false);
+
+        let mut result = array.all(&[0][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<bool>(), &[true, false]);
+
+        let mut result = array.all(&[1][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<bool>(), &[false, false]);
     }
 
     #[test]
@@ -893,12 +901,20 @@ mod tests {
 
     #[test]
     fn test_prod() {
-        let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let mut result = array.prod(&[0][..], None);
+        let x = Array::from_slice(&[1, 2, 3, 3], &[2, 2]);
+        assert_eq!(x.prod(None, None).item::<i32>(), 18);
 
+        let y = x.prod(None, true);
+        assert_eq!(y.item::<i32>(), 18);
+        assert_eq!(y.shape(), &[1, 1]);
+
+        let mut result = x.prod(&[0][..], None);
         result.eval();
-        let results: &[i32] = result.as_slice();
-        assert_eq!(results, &[20, 72]);
+        assert_eq!(result.as_slice::<i32>(), &[3, 6]);
+
+        let mut result = x.prod(&[1][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<i32>(), &[2, 9])
     }
 
     #[test]
@@ -913,12 +929,19 @@ mod tests {
 
     #[test]
     fn test_max() {
-        let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let mut result = array.max(&[0][..], None);
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        assert_eq!(x.max(None, None).item::<i32>(), 4);
+        let y = x.max(None, true);
+        assert_eq!(y.item::<i32>(), 4);
+        assert_eq!(y.shape(), &[1, 1]);
 
+        let mut result = x.max(&[0][..], None);
         result.eval();
-        let results: &[i32] = result.as_slice();
-        assert_eq!(results, &[5, 9]);
+        assert_eq!(result.as_slice::<i32>(), &[3, 4]);
+
+        let mut result = x.max(&[1][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<i32>(), &[2, 4]);
     }
 
     #[test]
@@ -953,12 +976,19 @@ mod tests {
 
     #[test]
     fn test_mean() {
-        let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let mut result = array.mean(&[0][..], None);
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        assert_eq!(x.mean(None, None).item::<f32>(), 2.5);
+        let y = x.mean(None, true);
+        assert_eq!(y.item::<f32>(), 2.5);
+        assert_eq!(y.shape(), &[1, 1]);
 
+        let mut result = x.mean(&[0][..], None);
         result.eval();
-        let results: &[f32] = result.as_slice();
-        assert_eq!(results, &[4.5, 8.5]);
+        assert_eq!(result.as_slice::<f32>(), &[2.0, 3.0]);
+
+        let mut result = x.mean(&[1][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<f32>(), &[1.5, 3.5]);
     }
 
     #[test]
@@ -980,12 +1010,20 @@ mod tests {
 
     #[test]
     fn test_min() {
-        let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let mut result = array.min(&[0][..], None);
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        assert_eq!(x.min(None, None).item::<i32>(), 1);
+        let y = x.min(None, true);
+        assert_eq!(y.item::<i32>(), 1);
+        assert_eq!(y.shape(), &[1, 1]);
 
+        let mut result = x.min(&[0][..], None);
         result.eval();
-        let results: &[i32] = result.as_slice();
-        assert_eq!(results, &[4, 8]);
+        assert_eq!(result.as_slice::<i32>(), &[1, 2]);
+
+        let mut result = x.min(&[1][..], None);
+        result.eval();
+        assert_eq!(result.as_slice::<i32>(), &[1, 3]);
+
     }
 
     #[test]
@@ -1000,12 +1038,23 @@ mod tests {
 
     #[test]
     fn test_var() {
-        let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let mut result = array.variance(&[0][..], None, 0);
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        assert_eq!(x.variance(None, None, None).item::<f32>(), 1.25);
+        let y = x.variance(None, true, None);
+        assert_eq!(y.item::<f32>(), 1.25);
+        assert_eq!(y.shape(), &[1, 1]);
 
+        let mut result = x.variance(&[0][..], None, None);
         result.eval();
-        let results: &[f32] = result.as_slice();
-        assert_eq!(results, &[0.25, 0.25]);
+        assert_eq!(result.as_slice::<f32>(), &[1.0, 1.0]);
+
+        let mut result = x.variance(&[1][..], None, None);
+        result.eval();
+        assert_eq!(result.as_slice::<f32>(), &[0.25, 0.25]);
+
+        let x = Array::from_slice(&[1.0, 2.0], &[2]);
+        let out = x.variance(None, None, Some(3));
+        assert_eq!(out.item::<f32>(), f32::INFINITY);
     }
 
     #[test]

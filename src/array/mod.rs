@@ -301,7 +301,7 @@ mod tests {
     #[test]
     fn new_scalar_array_from_bool() {
         let array = Array::from_bool(true);
-        assert_eq!(array.item::<bool>(), true);
+        assert!(array.item::<bool>());
         assert_eq!(array.item_size(), 1);
         assert_eq!(array.size(), 1);
         assert!(array.strides().is_empty());

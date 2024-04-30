@@ -189,7 +189,7 @@ pub fn try_conv_general_device<'a>(
 
     let spatial_dims = spatial_dims.unwrap();
 
-    if spatial_dims < 1 || spatial_dims > 2 {
+    if !(1..=2).contains(&spatial_dims) {
         return Err(OperationError::WrongInput(
             "Only 1d and 2d arrays are supported.".to_string(),
         ));

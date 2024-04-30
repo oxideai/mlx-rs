@@ -67,7 +67,7 @@ impl Clone for Device {
             // Increment the reference count.
             mlx_retain(self.c_device as *mut std::ffi::c_void);
             Self {
-                c_device: self.c_device.clone(),
+                c_device: self.c_device,
             }
         }
     }

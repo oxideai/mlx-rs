@@ -930,7 +930,6 @@ impl Array {
         let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
         is_close
             .map(|is_close| is_close.all_device(None, None, stream))
-            .map_err(|error| error)
     }
 
     /// Returns a boolean array where two arrays are element-wise equal within a tolerance.
@@ -1169,9 +1168,7 @@ impl Array {
 
         // verify reducing shape only if axes are provided
         if !axes.is_empty() {
-            if let Err(error) = can_reduce_shape(self.shape(), &axes) {
-                return Err(error);
-            }
+            can_reduce_shape(self.shape(), &axes)?
         }
 
         Ok(unsafe {

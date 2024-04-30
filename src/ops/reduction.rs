@@ -133,9 +133,9 @@ impl Array {
     ///
     /// # Params
     ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
-    /// - stream: stream or device to evaluate on
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    /// - stream: The stream to execute the operation on
     #[default_device]
     pub fn prod_device<'a>(
         &'a self,
@@ -161,7 +161,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -200,7 +200,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_prod_device<'a>(
@@ -242,7 +242,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn max_device<'a>(
@@ -270,7 +270,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -309,7 +309,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_max_device<'a>(
@@ -465,7 +465,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn mean_device<'a>(
@@ -492,7 +492,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -531,7 +531,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_mean_device<'a>(
@@ -582,7 +582,7 @@ impl Array {
     ///
     /// # Params
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn min_device<'a>(
@@ -609,7 +609,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -648,7 +648,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_min_device<'a>(
@@ -785,7 +785,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn log_sum_exp_device<'a>(
@@ -805,7 +805,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     ///
     /// # Safety
@@ -836,7 +836,7 @@ impl Array {
     /// # Params
     ///
     /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep reduced axis as singleton dimension
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_log_sum_exp_device<'a>(

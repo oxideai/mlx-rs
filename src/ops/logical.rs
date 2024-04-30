@@ -928,8 +928,7 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
         let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
-        is_close
-            .map(|is_close| is_close.all_device(None, None, stream))
+        is_close.map(|is_close| is_close.all_device(None, None, stream))
     }
 
     /// Returns a boolean array where two arrays are element-wise equal within a tolerance.

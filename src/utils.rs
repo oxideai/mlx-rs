@@ -118,8 +118,8 @@ impl Array {
 
         let mut size = 1;
         let mut infer_idx: isize = -1;
-        for i in 0..shape.len() {
-            if shape[i] == -1 {
+        for (i, dim) in shape.iter().enumerate() {
+            if *dim == -1 {
                 if infer_idx >= 0 {
                     return false;
                 }

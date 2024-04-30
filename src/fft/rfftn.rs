@@ -18,6 +18,11 @@ use super::utils::{
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_rfft_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn rfft_device_unchecked(
     a: &Array,
@@ -91,6 +96,11 @@ pub fn rfft_device(
 /// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_rfft2_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn rfft2_device_unchecked<'a>(
     a: &'a Array,
@@ -178,6 +188,11 @@ fn rfftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is over
 ///   the last `len(s)` axes or all axes if `s` is also `None`.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_rfftn_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn rfftn_device_unchecked<'a>(
     a: &'a Array,
@@ -250,6 +265,11 @@ pub fn rfftn_device<'a>(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1`.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_irfft_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn irfft_device_unchecked(
     a: &Array,
@@ -331,6 +351,11 @@ pub fn irfft_device(
 ///   padded with zeros to match the sizes in `s` except for the last axis which has size
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_irfft2_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn irfft2_device_unchecked<'a>(
     a: &'a Array,
@@ -417,6 +442,11 @@ fn irfftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevic
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 ///  over the last `len(s)` axes or all axes if `s` is also `None`.
+///
+/// # Safety
+///
+/// This function is unsafe because it does not check if the input arguments are valid. See
+/// [try_irfftn_device()] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn irfftn_device_unchecked<'a>(
     a: &'a Array,

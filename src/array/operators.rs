@@ -28,21 +28,17 @@ macro_rules! impl_binary_op_assign {
     ($trait:ident, $method:ident, $c_method:ident) => {
         impl<T: Into<Array>> $trait<T> for Array {
             fn $method(&mut self, rhs: T) {
-                self.overwrite_descriptor(
-                    &paste::paste! {
-                        self.[<$c_method _device>](&rhs.into(), StreamOrDevice::default())
-                    }
-                );
+                self.overwrite_descriptor(&paste::paste! {
+                    self.[<$c_method _device>](&rhs.into(), StreamOrDevice::default())
+                });
             }
         }
 
         impl $trait<&Array> for Array {
             fn $method(&mut self, rhs: &Self) {
-                self.overwrite_descriptor(
-                    &paste::paste! {
-                        self.[<$c_method _device>](rhs, StreamOrDevice::default())
-                    }
-                );
+                self.overwrite_descriptor(&paste::paste! {
+                    self.[<$c_method _device>](rhs, StreamOrDevice::default())
+                });
             }
         }
     };

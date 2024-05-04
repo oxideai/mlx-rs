@@ -154,6 +154,29 @@ impl Array {
         Array { c_array }
     }
 
+    /// New array from an iterator.
+    /// 
+    /// This is a convenience method that is equivalent to
+    /// 
+    /// ```rust, ignore
+    /// let data: Vec<T> = iter.collect();
+    /// Array::from_slice(&data, shape)
+    /// ```
+    /// 
+    /// # Example 
+    /// 
+    /// ```rust
+    /// use mlx::Array;
+    /// 
+    /// let data = vec![1i32, 2, 3, 4, 5];
+    /// let array = Array::from_iter(data.clone(), &[5]);
+    /// assert_eq!(array.as_slice::<i32>(), &data[..]);
+    /// ```
+    pub fn from_iter<T: ArrayElement, I: IntoIterator<Item = T>>(iter: I, shape: &[i32]) -> Self {
+        let data: Vec<T> = iter.into_iter().collect();
+        Self::from_slice(&data, shape)
+    }
+
     /// The size of the array’s datatype in bytes.
     pub fn item_size(&self) -> usize {
         unsafe { mlx_sys::mlx_array_itemsize(self.c_array) }

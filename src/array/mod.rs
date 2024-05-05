@@ -295,10 +295,6 @@ impl Array {
     pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
         self.try_as_slice().unwrap()
     }
-
-    pub(crate) fn overwrite_descriptor(&self, other: &Array) {
-        unsafe { mlx_sys::mlx_overwrite_descriptor(self.c_array, other.c_array) };
-    }
 }
 
 impl From<bool> for Array {

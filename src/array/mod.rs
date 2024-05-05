@@ -155,19 +155,19 @@ impl Array {
     }
 
     /// New array from an iterator.
-    /// 
+    ///
     /// This is a convenience method that is equivalent to
-    /// 
+    ///
     /// ```rust, ignore
     /// let data: Vec<T> = iter.collect();
     /// Array::from_slice(&data, shape)
     /// ```
-    /// 
-    /// # Example 
-    /// 
+    ///
+    /// # Example
+    ///
     /// ```rust
     /// use mlx::Array;
-    /// 
+    ///
     /// let data = vec![1i32, 2, 3, 4, 5];
     /// let array = Array::from_iter(data.clone(), &[5]);
     /// assert_eq!(array.as_slice::<i32>(), &data[..]);

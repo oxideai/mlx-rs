@@ -1,10 +1,6 @@
 //! Indexing Arrays
 //!
-//! Arrays can be indexed in the following ways:
-//!
-//! 1. indexing with a single integer`i32`
-//! 2. indexing with a slice `&[i32]`
-//! 3. indexing with an iterator `impl Iterator<Item=i32>`
+//! TODO: fix documentation
 
 use std::{
     borrow::Cow,
@@ -16,16 +12,11 @@ use mlx_macros::default_device;
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    error::{
-        DuplicateAxisError, ExpandDimsError, InvalidAxisError, SliceError, TakeAlongAxisError,
-        TakeError,
-    },
-    ops::{expand_dims_device_unchecked, expand_dims_unchecked, reshape},
-    utils::{all_unique, resolve_index, resolve_index_unchecked},
+    error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
+    ops::{expand_dims_device_unchecked, reshape},
+    utils::resolve_index_unchecked,
     Array, StreamOrDevice,
 };
-
-use super::reshape_unchecked;
 
 /* -------------------------------------------------------------------------- */
 /*                                Custom types                                */
@@ -421,7 +412,6 @@ impl Array {
     // This is exposed in the c api but not found in the swift or python api
     //
     // Thie is not the same as rust slice. Slice in python is more like `StepBy` iterator in rust
-    #[default_device]
     pub(crate) unsafe fn slice_device_unchecked(
         &self,
         start: &[i32],
@@ -445,7 +435,6 @@ impl Array {
         }
     }
 
-    #[default_device]
     pub(crate) fn try_slice_device(
         &self,
         start: &[i32],
@@ -460,7 +449,6 @@ impl Array {
         unsafe { Ok(self.slice_device_unchecked(start, stop, strides, stream)) }
     }
 
-    #[default_device]
     pub(crate) fn slice_device(
         &self,
         start: &[i32],
@@ -614,11 +602,7 @@ fn get_item_array(src: &Array, indices: &Array, axis: i32, stream: StreamOrDevic
 }
 
 #[inline]
-fn get_item_slice(
-    src: &Array,
-    range: RangeIndex,
-    stream: StreamOrDevice,
-) -> Array {
+fn get_item_slice(src: &Array, range: RangeIndex, stream: StreamOrDevice) -> Array {
     let ndim = src.ndim();
     let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
     let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
@@ -771,20 +755,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
         }
     }
 
-    src = unsafe {
-        let c_array = mlx_sys::mlx_slice(
-            src.c_array,
-            starts.as_ptr(),
-            starts.len(),
-            ends.as_ptr(),
-            ends.len(),
-            strides.as_ptr(),
-            strides.len(),
-            stream.as_ptr(),
-        );
-
-        Cow::Owned(Array::from_ptr(c_array))
-    };
+    src = Cow::Owned(src.slice_device(&starts, &ends, &strides, stream));
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -874,13 +845,22 @@ where
 mod tests {
     use super::*;
 
+    macro_rules! assert_array_all_close {
+        ($a:tt, $b:tt) => {
+            let _b: Array = $b.into();
+            let mut assert = $a.all_close(&_b, None, None, None);
+            assert.eval();
+            assert!(assert.item::<bool>());
+        };
+    }
+
     #[test]
     fn test_get_item() {
         let a = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
         let mut b = a.index(1);
         b.eval();
 
-        assert_eq!(b.item::<f32>(), 2.0);
+        assert_array_all_close!(b, 2.0);
     }
 
     // The unit tests below are ported from the swift binding.
@@ -895,8 +875,8 @@ mod tests {
         assert_eq!(s.ndim(), 2);
         assert_eq!(s.shape(), &[8, 8]);
 
-        let expected = (64..128).collect::<Vec<_>>();
-        assert_eq!(s.as_slice::<i32>(), &expected);
+        let expected = Array::from_iter(64..128, &[8, 8]);
+        assert_array_all_close!(s, expected);
     }
 
     #[test]
@@ -909,8 +889,8 @@ mod tests {
         assert_eq!(s1.ndim(), 1);
         assert_eq!(s1.shape(), &[8]);
 
-        let expected = (80..88).collect::<Vec<_>>();
-        assert_eq!(s1.as_slice::<i32>(), &expected);
+        let expected = Array::from_iter(80..88, &[8]);
+        assert_array_all_close!(s1, expected);
 
         let mut s2 = a.index((1, 2, 3));
         s2.eval();
@@ -952,61 +932,105 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_dim_range() {
-        let a = Array::from_iter(0i32..9, &[3, 3]);
+    fn test_array_subscript_range() {
+        let a = Array::from_iter(0i32..512, &[8, 8, 8]);
 
-        let mut s = a.index((0..2, 1..3));
-        s.eval();
+        let mut s1 = a.index(1..3);
+        s1.eval();
+        assert_eq!(s1.ndim(), 3);
+        assert_eq!(s1.shape(), &[2, 8, 8]);
+        let expected = Array::from_iter(64..192, &[2, 8, 8]);
+        assert_array_all_close!(s1, expected);
 
-        assert_eq!(s.ndim(), 2);
-        assert_eq!(s.shape(), &[2, 2]);
-        let expected_data = &[1, 2, 4, 5];
-        let expected_shape = &[2, 2];
-        let expected = Array::from_slice(expected_data, expected_shape);
-        
-        // // This will fail, because the left side will be &[1,2,3,4]
-        // assert_eq!(s.as_slice::<i32>(), &expected_data[..]); 
+        // even though the first dimension is 1 we do not squeeze it
+        let mut s2 = a.index(1..=1);
+        s2.eval();
+        assert_eq!(s2.ndim(), 3);
+        assert_eq!(s2.shape(), &[1, 8, 8]);
+        let expected = Array::from_iter(64..128, &[1, 8, 8]);
+        assert_array_all_close!(s2, expected);
 
-        // This will pass
-        let mut assert = s.all_close(&expected, None, None, None);
-        assert.eval();
-        assert!(assert.item::<bool>());
+        // multiple ranges, resolving RangeExpressions vs the dimensions
+        let mut s3 = a.index((1..2, ..3, 3..));
+        s3.eval();
+        assert_eq!(s3.ndim(), 3);
+        assert_eq!(s3.shape(), &[1, 3, 5]);
+        let expected = Array::from_slice(
+            &[67, 68, 69, 70, 71, 75, 76, 77, 78, 79, 83, 84, 85, 86, 87],
+            &[1, 3, 5],
+        );
+        assert_array_all_close!(s3, expected);
+
+        let mut s4 = a.index((-2..-1, ..-3, -3..));
+        s4.eval();
+        assert_eq!(s4.ndim(), 3);
+        assert_eq!(s4.shape(), &[1, 5, 3]);
+        let expected = Array::from_slice(
+            &[
+                389, 390, 391, 397, 398, 399, 405, 406, 407, 413, 414, 415, 421, 422, 423,
+            ],
+            &[1, 5, 3],
+        );
+        assert_array_all_close!(s4, expected);
     }
 
     #[test]
-    fn test_array_subscript_range() {
-        // let a = Array::from_iter(0i32..512, &[8, 8, 8]);
+    fn test_array_subscript_advanced() {
+        // advanced subscript examples taken from
+        // https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
 
-        // let mut s1 = a.index(1..3);
-        // s1.eval();
-        // assert_eq!(s1.ndim(), 3);
-        // assert_eq!(s1.shape(), &[2, 8, 8]);
-        // let expected = (64..192).collect::<Vec<_>>();
-        // assert_eq!(s1.as_slice::<i32>(), &expected);
+        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>();
 
-        // // even though the first dimension is 1 we do not squeeze it
-        // let mut s2 = a.index(1..=1);
-        // s2.eval();
-        // assert_eq!(s2.ndim(), 3);
-        // assert_eq!(s2.shape(), &[1, 8, 8]);
-        // let expected = (64..128).collect::<Vec<_>>();
-        // assert_eq!(s2.as_slice::<i32>(), &expected);
+        let i1 = Array::from_slice(&[0, 2, 4], &[3]);
+        let i2 = Array::from_slice(&[0, 1, 2], &[3]);
 
-        // // multiple ranges, resolving RangeExpressions vs the dimensions
-        // let mut s3 = a.index((1..2, ..3, 3..));
-        // s3.eval();
-        // assert_eq!(s3.ndim(), 3);
-        // assert_eq!(s3.shape(), &[1, 3, 5]);
-        // let expected = [67, 68, 69, 70, 71, 75, 76, 77, 78, 79, 83, 84, 85, 86, 87];
-        // assert_eq!(s3.as_slice::<i32>(), &expected);
+        let mut s1 = a.index((i1, i2));
+        s1.eval();
 
-        // let mut s4 = a.index((-2..-1, ..-3, -3..));
-        // s4.eval();
-        // assert_eq!(s4.ndim(), 3);
-        // assert_eq!(s4.shape(), &[1, 5, 3]);
-        // let expected = [
-        //     389, 390, 391, 397, 398, 399, 405, 406, 407, 413, 414, 415, 421, 422, 423,
-        // ];
-        // assert_eq!(s4.as_slice::<i32>(), &expected);
+        assert_eq!(s1.ndim(), 1);
+        assert_eq!(s1.shape(), &[3]);
+
+        let expected = Array::from_slice(&[0i32, 15, 30], &[3]);
+        assert_array_all_close!(s1, expected);
+    }
+
+    #[test]
+    fn test_array_subscript_advanced_2() {
+        let a = Array::from_iter(0..12, &[6, 2]).as_type::<i32>();
+
+        let i1 = Array::from_slice(&[0, 2, 4], &[3]);
+        let mut s2 = a.index(i1);
+        s2.eval();
+
+        let expected = Array::from_slice(&[0i32, 1, 4, 5, 8, 9], &[3, 2]);
+        assert_array_all_close!(s2, expected);
+    }
+
+    #[test]
+    fn test_array_subscript_advanced_2d() {
+        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>();
+
+        let rows = Array::from_slice(&[0, 0, 3, 3], &[2, 2]);
+        let cols = Array::from_slice(&[0, 2, 0, 2], &[2, 2]);
+
+        let mut s = a.index((rows, cols));
+        s.eval();
+
+        let expected = Array::from_slice(&[0, 2, 9, 11], &[2, 2]);
+        assert_array_all_close!(s, expected);
+    }
+
+    #[test]
+    fn test_array_subscript_advanced_2d_2() {
+        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>();
+
+        let rows = Array::from_slice(&[0, 3], &[2, 1]);
+        let cols = Array::from_slice(&[0, 2], &[2]);
+
+        let mut s = a.index((rows, cols));
+        s.eval();
+
+        let expected = Array::from_slice(&[0, 2, 9, 11], &[2, 2]);
+        assert_array_all_close!(s, expected);
     }
 }

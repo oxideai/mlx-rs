@@ -1,8 +1,3 @@
-use std::mem::ManuallyDrop;
-use std::ops::{Deref, DerefMut};
-
-use mlx_sys::mlx_array;
-
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 

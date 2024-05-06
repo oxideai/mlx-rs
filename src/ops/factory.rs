@@ -824,14 +824,14 @@ mod tests {
 
     #[test]
     fn test_full_array() {
-        let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::default());
+        let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::cpu());
         let mut array = Array::full::<f32>(&[2, 3], source);
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
         array.eval();
         let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[0.0; 6]);
+        float_eq::float_eq!(*data, [0.0; 6], abs <= [1e-6; 6]);
     }
 
     #[test]

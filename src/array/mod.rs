@@ -42,6 +42,19 @@ impl Drop for Array {
     }
 }
 
+impl PartialEq for &Array {
+    /// Array equality check.
+    ///
+    /// Compare two arrays for equality. Returns `true` iff the arrays have
+    /// the same shape and their values are equal. The arrays need not have
+    /// the same type to be considered equal.
+    ///
+    /// If you're looking for element-wise equality, use the [Array::eq()] method.
+    fn eq(&self, other: &Self) -> bool {
+        self.array_eq(other, None).item()
+    }
+}
+
 impl Array {
     /// Create a new array from an existing mlx_array pointer.
     ///
@@ -128,6 +141,10 @@ impl Array {
     /// The strides of the array.
     pub fn strides(&self) -> &[usize] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_strides(self.c_array);
@@ -150,6 +167,10 @@ impl Array {
     /// Returns: a pointer to the sizes of each dimension.
     pub fn shape(&self) -> &[i32] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_shape(self.c_array);
@@ -398,5 +419,16 @@ mod tests {
         assert_eq!(array.dim(-2), 2); // negative index
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Int32);
+    }
+
+    #[test]
+    fn test_array_eq() {
+        let data = [1i32, 2, 3, 4, 5];
+        let array1 = Array::from_slice(&data, &[5]);
+        let array2 = Array::from_slice(&data, &[5]);
+        let array3 = Array::from_slice(&[1i32, 2, 3, 4, 6], &[5]);
+
+        assert_eq!(&array1, &array2);
+        assert_ne!(&array1, &array3);
     }
 }

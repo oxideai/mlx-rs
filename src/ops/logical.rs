@@ -1028,8 +1028,8 @@ impl Array {
 
     /// Array equality check.
     ///
-    /// Compare two arrays for equality. Returns `True` if and only if the arrays
-    /// have the same shape and their values are equal. The arrays need not have
+    /// Compare two arrays for equality. Returns `true` iff the arrays have
+    /// the same shape and their values are equal. The arrays need not have
     /// the same type to be considered equal.
     ///
     /// # Example

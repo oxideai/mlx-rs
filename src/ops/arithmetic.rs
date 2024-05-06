@@ -586,10 +586,8 @@ impl Array {
         other: &Array,
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
-        if self.shape() != other.shape() {
-            if !is_broadcastable(self.shape(), other.shape()) {
-                return Err(DataStoreError::BroadcastError);
-            }
+        if self.shape() != other.shape() && !is_broadcastable(self.shape(), other.shape()) {
+            return Err(DataStoreError::BroadcastError);
         }
 
         Ok(unsafe { self.pow_device_unchecked(other, stream) })
@@ -1111,8 +1109,7 @@ impl Array {
         if self.ndim() == 0 || other.ndim() == 0 {
             return Err(OperationError::WrongInput(
                 "Got 0 dimension input. Inputs must have at least one dimension.".to_string(),
-            )
-            .into());
+            ));
         }
 
         // get last dimension of first input and second to last dimension of second input
@@ -1134,18 +1131,16 @@ impl Array {
             return Err(OperationError::WrongDimensions(
                 format!("Last dimension of first input with shape {:?} must match second to last dimension of second input with shape {:?}",
                 self.shape(), other.shape())
-            )
-            .into());
+            ));
         }
 
         let result_type = Dtype::from_promoting_types(self.dtype(), other.dtype());
 
-        if !result_type.is_floating() {
+        if !result_type.is_float() {
             return Err(OperationError::WrongInput(
                 format!("Only real floating point types are supported but {:?} and {:?} where provided, which is not a real floating point type",
                 self.dtype(), other.dtype())
-            )
-            .into());
+            ));
         }
 
         Ok(unsafe { self.matmul_device_unchecked(other, stream) })

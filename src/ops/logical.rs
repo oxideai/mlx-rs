@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::{DataStoreError, OperationError};
 use crate::stream::StreamOrDevice;
-use crate::utils::{can_reduce_shape, is_broadcastable};
+use crate::utils::{axes_or_default_to_all, can_reduce_shape, is_broadcastable};
 use mlx_macros::default_device;
 
 impl Array {
@@ -928,9 +928,7 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, DataStoreError> {
         let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
-        is_close
-            .map(|is_close| is_close.all_device(None, None, stream))
-            .map_err(|error| error)
+        is_close.map(|is_close| is_close.all_device(None, None, stream))
     }
 
     /// Returns a boolean array where two arrays are element-wise equal within a tolerance.
@@ -1126,13 +1124,7 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Array {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
             Array::from_ptr(mlx_sys::mlx_any(
@@ -1171,19 +1163,11 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         stream: StreamOrDevice,
     ) -> Result<Array, OperationError> {
-        let axes = match axes.into() {
-            Some(axes) => axes.to_vec(),
-            None => {
-                let axes: Vec<i32> = (0..self.ndim() as i32).collect();
-                axes
-            }
-        };
+        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         // verify reducing shape only if axes are provided
         if !axes.is_empty() {
-            if let Err(error) = can_reduce_shape(self.shape(), &axes) {
-                return Err(error);
-            }
+            can_reduce_shape(self.shape(), &axes)?
         }
 
         Ok(unsafe {

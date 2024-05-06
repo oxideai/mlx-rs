@@ -83,6 +83,7 @@ pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
 // It's probably rare to perform fft on more than 4 axes
 // TODO: check if this is a good default value
 #[inline]
+#[allow(clippy::type_complexity)]
 pub(super) fn try_resolve_sizes_and_axes<'a>(
     a: &'a Array,
     s: Option<&'a [i32]>,

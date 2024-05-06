@@ -30,7 +30,7 @@ pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
 }
 
 pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
-    let abs_index = index.abs() as usize;
+    let abs_index = index.unsigned_abs() as usize;
 
     if index.is_negative() {
         if abs_index <= len {
@@ -38,12 +38,10 @@ pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
         } else {
             None
         }
+    } else if abs_index < len {
+        Some(abs_index)
     } else {
-        if abs_index < len {
-            Some(abs_index)
-        } else {
-            None
-        }
+        None
     }
 }
 
@@ -56,6 +54,20 @@ pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
     }
 
     Ok(())
+}
+
+/// Helper method to convert an optional slice of axes to a Vec covering all axes.
+pub(crate) fn axes_or_default_to_all<'a>(
+    axes: impl Into<Option<&'a [i32]>>,
+    ndim: i32,
+) -> Vec<i32> {
+    match axes.into() {
+        Some(axes) => axes.to_vec(),
+        None => {
+            let axes: Vec<i32> = (0..ndim).collect();
+            axes
+        }
+    }
 }
 
 /// Helper method to check if two arrays are broadcastable.
@@ -106,8 +118,8 @@ impl Array {
 
         let mut size = 1;
         let mut infer_idx: isize = -1;
-        for i in 0..shape.len() {
-            if shape[i] == -1 {
+        for (i, dim) in shape.iter().enumerate() {
+            if *dim == -1 {
                 if infer_idx >= 0 {
                     return Err(ReshapeError::MultipleInferredDims);
                 }
@@ -253,5 +265,26 @@ mod tests {
         assert!(!a.can_reshape_to(&[2, 2, 2, 2]).is_ok());
         assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]).is_ok());
         assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_ok());
+    }
+
+    #[test]
+    fn test_can_reduce_shape() {
+        let shape = [2, 3, 4];
+        can_reduce_shape(&shape, &[0, 1]).unwrap();
+        can_reduce_shape(&shape, &[0, 1, 2]).unwrap();
+    }
+
+    #[test]
+    fn test_can_reduce_shape_out_of_bounds() {
+        let shape = [2, 3, 4];
+        let result = can_reduce_shape(&shape, &[0, 1, 3]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_can_reduce_shape_duplicate_axes() {
+        let shape = [2, 3, 4];
+        let result = can_reduce_shape(&shape, &[0, 0]);
+        assert!(result.is_err());
     }
 }

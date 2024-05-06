@@ -35,7 +35,7 @@ impl Dtype {
         matches!(self, Dtype::Complex64)
     }
 
-    pub fn is_floating(&self) -> bool {
+    pub fn is_float(&self) -> bool {
         matches!(self, Dtype::Float16 | Dtype::Float32 | Dtype::Bfloat16)
     }
 

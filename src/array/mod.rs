@@ -141,6 +141,10 @@ impl Array {
     /// The strides of the array.
     pub fn strides(&self) -> &[usize] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_strides(self.c_array);
@@ -163,6 +167,10 @@ impl Array {
     /// Returns: a pointer to the sizes of each dimension.
     pub fn shape(&self) -> &[i32] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_shape(self.c_array);

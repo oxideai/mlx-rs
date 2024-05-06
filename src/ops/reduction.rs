@@ -904,7 +904,7 @@ mod tests {
         let x = Array::from_slice(&[1, 2, 3, 3], &[2, 2]);
         assert_eq!(x.prod(None, None).item::<i32>(), 18);
 
-        let y = x.prod(None, true);
+        let mut y = x.prod(None, true);
         assert_eq!(y.item::<i32>(), 18);
         assert_eq!(y.shape(), &[1, 1]);
 
@@ -931,7 +931,7 @@ mod tests {
     fn test_max() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         assert_eq!(x.max(None, None).item::<i32>(), 4);
-        let y = x.max(None, true);
+        let mut y = x.max(None, true);
         assert_eq!(y.item::<i32>(), 4);
         assert_eq!(y.shape(), &[1, 1]);
 
@@ -978,7 +978,7 @@ mod tests {
     fn test_mean() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         assert_eq!(x.mean(None, None).item::<f32>(), 2.5);
-        let y = x.mean(None, true);
+        let mut y = x.mean(None, true);
         assert_eq!(y.item::<f32>(), 2.5);
         assert_eq!(y.shape(), &[1, 1]);
 
@@ -1012,7 +1012,7 @@ mod tests {
     fn test_min() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         assert_eq!(x.min(None, None).item::<i32>(), 1);
-        let y = x.min(None, true);
+        let mut y = x.min(None, true);
         assert_eq!(y.item::<i32>(), 1);
         assert_eq!(y.shape(), &[1, 1]);
 
@@ -1039,7 +1039,7 @@ mod tests {
     fn test_var() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         assert_eq!(x.variance(None, None, None).item::<f32>(), 1.25);
-        let y = x.variance(None, true, None);
+        let mut y = x.variance(None, true, None);
         assert_eq!(y.item::<f32>(), 1.25);
         assert_eq!(y.shape(), &[1, 1]);
 
@@ -1052,7 +1052,7 @@ mod tests {
         assert_eq!(result.as_slice::<f32>(), &[0.25, 0.25]);
 
         let x = Array::from_slice(&[1.0, 2.0], &[2]);
-        let out = x.variance(None, None, Some(3));
+        let mut out = x.variance(None, None, Some(3));
         assert_eq!(out.item::<f32>(), f32::INFINITY);
     }
 

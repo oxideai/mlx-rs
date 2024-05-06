@@ -6,6 +6,7 @@ use std::ffi::c_void;
 mod element;
 mod operators;
 
+use crate::error::DataStoreError;
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
@@ -210,9 +211,33 @@ impl Array {
     }
 
     /// Access the value of a scalar array.
-    pub fn item<T: ArrayElement>(&self) -> T {
+    ///
+    /// _Note: This will evaluate the array._
+    pub fn item<T: ArrayElement>(&mut self) -> T {
         // TODO: check and perform type conversion from the inner type to the desired output type
+        self.try_item().unwrap()
+    }
+
+    /// Access the value of a scalar array without validating the shape.
+    ///
+    /// _Note: This will evaluate the array._
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because the array is not checked for being a scalar.
+    pub fn item_unchecked<T: ArrayElement>(&mut self) -> T {
         T::array_item(self)
+    }
+
+    /// Access the value of a scalar array returning an error if the array is not a scalar.
+    ///
+    /// _Note: This will evaluate the array._
+    pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, DataStoreError> {
+        if self.size() != 1 {
+            return Err(DataStoreError::NotScalar);
+        }
+
+        Ok(T::array_item(self))
     }
 
     /// Returns a slice of the array data.
@@ -321,7 +346,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_bool() {
-        let array = Array::from_bool(true);
+        let mut array = Array::from_bool(true);
         assert!(array.item::<bool>());
         assert_eq!(array.item_size(), 1);
         assert_eq!(array.size(), 1);
@@ -334,7 +359,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_int() {
-        let array = Array::from_int(42);
+        let mut array = Array::from_int(42);
         assert_eq!(array.item::<i32>(), 42);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -347,7 +372,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_float() {
-        let array = Array::from_float(3.14);
+        let mut array = Array::from_float(3.14);
         assert_eq!(array.item::<f32>(), 3.14);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -361,7 +386,7 @@ mod tests {
     #[test]
     fn new_scalar_array_from_complex() {
         let val = complex64::new(1.0, 2.0);
-        let array = Array::from_complex(val);
+        let mut array = Array::from_complex(val);
         assert_eq!(array.item::<complex64>(), val);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
@@ -375,7 +400,7 @@ mod tests {
     #[test]
     fn new_array_from_single_element_slice() {
         let data = [1i32];
-        let array = Array::from_slice(&data, &[1]);
+        let mut array = Array::from_slice(&data, &[1]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
@@ -430,5 +455,12 @@ mod tests {
 
         assert_eq!(&array1, &array2);
         assert_ne!(&array1, &array3);
+    }
+
+    #[test]
+    fn test_array_item_non_scalar() {
+        let data = [1i32, 2, 3, 4, 5];
+        let mut array = Array::from_slice(&data, &[5]);
+        assert!(array.try_item::<i32>().is_err());
     }
 }

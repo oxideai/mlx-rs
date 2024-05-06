@@ -474,27 +474,22 @@ mod tests {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
 
         let mut result = array.cummax(0, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 5, 9]);
 
         let mut result = array.cummax(1, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 4, 9]);
 
         let mut result = array.cummax(None, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[4]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 8, 9]);
 
         let mut result = array.cummax(0, Some(true), None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 9, 4, 9]);
 
         let mut result = array.cummax(0, None, Some(true));
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 5, 9]);
     }
@@ -511,27 +506,22 @@ mod tests {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
 
         let mut result = array.cummin(0, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 4, 8]);
 
         let mut result = array.cummin(1, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 5, 4, 4]);
 
         let mut result = array.cummin(None, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[4]);
         assert_eq!(result.as_slice::<i32>(), &[5, 5, 4, 4]);
 
         let mut result = array.cummin(0, Some(true), None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[4, 8, 4, 9]);
 
         let mut result = array.cummin(0, None, Some(true));
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 4, 8]);
     }
@@ -548,27 +538,22 @@ mod tests {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
 
         let mut result = array.cumprod(0, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 20, 72]);
 
         let mut result = array.cumprod(1, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 40, 4, 36]);
 
         let mut result = array.cumprod(None, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[4]);
         assert_eq!(result.as_slice::<i32>(), &[5, 40, 160, 1440]);
 
         let mut result = array.cumprod(0, Some(true), None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[20, 72, 4, 9]);
 
         let mut result = array.cumprod(0, None, Some(true));
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 20, 72]);
     }
@@ -585,27 +570,22 @@ mod tests {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
 
         let mut result = array.cumsum(0, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 9, 17]);
 
         let mut result = array.cumsum(1, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 13, 4, 13]);
 
         let mut result = array.cumsum(None, None, None);
-        result.eval();
         assert_eq!(result.shape(), &[4]);
         assert_eq!(result.as_slice::<i32>(), &[5, 13, 17, 26]);
 
         let mut result = array.cumsum(0, Some(true), None);
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[9, 17, 4, 9]);
 
         let mut result = array.cumsum(0, None, Some(true));
-        result.eval();
         assert_eq!(result.shape(), &[2, 2]);
         assert_eq!(result.as_slice::<i32>(), &[5, 8, 9, 17]);
     }

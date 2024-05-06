@@ -206,7 +206,6 @@ impl Array {
     // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&mut self) {
-        // This clearly modifies the array, so it should be mutable
         unsafe { mlx_sys::mlx_array_eval(self.c_array) };
     }
 
@@ -253,14 +252,16 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// unsafe {
     ///    let slice = array.as_slice_unchecked::<i32>();
     ///    assert_eq!(slice, &[1, 2, 3, 4, 5]);
     /// }
     /// ```
-    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&self) -> &[T] {
+    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&mut self) -> &[T] {
+        self.eval();
+
         unsafe {
             let data = T::array_data(self);
             let size = self.size();
@@ -276,18 +277,20 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// let slice = array.try_as_slice::<i32>();
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
-    pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
+    pub fn try_as_slice<T: ArrayElement>(&mut self) -> Result<&[T], AsSliceError> {
         if self.dtype() != T::DTYPE {
             return Err(AsSliceError::DtypeMismatch {
                 expecting: T::DTYPE,
                 found: self.dtype(),
             });
         }
+
+        self.eval();
 
         unsafe {
             let size = self.size();
@@ -312,12 +315,12 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// let slice = array.as_slice::<i32>();
     /// assert_eq!(slice, &data[..]);
     /// ```
-    pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
+    pub fn as_slice<T: ArrayElement>(&mut self) -> &[T] {
         self.try_as_slice().unwrap()
     }
 }
@@ -416,7 +419,7 @@ mod tests {
     #[test]
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
-        let array = Array::from_slice(&data, &[5]);
+        let mut array = Array::from_slice(&data, &[5]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
@@ -431,7 +434,7 @@ mod tests {
     #[test]
     fn new_2d_array_from_slice() {
         let data = [1i32, 2, 3, 4, 5, 6];
-        let array = Array::from_slice(&data, &[2, 3]);
+        let mut array = Array::from_slice(&data, &[2, 3]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 6);

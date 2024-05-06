@@ -87,7 +87,6 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
         a += &b;
-        a.eval();
 
         assert_eq!(a.as_slice::<f32>(), &[5.0, 7.0, 9.0]);
     }
@@ -97,7 +96,6 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
         a -= &b;
-        a.eval();
 
         assert_eq!(a.as_slice::<f32>(), &[-3.0, -3.0, -3.0]);
     }
@@ -107,7 +105,6 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
         a *= &b;
-        a.eval();
 
         assert_eq!(a.as_slice::<f32>(), &[4.0, 10.0, 18.0]);
     }
@@ -117,7 +114,6 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
         a /= &b;
-        a.eval();
 
         assert_eq!(a.as_slice::<f32>(), &[0.25, 0.4, 0.5]);
     }

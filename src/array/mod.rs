@@ -239,7 +239,8 @@ impl Array {
         Ok(T::array_item(self))
     }
 
-    /// Returns a slice of the array data.
+    /// Returns a slice of the array data without validating the dtype.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Safety
     ///
@@ -269,7 +270,8 @@ impl Array {
         }
     }
 
-    /// Returns a slice of the array data.
+    /// Returns a slice of the array data returning an error if the dtype does not match the actual dtype.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Example
     ///
@@ -304,6 +306,7 @@ impl Array {
     }
 
     /// Returns a slice of the array data.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Panics
     ///

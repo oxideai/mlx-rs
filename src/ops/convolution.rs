@@ -3,6 +3,7 @@ use crate::{Array, StreamOrDevice};
 use mlx_macros::default_device;
 
 #[inline]
+#[allow(clippy::too_many_arguments)]
 fn conv_general_device_inner(
     array: &Array,
     weight: &Array,
@@ -54,6 +55,7 @@ fn conv_general_device_inner(
 ///   operator otherwise.
 /// - stream: stream or device to evaluate on
 #[default_device]
+#[allow(clippy::too_many_arguments)]
 pub fn conv_general_device<'a>(
     array: &Array,
     weight: &Array,
@@ -106,6 +108,7 @@ pub fn conv_general_device<'a>(
 /// - if arrays are not floating point arrays
 /// - if arrays are not 1d or 2d arrays
 #[default_device]
+#[allow(clippy::too_many_arguments)]
 pub unsafe fn conv_general_device_unchecked<'a>(
     array: &Array,
     weight: &Array,
@@ -156,6 +159,7 @@ pub unsafe fn conv_general_device_unchecked<'a>(
 ///   operator otherwise.
 /// - stream: stream or device to evaluate on
 #[default_device]
+#[allow(clippy::too_many_arguments)]
 pub fn try_conv_general_device<'a>(
     array: &Array,
     weight: &Array,
@@ -189,7 +193,7 @@ pub fn try_conv_general_device<'a>(
 
     let spatial_dims = spatial_dims.unwrap();
 
-    if spatial_dims < 1 || spatial_dims > 2 {
+    if !(1..=2).contains(&spatial_dims) {
         return Err(OperationError::WrongInput(
             "Only 1d and 2d arrays are supported.".to_string(),
         ));
@@ -246,7 +250,7 @@ pub fn try_conv_general_device<'a>(
 /// - groups: input feature groups
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn conv1d_device<'a>(
+pub fn conv1d_device(
     array: &Array,
     weight: &Array,
     stride: impl Into<Option<i32>>,
@@ -271,7 +275,7 @@ pub fn conv1d_device<'a>(
 /// - groups: input feature groups
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn try_conv1d_device<'a>(
+pub fn try_conv1d_device(
     array: &Array,
     weight: &Array,
     stride: impl Into<Option<i32>>,
@@ -311,7 +315,7 @@ pub fn try_conv1d_device<'a>(
 /// - groups: input feature groups
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn conv2d_device<'a>(
+pub fn conv2d_device(
     array: &Array,
     weight: &Array,
     stride: impl Into<Option<(i32, i32)>>,
@@ -336,7 +340,7 @@ pub fn conv2d_device<'a>(
 /// - groups: input feature groups
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn try_conv2d_device<'a>(
+pub fn try_conv2d_device(
     array: &Array,
     weight: &Array,
     stride: impl Into<Option<(i32, i32)>>,

@@ -30,7 +30,7 @@ pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
 }
 
 pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
-    let abs_index = index.abs() as usize;
+    let abs_index = index.unsigned_abs() as usize;
 
     if index.is_negative() {
         if abs_index <= len {
@@ -38,12 +38,10 @@ pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
         } else {
             None
         }
+    } else if abs_index < len {
+        Some(abs_index)
     } else {
-        if abs_index < len {
-            Some(abs_index)
-        } else {
-            None
-        }
+        None
     }
 }
 
@@ -120,8 +118,8 @@ impl Array {
 
         let mut size = 1;
         let mut infer_idx: isize = -1;
-        for i in 0..shape.len() {
-            if shape[i] == -1 {
+        for (i, dim) in shape.iter().enumerate() {
+            if *dim == -1 {
                 if infer_idx >= 0 {
                     return false;
                 }

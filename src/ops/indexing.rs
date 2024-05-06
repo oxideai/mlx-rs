@@ -26,6 +26,9 @@ use crate::{
 pub struct NewAxis;
 
 #[derive(Debug, Clone, Copy)]
+pub struct Ellipsis;
+
+#[derive(Debug, Clone, Copy)]
 pub struct Stride<I> {
     pub iter: I,
     pub stride: i32,
@@ -124,6 +127,7 @@ impl RangeIndex {
 
 #[derive(Debug, Clone)]
 pub enum ArrayIndexOp {
+    Ellipsis,
     TakeIndex { index: i32 },
     TakeArray { indices: Rc<Array> },
     Slice(RangeIndex),
@@ -174,12 +178,66 @@ impl IndexBounds for std::ops::RangeTo<i32> {}
 
 impl IndexBounds for std::ops::RangeToInclusive<i32> {}
 
-/// A marker trait for iterators in `std` that yield `i32`.
-pub trait IndexIterator: Iterator<Item = i32> {}
-
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
 /* -------------------------------------------------------------------------- */
+
+pub trait ArrayIndex {
+    /// `mlx` allows out of bounds indexing.
+    fn index_op(self) -> ArrayIndexOp;
+}
+
+impl ArrayIndex for i32 {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::TakeIndex { index: self }
+    }
+}
+
+impl ArrayIndex for NewAxis {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::ExpandDims
+    }
+}
+
+impl ArrayIndex for Ellipsis {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::Ellipsis
+    }
+}
+
+impl ArrayIndex for Array {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::TakeArray {
+            indices: Rc::new(self),
+        }
+    }
+}
+
+impl<T> ArrayIndex for T
+where
+    T: IndexBounds,
+{
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::Slice(RangeIndex::new(
+            self.start_bound().cloned(),
+            self.end_bound().cloned(),
+            Some(1),
+        ))
+    }
+}
+
+impl<T> ArrayIndex for Stride<T>
+where
+    T: IndexBounds,
+{
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::Slice(RangeIndex::new(
+            self.iter.start_bound().cloned(),
+            self.iter.end_bound().cloned(),
+            Some(self.stride),
+        ))
+    }
+}
 
 // Implement public bindings
 impl Array {
@@ -460,6 +518,10 @@ impl Array {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                              Helper functions                              */
+/* -------------------------------------------------------------------------- */
+
 // Implement additional public APIs
 //
 // TODO: rewrite this in a more rusty way
@@ -515,8 +577,8 @@ fn gather_nd<'a>(
                 max_dims = max_dims.max(indices.ndim());
                 gather_indices.push(Rc::clone(indices));
             }
-            ExpandDims => {
-                unreachable!("ExpandDims(ie. NewAxis) is already filtered out")
+            Ellipsis | ExpandDims => {
+                unreachable!("Unexpected operation in gather_nd")
             }
         }
     }
@@ -616,12 +678,54 @@ fn get_item_slice(src: &Array, range: RangeIndex, stream: StreamOrDevice) -> Arr
     src.slice_device(&starts, &ends, &strides, stream)
 }
 
+fn count_non_new_axis_operations(operations: &[ArrayIndexOp]) -> usize {
+    operations
+        .iter()
+        .filter(|op| !matches!(op, ArrayIndexOp::ExpandDims))
+        .count()
+}
+
+fn expand_ellipsis_operations<'a>(
+    ndim: usize,
+    operations: &'a [ArrayIndexOp],
+) -> Cow<'a, [ArrayIndexOp]> {
+    let ellipsis_count = operations
+        .iter()
+        .filter(|op| matches!(op, ArrayIndexOp::Ellipsis))
+        .count();
+    if ellipsis_count == 0 {
+        return Cow::Borrowed(operations);
+    }
+
+    if ellipsis_count > 1 {
+        panic!("Indexing with multiple ellipsis is not supported");
+    }
+
+    let ellipsis_pos = operations
+        .iter()
+        .position(|op| matches!(op, ArrayIndexOp::Ellipsis))
+        .unwrap();
+    let prefix = &operations[..ellipsis_pos];
+    let suffix = &operations[(ellipsis_pos + 1)..];
+    let expand_range =
+        count_non_new_axis_operations(prefix)..(ndim - count_non_new_axis_operations(suffix));
+    let expand = expand_range.map(|_| ArrayIndexOp::range_full());
+
+    let mut expanded = Vec::with_capacity(ndim);
+    expanded.extend_from_slice(prefix);
+    expanded.extend(expand);
+    expanded.extend_from_slice(suffix);
+
+    Cow::Owned(expanded)
+}
+
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
 fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Array {
     use ArrayIndexOp::*;
 
     match index.index_op() {
+        Ellipsis => src.clone(),
         TakeIndex { index } => get_item_int(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
@@ -638,6 +742,13 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
     use ArrayIndexOp::*;
 
     let mut src = Cow::Borrowed(src);
+
+    // The plan is as follows:
+    // 1. Replace the ellipsis with a series of slice(None)
+    // 2. Loop over the indices and calculate the gather indices
+    // 3. Calculate the remaining slices and reshapes
+
+    let operations = expand_ellipsis_operations(src.ndim(), operations);
 
     // Gather handling
 
@@ -676,7 +787,10 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
                        // let remaining = indices.split_off(last_array_or_index + 1);
         let gather_indices = operations[..=last_array_or_index]
             .iter()
-            .filter(|op| !matches!(op, ArrayIndexOp::ExpandDims));
+            .filter(|op| match op {
+                Ellipsis | ExpandDims => false,
+                _ => true,
+            });
         let (max_dims, gathered) = gather_nd(&*src, gather_indices, gather_first, stream.clone());
 
         src = Cow::Owned(gathered);
@@ -699,7 +813,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
             remaining_indices.extend(operations[(last_array_or_index + 1)..].iter().cloned());
         } else {
             // !gather_first
-            for item in operations {
+            for item in operations.iter() {
                 match item {
                     TakeIndex { .. } | TakeArray { .. } => break,
                     ExpandDims => remaining_indices.push(item.clone()),
@@ -786,57 +900,6 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
     }
 }
 
-pub trait ArrayIndex {
-    /// `mlx` allows out of bounds indexing.
-    fn index_op(self) -> ArrayIndexOp;
-}
-
-impl ArrayIndex for i32 {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeIndex { index: self }
-    }
-}
-
-impl ArrayIndex for NewAxis {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::ExpandDims
-    }
-}
-
-impl ArrayIndex for Array {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeArray {
-            indices: Rc::new(self),
-        }
-    }
-}
-
-impl<T> ArrayIndex for T
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.start_bound().cloned(),
-            self.end_bound().cloned(),
-            Some(1),
-        ))
-    }
-}
-
-impl<T> ArrayIndex for Stride<T>
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.iter.start_bound().cloned(),
-            self.iter.end_bound().cloned(),
-            Some(self.stride),
-        ))
-    }
-}
-
 /* -------------------------------------------------------------------------- */
 /*                                 Unit tests                                 */
 /* -------------------------------------------------------------------------- */
@@ -855,12 +918,31 @@ mod tests {
     }
 
     #[test]
-    fn test_get_item() {
-        let a = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
-        let mut b = a.index(1);
-        b.eval();
+    fn test_array_index_new_axis() {
+        let a = Array::from_iter(0..60, &[3, 4, 5]);
+        let mut s = a.index(NewAxis);
+        s.eval();
 
-        assert_array_all_close!(b, 2.0);
+        assert_eq!(s.ndim(), 4);
+        assert_eq!(s.shape(), &[1, 3, 4, 5]);
+
+        let expected = Array::from_iter(0..60, &[1, 3, 4, 5]);
+        assert_array_all_close!(s, expected);
+    }
+
+    #[test]
+    fn test_array_index_ellipsis() {
+        let a = Array::from_iter(0i32..8, &[2, 2, 2]);
+
+        let mut s1 = a.index((.., .., 0));
+        s1.eval();
+        let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
+        assert_array_all_close!(s1, expected);
+
+        let mut s2 = a.index((Ellipsis, .., 0));
+        s2.eval();
+        let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
+        assert_array_all_close!(s2, expected);
     }
 
     // The unit tests below are ported from the swift binding.

@@ -1,6 +1,46 @@
 //! Indexing Arrays
 //!
-//! TODO: fix documentation
+//! # Single axis indexing
+//! 
+//! | Indexing Operation | `mlx` (python) | `mlx-swift` | `mlx-rs` |
+//! |--------------------|--------|-------|------|
+//! | integer | `arr[1]` | `arr[1]` | `arr.index(1)` |
+//! | range expression | `arr[1:3]` | `arr[1..<3]` | `arr.index(1..3)` |
+//! | full range | `arr[:]` | `arr[0...]` | `arr.index(..)` | 
+//! | range with stride | `arr[::2]` | `arr[.stride(by: 2)]` | `arr.index((0..).stride_by(2))` (see 1 below) |
+//! | ellipsis (consuming all axes) | `arr[...]` | `arr[.ellipsis]` | `arr.index(Ellipsis)` |
+//! | newaxis | `arr[None]` | `arr[.newAxis]` | `arr.index(NewAxis)` |
+//! | mlx array `i` | `arr[i]` | `arr[i]` | `arr.index(i)` |
+//! 
+//! Notes:
+//! 
+//! 1. We use `(0..).stride_by(2)` for full range because `std::ops::RangeFull` doens't carry the
+//!    type information, and indices are `i32`.
+//! 
+//! # Multi-axes indexing
+//! 
+//! Multi-axes indexing with combinations of the above operations is also supported by combining the
+//! operations in a tuple.
+//! 
+//! ## Examples
+//! 
+//! ```rust
+//! // See the multi-dimensional example code for mlx python https://ml-explore.github.io/mlx/build/html/usage/indexing.html
+//! 
+//! use mlx::prelude::*;
+//! 
+//! let a = Array::from_iter(0..8, &[2, 2, 2]);
+//! 
+//! let mut s1 = a.index((.., .., 0));
+//! s1.eval();
+//! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
+//! // TODO: assert_eq!(s1, expected);
+//! 
+//! let mut s2 = a.index((Ellipsis, 0));
+//! s2.eval();
+//! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
+//! // TODO: assert_eq!(s1, expected);
+//! ```
 
 use std::{
     borrow::Cow,
@@ -29,21 +69,21 @@ pub struct NewAxis;
 pub struct Ellipsis;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Stride<I> {
+pub struct StrideBy<I> {
     pub iter: I,
     pub stride: i32,
 }
 
-pub trait IntoStride: Sized {
-    fn stride(self, stride: i32) -> Stride<Self>;
+pub trait IntoStrideBy: Sized {
+    fn stride_by(self, stride: i32) -> StrideBy<Self>;
 }
 
-impl<I> IntoStride for I
+impl<I> IntoStrideBy for I
 where
     I: Iterator<Item = i32>,
 {
-    fn stride(self, stride: i32) -> Stride<Self> {
-        Stride { iter: self, stride }
+    fn stride_by(self, stride: i32) -> StrideBy<Self> {
+        StrideBy { iter: self, stride }
     }
 }
 
@@ -226,7 +266,7 @@ where
     }
 }
 
-impl<T> ArrayIndex for Stride<T>
+impl<T> ArrayIndex for StrideBy<T>
 where
     T: IndexBounds,
 {
@@ -939,10 +979,24 @@ mod tests {
         let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
         assert_array_all_close!(s1, expected);
 
-        let mut s2 = a.index((Ellipsis, .., 0));
+        let mut s2 = a.index((Ellipsis, 0));
         s2.eval();
         let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
         assert_array_all_close!(s2, expected);
+
+        let mut s3 = a.index(Ellipsis);
+        s3.eval();
+        let expected = Array::from_iter(0i32..8, &[2, 2, 2]);
+        assert_array_all_close!(s3, expected);
+    }
+
+    #[test]
+    fn test_array_index_stride() {
+        let arr = Array::from_iter(0..10, &[10]);
+        let mut s = arr.index((2..8).stride_by(2));
+        s.eval();
+        let expected = Array::from_slice(&[2, 4, 6], &[3]);
+        assert_array_all_close!(s, expected);
     }
 
     // The unit tests below are ported from the swift binding.

@@ -146,7 +146,7 @@ impl Array {
             return false;
         }
 
-        return true;
+        true
     }
 
     /// Helper method to validate an axis is in bounds.

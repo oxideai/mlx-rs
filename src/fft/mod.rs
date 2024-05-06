@@ -65,7 +65,8 @@
 //! assert_eq!(irfft_result.as_slice::<f32>(), &src[..]);
 //!
 //! // The original array is not modified
-//! assert_eq!(array.as_slice(), &src[..]);
+//! let data: &[f32] = array.as_slice();
+//! assert_eq!(data, &src[..]);
 //! ```
 //!
 //! ## Two dimensions
@@ -113,7 +114,8 @@
 //! assert_eq!(irfft2_result.as_slice::<f32>(), &src[..]);
 //!
 //! // The original array is not modified
-//! assert_eq!(array.as_slice(), &[1.0, 1.0, 1.0, 1.0]);
+//! let data: &[f32] = array.as_slice();
+//! assert_eq!(data, &[1.0, 1.0, 1.0, 1.0]);
 //! ```
 //!
 //! ## `N` dimensions
@@ -121,7 +123,7 @@
 //! ```rust
 //! use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
-//! let array = Array::ones::<f32>(&[2, 2, 2]);
+//! let mut array = Array::ones::<f32>(&[2, 2, 2]);
 //! let mut fftn_result = fftn(&array, None, None);
 //! assert_eq!(fftn_result.dtype(), Dtype::Complex64);
 //!

@@ -1,4 +1,4 @@
-use crate::{dtype::Dtype, error::AsSliceError};
+use crate::{dtype::Dtype, error::AsSliceError, StreamOrDevice};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::ffi::c_void;
@@ -210,14 +210,15 @@ impl Array {
     }
 
     /// Access the value of a scalar array.
+    /// If [T] does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     pub fn item<T: ArrayElement>(&mut self) -> T {
-        // TODO: check and perform type conversion from the inner type to the desired output type
         self.try_item().unwrap()
     }
 
     /// Access the value of a scalar array without validating the shape.
+    /// If [T] does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     ///
@@ -225,15 +226,50 @@ impl Array {
     ///
     /// This is unsafe because the array is not checked for being a scalar.
     pub fn item_unchecked<T: ArrayElement>(&mut self) -> T {
+        // Evaluate the array, so we have content to work with in the conversion
+        self.eval();
+
+        if self.dtype() != T::DTYPE {
+            let new_array_ctx = unsafe {
+                mlx_sys::mlx_astype(
+                    self.c_array,
+                    T::DTYPE.into(),
+                    StreamOrDevice::default().as_ptr(),
+                )
+            };
+            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            new_array.eval();
+
+            return T::array_item(&new_array);
+        }
+
         T::array_item(self)
     }
 
     /// Access the value of a scalar array returning an error if the array is not a scalar.
+    /// If [T] does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, DataStoreError> {
         if self.size() != 1 {
             return Err(DataStoreError::NotScalar);
+        }
+
+        // Evaluate the array, so we have content to work with in the conversion
+        self.eval();
+
+        if self.dtype() != T::DTYPE {
+            let new_array_ctx = unsafe {
+                mlx_sys::mlx_astype(
+                    self.c_array,
+                    T::DTYPE.into(),
+                    StreamOrDevice::default().as_ptr(),
+                )
+            };
+            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            new_array.eval();
+
+            return Ok(T::array_item(&new_array));
         }
 
         Ok(T::array_item(self))
@@ -468,5 +504,15 @@ mod tests {
         let data = [1i32, 2, 3, 4, 5];
         let mut array = Array::from_slice(&data, &[5]);
         assert!(array.try_item::<i32>().is_err());
+    }
+
+    #[test]
+    fn test_item_type_conversion() {
+        let mut array = Array::from_float(1.0);
+        assert_eq!(array.item::<i32>(), 1);
+        assert_eq!(array.item::<complex64>(), complex64::new(1.0, 0.0));
+        assert_eq!(array.item::<u8>(), 1);
+
+        assert_eq!(array.as_slice::<f32>(), &[1.0]);
     }
 }

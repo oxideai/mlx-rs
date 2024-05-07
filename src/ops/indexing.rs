@@ -45,11 +45,13 @@
 //!
 //! let a = Array::from_iter(0..8, &[2, 2, 2]);
 //!
+//! // a[:, :, 0]
 //! let mut s1 = a.index((.., .., 0));
 //! s1.eval();
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
 //! // TODO: assert_eq!(s1, expected);
 //!
+//! // a[..., 0]
 //! let mut s2 = a.index((Ellipsis, 0));
 //! s2.eval();
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);

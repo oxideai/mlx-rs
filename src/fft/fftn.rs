@@ -464,15 +464,13 @@ mod tests {
             complex64::new(-2.0, -2.0),
         ];
 
-        let array = Array::from_slice(FFT_DATA, FFT_SHAPE);
+        let mut array = Array::from_slice(FFT_DATA, FFT_SHAPE);
         let mut fft = fft(&array, None, None);
-        fft.eval();
 
         assert_eq!(fft.dtype(), Dtype::Complex64);
         assert_eq!(fft.as_slice::<complex64>(), FFT_EXPECTED);
 
         let mut ifft = ifft(&fft, None, None);
-        ifft.eval();
 
         assert_eq!(ifft.dtype(), Dtype::Complex64);
         assert_eq!(
@@ -499,15 +497,13 @@ mod tests {
             complex64::new(0.0, 0.0),
         ];
 
-        let array = Array::from_slice(FFT2_DATA, FFT2_SHAPE);
+        let mut array = Array::from_slice(FFT2_DATA, FFT2_SHAPE);
         let mut fft2 = fft2(&array, None, None);
-        fft2.eval();
 
         assert_eq!(fft2.dtype(), Dtype::Complex64);
         assert_eq!(fft2.as_slice::<complex64>(), FFT2_EXPECTED);
 
         let mut ifft2 = ifft2(&fft2, None, None);
-        ifft2.eval();
 
         assert_eq!(ifft2.dtype(), Dtype::Complex64);
         assert_eq!(
@@ -538,15 +534,13 @@ mod tests {
             complex64::new(0.0, 0.0),
         ];
 
-        let array = Array::from_slice(FFTN_DATA, FFTN_SHAPE);
+        let mut array = Array::from_slice(FFTN_DATA, FFTN_SHAPE);
         let mut fftn = fftn(&array, None, None);
-        fftn.eval();
 
         assert_eq!(fftn.dtype(), Dtype::Complex64);
         assert_eq!(fftn.as_slice::<complex64>(), FFTN_EXPECTED);
 
         let mut ifftn = ifftn(&fftn, None, None);
-        ifftn.eval();
 
         assert_eq!(ifftn.dtype(), Dtype::Complex64);
         assert_eq!(

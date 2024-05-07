@@ -18,7 +18,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.eq(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -45,7 +44,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.eq_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -82,7 +80,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_eq(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -117,7 +114,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.le(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -144,7 +140,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.le_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -181,7 +176,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_le(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -216,7 +210,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.ge(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -242,7 +235,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.ge_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -279,7 +271,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_ge(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -314,7 +305,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.ne(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -341,7 +331,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.ne_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -378,7 +367,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_ne(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -412,7 +400,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.lt(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -439,7 +426,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.lt_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -475,7 +461,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_lt(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -509,7 +494,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.gt(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -535,7 +519,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = unsafe { a.gt_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -571,7 +554,6 @@ impl Array {
     /// let b = Array::from_slice(&[1, 2, 3], &[3]);
     /// let mut c = a.try_gt(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
@@ -605,7 +587,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = a.logical_and(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, false, false]
     /// ```
@@ -631,7 +612,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = unsafe { a.logical_and_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, false, false]
     /// ```
@@ -671,7 +651,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = a.try_logical_and(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, false, false]
     /// ```
@@ -705,7 +684,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = a.logical_or(&b);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -731,7 +709,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = unsafe { a.logical_or_unchecked(&b) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -771,7 +748,6 @@ impl Array {
     /// let b = Array::from_slice(&[true, true, false], &[3]);
     /// let mut c = a.try_logical_or(&b).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
@@ -810,7 +786,6 @@ impl Array {
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
     /// let mut c = a.all_close(&b, None, None, None);
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true]
     /// ```
@@ -852,7 +827,6 @@ impl Array {
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
     /// let mut c = unsafe { a.all_close_unchecked(&b, None, None, None) };
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true]
     /// ```
@@ -906,7 +880,6 @@ impl Array {
     /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
     /// let mut c = a.try_all_close(&b, None, None, None).unwrap();
     ///
-    /// c.eval();
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true]
     /// ```
@@ -1261,11 +1234,10 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.eq(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, true, true]);
 
@@ -1287,11 +1259,10 @@ mod tests {
 
     #[test]
     fn test_le() {
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.le(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, true, true]);
 
@@ -1313,11 +1284,10 @@ mod tests {
 
     #[test]
     fn test_ge() {
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.ge(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, true, true]);
 
@@ -1339,11 +1309,10 @@ mod tests {
 
     #[test]
     fn test_ne() {
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.ne(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [false, false, false]);
 
@@ -1365,11 +1334,10 @@ mod tests {
 
     #[test]
     fn test_lt() {
-        let a = Array::from_slice(&[1, 0, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 0, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.lt(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [false, true, false]);
 
@@ -1391,11 +1359,10 @@ mod tests {
 
     #[test]
     fn test_gt() {
-        let a = Array::from_slice(&[1, 4, 3], &[3]);
-        let b = Array::from_slice(&[1, 2, 3], &[3]);
+        let mut a = Array::from_slice(&[1, 4, 3], &[3]);
+        let mut b = Array::from_slice(&[1, 2, 3], &[3]);
         let mut c = a.gt(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [false, true, false]);
 
@@ -1417,11 +1384,10 @@ mod tests {
 
     #[test]
     fn test_logical_and() {
-        let a = Array::from_slice(&[true, false, true], &[3]);
-        let b = Array::from_slice(&[true, true, false], &[3]);
+        let mut a = Array::from_slice(&[true, false, true], &[3]);
+        let mut b = Array::from_slice(&[true, true, false], &[3]);
         let mut c = a.logical_and(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, false, false]);
 
@@ -1443,11 +1409,10 @@ mod tests {
 
     #[test]
     fn test_logical_or() {
-        let a = Array::from_slice(&[true, false, true], &[3]);
-        let b = Array::from_slice(&[true, true, false], &[3]);
+        let mut a = Array::from_slice(&[true, false, true], &[3]);
+        let mut b = Array::from_slice(&[true, true, false], &[3]);
         let mut c = a.logical_or(&b);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, true, true]);
 
@@ -1473,7 +1438,6 @@ mod tests {
         let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
         let mut c = a.all_close(&b, 1e-5, None, None);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
     }
@@ -1492,7 +1456,6 @@ mod tests {
         let b = Array::from_slice(&[1.1, 2.2, 3.3], &[3]);
         let mut c = a.is_close(&b, None, None, false);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [false, false, false]);
     }
@@ -1503,7 +1466,6 @@ mod tests {
         let b = Array::from_slice(&[1.1, 2.2, 3.3], &[3]);
         let mut c = a.is_close(&b, 0.1, 0.2, true);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true, true, true]);
     }
@@ -1522,7 +1484,6 @@ mod tests {
         let b = Array::from_slice(&[0., 1., 2., 3.], &[4]);
         let mut c = a.array_eq(&b, None);
 
-        c.eval();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
     }
@@ -1532,7 +1493,6 @@ mod tests {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let mut all = array.any(&[0][..], None);
 
-        all.eval();
         let results: &[bool] = all.as_slice();
         assert_eq!(results, &[true, true, true, true]);
     }
@@ -1542,7 +1502,6 @@ mod tests {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let mut all = array.any(&[][..], None);
 
-        all.eval();
         let results: &[bool] = all.as_slice();
         assert_eq!(
             results,
@@ -1571,7 +1530,6 @@ mod tests {
         let b = Array::from_slice(&[4, 5, 6], &[3]);
         let mut c = which(&condition, &a, &b);
 
-        c.eval();
         let c_data: &[i32] = c.as_slice();
         assert_eq!(c_data, [1, 5, 3]);
     }

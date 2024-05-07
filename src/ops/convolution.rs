@@ -392,7 +392,6 @@ mod tests {
             Some(1), // groups
         );
 
-        result.eval();
         let expected_output = [12.0, 8.0, 17.0, 13.0, 22.0, 18.0];
         assert_eq!(result.shape(), &[1, 3, 2]);
         assert_eq!(result.as_slice::<f32>(), &expected_output);
@@ -420,7 +419,6 @@ mod tests {
             Some(1),      // groups
         );
 
-        result.eval();
         // Expected result is the convolution of a 2x2 filter over a 2x2 input with valid padding, resulting in a single output value
         let expected_output = 1.0 * 1.0 + 2.0 * 0.0 + 3.0 * 0.0 + 4.0 * 1.0; // = 1*1 + 4*1 = 5
         assert_eq!(result.as_slice::<f32>(), &[expected_output]);

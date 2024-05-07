@@ -21,6 +21,9 @@ pub enum DataStoreError {
 
     #[error("broadcast error")]
     BroadcastError,
+
+    #[error("not a scalar array")]
+    NotScalar,
 }
 
 #[derive(Error, PartialEq, Debug)]

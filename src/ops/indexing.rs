@@ -948,6 +948,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
 mod tests {
     use super::*;
 
+    /// See `assertEqual` in the swift binding tests
     macro_rules! assert_array_all_close {
         ($a:tt, $b:tt) => {
             let _b: Array = $b.into();
@@ -1168,5 +1169,21 @@ mod tests {
 
         let expected = Array::from_slice(&[0, 2, 9, 11], &[2, 2]);
         assert_array_all_close!(s, expected);
+    }
+
+    fn check(mut result: Array, shape: &[i32], expected_sum: i32) {
+        result.eval();
+        assert_eq!(result.shape(), shape);
+
+        let mut sum = result.sum(None, None);
+        sum.eval();
+        assert_eq!(sum.item::<i32>(), expected_sum);
+    }
+
+    #[test]
+    fn test_full_index_read_single() {
+        let a = Array::from_iter(0..60, &[3, 4, 5]);
+
+        check(a.index(Ellipsis), &[3, 4, 5], 1770);
     }
 }

@@ -1738,7 +1738,7 @@ mod tests {
         let result = a.index((
             (..).stride_by(-1),
             ..2,
-            i.clone(),
+            i,
             2..,
             Ellipsis,
             NewAxis,

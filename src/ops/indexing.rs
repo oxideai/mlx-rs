@@ -47,13 +47,13 @@
 //!
 //! // a[:, :, 0]
 //! let mut s1 = a.index((.., .., 0));
-//! s1.eval();
+//!
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
 //! // TODO: assert_eq!(s1, expected);
 //!
 //! // a[..., 0]
 //! let mut s2 = a.index((Ellipsis, 0));
-//! s2.eval();
+//!
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
 //! // TODO: assert_eq!(s1, expected);
 //! ```
@@ -1411,7 +1411,6 @@ mod tests {
         ($a:tt, $b:tt) => {
             let _b: Array = $b.into();
             let mut assert = $a.all_close(&_b, None, None, None);
-            assert.eval();
             assert!(assert.item::<bool>());
         };
     }
@@ -1419,8 +1418,7 @@ mod tests {
     #[test]
     fn test_array_index_new_axis() {
         let a = Array::from_iter(0..60, &[3, 4, 5]);
-        let mut s = a.index(NewAxis);
-        s.eval();
+        let s = a.index(NewAxis);
 
         assert_eq!(s.ndim(), 4);
         assert_eq!(s.shape(), &[1, 3, 4, 5]);
@@ -1433,18 +1431,17 @@ mod tests {
     fn test_array_index_ellipsis() {
         let a = Array::from_iter(0i32..8, &[2, 2, 2]);
 
-        let mut s1 = a.index((.., .., 0));
-        s1.eval();
+        let s1 = a.index((.., .., 0));
         let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
         assert_array_all_close!(s1, expected);
 
-        let mut s2 = a.index((Ellipsis, 0));
-        s2.eval();
+        let s2 = a.index((Ellipsis, 0));
+
         let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
         assert_array_all_close!(s2, expected);
 
-        let mut s3 = a.index(Ellipsis);
-        s3.eval();
+        let s3 = a.index(Ellipsis);
+
         let expected = Array::from_iter(0i32..8, &[2, 2, 2]);
         assert_array_all_close!(s3, expected);
     }
@@ -1452,8 +1449,8 @@ mod tests {
     #[test]
     fn test_array_index_stride() {
         let arr = Array::from_iter(0..10, &[10]);
-        let mut s = arr.index((2..8).stride_by(2));
-        s.eval();
+        let s = arr.index((2..8).stride_by(2));
+
         let expected = Array::from_slice(&[2, 4, 6], &[3]);
         assert_array_all_close!(s, expected);
     }
@@ -1465,8 +1462,8 @@ mod tests {
     fn test_array_subscript_int() {
         let a = Array::from_iter(0i32..512, &[8, 8, 8]);
 
-        let mut s = a.index(1);
-        s.eval();
+        let s = a.index(1);
+
         assert_eq!(s.ndim(), 2);
         assert_eq!(s.shape(), &[8, 8]);
 
@@ -1479,8 +1476,8 @@ mod tests {
         // squeeze output dimensions as needed
         let a = Array::from_iter(0i32..512, &[8, 8, 8]);
 
-        let mut s1 = a.index((1, 2));
-        s1.eval();
+        let s1 = a.index((1, 2));
+
         assert_eq!(s1.ndim(), 1);
         assert_eq!(s1.shape(), &[8]);
 
@@ -1488,7 +1485,7 @@ mod tests {
         assert_array_all_close!(s1, expected);
 
         let mut s2 = a.index((1, 2, 3));
-        s2.eval();
+
         assert_eq!(s2.ndim(), 0);
         assert!(s2.shape().is_empty());
         assert_eq!(s2.item::<i32>(), 64 + 2 * 8 + 3);
@@ -1499,18 +1496,18 @@ mod tests {
         // last dimension should not be squeezed
         let a = Array::from_iter(0i32..512, &[8, 8, 8, 1]);
 
-        let mut s = a.index(1);
-        s.eval();
+        let s = a.index(1);
+
         assert_eq!(s.ndim(), 3);
         assert_eq!(s.shape(), &[8, 8, 1]);
 
-        let mut s1 = a.index((1, 2));
-        s1.eval();
+        let s1 = a.index((1, 2));
+
         assert_eq!(s1.ndim(), 2);
         assert_eq!(s1.shape(), &[8, 1]);
 
-        let mut s2 = a.index((1, 2, 3));
-        s2.eval();
+        let s2 = a.index((1, 2, 3));
+
         assert_eq!(s2.ndim(), 1);
         assert_eq!(s2.shape(), &[1]);
     }
@@ -1520,7 +1517,6 @@ mod tests {
         let a = Array::from_iter(0i32..12, &[3, 4]);
 
         let mut s = a.index((-1, -2));
-        s.eval();
 
         assert_eq!(s.ndim(), 0);
         assert_eq!(s.item::<i32>(), 10);
@@ -1530,24 +1526,24 @@ mod tests {
     fn test_array_subscript_range() {
         let a = Array::from_iter(0i32..512, &[8, 8, 8]);
 
-        let mut s1 = a.index(1..3);
-        s1.eval();
+        let s1 = a.index(1..3);
+
         assert_eq!(s1.ndim(), 3);
         assert_eq!(s1.shape(), &[2, 8, 8]);
         let expected = Array::from_iter(64..192, &[2, 8, 8]);
         assert_array_all_close!(s1, expected);
 
         // even though the first dimension is 1 we do not squeeze it
-        let mut s2 = a.index(1..=1);
-        s2.eval();
+        let s2 = a.index(1..=1);
+
         assert_eq!(s2.ndim(), 3);
         assert_eq!(s2.shape(), &[1, 8, 8]);
         let expected = Array::from_iter(64..128, &[1, 8, 8]);
         assert_array_all_close!(s2, expected);
 
         // multiple ranges, resolving RangeExpressions vs the dimensions
-        let mut s3 = a.index((1..2, ..3, 3..));
-        s3.eval();
+        let s3 = a.index((1..2, ..3, 3..));
+
         assert_eq!(s3.ndim(), 3);
         assert_eq!(s3.shape(), &[1, 3, 5]);
         let expected = Array::from_slice(
@@ -1556,8 +1552,8 @@ mod tests {
         );
         assert_array_all_close!(s3, expected);
 
-        let mut s4 = a.index((-2..-1, ..-3, -3..));
-        s4.eval();
+        let s4 = a.index((-2..-1, ..-3, -3..));
+
         assert_eq!(s4.ndim(), 3);
         assert_eq!(s4.shape(), &[1, 5, 3]);
         let expected = Array::from_slice(
@@ -1579,8 +1575,7 @@ mod tests {
         let i1 = Array::from_slice(&[0, 2, 4], &[3]);
         let i2 = Array::from_slice(&[0, 1, 2], &[3]);
 
-        let mut s1 = a.index((i1, i2));
-        s1.eval();
+        let s1 = a.index((i1, i2));
 
         assert_eq!(s1.ndim(), 1);
         assert_eq!(s1.shape(), &[3]);
@@ -1594,8 +1589,7 @@ mod tests {
         let a = Array::from_iter(0..12, &[6, 2]).as_type::<i32>();
 
         let i1 = Array::from_slice(&[0, 2, 4], &[3]);
-        let mut s2 = a.index(i1);
-        s2.eval();
+        let s2 = a.index(i1);
 
         let expected = Array::from_slice(&[0i32, 1, 4, 5, 8, 9], &[3, 2]);
         assert_array_all_close!(s2, expected);
@@ -1608,8 +1602,7 @@ mod tests {
         let rows = Array::from_slice(&[0, 0, 3, 3], &[2, 2]);
         let cols = Array::from_slice(&[0, 2, 0, 2], &[2, 2]);
 
-        let mut s = a.index((rows, cols));
-        s.eval();
+        let s = a.index((rows, cols));
 
         let expected = Array::from_slice(&[0, 2, 9, 11], &[2, 2]);
         assert_array_all_close!(s, expected);
@@ -1622,19 +1615,17 @@ mod tests {
         let rows = Array::from_slice(&[0, 3], &[2, 1]);
         let cols = Array::from_slice(&[0, 2], &[2]);
 
-        let mut s = a.index((rows, cols));
-        s.eval();
+        let s = a.index((rows, cols));
 
         let expected = Array::from_slice(&[0, 2, 9, 11], &[2, 2]);
         assert_array_all_close!(s, expected);
     }
 
-    fn check(mut result: Array, shape: &[i32], expected_sum: i32) {
-        result.eval();
+    fn check(result: Array, shape: &[i32], expected_sum: i32) {
         assert_eq!(result.shape(), shape);
 
         let mut sum = result.sum(None, None);
-        sum.eval();
+
         assert_eq!(sum.item::<i32>(), expected_sum);
     }
 

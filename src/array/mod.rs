@@ -183,7 +183,7 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = vec![1i32, 2, 3, 4, 5];
-    /// let array = Array::from_iter(data.clone(), &[5]);
+    /// let mut array = Array::from_iter(data.clone(), &[5]);
     /// assert_eq!(array.as_slice::<i32>(), &data[..]);
     /// ```
     pub fn from_iter<T: ArrayElement, I: IntoIterator<Item = T>>(iter: I, shape: &[i32]) -> Self {

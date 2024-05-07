@@ -1,41 +1,55 @@
 //! Indexing Arrays
 //!
+//! # Overview
+//!
+//! The following types can be used for indexing:
+//!
+//! | Type | Description |
+//! |------|-------------|
+//! | `i32` | An integer index |
+//! | `Array` | Use an array to index another array |
+//! | `Rc<Array>` | Use an array to index another array |
+//! | `std::ops::Range<i32>` | A range index |
+//! | `std::ops::RangeFrom<i32>` | A range index |
+//! | `std::ops::RangeFull` | A range index |
+//! | `std::ops::RangeInclusive<i32>` | A range index |
+//! | `std::ops::RangeTo<i32>` | A range index |
+//! | `std::ops::RangeToInclusive<i32>` | A range index |
+//! | [`StrideBy`] | A range index with stride |
+//! | `NewAxis` | Add a new axis |
+//! | `Ellipsis` | Consume all axes |
+//!
 //! # Single axis indexing
-//! 
+//!
 //! | Indexing Operation | `mlx` (python) | `mlx-swift` | `mlx-rs` |
 //! |--------------------|--------|-------|------|
 //! | integer | `arr[1]` | `arr[1]` | `arr.index(1)` |
 //! | range expression | `arr[1:3]` | `arr[1..<3]` | `arr.index(1..3)` |
-//! | full range | `arr[:]` | `arr[0...]` | `arr.index(..)` | 
-//! | range with stride | `arr[::2]` | `arr[.stride(by: 2)]` | `arr.index((0..).stride_by(2))` (see 1 below) |
+//! | full range | `arr[:]` | `arr[0...]` | `arr.index(..)` |
+//! | range with stride | `arr[::2]` | `arr[.stride(by: 2)]` | `arr.index((..).stride_by(2))` |
 //! | ellipsis (consuming all axes) | `arr[...]` | `arr[.ellipsis]` | `arr.index(Ellipsis)` |
 //! | newaxis | `arr[None]` | `arr[.newAxis]` | `arr.index(NewAxis)` |
 //! | mlx array `i` | `arr[i]` | `arr[i]` | `arr.index(i)` |
-//! 
-//! Notes:
-//! 
-//! 1. We use `(0..).stride_by(2)` for full range because `std::ops::RangeFull` doens't carry the
-//!    type information, and indices are `i32`.
-//! 
+//!
 //! # Multi-axes indexing
-//! 
+//!
 //! Multi-axes indexing with combinations of the above operations is also supported by combining the
 //! operations in a tuple.
-//! 
+//!
 //! ## Examples
-//! 
+//!
 //! ```rust
 //! // See the multi-dimensional example code for mlx python https://ml-explore.github.io/mlx/build/html/usage/indexing.html
-//! 
+//!
 //! use mlx::prelude::*;
-//! 
+//!
 //! let a = Array::from_iter(0..8, &[2, 2, 2]);
-//! 
+//!
 //! let mut s1 = a.index((.., .., 0));
 //! s1.eval();
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
 //! // TODO: assert_eq!(s1, expected);
-//! 
+//!
 //! let mut s2 = a.index((Ellipsis, 0));
 //! s2.eval();
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
@@ -70,7 +84,7 @@ pub struct Ellipsis;
 
 #[derive(Debug, Clone, Copy)]
 pub struct StrideBy<I> {
-    pub iter: I,
+    pub inner: I,
     pub stride: i32,
 }
 
@@ -78,34 +92,34 @@ pub trait IntoStrideBy: Sized {
     fn stride_by(self, stride: i32) -> StrideBy<Self>;
 }
 
-impl<I> IntoStrideBy for I
-where
-    I: Iterator<Item = i32>,
-{
+impl<T> IntoStrideBy for T {
     fn stride_by(self, stride: i32) -> StrideBy<Self> {
-        StrideBy { iter: self, stride }
+        StrideBy {
+            inner: self,
+            stride,
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct RangeIndex {
-    start: i32,
-    stop: Option<i32>,
+    start: Bound<i32>,
+    stop: Bound<i32>,
     stride: i32,
 }
 
 impl RangeIndex {
     pub(crate) fn new(start: Bound<i32>, stop: Bound<i32>, stride: Option<i32>) -> Self {
-        let start = match start {
-            Bound::Included(start) => start,
-            Bound::Excluded(start) => start + 1,
-            Bound::Unbounded => 0,
-        };
-        let stop = match stop {
-            Bound::Included(stop) => Some(stop + 1),
-            Bound::Excluded(stop) => Some(stop),
-            Bound::Unbounded => None,
-        };
+        // let start = match start {
+        //     Bound::Included(start) => start,
+        //     Bound::Excluded(start) => start + 1,
+        //     Bound::Unbounded => 0,
+        // };
+        // let stop = match stop {
+        //     Bound::Included(stop) => Some(stop + 1),
+        //     Bound::Excluded(stop) => Some(stop),
+        //     Bound::Unbounded => None,
+        // };
         let stride = stride.unwrap_or(1);
         Self {
             start,
@@ -121,10 +135,22 @@ impl RangeIndex {
     pub(crate) fn start(&self, size: i32) -> i32 {
         // _start ?? (stride < 0 ? size - 1 : 0)
 
-        if self.stride.is_negative() {
-            self.start + size
-        } else {
-            self.start
+        // if self.stride.is_negative() {
+        //     self.start + size
+        // } else {
+        //     self.start
+        // }
+
+        match self.start {
+            Bound::Included(start) => start,
+            Bound::Excluded(start) => start + 1,
+            Bound::Unbounded => {
+                if self.stride.is_negative() {
+                    size - 1
+                } else {
+                    0
+                }
+            }
         }
     }
 
@@ -143,13 +169,25 @@ impl RangeIndex {
     pub(crate) fn end(&self, size: i32) -> i32 {
         // _end ?? (stride < 0 ? -size - 1 : size)
 
-        self.stop.unwrap_or_else(|| {
-            if self.stride.is_negative() {
-                -size - 1
-            } else {
-                size
+        // self.stop.unwrap_or_else(|| {
+        //     if self.stride.is_negative() {
+        //         -size - 1
+        //     } else {
+        //         size
+        //     }
+        // })
+
+        match self.stop {
+            Bound::Included(stop) => stop + 1,
+            Bound::Excluded(stop) => stop,
+            Bound::Unbounded => {
+                if self.stride.is_negative() {
+                    -size - 1
+                } else {
+                    size
+                }
             }
-        })
+        }
     }
 
     pub(crate) fn absolute_end(&self, size: i32) -> i32 {
@@ -167,10 +205,30 @@ impl RangeIndex {
 
 #[derive(Debug, Clone)]
 pub enum ArrayIndexOp {
+    /// An `Ellipsis` is used to consume all axes
+    ///
+    /// This is equivalent to `...` in python
     Ellipsis,
+
+    /// A single index operation
+    ///
+    /// This is equivalent to `arr[1]` in python
     TakeIndex { index: i32 },
+
+    /// Indexing with an array
+    ///
+    /// An `Rc` is used instead of `Cow` is that even with `Cow`, the compiler will infer
+    /// an `'static` lifetime due to current limitations in the borrow checker.
     TakeArray { indices: Rc<Array> },
+
+    /// Indexing with a range
+    ///
+    /// This is equivalent to `arr[1:3]` in python
     Slice(RangeIndex),
+
+    /// New axis operation
+    ///
+    /// This is equivalent to `arr[None]` in python
     ExpandDims,
 }
 
@@ -210,7 +268,7 @@ impl IndexBounds for std::ops::Range<i32> {}
 
 impl IndexBounds for std::ops::RangeFrom<i32> {}
 
-impl IndexBounds for std::ops::RangeFull {}
+// impl IndexBounds for std::ops::RangeFull {}
 
 impl IndexBounds for std::ops::RangeInclusive<i32> {}
 
@@ -253,6 +311,18 @@ impl ArrayIndex for Array {
     }
 }
 
+impl ArrayIndex for Rc<Array> {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::TakeArray { indices: self }
+    }
+}
+
+impl ArrayIndex for ArrayIndexOp {
+    fn index_op(self) -> ArrayIndexOp {
+        self
+    }
+}
+
 impl<T> ArrayIndex for T
 where
     T: IndexBounds,
@@ -266,14 +336,30 @@ where
     }
 }
 
+impl ArrayIndex for std::ops::RangeFull {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
+    }
+}
+
 impl<T> ArrayIndex for StrideBy<T>
 where
     T: IndexBounds,
 {
     fn index_op(self) -> ArrayIndexOp {
         ArrayIndexOp::Slice(RangeIndex::new(
-            self.iter.start_bound().cloned(),
-            self.iter.end_bound().cloned(),
+            self.inner.start_bound().cloned(),
+            self.inner.end_bound().cloned(),
+            Some(self.stride),
+        ))
+    }
+}
+
+impl ArrayIndex for StrideBy<std::ops::RangeFull> {
+    fn index_op(self) -> ArrayIndexOp {
+        ArrayIndexOp::Slice(RangeIndex::new(
+            Bound::Unbounded,
+            Bound::Unbounded,
             Some(self.stride),
         ))
     }
@@ -505,6 +591,360 @@ where
     }
 }
 
+impl<A, B, C, D, E, F, G> IndexOp<(A, B, C, D, E, F, G)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+{
+    fn index_device(&self, i: (A, B, C, D, E, F, G), stream: StreamOrDevice) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H> IndexOp<(A, B, C, D, E, F, G, H)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+{
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H), stream: StreamOrDevice) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I> IndexOp<(A, B, C, D, E, F, G, H, I)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+{
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: StreamOrDevice) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J> IndexOp<(A, B, C, D, E, F, G, H, I, J)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+{
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: StreamOrDevice) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K> IndexOp<(A, B, C, D, E, F, G, H, I, J, K)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+{
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J, K), stream: StreamOrDevice) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+{
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L),
+        stream: StreamOrDevice,
+    ) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M)>
+    for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+{
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
+        stream: StreamOrDevice,
+    ) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N)>
+    for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+{
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
+        stream: StreamOrDevice,
+    ) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+    O: ArrayIndex,
+{
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
+        stream: StreamOrDevice,
+    ) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+            i.14.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P)> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+    O: ArrayIndex,
+    P: ArrayIndex,
+{
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
+        stream: StreamOrDevice,
+    ) -> Array {
+        let i = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+            i.14.index_op(),
+            i.15.index_op(),
+        ];
+        get_item_nd(self, &i, stream)
+    }
+}
+
 // Implement private bindings
 impl Array {
     // This is exposed in the c api but not found in the swift or python api
@@ -562,6 +1002,16 @@ impl Array {
 /*                              Helper functions                              */
 /* -------------------------------------------------------------------------- */
 
+fn absolute_indices(absolute_start: i32, absolute_end: i32, stride: i32) -> Vec<i32> {
+    let mut indices = Vec::new();
+    let mut i = absolute_start;
+    while (stride > 0 && i < absolute_end) || (stride < 0 && i > absolute_end) {
+        indices.push(i);
+        i += stride;
+    }
+    indices
+}
+
 // Implement additional public APIs
 //
 // TODO: rewrite this in a more rusty way
@@ -604,10 +1054,13 @@ fn gather_nd<'a>(
                 let absolute_start = range.absolute_start(size);
                 let absolute_end = range.absolute_end(size);
 
-                // TODO: check if this is correct when stride is negative
-                let indices: Vec<i32> = (absolute_start..absolute_end)
-                    .step_by(range.stride().abs() as usize)
-                    .collect();
+                // // TODO: check if this is correct when stride is negative
+                // let indices: Vec<i32> = (absolute_start..absolute_end)
+                //     .step_by(range.stride().abs() as usize)
+                //     .collect();
+
+                let indices = absolute_indices(absolute_start, absolute_end, range.stride());
+
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
 
                 gather_indices.push(Rc::new(item));
@@ -887,8 +1340,9 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
     let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
     let mut strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
     let mut squeeze_needed = false;
+    let mut axis = 0;
 
-    for (axis, item) in remaining_indices.iter().enumerate() {
+    for item in remaining_indices.iter() {
         match item {
             ExpandDims => continue,
             TakeIndex { mut index } => {
@@ -907,6 +1361,8 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
             }
             _ => unreachable!("Unexpected item in remaining_indices: {:?}", item),
         }
+
+        axis += 1;
     }
 
     src = Cow::Owned(src.slice_device(&starts, &ends, &strides, stream));
@@ -1184,6 +1640,110 @@ mod tests {
     fn test_full_index_read_single() {
         let a = Array::from_iter(0..60, &[3, 4, 5]);
 
+        // a[...]
         check(a.index(Ellipsis), &[3, 4, 5], 1770);
+
+        // a[None]
+        check(a.index(NewAxis), &[1, 3, 4, 5], 1770);
+
+        // a[0]
+        check(a.index(0), &[4, 5], 190);
+
+        // a[1:3]
+        check(a.index(1..3), &[2, 4, 5], 1580);
+
+        // i = mx.array([2, 1])
+        let i = Array::from_slice(&[2, 1], &[2]);
+
+        // a[i]
+        check(a.index(i), &[2, 4, 5], 1580);
+    }
+
+    #[test]
+    fn test_full_index_read_no_array() {
+        let a = Array::from_iter(0..360, &[2, 3, 4, 5, 3]);
+
+        // a[..., 0]
+        check(a.index((Ellipsis, 0)), &[2, 3, 4, 5], 21420);
+
+        // a[0, ...]
+        check(a.index((0, Ellipsis)), &[3, 4, 5, 3], 16110);
+
+        // a[0, ..., 0]
+        check(a.index((0, Ellipsis, 0)), &[3, 4, 5], 5310);
+
+        // a[..., ::2, :]
+        let result = a.index((Ellipsis, (..).stride_by(2), ..));
+        check(result, &[2, 3, 4, 3, 3], 38772);
+
+        // a[..., None, ::2, -1]
+        let result = a.index((Ellipsis, NewAxis, (..).stride_by(2), -1));
+        check(result, &[2, 3, 4, 1, 3], 12996);
+
+        // a[:, 2:, 0]
+        check(a.index((.., 2.., 0)), &[2, 1, 5, 3], 6510);
+
+        // a[::-1, :2, 2:, ..., None, ::2]
+        let result = a.index((
+            (..).stride_by(-1),
+            ..2,
+            2..,
+            Ellipsis,
+            NewAxis,
+            (..).stride_by(2),
+        ));
+        check(result, &[2, 2, 2, 5, 1, 2], 13160);
+    }
+
+    #[test]
+    fn test_full_index_read_array() {
+        // these have an `Array` as a source of indices and go through the gather path
+
+        // a = mx.arange(540).reshape(3, 3, 4, 5, 3)
+        let a = Array::from_iter(0..540, &[3, 3, 4, 5, 3]);
+
+        // i = mx.array([2, 1])
+        let i = Rc::new(Array::from_slice(&[2, 1], &[2]));
+
+        // a[0, i]
+        check(a.index((0, i.clone())), &[2, 4, 5, 3], 14340);
+
+        // a[..., i, 0]
+        check(a.index((Ellipsis, i.clone(), 0)), &[3, 3, 4, 2], 19224);
+
+        // a[i, 0, ...]
+        check(a.index((i.clone(), 0, Ellipsis)), &[2, 4, 5, 3], 35940);
+
+        // gatherFirst path
+        // a[i, ..., i]
+        check(
+            a.index((i.clone(), Ellipsis, i.clone())),
+            &[2, 3, 4, 5],
+            43200,
+        );
+
+        // a[i, ..., ::2, :]
+        let result = a.index((i.clone(), Ellipsis, (..).stride_by(2), ..));
+        check(result, &[2, 3, 4, 3, 3], 77652);
+
+        // gatherFirst path
+        // a[..., i, None, ::2, -1]
+        let result = a.index((Ellipsis, i.clone(), NewAxis, (..).stride_by(2), -1));
+        check(result, &[2, 3, 3, 1, 3], 14607);
+
+        // a[:, 2:, i]
+        check(a.index((.., 2.., i.clone())), &[3, 1, 2, 5, 3], 29655);
+
+        // a[::-1, :2, i, 2:, ..., None, ::2]
+        let result = a.index((
+            (..).stride_by(-1),
+            ..2,
+            i.clone(),
+            2..,
+            Ellipsis,
+            NewAxis,
+            (..).stride_by(2),
+        ));
+        check(result, &[3, 2, 2, 3, 1, 2], 17460);
     }
 }

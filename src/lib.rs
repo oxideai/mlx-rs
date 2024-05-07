@@ -17,7 +17,9 @@ pub use stream::*;
 // TODO: what to put in the prelude?
 pub mod prelude {
     pub use crate::{
-        array::Array, dtype::Dtype, ops::indexing::{IndexOp, NewAxis, Ellipsis, IntoStrideBy},
+        array::Array,
+        dtype::Dtype,
+        ops::indexing::{Ellipsis, IndexOp, IntoStrideBy, NewAxis},
     };
 }
 

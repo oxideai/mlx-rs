@@ -15,7 +15,6 @@ impl Array {
     /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
     /// let mut result = array.abs();
     ///
-    /// result.eval();
     /// let data: &[i32] = result.as_slice();
     /// // data == [1, 2, 3, 4, 5]
     /// ```
@@ -39,7 +38,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.add_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
@@ -63,7 +61,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.add_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
@@ -98,7 +95,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.add_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
@@ -132,7 +128,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.sub_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
@@ -157,7 +152,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.sub_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
@@ -193,7 +187,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.sub_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
@@ -226,7 +219,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.neg();
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
@@ -250,7 +242,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = unsafe { a.neg_unchecked() };
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
@@ -278,7 +269,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.try_neg().unwrap();
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
@@ -310,7 +300,6 @@ impl Array {
     /// let a: Array = false.into();
     /// let mut b = a.logical_not_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[bool] = b.as_slice();
     /// // b_data == [true]
     /// ```
@@ -335,7 +324,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.mul_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
@@ -355,7 +343,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.mul_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
@@ -386,7 +373,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.mul_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
@@ -415,7 +401,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.div_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -440,7 +425,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.div_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -476,7 +460,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.div_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -510,7 +493,6 @@ impl Array {
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
     /// let mut c = a.pow_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
@@ -535,7 +517,6 @@ impl Array {
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
     /// let mut c = a.pow_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
@@ -571,7 +552,6 @@ impl Array {
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
     /// let mut c = a.pow_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
@@ -605,7 +585,6 @@ impl Array {
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
     /// let mut c = a.rem_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
@@ -630,7 +609,6 @@ impl Array {
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
     /// let mut c = a.rem_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
@@ -666,7 +644,6 @@ impl Array {
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
     /// let mut c = a.rem_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
@@ -697,7 +674,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
     /// let mut b = a.sqrt_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.0, 3.0]
     /// ```
@@ -715,7 +691,6 @@ impl Array {
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let mut b = a.cos_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.54030234, -0.41614687]
     /// ```
@@ -735,7 +710,6 @@ impl Array {
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let mut b = a.exp_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.7182817, 7.389056]
     /// ```
@@ -753,7 +727,6 @@ impl Array {
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
     /// let mut b = a.floor_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
@@ -771,7 +744,6 @@ impl Array {
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
     /// let mut b = a.floor_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
@@ -793,7 +765,6 @@ impl Array {
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
     /// let mut b = a.floor_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
@@ -822,7 +793,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.floor_divide_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -850,7 +820,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.floor_divide_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -892,7 +861,6 @@ impl Array {
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.floor_divide_device(&b, Default::default());
     ///
-    /// c.eval();
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
@@ -930,7 +898,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.log_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 0.6931472, 1.0986123]
     /// ```
@@ -948,7 +915,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
     /// let mut b = a.log2_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0, 3.0]
     /// ```
@@ -966,7 +932,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
     /// let mut b = a.log10_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
@@ -984,7 +949,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.log1p_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.6931472, 1.0986123, 1.3862944]
     /// ```
@@ -1155,7 +1119,6 @@ impl Array {
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
     /// let mut b = a.reciprocal_device(Default::default());
     ///
-    /// b.eval();
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.5, 0.25]
     /// ```
@@ -1210,10 +1173,9 @@ mod tests {
     #[test]
     fn test_abs() {
         let data = [1i32, 2, -3, -4, -5];
-        let array = Array::from_slice(&data, &[5]);
+        let mut array = Array::from_slice(&data, &[5]);
         let mut result = array.abs();
 
-        result.eval();
         let data: &[i32] = result.as_slice();
         assert_eq!(data, [1, 2, 3, 4, 5]);
 
@@ -1224,11 +1186,10 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         let mut c = &a + &b;
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[5.0, 7.0, 9.0]);
@@ -1251,11 +1212,10 @@ mod tests {
 
     #[test]
     fn test_sub() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         let mut c = &a - &b;
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[-3.0, -3.0, -3.0]);
@@ -1278,9 +1238,8 @@ mod tests {
 
     #[test]
     fn test_neg() {
-        let a = Array::from_slice::<f32>(&[1.0, 2.0, 3.0], &[3]);
+        let mut a = Array::from_slice::<f32>(&[1.0, 2.0, 3.0], &[3]);
         let mut b = a.neg();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[-1.0, -2.0, -3.0]);
@@ -1302,18 +1261,16 @@ mod tests {
         let a: Array = false.into();
         let mut b = a.logical_not();
 
-        b.eval();
         let b_data: &[bool] = b.as_slice();
         assert_eq!(b_data, [true]);
     }
 
     #[test]
     fn test_mul() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         let mut c = &a * &b;
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[4.0, 10.0, 18.0]);
@@ -1336,11 +1293,10 @@ mod tests {
 
     #[test]
     fn test_div() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         let mut c = &a / &b;
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[0.25, 0.4, 0.5]);
@@ -1363,11 +1319,10 @@ mod tests {
 
     #[test]
     fn test_pow() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
 
         let mut c = a.pow(&b);
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[1.0, 8.0, 81.0]);
@@ -1390,11 +1345,10 @@ mod tests {
 
     #[test]
     fn test_rem() {
-        let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
-        let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
+        let mut a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
+        let mut b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
 
         let mut c = &a % &b;
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[1.0, 3.0, 2.0]);
@@ -1417,9 +1371,8 @@ mod tests {
 
     #[test]
     fn test_sqrt() {
-        let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
         let mut b = a.sqrt();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 2.0, 3.0]);
@@ -1431,9 +1384,8 @@ mod tests {
 
     #[test]
     fn test_cos() {
-        let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
+        let mut a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let mut b = a.cos();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 0.54030234, -0.41614687]);
@@ -1445,9 +1397,8 @@ mod tests {
 
     #[test]
     fn test_exp() {
-        let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
+        let mut a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let mut b = a.exp();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 2.7182817, 7.389056]);
@@ -1459,9 +1410,8 @@ mod tests {
 
     #[test]
     fn test_floor() {
-        let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
+        let mut a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
         let mut b = a.floor();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 1.0, 2.0]);
@@ -1481,11 +1431,10 @@ mod tests {
 
     #[test]
     fn test_floor_divide() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         let mut c = a.floor_divide(&b);
-        c.eval();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[0.0, 0.0, 0.0]);
@@ -1517,9 +1466,8 @@ mod tests {
 
     #[test]
     fn test_log() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = a.log();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 0.6931472, 1.0986123]);
@@ -1531,9 +1479,8 @@ mod tests {
 
     #[test]
     fn test_log2() {
-        let a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
         let mut b = a.log2();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 1.0, 2.0, 3.0]);
@@ -1545,9 +1492,8 @@ mod tests {
 
     #[test]
     fn test_log10() {
-        let a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
         let mut b = a.log10();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 1.0, 2.0]);
@@ -1559,9 +1505,8 @@ mod tests {
 
     #[test]
     fn test_log1p() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = a.log1p();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.6931472, 1.0986123, 1.3862944]);
@@ -1573,11 +1518,10 @@ mod tests {
 
     #[test]
     fn test_matmul() {
-        let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        let b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
+        let mut a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        let mut b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
 
         let mut c = a.matmul(&b);
-        c.eval();
 
         assert_eq!(c.shape(), &[2, 3]);
         let c_data: &[f32] = c.as_slice();
@@ -1626,9 +1570,8 @@ mod tests {
 
     #[test]
     fn test_reciprocal() {
-        let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
         let mut b = a.reciprocal();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 0.5, 0.25]);
@@ -1640,9 +1583,8 @@ mod tests {
 
     #[test]
     fn test_round() {
-        let a = Array::from_slice(&[1.1, 2.9, 3.5], &[3]);
+        let mut a = Array::from_slice(&[1.1, 2.9, 3.5], &[3]);
         let mut b = a.round(None);
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 3.0, 4.0]);
@@ -1654,9 +1596,8 @@ mod tests {
 
     #[test]
     fn test_rsqrt() {
-        let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
         let mut b = a.rsqrt();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 0.70710677, 0.5]);
@@ -1668,9 +1609,8 @@ mod tests {
 
     #[test]
     fn test_sin() {
-        let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
+        let mut a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let mut b = a.sin();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 0.841471, 0.9092974]);
@@ -1682,9 +1622,8 @@ mod tests {
 
     #[test]
     fn test_square() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = a.square();
-        b.eval();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[1.0, 4.0, 9.0]);

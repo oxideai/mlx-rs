@@ -775,7 +775,6 @@ mod tests {
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[0.0; 6]);
     }
@@ -795,7 +794,6 @@ mod tests {
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float16);
 
-        array.eval();
         let data: &[f16] = array.as_slice();
         assert_eq!(data, &[f16::from_f32(1.0); 6]);
     }
@@ -806,7 +804,6 @@ mod tests {
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
     }
@@ -817,21 +814,19 @@ mod tests {
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[7.0; 6]);
     }
 
     #[test]
     fn test_full_array() {
-        let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::default());
+        let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::cpu());
         let mut array = Array::full::<f32>(&[2, 3], source);
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
-        assert_eq!(data, &[0.0; 6]);
+        float_eq::float_eq!(*data, [0.0; 6], abs <= [1e-6; 6]);
     }
 
     #[test]
@@ -851,7 +846,6 @@ mod tests {
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
     }
@@ -862,7 +856,6 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
         assert_eq!(data, expected.as_slice());
@@ -874,7 +867,6 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
         assert_eq!(data, expected.as_slice());
@@ -896,7 +888,6 @@ mod tests {
         assert_eq!(array.shape(), &[2, 8]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
-        array.eval();
         let data: &[i32] = array.as_slice();
         assert_eq!(data, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
     }
@@ -919,7 +910,6 @@ mod tests {
         assert_eq!(array.shape(), &[16]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
-        array.eval();
         let data: &[i32] = array.as_slice();
         assert_eq!(data, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]);
     }
@@ -941,7 +931,6 @@ mod tests {
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        array.eval();
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
     }

@@ -1,4 +1,4 @@
-use crate::{dtype::Dtype, error::AsSliceError};
+use crate::{dtype::Dtype, error::AsSliceError, StreamOrDevice};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::ffi::c_void;
@@ -6,6 +6,7 @@ use std::ffi::c_void;
 mod element;
 mod operators;
 
+use crate::error::DataStoreError;
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
@@ -78,6 +79,19 @@ impl Drop for Array {
 
         // Decrease the reference count
         unsafe { mlx_sys::mlx_free(self.c_array as *mut c_void) };
+    }
+}
+
+impl PartialEq for &Array {
+    /// Array equality check.
+    ///
+    /// Compare two arrays for equality. Returns `true` iff the arrays have
+    /// the same shape and their values are equal. The arrays need not have
+    /// the same type to be considered equal.
+    ///
+    /// If you're looking for element-wise equality, use the [Array::eq()] method.
+    fn eq(&self, other: &Self) -> bool {
+        self.array_eq(other, None).item()
     }
 }
 
@@ -190,6 +204,10 @@ impl Array {
     /// The strides of the array.
     pub fn strides(&self) -> &[usize] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_strides(self.c_array);
@@ -212,6 +230,10 @@ impl Array {
     /// Returns: a pointer to the sizes of each dimension.
     pub fn shape(&self) -> &[i32] {
         let ndim = self.ndim();
+        if ndim == 0 {
+            // The data pointer may be null which would panic even if len is 0
+            return &[];
+        }
 
         unsafe {
             let data = mlx_sys::mlx_array_shape(self.c_array);
@@ -246,17 +268,77 @@ impl Array {
     // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&mut self) {
-        // This clearly modifies the array, so it should be mutable
         unsafe { mlx_sys::mlx_array_eval(self.c_array) };
     }
 
     /// Access the value of a scalar array.
-    pub fn item<T: ArrayElement>(&self) -> T {
-        // TODO: check and perform type conversion from the inner type to the desired output type
+    /// If [T] does not match the array's `dtype` this will convert the type first.
+    ///
+    /// _Note: This will evaluate the array._
+    pub fn item<T: ArrayElement>(&mut self) -> T {
+        self.try_item().unwrap()
+    }
+
+    /// Access the value of a scalar array without validating the shape.
+    /// If [T] does not match the array's `dtype` this will convert the type first.
+    ///
+    /// _Note: This will evaluate the array._
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because the array is not checked for being a scalar.
+    pub fn item_unchecked<T: ArrayElement>(&mut self) -> T {
+        // Evaluate the array, so we have content to work with in the conversion
+        self.eval();
+
+        if self.dtype() != T::DTYPE {
+            let new_array_ctx = unsafe {
+                mlx_sys::mlx_astype(
+                    self.c_array,
+                    T::DTYPE.into(),
+                    StreamOrDevice::default().as_ptr(),
+                )
+            };
+            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            new_array.eval();
+
+            return T::array_item(&new_array);
+        }
+
         T::array_item(self)
     }
 
-    /// Returns a slice of the array data.
+    /// Access the value of a scalar array returning an error if the array is not a scalar.
+    /// If [T] does not match the array's `dtype` this will convert the type first.
+    ///
+    /// _Note: This will evaluate the array._
+    pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, DataStoreError> {
+        if self.size() != 1 {
+            return Err(DataStoreError::NotScalar);
+        }
+
+        // Evaluate the array, so we have content to work with in the conversion
+        self.eval();
+
+        if self.dtype() != T::DTYPE {
+            let new_array_ctx = unsafe {
+                mlx_sys::mlx_astype(
+                    self.c_array,
+                    T::DTYPE.into(),
+                    StreamOrDevice::default().as_ptr(),
+                )
+            };
+            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            new_array.eval();
+
+            return Ok(T::array_item(&new_array));
+        }
+
+        Ok(T::array_item(self))
+    }
+
+    /// Returns a slice of the array data without validating the dtype.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Safety
     ///
@@ -269,14 +351,16 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// unsafe {
     ///    let slice = array.as_slice_unchecked::<i32>();
     ///    assert_eq!(slice, &[1, 2, 3, 4, 5]);
     /// }
     /// ```
-    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&self) -> &[T] {
+    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&mut self) -> &[T] {
+        self.eval();
+
         unsafe {
             let data = T::array_data(self);
             let size = self.size();
@@ -284,7 +368,8 @@ impl Array {
         }
     }
 
-    /// Returns a slice of the array data.
+    /// Returns a slice of the array data returning an error if the dtype does not match the actual dtype.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Example
     ///
@@ -292,18 +377,20 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// let slice = array.try_as_slice::<i32>();
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
-    pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
+    pub fn try_as_slice<T: ArrayElement>(&mut self) -> Result<&[T], AsSliceError> {
         if self.dtype() != T::DTYPE {
             return Err(AsSliceError::DtypeMismatch {
                 expecting: T::DTYPE,
                 found: self.dtype(),
             });
         }
+
+        self.eval();
 
         unsafe {
             let size = self.size();
@@ -317,6 +404,7 @@ impl Array {
     }
 
     /// Returns a slice of the array data.
+    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Panics
     ///
@@ -328,12 +416,12 @@ impl Array {
     /// use mlx::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
-    /// let array = Array::from_slice(&data[..], &[5]);
+    /// let mut array = Array::from_slice(&data[..], &[5]);
     ///
     /// let slice = array.as_slice::<i32>();
     /// assert_eq!(slice, &data[..]);
     /// ```
-    pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
+    pub fn as_slice<T: ArrayElement>(&mut self) -> &[T] {
         self.try_as_slice().unwrap()
     }
 }
@@ -362,7 +450,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_bool() {
-        let array = Array::from_bool(true);
+        let mut array = Array::from_bool(true);
         assert!(array.item::<bool>());
         assert_eq!(array.item_size(), 1);
         assert_eq!(array.size(), 1);
@@ -375,7 +463,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_int() {
-        let array = Array::from_int(42);
+        let mut array = Array::from_int(42);
         assert_eq!(array.item::<i32>(), 42);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -388,7 +476,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_float() {
-        let array = Array::from_float(3.14);
+        let mut array = Array::from_float(3.14);
         assert_eq!(array.item::<f32>(), 3.14);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -402,7 +490,7 @@ mod tests {
     #[test]
     fn new_scalar_array_from_complex() {
         let val = complex64::new(1.0, 2.0);
-        let array = Array::from_complex(val);
+        let mut array = Array::from_complex(val);
         assert_eq!(array.item::<complex64>(), val);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
@@ -416,7 +504,7 @@ mod tests {
     #[test]
     fn new_array_from_single_element_slice() {
         let data = [1i32];
-        let array = Array::from_slice(&data, &[1]);
+        let mut array = Array::from_slice(&data, &[1]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
@@ -432,7 +520,7 @@ mod tests {
     #[test]
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
-        let array = Array::from_slice(&data, &[5]);
+        let mut array = Array::from_slice(&data, &[5]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
@@ -447,7 +535,7 @@ mod tests {
     #[test]
     fn new_2d_array_from_slice() {
         let data = [1i32, 2, 3, 4, 5, 6];
-        let array = Array::from_slice(&data, &[2, 3]);
+        let mut array = Array::from_slice(&data, &[2, 3]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 6);
@@ -465,8 +553,8 @@ mod tests {
     #[test]
     fn cloned_array_has_different_ptr() {
         let data = [1i32, 2, 3, 4, 5];
-        let orig = Array::from_slice(&data, &[5]);
-        let clone = orig.clone();
+        let mut orig = Array::from_slice(&data, &[5]);
+        let mut clone = orig.clone();
 
         // Data should be the same
         assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
@@ -479,5 +567,33 @@ mod tests {
             orig.as_slice::<i32>().as_ptr(),
             clone.as_slice::<i32>().as_ptr()
         );
+    }
+
+    #[test]
+    fn test_array_eq() {
+        let data = [1i32, 2, 3, 4, 5];
+        let array1 = Array::from_slice(&data, &[5]);
+        let array2 = Array::from_slice(&data, &[5]);
+        let array3 = Array::from_slice(&[1i32, 2, 3, 4, 6], &[5]);
+
+        assert_eq!(&array1, &array2);
+        assert_ne!(&array1, &array3);
+    }
+
+    #[test]
+    fn test_array_item_non_scalar() {
+        let data = [1i32, 2, 3, 4, 5];
+        let mut array = Array::from_slice(&data, &[5]);
+        assert!(array.try_item::<i32>().is_err());
+    }
+
+    #[test]
+    fn test_item_type_conversion() {
+        let mut array = Array::from_float(1.0);
+        assert_eq!(array.item::<i32>(), 1);
+        assert_eq!(array.item::<complex64>(), complex64::new(1.0, 0.0));
+        assert_eq!(array.item::<u8>(), 1);
+
+        assert_eq!(array.as_slice::<f32>(), &[1.0]);
     }
 }

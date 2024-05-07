@@ -12,7 +12,6 @@ impl Array {
     ///
     /// let array = Array::from_slice(&[1i16,2,3], &[3]);
     /// let mut new_array = array.as_type::<f32>();
-    /// new_array.eval();
     ///
     /// assert_eq!(new_array.dtype(), mlx::Dtype::Float32);
     /// assert_eq!(new_array.shape(), &[3]);
@@ -42,9 +41,7 @@ mod tests {
                 #[test]
                 fn [<test_as_type_ $src_type _ $dst_type>]() {
                     let array = Array::from_slice(&[$src_val; $len], &[$len as i32]);
-
                     let mut new_array = array.as_type::<$dst_type>();
-                    new_array.eval();
 
                     assert_eq!(new_array.dtype(), $dst_type::DTYPE);
                     assert_eq!(new_array.shape(), &[3]);

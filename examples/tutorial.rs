@@ -3,11 +3,11 @@ use std::ops::Add;
 
 fn scalar_basics() {
     // create a scalar array
-    let x: Array = 1.0.into();
+    let mut x: Array = 1.0.into();
 
     // the datatype is .float32
     let dtype = x.dtype();
-    assert_eq!(dtype, mlx::Dtype::Float32);
+    assert_eq!(dtype, Dtype::Float32);
 
     // get the value
     let s = x.item::<f32>();

@@ -11,3 +11,4 @@ pub mod indexing;
 
 pub use convolution::*;
 pub use logical::*;
+pub use shapes::*;

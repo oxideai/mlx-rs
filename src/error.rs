@@ -165,3 +165,10 @@ pub enum TransposeError {
     #[error("Received duplicate axis")]
     DuplicateAxis,
 }
+
+#[derive(Debug, Error)]
+#[error("Cannot broadcast array of shape {src_shape:?} into shape {dst_shape:?}")]
+pub struct BroadcastError<'a> {
+    pub src_shape: &'a [i32],
+    pub dst_shape: &'a [i32],
+}

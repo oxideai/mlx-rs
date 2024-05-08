@@ -1,3 +1,5 @@
+use mlx_sys::{mlx_array, mlx_vector_array};
+
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 
@@ -162,6 +164,18 @@ impl Array {
         }
 
         Ok(())
+    }
+}
+
+/// The returned `mlx_vector_array` must be manually freed by the caller.
+pub(crate) unsafe fn new_mlx_vector_array(arrays: &[Array]) -> mlx_vector_array {
+    unsafe {
+        let vec = mlx_sys::mlx_vector_array_new();
+        let arrs = arrays.as_ptr() as *const mlx_array;
+        let num_arrs = arrays.len();
+
+        mlx_sys::mlx_vector_array_add_arrays(vec, arrs, num_arrs);
+        vec
     }
 }
 

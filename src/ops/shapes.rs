@@ -1,13 +1,14 @@
-use std::{borrow::Cow, collections::HashSet};
+use std::{borrow::Cow, collections::HashSet, os::raw::c_void};
 
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{
     error::{
-        ExpandDimsError, FlattenError, InvalidAxisError, ReshapeError, SqueezeError, TransposeError,
+        BroadcastError, ExpandDimsError, FlattenError, InvalidAxisError, ReshapeError,
+        SqueezeError, TransposeError,
     },
-    utils::{all_unique, resolve_index},
+    utils::{all_unique, is_broadcastable, new_mlx_vector_array, resolve_index},
     Array, StreamOrDevice,
 };
 
@@ -496,5 +497,68 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
                 .collect::<SmallVec<[usize; 4]>>();
             result.into_iter().rev().collect()
         }
+    }
+}
+
+#[default_device]
+pub fn as_strided_device<'a>(
+    a: &'a Array,
+    shape: impl Into<Option<&'a [i32]>>,
+    strides: impl Into<Option<&'a [usize]>>,
+    offset: impl Into<Option<usize>>,
+    stream: StreamOrDevice,
+) -> Array {
+    a.as_strided_device(shape, strides, offset, stream)
+}
+
+#[default_device]
+pub unsafe fn broadcast_device_unchecked(
+    a: &Array,
+    shape: &[i32],
+    stream: StreamOrDevice,
+) -> Array {
+    unsafe {
+        let c_array =
+            mlx_sys::mlx_broadcast_to(a.c_array, shape.as_ptr(), shape.len(), stream.as_ptr());
+        Array::from_ptr(c_array)
+    }
+}
+
+#[default_device]
+pub fn try_broadcast_device<'a>(
+    a: &'a Array,
+    shape: &'a [i32],
+    stream: StreamOrDevice,
+) -> Result<Array, BroadcastError<'a>> {
+    if !is_broadcastable(a.shape(), shape) {
+        return Err(BroadcastError {
+            src_shape: a.shape(),
+            dst_shape: shape,
+        });
+    }
+    unsafe { Ok(broadcast_device_unchecked(a, shape, stream)) }
+}
+
+#[default_device]
+pub fn broadcast_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrDevice) -> Array {
+    try_broadcast_device(a, shape, stream).unwrap()
+}
+
+#[default_device]
+pub unsafe fn concatenate_device_unchecked(
+    arrays: &[Array],
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let axis = axis.into().unwrap_or(0);
+
+    unsafe {
+        let c_arrays = new_mlx_vector_array(arrays);
+        let c_array = mlx_sys::mlx_concatenate(c_arrays, axis, stream.as_ptr());
+
+        let result = Array::from_ptr(c_array);
+        mlx_sys::mlx_free(c_arrays as *mut c_void);
+
+        result
     }
 }

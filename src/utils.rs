@@ -179,6 +179,28 @@ pub(crate) unsafe fn new_mlx_vector_array(arrays: &[Array]) -> mlx_vector_array 
     }
 }
 
+/// The user is responsible for freeing the input `mlx_vector_array`.
+pub(crate) unsafe fn mlx_vector_array_values(c_vec: mlx_vector_array) -> Vec<Array> {
+    unsafe {
+        let size = mlx_sys::mlx_vector_array_size(c_vec);
+        (0..size)
+            .map(|i| {
+                let c_array = mlx_sys::mlx_vector_array_get(c_vec, i);
+                Array::from_ptr(c_array)
+            })
+            .collect()
+    }
+}
+
+pub(crate) fn is_same_shape(arrays: &[Array]) -> bool {
+    if arrays.is_empty() {
+        return true;
+    }
+
+    let shape = arrays[0].shape();
+    arrays.iter().all(|array| array.shape() == shape)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

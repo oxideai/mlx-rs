@@ -172,3 +172,54 @@ pub struct BroadcastError<'a> {
     pub src_shape: &'a [i32],
     pub dst_shape: &'a [i32],
 }
+
+#[derive(Debug, Error)]
+pub enum ConcatenateError {
+    #[error("No arrays provided for concatenation")]
+    NoInputArray,
+
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("All the input array dimensions must match exactly except for the concatenation axis. However, the provided shapes are {0:?}")]
+    InvalidShapes(Vec<Vec<i32>>),
+}
+
+#[derive(Debug, Error)]
+pub enum PadError {
+    #[error("Invalid number of padding sizes passed to pad with axes of size {axes_size}")]
+    InvalidWidths { axes_size: usize },
+
+    #[error("Invalid padding size {size:?} for axis {axis}. Padding sizes must be non-negative")]
+    NegativeWidth { axis: usize, size: (i32, i32) },
+}
+
+#[derive(Debug, Error)]
+pub enum StackError {
+    #[error("No arrays provided for stacking")]
+    NoInputArray,
+
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("All arrays must have the same shape")]
+    InvalidShapes,
+}
+
+#[derive(Debug, Error)]
+pub enum StackAllError {
+    #[error("No arrays provided for stacking")]
+    NoInputArray,
+
+    #[error("All arrays must have the same shape")]
+    InvalidShapes,
+}
+
+#[derive(Debug, Error)]
+pub enum SplitEqualError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("Cannot split array of size {size} into {num_splits} equal parts")]
+    InvalidNumSplits { size: usize, num_splits: i32 },
+}

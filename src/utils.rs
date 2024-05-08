@@ -1,5 +1,3 @@
-
-
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 

@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    error::{DuplicateAxisError, FftError, InvalidAxisError},
+    error::{FftError, InvalidAxisError},
     utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array,
 };
@@ -44,7 +44,7 @@ pub(super) fn try_resolve_size_and_axis(
     Ok((n, axis))
 }
 
-// TODO: Use Cow or SmallVec?
+// Use Cow or SmallVec?
 #[inline]
 pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
     a: &'a Array,
@@ -126,7 +126,7 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
     };
 
     // Check duplicate axes
-    all_unique(&valid_axes).map_err(|axis| DuplicateAxisError { axis })?;
+    all_unique(&valid_axes).map_err(|_axis| FftError::DuplicateAxis)?;
 
     // Check if shape and axes have the same size
     if valid_s.len() != valid_axes.len() {
@@ -194,7 +194,7 @@ mod try_resolve_size_and_axis_tests {
 
 #[cfg(test)]
 mod try_resolve_sizes_and_axes_tests {
-    use crate::{error::DuplicateAxisError, Array};
+    use crate::Array;
 
     use super::{try_resolve_sizes_and_axes, FftError};
 
@@ -233,7 +233,7 @@ mod try_resolve_sizes_and_axes_tests {
         // Returns an error if there are duplicate axes
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
         let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2][..]), Some(&[0, 0][..]));
-        assert_eq!(result, Err(DuplicateAxisError { axis: 0 }.into()));
+        assert_eq!(result, Err(FftError::DuplicateAxis));
     }
 
     #[test]

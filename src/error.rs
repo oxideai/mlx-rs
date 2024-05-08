@@ -66,8 +66,8 @@ pub enum FftError {
     #[error("Shape and axes/axis have different sizes")]
     IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
 
-    #[error(transparent)]
-    DuplicateAxis(#[from] DuplicateAxisError),
+    #[error("Received duplicate axis")]
+    DuplicateAxis,
 
     #[error("Invalid output size requested")]
     InvalidOutputSize,
@@ -78,12 +78,6 @@ pub enum FftError {
 pub struct InvalidAxisError {
     pub axis: i32,
     pub ndim: usize,
-}
-
-#[derive(Error, Debug, PartialEq)]
-#[error("Received duplicate axis {axis}")]
-pub struct DuplicateAxisError {
-    pub axis: i32,
 }
 
 #[derive(Debug, PartialEq, Error)]
@@ -114,8 +108,8 @@ pub enum ExpandDimsError {
     #[error(transparent)]
     InvalidAxis(#[from] InvalidAxisError),
 
-    #[error(transparent)]
-    DuplicateAxis(#[from] DuplicateAxisError),
+    #[error("Received duplicate axis")]
+    DuplicateAxis,
 }
 
 #[derive(Debug, Error)]
@@ -156,6 +150,18 @@ pub enum SqueezeError {
     #[error("Cannot squeeze axis {axis} with size {size} which is not equal to 1")]
     AxisSizeGreaterThanOne { axis: i32, size: i32 },
 
+    #[error("Received duplicate axis")]
+    DuplicateAxis,
+}
+
+#[derive(Debug, Error)]
+pub enum TransposeError {
+    #[error("Received {num_axes} axes for array with {ndim} dimensions")]
+    InvalidArgument { num_axes: usize, ndim: usize },
+
     #[error(transparent)]
-    DuplicateAxis(#[from] DuplicateAxisError),
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("Received duplicate axis")]
+    DuplicateAxis,
 }

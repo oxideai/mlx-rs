@@ -38,9 +38,9 @@ impl Array {
         // Check for valid axes
         // TODO: what is a good default capacity for SmallVec?
         let out_ndim = self.size() + axes.len();
-        let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim as usize);
+        let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim);
         for axis in axes {
-            let resolved_axis = resolve_index(*axis, out_ndim).ok_or_else(|| InvalidAxisError {
+            let resolved_axis = resolve_index(*axis, out_ndim).ok_or(InvalidAxisError {
                 axis: *axis,
                 ndim: out_ndim,
             })?;
@@ -305,9 +305,9 @@ impl Array {
     ) -> Result<Array, InvalidAxisError> {
         let ndim = self.ndim();
         let src =
-            resolve_index(src, ndim).ok_or_else(|| InvalidAxisError { axis: src, ndim })? as i32;
+            resolve_index(src, ndim).ok_or(InvalidAxisError { axis: src, ndim })? as i32;
         let dst =
-            resolve_index(dst, ndim).ok_or_else(|| InvalidAxisError { axis: dst, ndim })? as i32;
+            resolve_index(dst, ndim).ok_or(InvalidAxisError { axis: dst, ndim })? as i32;
 
         unsafe { Ok(self.move_axis_device_unchecked(src, dst, stream)) }
     }
@@ -352,7 +352,7 @@ impl Array {
     ) -> Result<Vec<Array>, InvalidAxisError> {
         let ndim = self.ndim();
         let resolved_axis =
-            resolve_index(axis, ndim).ok_or_else(|| InvalidAxisError { axis, ndim })? as i32;
+            resolve_index(axis, ndim).ok_or(InvalidAxisError { axis, ndim })? as i32;
 
         unsafe { Ok(self.split_device_unchecked(indices, resolved_axis, stream)) }
     }
@@ -392,7 +392,7 @@ impl Array {
         let ndim = self.ndim();
         let axis = axis.into().unwrap_or(0);
         let resolved_axis =
-            resolve_index(axis, ndim).ok_or_else(|| InvalidAxisError { axis, ndim })? as i32;
+            resolve_index(axis, ndim).ok_or(InvalidAxisError { axis, ndim })? as i32;
 
         // Check if the array can be split into equal parts
         let size = self.shape()[resolved_axis as usize] as usize;
@@ -439,10 +439,10 @@ impl Array {
     ) -> Result<Array, InvalidAxisError> {
         let ndim = self.ndim();
         let resolved_axis1 = resolve_index(axis1, ndim)
-            .ok_or_else(|| InvalidAxisError { axis: axis1, ndim })?
+            .ok_or(InvalidAxisError { axis: axis1, ndim })?
             as i32;
         let resolved_axis2 = resolve_index(axis2, ndim)
-            .ok_or_else(|| InvalidAxisError { axis: axis2, ndim })?
+            .ok_or(InvalidAxisError { axis: axis2, ndim })?
             as i32;
 
         unsafe { Ok(self.swap_axes_device_unchecked(resolved_axis1, resolved_axis2, stream)) }
@@ -544,7 +544,7 @@ fn axes_or_default_to_all_size_one_axes<'a>(
 }
 
 fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize; 4]> {
-    match strides.into() {
+    match strides {
         Some(strides) => SmallVec::from_slice(strides),
         None => {
             let result = shape

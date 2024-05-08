@@ -289,18 +289,18 @@ mod tests {
         assert!(a.can_reshape_to(&[1, -1, 1]).is_ok());
         assert!(a.can_reshape_to(&[-1, 1, 1]).is_ok());
 
-        assert!(!a.can_reshape_to(&[1, -2]).is_ok());
+        assert!(a.can_reshape_to(&[1, -2]).is_err());
     }
 
     #[test]
     fn test_cannot_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(!a.can_reshape_to(&[2]).is_ok());
-        assert!(!a.can_reshape_to(&[2, 2]).is_ok());
-        assert!(!a.can_reshape_to(&[2, 2, 2]).is_ok());
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2]).is_ok());
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]).is_ok());
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_ok());
+        assert!(a.can_reshape_to(&[2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_err());
     }
 
     #[test]

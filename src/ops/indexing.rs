@@ -1135,8 +1135,7 @@ fn gather_nd<'a>(
     // Squeeze the dims
     let output_shape: Vec<i32> = gathered_shape[0..(max_dims + slice_count)]
         .iter()
-        .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter())
-        .map(|i| *i)
+        .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter()).copied()
         .collect();
     let result = gathered.reshape(&output_shape);
 
@@ -1179,10 +1178,10 @@ fn count_non_new_axis_operations(operations: &[ArrayIndexOp]) -> usize {
         .count()
 }
 
-fn expand_ellipsis_operations<'a>(
+fn expand_ellipsis_operations(
     ndim: usize,
-    operations: &'a [ArrayIndexOp],
-) -> Cow<'a, [ArrayIndexOp]> {
+    operations: &[ArrayIndexOp],
+) -> Cow<'_, [ArrayIndexOp]> {
     let ellipsis_count = operations
         .iter()
         .filter(|op| matches!(op, ArrayIndexOp::Ellipsis))
@@ -1285,7 +1284,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
                 Ellipsis | ExpandDims => false,
                 _ => true,
             });
-        let (max_dims, gathered) = gather_nd(&*src, gather_indices, gather_first, stream.clone());
+        let (max_dims, gathered) = gather_nd(&src, gather_indices, gather_first, stream.clone());
 
         src = Cow::Owned(gathered);
 

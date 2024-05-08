@@ -286,7 +286,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
     /// let mut array = Array::from_slice(&data[..], &[5]);
@@ -312,7 +312,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
     /// let mut array = Array::from_slice(&data[..], &[5]);
@@ -351,7 +351,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     ///
     /// let data = [1i32, 2, 3, 4, 5];
     /// let mut array = Array::from_slice(&data[..], &[5]);

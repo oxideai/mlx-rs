@@ -23,7 +23,7 @@
 //! ## One dimension
 //!
 //! ```rust
-//! use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
+//! use mlx_rs::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
 //! let src = [1.0f32, 2.0, 3.0, 4.0];
 //! let mut array = Array::from_slice(&src[..], &[4]);
@@ -72,7 +72,7 @@
 //! ## Two dimensions
 //!
 //! ```rust
-//! use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
+//! use mlx_rs::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
 //! let src = [1.0f32, 1.0, 1.0, 1.0];
 //! let mut array = Array::from_slice(&src[..], &[2, 2]);
@@ -121,7 +121,7 @@
 //! ## `N` dimensions
 //!
 //! ```rust
-//! use mlx::{Dtype, Array, StreamOrDevice, complex64, fft::*};
+//! use mlx_rs::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
 //! let mut array = Array::ones::<f32>(&[2, 2, 2]);
 //! let mut fftn_result = fftn(&array, None, None);

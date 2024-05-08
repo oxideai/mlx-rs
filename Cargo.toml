@@ -1,5 +1,5 @@
 [package]
-name = "mlx"
+name = "mlx-rs"
 version = "0.10.0-alpha.0"
 authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
 edition = "2021"

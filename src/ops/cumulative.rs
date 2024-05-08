@@ -7,7 +7,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [5, 9]] -- cumulative max along the columns
@@ -34,7 +34,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [5, 9]] -- cumulative max along the columns
@@ -94,7 +94,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [5, 9]] -- cumulative max along the columns
@@ -122,7 +122,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [4, 8]] -- cumulative min along the columns
@@ -149,7 +149,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [4, 8]] -- cumulative min along the columns
@@ -209,7 +209,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [4, 8]] -- cumulative min along the columns
@@ -237,7 +237,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
@@ -264,7 +264,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
@@ -324,7 +324,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [20, 72]] -- cumulative min along the columns
@@ -352,7 +352,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns
@@ -379,7 +379,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns
@@ -439,7 +439,7 @@ impl Array {
     ///
     /// # Example
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [[5, 8], [9, 17]] -- cumulative min along the columns

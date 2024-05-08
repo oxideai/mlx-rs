@@ -1,4 +1,4 @@
-use smallvec::SmallVec;
+
 
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
@@ -69,20 +69,6 @@ pub(crate) fn axes_or_default_to_all<'a>(
             let axes: Vec<i32> = (0..ndim).collect();
             axes
         }
-    }
-}
-
-pub(crate) fn axes_or_default_to_all_size_one_axes<'a>(
-    axes: impl Into<Option<&'a [i32]>>,
-    shape: &[i32],
-) -> SmallVec<[i32; 4]> {
-    match axes.into() {
-        Some(axes) => SmallVec::from_slice(axes),
-        None => shape
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &dim)| if dim == 1 { Some(i as i32) } else { None })
-            .collect(),
     }
 }
 

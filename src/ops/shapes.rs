@@ -1,4 +1,4 @@
-use std::{collections::HashSet, hash::Hash};
+use std::{borrow::Cow, collections::HashSet};
 
 use mlx_macros::default_device;
 use smallvec::SmallVec;
@@ -8,7 +8,7 @@ use crate::{
         DuplicateAxisError, ExpandDimsError, FlattenError, InvalidAxisError, ReshapeError,
         SqueezeError,
     },
-    utils::{all_unique, axes_or_default_to_all_size_one_axes, resolve_index},
+    utils::{all_unique, resolve_index},
     Array, StreamOrDevice,
 };
 
@@ -64,7 +64,7 @@ impl Array {
     }
 
     #[default_device]
-    pub fn flatten_device_unchecked(
+    pub unsafe fn flatten_device_unchecked(
         &self,
         start_axis: impl Into<Option<i32>>,
         end_axis: impl Into<Option<i32>>,
@@ -164,13 +164,13 @@ impl Array {
     }
 
     #[default_device]
-    pub fn squeeze_device_unchecked<'a>(
+    pub unsafe fn squeeze_device_unchecked<'a>(
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         stream: StreamOrDevice,
     ) -> Array {
         // All size 1 axes are removed if axes is None
-        let axes: SmallVec<[i32; 4]> = axes_or_default_to_all_size_one_axes(axes, self.shape());
+        let axes = axes_or_default_to_all_size_one_axes(axes, self.shape());
         unsafe {
             let c_array =
                 mlx_sys::mlx_squeeze(self.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
@@ -187,7 +187,7 @@ impl Array {
         let axes = axes_or_default_to_all_size_one_axes(axes, self.shape());
         let mut unique_axes = HashSet::new();
 
-        for axis in &axes {
+        for axis in axes.iter() {
             if *axis < 0 || *axis >= self.ndim() as i32 {
                 return Err(InvalidAxisError {
                     axis: *axis,
@@ -223,5 +223,87 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Array {
         self.try_squeeze_device(axes, stream).unwrap()
+    }
+
+    #[default_device]
+    pub fn as_strided_device<'a>(
+        &self,
+        shape: impl Into<Option<&'a [i32]>>,
+        strides: impl Into<Option<&'a [usize]>>,
+        offset: impl Into<Option<usize>>,
+        stream: StreamOrDevice,
+    ) -> Array {
+        let shape = shape.into().unwrap_or(self.shape());
+        let resolved_strides = resolve_strides(shape, strides.into());
+        let offset = offset.into().unwrap_or(0);
+
+        unsafe {
+            let c_array = mlx_sys::mlx_as_strided(
+                self.c_array,
+                shape.as_ptr(),
+                shape.len(),
+                resolved_strides.as_ptr(),
+                resolved_strides.len(),
+                offset,
+                stream.as_ptr(),
+            );
+            Array::from_ptr(c_array)
+        }
+    }
+
+    #[default_device]
+    pub fn at_least_1d_device(&self, stream: StreamOrDevice) -> Array {
+        unsafe {
+            let c_array = mlx_sys::mlx_atleast_1d(self.c_array, stream.as_ptr());
+            Array::from_ptr(c_array)
+        }
+    }
+
+    #[default_device]
+    pub fn at_least_2d_device(&self, stream: StreamOrDevice) -> Array {
+        unsafe {
+            let c_array = mlx_sys::mlx_atleast_2d(self.c_array, stream.as_ptr());
+            Array::from_ptr(c_array)
+        }
+    }
+
+    #[default_device]
+    pub fn at_least_3d_device(&self, stream: StreamOrDevice) -> Array {
+        unsafe {
+            let c_array = mlx_sys::mlx_atleast_3d(self.c_array, stream.as_ptr());
+            Array::from_ptr(c_array)
+        }
+    }
+}
+
+fn axes_or_default_to_all_size_one_axes<'a>(
+    axes: impl Into<Option<&'a [i32]>>,
+    shape: &[i32],
+) -> Cow<'a, [i32]> {
+    match axes.into() {
+        Some(axes) => Cow::Borrowed(axes),
+        None => shape
+            .iter()
+            .enumerate()
+            .filter_map(|(i, &dim)| if dim == 1 { Some(i as i32) } else { None })
+            .collect(),
+    }
+}
+
+fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize; 4]> {
+    match strides.into() {
+        Some(strides) => SmallVec::from_slice(strides),
+        None => {
+            let result = shape
+                .iter()
+                .rev()
+                .scan(1, |acc, &dim| {
+                    let result = *acc;
+                    *acc *= dim as usize;
+                    Some(result)
+                })
+                .collect::<SmallVec<[usize; 4]>>();
+            result.into_iter().rev().collect()
+        }
     }
 }

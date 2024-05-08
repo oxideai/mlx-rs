@@ -44,6 +44,7 @@ pub(super) fn try_resolve_size_and_axis(
     Ok((n, axis))
 }
 
+// TODO: Use Cow or SmallVec?
 #[inline]
 pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
     a: &'a Array,

@@ -34,7 +34,7 @@
 //! # Multi-axes indexing
 //!
 //! Multi-axes indexing with combinations of the above operations is also supported by combining the
-//! operations in a tuple.
+//! operations in a tuple with the restriction that `Ellipsis` can only be used once.
 //!
 //! ## Examples
 //!
@@ -69,7 +69,6 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    ops::{expand_dims_device_unchecked, reshape},
     utils::resolve_index_unchecked,
     Array, StreamOrDevice,
 };
@@ -1086,12 +1085,12 @@ fn gather_nd<'a>(
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(0);
-                    *item = Rc::new(reshape(&item, &new_shape));
+                    *item = Rc::new(item.reshape(&new_shape));
                     slice_index += 1;
                 } else {
                     let mut new_shape = item.shape().to_vec();
                     new_shape.extend((0..slice_count).map(|_| 1));
-                    *item = Rc::new(reshape(&item, &new_shape));
+                    *item = Rc::new(item.reshape(&new_shape));
                 }
             }
         }
@@ -1100,7 +1099,7 @@ fn gather_nd<'a>(
         for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
             let mut new_shape = vec![1; max_dims + slice_count];
             new_shape[i] = item.dim(0);
-            *item = Rc::new(reshape(&item, &new_shape));
+            *item = Rc::new(item.reshape(&new_shape));
         }
     }
 
@@ -1226,7 +1225,7 @@ fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Arra
         Slice(range) => get_item_slice(src, range, stream),
         ExpandDims => unsafe {
             // SAFETY: 0 is always a valid axis
-            expand_dims_device_unchecked(src, &[0], stream)
+            src.expand_dims_device_unchecked(&[0], stream)
         },
     }
 }

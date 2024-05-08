@@ -66,8 +66,8 @@ pub enum FftError {
     #[error("Shape and axes/axis have different sizes")]
     IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
 
-    #[error("Duplicate axis received: {axis}")]
-    DuplicateAxis { axis: i32 },
+    #[error(transparent)]
+    DuplicateAxis(#[from] DuplicateAxisError),
 
     #[error("Invalid output size requested")]
     InvalidOutputSize,
@@ -125,6 +125,18 @@ pub struct SliceError {
 }
 
 #[derive(Debug, Error)]
+pub enum FlattenError {
+    #[error("Start axis must be less than or equal to end axis. Found start: {start}, end: {end}")]
+    StartAxisGreaterThanEndAxis { start: i32, end: i32 },
+
+    #[error(transparent)]
+    InvalidStartAxis(InvalidAxisError),
+
+    #[error(transparent)]
+    InvalidEndAxis(InvalidAxisError),
+}
+
+#[derive(Debug, Error)]
 pub enum ReshapeError<'a> {
     #[error("Can only infer one dimension")]
     MultipleInferredDims,
@@ -134,4 +146,16 @@ pub enum ReshapeError<'a> {
 
     #[error("Cannot reshape array of size {size} into shape {shape:?}")]
     InvalidShape { size: usize, shape: &'a [i32] },
+}
+
+#[derive(Debug, Error)]
+pub enum SqueezeError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error("Cannot squeeze axis {axis} with size {size} which is not equal to 1")]
+    AxisSizeGreaterThanOne { axis: i32, size: i32 },
+
+    #[error(transparent)]
+    DuplicateAxis(#[from] DuplicateAxisError),
 }

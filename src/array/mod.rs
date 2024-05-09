@@ -444,6 +444,12 @@ impl From<f32> for Array {
     }
 }
 
+impl AsRef<Array> for Array {
+    fn as_ref(&self) -> &Array {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

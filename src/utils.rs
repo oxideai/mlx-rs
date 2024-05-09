@@ -1,4 +1,4 @@
-use mlx_sys::{mlx_array, mlx_vector_array};
+use mlx_sys::mlx_vector_array;
 
 use crate::error::{OperationError, ReshapeError};
 use crate::Array;
@@ -168,10 +168,15 @@ impl Array {
 }
 
 /// The returned `mlx_vector_array` must be manually freed by the caller.
-pub(crate) unsafe fn new_mlx_vector_array(arrays: &[Array]) -> mlx_vector_array {
+pub(crate) unsafe fn new_mlx_vector_array(arrays: &[impl AsRef<Array>]) -> mlx_vector_array {
+    let arrays = arrays
+        .iter()
+        .map(|array| array.as_ref().as_ptr())
+        .collect::<Vec<_>>();
+
     unsafe {
         let vec = mlx_sys::mlx_vector_array_new();
-        let arrs = arrays.as_ptr() as *const mlx_array;
+        let arrs = arrays.as_ptr();
         let num_arrs = arrays.len();
 
         mlx_sys::mlx_vector_array_add_arrays(vec, arrs, num_arrs);
@@ -192,13 +197,13 @@ pub(crate) unsafe fn mlx_vector_array_values(c_vec: mlx_vector_array) -> Vec<Arr
     }
 }
 
-pub(crate) fn is_same_shape(arrays: &[Array]) -> bool {
+pub(crate) fn is_same_shape(arrays: &[impl AsRef<Array>]) -> bool {
     if arrays.is_empty() {
         return true;
     }
 
-    let shape = arrays[0].shape();
-    arrays.iter().all(|array| array.shape() == shape)
+    let shape = arrays[0].as_ref().shape();
+    arrays.iter().all(|array| array.as_ref().shape() == shape)
 }
 
 #[cfg(test)]

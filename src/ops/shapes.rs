@@ -128,6 +128,7 @@ impl Array {
         self.try_squeeze_device(axes, stream).unwrap()
     }
 
+    /// See [`as_strided`]
     #[default_device]
     pub fn as_strided_device<'a>(
         &'a self,
@@ -139,16 +140,19 @@ impl Array {
         as_strided_device(self, shape, strides, offset, stream)
     }
 
+    /// See [`at_least_1d`]
     #[default_device]
     pub fn at_least_1d_device(&self, stream: StreamOrDevice) -> Array {
         at_least_1d_device(self, stream)
     }
 
+    /// See [`at_least_2d`]
     #[default_device]
     pub fn at_least_2d_device(&self, stream: StreamOrDevice) -> Array {
         at_least_2d_device(self, stream)
     }
 
+    /// See [`at_least_3d`]
     #[default_device]
     pub fn at_least_3d_device(&self, stream: StreamOrDevice) -> Array {
         at_least_3d_device(self, stream)
@@ -329,6 +333,16 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
     }
 }
 
+/// Create a view into the array with the given shape and strides.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_iter(0..10, &[10]);
+/// let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0);
+/// ```
 #[default_device]
 pub fn as_strided_device<'a>(
     a: &'a Array,
@@ -355,8 +369,27 @@ pub fn as_strided_device<'a>(
     }
 }
 
+/// Broadcast an array to the given shape.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `shape`: The shape to broadcast to.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the shapes are broadcastable.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_float(2.3);
+/// let y = unsafe { broadcast_to_unchecked(&x, &[1, 1]) };
+/// ```
 #[default_device]
-pub unsafe fn broadcast_device_unchecked(
+pub unsafe fn broadcast_to_device_unchecked(
     a: &Array,
     shape: &[i32],
     stream: StreamOrDevice,
@@ -368,8 +401,23 @@ pub unsafe fn broadcast_device_unchecked(
     }
 }
 
+/// Broadcast an array to the given shape. Returns an error if the shapes are not broadcastable.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `shape`: The shape to broadcast to.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_float(2.3);
+/// let result = try_broadcast_to(&x, &[1, 1]);
+/// ```
 #[default_device]
-pub fn try_broadcast_device<'a>(
+pub fn try_broadcast_to_device<'a>(
     a: &'a Array,
     shape: &'a [i32],
     stream: StreamOrDevice,
@@ -380,24 +428,36 @@ pub fn try_broadcast_device<'a>(
             dst_shape: shape,
         });
     }
-    unsafe { Ok(broadcast_device_unchecked(a, shape, stream)) }
+    unsafe { Ok(broadcast_to_device_unchecked(a, shape, stream)) }
 }
 
+/// Broadcast an array to the given shape. Panics if the shapes are not broadcastable.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `shape`: The shape to broadcast to.
+///
+/// # Panics
+///
+/// Panics if the shapes are not broadcastable. See [`try_broadcast_to`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_float(2.3);
+/// let y = broadcast_to(&x, &[1, 1]);
+/// ```
 #[default_device]
-pub fn broadcast_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrDevice) -> Array {
-    try_broadcast_device(a, shape, stream).unwrap()
+pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrDevice) -> Array {
+    try_broadcast_to_device(a, shape, stream).unwrap()
 }
 
-#[default_device]
-pub unsafe fn concatenate_device_unchecked(
-    arrays: &[Array],
-    axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
-) -> Array {
-    let axis = axis.into().unwrap_or(0);
-
+fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(arrays);
+        let c_arrays = new_mlx_vector_array(&arrays);
         let c_array = mlx_sys::mlx_concatenate(c_arrays, axis, stream.as_ptr());
 
         let result = Array::from_ptr(c_array);
@@ -407,34 +467,68 @@ pub unsafe fn concatenate_device_unchecked(
     }
 }
 
+/// Concatenate the arrays along the given axis.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to concatenate.
+/// - `axis`: The axis to concatenate along.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the shapes are valid for concatenation.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_iter(0..4, &[2, 2]);
+/// let y = Array::from_iter(4..8, &[2, 2]);
+/// let z = unsafe { concatenate_unchecked(&[x, y], 0) };
+/// ```
+#[default_device]
+pub unsafe fn concatenate_device_unchecked(
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let axis = axis.into().unwrap_or(0);
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
+
+    concatenate_inner(&arrays, axis, stream)
+}
+
 #[default_device]
 pub fn try_concatenate_device(
-    arrays: &[Array],
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Array, ConcatenateError> {
     let axis = axis.into().unwrap_or(0);
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
 
     if arrays.is_empty() {
         return Err(ConcatenateError::NoInputArray);
     }
 
-    let resolved_axis = resolve_index(axis, arrays[0].ndim()).ok_or_else(|| InvalidAxisError {
-        axis,
-        ndim: arrays[0].ndim(),
-    })? as i32;
+    let resolved_axis =
+        resolve_index(axis, arrays[0].as_ref().ndim()).ok_or_else(|| InvalidAxisError {
+            axis,
+            ndim: arrays[0].as_ref().ndim(),
+        })? as i32;
 
     // validate shapes
-    let shape = arrays[0].shape();
+    let shape = arrays[0].as_ref().shape();
     for array in arrays[1..].iter() {
-        if array.ndim() != shape.len() {
+        if array.as_ref().ndim() != shape.len() {
             return Err(ConcatenateError::InvalidAxis(InvalidAxisError {
                 axis,
-                ndim: array.ndim(),
+                ndim: array.as_ref().ndim(),
             }));
         }
 
-        for (i, axis_shape) in array.shape().iter().enumerate() {
+        for (i, axis_shape) in array.as_ref().shape().iter().enumerate() {
             if i as i32 == resolved_axis {
                 continue;
             }
@@ -442,18 +536,18 @@ pub fn try_concatenate_device(
             if axis_shape != &shape[i] {
                 return Err(ConcatenateError::InvalidAxis(InvalidAxisError {
                     axis,
-                    ndim: array.ndim(),
+                    ndim: array.as_ref().ndim(),
                 }));
             }
         }
     }
 
-    Ok(unsafe { concatenate_device_unchecked(arrays, axis, stream) })
+    Ok(concatenate_inner(&arrays, resolved_axis, stream))
 }
 
 #[default_device]
 pub fn concatenate_device(
-    arrays: &[Array],
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
@@ -902,6 +996,20 @@ pub fn squeeze_device<'a>(
     a.squeeze_device(axes, stream)
 }
 
+/// Convert array to have at least one dimension.
+///
+/// # Params
+///
+/// - `a`: The input array.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_int(1);
+/// let out = at_least_1d(&x);
+/// ```
 #[default_device]
 pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -910,6 +1018,20 @@ pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
     }
 }
 
+/// Convert array to have at least two dimensions.
+///
+/// # Params
+///
+/// - `a`: The input array.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_int(1);
+/// let out = at_least_2d(&x);
+/// ```
 #[default_device]
 pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -918,6 +1040,20 @@ pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
     }
 }
 
+/// Convert array to have at least three dimensions.
+///
+/// # Params
+///
+/// - `a`: The input array.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_int(1);
+/// let out = at_least_3d(&x);
+/// ```
 #[default_device]
 pub fn at_least_3d_device(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -1188,10 +1324,9 @@ pub fn pad_device<'a>(
     try_pad_device(array, width, value, stream).unwrap()
 }
 
-#[default_device]
-pub unsafe fn stack_device_unchecked(arrays: &[Array], axis: i32, stream: StreamOrDevice) -> Array {
+fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(arrays);
+        let c_arrays = new_mlx_vector_array(&arrays);
         let c_array = mlx_sys::mlx_stack(c_arrays, axis, stream.as_ptr());
 
         let result = Array::from_ptr(c_array);
@@ -1202,29 +1337,44 @@ pub unsafe fn stack_device_unchecked(arrays: &[Array], axis: i32, stream: Stream
 }
 
 #[default_device]
+pub unsafe fn stack_device_unchecked(
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Array {
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
+    stack_inner(&arrays, axis, stream)
+}
+
+#[default_device]
 pub fn try_stack_device(
-    arrays: &[Array],
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
     axis: i32,
     stream: StreamOrDevice,
 ) -> Result<Array, StackError> {
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
+
     if arrays.is_empty() {
         return Err(StackError::NoInputArray);
     }
 
-    if !is_same_shape(arrays) {
+    if !is_same_shape(&arrays) {
         return Err(StackError::InvalidShapes);
     }
 
-    unsafe { Ok(stack_device_unchecked(arrays, axis, stream)) }
+    Ok(stack_inner(&arrays, axis, stream))
 }
 
 #[default_device]
-pub fn stack_device(arrays: &[Array], axis: i32, stream: StreamOrDevice) -> Array {
+pub fn stack_device(
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Array {
     try_stack_device(arrays, axis, stream).unwrap()
 }
 
-#[default_device]
-pub unsafe fn stack_all_device_unchecked(arrays: &[Array], stream: StreamOrDevice) -> Array {
+fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
     unsafe {
         let c_arrays = new_mlx_vector_array(arrays);
         let c_array = mlx_sys::mlx_stack_all(c_arrays, stream.as_ptr());
@@ -1237,23 +1387,37 @@ pub unsafe fn stack_all_device_unchecked(arrays: &[Array], stream: StreamOrDevic
 }
 
 #[default_device]
+pub unsafe fn stack_all_device_unchecked(
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
+    stack_all_inner(&arrays, stream)
+}
+
+#[default_device]
 pub fn try_stack_all_device(
-    arrays: &[Array],
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
     stream: StreamOrDevice,
 ) -> Result<Array, StackAllError> {
+    let arrays = arrays.into_iter().collect::<Vec<_>>();
+
     if arrays.is_empty() {
         return Err(StackAllError::NoInputArray);
     }
 
-    if !is_same_shape(arrays) {
+    if !is_same_shape(&arrays) {
         return Err(StackAllError::InvalidShapes);
     }
 
-    unsafe { Ok(stack_all_device_unchecked(arrays, stream)) }
+    Ok(stack_all_inner(&arrays, stream))
 }
 
 #[default_device]
-pub fn stack_all_device(arrays: &[Array], stream: StreamOrDevice) -> Array {
+pub fn stack_all_device(
+    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    stream: StreamOrDevice,
+) -> Array {
     try_stack_all_device(arrays, stream).unwrap()
 }
 
@@ -1674,7 +1838,8 @@ mod tests {
         assert_eq!(stack(&z, -1).shape(), &[3, 2]);
         assert_eq!(stack(&z, -2).shape(), &[2, 3]);
 
-        assert!(try_stack(&[], 0).is_err());
+        let empty: Vec<Array> = Vec::new();
+        assert!(try_stack(empty, 0).is_err());
 
         let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Float16);
         let y = Array::from_slice(&[4, 5, 6], &[3]).as_dtype(Dtype::Int32);

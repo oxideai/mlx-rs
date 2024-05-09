@@ -117,25 +117,25 @@ impl Array {
     }
 
     /// Flatten an array.
-    /// 
+    ///
     /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
     /// supported. After converting negative axis to positive, axes outside the valid range will be
     /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
     /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2, 2]);
     /// let y = unsafe { x.flatten_unchecked(None, None) };
     /// ```
@@ -156,21 +156,21 @@ impl Array {
     }
 
     /// Flatten an array. Returns an error if the axes are invalid.
-    /// 
+    ///
     /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
     /// supported. After converting negative axis to positive, axes outside the valid range will be
     /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
     /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2, 2]);
     /// let y = x.try_flatten(None, None);
     /// ```
@@ -184,7 +184,7 @@ impl Array {
         let ndim = self.ndim();
 
         if ndim == 0 {
-            return unsafe { Ok(self.flatten_device_unchecked(start_axis, end_axis, stream)) }
+            return unsafe { Ok(self.flatten_device_unchecked(start_axis, end_axis, stream)) };
         }
 
         let mut start_axis = start_axis.into().unwrap_or(0);
@@ -226,25 +226,25 @@ impl Array {
     }
 
     /// Flatten an array. Panics if the axes are invalid.
-    /// 
+    ///
     /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
     /// supported. After converting negative axis to positive, axes outside the valid range will be
     /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
     /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if the axes are invalid. See [`try_flatten`] for more information.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2, 2]);
     /// let y = x.flatten(None, None);
     /// ```
@@ -260,20 +260,20 @@ impl Array {
     }
 
     /// Reshape an array while preserving the size.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `shape`: New shape.
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the new shape is valid.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2]);
     /// let y = unsafe { x.reshape_unchecked(&[4]) };
     /// ```
@@ -287,16 +287,16 @@ impl Array {
     }
 
     /// Reshape an array while preserving the size. Returns an error if the new shape is invalid.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `shape`: New shape.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2]);
     /// let result = x.try_reshape(&[4]);
     /// ```
@@ -311,20 +311,20 @@ impl Array {
     }
 
     /// Reshape an array while preserving the size. Panics if the new shape is invalid.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `shape`: New shape.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if the new shape is invalid. See [`try_reshape`] for more information.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use mlx::prelude::*;
-    /// 
+    ///
     /// let x = Array::zeros::<i32>(&[2, 2]);
     /// let y = x.reshape(&[4]);
     /// ```
@@ -486,9 +486,10 @@ impl Array {
     pub unsafe fn split_device_unchecked(
         &self,
         indices: &[i32],
-        axis: i32,
+        axis: impl Into<Option<i32>>,
         stream: StreamOrDevice,
     ) -> Vec<Array> {
+        let axis = axis.into().unwrap_or(0);
         unsafe {
             let c_vec_arrays = mlx_sys::mlx_split(
                 self.c_array,
@@ -512,9 +513,10 @@ impl Array {
     pub fn try_split_device(
         &self,
         indices: &[i32],
-        axis: i32,
+        axis: impl Into<Option<i32>>,
         stream: StreamOrDevice,
     ) -> Result<Vec<Array>, InvalidAxisError> {
+        let axis = axis.into().unwrap_or(0);
         let ndim = self.ndim();
         let resolved_axis =
             resolve_index(axis, ndim).ok_or(InvalidAxisError { axis, ndim })? as i32;
@@ -523,7 +525,12 @@ impl Array {
     }
 
     #[default_device]
-    pub fn split_device(&self, indices: &[i32], axis: i32, stream: StreamOrDevice) -> Vec<Array> {
+    pub fn split_device(
+        &self,
+        indices: &[i32],
+        axis: impl Into<Option<i32>>,
+        stream: StreamOrDevice,
+    ) -> Vec<Array> {
         self.try_split_device(indices, axis, stream).unwrap()
     }
 
@@ -917,26 +924,26 @@ pub fn expand_dims_device(a: &Array, axes: &[i32], stream: StreamOrDevice) -> Ar
 }
 
 /// Flatten an array.
-/// 
+///
 /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
 /// supported. After converting negative axis to positive, axes outside the valid range will be
 /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
 /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-/// 
+///
 /// # Safety
-/// 
+///
 /// The function is unsafe because it does not check if the axes are valid.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = unsafe { flatten_unchecked(&x, None, None) };
 /// ```
@@ -951,22 +958,22 @@ pub unsafe fn flatten_device_unchecked(
 }
 
 /// Flatten an array. Returns an error if the axes are invalid.
-/// 
+///
 /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
 /// supported. After converting negative axis to positive, axes outside the valid range will be
 /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
 /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = try_flatten(&x, None, None);
 /// ```
@@ -981,26 +988,26 @@ pub fn try_flatten_device(
 }
 
 /// Flatten an array.
-/// 
+///
 /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
 /// supported. After converting negative axis to positive, axes outside the valid range will be
 /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
 /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
-/// 
+///
 /// # Panics
-/// 
+///
 /// Panics if the axes are invalid.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = flatten(&x, None, None);
 /// ```
@@ -1015,21 +1022,21 @@ pub fn flatten_device(
 }
 
 /// Reshape an array while preserving the size.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `shape`: New shape.
-/// 
+///
 /// # Safety
-/// 
+///
 /// The function is unsafe because it does not check if the new shape is valid.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = unsafe { reshape_unchecked(&x, &[4]) };
 /// ```
@@ -1039,17 +1046,17 @@ pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamO
 }
 
 /// Reshape an array while preserving the size. Returns an error if the new shape is invalid.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `shape`: New shape.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let result = try_reshape(&x, &[4]);
 /// ```
@@ -1063,21 +1070,21 @@ pub fn try_reshape_device<'a>(
 }
 
 /// Reshape an array while preserving the size. Panics if the new shape is invalid.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: The input array.
 /// - `shape`: New shape.
-/// 
+///
 /// # Panics
-/// 
+///
 /// Panics if the new shape is invalid. See [`try_reshape`] for more information.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use mlx::{prelude::*, ops::*};
-/// 
+///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = reshape(&x, &[4]);
 /// ```
@@ -1157,7 +1164,7 @@ pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: StreamOrDevice) -
 pub unsafe fn split_device_unchecked(
     a: &Array,
     indices: &[i32],
-    axis: i32,
+    axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Vec<Array> {
     a.split_device_unchecked(indices, axis, stream)
@@ -1167,14 +1174,19 @@ pub unsafe fn split_device_unchecked(
 pub fn try_split_device(
     a: &Array,
     indices: &[i32],
-    axis: i32,
+    axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Vec<Array>, InvalidAxisError> {
     a.try_split_device(indices, axis, stream)
 }
 
 #[default_device]
-pub fn split_device(a: &Array, indices: &[i32], axis: i32, stream: StreamOrDevice) -> Vec<Array> {
+pub fn split_device(
+    a: &Array,
+    indices: &[i32],
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Vec<Array> {
     a.split_device(indices, axis, stream)
 }
 
@@ -1228,6 +1240,12 @@ impl From<(i32, i32)> for PadWidth<'_> {
 
 impl<'a> From<&'a [(i32, i32)]> for PadWidth<'a> {
     fn from(widths: &'a [(i32, i32)]) -> Self {
+        PadWidth::Widths(widths)
+    }
+}
+
+impl<'a, const N: usize> From<&'a [(i32, i32); N]> for PadWidth<'a> {
+    fn from(widths: &'a [(i32, i32); N]) -> Self {
         PadWidth::Widths(widths)
     }
 }
@@ -1359,11 +1377,6 @@ pub fn try_stack_device(
         return Err(StackError::NoInputArray);
     }
 
-    resolve_index(axis, arrays[0].ndim()).ok_or_else(|| InvalidAxisError {
-        axis,
-        ndim: arrays[0].ndim(),
-    })?;
-
     if !is_same_shape(arrays) {
         return Err(StackError::InvalidShapes);
     }
@@ -1449,31 +1462,37 @@ pub fn tile_device(array: &Array, repetitions: &[i32], stream: StreamOrDevice) -
 }
 
 #[default_device]
-pub unsafe fn transpose_device_unchecked(
-    device: &Array,
-    axes: Option<&[i32]>,
+pub unsafe fn transpose_device_unchecked<'a>(
+    device: &'a Array,
+    axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Array {
     device.transpose_device(axes, stream)
 }
 
 #[default_device]
-pub fn try_transpose_device(
+pub fn try_transpose_device<'a>(
     device: &Array,
-    axes: Option<&[i32]>,
+    axes: impl Into<Option<&'a [i32]>>,
     stream: StreamOrDevice,
 ) -> Result<Array, TransposeError> {
     device.try_transpose_device(axes, stream)
 }
 
 #[default_device]
-pub fn transpose_device(device: &Array, axes: Option<&[i32]>, stream: StreamOrDevice) -> Array {
+pub fn transpose_device<'a>(
+    device: &Array,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
     device.transpose_device(axes, stream)
 }
 
+// The unit tests below are adapted from
+// https://github.com/ml-explore/mlx/blob/main/tests/ops_tests.cpp
 #[cfg(test)]
 mod tests {
-    use crate::Array;
+    use crate::{Array, Dtype};
 
     use super::*;
 
@@ -1566,5 +1585,355 @@ mod tests {
         assert!(try_reshape(&x, &[1]).is_err());
         let y = reshape(&x, &[1, 5, 0]);
         assert_eq!(y.shape(), &[1, 5, 0]);
+    }
+
+    #[test]
+    fn test_as_strided() {
+        let x = Array::from_iter(0..10, &[10]);
+        let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0);
+        let expected = Array::from_slice(&[0, 1, 2, 1, 2, 3, 2, 3, 4], &[3, 3]);
+        assert_eq!(y, expected);
+
+        let y = as_strided(&x, &[3, 3][..], &[0, 3][..], 0);
+        let expected = Array::from_slice(&[0, 3, 6, 0, 3, 6, 0, 3, 6], &[3, 3]);
+        assert_eq!(y, expected);
+
+        let x = x.reshape(&[2, 5]);
+        let x = x.transpose(&[1, 0][..]);
+        let y = as_strided(&x, &[3, 3][..], &[2, 1][..], 1);
+        let expected = Array::from_slice(&[5, 1, 6, 6, 2, 7, 7, 3, 8], &[3, 3]);
+        assert_eq!(y, expected);
+    }
+
+    #[test]
+    fn test_at_least_1d() {
+        let x = Array::from_int(1);
+        let out = at_least_1d(&x);
+        assert_eq!(out.ndim(), 1);
+        assert_eq!(out.shape(), &[1]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let out = at_least_1d(&x);
+        assert_eq!(out.ndim(), 1);
+        assert_eq!(out.shape(), &[3]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
+        let out = at_least_1d(&x);
+        assert_eq!(out.ndim(), 2);
+        assert_eq!(out.shape(), &[3, 1]);
+    }
+
+    #[test]
+    fn test_at_least_2d() {
+        let x = Array::from_int(1);
+        let out = at_least_2d(&x);
+        assert_eq!(out.ndim(), 2);
+        assert_eq!(out.shape(), &[1, 1]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let out = at_least_2d(&x);
+        assert_eq!(out.ndim(), 2);
+        assert_eq!(out.shape(), &[1, 3]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
+        let out = at_least_2d(&x);
+        assert_eq!(out.ndim(), 2);
+        assert_eq!(out.shape(), &[3, 1]);
+    }
+
+    #[test]
+    fn test_at_least_3d() {
+        let x = Array::from_int(1);
+        let out = at_least_3d(&x);
+        assert_eq!(out.ndim(), 3);
+        assert_eq!(out.shape(), &[1, 1, 1]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let out = at_least_3d(&x);
+        assert_eq!(out.ndim(), 3);
+        assert_eq!(out.shape(), &[1, 3, 1]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
+        let out = at_least_3d(&x);
+        assert_eq!(out.ndim(), 3);
+        assert_eq!(out.shape(), &[3, 1, 1]);
+    }
+
+    #[test]
+    fn test_move_axis() {
+        let a = Array::from_int(0);
+        assert!(try_move_axis(&a, 0, 0).is_err());
+
+        let a = Array::zeros::<i32>(&[2]);
+        assert!(try_move_axis(&a, 0, 1).is_err());
+        assert_eq!(move_axis(&a, 0, 0).shape(), &[2]);
+        assert_eq!(move_axis(&a, -1, -1).shape(), &[2]);
+
+        let a = Array::zeros::<i32>(&[2, 3, 4]);
+        assert!(try_move_axis(&a, 0, -4).is_err());
+        assert!(try_move_axis(&a, 0, 3).is_err());
+        assert!(try_move_axis(&a, 3, 0).is_err());
+        assert!(try_move_axis(&a, -4, 0).is_err());
+        assert_eq!(move_axis(&a, 0, 2).shape(), &[3, 4, 2]);
+        assert_eq!(move_axis(&a, 0, 1).shape(), &[3, 2, 4]);
+        assert_eq!(move_axis(&a, 0, -1).shape(), &[3, 4, 2]);
+        assert_eq!(move_axis(&a, -2, 2).shape(), &[2, 4, 3]);
+    }
+
+    #[test]
+    fn test_split_equal() {
+        let x = Array::from_int(3);
+        assert!(try_split_equal(&x, 0, 0).is_err());
+
+        let x = Array::from_slice(&[0, 1, 2], &[3]);
+        assert!(try_split_equal(&x, 3, 1).is_err());
+        assert!(try_split_equal(&x, -2, 1).is_err());
+
+        let out = split_equal(&x, 3, 0);
+        assert_eq!(out.len(), 3);
+
+        let mut out = split_equal(&x, 3, -1);
+        assert_eq!(out.len(), 3);
+        for (i, a) in out.iter_mut().enumerate() {
+            assert_eq!(a.shape(), &[1]);
+            assert_eq!(a.dtype(), Dtype::Int32);
+            assert_eq!(a.item::<i32>(), i as i32);
+        }
+
+        let x = Array::from_slice(&[0, 1, 2, 3, 4, 5], &[2, 3]);
+        let out = split_equal(&x, 2, None);
+        assert_eq!(out[0], Array::from_slice(&[0, 1, 2], &[1, 3]));
+        assert_eq!(out[1], Array::from_slice(&[3, 4, 5], &[1, 3]));
+
+        let out = split_equal(&x, 3, 1);
+        assert_eq!(out[0], Array::from_slice(&[0, 3], &[2, 1]));
+        assert_eq!(out[1], Array::from_slice(&[1, 4], &[2, 1]));
+        assert_eq!(out[2], Array::from_slice(&[2, 5], &[2, 1]));
+
+        let x = Array::zeros::<i32>(&[8, 12]);
+        let out = split_equal(&x, 2, None);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].shape(), &[4, 12]);
+        assert_eq!(out[1].shape(), &[4, 12]);
+
+        let out = split_equal(&x, 3, 1);
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[0].shape(), &[8, 4]);
+        assert_eq!(out[1].shape(), &[8, 4]);
+        assert_eq!(out[2].shape(), &[8, 4]);
+    }
+
+    #[test]
+    fn test_split() {
+        let x = Array::zeros::<i32>(&[8, 12]);
+
+        let out = split(&x, &[], None);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].shape(), x.shape());
+
+        let out = split(&x, &[3, 7], None);
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[0].shape(), &[3, 12]);
+        assert_eq!(out[1].shape(), &[4, 12]);
+        assert_eq!(out[2].shape(), &[1, 12]);
+
+        let out = split(&x, &[20], None);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].shape(), &[8, 12]);
+        assert_eq!(out[1].shape(), &[0, 12]);
+
+        let out = split(&x, &[-5], None);
+        assert_eq!(out[0].shape(), &[3, 12]);
+        assert_eq!(out[1].shape(), &[5, 12]);
+
+        let out = split(&x, &[2, 8], Some(1));
+        assert_eq!(out[0].shape(), &[8, 2]);
+        assert_eq!(out[1].shape(), &[8, 6]);
+        assert_eq!(out[2].shape(), &[8, 4]);
+
+        let x = Array::from_iter(0i32..5, &[5]);
+        let out = split(&x, &[2, 1, 2], None);
+        assert_eq!(out[0], Array::from_slice(&[0, 1], &[2]));
+        assert_eq!(out[1], Array::from_slice::<i32>(&[], &[0]));
+        assert_eq!(out[2], Array::from_slice(&[1], &[1]));
+        assert_eq!(out[3], Array::from_slice(&[2, 3, 4], &[3]));
+    }
+
+    #[test]
+    fn test_pad() {
+        let x = Array::zeros::<f32>(&[1, 2, 3]);
+        assert_eq!(pad(&x, 1, None).shape(), &[3, 4, 5]);
+        assert_eq!(pad(&x, (0, 1), None).shape(), &[2, 3, 4]);
+        assert_eq!(pad(&x, &[(1, 1), (1, 2), (3, 1)], None).shape(), &[3, 5, 7]);
+    }
+
+    #[test]
+    fn test_stack() {
+        let x = Array::from_slice::<f32>(&[], &[0]);
+        let x = vec![x];
+        assert_eq!(stack(&x, 0).shape(), &[1, 0]);
+        assert_eq!(stack(&x, 1).shape(), &[0, 1]);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let x = vec![x];
+        assert_eq!(stack(&x, 0).shape(), &[1, 3]);
+        assert_eq!(stack(&x, 1).shape(), &[3, 1]);
+
+        let y = Array::from_slice(&[4, 5, 6], &[3]);
+        let mut z = x;
+        z.push(y);
+        assert_eq!(stack_all(&z).shape(), &[2, 3]);
+        assert_eq!(stack(&z, 1).shape(), &[3, 2]);
+        assert_eq!(stack(&z, -1).shape(), &[3, 2]);
+        assert_eq!(stack(&z, -2).shape(), &[2, 3]);
+
+        assert!(try_stack(&[], 0).is_err());
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Float16);
+        let y = Array::from_slice(&[4, 5, 6], &[3]).as_dtype(Dtype::Int32);
+        assert_eq!(stack(&[x, y], 0).dtype(), Dtype::Float16);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Int32);
+        let y = Array::from_slice(&[4, 5, 6, 7], &[4]).as_dtype(Dtype::Int32);
+        assert!(try_stack(&[x, y], 0).is_err());
+    }
+
+    #[test]
+    fn test_swap_axes() {
+        let a = Array::from_int(0);
+        assert!(try_swap_axes(&a, 0, 0).is_err());
+
+        let a = Array::zeros::<i32>(&[2]);
+        assert!(try_swap_axes(&a, 0, 1).is_err());
+        assert_eq!(swap_axes(&a, 0, 0).shape(), &[2]);
+        assert_eq!(swap_axes(&a, -1, -1).shape(), &[2]);
+
+        let a = Array::zeros::<i32>(&[2, 3, 4]);
+        assert!(try_swap_axes(&a, 0, -4).is_err());
+        assert!(try_swap_axes(&a, 0, 3).is_err());
+        assert!(try_swap_axes(&a, 3, 0).is_err());
+        assert!(try_swap_axes(&a, -4, 0).is_err());
+        assert_eq!(swap_axes(&a, 0, 2).shape(), &[4, 3, 2]);
+        assert_eq!(swap_axes(&a, 0, 1).shape(), &[3, 2, 4]);
+        assert_eq!(swap_axes(&a, 0, -1).shape(), &[4, 3, 2]);
+        assert_eq!(swap_axes(&a, -2, 2).shape(), &[2, 4, 3]);
+    }
+
+    #[test]
+    fn test_tile() {
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let y = tile(&x, &[2]);
+        let expected = Array::from_slice(&[1, 2, 3, 1, 2, 3], &[6]);
+        assert_eq!(y, expected);
+
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        let y = tile(&x, &[2]);
+        let expected = Array::from_slice(&[1, 2, 1, 2, 3, 4, 3, 4], &[2, 4]);
+        assert_eq!(y, expected);
+
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        let y = tile(&x, &[4, 1]);
+        let expected =
+            Array::from_slice(&[1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4], &[8, 2]);
+        assert_eq!(y, expected);
+
+        let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
+        let y = tile(&x, &[2, 2]);
+        let expected =
+            Array::from_slice(&[1, 2, 1, 2, 3, 4, 3, 4, 1, 2, 1, 2, 3, 4, 3, 4], &[4, 4]);
+        assert_eq!(y, expected);
+
+        let x = Array::from_slice(&[1, 2, 3], &[3]);
+        let y = tile(&x, &[2, 2, 2]);
+        let expected = Array::from_slice(
+            &[
+                1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3,
+            ],
+            &[2, 2, 6],
+        );
+        assert_eq!(y, expected);
+    }
+
+    #[test]
+    fn test_transpose() {
+        let x = Array::from_int(1);
+        let mut y = transpose(&x, None);
+        assert_eq!(y.shape(), &[]);
+        assert_eq!(y.item::<i32>(), 1);
+        assert!(try_transpose(&x, &[0][..]).is_err());
+        assert!(try_transpose(&x, &[1][..]).is_err());
+
+        let x = Array::from_slice(&[1], &[1]);
+        let mut y = transpose(&x, None);
+        assert_eq!(y.shape(), &[1]);
+        assert_eq!(y.item::<i32>(), 1);
+
+        let mut y = transpose(&x, &[-1][..]);
+        assert_eq!(y.shape(), &[1]);
+        assert_eq!(y.item::<i32>(), 1);
+
+        assert!(try_transpose(&x, &[1][..]).is_err());
+        assert!(try_transpose(&x, &[0, 0][..]).is_err());
+
+        let x = Array::from_slice::<i32>(&[], &[0]);
+        let mut y = transpose(&x, None);
+        assert_eq!(y.shape(), &[0]);
+        y.eval();
+        assert_eq!(y.size(), 0);
+
+        let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
+        let mut y = transpose(&x, None);
+        assert_eq!(y.shape(), &[3, 2]);
+        y = transpose(&x, &[-1, 0][..]);
+        assert_eq!(y.shape(), &[3, 2]);
+        y = transpose(&x, &[-1, -2][..]);
+        assert_eq!(y.shape(), &[3, 2]);
+        y.eval();
+        assert_eq!(y, Array::from_slice(&[1, 4, 2, 5, 3, 6], &[3, 2]));
+
+        let y = transpose(&x, &[0, 1][..]);
+        assert_eq!(y.shape(), &[2, 3]);
+        assert_eq!(y, x);
+
+        let y = transpose(&x, &[0, -1][..]);
+        assert_eq!(y.shape(), &[2, 3]);
+        assert_eq!(y, x);
+
+        assert!(try_transpose(&x, &[][..]).is_err());
+        assert!(try_transpose(&x, &[0][..]).is_err());
+        assert!(try_transpose(&x, &[0, 0][..]).is_err());
+        assert!(try_transpose(&x, &[0, 0, 0][..]).is_err());
+        assert!(try_transpose(&x, &[0, 1, 1][..]).is_err());
+
+        let x = Array::from_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &[2, 3, 2]);
+        let y = transpose(&x, None);
+        assert_eq!(y.shape(), &[2, 3, 2]);
+        let expected = Array::from_slice(&[1, 7, 3, 9, 5, 11, 2, 8, 4, 10, 6, 12], &[2, 3, 2]);
+        assert_eq!(y, expected);
+
+        let y = transpose(&x, &[0, 1, 2][..]);
+        assert_eq!(y.shape(), &[2, 3, 2]);
+        assert_eq!(y, x);
+
+        let y = transpose(&x, &[1, 0, 2][..]);
+        assert_eq!(y.shape(), &[3, 2, 2]);
+        let expected = Array::from_slice(&[1, 2, 7, 8, 3, 4, 9, 10, 5, 6, 11, 12], &[3, 2, 2]);
+        assert_eq!(y, expected);
+
+        let y = transpose(&x, &[0, 2, 1][..]);
+        assert_eq!(y.shape(), &[2, 2, 3]);
+        let expected = Array::from_slice(&[1, 3, 5, 2, 4, 6, 7, 9, 11, 8, 10, 12], &[2, 2, 3]);
+        assert_eq!(y, expected);
+
+        let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[4, 2]);
+        x = reshape(&transpose(&x, None), &[2, 2, 2]);
+        let expected = Array::from_slice(&[0, 2, 4, 6, 1, 3, 5, 7], &[2, 2, 2]);
+        assert_eq!(x, expected);
+
+        let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[1, 4, 1, 2]);
+        // assert!(x.flags().row_contiguous);
+        x = transpose(&x, &[2, 1, 0, 3][..]);
+        x.eval();
+        // assert!(x.flags().row_contiguous);
     }
 }

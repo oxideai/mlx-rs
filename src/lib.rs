@@ -1,4 +1,5 @@
 #![deny(unused_unsafe, missing_debug_implementations)]
+#![cfg_attr(test, allow(clippy::approx_constant))]
 
 mod array;
 mod device;

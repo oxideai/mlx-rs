@@ -368,6 +368,20 @@ impl ArrayIndex for StrideBy<std::ops::RangeFull> {
 
 // Implement public bindings
 impl Array {
+    /// Take elements along an axis.
+    ///
+    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
+    /// the array is treated as a flattened 1-D array prior to performing the take.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
+    /// flattened 1-D vector.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not check if the arguments are valid.
     #[default_device]
     pub unsafe fn take_device_unchecked(
         &self,
@@ -393,6 +407,16 @@ impl Array {
         }
     }
 
+    /// Take elements along an axis.
+    ///
+    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
+    /// the array is treated as a flattened 1-D array prior to performing the take.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
+    /// flattened 1-D vector.
     #[default_device]
     pub fn try_take_device(
         &self,
@@ -422,6 +446,20 @@ impl Array {
         unsafe { Ok(self.take_device_unchecked(indices, axis, stream)) }
     }
 
+    /// Take elements along an axis.
+    ///
+    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
+    /// the array is treated as a flattened 1-D array prior to performing the take.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
+    /// flattened 1-D vector.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_device(
         &self,
@@ -435,6 +473,16 @@ impl Array {
     // NOTE: take and take_long_axis are two separate functions in the c++ code. They don't call
     // each other.
 
+    /// Take values along an axis at the specified indices.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: Axis in the input to take the values from.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not check if the arguments are valid.
     #[default_device]
     pub unsafe fn take_along_axis_device_unchecked(
         &self,
@@ -449,6 +497,12 @@ impl Array {
         }
     }
 
+    /// Take values along an axis at the specified indices.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: Axis in the input to take the values from.
     #[default_device]
     pub fn try_take_along_axis_device(
         &self,
@@ -478,6 +532,16 @@ impl Array {
         unsafe { Ok(self.take_along_axis_device_unchecked(indices, axis, stream)) }
     }
 
+    /// Take values along an axis at the specified indices.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    /// - `axis`: Axis in the input to take the values from.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_along_axis_device(
         &self,

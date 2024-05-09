@@ -17,9 +17,9 @@ use crate::{
 
 impl Array {
     /// See [`expand_dims_uncheked`].
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn expand_dims_device_unchecked(
@@ -47,9 +47,9 @@ impl Array {
     }
 
     /// See [`flatten_unchecked`].
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn flatten_device_unchecked(
@@ -85,9 +85,9 @@ impl Array {
     }
 
     /// See [`reshape_unchecked`].
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the shapes are valid.
     #[default_device]
     pub unsafe fn reshape_device_unchecked(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
@@ -111,9 +111,9 @@ impl Array {
     }
 
     /// See [`squeeze_unchecked`].
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn squeeze_device_unchecked<'a>(
@@ -175,9 +175,9 @@ impl Array {
     }
 
     /// See [`move_axis_unchecked`]
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn move_axis_device_unchecked(
@@ -207,9 +207,9 @@ impl Array {
     }
 
     /// See [`split_unchecked`]
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the indices are valid.
     #[default_device]
     pub unsafe fn split_device_unchecked(
@@ -244,9 +244,9 @@ impl Array {
     }
 
     /// See [`split_equal_unchecked`]
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the number of parts is valid.
     #[default_device]
     pub unsafe fn split_equal_device_unchecked(
@@ -282,9 +282,9 @@ impl Array {
     }
 
     /// See [`stack_unchecked`]
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the shapes are valid.
     #[default_device]
     pub unsafe fn swap_axes_device_unchecked(
@@ -313,9 +313,9 @@ impl Array {
     }
 
     /// See [`transpose_unchecked`]
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn transpose_device_unchecked<'a>(
@@ -508,7 +508,7 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
 
 fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(&arrays);
+        let c_arrays = new_mlx_vector_array(arrays);
         let c_array = mlx_sys::mlx_concatenate(c_arrays, axis, stream.as_ptr());
 
         let result = Array::from_ptr(c_array);
@@ -1648,7 +1648,7 @@ pub fn pad_device<'a>(
 
 fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(&arrays);
+        let c_arrays = new_mlx_vector_array(arrays);
         let c_array = mlx_sys::mlx_stack(c_arrays, axis, stream.as_ptr());
 
         let result = Array::from_ptr(c_array);

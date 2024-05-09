@@ -17,6 +17,10 @@ use crate::{
 
 impl Array {
     /// See [`expand_dims_uncheked`].
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn expand_dims_device_unchecked(
         &self,
@@ -43,6 +47,10 @@ impl Array {
     }
 
     /// See [`flatten_unchecked`].
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn flatten_device_unchecked(
         &self,
@@ -77,6 +85,10 @@ impl Array {
     }
 
     /// See [`reshape_unchecked`].
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the shapes are valid.
     #[default_device]
     pub unsafe fn reshape_device_unchecked(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
         unsafe { reshape_device_unchecked(self, shape, stream) }
@@ -99,6 +111,10 @@ impl Array {
     }
 
     /// See [`squeeze_unchecked`].
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn squeeze_device_unchecked<'a>(
         &'a self,
@@ -159,6 +175,10 @@ impl Array {
     }
 
     /// See [`move_axis_unchecked`]
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn move_axis_device_unchecked(
         &self,
@@ -187,6 +207,10 @@ impl Array {
     }
 
     /// See [`split_unchecked`]
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the indices are valid.
     #[default_device]
     pub unsafe fn split_device_unchecked(
         &self,
@@ -220,6 +244,10 @@ impl Array {
     }
 
     /// See [`split_equal_unchecked`]
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the number of parts is valid.
     #[default_device]
     pub unsafe fn split_equal_device_unchecked(
         &self,
@@ -254,6 +282,10 @@ impl Array {
     }
 
     /// See [`stack_unchecked`]
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the shapes are valid.
     #[default_device]
     pub unsafe fn swap_axes_device_unchecked(
         &self,
@@ -281,6 +313,10 @@ impl Array {
     }
 
     /// See [`transpose_unchecked`]
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
     #[default_device]
     pub unsafe fn transpose_device_unchecked<'a>(
         &'a self,

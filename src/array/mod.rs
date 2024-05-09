@@ -43,7 +43,7 @@ impl Drop for Array {
     }
 }
 
-impl PartialEq for &Array {
+impl PartialEq for Array {
     /// Array equality check.
     ///
     /// Compare two arrays for equality. Returns `true` iff the arrays have

@@ -20,6 +20,7 @@ pub mod prelude {
         array::Array,
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexOp, IntoStrideBy, NewAxis},
+        stream::StreamOrDevice,
     };
 }
 

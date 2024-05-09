@@ -116,6 +116,29 @@ impl Array {
         self.try_expand_dims_device(axes, stream).unwrap()
     }
 
+    /// Flatten an array.
+    /// 
+    /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+    /// supported. After converting negative axis to positive, axes outside the valid range will be
+    /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+    /// 
+    /// # Params
+    /// 
+    /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+    /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the axes are valid.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2, 2]);
+    /// let y = unsafe { x.flatten_unchecked(None, None) };
+    /// ```
     #[default_device]
     pub unsafe fn flatten_device_unchecked(
         &self,
@@ -132,6 +155,25 @@ impl Array {
         }
     }
 
+    /// Flatten an array. Returns an error if the axes are invalid.
+    /// 
+    /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+    /// supported. After converting negative axis to positive, axes outside the valid range will be
+    /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+    /// 
+    /// # Params
+    /// 
+    /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+    /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2, 2]);
+    /// let y = x.try_flatten(None, None);
+    /// ```
     #[default_device]
     pub fn try_flatten_device(
         &self,
@@ -140,6 +182,11 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, FlattenError> {
         let ndim = self.ndim();
+
+        if ndim == 0 {
+            return unsafe { Ok(self.flatten_device_unchecked(start_axis, end_axis, stream)) }
+        }
+
         let mut start_axis = start_axis.into().unwrap_or(0);
         let mut end_axis = end_axis.into().unwrap_or(-1);
 
@@ -175,12 +222,32 @@ impl Array {
             }));
         }
 
-        unsafe {
-            let c_array = mlx_sys::mlx_flatten(self.c_array, start_axis, end_axis, stream.as_ptr());
-            Ok(Array::from_ptr(c_array))
-        }
+        unsafe { Ok(self.flatten_device_unchecked(start_axis, end_axis, stream)) }
     }
 
+    /// Flatten an array.
+    /// 
+    /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+    /// supported. After converting negative axis to positive, axes outside the valid range will be
+    /// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+    /// 
+    /// # Params
+    /// 
+    /// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+    /// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the axes are invalid.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2, 2]);
+    /// let y = x.flatten(None, None);
+    /// ```
     #[default_device]
     pub fn flatten_device(
         &self,
@@ -799,6 +866,165 @@ pub fn expand_dims_device(a: &Array, axes: &[i32], stream: StreamOrDevice) -> Ar
     a.expand_dims_device(axes, stream)
 }
 
+/// Flatten an array.
+/// 
+/// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+/// supported. After converting negative axis to positive, axes outside the valid range will be
+/// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+/// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+/// 
+/// # Safety
+/// 
+/// The function is unsafe because it does not check if the axes are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2, 2]);
+/// let y = unsafe { flatten_unchecked(&x, None, None) };
+/// ```
+#[default_device]
+pub unsafe fn flatten_device_unchecked(
+    a: &Array,
+    start_axis: impl Into<Option<i32>>,
+    end_axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    a.flatten_device_unchecked(start_axis, end_axis, stream)
+}
+
+/// Flatten an array. Returns an error if the axes are invalid.
+/// 
+/// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+/// supported. After converting negative axis to positive, axes outside the valid range will be
+/// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+/// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2, 2]);
+/// let y = try_flatten(&x, None, None);
+/// ```
+#[default_device]
+pub fn try_flatten_device(
+    a: &Array,
+    start_axis: impl Into<Option<i32>>,
+    end_axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Result<Array, FlattenError> {
+    a.try_flatten_device(start_axis, end_axis, stream)
+}
+
+/// Flatten an array.
+/// 
+/// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
+/// supported. After converting negative axis to positive, axes outside the valid range will be
+/// clamped to a valid value, `start_axis` to `0` and `end_axis` to `ndim - 1`.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `start_axis`: The first axis to flatten. Default is `0` if not provided.
+/// - `end_axis`: The last axis to flatten. Default is `-1` if not provided.
+/// 
+/// # Panics
+/// 
+/// Panics if the axes are invalid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2, 2]);
+/// let y = flatten(&x, None, None);
+/// ```
+#[default_device]
+pub fn flatten_device(
+    a: &Array,
+    start_axis: impl Into<Option<i32>>,
+    end_axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Array {
+    a.flatten_device(start_axis, end_axis, stream)
+}
+
+#[default_device]
+pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
+    a.reshape_device_unchecked(shape, stream)
+}
+
+#[default_device]
+pub fn try_reshape_device<'a>(
+    a: &Array,
+    shape: &'a [i32],
+    stream: StreamOrDevice,
+) -> Result<Array, ReshapeError<'a>> {
+    a.try_reshape_device(shape, stream)
+}
+
+#[default_device]
+pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
+    a.reshape_device(shape, stream)
+}
+
+#[default_device]
+pub unsafe fn squeeze_device_unchecked<'a>(
+    a: &'a Array,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    a.squeeze_device_unchecked(axes, stream)
+}
+
+#[default_device]
+pub fn try_squeeze_device<'a>(
+    a: &'a Array,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Result<Array, SqueezeError> {
+    a.try_squeeze_device(axes, stream)
+}
+
+#[default_device]
+pub fn squeeze_device<'a>(
+    a: &'a Array,
+    axes: impl Into<Option<&'a [i32]>>,
+    stream: StreamOrDevice,
+) -> Array {
+    a.squeeze_device(axes, stream)
+}
+
+#[default_device]
+pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
+    a.at_least_1d_device(stream)
+}
+
+#[default_device]
+pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
+    a.at_least_2d_device(stream)
+}
+
+#[default_device]
+pub fn at_least_3d_device(a: &Array, stream: StreamOrDevice) -> Array {
+    a.at_least_3d_device(stream)
+}
+
 #[default_device]
 pub unsafe fn move_axis_device_unchecked(
     a: &Array,
@@ -822,6 +1048,61 @@ pub fn try_move_axis_device(
 #[default_device]
 pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: StreamOrDevice) -> Array {
     a.move_axis_device(src, dst, stream)
+}
+
+#[default_device]
+pub unsafe fn split_device_unchecked(
+    a: &Array,
+    indices: &[i32],
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Vec<Array> {
+    a.split_device_unchecked(indices, axis, stream)
+}
+
+#[default_device]
+pub fn try_split_device(
+    a: &Array,
+    indices: &[i32],
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Result<Vec<Array>, InvalidAxisError> {
+    a.try_split_device(indices, axis, stream)
+}
+
+#[default_device]
+pub fn split_device(a: &Array, indices: &[i32], axis: i32, stream: StreamOrDevice) -> Vec<Array> {
+    a.split_device(indices, axis, stream)
+}
+
+#[default_device]
+pub unsafe fn split_equal_device_unchecked(
+    a: &Array,
+    num_parts: i32,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Vec<Array> {
+    a.split_equal_device_unchecked(num_parts, axis, stream)
+}
+
+#[default_device]
+pub fn try_split_equal_device(
+    a: &Array,
+    num_parts: i32,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Result<Vec<Array>, InvalidAxisError> {
+    a.try_split_equal_device(num_parts, axis, stream)
+}
+
+#[default_device]
+pub fn split_equal_device(
+    a: &Array,
+    num_parts: i32,
+    axis: impl Into<Option<i32>>,
+    stream: StreamOrDevice,
+) -> Vec<Array> {
+    a.split_equal_device(num_parts, axis, stream)
 }
 
 #[derive(Debug)]
@@ -950,31 +1231,6 @@ pub fn pad_device<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     try_pad_device(array, width, value, stream).unwrap()
-}
-
-#[default_device]
-pub unsafe fn split_device_unchecked(
-    a: &Array,
-    indices: &[i32],
-    axis: i32,
-    stream: StreamOrDevice,
-) -> Vec<Array> {
-    a.split_device_unchecked(indices, axis, stream)
-}
-
-#[default_device]
-pub fn try_split_device(
-    a: &Array,
-    indices: &[i32],
-    axis: i32,
-    stream: StreamOrDevice,
-) -> Result<Vec<Array>, InvalidAxisError> {
-    a.try_split_device(indices, axis, stream)
-}
-
-#[default_device]
-pub fn split_device(a: &Array, indices: &[i32], axis: i32, stream: StreamOrDevice) -> Vec<Array> {
-    a.split_device(indices, axis, stream)
 }
 
 #[default_device]
@@ -1134,5 +1390,29 @@ mod tests {
         assert!(try_expand_dims(&x, &[-4]).is_err());
         assert!(try_expand_dims(&x, &[0, 1, 0]).is_err());
         assert!(try_expand_dims(&x, &[0, 1, -4]).is_err());
+    }
+
+    #[test]
+    fn test_flatten() {
+        let x = Array::zeros::<i32>(&[2, 3, 4]);
+        assert_eq!(flatten(&x, None, None).shape(), &[2 * 3 * 4]);
+
+        assert_eq!(flatten(&x, 1, 1).shape(), &[2, 3, 4]);
+        assert_eq!(flatten(&x, 1, 2).shape(), &[2, 3 * 4]);
+        assert_eq!(flatten(&x, 1, 3).shape(), &[2, 3 * 4]);
+        assert_eq!(flatten(&x, 1, -1).shape(), &[2, 3 * 4]);
+        assert_eq!(flatten(&x, -2, -1).shape(), &[2, 3 * 4]);
+        assert_eq!(flatten(&x, -3, -1).shape(), &[2 * 3 * 4]);
+        assert_eq!(flatten(&x, -4, -1).shape(), &[2 * 3 * 4]);
+
+        assert!(try_flatten(&x, 2, 1).is_err());
+
+        assert!(try_flatten(&x, 5, 6).is_err());
+
+        assert!(try_flatten(&x, -5, -4).is_err());
+
+        let x = Array::from_int(1);
+        assert_eq!(flatten(&x, -3, -1).shape(), &[1]);
+        assert_eq!(flatten(&x, 0, 0).shape(), &[1]);
     }
 }

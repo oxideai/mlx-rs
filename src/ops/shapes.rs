@@ -93,7 +93,7 @@ impl Array {
         unsafe { Ok(self.expand_dims_device_unchecked(&out_axes, stream)) }
     }
 
-    /// Add a size one dimension at the given axis.
+    /// Add a size one dimension at the given axis. Panics if the axes are invalid.
     ///
     /// # Params
     ///
@@ -101,7 +101,7 @@ impl Array {
     ///
     /// # Panics
     ///
-    /// Panics if the axes are invalid.
+    /// Panics if the axes are invalid. See [`try_expand_dims`] for more information.
     ///
     /// # Example
     ///
@@ -225,7 +225,7 @@ impl Array {
         unsafe { Ok(self.flatten_device_unchecked(start_axis, end_axis, stream)) }
     }
 
-    /// Flatten an array.
+    /// Flatten an array. Panics if the axes are invalid.
     /// 
     /// The axes flattened will be between `start_axis` and `end_axis`, inclusive. Negative axes are
     /// supported. After converting negative axis to positive, axes outside the valid range will be
@@ -238,7 +238,7 @@ impl Array {
     /// 
     /// # Panics
     /// 
-    /// Panics if the axes are invalid.
+    /// Panics if the axes are invalid. See [`try_flatten`] for more information.
     /// 
     /// # Example
     /// 
@@ -259,6 +259,24 @@ impl Array {
             .unwrap()
     }
 
+    /// Reshape an array while preserving the size.
+    /// 
+    /// # Params
+    /// 
+    /// - `shape`: New shape.
+    /// 
+    /// # Safety
+    /// 
+    /// The function is unsafe because it does not check if the new shape is valid.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let y = unsafe { x.reshape_unchecked(&[4]) };
+    /// ```
     #[default_device]
     pub unsafe fn reshape_device_unchecked(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
         unsafe {
@@ -268,6 +286,20 @@ impl Array {
         }
     }
 
+    /// Reshape an array while preserving the size. Returns an error if the new shape is invalid.
+    /// 
+    /// # Params
+    /// 
+    /// - `shape`: New shape.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let result = x.try_reshape(&[4]);
+    /// ```
     #[default_device]
     pub fn try_reshape_device<'a>(
         &self,
@@ -278,6 +310,24 @@ impl Array {
         unsafe { Ok(self.reshape_device_unchecked(shape, stream)) }
     }
 
+    /// Reshape an array while preserving the size. Panics if the new shape is invalid.
+    /// 
+    /// # Params
+    /// 
+    /// - `shape`: New shape.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the new shape is invalid. See [`try_reshape`] for more information.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use mlx::prelude::*;
+    /// 
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let y = x.reshape(&[4]);
+    /// ```
     #[default_device]
     pub fn reshape_device(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
         self.try_reshape_device(shape, stream).unwrap()
@@ -321,7 +371,7 @@ impl Array {
                 .into());
             }
 
-            let axis_size = self.shape()[*axis as usize];
+            let axis_size = self.shape()[resolved_axis as usize];
             if axis_size != 1 {
                 return Err(SqueezeError::AxisSizeGreaterThanOne {
                     axis: resolved_axis,
@@ -964,11 +1014,45 @@ pub fn flatten_device(
     a.flatten_device(start_axis, end_axis, stream)
 }
 
+/// Reshape an array while preserving the size.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `shape`: New shape.
+/// 
+/// # Safety
+/// 
+/// The function is unsafe because it does not check if the new shape is valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let y = unsafe { reshape_unchecked(&x, &[4]) };
+/// ```
 #[default_device]
 pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
     a.reshape_device_unchecked(shape, stream)
 }
 
+/// Reshape an array while preserving the size. Returns an error if the new shape is invalid.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `shape`: New shape.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let result = try_reshape(&x, &[4]);
+/// ```
 #[default_device]
 pub fn try_reshape_device<'a>(
     a: &Array,
@@ -978,6 +1062,25 @@ pub fn try_reshape_device<'a>(
     a.try_reshape_device(shape, stream)
 }
 
+/// Reshape an array while preserving the size. Panics if the new shape is invalid.
+/// 
+/// # Params
+/// 
+/// - `a`: The input array.
+/// - `shape`: New shape.
+/// 
+/// # Panics
+/// 
+/// Panics if the new shape is invalid. See [`try_reshape`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+/// 
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let y = reshape(&x, &[4]);
+/// ```
 #[default_device]
 pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
     a.reshape_device(shape, stream)
@@ -1375,21 +1478,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_expand_dims() {
-        let x = Array::zeros::<i32>(&[2, 2]);
-        assert_eq!(expand_dims(&x, &[0]).shape(), &[1, 2, 2]);
-        assert_eq!(expand_dims(&x, &[-1]).shape(), &[2, 2, 1]);
-        assert_eq!(expand_dims(&x, &[1]).shape(), &[2, 1, 2]);
-        assert_eq!(expand_dims(&x, &[0, 1, 2]).shape(), &[1, 1, 1, 2, 2]);
+    fn test_squeeze() {
+        let a = Array::zeros::<i32>(&[2, 1, 2, 1, 2, 1]);
+        assert_eq!(squeeze(&a, &[1, 3, 5][..]).shape(), &[2, 2, 2]);
+        assert_eq!(squeeze(&a, &[-1, -3, -5][..]).shape(), &[2, 2, 2]);
+        assert_eq!(squeeze(&a, &[1][..]).shape(), &[2, 2, 1, 2, 1]);
+        assert_eq!(squeeze(&a, &[-1][..]).shape(), &[2, 1, 2, 1, 2]);
+
+        assert!(try_squeeze(&a, &[0][..]).is_err());
+        assert!(try_squeeze(&a, &[2][..]).is_err());
+        assert!(try_squeeze(&a, &[1, 3, 1][..]).is_err());
+        assert!(try_squeeze(&a, &[1, 3, -3][..]).is_err());
+    }
+
+    #[test]
+    fn test_expand() {
+        let a = Array::zeros::<i32>(&[2, 2]);
+        assert_eq!(expand_dims(&a, &[0][..]).shape(), &[1, 2, 2]);
+        assert_eq!(expand_dims(&a, &[-1][..]).shape(), &[2, 2, 1]);
+        assert_eq!(expand_dims(&a, &[1][..]).shape(), &[2, 1, 2]);
+        assert_eq!(expand_dims(&a, &[0, 1, 2][..]).shape(), &[1, 1, 1, 2, 2]);
         assert_eq!(
-            expand_dims(&x, &[0, 1, 2, 5, 6, 7]).shape(),
+            expand_dims(&a, &[0, 1, 2, 5, 6, 7][..]).shape(),
             &[1, 1, 1, 2, 2, 1, 1, 1]
         );
 
-        assert!(try_expand_dims(&x, &[3]).is_err());
-        assert!(try_expand_dims(&x, &[-4]).is_err());
-        assert!(try_expand_dims(&x, &[0, 1, 0]).is_err());
-        assert!(try_expand_dims(&x, &[0, 1, -4]).is_err());
+        assert!(try_expand_dims(&a, &[3][..]).is_err());
+        assert!(try_expand_dims(&a, &[-4][..]).is_err());
+        assert!(try_expand_dims(&a, &[0, 1, 0][..]).is_err());
+        assert!(try_expand_dims(&a, &[0, 1, -4][..]).is_err());
     }
 
     #[test]
@@ -1414,5 +1531,40 @@ mod tests {
         let x = Array::from_int(1);
         assert_eq!(flatten(&x, -3, -1).shape(), &[1]);
         assert_eq!(flatten(&x, 0, 0).shape(), &[1]);
+    }
+
+    #[test]
+    fn test_reshape() {
+        let x = Array::from_int(1);
+        assert_eq!(reshape(&x, &[]).shape(), &[]);
+        assert!(try_reshape(&x, &[2]).is_err());
+        let y = reshape(&x, &[1, 1, 1]);
+        assert_eq!(y.shape(), &[1, 1, 1]);
+        let y = reshape(&x, &[-1, 1, 1]);
+        assert_eq!(y.shape(), &[1, 1, 1]);
+        let y = reshape(&x, &[1, 1, -1]);
+        assert_eq!(y.shape(), &[1, 1, 1]);
+        assert!(try_reshape(&x, &[1, -1, -1]).is_err());
+        assert!(try_reshape(&x, &[2, -1]).is_err());
+
+        let x = Array::zeros::<i32>(&[2, 2, 2]);
+        let y = reshape(&x, &[8]);
+        assert_eq!(y.shape(), &[8]);
+        assert!(try_reshape(&x, &[7]).is_err());
+        let y = reshape(&x, &[-1]);
+        assert_eq!(y.shape(), &[8]);
+        let y = reshape(&x, &[-1, 2]);
+        assert_eq!(y.shape(), &[4, 2]);
+        assert!(try_reshape(&x, &[-1, 7]).is_err());
+
+        let x = Array::from_slice::<i32>(&[], &[0]);
+        let mut y = reshape(&x, &[0, 0, 0]);
+        assert_eq!(y.shape(), &[0, 0, 0]);
+        y.eval();
+        assert_eq!(y.size(), 0);
+        assert!(try_reshape(&x, &[]).is_err());
+        assert!(try_reshape(&x, &[1]).is_err());
+        let y = reshape(&x, &[1, 5, 0]);
+        assert_eq!(y.shape(), &[1, 5, 0]);
     }
 }

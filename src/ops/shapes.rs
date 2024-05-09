@@ -158,6 +158,7 @@ impl Array {
         at_least_3d_device(self, stream)
     }
 
+    /// See [`move_axis_unchecked`]
     #[default_device]
     pub unsafe fn move_axis_device_unchecked(
         &self,
@@ -168,6 +169,7 @@ impl Array {
         unsafe { move_axis_device_unchecked(self, src, dst, stream) }
     }
 
+    /// See [`try_move_axis`]
     #[default_device]
     pub fn try_move_axis_device(
         &self,
@@ -178,11 +180,13 @@ impl Array {
         try_move_axis_device(self, src, dst, stream)
     }
 
+    /// See [`move_axis`]
     #[default_device]
     pub fn move_axis_device(&self, src: i32, dst: i32, stream: StreamOrDevice) -> Array {
         self.try_move_axis_device(src, dst, stream).unwrap()
     }
 
+    /// See [`split_unchecked`]
     #[default_device]
     pub unsafe fn split_device_unchecked(
         &self,
@@ -193,6 +197,7 @@ impl Array {
         split_device_unchecked(self, indices, axis, stream)
     }
 
+    /// See [`try_split`]
     #[default_device]
     pub fn try_split_device(
         &self,
@@ -203,6 +208,7 @@ impl Array {
         try_split_device(self, indices, axis, stream)
     }
 
+    /// See [`split`]
     #[default_device]
     pub fn split_device(
         &self,
@@ -213,6 +219,7 @@ impl Array {
         self.try_split_device(indices, axis, stream).unwrap()
     }
 
+    /// See [`split_equal_unchecked`]
     #[default_device]
     pub unsafe fn split_equal_device_unchecked(
         &self,
@@ -223,6 +230,7 @@ impl Array {
         unsafe { split_equal_device_unchecked(self, num_parts, axis, stream) }
     }
 
+    /// See [`try_split_equal`]
     #[default_device]
     pub fn try_split_equal_device(
         &self,
@@ -233,6 +241,7 @@ impl Array {
         try_split_equal_device(self, num_parts, axis, stream)
     }
 
+    /// See [`split_equal`]
     #[default_device]
     pub fn split_equal_device(
         &self,
@@ -244,6 +253,7 @@ impl Array {
             .unwrap()
     }
 
+    /// See [`stack_unchecked`]
     #[default_device]
     pub unsafe fn swap_axes_device_unchecked(
         &self,
@@ -254,6 +264,7 @@ impl Array {
         unsafe { swap_axes_device_unchecked(self, axis1, axis2, stream) }
     }
 
+    /// See [`try_swap_axes`]
     #[default_device]
     pub fn try_swap_axes_device(
         &self,
@@ -269,6 +280,7 @@ impl Array {
         self.try_swap_axes_device(axis1, axis2, stream).unwrap()
     }
 
+    /// See [`transpose_unchecked`]
     #[default_device]
     pub unsafe fn transpose_device_unchecked<'a>(
         &'a self,
@@ -278,6 +290,7 @@ impl Array {
         unsafe { transpose_device_unchecked(self, axes, stream) }
     }
 
+    /// See [`try_transpose`]
     #[default_device]
     pub fn try_transpose_device<'a>(
         &self,
@@ -287,6 +300,7 @@ impl Array {
         try_transpose_device(self, axes, stream)
     }
 
+    /// See [`transpose`]
     #[default_device]
     pub fn transpose_device<'a>(
         &self,
@@ -296,6 +310,7 @@ impl Array {
         self.try_transpose_device(axes, stream).unwrap()
     }
 
+    /// See [`transpose`]
     pub fn t(&self) -> Array {
         self.transpose_device(None, StreamOrDevice::default())
     }
@@ -499,6 +514,22 @@ pub unsafe fn concatenate_device_unchecked(
     concatenate_inner(&arrays, axis, stream)
 }
 
+/// Concatenate the arrays along the given axis. Returns an error if the shapes are invalid.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to concatenate.
+/// - `axis`: The axis to concatenate along.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_iter(0..4, &[2, 2]);
+/// let y = Array::from_iter(4..8, &[2, 2]);
+/// let result = try_concatenate(&[x, y], 0);
+/// ```
 #[default_device]
 pub fn try_concatenate_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -545,6 +576,26 @@ pub fn try_concatenate_device(
     Ok(concatenate_inner(&arrays, resolved_axis, stream))
 }
 
+/// Concatenate the arrays along the given axis. Panics if the shapes are invalid.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to concatenate.
+/// - `axis`: The axis to concatenate along.
+///
+/// # Panics
+///
+/// Panics if the shapes are invalid. See [`try_concatenate`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_iter(0..4, &[2, 2]);
+/// let y = Array::from_iter(4..8, &[2, 2]);
+/// let z = concatenate(&[x, y], 0);
+/// ```
 #[default_device]
 pub fn concatenate_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1062,6 +1113,26 @@ pub fn at_least_3d_device(a: &Array, stream: StreamOrDevice) -> Array {
     }
 }
 
+/// Move an axis to a new position.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `src`: Specifies the source axis.
+/// - `dst`: Specifies the destination axis.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the axes are valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::zeros::<i32>(&[2, 3, 4]);
+/// let result = unsafe { move_axis_unchecked(&a, 0, 2).shape() };
+/// ```
 #[default_device]
 pub unsafe fn move_axis_device_unchecked(
     a: &Array,
@@ -1075,6 +1146,22 @@ pub unsafe fn move_axis_device_unchecked(
     }
 }
 
+/// Move an axis to a new position. Returns an error if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `src`: Specifies the source axis.
+/// - `dst`: Specifies the destination axis.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::zeros::<i32>(&[2, 3, 4]);
+/// let result = try_move_axis(&a, 0, 2);
+/// ```
 #[default_device]
 pub fn try_move_axis_device(
     a: &Array,
@@ -1089,11 +1176,51 @@ pub fn try_move_axis_device(
     unsafe { Ok(a.move_axis_device_unchecked(src, dst, stream)) }
 }
 
+/// Move an axis to a new position. Panics if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `src`: Specifies the source axis.
+/// - `dst`: Specifies the destination axis.
+///
+/// # Panics
+///
+/// Panics if the axes are invalid. See [`try_move_axis`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::zeros::<i32>(&[2, 3, 4]);
+/// let result = move_axis(&a, 0, 2);
+/// ```
 #[default_device]
 pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: StreamOrDevice) -> Array {
     a.move_axis_device(src, dst, stream)
 }
 
+/// Split an array along a given axis.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: The indices to split at.
+/// - `axis`: The axis to split along. Default is `0` if not provided.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the indices are valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = unsafe { split_unchecked(&a, &[3, 7], 0) };
+/// ```
 #[default_device]
 pub unsafe fn split_device_unchecked(
     a: &Array,
@@ -1116,6 +1243,22 @@ pub unsafe fn split_device_unchecked(
     }
 }
 
+/// Split an array along a given axis. Returns an error if the indices are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: The indices to split at.
+/// - `axis`: The axis to split along. Default is `0` if not provided.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = try_split(&a, &[3, 7], 0);
+/// ```
 #[default_device]
 pub fn try_split_device(
     a: &Array,
@@ -1130,6 +1273,25 @@ pub fn try_split_device(
     unsafe { Ok(a.split_device_unchecked(indices, resolved_axis, stream)) }
 }
 
+/// Split an array along a given axis. Panics if the indices are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: The indices to split at.
+///
+/// # Panics
+///
+/// Panics if the indices are invalid. See [`try_split`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = split(&a, &[3, 7], 0);
+/// ```
 #[default_device]
 pub fn split_device(
     a: &Array,
@@ -1140,6 +1302,26 @@ pub fn split_device(
     a.split_device(indices, axis, stream)
 }
 
+/// Split an array into equal parts along a given axis.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `num_parts`: The number of parts to split into.
+/// - `axis`: The axis to split along. Default is `0` if not provided.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the array can be split into equal parts.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = unsafe { split_equal_unchecked(&a, 2, 0) };
+/// ```
 #[default_device]
 pub unsafe fn split_equal_device_unchecked(
     a: &Array,
@@ -1157,6 +1339,23 @@ pub unsafe fn split_equal_device_unchecked(
     }
 }
 
+/// Split an array into equal parts along a given axis. Returns an error if the array cannot be
+/// split into equal parts.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `num_parts`: The number of parts to split into.
+/// - `axis`: The axis to split along. Default is `0` if not provided.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = try_split_equal(&a, 2, 0);
+/// ```
 #[default_device]
 pub fn try_split_equal_device(
     a: &Array,
@@ -1180,6 +1379,28 @@ pub fn try_split_equal_device(
     unsafe { Ok(a.split_equal_device_unchecked(num_parts, resolved_axis, stream)) }
 }
 
+/// Split an array into equal parts along a given axis. Panics if the array cannot be split into
+/// equal parts.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `num_parts`: The number of parts to split into.
+/// - `axis`: The axis to split along. Default is `0` if not provided.
+///
+/// # Panics
+///
+/// Panics if the array cannot be split into equal parts. See [`try_split_equal`] for more
+/// information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..10, &[10]);
+/// let result = split_equal(&a, 2, 0);
+/// ```
 #[default_device]
 pub fn split_equal_device(
     a: &Array,
@@ -1236,6 +1457,29 @@ impl<'a> PadWidth<'a> {
     }
 }
 
+/// Pad an array with a constant value
+///
+/// # Params
+///
+/// - `array`: The input array.
+/// - `width`: Number of padded values to add to the edges of each axis:`((before_1, after_1),
+///   (before_2, after_2), ..., (before_N, after_N))`. If a single pair of integers is passed then
+///   `(before_i, after_i)` are all the same. If a single integer or tuple with a single integer is
+///   passed then all axes are extended by the same number on each side.
+/// - `value`: The value to pad the array with. Default is `0` if not provided.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the width is valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let result = unsafe { pad_unchecked(&a, 1, Array::from_int(0)) };
+/// ```
 #[default_device]
 pub unsafe fn pad_device_unchecked<'a>(
     array: &'a Array,
@@ -1268,6 +1512,25 @@ pub unsafe fn pad_device_unchecked<'a>(
     }
 }
 
+/// Pad an array with a constant value. Returns an error if the width is invalid.
+///
+/// # Params
+///
+/// - `array`: The input array.
+/// - `width`: Number of padded values to add to the edges of each axis:`((before_1, after_1),
+///   (before_2, after_2), ..., (before_N, after_N))`. If a single pair of integers is passed then
+///   `(before_i, after_i)` are all the same. If a single integer or tuple with a single integer is
+///   passed then all axes are extended by the same number on each side.
+/// - `value`: The value to pad the array with. Default is `0` if not provided.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let result = try_pad(&a, 1, Array::from_int(0));
+/// ```
 #[default_device]
 pub fn try_pad_device<'a>(
     array: &'a Array,
@@ -1314,6 +1577,29 @@ pub fn try_pad_device<'a>(
     }
 }
 
+/// Pad an array with a constant value. Panics if the width is invalid.
+///
+/// # Params
+///
+/// - `array`: The input array.
+/// - `width`: Number of padded values to add to the edges of each axis:`((before_1, after_1),
+///   (before_2, after_2), ..., (before_N, after_N))`. If a single pair of integers is passed then
+///   `(before_i, after_i)` are all the same. If a single integer or tuple with a single integer is
+///   passed then all axes are extended by the same number on each side.
+/// - `value`: The value to pad the array with. Default is `0` if not provided.
+///
+/// # Panics
+///
+/// Panics if the width is invalid. See [`try_pad`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let result = pad(&a, 1, Array::from_int(0));
+/// ```
 #[default_device]
 pub fn pad_device<'a>(
     array: &'a Array,
@@ -1336,6 +1622,26 @@ fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) 
     }
 }
 
+/// Stacks the arrays along a new axis.
+///
+/// # Params
+///
+/// - `arrays`: The input arrays.
+/// - `axis`: The axis in the result array along which the input arrays are stacked.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the arrays have the same shape.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let b = Array::from_iter(4..8, &[2, 2]);
+/// let result = unsafe { stack_unchecked(&[&a, &b], 0) };
+/// ```
 #[default_device]
 pub unsafe fn stack_device_unchecked(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1365,6 +1671,26 @@ pub fn try_stack_device(
     Ok(stack_inner(&arrays, axis, stream))
 }
 
+/// Stacks the arrays along a new axis. Panics if the arrays have different shapes.
+///
+/// # Params
+///
+/// - `arrays`: The input arrays.
+/// - `axis`: The axis in the result array along which the input arrays are stacked.
+///
+/// # Panics
+///
+/// Panics if the arrays have different shapes. See [`try_stack`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let b = Array::from_iter(4..8, &[2, 2]);
+/// let result = stack(&[&a, &b], 0);
+/// ```
 #[default_device]
 pub fn stack_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1386,6 +1712,25 @@ fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Arra
     }
 }
 
+/// Stacks the arrays along a new axis.
+///
+/// # Params
+///
+/// - `arrays`: The input arrays.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the arrays have the same shape.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let b = Array::from_iter(4..8, &[2, 2]);
+/// let result = unsafe { stack_all_unchecked(&[&a, &b]) };
+/// ```
 #[default_device]
 pub unsafe fn stack_all_device_unchecked(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1395,6 +1740,21 @@ pub unsafe fn stack_all_device_unchecked(
     stack_all_inner(&arrays, stream)
 }
 
+/// Stacks the arrays along a new axis. Returns an error if the arrays have different shapes.
+///
+/// # Params
+///
+/// - `arrays`: The input arrays.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let b = Array::from_iter(4..8, &[2, 2]);
+/// let result = try_stack_all(&[&a, &b]);
+/// ```
 #[default_device]
 pub fn try_stack_all_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1413,6 +1773,25 @@ pub fn try_stack_all_device(
     Ok(stack_all_inner(&arrays, stream))
 }
 
+/// Stacks the arrays along a new axis. Panics if the arrays have different shapes.
+///
+/// # Params
+///
+/// - `arrays`: The input arrays.
+///
+/// # Panics
+///
+/// Panics if the arrays have different shapes. See [`try_stack_all`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..4, &[2, 2]);
+/// let b = Array::from_iter(4..8, &[2, 2]);
+/// let result = stack_all(&[&a, &b]);
+/// ```
 #[default_device]
 pub fn stack_all_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
@@ -1421,6 +1800,26 @@ pub fn stack_all_device(
     try_stack_all_device(arrays, stream).unwrap()
 }
 
+/// Swap two axes of an array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis1`: The first axis.
+/// - `axis2`: The second axis.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the axes are valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..6, &[2, 3]);
+/// let result = unsafe { swap_axes_unchecked(&a, 0, 1) };
+/// ```
 #[default_device]
 pub unsafe fn swap_axes_device_unchecked(
     a: &Array,
@@ -1434,6 +1833,22 @@ pub unsafe fn swap_axes_device_unchecked(
     }
 }
 
+/// Swap two axes of an array. Returns an error if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis1`: The first axis.
+/// - `axis2`: The second axis.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..6, &[2, 3]);
+/// let result = try_swap_axes(&a, 0, 1);
+/// ```
 #[default_device]
 pub fn try_swap_axes_device(
     a: &Array,
@@ -1450,24 +1865,74 @@ pub fn try_swap_axes_device(
     unsafe { Ok(a.swap_axes_device_unchecked(resolved_axis1, resolved_axis2, stream)) }
 }
 
+/// Swap two axes of an array. Panics if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis1`: The first axis.
+/// - `axis2`: The second axis.
+///
+/// # Panics
+///
+/// Panics if the axes are invalid. See [`try_swap_axes`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let a = Array::from_iter(0..6, &[2, 3]);
+/// let result = swap_axes(&a, 0, 1);
+/// ```
 #[default_device]
 pub fn swap_axes_device(a: &Array, axis1: i32, axis2: i32, stream: StreamOrDevice) -> Array {
     a.swap_axes_device(axis1, axis2, stream)
 }
 
+/// Construct an array by repeating `a` the number of times given by `reps`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `reps`: The number of repetitions along each axis.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_slice(&[1, 2, 3], &[3]);
+/// let y = tile(&x, &[2]);
+/// ```
 #[default_device]
-pub fn tile_device(a: &Array, repetitions: &[i32], stream: StreamOrDevice) -> Array {
+pub fn tile_device(a: &Array, reps: &[i32], stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_tile(
-            a.c_array,
-            repetitions.as_ptr(),
-            repetitions.len(),
-            stream.as_ptr(),
-        );
+        let c_array = mlx_sys::mlx_tile(a.c_array, reps.as_ptr(), reps.len(), stream.as_ptr());
         Array::from_ptr(c_array)
     }
 }
 
+/// Transpose the dimensions of the array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: Specifies the source axis for each axis in the new array. The default is to reverse
+///   the axes.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the axes are valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
+/// let y = transpose(&x, None);
+/// ```
 #[default_device]
 pub unsafe fn transpose_device_unchecked<'a>(
     a: &'a Array,
@@ -1485,6 +1950,22 @@ pub unsafe fn transpose_device_unchecked<'a>(
     }
 }
 
+/// Transpose the dimensions of the array. Returns an error if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: Specifies the source axis for each axis in the new array. The default is to reverse
+///  the axes.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
+/// let y = try_transpose(&x, None);
+/// ```
 #[default_device]
 pub fn try_transpose_device<'a>(
     a: &Array,
@@ -1530,6 +2011,26 @@ pub fn try_transpose_device<'a>(
     }
 }
 
+/// Transpose the dimensions of the array. Panics if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: Specifies the source axis for each axis in the new array. The default is to reverse
+/// the axes.
+///
+/// # Panics
+///
+/// Panics if the axes are invalid. See [`try_transpose`] for more information.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
+/// let y = transpose(&x, None);
+/// ```
 #[default_device]
 pub fn transpose_device<'a>(
     a: &Array,

@@ -1342,10 +1342,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
                        // let remaining = indices.split_off(last_array_or_index + 1);
         let gather_indices = operations[..=last_array_or_index]
             .iter()
-            .filter(|op| match op {
-                Ellipsis | ExpandDims => false,
-                _ => true,
-            });
+            .filter(|op| !matches!(op, Ellipsis | ExpandDims));
         let (max_dims, gathered) = gather_nd(&src, gather_indices, gather_first, stream.clone());
 
         src = Cow::Owned(gathered);

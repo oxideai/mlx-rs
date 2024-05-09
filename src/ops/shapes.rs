@@ -16,6 +16,24 @@ use crate::{
 };
 
 impl Array {
+    /// Add a size one dimension at the given axis.
+    ///
+    /// # Params
+    ///
+    /// - `axes`: The index of the inserted dimensions.
+    ///
+    /// # Safety
+    ///
+    /// The function is unsafe because it does not check if the axes are valid.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::prelude::*;
+    ///
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let y = unsafe { x.expand_dims_unchecked(&[0]) };
+    /// ```
     #[default_device]
     pub unsafe fn expand_dims_device_unchecked(
         &self,
@@ -29,6 +47,20 @@ impl Array {
         }
     }
 
+    /// Add a size one dimension at the given axis, returns an error if the axes are invalid.
+    ///
+    /// # Params
+    ///
+    /// - `axes`: The index of the inserted dimensions.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::prelude::*;
+    ///
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let result = x.try_expand_dims(&[0]);
+    /// ```
     #[default_device]
     pub fn try_expand_dims_device(
         &self,
@@ -37,7 +69,7 @@ impl Array {
     ) -> Result<Array, ExpandDimsError> {
         // Check for valid axes
         // TODO: what is a good default capacity for SmallVec?
-        let out_ndim = self.size() + axes.len();
+        let out_ndim = self.ndim() + axes.len();
         let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim);
         for axis in axes {
             let resolved_axis = resolve_index(*axis, out_ndim).ok_or(InvalidAxisError {
@@ -61,6 +93,24 @@ impl Array {
         unsafe { Ok(self.expand_dims_device_unchecked(&out_axes, stream)) }
     }
 
+    /// Add a size one dimension at the given axis.
+    ///
+    /// # Params
+    ///
+    /// - `axes`: The index of the inserted dimensions.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the axes are invalid.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::prelude::*;
+    ///
+    /// let x = Array::zeros::<i32>(&[2, 2]);
+    /// let y = x.expand_dims(&[0]);
+    /// ```
     #[default_device]
     pub fn expand_dims_device(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
         self.try_expand_dims_device(axes, stream).unwrap()
@@ -304,10 +354,8 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, InvalidAxisError> {
         let ndim = self.ndim();
-        let src =
-            resolve_index(src, ndim).ok_or(InvalidAxisError { axis: src, ndim })? as i32;
-        let dst =
-            resolve_index(dst, ndim).ok_or(InvalidAxisError { axis: dst, ndim })? as i32;
+        let src = resolve_index(src, ndim).ok_or(InvalidAxisError { axis: src, ndim })? as i32;
+        let dst = resolve_index(dst, ndim).ok_or(InvalidAxisError { axis: dst, ndim })? as i32;
 
         unsafe { Ok(self.move_axis_device_unchecked(src, dst, stream)) }
     }
@@ -438,12 +486,10 @@ impl Array {
         stream: StreamOrDevice,
     ) -> Result<Array, InvalidAxisError> {
         let ndim = self.ndim();
-        let resolved_axis1 = resolve_index(axis1, ndim)
-            .ok_or(InvalidAxisError { axis: axis1, ndim })?
-            as i32;
-        let resolved_axis2 = resolve_index(axis2, ndim)
-            .ok_or(InvalidAxisError { axis: axis2, ndim })?
-            as i32;
+        let resolved_axis1 =
+            resolve_index(axis1, ndim).ok_or(InvalidAxisError { axis: axis1, ndim })? as i32;
+        let resolved_axis2 =
+            resolve_index(axis2, ndim).ok_or(InvalidAxisError { axis: axis2, ndim })? as i32;
 
         unsafe { Ok(self.swap_axes_device_unchecked(resolved_axis1, resolved_axis2, stream)) }
     }
@@ -636,18 +682,6 @@ pub fn try_concatenate_device(
         return Err(ConcatenateError::NoInputArray);
     }
 
-    // let resolved_axis = if axis.is_negative() {
-    //     axis + arrays[0].ndim() as i32
-    // } else {
-    //     axis
-    // };
-    // if resolved_axis < 0 || resolved_axis >= arrays[0].ndim() as i32 {
-    //     return Err(InvalidAxisError {
-    //         axis,
-    //         ndim: arrays[0].ndim(),
-    //     }
-    //     .into());
-    // }
     let resolved_axis = resolve_index(axis, arrays[0].ndim()).ok_or_else(|| InvalidAxisError {
         axis,
         ndim: arrays[0].ndim(),
@@ -689,6 +723,25 @@ pub fn concatenate_device(
     try_concatenate_device(arrays, axis, stream).unwrap()
 }
 
+/// Add a size one dimension at the given axis.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: The index of the inserted dimensions.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the axes are valid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let y = unsafe { expand_dims_unchecked(&x, &[0]) };
+/// ```
 #[default_device]
 pub unsafe fn expand_dims_device_unchecked(
     a: &Array,
@@ -698,6 +751,21 @@ pub unsafe fn expand_dims_device_unchecked(
     a.expand_dims_device_unchecked(axes, stream)
 }
 
+/// Add a size one dimension at the given axis, returns an error if the axes are invalid.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: The index of the inserted dimensions.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let result = try_expand_dims(&x, &[0]);
+/// ```
 #[default_device]
 pub fn try_expand_dims_device(
     a: &Array,
@@ -707,6 +775,25 @@ pub fn try_expand_dims_device(
     a.try_expand_dims_device(axes, stream)
 }
 
+/// Add a size one dimension at the given axis.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: The index of the inserted dimensions.
+///
+/// # Panics
+///
+/// Panics if the axes are invalid.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx::{prelude::*, ops::*};
+///
+/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let y = expand_dims(&x, &[0]);
+/// ```
 #[default_device]
 pub fn expand_dims_device(a: &Array, axes: &[i32], stream: StreamOrDevice) -> Array {
     a.expand_dims_device(axes, stream)
@@ -1023,4 +1110,29 @@ pub fn try_transpose_device(
 #[default_device]
 pub fn transpose_device(device: &Array, axes: Option<&[i32]>, stream: StreamOrDevice) -> Array {
     device.transpose_device(axes, stream)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Array;
+
+    use super::*;
+
+    #[test]
+    fn test_expand_dims() {
+        let x = Array::zeros::<i32>(&[2, 2]);
+        assert_eq!(expand_dims(&x, &[0]).shape(), &[1, 2, 2]);
+        assert_eq!(expand_dims(&x, &[-1]).shape(), &[2, 2, 1]);
+        assert_eq!(expand_dims(&x, &[1]).shape(), &[2, 1, 2]);
+        assert_eq!(expand_dims(&x, &[0, 1, 2]).shape(), &[1, 1, 1, 2, 2]);
+        assert_eq!(
+            expand_dims(&x, &[0, 1, 2, 5, 6, 7]).shape(),
+            &[1, 1, 1, 2, 2, 1, 1, 1]
+        );
+
+        assert!(try_expand_dims(&x, &[3]).is_err());
+        assert!(try_expand_dims(&x, &[-4]).is_err());
+        assert!(try_expand_dims(&x, &[0, 1, 0]).is_err());
+        assert!(try_expand_dims(&x, &[0, 1, -4]).is_err());
+    }
 }

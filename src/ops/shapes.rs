@@ -8,7 +8,7 @@ use crate::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
-    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, MlxVectorArray},
+    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, VectorArray},
     Array, StreamOrDevice,
 };
 
@@ -505,7 +505,7 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
 
 fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = MlxVectorArray::from_iter(arrays.iter());
+        let c_arrays = VectorArray::from_iter(arrays.iter());
         let c_array = mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ptr());
         Array::from_ptr(c_array)
     }
@@ -1256,7 +1256,7 @@ pub unsafe fn split_device_unchecked(
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
-        let c_vec = MlxVectorArray::from_op(|| {
+        let c_vec = VectorArray::from_op(|| {
             mlx_sys::mlx_split(
                 a.c_array,
                 indices.as_ptr(),
@@ -1356,7 +1356,7 @@ pub unsafe fn split_equal_device_unchecked(
     stream: StreamOrDevice,
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
-    let c_vec = MlxVectorArray::from_op(|| {
+    let c_vec = VectorArray::from_op(|| {
         mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ptr())
     });
     c_vec.into_values()
@@ -1635,7 +1635,7 @@ pub fn pad_device<'a>(
 
 fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_vec = MlxVectorArray::from_iter(arrays.iter());
+        let c_vec = VectorArray::from_iter(arrays.iter());
         let c_array = mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ptr());
         Array::from_ptr(c_array)
     }
@@ -1714,7 +1714,7 @@ pub fn stack_device(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDev
 
 fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_vec = MlxVectorArray::from_iter(arrays.iter());
+        let c_vec = VectorArray::from_iter(arrays.iter());
         let c_array = mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ptr());
         Array::from_ptr(c_array)
     }

@@ -169,11 +169,11 @@ impl Array {
     }
 }
 
-pub(crate) struct MlxVectorArray {
+pub(crate) struct VectorArray {
     c_vec: mlx_vector_array,
 }
 
-impl MlxVectorArray {
+impl VectorArray {
     pub(crate) fn as_ptr(&self) -> mlx_vector_array {
         self.c_vec
     }
@@ -205,7 +205,7 @@ impl MlxVectorArray {
     }
 }
 
-impl Drop for MlxVectorArray {
+impl Drop for VectorArray {
     fn drop(&mut self) {
         unsafe { mlx_sys::mlx_free(self.c_vec as *mut c_void) }
     }

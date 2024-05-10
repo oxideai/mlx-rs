@@ -69,7 +69,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    utils::{resolve_index_unchecked, MlxVectorArray, OwnedOrRef},
+    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
     Array, StreamOrDevice,
 };
 
@@ -1146,7 +1146,7 @@ fn gather_nd<'a>(
     // let indices = new_mlx_vector_array(gather_indices);
     // SAFETY: indices will be freed at the end of this function. The lifetime of the items in
     // `gather_indices` is managed by the `gather_indices` vector.
-    let indices = MlxVectorArray::from_iter(gather_indices.iter());
+    let indices = VectorArray::from_iter(gather_indices.iter());
 
     let gathered = unsafe {
         let c_array = mlx_sys::mlx_gather(

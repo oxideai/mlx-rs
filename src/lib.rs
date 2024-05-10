@@ -11,7 +11,7 @@ pub mod error;
 pub mod fft;
 pub mod linalg;
 pub mod ops;
-mod random;
+pub mod random;
 mod stream;
 mod transforms;
 pub mod utils;

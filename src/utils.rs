@@ -4,6 +4,15 @@ use mlx_sys::mlx_vector_array;
 
 use crate::{complex64, Array, FromNested};
 
+#[macro_export]
+macro_rules! assert_array_eq {
+    ($value:expr, $expected:expr, $atol:expr) => {
+        assert_eq!($value.shape(), $expected.shape(), "Shapes are not equal");
+        let mut assert = $value.all_close(&$expected, $atol, $atol, None);
+        assert!(assert.item::<bool>(), "Values are not sufficiently close");
+    };
+}
+
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     let mlx_description = unsafe { mlx_sys::mlx_tostring(ptr) };

@@ -71,12 +71,7 @@ impl Array {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = Array::from_ptr(mlx_sys::mlx_reshape(
-                        self.c_array,
-                        shape.as_ptr(),
-                        1,
-                        stream.as_ptr(),
-                    ));
+                    let flat = self.reshape_device_unchecked(shape, stream.clone());
 
                     Array::from_ptr(mlx_sys::mlx_cummax(
                         flat.c_array,
@@ -186,12 +181,7 @@ impl Array {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = Array::from_ptr(mlx_sys::mlx_reshape(
-                        self.c_array,
-                        shape.as_ptr(),
-                        1,
-                        stream.as_ptr(),
-                    ));
+                    let flat = self.reshape_device_unchecked(shape, stream.clone());
 
                     Array::from_ptr(mlx_sys::mlx_cummin(
                         flat.c_array,
@@ -301,12 +291,7 @@ impl Array {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = Array::from_ptr(mlx_sys::mlx_reshape(
-                        self.c_array,
-                        shape.as_ptr(),
-                        1,
-                        stream.as_ptr(),
-                    ));
+                    let flat = self.reshape_device_unchecked(shape, stream.clone());
 
                     Array::from_ptr(mlx_sys::mlx_cumprod(
                         flat.c_array,
@@ -416,12 +401,7 @@ impl Array {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = Array::from_ptr(mlx_sys::mlx_reshape(
-                        self.c_array,
-                        shape.as_ptr(),
-                        1,
-                        stream.as_ptr(),
-                    ));
+                    let flat = self.reshape_device_unchecked(shape, stream.clone());
 
                     Array::from_ptr(mlx_sys::mlx_cumsum(
                         flat.c_array,

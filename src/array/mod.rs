@@ -13,6 +13,7 @@ pub use element::ArrayElement;
 #[allow(non_camel_case_types)]
 pub type complex64 = Complex<f32>;
 
+#[repr(transparent)]
 pub struct Array {
     pub(crate) c_array: mlx_array,
 }
@@ -33,6 +34,42 @@ impl std::fmt::Display for Array {
 
 // TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
+
+impl Array {
+    /// Clone the array by copying the data.
+    pub(crate) fn clone(&self) -> Self {
+        unsafe {
+            let dtype = self.dtype();
+            let shape = self.shape();
+            let data = match dtype {
+                Dtype::Bool => mlx_sys::mlx_array_data_bool(self.c_array) as *const c_void,
+                Dtype::Uint8 => mlx_sys::mlx_array_data_uint8(self.c_array) as *const c_void,
+                Dtype::Uint16 => mlx_sys::mlx_array_data_uint16(self.c_array) as *const c_void,
+                Dtype::Uint32 => mlx_sys::mlx_array_data_uint32(self.c_array) as *const c_void,
+                Dtype::Uint64 => mlx_sys::mlx_array_data_uint64(self.c_array) as *const c_void,
+                Dtype::Int8 => mlx_sys::mlx_array_data_int8(self.c_array) as *const c_void,
+                Dtype::Int16 => mlx_sys::mlx_array_data_int16(self.c_array) as *const c_void,
+                Dtype::Int32 => mlx_sys::mlx_array_data_int32(self.c_array) as *const c_void,
+                Dtype::Int64 => mlx_sys::mlx_array_data_int64(self.c_array) as *const c_void,
+                Dtype::Float16 => mlx_sys::mlx_array_data_float16(self.c_array) as *const c_void,
+                Dtype::Float32 => mlx_sys::mlx_array_data_float32(self.c_array) as *const c_void,
+                Dtype::Bfloat16 => mlx_sys::mlx_array_data_bfloat16(self.c_array) as *const c_void,
+                Dtype::Complex64 => {
+                    mlx_sys::mlx_array_data_complex64(self.c_array) as *const c_void
+                }
+            };
+
+            let new_c_array = mlx_sys::mlx_array_from_data(
+                data,
+                shape.as_ptr(),
+                shape.len() as i32,
+                dtype.into(),
+            );
+
+            Array::from_ptr(new_c_array)
+        }
+    }
+}
 
 impl Drop for Array {
     fn drop(&mut self) {
@@ -127,6 +164,29 @@ impl Array {
         };
 
         Array { c_array }
+    }
+
+    /// New array from an iterator.
+    ///
+    /// This is a convenience method that is equivalent to
+    ///
+    /// ```rust, ignore
+    /// let data: Vec<T> = iter.collect();
+    /// Array::from_slice(&data, shape)
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx::Array;
+    ///
+    /// let data = vec![1i32, 2, 3, 4, 5];
+    /// let mut array = Array::from_iter(data.clone(), &[5]);
+    /// assert_eq!(array.as_slice::<i32>(), &data[..]);
+    /// ```
+    pub fn from_iter<T: ArrayElement, I: IntoIterator<Item = T>>(iter: I, shape: &[i32]) -> Self {
+        let data: Vec<T> = iter.into_iter().collect();
+        Self::from_slice(&data, shape)
     }
 
     /// The size of the array’s datatype in bytes.
@@ -382,6 +442,12 @@ impl From<f32> for Array {
     }
 }
 
+impl AsRef<Array> for Array {
+    fn as_ref(&self) -> &Array {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -486,6 +552,25 @@ mod tests {
         assert_eq!(array.dim(-2), 2); // negative index
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Int32);
+    }
+
+    #[test]
+    fn cloned_array_has_different_ptr() {
+        let data = [1i32, 2, 3, 4, 5];
+        let mut orig = Array::from_slice(&data, &[5]);
+        let mut clone = orig.clone();
+
+        // Data should be the same
+        assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
+
+        // Addr of `mlx_array` should be different
+        assert_ne!(orig.as_ptr(), clone.as_ptr());
+
+        // Addr of data should be different
+        assert_ne!(
+            orig.as_slice::<i32>().as_ptr(),
+            clone.as_slice::<i32>().as_ptr()
+        );
     }
 
     #[test]

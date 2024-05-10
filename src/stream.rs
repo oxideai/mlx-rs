@@ -5,7 +5,7 @@ use crate::utils::mlx_describe;
 ///
 /// Use this to control where operations are evaluated:
 ///
-/// If omitted it will use the [default()], which will be [Device::gpu()] unless
+/// If omitted it will use the [Default::default()], which will be [Device::gpu()] unless
 /// set otherwise.
 #[derive(Clone)]
 pub struct StreamOrDevice {
@@ -23,14 +23,14 @@ impl StreamOrDevice {
         }
     }
 
-    /// The `[Stream::default_stream()] on the [Device::cpu()]
+    /// The `[Stream::default_stream_on_device()] on the [Device::cpu()]
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::default_stream_on_device(&Device::cpu()),
         }
     }
 
-    /// The `[Stream::default_stream()] on the [Device::gpu()]
+    /// The `[Stream::default_stream_on_device()] on the [Device::gpu()]
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::default_stream_on_device(&Device::gpu()),

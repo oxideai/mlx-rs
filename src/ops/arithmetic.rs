@@ -781,9 +781,11 @@ impl Array {
 
     /// Element-wise integer division.
     ///
-    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
+    /// Divide two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
-    /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
+    /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
+    /// after `/`.
     ///
     /// # Example
     ///
@@ -808,9 +810,11 @@ impl Array {
 
     /// Element-wise integer division without checking the array type or for broadcastability.
     ///
-    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
+    /// Divide two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
-    /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
+    /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
+    /// after `/`.
     ///
     /// # Example
     ///
@@ -831,7 +835,8 @@ impl Array {
     ///
     /// # Safety
     ///
-    /// This function is unsafe because it does not check array types or that the arrays are broadcastable.
+    /// This function is unsafe because it does not check array types or that the arrays are
+    /// broadcastable.
     #[default_device]
     pub unsafe fn floor_divide_device_unchecked(
         &self,
@@ -849,9 +854,11 @@ impl Array {
 
     /// Element-wise integer division returning an error if arrays are not broadcastable.
     ///
-    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
+    /// Divide two arrays with
+    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
-    /// If either array is a floating point type then it is equivalent to calling [floor()] after `/`.
+    /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
+    /// after `/`.
     ///
     /// # Example
     ///

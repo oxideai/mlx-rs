@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl Array {
-    /// See [`expand_dims_uncheked`].
+    /// See [`expand_dims_unchecked`].
     ///
     /// # Safety
     ///

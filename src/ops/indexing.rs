@@ -1063,19 +1063,20 @@ fn gather_nd<'a>(
     src: &'a Array,
     operations: impl Iterator<Item = &'a ArrayIndexOp>,
     gather_first: bool,
+    last_array_or_index: usize,
     stream: StreamOrDevice,
 ) -> (usize, Array) {
     use ArrayIndexOp::*;
 
     let mut max_dims = 0;
     let mut slice_count = 0;
-    let mut is_slice: Vec<bool> = Vec::new();
-    let mut gather_indices: Vec<Rc<Array>> = Vec::new();
+    let mut is_slice: Vec<bool> = Vec::with_capacity(last_array_or_index);
+    let mut gather_indices: Vec<Rc<Array>> = Vec::with_capacity(last_array_or_index);
 
     let shape = src.shape();
 
     // prepare the gather indices
-    let mut axes = Vec::new();
+    let mut axes = Vec::with_capacity(last_array_or_index);
     let mut operation_len: usize = 0;
     for (i, op) in operations.enumerate() {
         axes.push(i as i32);
@@ -1315,7 +1316,13 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
         let gather_indices = operations[..=last_array_or_index]
             .iter()
             .filter(|op| !matches!(op, Ellipsis | ExpandDims));
-        let (max_dims, gathered) = gather_nd(&src, gather_indices, gather_first, stream.clone());
+        let (max_dims, gathered) = gather_nd(
+            &src,
+            gather_indices,
+            gather_first,
+            last_array_or_index,
+            stream.clone(),
+        );
 
         src = OwnedOrRef::Owned(gathered);
 

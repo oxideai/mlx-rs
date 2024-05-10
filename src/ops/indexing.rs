@@ -69,7 +69,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    utils::resolve_index_unchecked,
+    utils::{resolve_index_unchecked, OwnedOrRef},
     Array, StreamOrDevice,
 };
 
@@ -111,16 +111,6 @@ pub struct RangeIndex {
 
 impl RangeIndex {
     pub(crate) fn new(start: Bound<i32>, stop: Bound<i32>, stride: Option<i32>) -> Self {
-        // let start = match start {
-        //     Bound::Included(start) => start,
-        //     Bound::Excluded(start) => start + 1,
-        //     Bound::Unbounded => 0,
-        // };
-        // let stop = match stop {
-        //     Bound::Included(stop) => Some(stop + 1),
-        //     Bound::Excluded(stop) => Some(stop),
-        //     Bound::Unbounded => None,
-        // };
         let stride = stride.unwrap_or(1);
         Self {
             start,
@@ -134,18 +124,13 @@ impl RangeIndex {
     }
 
     pub(crate) fn start(&self, size: i32) -> i32 {
-        // _start ?? (stride < 0 ? size - 1 : 0)
-
-        // if self.stride.is_negative() {
-        //     self.start + size
-        // } else {
-        //     self.start
-        // }
-
         match self.start {
             Bound::Included(start) => start,
             Bound::Excluded(start) => start + 1,
             Bound::Unbounded => {
+                // ref swift binding
+                // _start ?? (stride < 0 ? size - 1 : 0)
+
                 if self.stride.is_negative() {
                     size - 1
                 } else {
@@ -156,7 +141,7 @@ impl RangeIndex {
     }
 
     pub(crate) fn absolute_start(&self, size: i32) -> i32 {
-        // let start = self.start(size)
+        // ref swift binding
         // return start < 0 ? start + size : start
 
         let start = self.start(size);
@@ -168,20 +153,13 @@ impl RangeIndex {
     }
 
     pub(crate) fn end(&self, size: i32) -> i32 {
-        // _end ?? (stride < 0 ? -size - 1 : size)
-
-        // self.stop.unwrap_or_else(|| {
-        //     if self.stride.is_negative() {
-        //         -size - 1
-        //     } else {
-        //         size
-        //     }
-        // })
-
         match self.stop {
             Bound::Included(stop) => stop + 1,
             Bound::Excluded(stop) => stop,
             Bound::Unbounded => {
+                // ref swift binding
+                // _end ?? (stride < 0 ? -size - 1 : size)
+
                 if self.stride.is_negative() {
                     -size - 1
                 } else {
@@ -192,7 +170,7 @@ impl RangeIndex {
     }
 
     pub(crate) fn absolute_end(&self, size: i32) -> i32 {
-        // let end = self.end(size)
+        // ref swift binding
         // return end < 0 ? end + size : end
 
         let end = self.end(size);
@@ -1118,12 +1096,6 @@ fn gather_nd<'a>(
                 let size = shape[i];
                 let absolute_start = range.absolute_start(size);
                 let absolute_end = range.absolute_end(size);
-
-                // // TODO: check if this is correct when stride is negative
-                // let indices: Vec<i32> = (absolute_start..absolute_end)
-                //     .step_by(range.stride().abs() as usize)
-                //     .collect();
-
                 let indices = absolute_indices(absolute_start, absolute_end, range.stride());
 
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
@@ -1296,7 +1268,7 @@ fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Arra
 fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice) -> Array {
     use ArrayIndexOp::*;
 
-    let mut src = Cow::Borrowed(src);
+    let mut src = OwnedOrRef::Ref(src);
 
     // The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -1345,7 +1317,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
             .filter(|op| !matches!(op, Ellipsis | ExpandDims));
         let (max_dims, gathered) = gather_nd(&src, gather_indices, gather_first, stream.clone());
 
-        src = Cow::Owned(gathered);
+        src = OwnedOrRef::Owned(gathered);
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -1383,10 +1355,10 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
 
     if have_array && remaining_indices.is_empty() {
         // `clone` returns a new array with the same shape and data
-        match src {
-            Cow::Borrowed(src) => return src.clone(),
-            Cow::Owned(src) => return src,
-        }
+        return match src {
+            OwnedOrRef::Ref(src) => src.clone(),
+            OwnedOrRef::Owned(src) => src,
+        };
     }
 
     if remaining_indices.is_empty() {
@@ -1424,7 +1396,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
         axis += 1;
     }
 
-    src = Cow::Owned(src.slice_device(&starts, &ends, &strides, stream));
+    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream));
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -1446,12 +1418,12 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = Cow::Owned(src.reshape(&new_shape));
+        src = OwnedOrRef::Owned(src.reshape(&new_shape));
     }
 
     match src {
-        Cow::Borrowed(src) => src.clone(),
-        Cow::Owned(src) => src,
+        OwnedOrRef::Ref(src) => src.clone(),
+        OwnedOrRef::Owned(src) => src,
     }
 }
 

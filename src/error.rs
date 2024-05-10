@@ -199,18 +199,6 @@ pub enum StackError {
     #[error("No arrays provided for stacking")]
     NoInputArray,
 
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error("All arrays must have the same shape")]
-    InvalidShapes,
-}
-
-#[derive(Debug, Error)]
-pub enum StackAllError {
-    #[error("No arrays provided for stacking")]
-    NoInputArray,
-
     #[error("All arrays must have the same shape")]
     InvalidShapes,
 }

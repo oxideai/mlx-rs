@@ -1,3 +1,5 @@
+use std::os::raw::c_void;
+
 use mlx_sys::mlx_vector_array;
 
 use crate::error::{OperationError, ReshapeError};
@@ -167,33 +169,45 @@ impl Array {
     }
 }
 
-/// The returned `mlx_vector_array` must be manually freed by the caller.
-pub(crate) unsafe fn new_mlx_vector_array(arrays: &[impl AsRef<Array>]) -> mlx_vector_array {
-    let arrays = arrays
-        .iter()
-        .map(|array| array.as_ref().as_ptr())
-        .collect::<Vec<_>>();
+pub(crate) struct MlxVectorArray {
+    c_vec: mlx_vector_array,
+}
 
-    unsafe {
-        let vec = mlx_sys::mlx_vector_array_new();
-        let arrs = arrays.as_ptr();
-        let num_arrs = arrays.len();
+impl MlxVectorArray {
+    pub(crate) fn as_ptr(&self) -> mlx_vector_array {
+        self.c_vec
+    }
 
-        mlx_sys::mlx_vector_array_add_arrays(vec, arrs, num_arrs);
-        vec
+    pub(crate) fn from_op(f: impl FnOnce() -> mlx_vector_array) -> Self {
+        Self { c_vec: f() }
+    }
+
+    pub(crate) fn from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Self {
+        unsafe {
+            let c_vec = mlx_sys::mlx_vector_array_new();
+            for arr in iter {
+                mlx_sys::mlx_vector_array_add(c_vec, arr.as_ref().as_ptr())
+            }
+            Self { c_vec }
+        }
+    }
+
+    pub(crate) fn into_values(self) -> Vec<Array> {
+        unsafe {
+            let size = mlx_sys::mlx_vector_array_size(self.c_vec);
+            (0..size)
+                .map(|i| {
+                    let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
+                    Array::from_ptr(c_array)
+                })
+                .collect()
+        }
     }
 }
 
-/// The user is responsible for freeing the input `mlx_vector_array`.
-pub(crate) unsafe fn mlx_vector_array_values(c_vec: mlx_vector_array) -> Vec<Array> {
-    unsafe {
-        let size = mlx_sys::mlx_vector_array_size(c_vec);
-        (0..size)
-            .map(|i| {
-                let c_array = mlx_sys::mlx_vector_array_get(c_vec, i);
-                Array::from_ptr(c_array)
-            })
-            .collect()
+impl Drop for MlxVectorArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_vec as *mut c_void) }
     }
 }
 
@@ -204,6 +218,30 @@ pub(crate) fn is_same_shape(arrays: &[impl AsRef<Array>]) -> bool {
 
     let shape = arrays[0].as_ref().shape();
     arrays.iter().all(|array| array.as_ref().shape() == shape)
+}
+
+/// A custom type for internal use with `Array` only that is essentially `Cow` but doens't require
+/// the `Clone`
+pub(crate) enum OwnedOrRef<'a, T> {
+    Owned(T),
+    Ref(&'a T),
+}
+
+impl<'a, T> AsRef<T> for OwnedOrRef<'a, T> {
+    fn as_ref(&self) -> &T {
+        match self {
+            OwnedOrRef::Owned(array) => array,
+            OwnedOrRef::Ref(array) => array,
+        }
+    }
+}
+
+impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
 }
 
 #[cfg(test)]

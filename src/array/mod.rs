@@ -35,11 +35,9 @@ impl std::fmt::Display for Array {
 // TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
 
-impl Clone for Array {
+impl Array {
     /// Clone the array by copying the data.
-    ///
-    /// TODO: test if this is actually a deep copy
-    fn clone(&self) -> Self {
+    pub(crate) fn clone(&self) -> Self {
         unsafe {
             let dtype = self.dtype();
             let shape = self.shape();

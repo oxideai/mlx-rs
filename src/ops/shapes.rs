@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet, os::raw::c_void};
+use std::{borrow::Cow, collections::HashSet};
 
 use mlx_macros::default_device;
 use smallvec::SmallVec;
@@ -6,12 +6,9 @@ use smallvec::SmallVec;
 use crate::{
     error::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
-        PadError, ReshapeError, SqueezeError, StackAllError, StackError, TransposeError,
+        PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
-    utils::{
-        all_unique, is_broadcastable, is_same_shape, mlx_vector_array_values, new_mlx_vector_array,
-        resolve_index,
-    },
+    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, MlxVectorArray},
     Array, StreamOrDevice,
 };
 
@@ -508,13 +505,9 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
 
 fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(arrays);
-        let c_array = mlx_sys::mlx_concatenate(c_arrays, axis, stream.as_ptr());
-
-        let result = Array::from_ptr(c_array);
-        mlx_sys::mlx_free(c_arrays as *mut c_void);
-
-        result
+        let c_arrays = MlxVectorArray::from_iter(arrays.iter());
+        let c_array = mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ptr());
+        Array::from_ptr(c_array)
     }
 }
 
@@ -540,7 +533,7 @@ fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDe
 /// ```
 #[default_device]
 pub unsafe fn concatenate_device_unchecked(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
@@ -568,7 +561,7 @@ pub unsafe fn concatenate_device_unchecked(
 /// ```
 #[default_device]
 pub fn try_concatenate_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Result<Array, ConcatenateError> {
@@ -634,7 +627,7 @@ pub fn try_concatenate_device(
 /// ```
 #[default_device]
 pub fn concatenate_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
     stream: StreamOrDevice,
 ) -> Array {
@@ -1266,16 +1259,16 @@ pub unsafe fn split_device_unchecked(
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
-        let c_vec = mlx_sys::mlx_split(
-            a.c_array,
-            indices.as_ptr(),
-            indices.len(),
-            axis,
-            stream.as_ptr(),
-        );
-        let result = mlx_vector_array_values(c_vec);
-        mlx_sys::mlx_free(c_vec as *mut c_void);
-        result
+        let c_vec = MlxVectorArray::from_op(|| {
+            mlx_sys::mlx_split(
+                a.c_array,
+                indices.as_ptr(),
+                indices.len(),
+                axis,
+                stream.as_ptr(),
+            )
+        });
+        c_vec.into_values()
     }
 }
 
@@ -1366,13 +1359,10 @@ pub unsafe fn split_equal_device_unchecked(
     stream: StreamOrDevice,
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
-
-    unsafe {
-        let c_vec = mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ptr());
-        let result = mlx_vector_array_values(c_vec);
-        mlx_sys::mlx_free(c_vec as *mut c_void);
-        result
-    }
+    let c_vec = MlxVectorArray::from_op(|| {
+        mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ptr())
+    });
+    c_vec.into_values()
 }
 
 /// Split an array into equal parts along a given axis. Returns an error if the array cannot be
@@ -1648,13 +1638,9 @@ pub fn pad_device<'a>(
 
 fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(arrays);
-        let c_array = mlx_sys::mlx_stack(c_arrays, axis, stream.as_ptr());
-
-        let result = Array::from_ptr(c_array);
-        mlx_sys::mlx_free(c_arrays as *mut c_void);
-
-        result
+        let c_vec = MlxVectorArray::from_iter(arrays.iter());
+        let c_array = mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ptr());
+        Array::from_ptr(c_array)
     }
 }
 
@@ -1738,13 +1724,9 @@ pub fn stack_device(
 
 fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
     unsafe {
-        let c_arrays = new_mlx_vector_array(arrays);
-        let c_array = mlx_sys::mlx_stack_all(c_arrays, stream.as_ptr());
-
-        let result = Array::from_ptr(c_array);
-        mlx_sys::mlx_free(c_arrays as *mut c_void);
-
-        result
+        let c_vec = MlxVectorArray::from_iter(arrays.iter());
+        let c_array = mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ptr());
+        Array::from_ptr(c_array)
     }
 }
 
@@ -1795,15 +1777,15 @@ pub unsafe fn stack_all_device_unchecked(
 pub fn try_stack_all_device(
     arrays: impl IntoIterator<Item = impl AsRef<Array>>,
     stream: StreamOrDevice,
-) -> Result<Array, StackAllError> {
+) -> Result<Array, StackError> {
     let arrays = arrays.into_iter().collect::<Vec<_>>();
 
     if arrays.is_empty() {
-        return Err(StackAllError::NoInputArray);
+        return Err(StackError::NoInputArray);
     }
 
     if !is_same_shape(&arrays) {
-        return Err(StackAllError::InvalidShapes);
+        return Err(StackError::InvalidShapes);
     }
 
     Ok(stack_all_inner(&arrays, stream))

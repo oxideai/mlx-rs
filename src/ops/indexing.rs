@@ -196,7 +196,7 @@ pub enum ArrayIndexOp {
 
     /// Indexing with an array
     ///
-    /// An `Rc` is used instead of `Cow` is that even with `Cow`, the compiler will infer
+    /// The reason an `Rc` is used instead of `Cow` is that even with `Cow`, the compiler will infer
     /// an `'static` lifetime due to current limitations in the borrow checker.
     TakeArray { indices: Rc<Array> },
 

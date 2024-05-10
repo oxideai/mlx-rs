@@ -1184,7 +1184,8 @@ fn gather_nd<'a>(
 }
 
 #[inline]
-fn get_item_int(src: &Array, index: i32, axis: i32, stream: StreamOrDevice) -> Array {
+fn get_item_index(src: &Array, index: i32, axis: i32, stream: StreamOrDevice) -> Array {
+    let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
     src.take_device(&index.into(), axis, stream)
 }
 
@@ -1253,7 +1254,7 @@ fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Arra
 
     match index.index_op() {
         Ellipsis => src.clone(),
-        TakeIndex { index } => get_item_int(src, index, 0, stream),
+        TakeIndex { index } => get_item_index(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
         ExpandDims => unsafe {
@@ -1439,6 +1440,21 @@ mod tests {
             let mut assert = $a.all_close(&_b, None, None, None);
             assert!(assert.item::<bool>());
         };
+    }
+
+    #[test]
+    fn test_array_index_negative_int() {
+        let a = Array::from_iter(0i32..8, &[8]);
+
+        let mut s = a.index(-1);
+
+        assert_eq!(s.ndim(), 0);
+        assert_eq!(s.item::<i32>(), 7);
+
+        let mut s = a.index(-8);
+
+        assert_eq!(s.ndim(), 0);
+        assert_eq!(s.item::<i32>(), 0);
     }
 
     #[test]

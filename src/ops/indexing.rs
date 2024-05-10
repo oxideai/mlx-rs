@@ -69,7 +69,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    utils::{resolve_index_unchecked, OwnedOrRef},
+    utils::{resolve_index_unchecked, MlxVectorArray, OwnedOrRef},
     Array, StreamOrDevice,
 };
 
@@ -1078,9 +1078,11 @@ fn gather_nd<'a>(
     // prepare the gather indices
     let mut axes = Vec::with_capacity(last_array_or_index);
     let mut operation_len: usize = 0;
+    let mut slice_sizes = shape.to_vec();
     for (i, op) in operations.enumerate() {
         axes.push(i as i32);
         operation_len += 1;
+        slice_sizes[i] = 1;
         match op {
             TakeIndex { index } => {
                 let item = Array::from_int(resolve_index_unchecked(
@@ -1144,20 +1146,12 @@ fn gather_nd<'a>(
     // let indices = new_mlx_vector_array(gather_indices);
     // SAFETY: indices will be freed at the end of this function. The lifetime of the items in
     // `gather_indices` is managed by the `gather_indices` vector.
-    let indices = unsafe {
-        let c_vec_array = mlx_sys::mlx_vector_array_new();
-        for item in gather_indices.iter() {
-            mlx_sys::mlx_vector_array_add(c_vec_array, item.c_array);
-        }
-        c_vec_array
-    };
-    let mut slice_sizes = shape.to_vec();
-    (0..operation_len).for_each(|i| slice_sizes[i] = 1);
+    let indices = MlxVectorArray::from_iter(gather_indices.iter());
 
     let gathered = unsafe {
         let c_array = mlx_sys::mlx_gather(
             src.c_array,
-            indices,
+            indices.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             slice_sizes.as_ptr(),
@@ -1176,10 +1170,6 @@ fn gather_nd<'a>(
         .copied()
         .collect();
     let result = gathered.reshape(&output_shape);
-
-    unsafe {
-        mlx_sys::mlx_free(indices as *mut _);
-    }
 
     (max_dims, result)
 }

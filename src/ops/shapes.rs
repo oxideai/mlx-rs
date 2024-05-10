@@ -538,9 +538,7 @@ pub unsafe fn concatenate_device_unchecked(
     stream: StreamOrDevice,
 ) -> Array {
     let axis = axis.into().unwrap_or(0);
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
-
-    concatenate_inner(&arrays, axis, stream)
+    concatenate_inner(arrays, axis, stream)
 }
 
 /// Concatenate the arrays along the given axis. Returns an error if the shapes are invalid.
@@ -566,7 +564,6 @@ pub fn try_concatenate_device(
     stream: StreamOrDevice,
 ) -> Result<Array, ConcatenateError> {
     let axis = axis.into().unwrap_or(0);
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
 
     if arrays.is_empty() {
         return Err(ConcatenateError::NoInputArray);
@@ -602,7 +599,7 @@ pub fn try_concatenate_device(
         }
     }
 
-    Ok(concatenate_inner(&arrays, resolved_axis, stream))
+    Ok(concatenate_inner(arrays, resolved_axis, stream))
 }
 
 /// Concatenate the arrays along the given axis. Panics if the shapes are invalid.
@@ -1666,31 +1663,28 @@ fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) 
 /// ```
 #[default_device]
 pub unsafe fn stack_device_unchecked(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     axis: i32,
     stream: StreamOrDevice,
 ) -> Array {
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
-    stack_inner(&arrays, axis, stream)
+    stack_inner(arrays, axis, stream)
 }
 
 #[default_device]
 pub fn try_stack_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     axis: i32,
     stream: StreamOrDevice,
 ) -> Result<Array, StackError> {
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
-
     if arrays.is_empty() {
         return Err(StackError::NoInputArray);
     }
 
-    if !is_same_shape(&arrays) {
+    if !is_same_shape(arrays) {
         return Err(StackError::InvalidShapes);
     }
 
-    Ok(stack_inner(&arrays, axis, stream))
+    Ok(stack_inner(arrays, axis, stream))
 }
 
 /// Stacks the arrays along a new axis. Panics if the arrays have different shapes.
@@ -1714,11 +1708,7 @@ pub fn try_stack_device(
 /// let result = stack(&[&a, &b], 0);
 /// ```
 #[default_device]
-pub fn stack_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
-    axis: i32,
-    stream: StreamOrDevice,
-) -> Array {
+pub fn stack_device(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     try_stack_device(arrays, axis, stream).unwrap()
 }
 
@@ -1751,11 +1741,10 @@ fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Arra
 /// ```
 #[default_device]
 pub unsafe fn stack_all_device_unchecked(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     stream: StreamOrDevice,
 ) -> Array {
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
-    stack_all_inner(&arrays, stream)
+    stack_all_inner(arrays, stream)
 }
 
 /// Stacks the arrays along a new axis. Returns an error if the arrays have different shapes.
@@ -1775,20 +1764,18 @@ pub unsafe fn stack_all_device_unchecked(
 /// ```
 #[default_device]
 pub fn try_stack_all_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
+    arrays: &[impl AsRef<Array>],
     stream: StreamOrDevice,
 ) -> Result<Array, StackError> {
-    let arrays = arrays.into_iter().collect::<Vec<_>>();
-
     if arrays.is_empty() {
         return Err(StackError::NoInputArray);
     }
 
-    if !is_same_shape(&arrays) {
+    if !is_same_shape(arrays) {
         return Err(StackError::InvalidShapes);
     }
 
-    Ok(stack_all_inner(&arrays, stream))
+    Ok(stack_all_inner(arrays, stream))
 }
 
 /// Stacks the arrays along a new axis. Panics if the arrays have different shapes.
@@ -1811,10 +1798,7 @@ pub fn try_stack_all_device(
 /// let result = stack_all(&[&a, &b]);
 /// ```
 #[default_device]
-pub fn stack_all_device(
-    arrays: impl IntoIterator<Item = impl AsRef<Array>>,
-    stream: StreamOrDevice,
-) -> Array {
+pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
     try_stack_all_device(arrays, stream).unwrap()
 }
 
@@ -2358,7 +2342,7 @@ mod tests {
         assert_eq!(stack(&z, -2).shape(), &[2, 3]);
 
         let empty: Vec<Array> = Vec::new();
-        assert!(try_stack(empty, 0).is_err());
+        assert!(try_stack(&empty, 0).is_err());
 
         let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Float16);
         let y = Array::from_slice(&[4, 5, 6], &[3]).as_dtype(Dtype::Int32);

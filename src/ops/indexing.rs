@@ -1311,7 +1311,6 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
             .iter()
             .rposition(|op| op.is_array_or_index())
             .unwrap(); // safe because we know there is at least one array operation
-                       // let remaining = indices.split_off(last_array_or_index + 1);
         let gather_indices = operations[..=last_array_or_index]
             .iter()
             .filter(|op| !matches!(op, Ellipsis | ExpandDims));
@@ -1405,10 +1404,8 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
         for item in remaining_indices {
             match item {
                 ExpandDims => new_shape.push(1),
-                TakeIndex { .. } => {
-                    if squeeze_needed {
-                        axis_ += 1;
-                    }
+                TakeIndex { .. } if squeeze_needed => {
+                    axis_ += 1;
                 }
                 _ => {
                     new_shape.push(src.dim(axis_));

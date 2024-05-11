@@ -80,6 +80,8 @@ impl Drop for Array {
     }
 }
 
+unsafe impl Send for Array {}
+
 impl PartialEq for Array {
     /// Array equality check.
     ///
@@ -270,7 +272,7 @@ impl Array {
     }
 
     /// Access the value of a scalar array.
-    /// If [T] does not match the array's `dtype` this will convert the type first.
+    /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     pub fn item<T: ArrayElement>(&mut self) -> T {
@@ -278,7 +280,7 @@ impl Array {
     }
 
     /// Access the value of a scalar array without validating the shape.
-    /// If [T] does not match the array's `dtype` this will convert the type first.
+    /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     ///
@@ -307,7 +309,7 @@ impl Array {
     }
 
     /// Access the value of a scalar array returning an error if the array is not a scalar.
-    /// If [T] does not match the array's `dtype` this will convert the type first.
+    /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
     pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, DataStoreError> {

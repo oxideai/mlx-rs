@@ -46,7 +46,7 @@ pub fn split_device(key: &Array, stream: StreamOrDevice) -> (Array, Array) {
 /// Generate uniformly distributed random numbers with a `RangeBounds`.
 ///
 /// The values are sampled uniformly in the range.  An optional shape can be used to broadcast into
-/// a larger array.  An optional `Key` can be specified to control the PRNG.
+/// a larger array.  An optional `key` can be specified to control the PRNG.
 ///
 /// ```rust
 /// let key = mlx::random::key(0);
@@ -98,6 +98,65 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     return ret;
 }
 
+/// Generate normally distributed random numbers.
+///
+/// Generate an array of random numbers using the optional shape. The result
+/// will be of the given `T`.
+///
+/// ```rust
+/// let key = mlx::random::key(0);
+///
+/// // generate a single Float with normal distribution
+/// let value = mlx::random::normal(None, None, None, &key).item::<f32>();
+///
+/// // generate an array of Float with normal distribution in shape [10, 5]
+/// let array = mlx::random::normal(&[10, 5], None, None, &key);
+/// ```
+///
+/// # Params
+///  - shape: shape of the output, if `None` a single value is returned
+///  - loc: mean of the distribution, default is `0.0`
+///  - scale: standard deviation of the distribution, default is `1.0`
+///  - key: PRNG key
+#[default_device]
+pub fn normal_device<'a, T: ArrayElement>(
+    shape: impl Into<Option<&'a [i32]>>,
+    loc: impl Into<Option<f32>>,
+    scale: impl Into<Option<f32>>,
+    key: impl Into<Option<&'a Array>>,
+    stream: StreamOrDevice,
+) -> Array {
+    let shape = shape.into().unwrap_or(&[]);
+    let mut seed = SEED.lock().unwrap();
+    let mut rng = match seed.as_ref() {
+        Some(rng_seeded) => rng_seeded.clone(),
+        None => get_seeded_rng(),
+    };
+
+    let key = key.into().map_or_else(
+        || {
+            let key: i32 = rng.gen();
+            Array::from_int(key)
+        },
+        |key| key.clone(),
+    );
+
+    let ret = unsafe {
+        Array::from_ptr(mlx_sys::mlx_random_normal(
+            shape.as_ptr(),
+            shape.len(),
+            T::DTYPE.into(),
+            loc.into().unwrap_or(0.0),
+            scale.into().unwrap_or(1.0),
+            key.as_ptr(),
+            stream.as_ptr(),
+        ))
+    };
+
+    *seed = Some(rng);
+    return ret;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,5 +186,12 @@ mod tests {
         let expected = Array::from_slice(&[2.16, 82.37], &[2]);
 
         assert_array_eq!(value, expected, 0.01);
+    }
+
+    #[test]
+    fn test_normal() {
+        let key = key(0);
+        let mut value = normal::<f32>(None, None, None, &key);
+        float_eq!(value.item::<f32>(), -0.20, abs <= 0.01);
     }
 }

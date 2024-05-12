@@ -82,7 +82,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
         |key| key.clone(),
     );
 
-    let ret = unsafe {
+    let array = unsafe {
         Array::from_ptr(mlx_sys::mlx_random_uniform(
             lb.as_ptr(),
             ub.as_ptr(),
@@ -95,7 +95,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     };
 
     *seed = Some(rng);
-    return ret;
+    array
 }
 
 /// Generate normally distributed random numbers.
@@ -141,7 +141,7 @@ pub fn normal_device<'a, T: ArrayElement>(
         |key| key.clone(),
     );
 
-    let ret = unsafe {
+    let array = unsafe {
         Array::from_ptr(mlx_sys::mlx_random_normal(
             shape.as_ptr(),
             shape.len(),
@@ -154,7 +154,7 @@ pub fn normal_device<'a, T: ArrayElement>(
     };
 
     *seed = Some(rng);
-    return ret;
+    array
 }
 
 #[cfg(test)]

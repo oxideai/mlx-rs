@@ -107,10 +107,10 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// let key = mlx::random::key(0);
 ///
 /// // generate a single Float with normal distribution
-/// let value = mlx::random::normal(None, None, None, &key).item::<f32>();
+/// let value = mlx::random::normal::<f32>(None, None, None, &key).item::<f32>();
 ///
 /// // generate an array of Float with normal distribution in shape [10, 5]
-/// let array = mlx::random::normal(&[10, 5], None, None, &key);
+/// let array = mlx::random::normal::<f32>(&[10, 5][..], None, None, &key);
 /// ```
 ///
 /// # Params

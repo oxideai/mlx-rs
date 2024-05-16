@@ -1,4 +1,8 @@
-use crate::error::OperationError;
+use std::os::raw::c_void;
+
+use mlx_sys::mlx_vector_array;
+
+use crate::error::{OperationError, ReshapeError};
 use crate::Array;
 
 /// Helper method to get a string representation of an mlx object.
@@ -111,9 +115,9 @@ pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), Operat
 
 impl Array {
     /// Helper method to check if an array can be reshaped to a given shape.
-    pub fn can_reshape_to(&self, shape: &[i32]) -> bool {
+    pub fn can_reshape_to<'a>(&self, shape: &'a [i32]) -> Result<(), ReshapeError<'a>> {
         if self.shape() == shape {
-            return true;
+            return Ok(());
         }
 
         let mut size = 1;
@@ -121,7 +125,7 @@ impl Array {
         for (i, dim) in shape.iter().enumerate() {
             if *dim == -1 {
                 if infer_idx >= 0 {
-                    return false;
+                    return Err(ReshapeError::MultipleInferredDims);
                 }
 
                 infer_idx = i as isize;
@@ -136,15 +140,18 @@ impl Array {
                 size *= quotient as i32;
             }
         } else if infer_idx >= 0 {
-            return false;
+            return Err(ReshapeError::EmptyArray);
         }
 
         // validate the reshaping is valid
         if self.size() != size as usize {
-            return false;
+            return Err(ReshapeError::InvalidShape {
+                size: self.size(),
+                shape,
+            });
         }
 
-        true
+        Ok(())
     }
 
     /// Helper method to validate an axis is in bounds.
@@ -159,6 +166,81 @@ impl Array {
         }
 
         Ok(())
+    }
+}
+
+pub(crate) struct VectorArray {
+    c_vec: mlx_vector_array,
+}
+
+impl VectorArray {
+    pub(crate) fn as_ptr(&self) -> mlx_vector_array {
+        self.c_vec
+    }
+
+    pub(crate) fn from_op(f: impl FnOnce() -> mlx_vector_array) -> Self {
+        Self { c_vec: f() }
+    }
+
+    pub(crate) fn from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Self {
+        unsafe {
+            let c_vec = mlx_sys::mlx_vector_array_new();
+            for arr in iter {
+                mlx_sys::mlx_vector_array_add(c_vec, arr.as_ref().as_ptr())
+            }
+            Self { c_vec }
+        }
+    }
+
+    pub(crate) fn into_values(self) -> Vec<Array> {
+        unsafe {
+            let size = mlx_sys::mlx_vector_array_size(self.c_vec);
+            (0..size)
+                .map(|i| {
+                    let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
+                    Array::from_ptr(c_array)
+                })
+                .collect()
+        }
+    }
+}
+
+impl Drop for VectorArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_vec as *mut c_void) }
+    }
+}
+
+pub(crate) fn is_same_shape(arrays: &[impl AsRef<Array>]) -> bool {
+    if arrays.is_empty() {
+        return true;
+    }
+
+    let shape = arrays[0].as_ref().shape();
+    arrays.iter().all(|array| array.as_ref().shape() == shape)
+}
+
+/// A custom type for internal use with `Array` only that is essentially `Cow` but doens't require
+/// the `Clone`
+pub(crate) enum OwnedOrRef<'a, T> {
+    Owned(T),
+    Ref(&'a T),
+}
+
+impl<'a, T> AsRef<T> for OwnedOrRef<'a, T> {
+    fn as_ref(&self) -> &T {
+        match self {
+            OwnedOrRef::Owned(array) => array,
+            OwnedOrRef::Ref(array) => array,
+        }
+    }
+}
+
+impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
     }
 }
 
@@ -218,50 +300,50 @@ mod tests {
     #[test]
     fn test_can_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[3]));
-        assert!(a.can_reshape_to(&[1, 3]));
-        assert!(a.can_reshape_to(&[3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 3, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 1, 3]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1, 1]));
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1, 1]));
+        assert!(a.can_reshape_to(&[3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 1, 3]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1, 1]).is_ok());
     }
 
     #[test]
     fn test_reshape_negative_dim() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[1, -1]));
-        assert!(a.can_reshape_to(&[-1, 1]));
-        assert!(a.can_reshape_to(&[-1]));
-        assert!(a.can_reshape_to(&[1, -1, 1]));
-        assert!(a.can_reshape_to(&[-1, 1, 1]));
+        assert!(a.can_reshape_to(&[1, -1]).is_ok());
+        assert!(a.can_reshape_to(&[-1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[-1]).is_ok());
+        assert!(a.can_reshape_to(&[1, -1, 1]).is_ok());
+        assert!(a.can_reshape_to(&[-1, 1, 1]).is_ok());
 
-        assert!(!a.can_reshape_to(&[1, -2]));
+        assert!(a.can_reshape_to(&[1, -2]).is_err());
     }
 
     #[test]
     fn test_cannot_reshape_to() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(!a.can_reshape_to(&[2]));
-        assert!(!a.can_reshape_to(&[2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2]));
-        assert!(!a.can_reshape_to(&[2, 2, 2, 2, 2, 2]));
+        assert!(a.can_reshape_to(&[2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2]).is_err());
+        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_err());
     }
 
     #[test]

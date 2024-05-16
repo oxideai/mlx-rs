@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    error::FftError,
+    error::{FftError, InvalidAxisError},
     utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array,
 };
@@ -31,8 +31,10 @@ pub(super) fn try_resolve_size_and_axis(
     }
 
     let axis = axis.unwrap_or(-1);
-    let axis_index =
-        resolve_index(axis, a.ndim()).ok_or_else(|| FftError::InvalidAxis { ndim: a.ndim() })?;
+    let axis_index = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+        axis,
+        ndim: a.ndim(),
+    })?;
     let n = n.unwrap_or(a.shape()[axis_index]);
 
     if n <= 0 {
@@ -42,6 +44,7 @@ pub(super) fn try_resolve_size_and_axis(
     Ok((n, axis))
 }
 
+// Use Cow or SmallVec?
 #[inline]
 pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
     a: &'a Array,
@@ -106,8 +109,10 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
             // SmallVec somehow doesn't implement FromIterator with result
             let mut valid_s = SmallVec::<[i32; 4]>::new();
             for &axis in axes {
-                let axis_index = resolve_index(axis, a.ndim())
-                    .ok_or_else(|| FftError::InvalidAxis { ndim: a.ndim() })?;
+                let axis_index = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+                    axis,
+                    ndim: a.ndim(),
+                })?;
                 valid_s.push(a.shape()[axis_index]);
             }
             let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
@@ -121,7 +126,7 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
     };
 
     // Check duplicate axes
-    all_unique(&valid_axes).map_err(|axis| FftError::DuplicateAxis { axis })?;
+    all_unique(&valid_axes).map_err(|_axis| FftError::DuplicateAxis)?;
 
     // Check if shape and axes have the same size
     if valid_s.len() != valid_axes.len() {
@@ -133,7 +138,11 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
 
     // Check if more axes are provided than the array has
     if valid_s.len() > a.ndim() {
-        return Err(FftError::InvalidAxis { ndim: a.ndim() });
+        return Err(InvalidAxisError {
+            axis: valid_s.len() as i32,
+            ndim: a.ndim(),
+        }
+        .into());
     }
 
     // Check if output sizes are valid
@@ -163,7 +172,7 @@ mod try_resolve_size_and_axis_tests {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let result = try_resolve_size_and_axis(&a, Some(0), Some(1));
-        assert_eq!(result, Err(FftError::InvalidAxis { ndim: 1 }));
+        assert!(matches!(result, Err(FftError::InvalidAxis(_))));
     }
 
     #[test]
@@ -202,7 +211,7 @@ mod try_resolve_sizes_and_axes_tests {
         // Returns an error if the axis is invalid (out of bounds)
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
         let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2, 2][..]), Some(&[0, 1, 2][..]));
-        assert_eq!(result, Err(FftError::InvalidAxis { ndim: 2 }));
+        assert!(matches!(result, Err(FftError::InvalidAxis(_))));
     }
 
     #[test]
@@ -224,7 +233,7 @@ mod try_resolve_sizes_and_axes_tests {
         // Returns an error if there are duplicate axes
         let a = Array::from_slice(&[1.0f32, 1.0, 1.0, 1.0], &[2, 2]);
         let result = try_resolve_sizes_and_axes(&a, Some(&[2, 2][..]), Some(&[0, 0][..]));
-        assert_eq!(result, Err(FftError::DuplicateAxis { axis: 0 }));
+        assert_eq!(result, Err(FftError::DuplicateAxis));
     }
 
     #[test]

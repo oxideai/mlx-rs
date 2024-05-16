@@ -8,12 +8,12 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::{Array, Dtype};
     ///
     /// let array = Array::from_slice(&[1i16,2,3], &[3]);
     /// let mut new_array = array.as_type::<f32>();
     ///
-    /// assert_eq!(new_array.dtype(), mlx::Dtype::Float32);
+    /// assert_eq!(new_array.dtype(), Dtype::Float32);
     /// assert_eq!(new_array.shape(), &[3]);
     /// assert_eq!(new_array.item_size(), 4);
     /// assert_eq!(new_array.as_slice::<f32>(), &[1.0,2.0,3.0]);

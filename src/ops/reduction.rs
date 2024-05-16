@@ -10,7 +10,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
     /// let mut b = a.all(&[0][..], None);
     ///
@@ -38,7 +38,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
     /// let mut b = unsafe { a.all_unchecked(&[0][..], None) };
     ///
@@ -78,7 +78,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
     /// let mut b = a.try_all(&[0][..], None).unwrap();
     ///
@@ -121,7 +121,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
@@ -148,7 +148,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
@@ -187,7 +187,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
@@ -229,7 +229,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [5, 9]
@@ -256,7 +256,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     ///
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
@@ -296,7 +296,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [5, 9]
@@ -344,7 +344,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
@@ -371,7 +371,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
@@ -410,7 +410,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
@@ -452,7 +452,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
@@ -479,7 +479,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
@@ -518,7 +518,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
@@ -570,7 +570,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]
@@ -596,7 +596,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]
@@ -635,7 +635,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::Array;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]

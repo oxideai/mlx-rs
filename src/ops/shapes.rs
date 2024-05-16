@@ -386,7 +386,7 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_iter(0..10, &[10]);
 /// let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0);
@@ -431,7 +431,7 @@ pub fn as_strided_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_float(2.3);
 /// let y = unsafe { broadcast_to_unchecked(&x, &[1, 1]) };
@@ -459,7 +459,7 @@ pub unsafe fn broadcast_to_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_float(2.3);
 /// let result = try_broadcast_to(&x, &[1, 1]);
@@ -493,7 +493,7 @@ pub fn try_broadcast_to_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_float(2.3);
 /// let y = broadcast_to(&x, &[1, 1]);
@@ -525,7 +525,7 @@ fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDe
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
@@ -551,7 +551,7 @@ pub unsafe fn concatenate_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
@@ -616,7 +616,7 @@ pub fn try_concatenate_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
@@ -645,7 +645,7 @@ pub fn concatenate_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = unsafe { expand_dims_unchecked(&x, &[0]) };
@@ -673,7 +673,7 @@ pub unsafe fn expand_dims_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let result = try_expand_dims(&x, &[0]);
@@ -724,7 +724,7 @@ pub fn try_expand_dims_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = expand_dims(&x, &[0]);
@@ -753,7 +753,7 @@ pub fn expand_dims_device(a: &Array, axes: &[i32], stream: StreamOrDevice) -> Ar
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = unsafe { flatten_unchecked(&x, None, None) };
@@ -789,7 +789,7 @@ pub unsafe fn flatten_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = try_flatten(&x, None, None);
@@ -864,7 +864,7 @@ pub fn try_flatten_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]);
 /// let y = flatten(&x, None, None);
@@ -893,7 +893,7 @@ pub fn flatten_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = unsafe { reshape_unchecked(&x, &[4]) };
@@ -916,7 +916,7 @@ pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamO
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let result = try_reshape(&x, &[4]);
@@ -945,7 +945,7 @@ pub fn try_reshape_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]);
 /// let y = reshape(&x, &[4]);
@@ -969,7 +969,7 @@ pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]);
 /// let y = unsafe { squeeze_unchecked(&x, None) };
@@ -998,7 +998,7 @@ pub unsafe fn squeeze_device_unchecked<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]);
 /// let result = try_squeeze(&x, None);
@@ -1059,7 +1059,7 @@ pub fn try_squeeze_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]);
 /// let y = squeeze(&x, None);
@@ -1082,7 +1082,7 @@ pub fn squeeze_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_1d(&x);
@@ -1104,7 +1104,7 @@ pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_2d(&x);
@@ -1126,7 +1126,7 @@ pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_3d(&x);
@@ -1154,7 +1154,7 @@ pub fn at_least_3d_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::zeros::<i32>(&[2, 3, 4]);
 /// let result = unsafe { move_axis_unchecked(&a, 0, 2).shape() };
@@ -1183,7 +1183,7 @@ pub unsafe fn move_axis_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::zeros::<i32>(&[2, 3, 4]);
 /// let result = try_move_axis(&a, 0, 2);
@@ -1217,7 +1217,7 @@ pub fn try_move_axis_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::zeros::<i32>(&[2, 3, 4]);
 /// let result = move_axis(&a, 0, 2);
@@ -1242,7 +1242,7 @@ pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: StreamOrDevice) -
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = unsafe { split_unchecked(&a, &[3, 7], 0) };
@@ -1280,7 +1280,7 @@ pub unsafe fn split_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = try_split(&a, &[3, 7], 0);
@@ -1313,7 +1313,7 @@ pub fn try_split_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split(&a, &[3, 7], 0);
@@ -1343,7 +1343,7 @@ pub fn split_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = unsafe { split_equal_unchecked(&a, 2, 0) };
@@ -1374,7 +1374,7 @@ pub unsafe fn split_equal_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = try_split_equal(&a, 2, 0);
@@ -1419,7 +1419,7 @@ pub fn try_split_equal_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split_equal(&a, 2, 0);
@@ -1498,7 +1498,7 @@ impl<'a> PadWidth<'a> {
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let result = unsafe { pad_unchecked(&a, 1, Array::from_int(0)) };
@@ -1549,7 +1549,7 @@ pub unsafe fn pad_device_unchecked<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let result = try_pad(&a, 1, Array::from_int(0));
@@ -1618,7 +1618,7 @@ pub fn try_pad_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let result = pad(&a, 1, Array::from_int(0));
@@ -1655,7 +1655,7 @@ fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) 
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -1701,7 +1701,7 @@ pub fn try_stack_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -1733,7 +1733,7 @@ fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Arra
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -1756,7 +1756,7 @@ pub unsafe fn stack_all_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -1791,7 +1791,7 @@ pub fn try_stack_all_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -1817,7 +1817,7 @@ pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) ->
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..6, &[2, 3]);
 /// let result = unsafe { swap_axes_unchecked(&a, 0, 1) };
@@ -1846,7 +1846,7 @@ pub unsafe fn swap_axes_device_unchecked(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..6, &[2, 3]);
 /// let result = try_swap_axes(&a, 0, 1);
@@ -1882,7 +1882,7 @@ pub fn try_swap_axes_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..6, &[2, 3]);
 /// let result = swap_axes(&a, 0, 1);
@@ -1902,7 +1902,7 @@ pub fn swap_axes_device(a: &Array, axis1: i32, axis2: i32, stream: StreamOrDevic
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3], &[3]);
 /// let y = tile(&x, &[2]);
@@ -1930,7 +1930,7 @@ pub fn tile_device(a: &Array, reps: &[i32], stream: StreamOrDevice) -> Array {
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
 /// let y = transpose(&x, None);
@@ -1963,7 +1963,7 @@ pub unsafe fn transpose_device_unchecked<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
 /// let y = try_transpose(&x, None);
@@ -2028,7 +2028,7 @@ pub fn try_transpose_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx::{prelude::*, ops::*};
+/// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
 /// let y = transpose(&x, None);

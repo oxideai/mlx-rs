@@ -10,7 +10,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::zeros_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
@@ -29,7 +29,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// unsafe { Array::zeros_device_unchecked::<f32>(&[5, 10], StreamOrDevice::default()) };
     /// ```
     ///
@@ -62,7 +62,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::try_zeros_device::<f32>(&[5, 10], StreamOrDevice::default()).unwrap();
     /// ```
     ///
@@ -90,7 +90,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::ones_device::<f32>(&[5, 10], StreamOrDevice::default());
     /// ```
     ///
@@ -109,7 +109,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// unsafe { Array::ones_device_unchecked::<f32>(&[5, 10], StreamOrDevice::default()) };
     /// ```
     ///
@@ -140,7 +140,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::try_ones_device::<f32>(&[5, 10], StreamOrDevice::default()).unwrap();
     /// ```
     ///
@@ -167,7 +167,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::eye_device::<f32>(10, None, None, StreamOrDevice::default());
     /// ```
@@ -193,7 +193,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = unsafe { Array::eye_device_unchecked::<f32>(10, None, None, StreamOrDevice::default()) };
     /// ```
@@ -231,7 +231,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::try_eye_device::<f32>(10, None, None, StreamOrDevice::default()).unwrap();
     /// ```
@@ -268,7 +268,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
     /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default());
     /// ```
@@ -295,7 +295,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
     /// let r = unsafe { Array::full_device_unchecked::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()) };
     /// ```
@@ -334,7 +334,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
     /// let r = Array::try_full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()).unwrap();
     /// ```
@@ -364,7 +364,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::identity_device::<f32>(10, StreamOrDevice::default());
     /// ```
@@ -383,7 +383,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = unsafe { Array::identity_device_unchecked::<f32>(10, StreamOrDevice::default()) };
     /// ```
@@ -408,7 +408,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::try_identity_device::<f32>(10, StreamOrDevice::default()).unwrap();
     /// ```
@@ -429,7 +429,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
     /// let r = Array::linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default());
     /// ```
@@ -459,7 +459,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
     /// let r = unsafe { Array::linspace_device_unchecked::<f32, _>(0, 50, None, StreamOrDevice::default()) };
     /// ```
@@ -504,7 +504,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
     /// let r = Array::try_linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default()).unwrap();
     /// ```
@@ -542,7 +542,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default());
@@ -569,7 +569,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = unsafe { Array::repeat_device_unchecked::<i32>(source, 4, 1, StreamOrDevice::default()) };
@@ -607,7 +607,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::try_repeat_device::<i32>(source, 4, 1, StreamOrDevice::default()).unwrap();
@@ -641,7 +641,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default());
@@ -666,7 +666,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = unsafe { Array::repeat_all_device_unchecked::<i32>(source, 4, StreamOrDevice::default()) };
@@ -701,7 +701,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::try_repeat_all_device::<i32>(source, 4, StreamOrDevice::default()).unwrap();
@@ -733,7 +733,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// // [5, 5] array with the lower triangle filled with 1s
     /// let r = Array::tri_device::<f32>(5, None, None, StreamOrDevice::default());
     /// ```

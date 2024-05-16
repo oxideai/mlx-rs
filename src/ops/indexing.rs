@@ -41,7 +41,7 @@
 //! ```rust
 //! // See the multi-dimensional example code for mlx python https://ml-explore.github.io/mlx/build/html/usage/indexing.html
 //!
-//! use mlx::prelude::*;
+//! use mlx_rs::prelude::*;
 //!
 //! let a = Array::from_iter(0..8, &[2, 2, 2]);
 //!

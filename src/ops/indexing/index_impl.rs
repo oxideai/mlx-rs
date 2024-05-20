@@ -756,14 +756,14 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
-            remaining_indices.extend((0..max_dims).map(|_| ArrayIndexOp::range_full()));
+            remaining_indices.extend((0..max_dims).map(|_| (..).index_op()));
 
             // copy any newAxis in the gatherIndices through.  any slices get
             // copied in as full range (already applied)
             for item in &operations[..=last_array_or_index] {
                 match item {
                     ExpandDims => remaining_indices.push(item.clone()),
-                    Slice { .. } => remaining_indices.push(ArrayIndexOp::range_full()),
+                    Slice { .. } => remaining_indices.push((..).index_op()),
                     _ => {}
                 }
             }
@@ -776,12 +776,12 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
                 match item {
                     TakeIndex { .. } | TakeArray { .. } => break,
                     ExpandDims => remaining_indices.push(item.clone()),
-                    _ => remaining_indices.push(ArrayIndexOp::range_full()),
+                    _ => remaining_indices.push((..).index_op()),
                 }
             }
 
             // handle the trailing gathers
-            remaining_indices.extend((0..max_dims).map(|_| ArrayIndexOp::range_full()));
+            remaining_indices.extend((0..max_dims).map(|_| (..).index_op()));
 
             // and the remaining operations
             remaining_indices.extend(operations[(last_array_or_index + 1)..].iter().cloned());

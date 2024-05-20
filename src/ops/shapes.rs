@@ -503,6 +503,20 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
     try_broadcast_to_device(a, shape, stream).unwrap()
 }
 
+#[default_device]
+pub unsafe fn broadcast_arrays_device_unchecked<'a>(
+    arrays: &[impl AsRef<Array>],
+    stream: StreamOrDevice,
+) -> Vec<Array> {
+    let c_vec = VectorArray::from_iter(arrays.iter());
+
+    unsafe {
+        let result =
+            VectorArray::from_op(|| mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ptr()));
+        result.into_values()
+    }
+}
+
 fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
         let c_arrays = VectorArray::from_iter(arrays.iter());

@@ -60,7 +60,7 @@
 
 use std::{
     borrow::Cow,
-    ops::{Bound, RangeBounds},
+    ops::{Bound, RangeBounds, RangeInclusive},
     rc::Rc,
 };
 
@@ -118,6 +118,16 @@ impl RangeIndex {
             stop,
             stride,
         }
+    }
+
+    pub(crate) fn full() -> Self {
+        RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1))
+    }
+
+    pub(crate) fn is_full(&self) -> bool {
+        matches!(self.start, Bound::Unbounded)
+            && matches!(self.stop, Bound::Unbounded)
+            && self.stride == 1
     }
 
     pub(crate) fn stride(&self) -> i32 {
@@ -224,9 +234,9 @@ impl ArrayIndexOp {
         matches!(self, ArrayIndexOp::TakeArray { .. })
     }
 
-    pub fn range_full() -> Self {
-        ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
-    }
+    // pub fn range_full() -> Self {
+    //     ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
+    // }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -589,7 +599,7 @@ fn expand_ellipsis_operations(ndim: usize, operations: &[ArrayIndexOp]) -> Cow<'
     let suffix = &operations[(ellipsis_pos + 1)..];
     let expand_range =
         count_non_new_axis_operations(prefix)..(ndim - count_non_new_axis_operations(suffix));
-    let expand = expand_range.map(|_| ArrayIndexOp::range_full());
+    let expand = expand_range.map(|_| (..).index_op());
 
     let mut expanded = Vec::with_capacity(ndim);
     expanded.extend_from_slice(prefix);

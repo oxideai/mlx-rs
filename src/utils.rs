@@ -25,6 +25,14 @@ pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     description
 }
 
+pub(crate) fn resolve_index_signed_unchecked(index: i32, len: i32) -> i32 {
+    if index < 0 {
+        len.saturating_add(index)
+    } else {
+        index
+    }
+}
+
 pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
     if index.is_negative() {
         (len as i32 + index) as usize
@@ -192,7 +200,10 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn into_values(self) -> Vec<Array> {
+    pub(crate) fn into_values<T>(self) -> T 
+    where
+        T: FromIterator<Array>,
+    {
         unsafe {
             let size = mlx_sys::mlx_vector_array_size(self.c_vec);
             (0..size)
@@ -200,7 +211,7 @@ impl VectorArray {
                     let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
                     Array::from_ptr(c_array)
                 })
-                .collect()
+                .collect::<T>()
         }
     }
 }

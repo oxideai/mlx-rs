@@ -1,6 +1,7 @@
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::SliceError,
     ops::{
         broadcast_arrays_device_unchecked, broadcast_to_device,
@@ -64,7 +65,7 @@ impl Array {
 
 // See `updateSlice` in the swift binding or `mlx_slice_update` in the python binding
 fn update_slice(
-    src: &Array, // TODO: should this be &mut?
+    src: &Array,
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: StreamOrDevice,
@@ -80,9 +81,9 @@ fn update_slice(
     let mut update = remove_leading_singleton_dimensions(update, stream.clone());
 
     // Build slice update params
-    let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
-    let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
-    let mut strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
+    let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
+    let mut ends: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
+    let mut strides: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![1; ndim];
 
     // If it's just a simple slice, just do a slice update and return
     if operations.len() == 1 {
@@ -116,7 +117,7 @@ fn update_slice(
     }
 
     // Process entries
-    let mut update_expand_dims = Vec::new(); // TODO: pre-allcate
+    let mut update_expand_dims: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::new();
     let mut axis = 0i32;
     for item in operations.iter() {
         use ArrayIndexOp::*;
@@ -169,7 +170,7 @@ fn remove_leading_singleton_dimensions<'a>(
         if new_shape.is_empty() {
             new_shape = vec![1];
         }
-        // TODO: should we use `reshape_device_unchecked`?
+        // TODO: should this be `reshape_device_unchecked`?
         OwnedOrRef::Owned(a.reshape_device(&new_shape, stream))
     } else {
         OwnedOrRef::Ref(a)
@@ -183,9 +184,9 @@ fn scatter_args<'a>(
     update: &Array,
     stream: StreamOrDevice,
 ) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; 4]>,
+    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     Array,
-    SmallVec<[i32; 4]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 ) {
     use ArrayIndexOp::*;
     use OwnedOrRef::*;
@@ -213,9 +214,9 @@ fn scatter_args_index<'a>(
     update: &Array,
     stream: StreamOrDevice,
 ) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; 4]>,
+    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     Array,
-    SmallVec<[i32; 4]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 ) {
     // mlx_scatter_args_index
 
@@ -223,7 +224,7 @@ fn scatter_args_index<'a>(
     // and then broadcast update to shape of src[0, ...]
     let update = remove_leading_singleton_dimensions(update, stream.clone());
 
-    let mut shape: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
+    let mut shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
     shape[0] = 1;
 
     (
@@ -241,9 +242,9 @@ fn scatter_args_array<'a>(
     update: &Array,
     stream: StreamOrDevice,
 ) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; 4]>,
+    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     Array,
-    SmallVec<[i32; 4]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 ) {
     // mlx_scatter_args_array
 
@@ -251,7 +252,7 @@ fn scatter_args_array<'a>(
     let update = remove_leading_singleton_dimensions(update, stream.clone());
 
     // The update shape must broadcast with indices.shape + [1] + src.shape[1:]
-    let mut update_shape: SmallVec<[i32; 4]> = a
+    let mut update_shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = a
         .shape()
         .iter()
         .chain(src.shape().iter().skip(1))
@@ -271,9 +272,9 @@ fn scatter_args_slice<'a>(
     update: &Array,
     stream: StreamOrDevice,
 ) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; 4]>,
+    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     Array,
-    SmallVec<[i32; 4]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 ) {
     use OwnedOrRef::*;
 
@@ -300,12 +301,12 @@ fn scatter_args_slice<'a>(
         let update = remove_leading_singleton_dimensions(&update, stream.clone());
 
         // Broadcast update to slice size
-        let update_broadcast_shape: SmallVec<[i32; 4]> = (1..end - start)
+        let update_broadcast_shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (1..end - start)
             .chain(src.shape().iter().skip(1).cloned())
             .collect();
         let update = broadcast_to_device(&update, &update_broadcast_shape, stream.clone());
 
-        let indices = Array::from_int(start).reshape_device(&[1], stream.clone()); // TODO: is reshape really needed?
+        let indices = Array::from_slice(&[start], &[1]);
         (smallvec![OwnedOrRef::Owned(indices)], update, smallvec![0])
     } else {
         // stride != 1, convert the slice to an array
@@ -322,9 +323,9 @@ fn scatter_args_nd<'a>(
     update: &Array,
     stream: StreamOrDevice,
 ) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; 4]>,
+    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     Array,
-    SmallVec<[i32; 4]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 ) {
     use ArrayIndexOp::*;
 
@@ -399,14 +400,15 @@ fn scatter_args_nd<'a>(
     }
 
     // Go over each index type and translate to the needed scatter args
-    let mut array_indices: Vec<Array> = Vec::new(); // TODO: pre-allocate
+    let mut array_indices: SmallVec<[Array; DEFAULT_STACK_VEC_LEN]> =
+        SmallVec::with_capacity(operations.len());
     let mut slice_number: i32 = 0;
     let mut array_number: i32 = 0;
     let mut axis: i32 = 0;
 
     // We collect the shapes of the slices and updates during this process
     let mut update_shape = vec![1; non_new_axis_operation_count];
-    let mut slice_shapes: Vec<i32> = Vec::new(); // TODO: pre-allocate
+    let mut slice_shapes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::new();
 
     for item in operations.iter() {
         match item {

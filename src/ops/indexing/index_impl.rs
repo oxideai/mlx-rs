@@ -3,6 +3,7 @@ use std::rc::Rc;
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::SliceError,
     ops::indexing::expand_ellipsis_operations,
     utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
@@ -664,9 +665,9 @@ fn get_item_array(src: &Array, indices: &Array, axis: i32, stream: StreamOrDevic
 #[inline]
 fn get_item_slice(src: &Array, range: RangeIndex, stream: StreamOrDevice) -> Array {
     let ndim = src.ndim();
-    let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
-    let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
-    let mut strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
+    let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
+    let mut ends: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
+    let mut strides: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![1; ndim];
 
     let size = ends[0];
     starts[0] = range.start(size);
@@ -802,9 +803,9 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
 
     // Slice handling
     let ndim = src.ndim();
-    let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
-    let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
-    let mut strides: SmallVec<[i32; 4]> = smallvec![1; ndim];
+    let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
+    let mut ends: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
+    let mut strides: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![1; ndim];
     let mut squeeze_needed = false;
     let mut axis = 0;
 
@@ -835,7 +836,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
-        let mut new_shape = SmallVec::<[i32; 4]>::new();
+        let mut new_shape = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::new();
         let mut axis_ = 0;
         for item in remaining_indices {
             match item {

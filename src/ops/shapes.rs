@@ -4,6 +4,7 @@ use mlx_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
@@ -363,7 +364,10 @@ fn axes_or_default_to_all_size_one_axes<'a>(
     }
 }
 
-fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize; 4]> {
+fn resolve_strides(
+    shape: &[i32],
+    strides: Option<&[usize]>,
+) -> SmallVec<[usize; DEFAULT_STACK_VEC_LEN]> {
     match strides {
         Some(strides) => SmallVec::from_slice(strides),
         None => {
@@ -375,7 +379,7 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
                     *acc *= dim as usize;
                     Some(result)
                 })
-                .collect::<SmallVec<[usize; 4]>>();
+                .collect::<SmallVec<[usize; DEFAULT_STACK_VEC_LEN]>>();
             result.into_iter().rev().collect()
         }
     }
@@ -701,7 +705,7 @@ pub fn try_expand_dims_device(
     // Check for valid axes
     // TODO: what is a good default capacity for SmallVec?
     let out_ndim = a.ndim() + axes.len();
-    let mut out_axes = SmallVec::<[i32; 4]>::with_capacity(out_ndim);
+    let mut out_axes = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::with_capacity(out_ndim);
     for axis in axes {
         let resolved_axis = resolve_index(*axis, out_ndim).ok_or(InvalidAxisError {
             axis: *axis,
@@ -1479,14 +1483,14 @@ impl<'a, const N: usize> From<&'a [(i32, i32); N]> for PadWidth<'a> {
 }
 
 impl<'a> PadWidth<'a> {
-    fn low_pads(&self, ndim: usize) -> SmallVec<[i32; 4]> {
+    fn low_pads(&self, ndim: usize) -> SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> {
         match self {
             PadWidth::Same((low, _high)) => (0..ndim).map(|_| *low).collect(),
             PadWidth::Widths(widths) => widths.iter().map(|(low, _high)| *low).collect(),
         }
     }
 
-    fn high_pads(&self, ndim: usize) -> SmallVec<[i32; 4]> {
+    fn high_pads(&self, ndim: usize) -> SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> {
         match self {
             PadWidth::Same((_low, high)) => (0..ndim).map(|_| *high).collect(),
             PadWidth::Widths(widths) => widths.iter().map(|(_low, high)| *high).collect(),
@@ -1526,7 +1530,7 @@ pub unsafe fn pad_device_unchecked<'a>(
 ) -> Array {
     let width = width.into();
     let ndim = array.ndim();
-    let axes: SmallVec<[i32; 4]> = (0..ndim).map(|i| i as i32).collect();
+    let axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (0..ndim).map(|i| i as i32).collect();
     let low_pads = width.low_pads(ndim);
     let high_pads = width.high_pads(ndim);
     let value = value
@@ -1577,7 +1581,7 @@ pub fn try_pad_device<'a>(
 ) -> Result<Array, PadError> {
     let width = width.into();
     let ndim = array.ndim();
-    let axes: SmallVec<[i32; 4]> = (0..ndim).map(|i| i as i32).collect();
+    let axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (0..ndim).map(|i| i as i32).collect();
     let low_pads = width.low_pads(ndim);
     let high_pads = width.high_pads(ndim);
     let value = value

@@ -201,7 +201,7 @@ pub unsafe fn rfftn_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    rfftn_device_inner(a, &valid_s, &valid_axes, stream)
+    rfftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), stream)
 }
 
 /// n-dimensional real discrete Fourier Transform.

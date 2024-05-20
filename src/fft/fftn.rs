@@ -181,7 +181,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    fftn_device_inner(a, &valid_s, &valid_axes, stream)
+    fftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), stream)
 }
 
 /// n-dimensional discrete Fourier Transform.
@@ -401,7 +401,7 @@ pub unsafe fn ifftn_device_unchecked<'a>(
     stream: StreamOrDevice,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    ifftn_device_inner(a, &valid_s, &valid_axes, stream)
+    ifftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), stream)
 }
 
 /// n-dimensional inverse discrete Fourier Transform.

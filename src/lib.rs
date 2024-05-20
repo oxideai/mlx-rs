@@ -28,6 +28,11 @@ pub mod prelude {
     };
 }
 
+pub(crate) mod constants {
+    /// The default length of the stack-allocated vector in `SmallVec<[T; DEFAULT_STACK_VEC_LEN]>`
+    pub(crate) const DEFAULT_STACK_VEC_LEN: usize = 4;
+}
+
 pub(crate) mod sealed {
     /// A marker trait to prevent external implementations of the `Sealed` trait.
     pub trait Sealed {}

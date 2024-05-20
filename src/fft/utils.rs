@@ -1,6 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::{FftError, InvalidAxisError},
     utils::{all_unique, resolve_index, resolve_index_unchecked},
     Array,
@@ -50,15 +51,18 @@ pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
     a: &'a Array,
     s: Option<&'a [i32]>,
     axes: Option<&'a [i32]>,
-) -> (SmallVec<[i32; 4]>, SmallVec<[i32; 4]>) {
+) -> (
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
+    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
+) {
     match (s, axes) {
         (Some(s), Some(axes)) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
+            let valid_s = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(s);
+            let valid_axes = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(axes);
             (valid_s, valid_axes)
         }
         (Some(s), None) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
+            let valid_s = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(s);
             let valid_axes = (-(valid_s.len() as i32)..0).collect();
             (valid_s, valid_axes)
         }
@@ -70,11 +74,12 @@ pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
                     a.shape()[axis_index]
                 })
                 .collect();
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
+            let valid_axes = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(axes);
             (valid_s, valid_axes)
         }
         (None, None) => {
-            let valid_s: SmallVec<[i32; 4]> = (0..a.ndim()).map(|axis| a.shape()[axis]).collect();
+            let valid_s: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> =
+                (0..a.ndim()).map(|axis| a.shape()[axis]).collect();
             let valid_axes = (-(valid_s.len() as i32)..0).collect();
             (valid_s, valid_axes)
         }
@@ -89,25 +94,31 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
     a: &'a Array,
     s: Option<&'a [i32]>,
     axes: Option<&'a [i32]>,
-) -> Result<(SmallVec<[i32; 4]>, SmallVec<[i32; 4]>), FftError> {
+) -> Result<
+    (
+        SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
+        SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
+    ),
+    FftError,
+> {
     if a.ndim() < 1 {
         return Err(FftError::ScalarArray);
     }
 
     let (valid_s, valid_axes) = match (s, axes) {
         (Some(s), Some(axes)) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
+            let valid_s = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(s);
+            let valid_axes = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(axes);
             (valid_s, valid_axes)
         }
         (Some(s), None) => {
-            let valid_s = SmallVec::<[i32; 4]>::from_slice(s);
+            let valid_s = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(s);
             let valid_axes = (-(valid_s.len() as i32)..0).collect();
             (valid_s, valid_axes)
         }
         (None, Some(axes)) => {
             // SmallVec somehow doesn't implement FromIterator with result
-            let mut valid_s = SmallVec::<[i32; 4]>::new();
+            let mut valid_s = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::new();
             for &axis in axes {
                 let axis_index = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
                     axis,
@@ -115,11 +126,12 @@ pub(super) fn try_resolve_sizes_and_axes<'a>(
                 })?;
                 valid_s.push(a.shape()[axis_index]);
             }
-            let valid_axes = SmallVec::<[i32; 4]>::from_slice(axes);
+            let valid_axes = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::from_slice(axes);
             (valid_s, valid_axes)
         }
         (None, None) => {
-            let valid_s: SmallVec<[i32; 4]> = (0..a.ndim()).map(|axis| a.shape()[axis]).collect();
+            let valid_s: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> =
+                (0..a.ndim()).map(|axis| a.shape()[axis]).collect();
             let valid_axes = (-(valid_s.len() as i32)..0).collect();
             (valid_s, valid_axes)
         }

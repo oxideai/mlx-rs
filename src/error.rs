@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::Dtype;
 use thiserror::Error;
 
@@ -169,8 +171,17 @@ pub enum TransposeError {
 #[derive(Debug, Error)]
 #[error("Cannot broadcast array of shape {src_shape:?} into shape {dst_shape:?}")]
 pub struct BroadcastError<'a> {
-    pub src_shape: &'a [i32],
-    pub dst_shape: &'a [i32],
+    pub src_shape: Cow<'a, [i32]>,
+    pub dst_shape: Cow<'a, [i32]>,
+}
+
+impl<'a> BroadcastError<'a> {
+    pub fn into_owned(self) -> BroadcastError<'static> {
+        BroadcastError {
+            src_shape: Cow::Owned(self.src_shape.into_owned()),
+            dst_shape: Cow::Owned(self.dst_shape.into_owned()),
+        }
+    }
 }
 
 #[derive(Debug, Error)]

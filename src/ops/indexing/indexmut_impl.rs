@@ -195,13 +195,11 @@ fn scatter_args<'a>(
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
             TakeArray { indices } => scatter_args_array(src, Ref(indices), update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
-            ExpandDims => {
-                ScatterArgs {
-                    indices: smallvec![],
-                    update: broadcast_to_device(update, src.shape(), stream.clone()),
-                    axes: smallvec![],
-                }
-            }
+            ExpandDims => ScatterArgs {
+                indices: smallvec![],
+                update: broadcast_to_device(update, src.shape(), stream.clone()),
+                axes: smallvec![],
+            },
             Ellipsis => panic!("Unable to update array with ellipsis argument"),
         };
     }

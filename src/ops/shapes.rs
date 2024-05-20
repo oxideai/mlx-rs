@@ -9,7 +9,9 @@ use crate::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
-    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, VectorArray},
+    utils::{
+        all_unique, broadcast_shapes, is_broadcastable, is_same_shape, resolve_index, VectorArray,
+    },
     Array, StreamOrDevice,
 };
 
@@ -476,8 +478,8 @@ pub fn try_broadcast_to_device<'a>(
 ) -> Result<Array, BroadcastError<'a>> {
     if !is_broadcastable(a.shape(), shape) {
         return Err(BroadcastError {
-            src_shape: a.shape(),
-            dst_shape: shape,
+            src_shape: Cow::Borrowed(a.shape()),
+            dst_shape: Cow::Borrowed(shape),
         });
     }
     unsafe { Ok(broadcast_to_device_unchecked(a, shape, stream)) }
@@ -509,6 +511,10 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
 
 /// Broadcast a vector of arrays against one another.
 ///
+/// # Params
+///
+/// - `arrays`: The arrays to broadcast.
+///
 /// # Safety
 ///
 /// The function is unsafe because it does not check if the arguments are valid.
@@ -524,6 +530,35 @@ pub unsafe fn broadcast_arrays_device_unchecked(
             VectorArray::from_op(|| mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ptr()));
         result.into_values()
     }
+}
+
+/// Broadcast a vector of arrays against one another. Returns an error if the shapes are
+/// broadcastable.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to broadcast.
+#[default_device]
+pub fn try_broadcast_arrays_device(
+    arrays: &[impl AsRef<Array>],
+    stream: StreamOrDevice,
+) -> Result<Vec<Array>, BroadcastError> {
+    let mut shapes = Vec::new();
+    for arr in arrays.iter() {
+        shapes = broadcast_shapes(&shapes, arr.as_ref().shape()).map_err(|e| e.into_owned())?;
+    }
+
+    unsafe { Ok(broadcast_arrays_device_unchecked(arrays, stream)) }
+}
+
+/// Broadcast a vector of arrays against one another. Panics if the shapes are not broadcastable.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to broadcast.
+#[default_device]
+pub fn broadcast_arrays_device(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Vec<Array> {
+    try_broadcast_arrays_device(arrays, stream).unwrap()
 }
 
 fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {

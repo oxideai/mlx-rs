@@ -1,8 +1,9 @@
+use std::borrow::Cow;
 use std::os::raw::c_void;
 
 use mlx_sys::mlx_vector_array;
 
-use crate::error::{OperationError, ReshapeError};
+use crate::error::{BroadcastError, OperationError, ReshapeError};
 use crate::Array;
 
 /// Helper method to get a string representation of an mlx object.
@@ -94,6 +95,41 @@ pub(crate) fn is_broadcastable(a: &[i32], b: &[i32]) -> bool {
         .rev()
         .zip(b.iter().rev())
         .all(|(a, b)| *a == 1 || *b == 1 || a == b)
+}
+
+/// See `broadcast_shapes` in the `mlx/utils.cpp`
+pub(crate) fn broadcast_shapes<'a>(
+    s1: &'a [i32],
+    s2: &'a [i32],
+) -> Result<Vec<i32>, BroadcastError<'a>> {
+    let ndim1 = s1.len();
+    let ndim2 = s2.len();
+    let ndim = ndim1.max(ndim2);
+    let abs_diff = (ndim1 as i32 - ndim2 as i32).abs();
+    let (big, small) = if ndim1 > ndim2 { (s1, s2) } else { (s2, s1) };
+    let mut out_shape = vec![0; ndim];
+    for i in (abs_diff as usize..ndim).rev() {
+        let a = big[i];
+        let i_sub_diff = i as i32 - abs_diff;
+        let resolved_i_sub_diff = resolve_index_unchecked(i_sub_diff, ndim);
+        let b = small[resolved_i_sub_diff];
+        if b == a {
+            out_shape[i] = a;
+        } else if a == 1 || b == 1 {
+            out_shape[i] = a * b;
+        } else {
+            return Err(BroadcastError {
+                src_shape: Cow::Borrowed(s1),
+                dst_shape: Cow::Borrowed(s2),
+            });
+        }
+    }
+
+    for i in (0..abs_diff as usize).rev() {
+        out_shape[i] = big[i];
+    }
+
+    Ok(out_shape)
 }
 
 pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), OperationError> {

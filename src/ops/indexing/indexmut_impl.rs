@@ -160,10 +160,7 @@ fn update_slice(
 }
 
 // See `leadingSingletonDimensionsRemoved` in the swift binding
-fn remove_leading_singleton_dimensions<'a>(
-    a: &'a Array,
-    stream: StreamOrDevice,
-) -> OwnedOrRef<'a, Array> {
+fn remove_leading_singleton_dimensions(a: &Array, stream: StreamOrDevice) -> OwnedOrRef<'_, Array> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
@@ -177,17 +174,19 @@ fn remove_leading_singleton_dimensions<'a>(
     }
 }
 
+struct ScatterArgs<'a> {
+    indices: SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
+    update: Array,
+    axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
+}
+
 /// See `scatterArguments` in the swift binding
 fn scatter_args<'a>(
     src: &Array,
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: StreamOrDevice,
-) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
-    Array,
-    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
-) {
+) -> ScatterArgs<'a> {
     use ArrayIndexOp::*;
     use OwnedOrRef::*;
 
@@ -196,11 +195,13 @@ fn scatter_args<'a>(
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
             TakeArray { indices } => scatter_args_array(src, Ref(indices), update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
-            ExpandDims => (
-                smallvec![],
-                broadcast_to_device(&update, src.shape(), stream.clone()),
-                smallvec![],
-            ),
+            ExpandDims => {
+                ScatterArgs {
+                    indices: smallvec![],
+                    update: broadcast_to_device(update, src.shape(), stream.clone()),
+                    axes: smallvec![],
+                }
+            }
             Ellipsis => panic!("Unable to update array with ellipsis argument"),
         };
     }
@@ -213,11 +214,7 @@ fn scatter_args_index<'a>(
     index: i32,
     update: &Array,
     stream: StreamOrDevice,
-) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
-    Array,
-    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
-) {
+) -> ScatterArgs<'a> {
     // mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
@@ -227,13 +224,13 @@ fn scatter_args_index<'a>(
     let mut shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
     shape[0] = 1;
 
-    (
-        smallvec![OwnedOrRef::Owned(Array::from_int(
+    ScatterArgs {
+        indices: smallvec![OwnedOrRef::Owned(Array::from_int(
             resolve_index_signed_unchecked(index, src.dim(0))
         ))],
-        broadcast_to_device(&update, &shape, stream.clone()),
-        smallvec![0],
-    )
+        update: broadcast_to_device(&update, &shape, stream.clone()),
+        axes: smallvec![0],
+    }
 }
 
 fn scatter_args_array<'a>(
@@ -241,11 +238,7 @@ fn scatter_args_array<'a>(
     a: OwnedOrRef<'a, Array>,
     update: &Array,
     stream: StreamOrDevice,
-) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
-    Array,
-    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
-) {
+) -> ScatterArgs<'a> {
     // mlx_scatter_args_array
 
     // trim leading singleton dimensions
@@ -263,7 +256,11 @@ fn scatter_args_array<'a>(
     update_shape.insert(a.ndim(), 1);
     let update = update.reshape_device(&update_shape, stream.clone());
 
-    (smallvec![a], update, smallvec![0])
+    ScatterArgs {
+        indices: smallvec![a],
+        update,
+        axes: smallvec![0],
+    }
 }
 
 fn scatter_args_slice<'a>(
@@ -271,24 +268,20 @@ fn scatter_args_slice<'a>(
     range_index: &'a RangeIndex,
     update: &Array,
     stream: StreamOrDevice,
-) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
-    Array,
-    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
-) {
+) -> ScatterArgs<'a> {
     use OwnedOrRef::*;
 
     // mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
     if range_index.is_full() {
-        let update = remove_leading_singleton_dimensions(&update, stream.clone());
+        let update = remove_leading_singleton_dimensions(update, stream.clone());
 
-        return (
-            smallvec![],
-            broadcast_to_device(&update, src.shape(), stream.clone()),
-            smallvec![],
-        );
+        return ScatterArgs {
+            indices: smallvec![],
+            update: broadcast_to_device(&update, src.shape(), stream.clone()),
+            axes: smallvec![],
+        };
     }
 
     let size = src.dim(0);
@@ -298,7 +291,7 @@ fn scatter_args_slice<'a>(
 
     // If simple stride
     if stride == 1 {
-        let update = remove_leading_singleton_dimensions(&update, stream.clone());
+        let update = remove_leading_singleton_dimensions(update, stream.clone());
 
         // Broadcast update to slice size
         let update_broadcast_shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (1..end - start)
@@ -307,7 +300,11 @@ fn scatter_args_slice<'a>(
         let update = broadcast_to_device(&update, &update_broadcast_shape, stream.clone());
 
         let indices = Array::from_slice(&[start], &[1]);
-        (smallvec![OwnedOrRef::Owned(indices)], update, smallvec![0])
+        ScatterArgs {
+            indices: smallvec![Owned(indices)],
+            update,
+            axes: smallvec![0],
+        }
     } else {
         // stride != 1, convert the slice to an array
         let a_vals = strided_range_to_vec(start, end, stride);
@@ -322,11 +319,7 @@ fn scatter_args_nd<'a>(
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: StreamOrDevice,
-) -> (
-    SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
-    Array,
-    SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
-) {
+) -> ScatterArgs<'a> {
     use ArrayIndexOp::*;
 
     // mlx_scatter_args_nd
@@ -334,16 +327,16 @@ fn scatter_args_nd<'a>(
     let shape = src.shape();
 
     let operations = expand_ellipsis_operations(src.ndim(), operations);
-    let update = remove_leading_singleton_dimensions(&update, stream.clone());
+    let update = remove_leading_singleton_dimensions(update, stream.clone());
 
     // If no non-newAxis indices return the broadcasted update
     let non_new_axis_operation_count = count_non_new_axis_operations(&operations);
     if non_new_axis_operation_count == 0 {
-        return (
-            smallvec![],
-            broadcast_to_device(&update, shape, stream.clone()),
-            smallvec![],
-        );
+        return ScatterArgs {
+            indices: smallvec![],
+            update: broadcast_to_device(&update, shape, stream.clone()),
+            axes: smallvec![],
+        };
     }
 
     // Analyse the types of the indices
@@ -511,14 +504,12 @@ fn scatter_args_nd<'a>(
     let update = update.reshape_device(&update_reshape, stream.clone());
 
     let array_indices_len = array_indices.len();
-    (
-        array_indices
-            .into_iter()
-            .map(|i| OwnedOrRef::Owned(i))
-            .collect(),
+
+    ScatterArgs {
+        indices: array_indices.into_iter().map(OwnedOrRef::Owned).collect(),
         update,
-        (0..array_indices_len as i32).collect(),
-    )
+        axes: (0..array_indices_len as i32).collect(),
+    }
 }
 
 fn strided_range_to_vec(start: i32, exclusive_end: i32, stride: i32) -> Vec<i32> {
@@ -572,15 +563,19 @@ impl Array {
         update: &Array,
         stream: StreamOrDevice,
     ) {
-        if let Some(result) = update_slice(&self, &operations, update, stream.clone()) {
+        if let Some(result) = update_slice(self, operations, update, stream.clone()) {
             *self = result;
             return;
         }
 
-        let (indices, update, axes) = scatter_args(self, &operations, update, stream.clone());
+        let ScatterArgs {
+            indices,
+            update,
+            axes,
+        } = scatter_args(self, operations, update, stream.clone());
         if !indices.is_empty() {
             let result =
-                unsafe { scatter_device_unchecked(&self, &indices, &update, &axes, stream) };
+                unsafe { scatter_device_unchecked(self, &indices, &update, &axes, stream) };
             *self = result;
         } else {
             *self = update;

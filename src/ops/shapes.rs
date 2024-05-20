@@ -507,8 +507,13 @@ pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrD
     try_broadcast_to_device(a, shape, stream).unwrap()
 }
 
+/// Broadcast a vector of arrays against one another.
+///
+/// # Safety
+///
+/// The function is unsafe because it does not check if the arguments are valid.
 #[default_device]
-pub unsafe fn broadcast_arrays_device_unchecked<'a>(
+pub unsafe fn broadcast_arrays_device_unchecked(
     arrays: &[impl AsRef<Array>],
     stream: StreamOrDevice,
 ) -> Vec<Array> {

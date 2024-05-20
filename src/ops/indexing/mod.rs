@@ -2,7 +2,11 @@
 //!
 //! # Overview
 //!
-//! The following types can be used for indexing:
+//! Due to limitations in the `std::ops::Index` and `std::ops::IndexMut` traits (only references can
+//! be returned), the indexing is achieved with the [`IndexOp`] and [`IndexMutOp`] traits where
+//! arrays can be indexed with [`IndexOp::index()`] and [`IndexMutOp::index_mut()`] respectively.
+//!
+//! The following types can be used as indices:
 //!
 //! | Type | Description |
 //! |------|-------------|
@@ -49,13 +53,47 @@
 //! let mut s1 = a.index((.., .., 0));
 //!
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
-//! // TODO: assert_eq!(s1, expected);
+//! assert_eq!(s1, expected);
 //!
 //! // a[..., 0]
 //! let mut s2 = a.index((Ellipsis, 0));
 //!
 //! let expected = Array::from_slice(&[0, 2, 4, 6], &[2, 2]);
-//! // TODO: assert_eq!(s1, expected);
+//! assert_eq!(s1, expected);
+//! ```
+//!
+//! # Set values with indexing
+//!
+//! The same indexing operations (single or multiple) can be used to set values in an array using
+//! the [`IndexMutOp`] trait.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use mlx_rs::prelude::*;
+//!
+//! let mut a = Array::from_slice(&[1, 2, 3], &[3]);
+//! a.index_mut(2, Array::from_int(0));
+//!
+//! let expected = Array::from_slice(&[1, 2, 0], &[3]);
+//! assert_eq!(a, expected);
+//! ```
+//!
+//! ```rust
+//! use mlx_rs::prelude::*;
+//!
+//! let mut a = Array::from_iter(0i32..20, &[2, 2, 5]);
+//!
+//! // writing using slices -- this ends up covering two elements
+//! a.index_mut((0..1, 1..2, 2..4), Array::from_int(88));
+//!
+//! let expected = Array::from_slice(
+//!     &[
+//!         0, 1, 2, 3, 4, 5, 6, 88, 88, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+//!     ],
+//!     &[2, 2, 5],
+//! );
+//! assert_eq!(a, expected);
 //! ```
 
 use std::{

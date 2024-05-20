@@ -60,7 +60,7 @@
 
 use std::{
     borrow::Cow,
-    ops::{Bound, RangeBounds, RangeInclusive},
+    ops::{Bound, RangeBounds},
     rc::Rc,
 };
 
@@ -118,10 +118,6 @@ impl RangeIndex {
             stop,
             stride,
         }
-    }
-
-    pub(crate) fn full() -> Self {
-        RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1))
     }
 
     pub(crate) fn is_full(&self) -> bool {

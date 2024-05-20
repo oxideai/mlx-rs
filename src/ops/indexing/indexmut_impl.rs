@@ -1,18 +1,16 @@
-use std::rc::Rc;
-
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
     error::SliceError,
     ops::{
         broadcast_arrays_device_unchecked, broadcast_to_device,
-        indexing::{count_non_new_axis_operations, expand_ellipsis_operations, IntoStrideBy},
+        indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
     },
-    utils::{resolve_index_signed_unchecked, OwnedOrRef},
+    utils::{resolve_index_signed_unchecked, OwnedOrRef, VectorArray},
     Array, StreamOrDevice,
 };
 
-use super::{ArrayIndexOp, RangeIndex};
+use super::{ArrayIndex, ArrayIndexOp, IndexMutOp, RangeIndex};
 
 impl Array {
     pub(crate) unsafe fn slice_update_device_unchecked(
@@ -180,7 +178,7 @@ fn remove_leading_singleton_dimensions<'a>(
 
 /// See `scatterArguments` in the swift binding
 fn scatter_args<'a>(
-    src: &'a Array,
+    src: &Array,
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: StreamOrDevice,
@@ -210,7 +208,7 @@ fn scatter_args<'a>(
 }
 
 fn scatter_args_index<'a>(
-    src: &'a Array,
+    src: &Array,
     index: i32,
     update: &Array,
     stream: StreamOrDevice,
@@ -238,7 +236,7 @@ fn scatter_args_index<'a>(
 }
 
 fn scatter_args_array<'a>(
-    src: &'a Array,
+    src: &Array,
     a: OwnedOrRef<'a, Array>,
     update: &Array,
     stream: StreamOrDevice,
@@ -268,7 +266,7 @@ fn scatter_args_array<'a>(
 }
 
 fn scatter_args_slice<'a>(
-    src: &'a Array,
+    src: &Array,
     range_index: &'a RangeIndex,
     update: &Array,
     stream: StreamOrDevice,
@@ -319,7 +317,7 @@ fn scatter_args_slice<'a>(
 }
 
 fn scatter_args_nd<'a>(
-    src: &'a Array,
+    src: &Array,
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: StreamOrDevice,
@@ -542,4 +540,562 @@ fn strided_range_to_vec(start: i32, end: i32, stride: i32) -> Vec<i32> {
     }
 
     vec
+}
+
+unsafe fn scatter_device_unchecked(
+    a: &Array,
+    indices: &[impl AsRef<Array>],
+    updates: &Array,
+    axes: &[i32],
+    stream: StreamOrDevice,
+) -> Array {
+    let indices_vector = VectorArray::from_iter(indices.iter());
+
+    unsafe {
+        let result = mlx_sys::mlx_scatter(
+            a.as_ptr(),
+            indices_vector.as_ptr(),
+            updates.as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ptr(),
+        );
+        Array::from_ptr(result)
+    }
+}
+
+impl Array {
+    fn index_mut_device_inner(
+        &mut self,
+        operations: &[ArrayIndexOp],
+        update: &Array,
+        stream: StreamOrDevice,
+    ) {
+        if let Some(result) = update_slice(&self, &operations, update, stream.clone()) {
+            *self = result;
+            return;
+        }
+
+        let (indices, update, axes) = scatter_args(self, &operations, update, stream.clone());
+        if !indices.is_empty() {
+            let result =
+                unsafe { scatter_device_unchecked(&self, &indices, &update, &axes, stream) };
+            *self = result;
+        } else {
+            *self = update;
+        }
+    }
+}
+
+impl<A, Val> IndexMutOp<A, Val> for Array
+where
+    A: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: A, val: Val, stream: StreamOrDevice) {
+        let operations = [i.index_op()];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, Val> IndexMutOp<(A,), Val> for Array
+where
+    A: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, (i,): (A,), val: Val, stream: StreamOrDevice) {
+        let operations = [i.index_op()];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, Val> IndexMutOp<(A, B), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B), val: Val, stream: StreamOrDevice) {
+        let operations = [i.0.index_op(), i.1.index_op()];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, Val> IndexMutOp<(A, B, C), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C), val: Val, stream: StreamOrDevice) {
+        let operations = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, Val> IndexMutOp<(A, B, C, D), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C, D), val: Val, stream: StreamOrDevice) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, Val> IndexMutOp<(A, B, C, D, E), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C, D, E), val: Val, stream: StreamOrDevice) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, Val> IndexMutOp<(A, B, C, D, E, F), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C, D, E, F), val: Val, stream: StreamOrDevice) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, Val> IndexMutOp<(A, B, C, D, E, F, G), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C, D, E, F, G), val: Val, stream: StreamOrDevice) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, Val> IndexMutOp<(A, B, C, D, E, F, G, H), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(&mut self, i: (A, B, C, D, E, F, G, H), val: Val, stream: StreamOrDevice) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K), Val>
+    for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L), Val>
+    for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+    O: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+            i.14.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P), Val> for Array
+where
+    A: ArrayIndex,
+    B: ArrayIndex,
+    C: ArrayIndex,
+    D: ArrayIndex,
+    E: ArrayIndex,
+    F: ArrayIndex,
+    G: ArrayIndex,
+    H: ArrayIndex,
+    I: ArrayIndex,
+    J: ArrayIndex,
+    K: ArrayIndex,
+    L: ArrayIndex,
+    M: ArrayIndex,
+    N: ArrayIndex,
+    O: ArrayIndex,
+    P: ArrayIndex,
+    Val: AsRef<Array>,
+{
+    fn index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
+        val: Val,
+        stream: StreamOrDevice,
+    ) {
+        let operations = [
+            i.0.index_op(),
+            i.1.index_op(),
+            i.2.index_op(),
+            i.3.index_op(),
+            i.4.index_op(),
+            i.5.index_op(),
+            i.6.index_op(),
+            i.7.index_op(),
+            i.8.index_op(),
+            i.9.index_op(),
+            i.10.index_op(),
+            i.11.index_op(),
+            i.12.index_op(),
+            i.13.index_op(),
+            i.14.index_op(),
+            i.15.index_op(),
+        ];
+        let update = val.as_ref();
+        self.index_mut_device_inner(&operations, update, stream);
+    }
 }

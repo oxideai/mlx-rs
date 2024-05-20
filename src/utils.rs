@@ -200,7 +200,7 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn into_values<T>(self) -> T 
+    pub(crate) fn into_values<T>(self) -> T
     where
         T: FromIterator<Array>,
     {

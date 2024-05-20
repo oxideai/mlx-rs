@@ -870,15 +870,6 @@ mod tests {
 
     use super::*;
 
-    /// See `assertEqual` in the swift binding tests
-    macro_rules! assert_array_all_close {
-        ($a:tt, $b:tt) => {
-            let _b: Array = $b.into();
-            let mut assert = $a.all_close(&_b, None, None, None);
-            assert!(assert.item::<bool>());
-        };
-    }
-
     #[test]
     fn test_array_index_negative_int() {
         let a = Array::from_iter(0i32..8, &[8]);

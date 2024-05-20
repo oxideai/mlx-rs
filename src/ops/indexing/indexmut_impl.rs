@@ -1099,3 +1099,18 @@ where
         self.index_mut_device_inner(&operations, update, stream);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_array_mutate_single_index() {
+        use crate::prelude::*;
+
+        let mut a = Array::from_iter(0i32..12, &[3, 4]);
+        let new_value = Array::from_int(77);
+        a.index_mut(1, new_value);
+
+        let expected = Array::from_slice(&[0, 1, 2, 3, 77, 77, 77, 77, 8, 9, 10, 11], &[3, 4]);
+        assert_array_all_close!(a, expected);
+    }
+}

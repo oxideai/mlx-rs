@@ -1,6 +1,10 @@
 #![deny(unused_unsafe, missing_debug_implementations)]
 #![cfg_attr(test, allow(clippy::approx_constant))]
 
+#[macro_use]
+#[allow(unused_macros)]
+mod macros;
+
 mod array;
 mod device;
 mod dtype;
@@ -20,7 +24,7 @@ pub mod prelude {
     pub use crate::{
         array::Array,
         dtype::Dtype,
-        ops::indexing::{Ellipsis, IndexOp, IntoStrideBy, NewAxis},
+        ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
     };
 }

@@ -167,7 +167,6 @@ fn remove_leading_singleton_dimensions(a: &Array, stream: StreamOrDevice) -> Own
         if new_shape.is_empty() {
             new_shape = vec![1];
         }
-        // TODO: should this be `reshape_device_unchecked`?
         OwnedOrRef::Owned(a.reshape_device(&new_shape, stream))
     } else {
         OwnedOrRef::Ref(a)

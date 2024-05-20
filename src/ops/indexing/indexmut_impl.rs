@@ -146,7 +146,7 @@ fn update_slice(
                 strides[axis as usize] = range_index.stride();
                 axis = axis.saturating_add(1);
             }
-            ExpandDims => break,
+            ExpandDims => {}
             Ellipsis | TakeArray { indices: _ } => panic!("unexpected item in operations"),
         }
     }
@@ -361,7 +361,6 @@ fn scatter_args_nd<'a>(
         match item {
             TakeIndex { index: _ } => {
                 // ignore
-                break;
             }
             Slice(range_index) => {
                 have_non_array = have_array;
@@ -520,20 +519,20 @@ fn scatter_args_nd<'a>(
     )
 }
 
-fn strided_range_to_vec(start: i32, end: i32, stride: i32) -> Vec<i32> {
-    let estimated_capacity = (end - start).abs() / stride.abs();
+fn strided_range_to_vec(start: i32, exclusive_end: i32, stride: i32) -> Vec<i32> {
+    let estimated_capacity = (exclusive_end - start).abs() / stride.abs();
     let mut vec = Vec::with_capacity(estimated_capacity as usize);
     let mut current = start;
 
     assert_ne!(stride, 0, "Stride cannot be zero");
 
     if stride.is_negative() {
-        while current >= end {
+        while current > exclusive_end {
             vec.push(current);
             current += stride;
         }
     } else {
-        while current <= end {
+        while current < exclusive_end {
             vec.push(current);
             current += stride;
         }
@@ -1100,17 +1099,205 @@ where
     }
 }
 
+/// The unit tests below are adapted from the Swift binding tests
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
+    use crate::{ops::indexing::ArrayIndex, prelude::*};
+
     #[test]
     fn test_array_mutate_single_index() {
-        use crate::prelude::*;
-
         let mut a = Array::from_iter(0i32..12, &[3, 4]);
         let new_value = Array::from_int(77);
         a.index_mut(1, new_value);
 
         let expected = Array::from_slice(&[0, 1, 2, 3, 77, 77, 77, 77, 8, 9, 10, 11], &[3, 4]);
         assert_array_all_close!(a, expected);
+    }
+
+    #[test]
+    fn test_array_mutate_broadcast_multi_index() {
+        let mut a = Array::from_iter(0i32..20, &[2, 2, 5]);
+
+        // broadcast to a row
+        a.index_mut((1, 0), Array::from_int(77));
+
+        // assign to a row
+        a.index_mut((0, 0), Array::from_slice(&[55i32, 66, 77, 88, 99], &[5]));
+
+        // single element
+        a.index_mut((0, 1, 3), Array::from_int(123));
+
+        let expected = Array::from_slice(
+            &[
+                55, 66, 77, 88, 99, 5, 6, 7, 123, 9, 77, 77, 77, 77, 77, 15, 16, 17, 18, 19,
+            ],
+            &[2, 2, 5],
+        );
+        assert_array_all_close!(a, expected);
+    }
+
+    #[test]
+    fn test_array_mutate_broadcast_slice() {
+        let mut a = Array::from_iter(0i32..20, &[2, 2, 5]);
+
+        // writing using slices -- this ends up covering two elements
+        a.index_mut((0..1, 1..2, 2..4), Array::from_int(88));
+
+        let expected = Array::from_slice(
+            &[
+                0, 1, 2, 3, 4, 5, 6, 88, 88, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            ],
+            &[2, 2, 5],
+        );
+        assert_array_all_close!(a, expected);
+    }
+
+    #[test]
+    fn test_array_mutate_advanced() {
+        let mut a = Array::from_iter(0i32..35, &[5, 7]);
+
+        let i1 = Array::from_slice(&[0, 2, 4], &[3]);
+        let i2 = Array::from_slice(&[0, 1, 2], &[3]);
+
+        a.index_mut((i1, i2), Array::from_slice(&[100, 200, 300], &[3]));
+
+        assert_eq!(a.index((0, 0)).item::<i32>(), 100i32);
+        assert_eq!(a.index((2, 1)).item::<i32>(), 200i32);
+        assert_eq!(a.index((4, 2)).item::<i32>(), 300i32);
+    }
+
+    #[test]
+    fn test_full_index_write_single() {
+        fn check(index: impl ArrayIndex, expected_sum: i32) {
+            let mut a = Array::from_iter(0..60, &[3, 4, 5]);
+
+            a.index_mut(index, Array::from_int(1));
+            let sum = a.sum(None, None).item::<i32>();
+            assert_eq!(sum, expected_sum);
+        }
+
+        // a[...]
+        // not valid
+
+        // a[None]
+        check(NewAxis, 60);
+
+        // a[0]
+        check(0, 1600);
+
+        // a[1:3]
+        check(1..3, 230);
+
+        // i = mx.array([2, 1])
+        let i = Array::from_slice(&[2, 1], &[2]);
+
+        // a[i]
+        check(i, 230);
+    }
+
+    #[test]
+    fn test_full_index_write_no_array() {
+        macro_rules! check {
+            (($( $i:expr ),*), $sum:expr ) => {
+                {
+                    let mut a = Array::from_iter(0..360, &[2, 3, 4, 5, 3]);
+
+                    a.index_mut(($($i),*), Array::from_int(1));
+                    let sum = a.sum(None, None).item::<i32>();
+                    assert_eq!(sum, $sum);
+                }
+            };
+        }
+
+        // a[..., 0] = 1
+        check!((Ellipsis, 0), 43320);
+
+        // a[0, ...] = 1
+        check!((0, Ellipsis), 48690);
+
+        // a[0, ..., 0] = 1
+        check!((0, Ellipsis, 0), 59370);
+
+        // a[..., ::2, :] = 1
+        check!((Ellipsis, (..).stride_by(2), ..), 26064);
+
+        // a[..., None, ::2, -1]
+        check!((Ellipsis, NewAxis, (..).stride_by(2), -1), 51696);
+
+        // a[:, 2:, 0] = 1
+        check!((.., 2.., 0), 58140);
+
+        // a[::-1, :2, 2:, ..., None, ::2] = 1
+        check!(
+            (
+                (..).stride_by(-1),
+                ..2,
+                2..,
+                Ellipsis,
+                NewAxis,
+                (..).stride_by(2)
+            ),
+            51540
+        );
+    }
+
+    #[test]
+    fn test_full_index_write_array() {
+        // these have an Array as a source of indices and go through the gather path
+
+        macro_rules! check {
+            (($( $i:expr ),*), $sum:expr ) => {
+                {
+                    let mut a = Array::from_iter(0..540, &[3, 3, 4, 5, 3]);
+
+                    a.index_mut(($($i),*), Array::from_int(1));
+                    let sum = a.sum(None, None).item::<i32>();
+                    assert_eq!(sum, $sum);
+                }
+            };
+        }
+
+        // i = mx.array([2, 1])
+        let i = Rc::new(Array::from_slice(&[2, 1], &[2]));
+
+        // a[0, i] = 1
+        check!((0, i.clone()), 131310);
+
+        // a[..., i, 0] = 1
+        check!((Ellipsis, i.clone(), 0), 126378);
+
+        // a[i, 0, ...] = 1
+        check!((i.clone(), 0, Ellipsis), 109710);
+
+        // a[i, ..., i] = 1
+        check!((i.clone(), Ellipsis, i.clone()), 102450);
+
+        // a[i, ..., ::2, :] = 1
+        check!((i.clone(), Ellipsis, (..).stride_by(2), ..), 68094);
+
+        // a[..., i, None, ::2, -1] = 1
+        check!(
+            (Ellipsis, i.clone(), NewAxis, (..).stride_by(2), -1),
+            130977
+        );
+
+        // a[:, 2:, i] = 1
+        check!((.., 2.., i.clone()), 115965);
+
+        // a[::-1, :2, i, 2:, ..., None, ::2] = 1
+        check!(
+            (
+                (..).stride_by(-1),
+                ..2,
+                i,
+                2..,
+                Ellipsis,
+                NewAxis,
+                (..).stride_by(2)
+            ),
+            128142
+        );
     }
 }

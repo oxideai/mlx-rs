@@ -1,6 +1,7 @@
 //! All internal macros
 
 /// See `assertEqual` in the swift binding tests
+#[allow(unused_macros)]
 macro_rules! assert_array_all_close {
     ($a:tt, $b:tt) => {
         let _b: Array = $b.into();

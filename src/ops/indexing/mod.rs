@@ -247,6 +247,7 @@ pub trait IndexOp<Idx> {
     }
 }
 
+// TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
 pub trait IndexMutOp<Idx, Val> {
     fn index_mut_device(&mut self, i: Idx, val: Val, stream: StreamOrDevice);
 

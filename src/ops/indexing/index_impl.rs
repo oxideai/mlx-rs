@@ -1066,6 +1066,18 @@ mod tests {
     }
 
     #[test]
+    fn test_collection() {
+        let a = Array::from_iter(0i32..20, &[2, 2, 5]);
+
+        // enumerate "rows"
+        for i in 0..2 {
+            let row = a.index(i);
+            let expected = Array::from_iter((i * 10)..(i * 10 + 10), &[2, 5]);
+            assert_array_all_close!(row, expected);
+        }
+    }
+
+    #[test]
     fn test_array_subscript_advanced_2d() {
         let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>();
 

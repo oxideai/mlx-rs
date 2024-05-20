@@ -2,7 +2,6 @@
 #![cfg_attr(test, allow(clippy::approx_constant))]
 
 #[macro_use]
-#[allow(unused_macros)]
 mod macros;
 
 mod array;

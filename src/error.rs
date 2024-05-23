@@ -211,3 +211,49 @@ pub enum SplitEqualError {
     #[error("Cannot split array of size {size} into {num_splits} equal parts")]
     InvalidNumSplits { size: usize, num_splits: i32 },
 }
+
+#[derive(Debug, Error)]
+#[error(
+    "GPU sort cannot handle sort axis of >= 2M elements, got array with sort axis size {size} "
+)]
+pub struct ArrayTooLargeForGpuError {
+    pub size: usize,
+}
+
+#[derive(Debug, Error)]
+pub enum SortError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error(transparent)]
+    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
+}
+
+#[derive(Debug, Error)]
+pub enum SortAllError {
+    #[error(transparent)]
+    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
+}
+
+#[derive(Debug, Error)]
+#[error("Received invalid kth {kth} along axis {axis} for array with shape {shape:?}")]
+pub struct InvalidKthError {
+    pub kth: i32,
+    pub axis: i32,
+    pub shape: Vec<i32>,
+}
+
+#[derive(Debug, Error)]
+pub enum PartitionError {
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
+
+    #[error(transparent)]
+    InvalidKth(#[from] InvalidKthError),
+}
+
+#[derive(Debug, Error)]
+pub enum PartitionAllError {
+    #[error(transparent)]
+    InvalidKth(#[from] InvalidKthError),
+}

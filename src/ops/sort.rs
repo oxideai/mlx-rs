@@ -1,7 +1,28 @@
+//! Implements bindings for the sorting ops.
+
+// TODO: examples need random
+
 use mlx_macros::default_device;
 
-use crate::{Array, StreamOrDevice};
+use crate::{
+    error::{
+        ArrayTooLargeForGpuError, InvalidAxisError, InvalidKthError, PartitionAllError,
+        PartitionError, SortAllError, SortError,
+    },
+    utils::resolve_index,
+    Array, StreamOrDevice,
+};
 
+/// Returns a sorted copy of the array.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `axis`: axis to sort over
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
 #[default_device]
 pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -10,6 +31,55 @@ pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice
     }
 }
 
+/// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `axis`: axis to sort over
+pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<Array, SortError> {
+    let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+        axis,
+        ndim: a.ndim(),
+    })?;
+
+    if a.shape()[resolved_axis] as usize >= (1usize << 21)
+        // TODO: mlx-c doesn't support getting the device type yet
+        && stream == StreamOrDevice::gpu()
+    {
+        return Err(ArrayTooLargeForGpuError {
+            size: a.shape()[resolved_axis] as usize,
+        }
+        .into());
+    }
+
+    Ok(unsafe { sort_device_unchecked(a, axis, stream) })
+}
+
+/// Returns a sorted copy of the array. Panics if the arguments are invalid.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `axis`: axis to sort over
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_sort_device`] for more information.
+#[default_device]
+pub fn sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+    try_sort_device(a, axis, stream).unwrap()
+}
+
+/// Returns a sorted copy of the flattened array.
+///
+/// # Params
+///
+/// - `array`: input array
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
 #[default_device]
 pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -18,6 +88,44 @@ pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Ar
     }
 }
 
+/// Returns a sorted copy of the flattened array. Returns an error if the arguments are invalid.
+///
+/// # Params
+///
+/// - `array`: input array
+#[default_device]
+pub fn try_sort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
+    if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
+        return Err(ArrayTooLargeForGpuError { size: a.size() }.into());
+    }
+
+    Ok(unsafe { sort_all_device_unchecked(a, stream) })
+}
+
+/// Returns a sorted copy of the flattened array. Panics if the arguments are invalid.
+///
+/// # Params
+///
+/// - `array`: input array
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_sort_all_device`] for more information.
+#[default_device]
+pub fn sort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
+    try_sort_all_device(a, stream).unwrap()
+}
+
+/// Returns the indices that sort the array.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `axis`: axis to sort over
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
 #[default_device]
 pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -26,6 +134,57 @@ pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDev
     }
 }
 
+/// Returns the indices that sort the array. Returns an error if the arguments are invalid.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `axis`: axis to sort over
+#[default_device]
+pub fn try_argsort_device(
+    a: &Array,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Result<Array, SortError> {
+    let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+        axis,
+        ndim: a.ndim(),
+    })?;
+
+    if a.shape()[resolved_axis] as usize >= (1usize << 21) && stream == StreamOrDevice::gpu() {
+        return Err(ArrayTooLargeForGpuError {
+            size: a.shape()[resolved_axis] as usize,
+        }
+        .into());
+    }
+
+    Ok(unsafe { argsort_device_unchecked(a, axis, stream) })
+}
+
+/// Returns the indices that sort the array. Panics if the arguments are invalid.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `axis`: axis to sort over
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_argsort_device`] for more information.
+#[default_device]
+pub fn argsort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+    try_argsort_device(a, axis, stream).unwrap()
+}
+
+/// Returns the indices that sort the flattened array.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
 #[default_device]
 pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -34,14 +193,127 @@ pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) ->
     }
 }
 
+/// Returns the indices that sort the flattened array. Returns an error if the arguments are
+/// invalid.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
 #[default_device]
-pub unsafe fn partition_device_unchecked(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn try_argsort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
+    if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
+        return Err(ArrayTooLargeForGpuError { size: a.size() }.into());
+    }
+
+    Ok(unsafe { argsort_all_device_unchecked(a, stream) })
+}
+
+/// Returns the indices that sort the flattened array. Panics if the arguments are invalid.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_argsort_all_device`] for more information.
+#[default_device]
+pub fn argsort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
+    try_argsort_all_device(a, stream).unwrap()
+}
+
+/// Returns a partitioned copy of the array such that the smaller `kth` elements are first.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
+/// - `axis`: axis to partition over
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
+#[default_device]
+pub unsafe fn partition_device_unchecked(
+    a: &Array,
+    kth: i32,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Array {
     unsafe {
         let c_array = mlx_sys::mlx_partition(a.as_ptr(), kth, axis, stream.as_ptr());
         Array::from_ptr(c_array)
     }
 }
 
+/// Returns a partitioned copy of the array such that the smaller `kth` elements are first.
+/// Returns an error if the arguments are invalid.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
+/// - `axis`: axis to partition over
+#[default_device]
+pub fn try_partition_device(
+    a: &Array,
+    kth: i32,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Result<Array, PartitionError> {
+    let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+        axis,
+        ndim: a.ndim(),
+    })?;
+    resolve_kth(kth, Some(resolved_axis), a)?;
+
+    Ok(unsafe { partition_device_unchecked(a, kth, axis, stream) })
+}
+
+/// Returns a partitioned copy of the array such that the smaller `kth` elements are first.
+/// Panics if the arguments are invalid.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
+/// - `axis`: axis to partition over
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_partition_device`] for more information.
+#[default_device]
+pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+    try_partition_device(a, kth, axis, stream).unwrap()
+}
+
+/// Returns a partitioned copy of the flattened array such that the smaller `kth` elements are
+/// first.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params:
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
 #[default_device]
 pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -50,18 +322,218 @@ pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: Stream
     }
 }
 
+/// Returns a partitioned copy of the flattened array such that the smaller `kth` elements are
+/// first. Returns an error if the arguments are invalid.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
 #[default_device]
-pub unsafe fn argpartition_device_unchecked(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn try_partition_all_device(
+    a: &Array,
+    kth: i32,
+    stream: StreamOrDevice,
+) -> Result<Array, PartitionAllError> {
+    resolve_kth(kth, None, a)?;
+    Ok(unsafe { partition_all_device_unchecked(a, kth, stream) })
+}
+
+/// Returns a partitioned copy of the flattened array such that the smaller `kth` elements are
+/// first. Panics if the arguments are invalid.
+///
+/// The ordering of the elements in partitions is undefined.
+///
+/// # Params
+///
+/// - `array`: input array
+/// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
+///   before the kth index will be less or equal to the `kth` element and all elements after will be
+///   greater or equal to the `kth` element in the output.
+#[default_device]
+pub fn partition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+    try_partition_all_device(a, kth, stream).unwrap()
+}
+
+/// Returns the indices that partition the array.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+/// - `axis`: axis to partition over
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
+#[default_device]
+pub unsafe fn argpartition_device_unchecked(
+    a: &Array,
+    kth: i32,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Array {
     unsafe {
         let c_array = mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ptr());
         Array::from_ptr(c_array)
     }
 }
 
+/// Returns the indices that partition the array. Returns an error if the arguments are invalid.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+/// - `axis`: axis to partition over
 #[default_device]
-pub unsafe fn argpartition_all_device_unchecked(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+pub fn try_argpartition_device(
+    a: &Array,
+    kth: i32,
+    axis: i32,
+    stream: StreamOrDevice,
+) -> Result<Array, PartitionError> {
+    let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
+        axis,
+        ndim: a.ndim(),
+    })?;
+    resolve_kth(kth, Some(resolved_axis), a)?;
+
+    Ok(unsafe { argpartition_device_unchecked(a, kth, axis, stream) })
+}
+
+/// Returns the indices that partition the array. Panics if the arguments are invalid.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+/// - `axis`: axis to partition over
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_argpartition_device`] for more information.
+#[default_device]
+pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+    try_argpartition_device(a, kth, axis, stream).unwrap()
+}
+
+/// Returns the indices that partition the flattened array.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+///
+/// # Safety
+///
+/// This is unsafe because it doesn't check if the arguments are valid.
+#[default_device]
+pub unsafe fn argpartition_all_device_unchecked(
+    a: &Array,
+    kth: i32,
+    stream: StreamOrDevice,
+) -> Array {
     unsafe {
         let c_array = mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ptr());
         Array::from_ptr(c_array)
+    }
+}
+
+/// Returns the indices that partition the flattened array. Returns an error if the arguments are
+/// invalid.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+#[default_device]
+pub fn try_argpartition_all_device(
+    a: &Array,
+    kth: i32,
+    stream: StreamOrDevice,
+) -> Result<Array, PartitionAllError> {
+    resolve_kth(kth, None, a)?;
+    Ok(unsafe { argpartition_all_device_unchecked(a, kth, stream) })
+}
+
+/// Returns the indices that partition the flattened array. Panics if the arguments are invalid.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The array to sort.
+/// - `kth`: element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+///
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_argpartition_all_device`] for more
+/// information.
+#[default_device]
+pub fn argpartition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+    try_argpartition_all_device(a, kth, stream).unwrap()
+}
+
+fn resolve_kth(kth: i32, resolved_axis: Option<usize>, a: &Array) -> Result<i32, InvalidKthError> {
+    match resolved_axis {
+        Some(axis) => {
+            let resolved_kth = if kth < 0 { a.shape()[axis] + kth } else { kth };
+
+            if resolved_kth < 0 || resolved_kth >= a.shape()[axis] {
+                return Err(InvalidKthError {
+                    kth,
+                    axis: axis as i32,
+                    shape: a.shape().to_vec(),
+                });
+            }
+
+            Ok(resolved_kth)
+        }
+        None => {
+            let resolved_kth = if kth < 0 { a.size() as i32 + kth } else { kth };
+
+            if resolved_kth < 0 || resolved_kth >= a.size() as i32 {
+                return Err(InvalidKthError {
+                    kth,
+                    axis: 0,
+                    shape: a.shape().to_vec(),
+                });
+            }
+
+            Ok(resolved_kth)
+        }
     }
 }

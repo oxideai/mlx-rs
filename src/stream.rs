@@ -7,7 +7,7 @@ use crate::utils::mlx_describe;
 ///
 /// If omitted it will use the [Default::default()], which will be [Device::gpu()] unless
 /// set otherwise.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct StreamOrDevice {
     pub(crate) stream: Stream,
 }
@@ -156,5 +156,11 @@ impl std::fmt::Display for Stream {
         let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
         let description = description.unwrap_or_else(|| "Stream".to_string());
         write!(f, "{}", description)
+    }
+}
+
+impl PartialEq for Stream {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { mlx_sys::mlx_stream_equal(self.c_stream, other.c_stream) }
     }
 }

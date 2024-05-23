@@ -2,6 +2,7 @@ use crate::array::Array;
 use crate::error::OperationError;
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, can_reduce_shape};
+use crate::Stream;
 use mlx_macros::default_device;
 
 impl Array {
@@ -28,7 +29,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_all_device(axes, keep_dims, stream).unwrap()
     }
@@ -60,7 +61,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -69,7 +70,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -96,7 +97,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -111,7 +112,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -138,7 +139,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_prod_device(axes, keep_dims, stream).unwrap()
     }
@@ -169,7 +170,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -178,7 +179,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -204,7 +205,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -219,7 +220,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -246,7 +247,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_max_device(axes, keep_dims, stream).unwrap()
     }
@@ -278,7 +279,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -287,7 +288,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -313,7 +314,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         if self.size() == 0 {
             return Err(OperationError::NotSupported(
@@ -334,7 +335,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -361,7 +362,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_sum_device(axes, keep_dims, stream).unwrap()
     }
@@ -392,7 +393,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -401,7 +402,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -427,7 +428,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -442,7 +443,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -469,7 +470,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_mean_device(axes, keep_dims, stream).unwrap()
     }
@@ -500,7 +501,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -509,7 +510,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -535,7 +536,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -560,7 +561,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -586,7 +587,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_min_device(axes, keep_dims, stream).unwrap()
     }
@@ -617,7 +618,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -626,7 +627,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -652,7 +653,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         if self.size() == 0 {
             return Err(OperationError::NotSupported(
@@ -673,7 +674,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -691,7 +692,7 @@ impl Array {
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_variance_device(axes, keep_dims, ddof, stream)
             .unwrap()
@@ -715,7 +716,7 @@ impl Array {
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -725,7 +726,7 @@ impl Array {
             axes.len(),
             keep_dims.into().unwrap_or(false),
             ddof.into().unwrap_or(0),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -743,7 +744,7 @@ impl Array {
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -770,7 +771,7 @@ impl Array {
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
                 ddof.into().unwrap_or(0),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -789,7 +790,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_log_sum_exp_device(axes, keep_dims, stream)
             .unwrap()
@@ -813,7 +814,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -822,7 +823,7 @@ impl Array {
             axes.as_ptr(),
             axes.len(),
             keep_dims.into().unwrap_or(false),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -840,7 +841,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -855,7 +856,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }

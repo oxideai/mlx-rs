@@ -17,7 +17,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     #[default_device]
     pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
         // TODO: Can we make use of full() here?
@@ -36,7 +35,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -69,7 +67,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     #[default_device]
     pub fn try_zeros_device<T: ArrayElement>(
         shape: &[i32],
@@ -97,7 +94,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     #[default_device]
     pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
         // TODO: Can we make use of full() here?
@@ -116,7 +112,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -147,7 +142,6 @@ impl Array {
     /// # Params
     ///
     /// - shape: Desired shape
-    /// - stream: Stream or device to evaluate on
     pub fn try_ones_device<T: ArrayElement>(
         shape: &[i32],
         stream: StreamOrDevice,
@@ -177,7 +171,6 @@ impl Array {
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn eye_device<T: ArrayElement>(
         n: i32,
@@ -203,7 +196,6 @@ impl Array {
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -241,7 +233,6 @@ impl Array {
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal - defaults to 0 if not specified
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_eye_device<T: ArrayElement>(
         n: i32,
@@ -277,7 +268,6 @@ impl Array {
     ///
     /// - shape: shape of the output array
     /// - values: values to be broadcast into the array
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn full_device<T: ArrayElement>(
         shape: &[i32],
@@ -304,7 +294,6 @@ impl Array {
     ///
     /// - shape: shape of the output array
     /// - values: values to be broadcast into the array
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -343,7 +332,6 @@ impl Array {
     ///
     /// - shape: shape of the output array
     /// - values: values to be broadcast into the array
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_full_device<T: ArrayElement>(
         shape: &[i32],
@@ -372,7 +360,6 @@ impl Array {
     /// # Params
     ///
     /// - n: number of rows and columns in the output
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn identity_device<T: ArrayElement>(n: i32, stream: StreamOrDevice) -> Array {
         Self::eye_device::<T>(n, Some(n), None, stream)
@@ -391,7 +378,6 @@ impl Array {
     /// # Params
     ///
     /// - n: number of rows and columns in the output
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -416,7 +402,6 @@ impl Array {
     /// # Params
     ///
     /// - n: number of rows and columns in the output
-    /// - stream: stream or device to evaluate on
     pub fn try_identity_device<T: ArrayElement>(
         n: i32,
         stream: StreamOrDevice,
@@ -439,7 +424,6 @@ impl Array {
     /// - start: start value
     /// - stop: stop value
     /// - count: number of samples -- defaults to 50 if not specified
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn linspace_device<T, U>(
         start: U,
@@ -469,7 +453,6 @@ impl Array {
     /// - start: start value
     /// - stop: stop value
     /// - count: number of samples -- defaults to 50 if not specified
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -514,7 +497,6 @@ impl Array {
     /// - start: start value
     /// - stop: stop value
     /// - count: number of samples -- defaults to 50 if not specified
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_linspace_device<T, U>(
         start: U,
@@ -553,7 +535,6 @@ impl Array {
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - axis: axis to repeat along
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn repeat_device<T: ArrayElement>(
         array: Array,
@@ -580,7 +561,6 @@ impl Array {
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - axis: axis to repeat along
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -618,7 +598,6 @@ impl Array {
     /// - array: array to repeat
     /// - count: number of times to repeat
     /// - axis: axis to repeat along
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_repeat_device<T: ArrayElement>(
         array: Array,
@@ -651,7 +630,6 @@ impl Array {
     ///
     /// - array: array to repeat
     /// - count: number of times to repeat
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn repeat_all_device<T: ArrayElement>(
         array: Array,
@@ -676,7 +654,6 @@ impl Array {
     ///
     /// - array: array to repeat
     /// - count: number of times to repeat
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -711,7 +688,6 @@ impl Array {
     ///
     /// - array: array to repeat
     /// - count: number of times to repeat
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_repeat_all_device<T: ArrayElement>(
         array: Array,
@@ -743,7 +719,6 @@ impl Array {
     /// - n: number of rows in the output
     /// - m: number of columns in the output -- equal to `n` if not specified
     /// - k: index of the diagonal -- defaults to 0 if not specified
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn tri_device<T: ArrayElement>(
         n: i32,

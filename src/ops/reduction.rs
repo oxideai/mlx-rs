@@ -22,7 +22,6 @@ impl Array {
     ///
     /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: The stream to execute the operation on
     #[default_device]
     pub fn all_device<'a>(
         &'a self,
@@ -50,7 +49,6 @@ impl Array {
     ///
     /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: The stream to execute the operation on
     ///
     /// # Safety
     ///
@@ -90,7 +88,6 @@ impl Array {
     ///
     /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: The stream to execute the operation on
     #[default_device]
     pub fn try_all_device<'a>(
         &'a self,
@@ -132,7 +129,6 @@ impl Array {
     ///
     /// - axes: The axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: The stream to execute the operation on
     #[default_device]
     pub fn prod_device<'a>(
         &'a self,
@@ -159,7 +155,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -198,7 +193,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_prod_device<'a>(
         &'a self,
@@ -240,7 +234,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn max_device<'a>(
         &'a self,
@@ -268,7 +261,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -307,7 +299,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_max_device<'a>(
         &'a self,
@@ -355,7 +346,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn sum_device<'a>(
         &'a self,
@@ -382,7 +372,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -421,7 +410,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_sum_device<'a>(
         &'a self,
@@ -463,7 +451,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn mean_device<'a>(
         &'a self,
@@ -490,7 +477,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -529,7 +515,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_mean_device<'a>(
         &'a self,
@@ -580,7 +565,6 @@ impl Array {
     /// # Params
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn min_device<'a>(
         &'a self,
@@ -607,7 +591,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -646,7 +629,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_min_device<'a>(
         &'a self,
@@ -684,7 +666,6 @@ impl Array {
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     /// - ddof: the divisor to compute the variance is `N - ddof`
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn variance_device<'a>(
         &'a self,
@@ -704,7 +685,6 @@ impl Array {
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     /// - ddof: the divisor to compute the variance is `N - ddof`
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -736,7 +716,6 @@ impl Array {
     /// - axes: axes to reduce over
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     /// - ddof: the divisor to compute the variance is `N - ddof`
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_variance_device<'a>(
         &'a self,
@@ -783,7 +762,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn log_sum_exp_device<'a>(
         &'a self,
@@ -803,7 +781,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -834,7 +811,6 @@ impl Array {
     ///
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_log_sum_exp_device<'a>(
         &'a self,

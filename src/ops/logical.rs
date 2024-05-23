@@ -25,7 +25,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn eq_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_eq_device(other, stream).unwrap()
@@ -51,7 +50,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -87,7 +85,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_eq_device(
         &self,
@@ -121,7 +118,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn le_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_le_device(other, stream).unwrap()
@@ -147,7 +143,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -183,7 +178,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_le_device(
         &self,
@@ -217,7 +211,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn ge_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_ge_device(other, stream).unwrap()
@@ -242,7 +235,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -278,7 +270,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_ge_device(
         &self,
@@ -312,7 +303,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn ne_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_ne_device(other, stream).unwrap()
@@ -338,7 +328,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -374,7 +363,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_ne_device(
         &self,
@@ -407,7 +395,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn lt_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_lt_device(other, stream).unwrap()
@@ -433,7 +420,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -468,7 +454,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_lt_device(
         &self,
@@ -501,7 +486,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn gt_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_gt_device(other, stream).unwrap()
@@ -526,7 +510,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -561,7 +544,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_gt_device(
         &self,
@@ -594,7 +576,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn logical_and_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_logical_and_device(other, stream).unwrap()
@@ -619,7 +600,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -658,7 +638,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_logical_and_device(
         &self,
@@ -691,7 +670,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn logical_or_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
         self.try_logical_or_device(other, stream).unwrap()
@@ -716,7 +694,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -755,7 +732,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to compare
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_logical_or_device(
         &self,
@@ -796,7 +772,6 @@ impl Array {
     /// - rtol: relative tolerance = defaults to 1e-5 when None
     /// - atol: absolute tolerance - defaults to 1e-8 when None
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn all_close_device(
         &self,
@@ -837,7 +812,6 @@ impl Array {
     /// - rtol: relative tolerance = defaults to 1e-5 when None
     /// - atol: absolute tolerance - defaults to 1e-8 when None
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -890,7 +864,6 @@ impl Array {
     /// - rtol: relative tolerance = defaults to 1e-5 when None
     /// - atol: absolute tolerance - defaults to 1e-8 when None
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_all_close_device(
         &self,
@@ -1020,7 +993,6 @@ impl Array {
     ///
     /// - other: array to compare
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn array_eq_device(
         &self,
@@ -1056,7 +1028,6 @@ impl Array {
     /// # Params
     /// - axes: axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn any_device<'a>(
         &'a self,
@@ -1085,7 +1056,6 @@ impl Array {
     /// # Params
     /// - axes: axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -1128,7 +1098,6 @@ impl Array {
     /// # Params
     /// - axes: axes to reduce over -- defaults to all axes if not provided
     /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_any_device<'a>(
         &'a self,
@@ -1164,7 +1133,6 @@ impl Array {
 /// - condition: condition array
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDevice) -> Array {
     try_which_device(condition, a, b, stream).unwrap()
@@ -1179,7 +1147,6 @@ pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDev
 /// - condition: condition array
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
-/// - stream: stream or device to evaluate on
 ///
 /// # Safety
 ///
@@ -1210,7 +1177,6 @@ pub unsafe fn which_device_unchecked(
 /// - condition: condition array
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn try_which_device(
     condition: &Array,

@@ -53,7 +53,6 @@ fn conv_general_device_inner(
 /// - flip: Flip the order in which the spatial dimensions of the weights are processed.
 ///   Performs the cross-correlation operator when `flip` is `false` and the convolution
 ///   operator otherwise.
-/// - stream: stream or device to evaluate on
 #[default_device]
 #[allow(clippy::too_many_arguments)]
 pub fn conv_general_device<'a>(
@@ -97,7 +96,6 @@ pub fn conv_general_device<'a>(
 /// - flip: Flip the order in which the spatial dimensions of the weights are processed.
 ///   Performs the cross-correlation operator when `flip` is `false` and the convolution
 ///   operator otherwise.
-/// - stream: stream or device to evaluate on
 ///
 /// # Safety
 ///
@@ -157,7 +155,6 @@ pub unsafe fn conv_general_device_unchecked<'a>(
 /// - flip: Flip the order in which the spatial dimensions of the weights are processed.
 ///   Performs the cross-correlation operator when `flip` is `false` and the convolution
 ///   operator otherwise.
-/// - stream: stream or device to evaluate on
 #[default_device]
 #[allow(clippy::too_many_arguments)]
 pub fn try_conv_general_device<'a>(
@@ -248,7 +245,6 @@ pub fn try_conv_general_device<'a>(
 /// - padding: input padding
 /// - dilation: kernel dilation
 /// - groups: input feature groups
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn conv1d_device(
     array: &Array,
@@ -273,7 +269,6 @@ pub fn conv1d_device(
 /// - padding: input padding
 /// - dilation: kernel dilation
 /// - groups: input feature groups
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn try_conv1d_device(
     array: &Array,
@@ -313,7 +308,6 @@ pub fn try_conv1d_device(
 /// - padding: input padding
 /// - dilation: kernel dilation
 /// - groups: input feature groups
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn conv2d_device(
     array: &Array,
@@ -338,7 +332,6 @@ pub fn conv2d_device(
 /// - padding: input padding
 /// - dilation: kernel dilation
 /// - groups: input feature groups
-/// - stream: stream or device to evaluate on
 #[default_device]
 pub fn try_conv2d_device(
     array: &Array,

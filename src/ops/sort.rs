@@ -1,7 +1,5 @@
 //! Implements bindings for the sorting ops.
 
-// TODO: examples need random
-
 use mlx_macros::default_device;
 
 use crate::{
@@ -10,7 +8,7 @@ use crate::{
         PartitionError, SortAllError, SortError,
     },
     utils::resolve_index,
-    Array, StreamOrDevice,
+    Array, Stream, StreamOrDevice,
 };
 
 /// Returns a sorted copy of the array.
@@ -34,9 +32,9 @@ use crate::{
 /// let result = unsafe { sort_unchecked(&a, axis) };
 /// ```
 #[default_device]
-pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_sort(a.as_ptr(), axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_sort(a.as_ptr(), axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -58,7 +56,11 @@ pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice
 /// let result = try_sort(&a, axis);
 /// ```
 #[default_device]
-pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<Array, SortError> {
+pub fn try_sort_device(
+    a: &Array,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, SortError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
         axis,
         ndim: a.ndim(),
@@ -66,7 +68,7 @@ pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<A
 
     if a.shape()[resolved_axis] as usize >= (1usize << 21)
         // TODO: mlx-c doesn't support getting the device type yet
-        && stream == StreamOrDevice::gpu()
+        && stream.as_ref() == &Stream::gpu()
     {
         return Err(ArrayTooLargeForGpuError {
             size: a.shape()[resolved_axis] as usize,
@@ -98,7 +100,7 @@ pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<A
 /// let result = sort(&a, axis);
 /// ```
 #[default_device]
-pub fn sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
     try_sort_device(a, axis, stream).unwrap()
 }
 
@@ -121,9 +123,9 @@ pub fn sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
 /// let result = unsafe { sort_all_unchecked(&a) };
 /// ```
 #[default_device]
-pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
+pub unsafe fn sort_all_device_unchecked(a: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_sort_all(a.as_ptr(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_sort_all(a.as_ptr(), stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -143,8 +145,8 @@ pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Ar
 /// let result = try_sort_all(&a);
 /// ```
 #[default_device]
-pub fn try_sort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
-    if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
+pub fn try_sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, SortAllError> {
+    if a.size() as u32 >= (1u32 << 21) && stream.as_ref() == &Stream::gpu() {
         return Err(ArrayTooLargeForGpuError { size: a.size() }.into());
     }
 
@@ -170,7 +172,7 @@ pub fn try_sort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, S
 /// let result = sort_all(&a);
 /// ```
 #[default_device]
-pub fn sort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
+pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     try_sort_all_device(a, stream).unwrap()
 }
 
@@ -195,9 +197,9 @@ pub fn sort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// let result = unsafe { argsort_unchecked(&a, axis) };
 /// ```
 #[default_device]
-pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -222,14 +224,14 @@ pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDev
 pub fn try_argsort_device(
     a: &Array,
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, SortError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
         axis,
         ndim: a.ndim(),
     })?;
 
-    if a.shape()[resolved_axis] as usize >= (1usize << 21) && stream == StreamOrDevice::gpu() {
+    if a.shape()[resolved_axis] as usize >= (1usize << 21) && stream.as_ref() == &Stream::gpu() {
         return Err(ArrayTooLargeForGpuError {
             size: a.shape()[resolved_axis] as usize,
         }
@@ -260,7 +262,7 @@ pub fn try_argsort_device(
 /// let result = argsort(&a, axis);
 /// ```
 #[default_device]
-pub fn argsort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn argsort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
     try_argsort_device(a, axis, stream).unwrap()
 }
 
@@ -283,9 +285,9 @@ pub fn argsort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
 /// let result = unsafe { argsort_all_unchecked(&a) };
 /// ```
 #[default_device]
-pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
+pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -306,8 +308,11 @@ pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) ->
 /// let result = try_argsort_all(&a);
 /// ```
 #[default_device]
-pub fn try_argsort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
-    if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
+pub fn try_argsort_all_device(
+    a: &Array,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, SortAllError> {
+    if a.size() as u32 >= (1u32 << 21) && stream.as_ref() == &Stream::gpu() {
         return Err(ArrayTooLargeForGpuError { size: a.size() }.into());
     }
 
@@ -333,7 +338,7 @@ pub fn try_argsort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array
 /// let result = argsort_all(&a);
 /// ```
 #[default_device]
-pub fn argsort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
+pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     try_argsort_all_device(a, stream).unwrap()
 }
 
@@ -368,10 +373,10 @@ pub unsafe fn partition_device_unchecked(
     a: &Array,
     kth: i32,
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_partition(a.as_ptr(), kth, axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_partition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -404,7 +409,7 @@ pub fn try_partition_device(
     a: &Array,
     kth: i32,
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, PartitionError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
         axis,
@@ -443,7 +448,7 @@ pub fn try_partition_device(
 /// let result = partition(&a, kth, axis);
 /// ```
 #[default_device]
-pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: impl AsRef<Stream>) -> Array {
     try_partition_device(a, kth, axis, stream).unwrap()
 }
 
@@ -473,9 +478,13 @@ pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) 
 /// let result = unsafe { partition_all_unchecked(&a, kth) };
 /// ```
 #[default_device]
-pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+pub unsafe fn partition_all_device_unchecked(
+    a: &Array,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_partition_all(a.as_ptr(), kth, stream.as_ptr());
+        let c_array = mlx_sys::mlx_partition_all(a.as_ptr(), kth, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -505,7 +514,7 @@ pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: Stream
 pub fn try_partition_all_device(
     a: &Array,
     kth: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, PartitionAllError> {
     resolve_kth(kth, None, a)?;
     Ok(unsafe { partition_all_device_unchecked(a, kth, stream) })
@@ -537,7 +546,7 @@ pub fn try_partition_all_device(
 /// let result = partition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn partition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+pub fn partition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Array {
     try_partition_all_device(a, kth, stream).unwrap()
 }
 
@@ -573,10 +582,10 @@ pub unsafe fn argpartition_device_unchecked(
     a: &Array,
     kth: i32,
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -609,7 +618,7 @@ pub fn try_argpartition_device(
     a: &Array,
     kth: i32,
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, PartitionError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
         axis,
@@ -648,7 +657,7 @@ pub fn try_argpartition_device(
 /// let result = argpartition(&a, kth, axis);
 /// ```
 #[default_device]
-pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
+pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: impl AsRef<Stream>) -> Array {
     try_argpartition_device(a, kth, axis, stream).unwrap()
 }
 
@@ -681,10 +690,10 @@ pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevic
 pub unsafe fn argpartition_all_device_unchecked(
     a: &Array,
     kth: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ptr());
+        let c_array = mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -715,7 +724,7 @@ pub unsafe fn argpartition_all_device_unchecked(
 pub fn try_argpartition_all_device(
     a: &Array,
     kth: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, PartitionAllError> {
     resolve_kth(kth, None, a)?;
     Ok(unsafe { argpartition_all_device_unchecked(a, kth, stream) })
@@ -748,7 +757,7 @@ pub fn try_argpartition_all_device(
 /// let result = argpartition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn argpartition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
+pub fn argpartition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Array {
     try_argpartition_all_device(a, kth, stream).unwrap()
 }
 

@@ -26,14 +26,14 @@ impl StreamOrDevice {
     /// The `[Stream::default_stream_on_device()] on the [Device::cpu()]
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream_on_device(&Device::cpu()),
+            stream: Stream::cpu(),
         }
     }
 
     /// The `[Stream::default_stream_on_device()] on the [Device::gpu()]
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream_on_device(&Device::gpu()),
+            stream: Stream::gpu(),
         }
     }
 
@@ -104,6 +104,20 @@ impl Stream {
 
     pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
         self.c_stream
+    }
+
+    pub fn cpu() -> Self {
+        unsafe {
+            let c_stream = mlx_sys::MLX_CPU_STREAM;
+            Stream { c_stream }
+        }
+    }
+
+    pub fn gpu() -> Self {
+        unsafe {
+            let c_stream = mlx_sys::MLX_GPU_STREAM;
+            Stream { c_stream }
+        }
     }
 }
 

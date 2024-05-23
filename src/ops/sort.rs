@@ -23,6 +23,16 @@ use crate::{
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = unsafe { sort_unchecked(&a, axis) };
+/// ```
 #[default_device]
 pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -37,6 +47,16 @@ pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice
 ///
 /// - `array`: input array
 /// - `axis`: axis to sort over
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = try_sort(&a, axis);
+/// ```
 #[default_device]
 pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<Array, SortError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
@@ -67,6 +87,16 @@ pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<A
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_sort_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = sort(&a, axis);
+/// ```
 #[default_device]
 pub fn sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     try_sort_device(a, axis, stream).unwrap()
@@ -81,6 +111,15 @@ pub fn sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = unsafe { sort_all_unchecked(&a) };
+/// ```
 #[default_device]
 pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -94,6 +133,15 @@ pub unsafe fn sort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Ar
 /// # Params
 ///
 /// - `array`: input array
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = try_sort_all(&a);
+/// ```
 #[default_device]
 pub fn try_sort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
     if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
@@ -112,6 +160,15 @@ pub fn try_sort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, S
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_sort_all_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = sort_all(&a);
+/// ```
 #[default_device]
 pub fn sort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
     try_sort_all_device(a, stream).unwrap()
@@ -127,6 +184,16 @@ pub fn sort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = unsafe { argsort_unchecked(&a, axis) };
+/// ```
 #[default_device]
 pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -141,6 +208,16 @@ pub unsafe fn argsort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDev
 ///
 /// - `a`: The array to sort.
 /// - `axis`: axis to sort over
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = try_argsort(&a, axis);
+/// ```
 #[default_device]
 pub fn try_argsort_device(
     a: &Array,
@@ -172,6 +249,16 @@ pub fn try_argsort_device(
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_argsort_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let axis = 0;
+/// let result = argsort(&a, axis);
+/// ```
 #[default_device]
 pub fn argsort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
     try_argsort_device(a, axis, stream).unwrap()
@@ -186,6 +273,15 @@ pub fn argsort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Array {
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = unsafe { argsort_all_unchecked(&a) };
+/// ```
 #[default_device]
 pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -200,6 +296,15 @@ pub unsafe fn argsort_all_device_unchecked(a: &Array, stream: StreamOrDevice) ->
 /// # Params
 ///
 /// - `a`: The array to sort.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = try_argsort_all(&a);
+/// ```
 #[default_device]
 pub fn try_argsort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array, SortAllError> {
     if a.size() as u32 >= (1u32 << 21) && stream == StreamOrDevice::gpu() {
@@ -218,6 +323,15 @@ pub fn try_argsort_all_device(a: &Array, stream: StreamOrDevice) -> Result<Array
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_argsort_all_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let result = argsort_all(&a);
+/// ```
 #[default_device]
 pub fn argsort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
     try_argsort_all_device(a, stream).unwrap()
@@ -238,6 +352,17 @@ pub fn argsort_all_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = unsafe { partition_unchecked(&a, kth, axis) };
+/// ```
 #[default_device]
 pub unsafe fn partition_device_unchecked(
     a: &Array,
@@ -263,6 +388,17 @@ pub unsafe fn partition_device_unchecked(
 ///   before the kth index will be less or equal to the `kth` element and all elements after will be
 ///   greater or equal to the `kth` element in the output.
 /// - `axis`: axis to partition over
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = try_partition(&a, kth, axis);
+/// ```
 #[default_device]
 pub fn try_partition_device(
     a: &Array,
@@ -295,6 +431,17 @@ pub fn try_partition_device(
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_partition_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = partition(&a, kth, axis);
+/// ```
 #[default_device]
 pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
     try_partition_device(a, kth, axis, stream).unwrap()
@@ -315,6 +462,16 @@ pub fn partition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) 
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = unsafe { partition_all_unchecked(&a, kth) };
+/// ```
 #[default_device]
 pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
     unsafe {
@@ -334,6 +491,16 @@ pub unsafe fn partition_all_device_unchecked(a: &Array, kth: i32, stream: Stream
 /// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
 ///   before the kth index will be less or equal to the `kth` element and all elements after will be
 ///   greater or equal to the `kth` element in the output.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = try_partition_all(&a, kth);
+/// ```
 #[default_device]
 pub fn try_partition_all_device(
     a: &Array,
@@ -355,6 +522,20 @@ pub fn try_partition_all_device(
 /// - `kth`: Element at the `kth` index will be in its sorted position in the output. All elements
 ///   before the kth index will be less or equal to the `kth` element and all elements after will be
 ///   greater or equal to the `kth` element in the output.
+/// 
+/// # Panics
+///
+/// This panics if the arguments are invalid. See [`try_partition_all_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = partition_all(&a, kth);
+/// ```
 #[default_device]
 pub fn partition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
     try_partition_all_device(a, kth, stream).unwrap()
@@ -376,6 +557,17 @@ pub fn partition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Arra
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = unsafe { argpartition_unchecked(&a, kth, axis) };
+/// ```
 #[default_device]
 pub unsafe fn argpartition_device_unchecked(
     a: &Array,
@@ -401,6 +593,17 @@ pub unsafe fn argpartition_device_unchecked(
 ///   `kth` index and all indices after will be elemenents greater than or equal to the element at
 ///   the `kth` position.
 /// - `axis`: axis to partition over
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = try_argpartition(&a, kth, axis);
+/// ```
 #[default_device]
 pub fn try_argpartition_device(
     a: &Array,
@@ -433,6 +636,17 @@ pub fn try_argpartition_device(
 /// # Panics
 ///
 /// This panics if the arguments are invalid. See [`try_argpartition_device`] for more information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let axis = 0;
+/// let result = argpartition(&a, kth, axis);
+/// ```
 #[default_device]
 pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevice) -> Array {
     try_argpartition_device(a, kth, axis, stream).unwrap()
@@ -453,6 +667,16 @@ pub fn argpartition_device(a: &Array, kth: i32, axis: i32, stream: StreamOrDevic
 /// # Safety
 ///
 /// This is unsafe because it doesn't check if the arguments are valid.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = unsafe { argpartition_all_unchecked(&a, kth) };
+/// ```
 #[default_device]
 pub unsafe fn argpartition_all_device_unchecked(
     a: &Array,
@@ -477,6 +701,16 @@ pub unsafe fn argpartition_all_device_unchecked(
 ///   indices before the`kth` position will be of elements less than or equal to the element at the
 ///   `kth` index and all indices after will be elemenents greater than or equal to the element at
 ///   the `kth` position.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = try_argpartition_all(&a, kth);
+/// ```
 #[default_device]
 pub fn try_argpartition_all_device(
     a: &Array,
@@ -503,6 +737,16 @@ pub fn try_argpartition_all_device(
 ///
 /// This panics if the arguments are invalid. See [`try_argpartition_all_device`] for more
 /// information.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use mlx_rs::{prelude::*, ops::*};
+/// 
+/// let a = Array::from_slice(&[3, 2, 1], &[3]);
+/// let kth = 1;
+/// let result = argpartition_all(&a, kth);
+/// ```
 #[default_device]
 pub fn argpartition_all_device(a: &Array, kth: i32, stream: StreamOrDevice) -> Array {
     try_argpartition_all_device(a, kth, stream).unwrap()

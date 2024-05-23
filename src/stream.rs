@@ -55,6 +55,12 @@ impl Default for StreamOrDevice {
     }
 }
 
+impl AsRef<Stream> for StreamOrDevice {
+    fn as_ref(&self) -> &Stream {
+        &self.stream
+    }
+}
+
 impl std::fmt::Debug for StreamOrDevice {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.stream)
@@ -94,6 +100,10 @@ impl Stream {
     pub fn default_stream_on_device(device: &Device) -> Stream {
         let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
         Stream::new_with_mlx_mlx_stream(default_stream)
+    }
+
+    pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
+        self.c_stream
     }
 }
 

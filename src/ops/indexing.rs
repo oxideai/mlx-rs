@@ -70,7 +70,7 @@ use smallvec::{smallvec, SmallVec};
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
     utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
-    Array, StreamOrDevice,
+    Array, Stream, StreamOrDevice,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -233,7 +233,7 @@ impl ArrayIndexOp {
 /* -------------------------------------------------------------------------- */
 
 pub trait IndexOp<Idx> {
-    fn index_device(&self, i: Idx, stream: StreamOrDevice) -> Array;
+    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array;
 
     fn index(&self, i: Idx) -> Array {
         self.index_device(i, StreamOrDevice::default())
@@ -365,19 +365,27 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             let c_array = match axis.into() {
-                Some(axis) => {
-                    mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ptr())
-                }
+                Some(axis) => mlx_sys::mlx_take(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                ),
                 None => {
                     let shape = &[-1];
                     // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device_unchecked(shape, stream.clone());
+                    let reshaped = self.reshape_device_unchecked(shape, &stream);
 
-                    mlx_sys::mlx_take(reshaped.c_array, indices.c_array, 0, stream.as_ptr())
+                    mlx_sys::mlx_take(
+                        reshaped.c_array,
+                        indices.c_array,
+                        0,
+                        stream.as_ref().as_ptr(),
+                    )
                 }
             };
 
@@ -400,7 +408,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, TakeError> {
         let ndim = self.ndim().min(i32::MAX as usize) as i32;
 
@@ -443,7 +451,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_take_device(indices, axis, stream).unwrap()
     }
@@ -466,11 +474,15 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
-            let c_array =
-                mlx_sys::mlx_take_along_axis(self.c_array, indices.c_array, axis, stream.as_ptr());
+            let c_array = mlx_sys::mlx_take_along_axis(
+                self.c_array,
+                indices.c_array,
+                axis,
+                stream.as_ref().as_ptr(),
+            );
             Array::from_ptr(c_array)
         }
     }
@@ -486,7 +498,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, TakeAlongAxisError> {
         let ndim = self.ndim().min(i32::MAX as usize) as i32;
 
@@ -525,7 +537,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_take_along_axis_device(indices, axis, stream)
             .unwrap()
@@ -536,7 +548,7 @@ impl<T> IndexOp<T> for Array
 where
     T: ArrayIndex,
 {
-    fn index_device(&self, i: T, stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: T, stream: impl AsRef<Stream>) -> Array {
         get_item(self, i, stream)
     }
 }
@@ -545,7 +557,7 @@ impl<A> IndexOp<(A,)> for Array
 where
     A: ArrayIndex,
 {
-    fn index_device(&self, i: (A,), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -556,7 +568,7 @@ where
     A: ArrayIndex,
     B: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -568,7 +580,7 @@ where
     B: ArrayIndex,
     C: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -581,7 +593,7 @@ where
     C: ArrayIndex,
     D: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -600,7 +612,7 @@ where
     D: ArrayIndex,
     E: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -621,7 +633,7 @@ where
     E: ArrayIndex,
     F: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -644,7 +656,7 @@ where
     F: ArrayIndex,
     G: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -669,7 +681,7 @@ where
     G: ArrayIndex,
     H: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -696,7 +708,7 @@ where
     H: ArrayIndex,
     I: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -725,7 +737,7 @@ where
     I: ArrayIndex,
     J: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: StreamOrDevice) -> Array {
+    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -756,7 +768,11 @@ where
     J: ArrayIndex,
     K: ArrayIndex,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J, K), stream: StreamOrDevice) -> Array {
+    fn index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J, K),
+        stream: impl AsRef<Stream>,
+    ) -> Array {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -792,7 +808,7 @@ where
     fn index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L),
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let i = [
             i.0.index_op(),
@@ -832,7 +848,7 @@ where
     fn index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let i = [
             i.0.index_op(),
@@ -874,7 +890,7 @@ where
     fn index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let i = [
             i.0.index_op(),
@@ -918,7 +934,7 @@ where
     fn index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let i = [
             i.0.index_op(),
@@ -964,7 +980,7 @@ where
     fn index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let i = [
             i.0.index_op(),
@@ -998,7 +1014,7 @@ impl Array {
         start: &[i32],
         stop: &[i32],
         strides: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             let c_array = mlx_sys::mlx_slice(
@@ -1009,7 +1025,7 @@ impl Array {
                 stop.len(),
                 strides.as_ptr(),
                 strides.len(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             );
 
             Array::from_ptr(c_array)
@@ -1021,7 +1037,7 @@ impl Array {
         start: &[i32],
         stop: &[i32],
         strides: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, SliceError> {
         if start.len() != self.ndim() || stop.len() != self.ndim() || strides.len() != self.ndim() {
             return Err(SliceError { ndim: self.ndim() });
@@ -1035,7 +1051,7 @@ impl Array {
         start: &[i32],
         stop: &[i32],
         strides: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_slice_device(start, stop, strides, stream).unwrap()
     }
@@ -1064,7 +1080,7 @@ fn gather_nd<'a>(
     operations: impl Iterator<Item = &'a ArrayIndexOp>,
     gather_first: bool,
     last_array_or_index: usize,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> (usize, Array) {
     use ArrayIndexOp::*;
 
@@ -1156,7 +1172,7 @@ fn gather_nd<'a>(
             axes.len(),
             slice_sizes.as_ptr(),
             slice_sizes.len(),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         );
 
         Array::from_ptr(c_array)
@@ -1175,18 +1191,18 @@ fn gather_nd<'a>(
 }
 
 #[inline]
-fn get_item_index(src: &Array, index: i32, axis: i32, stream: StreamOrDevice) -> Array {
+fn get_item_index(src: &Array, index: i32, axis: i32, stream: impl AsRef<Stream>) -> Array {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
     src.take_device(&index.into(), axis, stream)
 }
 
 #[inline]
-fn get_item_array(src: &Array, indices: &Array, axis: i32, stream: StreamOrDevice) -> Array {
+fn get_item_array(src: &Array, indices: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
     src.take_device(indices, axis, stream)
 }
 
 #[inline]
-fn get_item_slice(src: &Array, range: RangeIndex, stream: StreamOrDevice) -> Array {
+fn get_item_slice(src: &Array, range: RangeIndex, stream: impl AsRef<Stream>) -> Array {
     let ndim = src.ndim();
     let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
     let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
@@ -1240,7 +1256,7 @@ fn expand_ellipsis_operations(ndim: usize, operations: &[ArrayIndexOp]) -> Cow<'
 
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Array {
+fn get_item(src: &Array, index: impl ArrayIndex, stream: impl AsRef<Stream>) -> Array {
     use ArrayIndexOp::*;
 
     match index.index_op() {
@@ -1257,7 +1273,7 @@ fn get_item(src: &Array, index: impl ArrayIndex, stream: StreamOrDevice) -> Arra
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice) -> Array {
+fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stream>) -> Array {
     use ArrayIndexOp::*;
 
     let mut src = OwnedOrRef::Ref(src);
@@ -1311,7 +1327,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: StreamOrDevice)
             gather_indices,
             gather_first,
             last_array_or_index,
-            stream.clone(),
+            &stream,
         );
 
         src = OwnedOrRef::Owned(gathered);

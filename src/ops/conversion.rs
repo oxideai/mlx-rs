@@ -1,6 +1,6 @@
 use mlx_macros::default_device;
 
-use crate::{Array, ArrayElement, Dtype, StreamOrDevice};
+use crate::{Array, ArrayElement, Dtype, Stream, StreamOrDevice};
 
 impl Array {
     /// Cast the array to a specified type.
@@ -19,14 +19,15 @@ impl Array {
     /// assert_eq!(new_array.as_slice::<f32>(), &[1.0,2.0,3.0]);
     /// ```
     #[default_device]
-    pub fn as_type_device<T: ArrayElement>(&self, stream: StreamOrDevice) -> Array {
+    pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
         self.as_dtype_device(T::DTYPE, stream)
     }
 
     #[default_device]
-    pub fn as_dtype_device(&self, dtype: Dtype, stream: StreamOrDevice) -> Array {
+    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
         unsafe {
-            let new_array = mlx_sys::mlx_astype(self.c_array, dtype.into(), stream.as_ptr());
+            let new_array =
+                mlx_sys::mlx_astype(self.c_array, dtype.into(), stream.as_ref().as_ptr());
             Array::from_ptr(new_array)
         }
     }

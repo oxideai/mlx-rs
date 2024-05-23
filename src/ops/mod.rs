@@ -6,9 +6,11 @@ mod factory;
 mod logical;
 mod reduction;
 mod shapes;
+mod sort;
 
 pub mod indexing;
 
 pub use convolution::*;
 pub use logical::*;
 pub use shapes::*;
+pub use sort::*;

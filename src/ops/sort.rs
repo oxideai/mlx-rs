@@ -37,6 +37,7 @@ pub unsafe fn sort_device_unchecked(a: &Array, axis: i32, stream: StreamOrDevice
 ///
 /// - `array`: input array
 /// - `axis`: axis to sort over
+#[default_device]
 pub fn try_sort_device(a: &Array, axis: i32, stream: StreamOrDevice) -> Result<Array, SortError> {
     let resolved_axis = resolve_index(axis, a.ndim()).ok_or_else(|| InvalidAxisError {
         axis,
@@ -535,5 +536,60 @@ fn resolve_kth(kth: i32, resolved_axis: Option<usize>, a: &Array) -> Result<i32,
 
             Ok(resolved_kth)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Array, StreamOrDevice};
+
+    #[test]
+    fn test_sort_with_invalid_axis() {
+        let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
+        let axis = 1;
+        let result = super::try_sort(&a, axis);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_sort_with_large_arrays_on_gpu() {
+        let a = Array::ones::<i32>(&[1 << 21]);
+        let s = StreamOrDevice::gpu();
+        let result = super::try_sort_device(&a, 0, s);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_sort_all_with_large_arrays_on_gpu() {
+        let a = Array::ones::<i32>(&[1 << 21]);
+        let s = StreamOrDevice::gpu();
+        let result = super::try_sort_all_device(&a, s);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_partition_with_invalid_axis() {
+        let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
+        let kth = 2;
+        let axis = 1;
+        let result = super::try_partition(&a, kth, axis);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_partition_with_invalid_kth() {
+        let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
+        let kth = 5;
+        let axis = 0;
+        let result = super::try_partition(&a, kth, axis);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_partition_all_with_invalid_kth() {
+        let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
+        let kth = 5;
+        let result = super::try_partition_all(&a, kth);
+        assert!(result.is_err());
     }
 }

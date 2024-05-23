@@ -1,5 +1,5 @@
 use crate::error::OperationError;
-use crate::{Array, StreamOrDevice};
+use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 
 impl Array {
@@ -24,7 +24,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_cummax_device(axis, reverse, inclusive, stream)
             .unwrap()
@@ -56,7 +56,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             match axis.into() {
@@ -65,20 +65,20 @@ impl Array {
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
-                    stream.as_ptr(),
+                    stream.as_ref().as_ptr(),
                 )),
                 None => {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = self.reshape_device_unchecked(shape, stream.clone());
+                    let flat = self.reshape_device_unchecked(shape, &stream);
 
                     Array::from_ptr(mlx_sys::mlx_cummax(
                         flat.c_array,
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
+                        stream.as_ref().as_ptr(),
                     ))
                 }
             }
@@ -106,7 +106,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axis = axis.into();
         self.validate_axis_in_bounds(axis)?;
@@ -134,7 +134,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_cummin_device(axis, reverse, inclusive, stream)
             .unwrap()
@@ -166,7 +166,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             match axis.into() {
@@ -175,20 +175,20 @@ impl Array {
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
-                    stream.as_ptr(),
+                    stream.as_ref().as_ptr(),
                 )),
                 None => {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = self.reshape_device_unchecked(shape, stream.clone());
+                    let flat = self.reshape_device_unchecked(shape, &stream);
 
                     Array::from_ptr(mlx_sys::mlx_cummin(
                         flat.c_array,
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
+                        stream.as_ref().as_ptr(),
                     ))
                 }
             }
@@ -216,7 +216,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axis = axis.into();
         self.validate_axis_in_bounds(axis)?;
@@ -244,7 +244,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_cumprod_device(axis, reverse, inclusive, stream)
             .unwrap()
@@ -276,7 +276,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             match axis.into() {
@@ -285,20 +285,20 @@ impl Array {
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
-                    stream.as_ptr(),
+                    stream.as_ref().as_ptr(),
                 )),
                 None => {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = self.reshape_device_unchecked(shape, stream.clone());
+                    let flat = self.reshape_device_unchecked(shape, &stream);
 
                     Array::from_ptr(mlx_sys::mlx_cumprod(
                         flat.c_array,
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
+                        stream.as_ref().as_ptr(),
                     ))
                 }
             }
@@ -326,7 +326,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axis = axis.into();
         self.validate_axis_in_bounds(axis)?;
@@ -354,7 +354,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_cumsum_device(axis, reverse, inclusive, stream)
             .unwrap()
@@ -386,7 +386,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             match axis.into() {
@@ -395,20 +395,20 @@ impl Array {
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
-                    stream.as_ptr(),
+                    stream.as_ref().as_ptr(),
                 )),
                 None => {
                     // we make this an array instead of using the pointer directly
                     // so that Rust will drop it when it goes out of scope
                     let shape = &[-1];
-                    let flat = self.reshape_device_unchecked(shape, stream.clone());
+                    let flat = self.reshape_device_unchecked(shape, &stream);
 
                     Array::from_ptr(mlx_sys::mlx_cumsum(
                         flat.c_array,
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
+                        stream.as_ref().as_ptr(),
                     ))
                 }
             }
@@ -436,7 +436,7 @@ impl Array {
         axis: impl Into<Option<i32>>,
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axis = axis.into();
         self.validate_axis_in_bounds(axis)?;

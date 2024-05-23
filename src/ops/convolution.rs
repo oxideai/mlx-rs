@@ -1,5 +1,5 @@
 use crate::error::OperationError;
-use crate::{Array, StreamOrDevice};
+use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 
 #[inline]
@@ -14,7 +14,7 @@ fn conv_general_device_inner(
     input_dilation: &[i32],
     groups: i32,
     flip: bool,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
         Array::from_ptr(mlx_sys::mlx_conv_general(
@@ -32,7 +32,7 @@ fn conv_general_device_inner(
             input_dilation.len(),
             groups,
             flip,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 }
@@ -65,7 +65,7 @@ pub fn conv_general_device<'a>(
     input_dilation: impl Into<Option<&'a [i32]>>,
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_conv_general_device(
         array,
@@ -118,7 +118,7 @@ pub unsafe fn conv_general_device_unchecked<'a>(
     input_dilation: impl Into<Option<&'a [i32]>>,
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     let strides = strides.into().unwrap_or(&[1]);
     let padding = padding.into().unwrap_or(&[0]);
@@ -169,7 +169,7 @@ pub fn try_conv_general_device<'a>(
     input_dilation: impl Into<Option<&'a [i32]>>,
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, OperationError> {
     let strides = strides.into().unwrap_or(&[1]);
     let padding = padding.into().unwrap_or(&[0]);
@@ -257,7 +257,7 @@ pub fn conv1d_device(
     padding: impl Into<Option<i32>>,
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_conv1d_device(array, weight, stride, padding, dilation, groups, stream).unwrap()
 }
@@ -282,7 +282,7 @@ pub fn try_conv1d_device(
     padding: impl Into<Option<i32>>,
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, OperationError> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
@@ -322,7 +322,7 @@ pub fn conv2d_device(
     padding: impl Into<Option<(i32, i32)>>,
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_conv2d_device(array, weight, stride, padding, dilation, groups, stream).unwrap()
 }
@@ -347,7 +347,7 @@ pub fn try_conv2d_device(
     padding: impl Into<Option<(i32, i32)>>,
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, OperationError> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));

@@ -106,7 +106,7 @@ use mlx_macros::default_device;
 
 use crate::{
     error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    Array, StreamOrDevice,
+    Array, Stream, StreamOrDevice,
 };
 
 mod index_impl;
@@ -278,7 +278,7 @@ impl ArrayIndexOp {
 /* -------------------------------------------------------------------------- */
 
 pub trait IndexOp<Idx> {
-    fn index_device(&self, i: Idx, stream: StreamOrDevice) -> Array;
+    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array;
 
     fn index(&self, i: Idx) -> Array {
         self.index_device(i, StreamOrDevice::default())
@@ -287,7 +287,7 @@ pub trait IndexOp<Idx> {
 
 // TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
 pub trait IndexMutOp<Idx, Val> {
-    fn index_mut_device(&mut self, i: Idx, val: Val, stream: StreamOrDevice);
+    fn index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>);
 
     fn index_mut(&mut self, i: Idx, val: Val) {
         self.index_mut_device(i, val, StreamOrDevice::default())
@@ -419,19 +419,27 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             let c_array = match axis.into() {
-                Some(axis) => {
-                    mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ptr())
-                }
+                Some(axis) => mlx_sys::mlx_take(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                ),
                 None => {
                     let shape = &[-1];
                     // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device_unchecked(shape, stream.clone());
+                    let reshaped = self.reshape_device_unchecked(shape, &stream);
 
-                    mlx_sys::mlx_take(reshaped.c_array, indices.c_array, 0, stream.as_ptr())
+                    mlx_sys::mlx_take(
+                        reshaped.c_array,
+                        indices.c_array,
+                        0,
+                        stream.as_ref().as_ptr(),
+                    )
                 }
             };
 
@@ -454,7 +462,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, TakeError> {
         let ndim = self.ndim().min(i32::MAX as usize) as i32;
 
@@ -497,7 +505,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_take_device(indices, axis, stream).unwrap()
     }
@@ -520,11 +528,15 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
-            let c_array =
-                mlx_sys::mlx_take_along_axis(self.c_array, indices.c_array, axis, stream.as_ptr());
+            let c_array = mlx_sys::mlx_take_along_axis(
+                self.c_array,
+                indices.c_array,
+                axis,
+                stream.as_ref().as_ptr(),
+            );
             Array::from_ptr(c_array)
         }
     }
@@ -540,7 +552,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, TakeAlongAxisError> {
         let ndim = self.ndim().min(i32::MAX as usize) as i32;
 
@@ -579,7 +591,7 @@ impl Array {
         &self,
         indices: &Array,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_take_along_axis_device(indices, axis, stream)
             .unwrap()

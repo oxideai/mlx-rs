@@ -9,7 +9,9 @@ use crate::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
-    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, VectorArray},
+    utils::{
+        all_unique, broadcast_shapes, is_broadcastable, is_same_shape, resolve_index, VectorArray,
+    },
     Array, Stream, StreamOrDevice,
 };
 
@@ -531,13 +533,14 @@ pub fn broadcast_to_device<'a>(
 #[default_device]
 pub unsafe fn broadcast_arrays_device_unchecked(
     arrays: &[impl AsRef<Array>],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Vec<Array> {
     let c_vec = VectorArray::from_iter(arrays.iter());
 
     unsafe {
-        let result =
-            VectorArray::from_op(|| mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ptr()));
+        let result = VectorArray::from_op(|| {
+            mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ref().as_ptr())
+        });
         result.into_values()
     }
 }
@@ -551,7 +554,7 @@ pub unsafe fn broadcast_arrays_device_unchecked(
 #[default_device]
 pub fn try_broadcast_arrays_device(
     arrays: &[impl AsRef<Array>],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>, BroadcastError> {
     let mut shapes = Vec::new();
     for arr in arrays.iter() {
@@ -567,7 +570,10 @@ pub fn try_broadcast_arrays_device(
 ///
 /// - `arrays`: The arrays to broadcast.
 #[default_device]
-pub fn broadcast_arrays_device(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Vec<Array> {
+pub fn broadcast_arrays_device(
+    arrays: &[impl AsRef<Array>],
+    stream: impl AsRef<Stream>,
+) -> Vec<Array> {
     try_broadcast_arrays_device(arrays, stream).unwrap()
 }
 

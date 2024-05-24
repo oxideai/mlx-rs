@@ -9,7 +9,7 @@ use crate::{
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
     utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, VectorArray},
-    Array, StreamOrDevice,
+    Array, Stream, StreamOrDevice,
 };
 
 impl Array {
@@ -22,7 +22,7 @@ impl Array {
     pub unsafe fn expand_dims_device_unchecked(
         &self,
         axes: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { expand_dims_device_unchecked(self, axes, stream) }
     }
@@ -32,14 +32,14 @@ impl Array {
     pub fn try_expand_dims_device(
         &self,
         axes: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, ExpandDimsError> {
         try_expand_dims_device(self, axes, stream)
     }
 
     /// See [`expand_dims`].
     #[default_device]
-    pub fn expand_dims_device(&self, axes: &[i32], stream: StreamOrDevice) -> Array {
+    pub fn expand_dims_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Array {
         self.try_expand_dims_device(axes, stream).unwrap()
     }
 
@@ -53,7 +53,7 @@ impl Array {
         &self,
         start_axis: impl Into<Option<i32>>,
         end_axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { flatten_device_unchecked(self, start_axis, end_axis, stream) }
     }
@@ -64,7 +64,7 @@ impl Array {
         &self,
         start_axis: impl Into<Option<i32>>,
         end_axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, FlattenError> {
         unsafe { Ok(flatten_device_unchecked(self, start_axis, end_axis, stream)) }
     }
@@ -75,7 +75,7 @@ impl Array {
         &self,
         start_axis: impl Into<Option<i32>>,
         end_axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_flatten_device(start_axis, end_axis, stream)
             .unwrap()
@@ -87,7 +87,11 @@ impl Array {
     ///
     /// The function is unsafe because it does not check if the shapes are valid.
     #[default_device]
-    pub unsafe fn reshape_device_unchecked(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
+    pub unsafe fn reshape_device_unchecked(
+        &self,
+        shape: &[i32],
+        stream: impl AsRef<Stream>,
+    ) -> Array {
         unsafe { reshape_device_unchecked(self, shape, stream) }
     }
 
@@ -96,14 +100,14 @@ impl Array {
     pub fn try_reshape_device<'a>(
         &self,
         shape: &'a [i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, ReshapeError<'a>> {
         try_reshape_device(self, shape, stream)
     }
 
     /// See [`reshape`].
     #[default_device]
-    pub fn reshape_device(&self, shape: &[i32], stream: StreamOrDevice) -> Array {
+    pub fn reshape_device(&self, shape: &[i32], stream: impl AsRef<Stream>) -> Array {
         self.try_reshape_device(shape, stream).unwrap()
     }
 
@@ -116,7 +120,7 @@ impl Array {
     pub unsafe fn squeeze_device_unchecked<'a>(
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         squeeze_device_unchecked(self, axes, stream)
     }
@@ -126,7 +130,7 @@ impl Array {
     pub fn try_squeeze_device<'a>(
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, SqueezeError> {
         try_squeeze_device(self, axes, stream)
     }
@@ -136,7 +140,7 @@ impl Array {
     pub fn squeeze_device<'a>(
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_squeeze_device(axes, stream).unwrap()
     }
@@ -148,26 +152,26 @@ impl Array {
         shape: impl Into<Option<&'a [i32]>>,
         strides: impl Into<Option<&'a [usize]>>,
         offset: impl Into<Option<usize>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         as_strided_device(self, shape, strides, offset, stream)
     }
 
     /// See [`at_least_1d`]
     #[default_device]
-    pub fn at_least_1d_device(&self, stream: StreamOrDevice) -> Array {
+    pub fn at_least_1d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_1d_device(self, stream)
     }
 
     /// See [`at_least_2d`]
     #[default_device]
-    pub fn at_least_2d_device(&self, stream: StreamOrDevice) -> Array {
+    pub fn at_least_2d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_2d_device(self, stream)
     }
 
     /// See [`at_least_3d`]
     #[default_device]
-    pub fn at_least_3d_device(&self, stream: StreamOrDevice) -> Array {
+    pub fn at_least_3d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_3d_device(self, stream)
     }
 
@@ -181,7 +185,7 @@ impl Array {
         &self,
         src: i32,
         dst: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { move_axis_device_unchecked(self, src, dst, stream) }
     }
@@ -192,14 +196,14 @@ impl Array {
         &self,
         src: i32,
         dst: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, InvalidAxisError> {
         try_move_axis_device(self, src, dst, stream)
     }
 
     /// See [`move_axis`]
     #[default_device]
-    pub fn move_axis_device(&self, src: i32, dst: i32, stream: StreamOrDevice) -> Array {
+    pub fn move_axis_device(&self, src: i32, dst: i32, stream: impl AsRef<Stream>) -> Array {
         self.try_move_axis_device(src, dst, stream).unwrap()
     }
 
@@ -213,7 +217,7 @@ impl Array {
         &self,
         indices: &[i32],
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Vec<Array> {
         split_device_unchecked(self, indices, axis, stream)
     }
@@ -224,7 +228,7 @@ impl Array {
         &self,
         indices: &[i32],
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Vec<Array>, InvalidAxisError> {
         try_split_device(self, indices, axis, stream)
     }
@@ -235,7 +239,7 @@ impl Array {
         &self,
         indices: &[i32],
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Vec<Array> {
         self.try_split_device(indices, axis, stream).unwrap()
     }
@@ -250,7 +254,7 @@ impl Array {
         &self,
         num_parts: i32,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Vec<Array> {
         unsafe { split_equal_device_unchecked(self, num_parts, axis, stream) }
     }
@@ -261,7 +265,7 @@ impl Array {
         &self,
         num_parts: i32,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Vec<Array>, InvalidAxisError> {
         try_split_equal_device(self, num_parts, axis, stream)
     }
@@ -272,7 +276,7 @@ impl Array {
         &self,
         num_parts: i32,
         axis: impl Into<Option<i32>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Vec<Array> {
         self.try_split_equal_device(num_parts, axis, stream)
             .unwrap()
@@ -288,7 +292,7 @@ impl Array {
         &self,
         axis1: i32,
         axis2: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { swap_axes_device_unchecked(self, axis1, axis2, stream) }
     }
@@ -299,13 +303,13 @@ impl Array {
         &self,
         axis1: i32,
         axis2: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, InvalidAxisError> {
         try_swap_axes_device(self, axis1, axis2, stream)
     }
 
     #[default_device]
-    pub fn swap_axes_device(&self, axis1: i32, axis2: i32, stream: StreamOrDevice) -> Array {
+    pub fn swap_axes_device(&self, axis1: i32, axis2: i32, stream: impl AsRef<Stream>) -> Array {
         self.try_swap_axes_device(axis1, axis2, stream).unwrap()
     }
 
@@ -318,7 +322,7 @@ impl Array {
     pub unsafe fn transpose_device_unchecked<'a>(
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { transpose_device_unchecked(self, axes, stream) }
     }
@@ -328,7 +332,7 @@ impl Array {
     pub fn try_transpose_device<'a>(
         &self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, TransposeError> {
         try_transpose_device(self, axes, stream)
     }
@@ -338,7 +342,7 @@ impl Array {
     pub fn transpose_device<'a>(
         &self,
         axes: impl Into<Option<&'a [i32]>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_transpose_device(axes, stream).unwrap()
     }
@@ -397,7 +401,7 @@ pub fn as_strided_device<'a>(
     shape: impl Into<Option<&'a [i32]>>,
     strides: impl Into<Option<&'a [usize]>>,
     offset: impl Into<Option<usize>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     let shape = shape.into().unwrap_or(a.shape());
     let resolved_strides = resolve_strides(shape, strides.into());
@@ -411,7 +415,7 @@ pub fn as_strided_device<'a>(
             resolved_strides.as_ptr(),
             resolved_strides.len(),
             offset,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         );
         Array::from_ptr(c_array)
     }
@@ -440,11 +444,15 @@ pub fn as_strided_device<'a>(
 pub unsafe fn broadcast_to_device_unchecked(
     a: &Array,
     shape: &[i32],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array =
-            mlx_sys::mlx_broadcast_to(a.c_array, shape.as_ptr(), shape.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_broadcast_to(
+            a.c_array,
+            shape.as_ptr(),
+            shape.len(),
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -468,7 +476,7 @@ pub unsafe fn broadcast_to_device_unchecked(
 pub fn try_broadcast_to_device<'a>(
     a: &'a Array,
     shape: &'a [i32],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, BroadcastError<'a>> {
     if !is_broadcastable(a.shape(), shape) {
         return Err(BroadcastError {
@@ -499,14 +507,18 @@ pub fn try_broadcast_to_device<'a>(
 /// let y = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
-pub fn broadcast_to_device<'a>(a: &'a Array, shape: &'a [i32], stream: StreamOrDevice) -> Array {
+pub fn broadcast_to_device<'a>(
+    a: &'a Array,
+    shape: &'a [i32],
+    stream: impl AsRef<Stream>,
+) -> Array {
     try_broadcast_to_device(a, shape, stream).unwrap()
 }
 
-fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
+fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let c_arrays = VectorArray::from_iter(arrays.iter());
-        let c_array = mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -535,7 +547,7 @@ fn concatenate_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDe
 pub unsafe fn concatenate_device_unchecked(
     arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     let axis = axis.into().unwrap_or(0);
     concatenate_inner(arrays, axis, stream)
@@ -561,7 +573,7 @@ pub unsafe fn concatenate_device_unchecked(
 pub fn try_concatenate_device(
     arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, ConcatenateError> {
     let axis = axis.into().unwrap_or(0);
 
@@ -626,7 +638,7 @@ pub fn try_concatenate_device(
 pub fn concatenate_device(
     arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_concatenate_device(arrays, axis, stream).unwrap()
 }
@@ -654,11 +666,15 @@ pub fn concatenate_device(
 pub unsafe fn expand_dims_device_unchecked(
     a: &Array,
     axes: &[i32],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array =
-            mlx_sys::mlx_expand_dims(a.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_expand_dims(
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -682,7 +698,7 @@ pub unsafe fn expand_dims_device_unchecked(
 pub fn try_expand_dims_device(
     a: &Array,
     axes: &[i32],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, ExpandDimsError> {
     // Check for valid axes
     // TODO: what is a good default capacity for SmallVec?
@@ -730,7 +746,7 @@ pub fn try_expand_dims_device(
 /// let y = expand_dims(&x, &[0]);
 /// ```
 #[default_device]
-pub fn expand_dims_device(a: &Array, axes: &[i32], stream: StreamOrDevice) -> Array {
+pub fn expand_dims_device(a: &Array, axes: &[i32], stream: impl AsRef<Stream>) -> Array {
     a.expand_dims_device(axes, stream)
 }
 
@@ -763,13 +779,14 @@ pub unsafe fn flatten_device_unchecked(
     a: &Array,
     start_axis: impl Into<Option<i32>>,
     end_axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     let start_axis = start_axis.into().unwrap_or(0);
     let end_axis = end_axis.into().unwrap_or(-1);
 
     unsafe {
-        let c_array = mlx_sys::mlx_flatten(a.c_array, start_axis, end_axis, stream.as_ptr());
+        let c_array =
+            mlx_sys::mlx_flatten(a.c_array, start_axis, end_axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -799,7 +816,7 @@ pub fn try_flatten_device(
     a: &Array,
     start_axis: impl Into<Option<i32>>,
     end_axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, FlattenError> {
     let ndim = a.ndim();
 
@@ -874,7 +891,7 @@ pub fn flatten_device(
     a: &Array,
     start_axis: impl Into<Option<i32>>,
     end_axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     a.flatten_device(start_axis, end_axis, stream)
 }
@@ -899,9 +916,18 @@ pub fn flatten_device(
 /// let y = unsafe { reshape_unchecked(&x, &[4]) };
 /// ```
 #[default_device]
-pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
+pub unsafe fn reshape_device_unchecked(
+    a: &Array,
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_reshape(a.c_array, shape.as_ptr(), shape.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_reshape(
+            a.c_array,
+            shape.as_ptr(),
+            shape.len(),
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -925,7 +951,7 @@ pub unsafe fn reshape_device_unchecked(a: &Array, shape: &[i32], stream: StreamO
 pub fn try_reshape_device<'a>(
     a: &Array,
     shape: &'a [i32],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, ReshapeError<'a>> {
     a.can_reshape_to(shape)?;
     unsafe { Ok(reshape_device_unchecked(a, shape, stream)) }
@@ -951,7 +977,7 @@ pub fn try_reshape_device<'a>(
 /// let y = reshape(&x, &[4]);
 /// ```
 #[default_device]
-pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array {
+pub fn reshape_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> Array {
     a.reshape_device(shape, stream)
 }
 
@@ -978,12 +1004,17 @@ pub fn reshape_device(a: &Array, shape: &[i32], stream: StreamOrDevice) -> Array
 pub unsafe fn squeeze_device_unchecked<'a>(
     a: &'a Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     // All size 1 axes are removed if axes is None
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     unsafe {
-        let c_array = mlx_sys::mlx_squeeze(a.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_squeeze(
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1007,7 +1038,7 @@ pub unsafe fn squeeze_device_unchecked<'a>(
 pub fn try_squeeze_device<'a>(
     a: &'a Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, SqueezeError> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     let mut unique_axes = HashSet::new();
@@ -1040,7 +1071,12 @@ pub fn try_squeeze_device<'a>(
     }
 
     unsafe {
-        let c_array = mlx_sys::mlx_squeeze(a.c_array, axes.as_ptr(), axes.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_squeeze(
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        );
         Ok(Array::from_ptr(c_array))
     }
 }
@@ -1068,7 +1104,7 @@ pub fn try_squeeze_device<'a>(
 pub fn squeeze_device<'a>(
     a: &'a Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     a.squeeze_device(axes, stream)
 }
@@ -1088,9 +1124,9 @@ pub fn squeeze_device<'a>(
 /// let out = at_least_1d(&x);
 /// ```
 #[default_device]
-pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
+pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_atleast_1d(a.c_array, stream.as_ptr());
+        let c_array = mlx_sys::mlx_atleast_1d(a.c_array, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1110,9 +1146,9 @@ pub fn at_least_1d_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// let out = at_least_2d(&x);
 /// ```
 #[default_device]
-pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
+pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_atleast_2d(a.c_array, stream.as_ptr());
+        let c_array = mlx_sys::mlx_atleast_2d(a.c_array, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1132,9 +1168,9 @@ pub fn at_least_2d_device(a: &Array, stream: StreamOrDevice) -> Array {
 /// let out = at_least_3d(&x);
 /// ```
 #[default_device]
-pub fn at_least_3d_device(a: &Array, stream: StreamOrDevice) -> Array {
+pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_atleast_3d(a.c_array, stream.as_ptr());
+        let c_array = mlx_sys::mlx_atleast_3d(a.c_array, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1164,10 +1200,10 @@ pub unsafe fn move_axis_device_unchecked(
     a: &Array,
     src: i32,
     dst: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_moveaxis(a.c_array, src, dst, stream.as_ptr());
+        let c_array = mlx_sys::mlx_moveaxis(a.c_array, src, dst, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1193,7 +1229,7 @@ pub fn try_move_axis_device(
     a: &Array,
     src: i32,
     dst: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, InvalidAxisError> {
     let ndim = a.ndim();
     let src = resolve_index(src, ndim).ok_or(InvalidAxisError { axis: src, ndim })? as i32;
@@ -1223,7 +1259,7 @@ pub fn try_move_axis_device(
 /// let result = move_axis(&a, 0, 2);
 /// ```
 #[default_device]
-pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: StreamOrDevice) -> Array {
+pub fn move_axis_device(a: &Array, src: i32, dst: i32, stream: impl AsRef<Stream>) -> Array {
     a.move_axis_device(src, dst, stream)
 }
 
@@ -1252,7 +1288,7 @@ pub unsafe fn split_device_unchecked(
     a: &Array,
     indices: &[i32],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
@@ -1262,7 +1298,7 @@ pub unsafe fn split_device_unchecked(
                 indices.as_ptr(),
                 indices.len(),
                 axis,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         });
         c_vec.into_values()
@@ -1290,7 +1326,7 @@ pub fn try_split_device(
     a: &Array,
     indices: &[i32],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>, InvalidAxisError> {
     let axis = axis.into().unwrap_or(0);
     let ndim = a.ndim();
@@ -1323,7 +1359,7 @@ pub fn split_device(
     a: &Array,
     indices: &[i32],
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Vec<Array> {
     a.split_device(indices, axis, stream)
 }
@@ -1353,11 +1389,11 @@ pub unsafe fn split_equal_device_unchecked(
     a: &Array,
     num_parts: i32,
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Vec<Array> {
     let axis = axis.into().unwrap_or(0);
     let c_vec = VectorArray::from_op(|| {
-        mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ptr())
+        mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ref().as_ptr())
     });
     c_vec.into_values()
 }
@@ -1384,7 +1420,7 @@ pub fn try_split_equal_device(
     a: &Array,
     num_parts: i32,
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>, InvalidAxisError> {
     let ndim = a.ndim();
     let axis = axis.into().unwrap_or(0);
@@ -1429,7 +1465,7 @@ pub fn split_equal_device(
     a: &Array,
     num_parts: i32,
     axis: impl Into<Option<i32>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Vec<Array> {
     a.split_equal_device(num_parts, axis, stream)
 }
@@ -1508,7 +1544,7 @@ pub unsafe fn pad_device_unchecked<'a>(
     array: &'a Array,
     width: impl Into<PadWidth<'a>>,
     value: impl Into<Option<Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     let width = width.into();
     let ndim = array.ndim();
@@ -1529,7 +1565,7 @@ pub unsafe fn pad_device_unchecked<'a>(
             high_pads.as_ptr(),
             high_pads.len(),
             value.c_array,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         );
         Array::from_ptr(c_array)
     }
@@ -1559,7 +1595,7 @@ pub fn try_pad_device<'a>(
     array: &'a Array,
     width: impl Into<PadWidth<'a>>,
     value: impl Into<Option<Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, PadError> {
     let width = width.into();
     let ndim = array.ndim();
@@ -1594,7 +1630,7 @@ pub fn try_pad_device<'a>(
             high_pads.as_ptr(),
             high_pads.len(),
             value.c_array,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         );
         Ok(Array::from_ptr(c_array))
     }
@@ -1628,15 +1664,15 @@ pub fn pad_device<'a>(
     array: &'a Array,
     width: impl Into<PadWidth<'a>>,
     value: impl Into<Option<Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_pad_device(array, width, value, stream).unwrap()
 }
 
-fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
+fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let c_vec = VectorArray::from_iter(arrays.iter());
-        let c_array = mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ptr());
+        let c_array = mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1665,7 +1701,7 @@ fn stack_inner(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) 
 pub unsafe fn stack_device_unchecked(
     arrays: &[impl AsRef<Array>],
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     stack_inner(arrays, axis, stream)
 }
@@ -1674,7 +1710,7 @@ pub unsafe fn stack_device_unchecked(
 pub fn try_stack_device(
     arrays: &[impl AsRef<Array>],
     axis: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, StackError> {
     if arrays.is_empty() {
         return Err(StackError::NoInputArray);
@@ -1708,14 +1744,14 @@ pub fn try_stack_device(
 /// let result = stack(&[&a, &b], 0);
 /// ```
 #[default_device]
-pub fn stack_device(arrays: &[impl AsRef<Array>], axis: i32, stream: StreamOrDevice) -> Array {
+pub fn stack_device(arrays: &[impl AsRef<Array>], axis: i32, stream: impl AsRef<Stream>) -> Array {
     try_stack_device(arrays, axis, stream).unwrap()
 }
 
-fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
+fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let c_vec = VectorArray::from_iter(arrays.iter());
-        let c_array = mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1742,7 +1778,7 @@ fn stack_all_inner(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Arra
 #[default_device]
 pub unsafe fn stack_all_device_unchecked(
     arrays: &[impl AsRef<Array>],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     stack_all_inner(arrays, stream)
 }
@@ -1765,7 +1801,7 @@ pub unsafe fn stack_all_device_unchecked(
 #[default_device]
 pub fn try_stack_all_device(
     arrays: &[impl AsRef<Array>],
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, StackError> {
     if arrays.is_empty() {
         return Err(StackError::NoInputArray);
@@ -1798,7 +1834,7 @@ pub fn try_stack_all_device(
 /// let result = stack_all(&[&a, &b]);
 /// ```
 #[default_device]
-pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: StreamOrDevice) -> Array {
+pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>) -> Array {
     try_stack_all_device(arrays, stream).unwrap()
 }
 
@@ -1827,10 +1863,10 @@ pub unsafe fn swap_axes_device_unchecked(
     a: &Array,
     axis1: i32,
     axis2: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_swapaxes(a.c_array, axis1, axis2, stream.as_ptr());
+        let c_array = mlx_sys::mlx_swapaxes(a.c_array, axis1, axis2, stream.as_ref().as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -1856,7 +1892,7 @@ pub fn try_swap_axes_device(
     a: &Array,
     axis1: i32,
     axis2: i32,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, InvalidAxisError> {
     let ndim = a.ndim();
     let resolved_axis1 =
@@ -1888,7 +1924,7 @@ pub fn try_swap_axes_device(
 /// let result = swap_axes(&a, 0, 1);
 /// ```
 #[default_device]
-pub fn swap_axes_device(a: &Array, axis1: i32, axis2: i32, stream: StreamOrDevice) -> Array {
+pub fn swap_axes_device(a: &Array, axis1: i32, axis2: i32, stream: impl AsRef<Stream>) -> Array {
     a.swap_axes_device(axis1, axis2, stream)
 }
 
@@ -1908,9 +1944,14 @@ pub fn swap_axes_device(a: &Array, axis1: i32, axis2: i32, stream: StreamOrDevic
 /// let y = tile(&x, &[2]);
 /// ```
 #[default_device]
-pub fn tile_device(a: &Array, reps: &[i32], stream: StreamOrDevice) -> Array {
+pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        let c_array = mlx_sys::mlx_tile(a.c_array, reps.as_ptr(), reps.len(), stream.as_ptr());
+        let c_array = mlx_sys::mlx_tile(
+            a.c_array,
+            reps.as_ptr(),
+            reps.len(),
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1939,14 +1980,17 @@ pub fn tile_device(a: &Array, reps: &[i32], stream: StreamOrDevice) -> Array {
 pub unsafe fn transpose_device_unchecked<'a>(
     a: &'a Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
         let c_array = match axes.into() {
-            Some(axes) => {
-                mlx_sys::mlx_transpose(a.c_array, axes.as_ptr(), axes.len(), stream.as_ptr())
-            }
-            None => mlx_sys::mlx_transpose_all(a.c_array, stream.as_ptr()),
+            Some(axes) => mlx_sys::mlx_transpose(
+                a.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                stream.as_ref().as_ptr(),
+            ),
+            None => mlx_sys::mlx_transpose_all(a.c_array, stream.as_ref().as_ptr()),
         };
         Array::from_ptr(c_array)
     }
@@ -1972,7 +2016,7 @@ pub unsafe fn transpose_device_unchecked<'a>(
 pub fn try_transpose_device<'a>(
     a: &Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, TransposeError> {
     unsafe {
         let c_array = match axes.into() {
@@ -2004,9 +2048,14 @@ pub fn try_transpose_device<'a>(
                     }
                 }
 
-                mlx_sys::mlx_transpose(a.c_array, axes.as_ptr(), axes.len(), stream.as_ptr())
+                mlx_sys::mlx_transpose(
+                    a.c_array,
+                    axes.as_ptr(),
+                    axes.len(),
+                    stream.as_ref().as_ptr(),
+                )
             }
-            None => mlx_sys::mlx_transpose_all(a.c_array, stream.as_ptr()),
+            None => mlx_sys::mlx_transpose_all(a.c_array, stream.as_ref().as_ptr()),
         };
 
         Ok(Array::from_ptr(c_array))
@@ -2037,7 +2086,7 @@ pub fn try_transpose_device<'a>(
 pub fn transpose_device<'a>(
     a: &Array,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     try_transpose_device(a, axes, stream).unwrap()
 }

@@ -1,5 +1,6 @@
 use crate::array::ArrayElement;
 use crate::error::DataStoreError;
+use crate::Stream;
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_macros::default_device;
 use num_traits::NumCast;
@@ -18,7 +19,7 @@ impl Array {
     ///
     /// - shape: Desired shape
     #[default_device]
-    pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
+    pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Array {
         // TODO: Can we make use of full() here?
         Self::try_zeros_device::<T>(shape, stream).unwrap()
     }
@@ -42,7 +43,7 @@ impl Array {
     #[default_device]
     pub unsafe fn zeros_device_unchecked<T: ArrayElement>(
         shape: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         // TODO: Can we make use of full() here?
         unsafe {
@@ -50,7 +51,7 @@ impl Array {
                 shape.as_ptr(),
                 shape.len(),
                 T::DTYPE.into(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -70,7 +71,7 @@ impl Array {
     #[default_device]
     pub fn try_zeros_device<T: ArrayElement>(
         shape: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
@@ -95,7 +96,7 @@ impl Array {
     ///
     /// - shape: Desired shape
     #[default_device]
-    pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: StreamOrDevice) -> Array {
+    pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Array {
         // TODO: Can we make use of full() here?
         Array::try_ones_device::<T>(shape, stream).unwrap()
     }
@@ -119,14 +120,14 @@ impl Array {
     #[default_device]
     pub unsafe fn ones_device_unchecked<T: ArrayElement>(
         shape: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         // TODO: Can we make use of full() here?
         Array::from_ptr(mlx_sys::mlx_ones(
             shape.as_ptr(),
             shape.len(),
             T::DTYPE.into(),
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 
@@ -144,7 +145,7 @@ impl Array {
     /// - shape: Desired shape
     pub fn try_ones_device<T: ArrayElement>(
         shape: &[i32],
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         // TODO: Can we make use of full() here?
         if shape.iter().any(|&i| i < 0) {
@@ -176,7 +177,7 @@ impl Array {
         n: i32,
         m: Option<i32>,
         k: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         Self::try_eye_device::<T>(n, m, k, stream).unwrap()
     }
@@ -205,7 +206,7 @@ impl Array {
         n: i32,
         m: Option<i32>,
         k: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_eye(
@@ -213,7 +214,7 @@ impl Array {
                 m.unwrap_or(n),
                 k.unwrap_or(0),
                 T::DTYPE.into(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -238,7 +239,7 @@ impl Array {
         n: i32,
         m: Option<i32>,
         k: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if n < 0 || m.unwrap_or(n) < 0 {
             return Err(DataStoreError::NegativeInteger(format!(
@@ -272,7 +273,7 @@ impl Array {
     pub fn full_device<T: ArrayElement>(
         shape: &[i32],
         values: Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         Self::try_full_device::<T>(shape, values, stream).unwrap()
     }
@@ -302,7 +303,7 @@ impl Array {
     pub unsafe fn full_device_unchecked<T: ArrayElement>(
         shape: &[i32],
         values: Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_full(
@@ -310,7 +311,7 @@ impl Array {
                 shape.len(),
                 values.c_array,
                 T::DTYPE.into(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -336,7 +337,7 @@ impl Array {
     pub fn try_full_device<T: ArrayElement>(
         shape: &[i32],
         values: Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if shape.iter().any(|&i| i < 0) {
             return Err(DataStoreError::NegativeDimensions(
@@ -361,7 +362,7 @@ impl Array {
     ///
     /// - n: number of rows and columns in the output
     #[default_device]
-    pub fn identity_device<T: ArrayElement>(n: i32, stream: StreamOrDevice) -> Array {
+    pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> Array {
         Self::eye_device::<T>(n, Some(n), None, stream)
     }
 
@@ -384,7 +385,7 @@ impl Array {
     /// The caller must ensure that n is positive.
     pub unsafe fn identity_device_unchecked<T: ArrayElement>(
         n: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { Self::eye_device_unchecked::<T>(n, Some(n), None, stream) }
     }
@@ -404,7 +405,7 @@ impl Array {
     /// - n: number of rows and columns in the output
     pub fn try_identity_device<T: ArrayElement>(
         n: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         Self::try_eye_device::<T>(n, Some(n), None, stream)
     }
@@ -429,7 +430,7 @@ impl Array {
         start: U,
         stop: U,
         count: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array
     where
         T: ArrayElement,
@@ -462,7 +463,7 @@ impl Array {
         start: U,
         stop: U,
         count: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array
     where
         T: ArrayElement,
@@ -477,7 +478,7 @@ impl Array {
                 stop_f32,
                 count.unwrap_or(50),
                 T::DTYPE.into(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -502,7 +503,7 @@ impl Array {
         start: U,
         stop: U,
         count: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError>
     where
         T: ArrayElement,
@@ -540,7 +541,7 @@ impl Array {
         array: Array,
         count: i32,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         Self::try_repeat_device::<T>(array, count, axis, stream).unwrap()
     }
@@ -570,14 +571,14 @@ impl Array {
         array: Array,
         count: i32,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_repeat(
                 array.c_array,
                 count,
                 axis,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -603,7 +604,7 @@ impl Array {
         array: Array,
         count: i32,
         axis: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if count < 0 {
             return Err(DataStoreError::NegativeInteger(format!(
@@ -634,7 +635,7 @@ impl Array {
     pub fn repeat_all_device<T: ArrayElement>(
         array: Array,
         count: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         Self::try_repeat_all_device::<T>(array, count, stream).unwrap()
     }
@@ -662,13 +663,13 @@ impl Array {
     pub unsafe fn repeat_all_device_unchecked<T: ArrayElement>(
         array: Array,
         count: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_repeat_all(
                 array.c_array,
                 count,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -692,7 +693,7 @@ impl Array {
     pub fn try_repeat_all_device<T: ArrayElement>(
         array: Array,
         count: i32,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if count < 0 {
             return Err(DataStoreError::NegativeInteger(format!(
@@ -724,7 +725,7 @@ impl Array {
         n: i32,
         m: Option<i32>,
         k: Option<i32>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_tri(
@@ -732,7 +733,7 @@ impl Array {
                 m.unwrap_or(n),
                 k.unwrap_or(0),
                 T::DTYPE.into(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }

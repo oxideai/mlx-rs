@@ -2,6 +2,7 @@ use crate::array::Array;
 use crate::error::{DataStoreError, OperationError};
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, can_reduce_shape, is_broadcastable};
+use crate::Stream;
 use mlx_macros::default_device;
 
 impl Array {
@@ -26,7 +27,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn eq_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn eq_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_eq_device(other, stream).unwrap()
     }
 
@@ -55,12 +56,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn eq_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn eq_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_equal(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -89,7 +90,7 @@ impl Array {
     pub fn try_eq_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -119,7 +120,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn le_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn le_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_le_device(other, stream).unwrap()
     }
 
@@ -148,12 +149,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn le_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn le_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_less_equal(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -182,7 +183,7 @@ impl Array {
     pub fn try_le_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -212,7 +213,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn ge_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn ge_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_ge_device(other, stream).unwrap()
     }
 
@@ -240,12 +241,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn ge_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn ge_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_greater_equal(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -274,7 +275,7 @@ impl Array {
     pub fn try_ge_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -304,7 +305,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn ne_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn ne_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_ne_device(other, stream).unwrap()
     }
 
@@ -333,12 +334,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn ne_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn ne_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_not_equal(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -367,7 +368,7 @@ impl Array {
     pub fn try_ne_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -396,7 +397,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn lt_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn lt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_lt_device(other, stream).unwrap()
     }
 
@@ -425,12 +426,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn lt_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn lt_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_less(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -458,7 +459,7 @@ impl Array {
     pub fn try_lt_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -487,7 +488,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn gt_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn gt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_gt_device(other, stream).unwrap()
     }
 
@@ -515,12 +516,12 @@ impl Array {
     ///
     /// This function is unsafe because it does not check if the arrays are broadcastable.
     #[default_device]
-    pub unsafe fn gt_device_unchecked(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub unsafe fn gt_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_greater(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -548,7 +549,7 @@ impl Array {
     pub fn try_gt_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -577,7 +578,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn logical_and_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn logical_and_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_logical_and_device(other, stream).unwrap()
     }
 
@@ -608,13 +609,13 @@ impl Array {
     pub unsafe fn logical_and_device_unchecked(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_logical_and(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -642,7 +643,7 @@ impl Array {
     pub fn try_logical_and_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -671,7 +672,7 @@ impl Array {
     ///
     /// - other: array to compare
     #[default_device]
-    pub fn logical_or_device(&self, other: &Array, stream: StreamOrDevice) -> Array {
+    pub fn logical_or_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_logical_or_device(other, stream).unwrap()
     }
 
@@ -702,13 +703,13 @@ impl Array {
     pub unsafe fn logical_or_device_unchecked(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_logical_or(
                 self.c_array,
                 other.c_array,
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -736,7 +737,7 @@ impl Array {
     pub fn try_logical_or_device(
         &self,
         other: &Array,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         if !is_broadcastable(self.shape(), other.shape()) {
             return Err(DataStoreError::BroadcastError);
@@ -779,7 +780,7 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_all_close_device(other, rtol, atol, equal_nan, stream)
             .unwrap()
@@ -823,7 +824,7 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_allclose(
@@ -832,7 +833,7 @@ impl Array {
                 rtol.into().unwrap_or(1e-5),
                 atol.into().unwrap_or(1e-8),
                 equal_nan.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -871,9 +872,9 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
-        let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, stream.clone());
+        let is_close = self.try_is_close_device(other, rtol, atol, equal_nan, &stream);
         is_close.map(|is_close| is_close.all_device(None, None, stream))
     }
 
@@ -896,7 +897,7 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_is_close_device(other, rtol, atol, equal_nan, stream)
             .unwrap()
@@ -925,7 +926,7 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_isclose(
@@ -934,7 +935,7 @@ impl Array {
                 rtol.into().unwrap_or(1e-5),
                 atol.into().unwrap_or(1e-8),
                 equal_nan.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -958,7 +959,7 @@ impl Array {
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         // represents atol and rtol being broadcasted to operate on other
         if !is_broadcastable(&[], other.shape()) {
@@ -998,14 +999,14 @@ impl Array {
         &self,
         other: &Array,
         equal_nan: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_array_equal(
                 self.c_array,
                 other.c_array,
                 equal_nan.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -1033,7 +1034,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_any_device(axes, keep_dims, stream).unwrap()
     }
@@ -1065,7 +1066,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -1075,7 +1076,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         }
     }
@@ -1103,7 +1104,7 @@ impl Array {
         &'a self,
         axes: impl Into<Option<&'a [i32]>>,
         keep_dims: impl Into<Option<bool>>,
-        stream: StreamOrDevice,
+        stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
@@ -1118,7 +1119,7 @@ impl Array {
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             ))
         })
     }
@@ -1134,7 +1135,7 @@ impl Array {
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
 #[default_device]
-pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: StreamOrDevice) -> Array {
+pub fn which_device(condition: &Array, a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Array {
     try_which_device(condition, a, b, stream).unwrap()
 }
 
@@ -1156,14 +1157,14 @@ pub unsafe fn which_device_unchecked(
     condition: &Array,
     a: &Array,
     b: &Array,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
         Array::from_ptr(mlx_sys::mlx_where(
             condition.c_array,
             a.c_array,
             b.c_array,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     }
 }
@@ -1182,7 +1183,7 @@ pub fn try_which_device(
     condition: &Array,
     a: &Array,
     b: &Array,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, DataStoreError> {
     if !is_broadcastable(condition.shape(), a.shape())
         || !is_broadcastable(condition.shape(), b.shape())

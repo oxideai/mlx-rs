@@ -1,3 +1,5 @@
+use mlx_sys::mlx_retain;
+
 use crate::device::Device;
 use crate::utils::mlx_describe;
 
@@ -23,14 +25,14 @@ impl StreamOrDevice {
         }
     }
 
-    /// The `[Stream::default_stream_on_device()] on the [Device::cpu()]
+    /// Current default CPU stream.
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::cpu(),
         }
     }
 
-    /// The `[Stream::default_stream_on_device()] on the [Device::gpu()]
+    /// Current default GPU stream.
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::gpu(),
@@ -106,16 +108,20 @@ impl Stream {
         self.c_stream
     }
 
+    /// Current default CPU stream.
     pub fn cpu() -> Self {
         unsafe {
             let c_stream = mlx_sys::MLX_CPU_STREAM;
+            mlx_retain(c_stream as *mut std::ffi::c_void);
             Stream { c_stream }
         }
     }
 
+    /// Current default GPU stream.
     pub fn gpu() -> Self {
         unsafe {
             let c_stream = mlx_sys::MLX_GPU_STREAM;
+            mlx_retain(c_stream as *mut std::ffi::c_void);
             Stream { c_stream }
         }
     }

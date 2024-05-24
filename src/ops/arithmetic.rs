@@ -18,10 +18,6 @@ impl Array {
     /// let data: &[i32] = result.as_slice();
     /// // data == [1, 2, 3, 4, 5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, stream.as_ref().as_ptr())) }
@@ -45,7 +41,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to add
-    /// - stream: stream or device to evaluate on
     pub fn add_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_add_device(other, stream).unwrap()
     }
@@ -68,7 +63,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to add
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -102,7 +96,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to add
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_add_device(
         &self,
@@ -135,7 +128,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
     pub fn sub_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_sub_device(other, stream).unwrap()
     }
@@ -159,7 +151,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -194,7 +185,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_sub_device(
         &self,
@@ -222,10 +212,6 @@ impl Array {
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn neg_device(&self, stream: impl AsRef<Stream>) -> Array {
         self.try_neg_device(stream).unwrap()
@@ -245,10 +231,6 @@ impl Array {
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -278,10 +260,6 @@ impl Array {
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
     ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    ///
     /// # Errors
     ///
     /// Returns an error if the array is of type bool.
@@ -308,10 +286,6 @@ impl Array {
     /// let b_data: &[bool] = b.as_slice();
     /// // b_data == [true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe {
@@ -418,7 +392,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     pub fn div_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_div_device(other, stream).unwrap()
     }
@@ -442,7 +415,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -477,7 +449,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_div_device(
         &self,
@@ -510,7 +481,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
     pub fn pow_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_pow_device(other, stream).unwrap()
     }
@@ -534,7 +504,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -569,7 +538,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_pow_device(
         &self,
@@ -602,7 +570,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     pub fn rem_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_rem_device(other, stream).unwrap()
     }
@@ -626,7 +593,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -661,7 +627,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_rem_device(
         &self,
@@ -812,7 +777,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn floor_divide_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_floor_divide_device(other, stream).unwrap()
@@ -841,7 +805,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -885,7 +848,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_floor_divide_device(
         &self,
@@ -1002,7 +964,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn matmul_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
         self.try_matmul_device(other, stream).unwrap()
@@ -1036,7 +997,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
     ///
     /// # Safety
     ///
@@ -1084,7 +1044,6 @@ impl Array {
     /// # Params
     ///
     /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn try_matmul_device(
         &self,
@@ -1158,7 +1117,6 @@ impl Array {
     /// # Params
     ///
     /// - decimals: number of decimals to round to - default is 0 if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn round_device(
         &self,

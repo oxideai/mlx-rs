@@ -1,6 +1,6 @@
 use mlx_macros::default_device;
 
-use crate::{array::Array, error::FftError, stream::StreamOrDevice, Stream};
+use crate::{array::Array, error::FftError, stream::StreamOrDevice};
 
 use super::utils::{
     resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked, try_resolve_size_and_axis,
@@ -25,11 +25,11 @@ pub unsafe fn fft_device_unchecked(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
-        let c_array = mlx_sys::mlx_fft_fft(a.c_array, n, axis, stream.as_ref().as_ptr());
+        let c_array = mlx_sys::mlx_fft_fft(a.c_array, n, axis, stream.stream.c_stream);
         Array::from_ptr(c_array)
     }
 }
@@ -47,7 +47,7 @@ pub fn try_fft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let (n, axis) = try_resolve_size_and_axis(a, n.into(), axis.into())?;
     unsafe { Ok(fft_device_unchecked(a, Some(n), Some(axis), stream)) }
@@ -72,7 +72,7 @@ pub fn fft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_fft_device(a, n, axis, stream).unwrap()
 }
@@ -95,7 +95,7 @@ pub unsafe fn fft2_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
     fftn_device_unchecked(a, s, axes, stream)
@@ -114,7 +114,7 @@ pub fn try_fft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let axes = axes.into().unwrap_or(&[-2, -1]);
     try_fftn_device(a, s, axes, stream)
@@ -137,13 +137,13 @@ pub fn fft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_fft2_device(a, s, axes, stream).unwrap()
 }
 
 #[inline]
-fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Stream>) -> Array {
+fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
     let num_s = s.len();
     let num_axes = axes.len();
 
@@ -151,14 +151,8 @@ fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Stre
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = mlx_sys::mlx_fft_fftn(
-            a.c_array,
-            s_ptr,
-            num_s,
-            axes_ptr,
-            num_axes,
-            stream.as_ref().as_ptr(),
-        );
+        let c_array =
+            mlx_sys::mlx_fft_fftn(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
 
         Array::from_ptr(c_array)
     }
@@ -184,10 +178,10 @@ pub unsafe fn fftn_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    fftn_device_inner(a, &valid_s, &valid_axes, stream)
+    fftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), stream)
 }
 
 /// n-dimensional discrete Fourier Transform.
@@ -205,7 +199,7 @@ pub fn try_fftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
     Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
@@ -236,7 +230,7 @@ pub fn fftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_fftn_device(a, s, axes, stream).unwrap()
 }
@@ -259,11 +253,11 @@ pub unsafe fn ifft_device_unchecked(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
-        let c_array = mlx_sys::mlx_fft_ifft(a.c_array, n, axis, stream.as_ref().as_ptr());
+        let c_array = mlx_sys::mlx_fft_ifft(a.c_array, n, axis, stream.stream.c_stream);
         Array::from_ptr(c_array)
     }
 }
@@ -281,7 +275,7 @@ pub fn try_ifft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let (n, axis) = try_resolve_size_and_axis(a, n.into(), axis.into())?;
     unsafe { Ok(ifft_device_unchecked(a, n, axis, stream)) }
@@ -300,7 +294,7 @@ pub fn ifft_device(
     a: &Array,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_ifft_device(a, n, axis, stream).unwrap()
 }
@@ -323,7 +317,7 @@ pub unsafe fn ifft2_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let axes = axes.into().unwrap_or(&[-2, -1]);
     ifftn_device_unchecked(a, s, axes, stream)
@@ -342,7 +336,7 @@ pub fn try_ifft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let axes = axes.into().unwrap_or(&[-2, -1]);
     try_ifftn_device(a, s, axes, stream)
@@ -365,12 +359,12 @@ pub fn ifft2_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_ifft2_device(a, s, axes, stream).unwrap()
 }
 
-fn ifftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Stream>) -> Array {
+fn ifftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: StreamOrDevice) -> Array {
     let num_s = s.len();
     let num_axes = axes.len();
 
@@ -378,14 +372,8 @@ fn ifftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Str
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = mlx_sys::mlx_fft_ifftn(
-            a.c_array,
-            s_ptr,
-            num_s,
-            axes_ptr,
-            num_axes,
-            stream.as_ref().as_ptr(),
-        );
+        let c_array =
+            mlx_sys::mlx_fft_ifftn(a.c_array, s_ptr, num_s, axes_ptr, num_axes, stream.as_ptr());
         Array::from_ptr(c_array)
     }
 }
@@ -410,10 +398,10 @@ pub unsafe fn ifftn_device_unchecked<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    ifftn_device_inner(a, &valid_s, &valid_axes, stream)
+    ifftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), stream)
 }
 
 /// n-dimensional inverse discrete Fourier Transform.
@@ -431,7 +419,7 @@ pub fn try_ifftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Result<Array, FftError> {
     let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
     Ok(ifftn_device_inner(a, &valid_s, &valid_axes, stream))
@@ -456,7 +444,7 @@ pub fn ifftn_device<'a>(
     a: &'a Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
-    stream: impl AsRef<Stream>,
+    stream: StreamOrDevice,
 ) -> Array {
     try_ifftn_device(a, s, axes, stream).unwrap()
 }

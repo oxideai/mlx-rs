@@ -212,6 +212,7 @@ pub enum SplitEqualError {
     InvalidNumSplits { size: usize, num_splits: i32 },
 }
 
+#[derive(Debug, Error)]
 pub enum LinAlgError {
     #[error("Too many axes for norm operation")]
     TooManyAxes,

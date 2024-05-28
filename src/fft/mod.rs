@@ -159,6 +159,4 @@ mod fftn;
 mod rfftn;
 mod utils;
 
-mod macros;
-
 pub use self::{fftn::*, rfftn::*};

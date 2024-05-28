@@ -1,3 +1,4 @@
+/// See [`crate::fft::fft`] for details.
 #[macro_export]
 macro_rules! fft {
     ($a:expr) => {
@@ -14,6 +15,7 @@ macro_rules! fft {
     };
 }
 
+/// See [`crate::fft::fft2`] for details.
 #[macro_export]
 macro_rules! fft2 {
     ($a:expr) => {
@@ -30,6 +32,7 @@ macro_rules! fft2 {
     };
 }
 
+/// See [`crate::fft::fftn`] for details.
 #[macro_export]
 macro_rules! fftn {
     ($a:expr) => {
@@ -46,6 +49,7 @@ macro_rules! fftn {
     };
 }
 
+/// See [`crate::fft::ifft`] for details.
 #[macro_export]
 macro_rules! ifft {
     ($a:expr) => {
@@ -62,6 +66,7 @@ macro_rules! ifft {
     };
 }
 
+/// See [`crate::fft::ifft2`] for details.
 #[macro_export]
 macro_rules! ifft2 {
     ($a:expr) => {
@@ -78,6 +83,7 @@ macro_rules! ifft2 {
     };
 }
 
+/// See [`crate::fft::ifftn`] for details.
 #[macro_export]
 macro_rules! ifftn {
     ($a:expr) => {
@@ -94,6 +100,7 @@ macro_rules! ifftn {
     };
 }
 
+/// See [`crate::fft::rfft`] for details.
 #[macro_export]
 macro_rules! rfft {
     ($a:expr) => {
@@ -110,6 +117,7 @@ macro_rules! rfft {
     };
 }
 
+/// See [`crate::fft::rfft2`] for details.
 #[macro_export]
 macro_rules! rfft2 {
     ($a:expr) => {
@@ -126,6 +134,7 @@ macro_rules! rfft2 {
     };
 }
 
+/// See [`crate::fft::rfftn`] for details.
 #[macro_export]
 macro_rules! rfftn {
     ($a:expr) => {
@@ -142,6 +151,7 @@ macro_rules! rfftn {
     };
 }
 
+/// See [`crate::fft::irfft`] for details.
 #[macro_export]
 macro_rules! irfft {
     ($a:expr) => {
@@ -158,6 +168,7 @@ macro_rules! irfft {
     };
 }
 
+/// See [`crate::fft::irfft2`] for details.
 #[macro_export]
 macro_rules! irfft2 {
     ($a:expr) => {
@@ -174,6 +185,7 @@ macro_rules! irfft2 {
     };
 }
 
+/// See [`crate::fft::irfftn`] for details.
 #[macro_export]
 macro_rules! irfftn {
     ($a:expr) => {

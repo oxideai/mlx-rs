@@ -142,7 +142,7 @@ impl Array {
         axes: impl Into<Option<&'a [i32]>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
-        self.try_squeeze_device(axes, stream).unwrap()
+        squeeze_device(self, axes, stream)
     }
 
     /// See [`as_strided`]
@@ -1106,7 +1106,7 @@ pub fn squeeze_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
 ) -> Array {
-    a.squeeze_device(axes, stream)
+    try_squeeze_device(a, axes, stream).unwrap()
 }
 
 /// Convert array to have at least one dimension.

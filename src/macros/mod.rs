@@ -2,4 +2,5 @@
 mod internal;
 
 mod fft;
+mod reduction;
 mod shapes;

@@ -2,16 +2,16 @@
 #[macro_export]
 macro_rules! fft {
     ($a:expr) => {
-        $crate::fft::fft($a, None, None)
+        $crate::fft::fft($a.as_ref(), None, None)
     };
     ($a:expr, $n:expr) => {
-        $crate::fft::fft($a, $n, None)
+        $crate::fft::fft($a.as_ref(), $n, None)
     };
     ($a:expr, $n:expr, $axis:expr) => {
-        $crate::fft::fft($a, $n, $axis)
+        $crate::fft::fft($a.as_ref(), $n, $axis)
     };
     ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
-        $crate::fft::fft_device($a, $n, $axis, $stream)
+        $crate::fft::fft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
 
@@ -19,16 +19,16 @@ macro_rules! fft {
 #[macro_export]
 macro_rules! fft2 {
     ($a:expr) => {
-        $crate::fft::fft2($a, None, None)
+        $crate::fft::fft2($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::fft2($a, $shape, None)
+        $crate::fft::fft2($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::fft2($a, $shape, $axes)
+        $crate::fft::fft2($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::fft2_device($a, $shape, $axes, $stream)
+        $crate::fft::fft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -36,16 +36,16 @@ macro_rules! fft2 {
 #[macro_export]
 macro_rules! fftn {
     ($a:expr) => {
-        $crate::fft::fftn($a, None, None)
+        $crate::fft::fftn($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::fftn($a, $shape, None)
+        $crate::fft::fftn($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::fftn($a, $shape, $axes)
+        $crate::fft::fftn($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::fftn_device($a, $shape, $axes, $stream)
+        $crate::fft::fftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -53,16 +53,16 @@ macro_rules! fftn {
 #[macro_export]
 macro_rules! ifft {
     ($a:expr) => {
-        $crate::fft::ifft($a, None, None)
+        $crate::fft::ifft($a.as_ref(), None, None)
     };
     ($a:expr, $n:expr) => {
-        $crate::fft::ifft($a, $n, None)
+        $crate::fft::ifft($a.as_ref(), $n, None)
     };
     ($a:expr, $n:expr, $axis:expr) => {
-        $crate::fft::ifft($a, $n, $axis)
+        $crate::fft::ifft($a.as_ref(), $n, $axis)
     };
     ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
-        $crate::fft::ifft_device($a, $n, $axis, $stream)
+        $crate::fft::ifft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
 
@@ -70,16 +70,16 @@ macro_rules! ifft {
 #[macro_export]
 macro_rules! ifft2 {
     ($a:expr) => {
-        $crate::fft::ifft2($a, None, None)
+        $crate::fft::ifft2($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::ifft2($a, $shape, None)
+        $crate::fft::ifft2($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::ifft2($a, $shape, $axes)
+        $crate::fft::ifft2($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::ifft2_device($a, $shape, $axes, $stream)
+        $crate::fft::ifft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -87,16 +87,16 @@ macro_rules! ifft2 {
 #[macro_export]
 macro_rules! ifftn {
     ($a:expr) => {
-        $crate::fft::ifftn($a, None, None)
+        $crate::fft::ifftn($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::ifftn($a, $shape, None)
+        $crate::fft::ifftn($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::ifftn($a, $shape, $axes)
+        $crate::fft::ifftn($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::ifftn_device($a, $shape, $axes, $stream)
+        $crate::fft::ifftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -104,16 +104,16 @@ macro_rules! ifftn {
 #[macro_export]
 macro_rules! rfft {
     ($a:expr) => {
-        $crate::fft::rfft($a, None, None)
+        $crate::fft::rfft($a.as_ref(), None, None)
     };
     ($a:expr, $n:expr) => {
-        $crate::fft::rfft($a, $n, None)
+        $crate::fft::rfft($a.as_ref(), $n, None)
     };
     ($a:expr, $n:expr, $axis:expr) => {
-        $crate::fft::rfft($a, $n, $axis)
+        $crate::fft::rfft($a.as_ref(), $n, $axis)
     };
     ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
-        $crate::fft::rfft_device($a, $n, $axis, $stream)
+        $crate::fft::rfft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
 
@@ -121,16 +121,16 @@ macro_rules! rfft {
 #[macro_export]
 macro_rules! rfft2 {
     ($a:expr) => {
-        $crate::fft::rfft2($a, None, None)
+        $crate::fft::rfft2($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::rfft2($a, $shape, None)
+        $crate::fft::rfft2($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::rfft2($a, $shape, $axes)
+        $crate::fft::rfft2($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::rfft2_device($a, $shape, $axes, $stream)
+        $crate::fft::rfft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -138,16 +138,16 @@ macro_rules! rfft2 {
 #[macro_export]
 macro_rules! rfftn {
     ($a:expr) => {
-        $crate::fft::rfftn($a, None, None)
+        $crate::fft::rfftn($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::rfftn($a, $shape, None)
+        $crate::fft::rfftn($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::rfftn($a, $shape, $axes)
+        $crate::fft::rfftn($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::rfftn_device($a, $shape, $axes, $stream)
+        $crate::fft::rfftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -155,16 +155,16 @@ macro_rules! rfftn {
 #[macro_export]
 macro_rules! irfft {
     ($a:expr) => {
-        $crate::fft::irfft($a, None, None)
+        $crate::fft::irfft($a.as_ref(), None, None)
     };
     ($a:expr, $n:expr) => {
-        $crate::fft::irfft($a, $n, None)
+        $crate::fft::irfft($a.as_ref(), $n, None)
     };
     ($a:expr, $n:expr, $axis:expr) => {
-        $crate::fft::irfft($a, $n, $axis)
+        $crate::fft::irfft($a.as_ref(), $n, $axis)
     };
     ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
-        $crate::fft::irfft_device($a, $n, $axis, $stream)
+        $crate::fft::irfft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
 
@@ -172,16 +172,16 @@ macro_rules! irfft {
 #[macro_export]
 macro_rules! irfft2 {
     ($a:expr) => {
-        $crate::fft::irfft2($a, None, None)
+        $crate::fft::irfft2($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::irfft2($a, $shape, None)
+        $crate::fft::irfft2($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::irfft2($a, $shape, $axes)
+        $crate::fft::irfft2($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::irfft2_device($a, $shape, $axes, $stream)
+        $crate::fft::irfft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 
@@ -189,16 +189,16 @@ macro_rules! irfft2 {
 #[macro_export]
 macro_rules! irfftn {
     ($a:expr) => {
-        $crate::fft::irfftn($a, None, None)
+        $crate::fft::irfftn($a.as_ref(), None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::fft::irfftn($a, $shape, None)
+        $crate::fft::irfftn($a.as_ref(), $shape, None)
     };
     ($a:expr, $shape:expr, $axes:expr) => {
-        $crate::fft::irfftn($a, $shape, $axes)
+        $crate::fft::irfftn($a.as_ref(), $shape, $axes)
     };
     ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
-        $crate::fft::irfftn_device($a, $shape, $axes, $stream)
+        $crate::fft::irfftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
 

@@ -2,19 +2,19 @@
 #[macro_export]
 macro_rules! as_strided {
     ($a:expr) => {
-        $crate::ops::as_strided($a, None, None, None)
+        $crate::ops::as_strided($a.as_ref(), None, None, None)
     };
     ($a:expr, $shape:expr) => {
-        $crate::ops::as_strided($a, $shape, None, None)
+        $crate::ops::as_strided($a.as_ref(), $shape, None, None)
     };
     ($a:expr, $shape:expr, $strides:expr) => {
-        $crate::ops::as_strided($a, $shape, $strides, None)
+        $crate::ops::as_strided($a.as_ref(), $shape, $strides, None)
     };
     ($a:expr, $shape:expr, $strides:expr, $offset:expr) => {
-        $crate::ops::as_strided($a, $shape, $strides, $offset)
+        $crate::ops::as_strided($a.as_ref(), $shape, $strides, $offset)
     };
     ($a:expr, $shape:expr, $strides:expr, $offset:expr, $stream:expr) => {
-        $crate::ops::as_strided_device($a, $shape, $strides, $offset, $stream)
+        $crate::ops::as_strided_device($a.as_ref(), $shape, $strides, $offset, $stream)
     };
 }
 
@@ -22,10 +22,10 @@ macro_rules! as_strided {
 #[macro_export]
 macro_rules! broadcast_to {
     ($a:expr, $shape:expr) => {
-        $crate::ops::broadcast_to($a, $shape)
+        $crate::ops::broadcast_to($a.as_ref(), $shape)
     };
     ($a:expr, $shape:expr, $stream:expr) => {
-        $crate::ops::broadcast_to_device($a, $shape, $stream)
+        $crate::ops::broadcast_to_device($a.as_ref(), $shape, $stream)
     };
 }
 
@@ -47,10 +47,10 @@ macro_rules! concatenate {
 #[macro_export]
 macro_rules! expand_dims {
     ($a:expr, $axis:expr) => {
-        $crate::ops::expand_dims($a, $axis)
+        $crate::ops::expand_dims($a.as_ref(), $axis)
     };
     ($a:expr, $axis:expr, $stream:expr) => {
-        $crate::ops::expand_dims_device($a, $axis, $stream)
+        $crate::ops::expand_dims_device($a.as_ref(), $axis, $stream)
     };
 }
 
@@ -58,16 +58,16 @@ macro_rules! expand_dims {
 #[macro_export]
 macro_rules! flatten {
     ($a:expr) => {
-        $crate::ops::flatten($a, None, None)
+        $crate::ops::flatten($a.as_ref(), None, None)
     };
     ($a:expr, $start:expr) => {
-        $crate::ops::flatten($a, $start, None)
+        $crate::ops::flatten($a.as_ref(), $start, None)
     };
     ($a:expr, $start:expr, $end:expr) => {
-        $crate::ops::flatten($a, $start, $end)
+        $crate::ops::flatten($a.as_ref(), $start, $end)
     };
     ($a:expr, $start:expr, $end:expr, $stream:expr) => {
-        $crate::ops::flatten_device($a, $start, $end, $stream)
+        $crate::ops::flatten_device($a.as_ref(), $start, $end, $stream)
     };
 }
 
@@ -75,10 +75,10 @@ macro_rules! flatten {
 #[macro_export]
 macro_rules! reshape {
     ($a:expr, $shape:expr) => {
-        $crate::ops::reshape($a, $shape)
+        $crate::ops::reshape($a.as_ref(), $shape)
     };
     ($a:expr, $shape:expr, $stream:expr) => {
-        $crate::ops::reshape_device($a, $shape, $stream)
+        $crate::ops::reshape_device($a.as_ref(), $shape, $stream)
     };
 }
 
@@ -86,13 +86,13 @@ macro_rules! reshape {
 #[macro_export]
 macro_rules! squeeze {
     ($a:expr) => {
-        $crate::ops::squeeze($a, None)
+        $crate::ops::squeeze($a.as_ref(), None)
     };
     ($a:expr, $axis:expr) => {
-        $crate::ops::squeeze($a, $axis)
+        $crate::ops::squeeze($a.as_ref(), $axis)
     };
     ($a:expr, $axis:expr, $stream:expr) => {
-        $crate::ops::squeeze_device($a, $axis, $stream)
+        $crate::ops::squeeze_device($a.as_ref(), $axis, $stream)
     };
 }
 
@@ -103,7 +103,7 @@ macro_rules! at_least_1d {
         $crate::ops::at_least_1d($a)
     };
     ($a:expr, $stream:expr) => {
-        $crate::ops::at_least_1d_device($a, $stream)
+        $crate::ops::at_least_1d_device($a.as_ref(), $stream)
     };
 }
 
@@ -114,7 +114,7 @@ macro_rules! at_least_2d {
         $crate::ops::at_least_2d($a)
     };
     ($a:expr, $stream:expr) => {
-        $crate::ops::at_least_2d_device($a, $stream)
+        $crate::ops::at_least_2d_device($a.as_ref(), $stream)
     };
 }
 
@@ -125,7 +125,7 @@ macro_rules! at_least_3d {
         $crate::ops::at_least_3d($a)
     };
     ($a:expr, $stream:expr) => {
-        $crate::ops::at_least_3d_device($a, $stream)
+        $crate::ops::at_least_3d_device($a.as_ref(), $stream)
     };
 }
 
@@ -133,10 +133,10 @@ macro_rules! at_least_3d {
 #[macro_export]
 macro_rules! move_axis {
     ($a:expr, $src:expr, $dst:expr) => {
-        $crate::ops::move_axis($a, $src, $dst)
+        $crate::ops::move_axis($a.as_ref(), $src, $dst)
     };
     ($a:expr, $src:expr, $dst:expr, $stream:expr) => {
-        $crate::ops::move_axis_device($a, $src, $dst, $stream)
+        $crate::ops::move_axis_device($a.as_ref(), $src, $dst, $stream)
     };
 }
 
@@ -144,13 +144,13 @@ macro_rules! move_axis {
 #[macro_export]
 macro_rules! split {
     ($a:expr, $indices:expr) => {
-        $crate::ops::split($a, $indices, None)
+        $crate::ops::split($a.as_ref(), $indices, None)
     };
     ($a:expr, $indices:expr, $axis:expr) => {
-        $crate::ops::split($a, $indices, $axis)
+        $crate::ops::split($a.as_ref(), $indices, $axis)
     };
     ($a:expr, $indices:expr, $axis:expr, $stream:expr) => {
-        $crate::ops::split_device($a, $indices, $axis, $stream)
+        $crate::ops::split_device($a.as_ref(), $indices, $axis, $stream)
     };
 }
 
@@ -158,13 +158,13 @@ macro_rules! split {
 #[macro_export]
 macro_rules! split_equal {
     ($a:expr, $num_splits:expr) => {
-        $crate::ops::split_equal($a, $num_splits, None)
+        $crate::ops::split_equal($a.as_ref(), $num_splits, None)
     };
     ($a:expr, $num_splits:expr, $axis:expr) => {
-        $crate::ops::split_equal($a, $num_splits, $axis)
+        $crate::ops::split_equal($a.as_ref(), $num_splits, $axis)
     };
     ($a:expr, $num_splits:expr, $axis:expr, $stream:expr) => {
-        $crate::ops::split_equal_device($a, $num_splits, $axis, $stream)
+        $crate::ops::split_equal_device($a.as_ref(), $num_splits, $axis, $stream)
     };
 }
 
@@ -172,13 +172,13 @@ macro_rules! split_equal {
 #[macro_export]
 macro_rules! pad {
     ($a:expr, $width:expr) => {
-        $crate::ops::pad($a, $width, None)
+        $crate::ops::pad($a.as_ref(), $width, None)
     };
     ($a:expr, $width:expr, $value:expr) => {
-        $crate::ops::pad($a, $width, $value)
+        $crate::ops::pad($a.as_ref(), $width, $value)
     };
     ($a:expr, $width:expr, $value:expr, $stream:expr) => {
-        $crate::ops::pad_device($a, $width, $value, $stream)
+        $crate::ops::pad_device($a.as_ref(), $width, $value, $stream)
     };
 }
 
@@ -208,10 +208,10 @@ macro_rules! stack_all {
 #[macro_export]
 macro_rules! swap_axes {
     ($a:expr, $axis1:expr, $axis2:expr) => {
-        $crate::ops::swap_axes($a, $axis1, $axis2)
+        $crate::ops::swap_axes($a.as_ref(), $axis1, $axis2)
     };
     ($a:expr, $axis1:expr, $axis2:expr, $stream:expr) => {
-        $crate::ops::swap_axes_device($a, $axis1, $axis2, $stream)
+        $crate::ops::swap_axes_device($a.as_ref(), $axis1, $axis2, $stream)
     };
 }
 
@@ -219,10 +219,10 @@ macro_rules! swap_axes {
 #[macro_export]
 macro_rules! tile {
     ($a:expr, $reps:expr) => {
-        $crate::ops::tile($a, $reps)
+        $crate::ops::tile($a.as_ref(), $reps)
     };
     ($a:expr, $reps:expr, $stream:expr) => {
-        $crate::ops::tile_device($a, $reps, $stream)
+        $crate::ops::tile_device($a.as_ref(), $reps, $stream)
     };
 }
 
@@ -230,13 +230,13 @@ macro_rules! tile {
 #[macro_export]
 macro_rules! transpose {
     ($a:expr) => {
-        $crate::ops::transpose($a, None)
+        $crate::ops::transpose($a.as_ref(), None)
     };
     ($a:expr, $axes:expr) => {
-        $crate::ops::transpose($a, $axes)
+        $crate::ops::transpose($a.as_ref(), $axes)
     };
     ($a:expr, $axes:expr, $stream:expr) => {
-        $crate::ops::transpose_device($a, $axes, $stream)
+        $crate::ops::transpose_device($a.as_ref(), $axes, $stream)
     };
 }
 

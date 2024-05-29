@@ -192,7 +192,10 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn into_values(self) -> Vec<Array> {
+    pub(crate) fn into_values<T>(self) -> T
+    where
+        T: FromIterator<Array>,
+    {
         unsafe {
             let size = mlx_sys::mlx_vector_array_size(self.c_vec);
             (0..size)
@@ -200,7 +203,7 @@ impl VectorArray {
                     let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
                     Array::from_ptr(c_array)
                 })
-                .collect()
+                .collect::<T>()
         }
     }
 }

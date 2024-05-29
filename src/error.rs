@@ -254,22 +254,34 @@ impl<'a> From<OrdNotImplementedError<'a>> for NormError<'a> {
 }
 
 #[derive(Debug, Error)]
-pub enum LinAlgError {
-    #[error("Too many axes for norm operation")]
-    TooManyAxes,
+pub enum QrError {
+    #[error("Arrays must type f32. Received array with dtype {dtype:?}")]
+    DtypeNotSupported { dtype: Dtype },
 
-    #[error("Singular value norms are not implemented")]
-    SingularValueNormNotImplemented,
+    #[error("Arrays must have >= 2 dimensions. Received array with {ndim} dimensions")]
+    InvalidShape { ndim: usize },
 
-    #[error("Matrix norm with ord={ord} is not supported")]
-    InvalidMatrixF64Ord { ord: f64 },
+    #[error("Support for non-square matrices NYI")]
+    NonSquareMatrix,
+}
 
-    #[error("Matrix norm with ord={ord} is not supported")]
-    InvalidMatrixStrOrd { ord: &'static str },
+#[derive(Debug, Error)]
+pub enum SvdError {
+    #[error("Arrays must type f32. Received array with dtype {dtype:?}")]
+    DtypeNotSupported { dtype: Dtype },
 
-    #[error("Norm ord={ord} only supported for matrices")]
-    RequiresMatrix { ord: &'static str },
+    #[error("Arrays must have >= 2 dimensions. Received array with {ndim} dimensions")]
+    InvalidShape { ndim: usize },
+}
 
-    #[error("Nuclear norm is not implemented")]
-    NotYetImplemented,
+#[derive(Debug, Error)]
+pub enum InvError {
+    #[error("Arrays must type f32. Received array with dtype {dtype:?}")]
+    DtypeNotSupported { dtype: Dtype },
+
+    #[error("Arrays must have >= 2 dimensions. Received array with {ndim} dimensions")]
+    InvalidShape { ndim: usize },
+
+    #[error("Support for non-square matrices NYI")]
+    NonSquareMatrix,
 }

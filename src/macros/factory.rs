@@ -291,17 +291,17 @@ mod tests {
         let stream = StreamOrDevice::default();
 
         // We are just testing that the macros compile
-        let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat!(a, 4, 1);
 
-        let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, stream = &stream);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat!(a, 4, 1, stream = &stream);
 
-        let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, dtype = f32);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat!(a, 4, 1, dtype = f32);
 
-        let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, dtype = f32, stream = &stream);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat!(a, 4, 1, dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -309,17 +309,17 @@ mod tests {
         let stream = StreamOrDevice::default();
 
         // We are just testing that the macros compile
-        let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat_all!(a, 4);
 
-        let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, stream = &stream);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat_all!(a, 4, stream = &stream);
 
-        let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, dtype = f32);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat_all!(a, 4, dtype = f32);
 
-        let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, dtype = f32, stream = &stream);
+        let a = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
+        let _result = repeat_all!(a, 4, dtype = f32, stream = &stream);
     }
 
     #[test]

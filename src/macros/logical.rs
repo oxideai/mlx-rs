@@ -180,7 +180,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = eq!(a, b);
-        let _c = eq!(a, b, stream=&stream);
+        let _c = eq!(a, b, stream = &stream);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = le!(a, b);
-        let _c = le!(a, b, stream=&stream);
+        let _c = le!(a, b, stream = &stream);
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = ge!(a, b);
-        let _c = ge!(a, b, stream=&stream);
+        let _c = ge!(a, b, stream = &stream);
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = ne!(a, b);
-        let _c = ne!(a, b, stream=&stream);
+        let _c = ne!(a, b, stream = &stream);
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = lt!(a, b);
-        let _c = lt!(a, b, stream=&stream);
+        let _c = lt!(a, b, stream = &stream);
     }
 
     #[test]
@@ -235,7 +235,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = gt!(a, b);
-        let _c = gt!(a, b, stream=&stream);
+        let _c = gt!(a, b, stream = &stream);
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = logical_and!(a, b);
-        let _c = logical_and!(a, b, stream=&stream);
+        let _c = logical_and!(a, b, stream = &stream);
     }
 
     #[test]
@@ -257,7 +257,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = logical_or!(a, b);
-        let _c = logical_or!(a, b, stream=&stream);
+        let _c = logical_or!(a, b, stream = &stream);
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod tests {
         let _c = all_close!(a, b, 1e-6);
         let _c = all_close!(a, b, 1e-6, 1e-6);
         let _c = all_close!(a, b, 1e-6, 1e-6, true);
-        let _c = all_close!(a, b, 1e-6, 1e-6, true, stream=&stream);
+        let _c = all_close!(a, b, 1e-6, 1e-6, true, stream = &stream);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod tests {
         let _c = is_close!(a, b, 1e-6);
         let _c = is_close!(a, b, 1e-6, 1e-6);
         let _c = is_close!(a, b, 1e-6, 1e-6, true);
-        let _c = is_close!(a, b, 1e-6, 1e-6, true, stream=&stream);
+        let _c = is_close!(a, b, 1e-6, 1e-6, true, stream = &stream);
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         // We are just testing that the macros compile
         let _c = array_eq!(a, b);
         let _c = array_eq!(a, b, true);
-        let _c = array_eq!(a, b, true, stream=&stream);
+        let _c = array_eq!(a, b, true, stream = &stream);
     }
 
     #[test]
@@ -309,7 +309,7 @@ mod tests {
         let _c = any!(a);
         let _c = any!(a, &[0][..]);
         let _c = any!(a, &[0][..], true);
-        let _c = any!(a, &[0][..], true, stream=&stream);
+        let _c = any!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -321,6 +321,6 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = which!(condition, a, b);
-        let _c = which!(condition, a, b, stream=&stream);
+        let _c = which!(condition, a, b, stream = &stream);
     }
 }

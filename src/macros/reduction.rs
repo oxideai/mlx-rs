@@ -150,7 +150,7 @@ mod tests {
         let _result = all!(&a);
         let _result = all!(a, &[0, 1][..]);
         let _result = all!(a, &[1][..], false);
-        let _result = all!(a, &[0][..], true, stream=&stream);
+        let _result = all!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
         let _result = prod!(&a);
         let _result = prod!(a, &[0, 1][..]);
         let _result = prod!(a, &[1][..], false);
-        let _result = prod!(a, &[0][..], true, stream=&stream);
+        let _result = prod!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
         let _result = max!(&a);
         let _result = max!(a, &[0, 1][..]);
         let _result = max!(a, &[1][..], false);
-        let _result = max!(a, &[0][..], true, stream=&stream);
+        let _result = max!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         let _result = sum!(&a);
         let _result = sum!(a, &[0, 1][..]);
         let _result = sum!(a, &[1][..], false);
-        let _result = sum!(a, &[0][..], true, stream=&stream);
+        let _result = sum!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
         let _result = mean!(&a);
         let _result = mean!(a, &[0, 1][..]);
         let _result = mean!(a, &[1][..], false);
-        let _result = mean!(a, &[0][..], true, stream=&stream);
+        let _result = mean!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
         let _result = min!(&a);
         let _result = min!(a, &[0, 1][..]);
         let _result = min!(a, &[1][..], false);
-        let _result = min!(a, &[0][..], true, stream=&stream);
+        let _result = min!(a, &[0][..], true, stream = &stream);
     }
 
     #[test]
@@ -223,7 +223,7 @@ mod tests {
         let _result = variance!(a, &[0, 1][..]);
         let _result = variance!(a, &[1][..], false);
         let _result = variance!(a, &[0][..], true, 3);
-        let _result = variance!(a, &[0][..], true, 3, stream=&stream);
+        let _result = variance!(a, &[0][..], true, 3, stream = &stream);
     }
 
     #[test]
@@ -235,6 +235,6 @@ mod tests {
         let _result = log_sum_exp!(&a);
         let _result = log_sum_exp!(a, &[0, 1][..]);
         let _result = log_sum_exp!(a, &[1][..], false);
-        let _result = log_sum_exp!(a, &[0][..], true, stream=&stream);
+        let _result = log_sum_exp!(a, &[0][..], true, stream = &stream);
     }
 }

@@ -214,9 +214,9 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = zeros!(&[2, 3]);
-        let _a = zeros!(&[2, 3], stream=&stream);
-        let _a = zeros!(&[2, 3], dtype=f32);
-        let _a = zeros!(&[2, 3], dtype=f32, stream=&stream);
+        let _a = zeros!(&[2, 3], stream = &stream);
+        let _a = zeros!(&[2, 3], dtype = f32);
+        let _a = zeros!(&[2, 3], dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -225,9 +225,9 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = ones!(&[2, 3]);
-        let _a = ones!(&[2, 3], stream=&stream);
-        let _a = ones!(&[2, 3], dtype=f32);
-        let _a = ones!(&[2, 3], dtype=f32, stream=&stream);
+        let _a = ones!(&[2, 3], stream = &stream);
+        let _a = ones!(&[2, 3], dtype = f32);
+        let _a = ones!(&[2, 3], dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -236,17 +236,17 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = eye!(3);
-        let _a = eye!(3, stream=&stream);
-        let _a = eye!(3, dtype=f32);
+        let _a = eye!(3, stream = &stream);
+        let _a = eye!(3, dtype = f32);
         let _a = eye!(3, 4);
-        let _a = eye!(3, dtype=f32, stream=&stream);
-        let _a = eye!(3, 4, stream=&stream);
-        let _a = eye!(3, 4, dtype=f32);
+        let _a = eye!(3, dtype = f32, stream = &stream);
+        let _a = eye!(3, 4, stream = &stream);
+        let _a = eye!(3, 4, dtype = f32);
         let _a = eye!(3, 4, 1);
-        let _a = eye!(3, 4, dtype=f32, stream=&stream);
-        let _a = eye!(3, 4, 1, stream=&stream);
-        let _a = eye!(3, 4, 1, dtype=f32);
-        let _a = eye!(3, 4, 1, dtype=f32, stream=&stream);
+        let _a = eye!(3, 4, dtype = f32, stream = &stream);
+        let _a = eye!(3, 4, 1, stream = &stream);
+        let _a = eye!(3, 4, 1, dtype = f32);
+        let _a = eye!(3, 4, 1, dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -255,9 +255,9 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = full!(&[2, 3], Array::from_int(5));
-        let _a = full!(&[2, 3], Array::from_int(5), stream=&stream);
-        let _a = full!(&[2, 3], Array::from_int(5), dtype=f32);
-        let _a = full!(&[2, 3], Array::from_int(5), dtype=f32, stream=&stream);
+        let _a = full!(&[2, 3], Array::from_int(5), stream = &stream);
+        let _a = full!(&[2, 3], Array::from_int(5), dtype = f32);
+        let _a = full!(&[2, 3], Array::from_int(5), dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -266,9 +266,9 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = identity!(3);
-        let _a = identity!(3, stream=&stream);
-        let _a = identity!(3, dtype=f32);
-        let _a = identity!(3, dtype=f32, stream=&stream);
+        let _a = identity!(3, stream = &stream);
+        let _a = identity!(3, dtype = f32);
+        let _a = identity!(3, dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -277,49 +277,49 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = linspace!(0.0, 1.0);
-        let _a = linspace!(0.0, 1.0, stream=&stream);
-        let _a = linspace!(0.0, 1.0, dtype=f32);
+        let _a = linspace!(0.0, 1.0, stream = &stream);
+        let _a = linspace!(0.0, 1.0, dtype = f32);
         let _a = linspace!(0.0, 1.0, 10);
-        let _a = linspace!(0.0, 1.0, dtype=f32, stream=&stream);
-        let _a = linspace!(0.0, 1.0, 10, stream=&stream);
-        let _a = linspace!(0.0, 1.0, 10, dtype=f32);
-        let _a = linspace!(0.0, 1.0, 10, dtype=f32, stream=&stream);
+        let _a = linspace!(0.0, 1.0, dtype = f32, stream = &stream);
+        let _a = linspace!(0.0, 1.0, 10, stream = &stream);
+        let _a = linspace!(0.0, 1.0, 10, dtype = f32);
+        let _a = linspace!(0.0, 1.0, 10, dtype = f32, stream = &stream);
     }
 
     #[test]
     fn test_repeat() {
         let stream = StreamOrDevice::default();
-        
+
         // We are just testing that the macros compile
         let a = Array::from_int(5);
         let _a = repeat!(a, 3, 0);
 
         let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, stream=&stream);
+        let _a = repeat!(a, 3, 0, stream = &stream);
 
         let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, dtype=f32);
+        let _a = repeat!(a, 3, 0, dtype = f32);
 
         let a = Array::from_int(5);
-        let _a = repeat!(a, 3, 0, dtype=f32, stream=&stream);
+        let _a = repeat!(a, 3, 0, dtype = f32, stream = &stream);
     }
 
     #[test]
     fn test_repeat_all() {
         let stream = StreamOrDevice::default();
-        
+
         // We are just testing that the macros compile
         let a = Array::from_int(5);
         let _a = repeat_all!(a, 3);
 
         let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, stream=&stream);
+        let _a = repeat_all!(a, 3, stream = &stream);
 
         let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, dtype=f32);
+        let _a = repeat_all!(a, 3, dtype = f32);
 
         let a = Array::from_int(5);
-        let _a = repeat_all!(a, 3, dtype=f32, stream=&stream);
+        let _a = repeat_all!(a, 3, dtype = f32, stream = &stream);
     }
 
     #[test]
@@ -328,16 +328,16 @@ mod tests {
 
         // We are just testing that the macros compile
         let _a = tri!(3);
-        let _a = tri!(3, stream=&stream);
-        let _a = tri!(3, dtype=f32);
+        let _a = tri!(3, stream = &stream);
+        let _a = tri!(3, dtype = f32);
         let _a = tri!(3, 4);
-        let _a = tri!(3, dtype=f32, stream=&stream);
-        let _a = tri!(3, 4, stream=&stream);
-        let _a = tri!(3, 4, dtype=f32);
+        let _a = tri!(3, dtype = f32, stream = &stream);
+        let _a = tri!(3, 4, stream = &stream);
+        let _a = tri!(3, 4, dtype = f32);
         let _a = tri!(3, 4, 1);
-        let _a = tri!(3, 4, dtype=f32, stream=&stream);
-        let _a = tri!(3, 4, 1, stream=&stream);
-        let _a = tri!(3, 4, 1, dtype=f32);
-        let _a = tri!(3, 4, 1, dtype=f32, stream=&stream);
+        let _a = tri!(3, 4, dtype = f32, stream = &stream);
+        let _a = tri!(3, 4, 1, stream = &stream);
+        let _a = tri!(3, 4, 1, dtype = f32);
+        let _a = tri!(3, 4, 1, dtype = f32, stream = &stream);
     }
 }

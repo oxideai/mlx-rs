@@ -2,8 +2,8 @@
 mod internal;
 
 // The mods below define exported macros
-mod fft;
 mod factory;
+mod fft;
 mod indexing;
 mod logical;
 mod reduction;

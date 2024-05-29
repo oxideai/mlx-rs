@@ -221,8 +221,8 @@ mod tests {
         let ifft_a = ifft!(&fft_a, 4, 0);
         assert_eq!(a, ifft_a);
 
-        let fft_a = fft!(&a, 4, 0, stream=StreamOrDevice::cpu());
-        let ifft_a = ifft!(&fft_a, 4, 0, stream=StreamOrDevice::cpu());
+        let fft_a = fft!(&a, 4, 0, stream = StreamOrDevice::cpu());
+        let ifft_a = ifft!(&fft_a, 4, 0, stream = StreamOrDevice::cpu());
         assert_eq!(a, ifft_a);
     }
 
@@ -241,8 +241,13 @@ mod tests {
         let ifft2_a = ifft2!(&fft2_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, ifft2_a);
 
-        let fft2_a = fft2!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
-        let ifft2_a = ifft2!(&fft2_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let fft2_a = fft2!(&a, &[2, 2][..], &[0, 1][..], stream = StreamOrDevice::cpu());
+        let ifft2_a = ifft2!(
+            &fft2_a,
+            &[2, 2][..],
+            &[0, 1][..],
+            stream = StreamOrDevice::cpu()
+        );
         assert_eq!(a, ifft2_a);
     }
 
@@ -261,8 +266,13 @@ mod tests {
         let ifftn_a = ifftn!(&fftn_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, ifftn_a);
 
-        let fftn_a = fftn!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
-        let ifftn_a = ifftn!(&fftn_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let fftn_a = fftn!(&a, &[2, 2][..], &[0, 1][..], stream = StreamOrDevice::cpu());
+        let ifftn_a = ifftn!(
+            &fftn_a,
+            &[2, 2][..],
+            &[0, 1][..],
+            stream = StreamOrDevice::cpu()
+        );
         assert_eq!(a, ifftn_a);
     }
 
@@ -281,8 +291,8 @@ mod tests {
         let irfft_a = irfft!(&rfft_a, 4, 0);
         assert_eq!(a, irfft_a);
 
-        let rfft_a = rfft!(&a, 4, 0, stream=StreamOrDevice::cpu());
-        let irfft_a = irfft!(&rfft_a, 4, 0, stream=StreamOrDevice::cpu());
+        let rfft_a = rfft!(&a, 4, 0, stream = StreamOrDevice::cpu());
+        let irfft_a = irfft!(&rfft_a, 4, 0, stream = StreamOrDevice::cpu());
         assert_eq!(a, irfft_a);
     }
 
@@ -301,8 +311,13 @@ mod tests {
         let irfft2_a = irfft2!(&rfft2_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, irfft2_a);
 
-        let rfft2_a = rfft2!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
-        let irfft2_a = irfft2!(&rfft2_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let rfft2_a = rfft2!(&a, &[2, 2][..], &[0, 1][..], stream = StreamOrDevice::cpu());
+        let irfft2_a = irfft2!(
+            &rfft2_a,
+            &[2, 2][..],
+            &[0, 1][..],
+            stream = StreamOrDevice::cpu()
+        );
         assert_eq!(a, irfft2_a);
     }
 
@@ -321,8 +336,13 @@ mod tests {
         let irfftn_a = irfftn!(&rfftn_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, irfftn_a);
 
-        let rfftn_a = rfftn!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
-        let irfftn_a = irfftn!(&rfftn_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let rfftn_a = rfftn!(&a, &[2, 2][..], &[0, 1][..], stream = StreamOrDevice::cpu());
+        let irfftn_a = irfftn!(
+            &rfftn_a,
+            &[2, 2][..],
+            &[0, 1][..],
+            stream = StreamOrDevice::cpu()
+        );
         assert_eq!(a, irfftn_a);
     }
 }

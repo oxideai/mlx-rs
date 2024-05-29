@@ -254,7 +254,7 @@ mod tests {
         let _y = as_strided!(&x, &[3, 3][..]);
         let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..]);
         let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0);
-        let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0, stream=stream);
+        let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0, stream = stream);
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = broadcast_to!(&x, &[9][..]);
-        let _y = broadcast_to!(&x, &[9][..], stream=stream);
+        let _y = broadcast_to!(&x, &[9][..], stream = stream);
     }
 
     #[test]
@@ -275,7 +275,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = concatenate!(&[&x, &x]);
         let _y = concatenate!(&[&x, &x], 0);
-        let _y = concatenate!(&[&x, &x], 0, stream=stream);
+        let _y = concatenate!(&[&x, &x], 0, stream = stream);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = expand_dims!(&x, &[0]);
-        let _y = expand_dims!(&x, &[0], stream=stream);
+        let _y = expand_dims!(&x, &[0], stream = stream);
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         let _y = flatten!(&x);
         let _y = flatten!(&x, 0);
         let _y = flatten!(&x, 0, 1);
-        let _y = flatten!(&x, 0, 1, stream=stream);
+        let _y = flatten!(&x, 0, 1, stream = stream);
     }
 
     #[test]
@@ -307,7 +307,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = reshape!(&x, &[3, 3]);
-        let _y = reshape!(&x, &[3, 3], stream=stream);
+        let _y = reshape!(&x, &[3, 3], stream = stream);
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = squeeze!(&x);
         let _y = squeeze!(&x, &[0, 2][..]);
-        let _y = squeeze!(&x, &[0, 2][..], stream=stream);
+        let _y = squeeze!(&x, &[0, 2][..], stream = stream);
     }
 
     #[test]
@@ -328,7 +328,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_1d!(&x);
-        let _y = at_least_1d!(&x, stream=stream);
+        let _y = at_least_1d!(&x, stream = stream);
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_2d!(&x);
-        let _y = at_least_2d!(&x, stream=stream);
+        let _y = at_least_2d!(&x, stream = stream);
     }
 
     #[test]
@@ -348,7 +348,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_3d!(&x);
-        let _y = at_least_3d!(&x, stream=stream);
+        let _y = at_least_3d!(&x, stream = stream);
     }
 
     #[test]
@@ -358,7 +358,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = move_axis!(&x, 0, 1);
-        let _y = move_axis!(&x, 0, 1, stream=stream);
+        let _y = move_axis!(&x, 0, 1, stream = stream);
     }
 
     #[test]
@@ -369,7 +369,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = split!(&x, &[3]);
         let _y = split!(&x, &[3], 0);
-        let _y = split!(&x, &[3], 0, stream=stream);
+        let _y = split!(&x, &[3], 0, stream = stream);
     }
 
     #[test]
@@ -380,7 +380,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = split_equal!(&x, 3);
         let _y = split_equal!(&x, 3, 0);
-        let _y = split_equal!(&x, 3, 0, stream=stream);
+        let _y = split_equal!(&x, 3, 0, stream = stream);
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod tests {
         // We are just testing that the macro compiles
         pad!(&x, 1);
         pad!(&x, (0, 1), Array::from_int(1));
-        pad!(&x, (0, 1), Array::from_int(1), stream=stream);
+        pad!(&x, (0, 1), Array::from_int(1), stream = stream);
     }
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         stack!(&[&x, &x], 0);
-        stack!(&[&x, &x], 0, stream=stream);
+        stack!(&[&x, &x], 0, stream = stream);
     }
 
     #[test]
@@ -411,7 +411,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         stack_all!(&[&x, &x]);
-        stack_all!(&[&x, &x], stream=stream);
+        stack_all!(&[&x, &x], stream = stream);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         swap_axes!(&x, 0, 1);
-        swap_axes!(&x, 0, 1, stream=stream);
+        swap_axes!(&x, 0, 1, stream = stream);
     }
 
     #[test]
@@ -431,7 +431,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         tile!(&x, &[2, 3]);
-        tile!(&x, &[2, 3], stream=stream);
+        tile!(&x, &[2, 3], stream = stream);
     }
 
     #[test]
@@ -442,6 +442,6 @@ mod tests {
         // We are just testing that the macro compiles
         transpose!(&x);
         transpose!(&x, &[1, 0][..]);
-        transpose!(&x, &[1, 0][..], stream=stream);
+        transpose!(&x, &[1, 0][..], stream = stream);
     }
 }

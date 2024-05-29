@@ -245,7 +245,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = abs!(a);
-        let _ = abs!(a, stream=stream);
+        let _ = abs!(a, stream = stream);
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = add!(a, b);
-        let _ = add!(a, b, stream=stream);
+        let _ = add!(a, b, stream = stream);
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = sub!(a, b);
-        let _ = sub!(a, b, stream=stream);
+        let _ = sub!(a, b, stream = stream);
     }
 
     #[test]
@@ -277,7 +277,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = neg!(a);
-        let _ = neg!(a, stream=stream);
+        let _ = neg!(a, stream = stream);
     }
 
     #[test]
@@ -287,7 +287,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = logical_not!(a);
-        let _ = logical_not!(a, stream=stream);
+        let _ = logical_not!(a, stream = stream);
     }
 
     #[test]
@@ -298,7 +298,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = mul!(a, b);
-        let _ = mul!(a, b, stream=stream);
+        let _ = mul!(a, b, stream = stream);
     }
 
     #[test]
@@ -309,7 +309,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = div!(a, b);
-        let _ = div!(a, b, stream=stream);
+        let _ = div!(a, b, stream = stream);
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = pow!(a, b);
-        let _ = pow!(a, b, stream=stream);
+        let _ = pow!(a, b, stream = stream);
     }
 
     #[test]
@@ -331,7 +331,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = rem!(a, b);
-        let _ = rem!(a, b, stream=stream);
+        let _ = rem!(a, b, stream = stream);
     }
 
     #[test]
@@ -341,7 +341,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = sqrt!(a);
-        let _ = sqrt!(a, stream=stream);
+        let _ = sqrt!(a, stream = stream);
     }
 
     #[test]
@@ -351,7 +351,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = cos!(a);
-        let _ = cos!(a, stream=stream);
+        let _ = cos!(a, stream = stream);
     }
 
     #[test]
@@ -361,7 +361,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = exp!(a);
-        let _ = exp!(a, stream=stream);
+        let _ = exp!(a, stream = stream);
     }
 
     #[test]
@@ -371,7 +371,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = floor!(a);
-        let _ = floor!(a, stream=stream);
+        let _ = floor!(a, stream = stream);
     }
 
     #[test]
@@ -381,7 +381,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = log!(a);
-        let _ = log!(a, stream=stream);
+        let _ = log!(a, stream = stream);
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = log2!(a);
-        let _ = log2!(a, stream=stream);
+        let _ = log2!(a, stream = stream);
     }
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = log10!(a);
-        let _ = log10!(a, stream=stream);
+        let _ = log10!(a, stream = stream);
     }
 
     #[test]
@@ -411,7 +411,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = log1p!(a);
-        let _ = log1p!(a, stream=stream);
+        let _ = log1p!(a, stream = stream);
     }
 
     #[test]
@@ -422,7 +422,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = matmul!(a, b);
-        let _ = matmul!(a, b, stream=stream);
+        let _ = matmul!(a, b, stream = stream);
     }
 
     #[test]
@@ -432,7 +432,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = reciprocal!(a);
-        let _ = reciprocal!(a, stream=stream);
+        let _ = reciprocal!(a, stream = stream);
     }
 
     #[test]
@@ -443,7 +443,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _ = round!(a);
         let _ = round!(a, 1);
-        let _ = round!(a, stream=stream);
+        let _ = round!(a, stream = stream);
     }
 
     #[test]
@@ -453,7 +453,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = rsqrt!(a);
-        let _ = rsqrt!(a, stream=stream);
+        let _ = rsqrt!(a, stream = stream);
     }
 
     #[test]
@@ -463,7 +463,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = sin!(a);
-        let _ = sin!(a, stream=stream);
+        let _ = sin!(a, stream = stream);
     }
 
     #[test]
@@ -473,6 +473,6 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _ = square!(a);
-        let _ = square!(a, stream=stream);
+        let _ = square!(a, stream = stream);
     }
 }

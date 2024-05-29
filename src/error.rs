@@ -211,3 +211,15 @@ pub enum SplitEqualError {
     #[error("Cannot split array of size {size} into {num_splits} equal parts")]
     InvalidNumSplits { size: usize, num_splits: i32 },
 }
+
+#[derive(Debug, Error)]
+pub enum ArangeError {
+    #[error("{dtype:?} is not supported for arange")]
+    DtypeNotSupported { dtype: Dtype },
+
+    #[error("Cannot compute length.")]
+    CannotComputeLength,
+
+    #[error("Maximum size exceeded.")]
+    MaxSizeExceeded,
+}

@@ -1,7 +1,7 @@
 use crate::array::ArrayElement;
-use crate::error::DataStoreError;
-use crate::Stream;
+use crate::error::{ArangeError, DataStoreError};
 use crate::{array::Array, stream::StreamOrDevice};
+use crate::{Dtype, Stream};
 use mlx_macros::default_device;
 use num_traits::NumCast;
 
@@ -408,6 +408,148 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
         Self::try_eye_device::<T>(n, Some(n), None, stream)
+    }
+
+    /// Generates ranges of numbers.
+    ///
+    /// Generate numbers in the half-open interval `[start, stop)` in increments of `step`.
+    ///
+    /// # Params
+    ///
+    /// - `start`: Starting value which defaults to `0`.
+    /// - `stop`: Stopping value.
+    /// - `step`: Increment which defaults to `1`.
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because it does not check if the arguments are valid.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::{Array, StreamOrDevice};
+    ///
+    /// // Create a 1-D array with values from 0 to 50
+    /// let r = Array::arange::<f32, _>(None, 50, None);
+    /// ```
+    #[default_device]
+    pub unsafe fn arange_device_unchecked<T, U>(
+        start: impl Into<Option<U>>,
+        stop: U,
+        step: impl Into<Option<U>>,
+        stream: impl AsRef<Stream>,
+    ) -> Array
+    where
+        T: ArrayElement,
+        U: NumCast,
+    {
+        let start: f64 = start.into().and_then(NumCast::from).unwrap_or(0.0);
+        let stop: f64 = NumCast::from(stop).unwrap();
+        let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
+
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_arange(
+                start,
+                stop,
+                step,
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            ))
+        }
+    }
+
+    /// Generates ranges of numbers.
+    ///
+    /// Generate numbers in the half-open interval `[start, stop)` in increments of `step`.
+    ///
+    /// # Params
+    ///
+    /// - `start`: Starting value which defaults to `0`.
+    /// - `stop`: Stopping value.
+    /// - `step`: Increment which defaults to `1`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::{Array, StreamOrDevice};
+    ///
+    /// // Create a 1-D array with values from 0 to 50
+    /// let r = Array::arange::<f32, _>(None, 50, None);
+    /// ```
+    #[default_device]
+    pub fn try_arange_device<T, U>(
+        start: impl Into<Option<U>>,
+        stop: U,
+        step: impl Into<Option<U>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, ArangeError>
+    where
+        T: ArrayElement,
+        U: NumCast,
+    {
+        let start: f64 = start.into().and_then(NumCast::from).unwrap_or(0.0);
+        let stop: f64 = NumCast::from(stop).unwrap();
+        let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
+
+        if T::DTYPE == Dtype::Bool {
+            return Err(ArangeError::DtypeNotSupported { dtype: T::DTYPE });
+        }
+
+        if start.is_nan() || stop.is_nan() || step.is_nan() {
+            return Err(ArangeError::CannotComputeLength);
+        }
+
+        if start.is_infinite() || stop.is_infinite() {
+            return Err(ArangeError::CannotComputeLength);
+        }
+
+        let real_size = ((stop - start) / step).ceil();
+
+        if real_size > i32::MAX as f64 {
+            return Err(ArangeError::MaxSizeExceeded);
+        }
+
+        Ok(unsafe {
+            Array::from_ptr(mlx_sys::mlx_arange(
+                start,
+                stop,
+                step,
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            ))
+        })
+    }
+
+    /// Generates ranges of numbers.
+    ///
+    /// Generate numbers in the half-open interval `[start, stop)` in increments of `step`.
+    ///
+    /// # Params
+    ///
+    /// - `start`: Starting value which defaults to `0`.
+    /// - `stop`: Stopping value.
+    /// - `step`: Increment which defaults to `1`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::{Array, StreamOrDevice};
+    ///
+    /// // Create a 1-D array with values from 0 to 50
+    /// let r = Array::arange::<f32, _>(None, 50, None);
+    /// ```
+    #[default_device]
+    pub fn arange_device<T, U>(
+        start: impl Into<Option<U>>,
+        stop: U,
+        step: impl Into<Option<U>>,
+        stream: impl AsRef<Stream>,
+    ) -> Array
+    where
+        T: ArrayElement,
+        U: NumCast,
+    {
+        Self::try_arange_device::<T, U>(start, stop, step, stream).unwrap()
     }
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]`.
@@ -824,6 +966,49 @@ mod tests {
 
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    }
+
+    #[test]
+    fn test_arange() {
+        let mut array = Array::arange::<f32, _>(None, 50, None);
+        assert_eq!(array.shape(), &[50]);
+        assert_eq!(array.dtype(), Dtype::Float32);
+
+        let data: &[f32] = array.as_slice();
+        let expected: Vec<f32> = (0..50).map(|x| x as f32).collect();
+        assert_eq!(data, expected.as_slice());
+
+        let mut array = Array::arange::<i32, _>(0, 50, None);
+        assert_eq!(array.shape(), &[50]);
+        assert_eq!(array.dtype(), Dtype::Int32);
+
+        let data: &[i32] = array.as_slice();
+        let expected: Vec<i32> = (0..50).collect();
+        assert_eq!(data, expected.as_slice());
+    }
+
+    #[test]
+    fn test_try_arange() {
+        let result = Array::try_arange::<bool, _>(None, 50, None);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(f64::NEG_INFINITY, 50.0, None);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(0.0, f64::INFINITY, None);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(0.0, 50.0, f32::NAN);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(f32::NAN, 50.0, None);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(0.0, f32::NAN, None);
+        assert!(result.is_err());
+
+        let result = Array::try_arange::<f32, _>(0, i32::MAX as i64 + 1, None);
+        assert!(result.is_err());
     }
 
     #[test]

@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::Dtype;
 use thiserror::Error;
 
@@ -210,6 +212,44 @@ pub enum SplitEqualError {
 
     #[error("Cannot split array of size {size} into {num_splits} equal parts")]
     InvalidNumSplits { size: usize, num_splits: i32 },
+}
+
+#[derive(Debug, Error)]
+#[error("{ord} norm is not implemented")]
+pub struct OrdNotImplementedError<'a> {
+    pub ord: &'a str,
+}
+
+impl From<Infallible> for OrdNotImplementedError<'static> {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum NormError<'a> {
+    #[error(transparent)]
+    Ord(OrdNotImplementedError<'a>),
+
+    #[error("Too many axes for norm operation")]
+    TooManyAxes,
+
+    #[error("Singular value norms are not implemented")]
+    SingularValueNormNotImplemented,
+
+    #[error("Invalid ord {ord} for matrix norm")]
+    InvalidMatrixOrd { ord: crate::linalg::Ord },
+
+    #[error("Norm {ord} only supported for matrices")]
+    OrdRequiresMatrix {
+        ord: crate::linalg::Ord
+    }
+}
+
+impl<'a> From<OrdNotImplementedError<'a>> for NormError<'a> {
+    fn from(err: OrdNotImplementedError<'a>) -> Self {
+        NormError::Ord(err)
+    }
 }
 
 #[derive(Debug, Error)]

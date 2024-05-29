@@ -251,8 +251,8 @@ mod tests {
     #[test]
     fn test_add() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = add!(a, b);
@@ -262,8 +262,8 @@ mod tests {
     #[test]
     fn test_sub() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = sub!(a, b);
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn test_neg() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = neg!(a);
@@ -293,8 +293,8 @@ mod tests {
     #[test]
     fn test_mul() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = mul!(a, b);
@@ -304,8 +304,8 @@ mod tests {
     #[test]
     fn test_div() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = div!(a, b);
@@ -315,8 +315,8 @@ mod tests {
     #[test]
     fn test_pow() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = pow!(a, b);
@@ -326,8 +326,8 @@ mod tests {
     #[test]
     fn test_rem() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-        let b = Array::from_slice(&[4, 5, 6], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = rem!(a, b);
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn test_sqrt() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = sqrt!(a);
@@ -347,7 +347,7 @@ mod tests {
     #[test]
     fn test_cos() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = cos!(a);
@@ -357,7 +357,7 @@ mod tests {
     #[test]
     fn test_exp() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = exp!(a);
@@ -417,8 +417,8 @@ mod tests {
     #[test]
     fn test_matmul() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
-        let b = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[3, 2]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
+        let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[3, 2]);
 
         // We are just testing that the macro compiles
         let _ = matmul!(a, b);
@@ -459,7 +459,7 @@ mod tests {
     #[test]
     fn test_sin() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = sin!(a);
@@ -469,7 +469,7 @@ mod tests {
     #[test]
     fn test_square() {
         let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
         let _ = square!(a);

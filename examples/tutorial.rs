@@ -40,7 +40,7 @@ fn array_basics() {
     let y = Array::ones::<f32>(&[2, 2]).unwrap();
 
     // Pointwise add x and y:
-    let z = x.add(&y);
+    let z = x.as_ref().add(&y);
 
     // Same thing:
     let mut z = &x + &y;

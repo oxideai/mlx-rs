@@ -4,6 +4,15 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, Sub, Su
 
 macro_rules! impl_binary_op {
     ($trait:ident, $method:ident) => {
+        impl<T: Into<Array>> $trait<T> for Array {
+            type Output = Array;
+            fn $method(self, rhs: T) -> Self::Output {
+                paste::paste! {
+                    self.[<$method _device>](&rhs.into(), StreamOrDevice::default())
+                }
+            }
+        }
+
         impl<'a, T: Into<Array>> $trait<T> for &'a Array {
             type Output = Array;
             fn $method(self, rhs: T) -> Self::Output {

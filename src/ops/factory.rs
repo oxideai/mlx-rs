@@ -182,8 +182,8 @@ impl Array {
     #[default_device]
     pub fn eye_device<T: ArrayElement>(
         n: i32,
-        m: Option<i32>,
-        k: Option<i32>,
+        m: impl Into<Option<i32>>,
+        k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         Self::try_eye_device::<T>(n, m, k, stream).unwrap()
@@ -212,15 +212,15 @@ impl Array {
     #[default_device]
     pub unsafe fn eye_device_unchecked<T: ArrayElement>(
         n: i32,
-        m: Option<i32>,
-        k: Option<i32>,
+        m: impl Into<Option<i32>>,
+        k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_eye(
                 n,
-                m.unwrap_or(n),
-                k.unwrap_or(0),
+                m.into().unwrap_or(n),
+                k.into().unwrap_or(0),
                 T::DTYPE.into(),
                 stream.as_ref().as_ptr(),
             ))
@@ -246,10 +246,13 @@ impl Array {
     #[default_device]
     pub fn try_eye_device<T: ArrayElement>(
         n: i32,
-        m: Option<i32>,
-        k: Option<i32>,
+        m: impl Into<Option<i32>>,
+        k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError> {
+        let m = m.into();
+        let k = k.into();
+
         if n < 0 || m.unwrap_or(n) < 0 {
             return Err(DataStoreError::NegativeInteger(format!(
                 "m and n must be positive, got m: {}, n: {}",
@@ -445,7 +448,7 @@ impl Array {
     pub fn linspace_device<T, U>(
         start: U,
         stop: U,
-        count: Option<i32>,
+        count: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Array
     where
@@ -479,7 +482,7 @@ impl Array {
     pub unsafe fn linspace_device_unchecked<T, U>(
         start: U,
         stop: U,
-        count: Option<i32>,
+        count: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Array
     where
@@ -493,7 +496,7 @@ impl Array {
             Array::from_ptr(mlx_sys::mlx_linspace(
                 start_f32,
                 stop_f32,
-                count.unwrap_or(50),
+                count.into().unwrap_or(50),
                 T::DTYPE.into(),
                 stream.as_ref().as_ptr(),
             ))
@@ -520,14 +523,14 @@ impl Array {
     pub fn try_linspace_device<T, U>(
         start: U,
         stop: U,
-        count: Option<i32>,
+        count: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, DataStoreError>
     where
         T: ArrayElement,
         U: NumCast,
     {
-        let count = count.unwrap_or(50);
+        let count = count.into().unwrap_or(50);
         if count < 0 {
             return Err(DataStoreError::NegativeInteger(format!(
                 "count must be positive, got {}",
@@ -748,15 +751,15 @@ impl Array {
     #[default_device]
     pub fn tri_device<T: ArrayElement>(
         n: i32,
-        m: Option<i32>,
-        k: Option<i32>,
+        m: impl Into<Option<i32>>,
+        k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_tri(
                 n,
-                m.unwrap_or(n),
-                k.unwrap_or(0),
+                m.into().unwrap_or(n),
+                k.into().unwrap_or(0),
                 T::DTYPE.into(),
                 stream.as_ref().as_ptr(),
             ))

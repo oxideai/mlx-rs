@@ -10,7 +10,7 @@ macro_rules! fft {
     ($a:expr, $n:expr, $axis:expr) => {
         $crate::fft::fft($a.as_ref(), $n, $axis)
     };
-    ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $n:expr, $axis:expr, stream=$stream:expr) => {
         $crate::fft::fft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
@@ -27,7 +27,7 @@ macro_rules! fft2 {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::fft2($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::fft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -44,7 +44,7 @@ macro_rules! fftn {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::fftn($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::fftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -61,7 +61,7 @@ macro_rules! ifft {
     ($a:expr, $n:expr, $axis:expr) => {
         $crate::fft::ifft($a.as_ref(), $n, $axis)
     };
-    ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $n:expr, $axis:expr, stream=$stream:expr) => {
         $crate::fft::ifft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
@@ -78,7 +78,7 @@ macro_rules! ifft2 {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::ifft2($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::ifft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -95,7 +95,7 @@ macro_rules! ifftn {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::ifftn($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::ifftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -112,7 +112,7 @@ macro_rules! rfft {
     ($a:expr, $n:expr, $axis:expr) => {
         $crate::fft::rfft($a.as_ref(), $n, $axis)
     };
-    ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $n:expr, $axis:expr, stream=$stream:expr) => {
         $crate::fft::rfft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
@@ -129,7 +129,7 @@ macro_rules! rfft2 {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::rfft2($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::rfft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -146,7 +146,7 @@ macro_rules! rfftn {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::rfftn($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::rfftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -163,7 +163,7 @@ macro_rules! irfft {
     ($a:expr, $n:expr, $axis:expr) => {
         $crate::fft::irfft($a.as_ref(), $n, $axis)
     };
-    ($a:expr, $n:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $n:expr, $axis:expr, stream=$stream:expr) => {
         $crate::fft::irfft_device($a.as_ref(), $n, $axis, $stream)
     };
 }
@@ -180,7 +180,7 @@ macro_rules! irfft2 {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::irfft2($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::irfft2_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -197,7 +197,7 @@ macro_rules! irfftn {
     ($a:expr, $shape:expr, $axes:expr) => {
         $crate::fft::irfftn($a.as_ref(), $shape, $axes)
     };
-    ($a:expr, $shape:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $axes:expr, stream=$stream:expr) => {
         $crate::fft::irfftn_device($a.as_ref(), $shape, $axes, $stream)
     };
 }
@@ -221,8 +221,8 @@ mod tests {
         let ifft_a = ifft!(&fft_a, 4, 0);
         assert_eq!(a, ifft_a);
 
-        let fft_a = fft!(&a, 4, 0, StreamOrDevice::cpu());
-        let ifft_a = ifft!(&fft_a, 4, 0, StreamOrDevice::cpu());
+        let fft_a = fft!(&a, 4, 0, stream=StreamOrDevice::cpu());
+        let ifft_a = ifft!(&fft_a, 4, 0, stream=StreamOrDevice::cpu());
         assert_eq!(a, ifft_a);
     }
 
@@ -241,8 +241,8 @@ mod tests {
         let ifft2_a = ifft2!(&fft2_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, ifft2_a);
 
-        let fft2_a = fft2!(&a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
-        let ifft2_a = ifft2!(&fft2_a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
+        let fft2_a = fft2!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let ifft2_a = ifft2!(&fft2_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
         assert_eq!(a, ifft2_a);
     }
 
@@ -261,8 +261,8 @@ mod tests {
         let ifftn_a = ifftn!(&fftn_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, ifftn_a);
 
-        let fftn_a = fftn!(&a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
-        let ifftn_a = ifftn!(&fftn_a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
+        let fftn_a = fftn!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let ifftn_a = ifftn!(&fftn_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
         assert_eq!(a, ifftn_a);
     }
 
@@ -281,8 +281,8 @@ mod tests {
         let irfft_a = irfft!(&rfft_a, 4, 0);
         assert_eq!(a, irfft_a);
 
-        let rfft_a = rfft!(&a, 4, 0, StreamOrDevice::cpu());
-        let irfft_a = irfft!(&rfft_a, 4, 0, StreamOrDevice::cpu());
+        let rfft_a = rfft!(&a, 4, 0, stream=StreamOrDevice::cpu());
+        let irfft_a = irfft!(&rfft_a, 4, 0, stream=StreamOrDevice::cpu());
         assert_eq!(a, irfft_a);
     }
 
@@ -301,8 +301,8 @@ mod tests {
         let irfft2_a = irfft2!(&rfft2_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, irfft2_a);
 
-        let rfft2_a = rfft2!(&a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
-        let irfft2_a = irfft2!(&rfft2_a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
+        let rfft2_a = rfft2!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let irfft2_a = irfft2!(&rfft2_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
         assert_eq!(a, irfft2_a);
     }
 
@@ -321,8 +321,8 @@ mod tests {
         let irfftn_a = irfftn!(&rfftn_a, &[2, 2][..], &[0, 1][..]);
         assert_eq!(a, irfftn_a);
 
-        let rfftn_a = rfftn!(&a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
-        let irfftn_a = irfftn!(&rfftn_a, &[2, 2][..], &[0, 1][..], StreamOrDevice::cpu());
+        let rfftn_a = rfftn!(&a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
+        let irfftn_a = irfftn!(&rfftn_a, &[2, 2][..], &[0, 1][..], stream=StreamOrDevice::cpu());
         assert_eq!(a, irfftn_a);
     }
 }

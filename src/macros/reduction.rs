@@ -10,7 +10,7 @@ macro_rules! all {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.all($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.all_device($axes, $keepdims, $stream)
     };
 }
@@ -27,7 +27,7 @@ macro_rules! prod {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.prod($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.prod_device($axes, $keepdims, $stream)
     };
 }
@@ -44,7 +44,7 @@ macro_rules! max {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.max($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.max_device($axes, $keepdims, $stream)
     };
 }
@@ -61,7 +61,7 @@ macro_rules! sum {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.sum($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.sum_device($axes, $keepdims, $stream)
     };
 }
@@ -78,7 +78,7 @@ macro_rules! mean {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.mean($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.mean_device($axes, $keepdims, $stream)
     };
 }
@@ -95,7 +95,7 @@ macro_rules! min {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.min($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.min_device($axes, $keepdims, $stream)
     };
 }
@@ -115,7 +115,7 @@ macro_rules! variance {
     ($a:expr, $axes:expr, $keepdims:expr, $ddof:expr) => {
         $a.variance($axes, $keepdims, $ddof)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $ddof:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, $ddof:expr, stream=$stream:expr) => {
         $a.variance_device($axes, $keepdims, $ddof, $stream)
     };
 }
@@ -132,7 +132,7 @@ macro_rules! log_sum_exp {
     ($a:expr, $axes:expr, $keepdims:expr) => {
         $a.log_sum_exp($axes, $keepdims)
     };
-    ($a:expr, $axes:expr, $keepdims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keepdims:expr, stream=$stream:expr) => {
         $a.log_sum_exp_device($axes, $keepdims, $stream)
     };
 }
@@ -150,7 +150,7 @@ mod tests {
         let _result = all!(&a);
         let _result = all!(a, &[0, 1][..]);
         let _result = all!(a, &[1][..], false);
-        let _result = all!(a, &[0][..], true, &stream);
+        let _result = all!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
         let _result = prod!(&a);
         let _result = prod!(a, &[0, 1][..]);
         let _result = prod!(a, &[1][..], false);
-        let _result = prod!(a, &[0][..], true, &stream);
+        let _result = prod!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
         let _result = max!(&a);
         let _result = max!(a, &[0, 1][..]);
         let _result = max!(a, &[1][..], false);
-        let _result = max!(a, &[0][..], true, &stream);
+        let _result = max!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         let _result = sum!(&a);
         let _result = sum!(a, &[0, 1][..]);
         let _result = sum!(a, &[1][..], false);
-        let _result = sum!(a, &[0][..], true, &stream);
+        let _result = sum!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
         let _result = mean!(&a);
         let _result = mean!(a, &[0, 1][..]);
         let _result = mean!(a, &[1][..], false);
-        let _result = mean!(a, &[0][..], true, &stream);
+        let _result = mean!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
         let _result = min!(&a);
         let _result = min!(a, &[0, 1][..]);
         let _result = min!(a, &[1][..], false);
-        let _result = min!(a, &[0][..], true, &stream);
+        let _result = min!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -223,7 +223,7 @@ mod tests {
         let _result = variance!(a, &[0, 1][..]);
         let _result = variance!(a, &[1][..], false);
         let _result = variance!(a, &[0][..], true, 3);
-        let _result = variance!(a, &[0][..], true, 3, &stream);
+        let _result = variance!(a, &[0][..], true, 3, stream=&stream);
     }
 
     #[test]
@@ -235,6 +235,6 @@ mod tests {
         let _result = log_sum_exp!(&a);
         let _result = log_sum_exp!(a, &[0, 1][..]);
         let _result = log_sum_exp!(a, &[1][..], false);
-        let _result = log_sum_exp!(a, &[0][..], true, &stream);
+        let _result = log_sum_exp!(a, &[0][..], true, stream=&stream);
     }
 }

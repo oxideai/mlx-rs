@@ -4,7 +4,7 @@ macro_rules! take {
     ($a:expr, $indices:expr) => {
         $a.take($indices.as_ref(), None)
     };
-    ($a:expr, $indices:expr, $stream:expr) => {
+    ($a:expr, $indices:expr, stream=$stream:expr) => {
         $a.take_device($indices.as_ref(), $stream)
     };
 }

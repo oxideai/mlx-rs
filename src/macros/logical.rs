@@ -4,7 +4,7 @@ macro_rules! eq {
     ($a:expr, $b:expr) => {
         $a.eq($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.eq_device($b.as_ref(), $stream)
     };
 }
@@ -15,7 +15,7 @@ macro_rules! le {
     ($a:expr, $b:expr) => {
         $a.le($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.le_device($b.as_ref(), $stream)
     };
 }
@@ -26,7 +26,7 @@ macro_rules! ge {
     ($a:expr, $b:expr) => {
         $a.ge($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.ge_device($b.as_ref(), $stream)
     };
 }
@@ -37,7 +37,7 @@ macro_rules! ne {
     ($a:expr, $b:expr) => {
         $a.ne($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.ne_device($b.as_ref(), $stream)
     };
 }
@@ -48,7 +48,7 @@ macro_rules! lt {
     ($a:expr, $b:expr) => {
         $a.lt($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.lt_device($b.as_ref(), $stream)
     };
 }
@@ -59,7 +59,7 @@ macro_rules! gt {
     ($a:expr, $b:expr) => {
         $a.gt($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.gt_device($b.as_ref(), $stream)
     };
 }
@@ -70,7 +70,7 @@ macro_rules! logical_and {
     ($a:expr, $b:expr) => {
         $a.logical_and($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.logical_and_device($b.as_ref(), $stream)
     };
 }
@@ -81,7 +81,7 @@ macro_rules! logical_or {
     ($a:expr, $b:expr) => {
         $a.logical_or($b.as_ref())
     };
-    ($a:expr, $b:expr, $stream:expr) => {
+    ($a:expr, $b:expr, stream=$stream:expr) => {
         $a.logical_or_device($b.as_ref(), $stream)
     };
 }
@@ -101,7 +101,7 @@ macro_rules! all_close {
     ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr) => {
         $a.all_close($b.as_ref(), $rtol, $atol, $equal_nan)
     };
-    ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr, $stream:expr) => {
+    ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr, stream=$stream:expr) => {
         $a.all_close_device($b.as_ref(), $rtol, $atol, $equal_nan, $stream)
     };
 }
@@ -121,7 +121,7 @@ macro_rules! is_close {
     ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr) => {
         $a.is_close($b.as_ref(), $rtol, $atol, $equal_nan)
     };
-    ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr, $stream:expr) => {
+    ($a:expr, $b:expr, $rtol:expr, $atol:expr, $equal_nan:expr, stream=$stream:expr) => {
         $a.is_close_device($b.as_ref(), $rtol, $atol, $equal_nan, $stream)
     };
 }
@@ -135,7 +135,7 @@ macro_rules! array_eq {
     ($a:expr, $b:expr, $equal_nan:expr) => {
         $a.array_eq($b.as_ref(), $equal_nan)
     };
-    ($a:expr, $b:expr, $equal_nan:expr, $stream:expr) => {
+    ($a:expr, $b:expr, $equal_nan:expr, stream=$stream:expr) => {
         $a.array_eq_device($b.as_ref(), $equal_nan, $stream)
     };
 }
@@ -152,7 +152,7 @@ macro_rules! any {
     ($a:expr, $axes:expr, $keep_dims:expr) => {
         $a.any($axes, $keep_dims)
     };
-    ($a:expr, $axes:expr, $keep_dims:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, $keep_dims:expr, stream=$stream:expr) => {
         $a.any_device($axes, $keep_dims, $stream)
     };
 }
@@ -163,7 +163,7 @@ macro_rules! which {
     ($condition:expr, $a:expr, $b:expr) => {
         $crate::ops::which($condition.as_ref(), $a.as_ref(), $b.as_ref())
     };
-    ($condition:expr, $a:expr, $b:expr, $stream:expr) => {
+    ($condition:expr, $a:expr, $b:expr, stream=$stream:expr) => {
         $crate::ops::which_device($condition.as_ref(), $a.as_ref(), $b.as_ref(), $stream)
     };
 }
@@ -180,7 +180,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = eq!(a, b);
-        let _c = eq!(a, b, &stream);
+        let _c = eq!(a, b, stream=&stream);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = le!(a, b);
-        let _c = le!(a, b, &stream);
+        let _c = le!(a, b, stream=&stream);
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = ge!(a, b);
-        let _c = ge!(a, b, &stream);
+        let _c = ge!(a, b, stream=&stream);
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = ne!(a, b);
-        let _c = ne!(a, b, &stream);
+        let _c = ne!(a, b, stream=&stream);
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = lt!(a, b);
-        let _c = lt!(a, b, &stream);
+        let _c = lt!(a, b, stream=&stream);
     }
 
     #[test]
@@ -235,7 +235,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = gt!(a, b);
-        let _c = gt!(a, b, &stream);
+        let _c = gt!(a, b, stream=&stream);
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = logical_and!(a, b);
-        let _c = logical_and!(a, b, &stream);
+        let _c = logical_and!(a, b, stream=&stream);
     }
 
     #[test]
@@ -257,7 +257,7 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = logical_or!(a, b);
-        let _c = logical_or!(a, b, &stream);
+        let _c = logical_or!(a, b, stream=&stream);
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod tests {
         let _c = all_close!(a, b, 1e-6);
         let _c = all_close!(a, b, 1e-6, 1e-6);
         let _c = all_close!(a, b, 1e-6, 1e-6, true);
-        let _c = all_close!(a, b, 1e-6, 1e-6, true, &stream);
+        let _c = all_close!(a, b, 1e-6, 1e-6, true, stream=&stream);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod tests {
         let _c = is_close!(a, b, 1e-6);
         let _c = is_close!(a, b, 1e-6, 1e-6);
         let _c = is_close!(a, b, 1e-6, 1e-6, true);
-        let _c = is_close!(a, b, 1e-6, 1e-6, true, &stream);
+        let _c = is_close!(a, b, 1e-6, 1e-6, true, stream=&stream);
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         // We are just testing that the macros compile
         let _c = array_eq!(a, b);
         let _c = array_eq!(a, b, true);
-        let _c = array_eq!(a, b, true, &stream);
+        let _c = array_eq!(a, b, true, stream=&stream);
     }
 
     #[test]
@@ -309,7 +309,7 @@ mod tests {
         let _c = any!(a);
         let _c = any!(a, &[0][..]);
         let _c = any!(a, &[0][..], true);
-        let _c = any!(a, &[0][..], true, &stream);
+        let _c = any!(a, &[0][..], true, stream=&stream);
     }
 
     #[test]
@@ -321,6 +321,6 @@ mod tests {
 
         // We are just testing that the macros compile
         let _c = which!(condition, a, b);
-        let _c = which!(condition, a, b, &stream);
+        let _c = which!(condition, a, b, stream=&stream);
     }
 }

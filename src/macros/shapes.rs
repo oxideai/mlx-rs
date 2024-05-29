@@ -13,7 +13,7 @@ macro_rules! as_strided {
     ($a:expr, $shape:expr, $strides:expr, $offset:expr) => {
         $crate::ops::as_strided($a.as_ref(), $shape, $strides, $offset)
     };
-    ($a:expr, $shape:expr, $strides:expr, $offset:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, $strides:expr, $offset:expr, stream=$stream:expr) => {
         $crate::ops::as_strided_device($a.as_ref(), $shape, $strides, $offset, $stream)
     };
 }
@@ -24,7 +24,7 @@ macro_rules! broadcast_to {
     ($a:expr, $shape:expr) => {
         $crate::ops::broadcast_to($a.as_ref(), $shape)
     };
-    ($a:expr, $shape:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, stream=$stream:expr) => {
         $crate::ops::broadcast_to_device($a.as_ref(), $shape, $stream)
     };
 }
@@ -38,7 +38,7 @@ macro_rules! concatenate {
     ($arrays:expr, $axis:expr) => {
         $crate::ops::concatenate($arrays, $axis)
     };
-    ($arrays:expr, $axis:expr, $stream:expr) => {
+    ($arrays:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::concatenate_device($arrays, $axis, $stream)
     };
 }
@@ -49,7 +49,7 @@ macro_rules! expand_dims {
     ($a:expr, $axis:expr) => {
         $crate::ops::expand_dims($a.as_ref(), $axis)
     };
-    ($a:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::expand_dims_device($a.as_ref(), $axis, $stream)
     };
 }
@@ -66,7 +66,7 @@ macro_rules! flatten {
     ($a:expr, $start:expr, $end:expr) => {
         $crate::ops::flatten($a.as_ref(), $start, $end)
     };
-    ($a:expr, $start:expr, $end:expr, $stream:expr) => {
+    ($a:expr, $start:expr, $end:expr, stream=$stream:expr) => {
         $crate::ops::flatten_device($a.as_ref(), $start, $end, $stream)
     };
 }
@@ -77,7 +77,7 @@ macro_rules! reshape {
     ($a:expr, $shape:expr) => {
         $crate::ops::reshape($a.as_ref(), $shape)
     };
-    ($a:expr, $shape:expr, $stream:expr) => {
+    ($a:expr, $shape:expr, stream=$stream:expr) => {
         $crate::ops::reshape_device($a.as_ref(), $shape, $stream)
     };
 }
@@ -91,7 +91,7 @@ macro_rules! squeeze {
     ($a:expr, $axis:expr) => {
         $crate::ops::squeeze($a.as_ref(), $axis)
     };
-    ($a:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::squeeze_device($a.as_ref(), $axis, $stream)
     };
 }
@@ -102,7 +102,7 @@ macro_rules! at_least_1d {
     ($a:expr) => {
         $crate::ops::at_least_1d($a)
     };
-    ($a:expr, $stream:expr) => {
+    ($a:expr, stream=$stream:expr) => {
         $crate::ops::at_least_1d_device($a.as_ref(), $stream)
     };
 }
@@ -113,7 +113,7 @@ macro_rules! at_least_2d {
     ($a:expr) => {
         $crate::ops::at_least_2d($a)
     };
-    ($a:expr, $stream:expr) => {
+    ($a:expr, stream=$stream:expr) => {
         $crate::ops::at_least_2d_device($a.as_ref(), $stream)
     };
 }
@@ -124,7 +124,7 @@ macro_rules! at_least_3d {
     ($a:expr) => {
         $crate::ops::at_least_3d($a)
     };
-    ($a:expr, $stream:expr) => {
+    ($a:expr, stream=$stream:expr) => {
         $crate::ops::at_least_3d_device($a.as_ref(), $stream)
     };
 }
@@ -135,7 +135,7 @@ macro_rules! move_axis {
     ($a:expr, $src:expr, $dst:expr) => {
         $crate::ops::move_axis($a.as_ref(), $src, $dst)
     };
-    ($a:expr, $src:expr, $dst:expr, $stream:expr) => {
+    ($a:expr, $src:expr, $dst:expr, stream=$stream:expr) => {
         $crate::ops::move_axis_device($a.as_ref(), $src, $dst, $stream)
     };
 }
@@ -149,7 +149,7 @@ macro_rules! split {
     ($a:expr, $indices:expr, $axis:expr) => {
         $crate::ops::split($a.as_ref(), $indices, $axis)
     };
-    ($a:expr, $indices:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $indices:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::split_device($a.as_ref(), $indices, $axis, $stream)
     };
 }
@@ -163,7 +163,7 @@ macro_rules! split_equal {
     ($a:expr, $num_splits:expr, $axis:expr) => {
         $crate::ops::split_equal($a.as_ref(), $num_splits, $axis)
     };
-    ($a:expr, $num_splits:expr, $axis:expr, $stream:expr) => {
+    ($a:expr, $num_splits:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::split_equal_device($a.as_ref(), $num_splits, $axis, $stream)
     };
 }
@@ -177,7 +177,7 @@ macro_rules! pad {
     ($a:expr, $width:expr, $value:expr) => {
         $crate::ops::pad($a.as_ref(), $width, $value)
     };
-    ($a:expr, $width:expr, $value:expr, $stream:expr) => {
+    ($a:expr, $width:expr, $value:expr, stream=$stream:expr) => {
         $crate::ops::pad_device($a.as_ref(), $width, $value, $stream)
     };
 }
@@ -188,7 +188,7 @@ macro_rules! stack {
     ($arrays:expr, $axis:expr) => {
         $crate::ops::stack($arrays, $axis)
     };
-    ($arrays:expr, $axis:expr, $stream:expr) => {
+    ($arrays:expr, $axis:expr, stream=$stream:expr) => {
         $crate::ops::stack_device($arrays, $axis, $stream)
     };
 }
@@ -199,7 +199,7 @@ macro_rules! stack_all {
     ($arrays:expr) => {
         $crate::ops::stack_all($arrays)
     };
-    ($arrays:expr, $stream:expr) => {
+    ($arrays:expr, stream=$stream:expr) => {
         $crate::ops::stack_all_device($arrays, $stream)
     };
 }
@@ -210,7 +210,7 @@ macro_rules! swap_axes {
     ($a:expr, $axis1:expr, $axis2:expr) => {
         $crate::ops::swap_axes($a.as_ref(), $axis1, $axis2)
     };
-    ($a:expr, $axis1:expr, $axis2:expr, $stream:expr) => {
+    ($a:expr, $axis1:expr, $axis2:expr, stream=$stream:expr) => {
         $crate::ops::swap_axes_device($a.as_ref(), $axis1, $axis2, $stream)
     };
 }
@@ -221,7 +221,7 @@ macro_rules! tile {
     ($a:expr, $reps:expr) => {
         $crate::ops::tile($a.as_ref(), $reps)
     };
-    ($a:expr, $reps:expr, $stream:expr) => {
+    ($a:expr, $reps:expr, stream=$stream:expr) => {
         $crate::ops::tile_device($a.as_ref(), $reps, $stream)
     };
 }
@@ -235,7 +235,7 @@ macro_rules! transpose {
     ($a:expr, $axes:expr) => {
         $crate::ops::transpose($a.as_ref(), $axes)
     };
-    ($a:expr, $axes:expr, $stream:expr) => {
+    ($a:expr, $axes:expr, stream=$stream:expr) => {
         $crate::ops::transpose_device($a.as_ref(), $axes, $stream)
     };
 }
@@ -254,7 +254,7 @@ mod tests {
         let _y = as_strided!(&x, &[3, 3][..]);
         let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..]);
         let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0);
-        let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0, stream);
+        let _y = as_strided!(&x, &[3, 3][..], &[1, 1][..], 0, stream=stream);
     }
 
     #[test]
@@ -264,7 +264,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = broadcast_to!(&x, &[9][..]);
-        let _y = broadcast_to!(&x, &[9][..], stream);
+        let _y = broadcast_to!(&x, &[9][..], stream=stream);
     }
 
     #[test]
@@ -275,7 +275,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = concatenate!(&[&x, &x]);
         let _y = concatenate!(&[&x, &x], 0);
-        let _y = concatenate!(&[&x, &x], 0, stream);
+        let _y = concatenate!(&[&x, &x], 0, stream=stream);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = expand_dims!(&x, &[0]);
-        let _y = expand_dims!(&x, &[0], stream);
+        let _y = expand_dims!(&x, &[0], stream=stream);
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         let _y = flatten!(&x);
         let _y = flatten!(&x, 0);
         let _y = flatten!(&x, 0, 1);
-        let _y = flatten!(&x, 0, 1, stream);
+        let _y = flatten!(&x, 0, 1, stream=stream);
     }
 
     #[test]
@@ -307,7 +307,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = reshape!(&x, &[3, 3]);
-        let _y = reshape!(&x, &[3, 3], stream);
+        let _y = reshape!(&x, &[3, 3], stream=stream);
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = squeeze!(&x);
         let _y = squeeze!(&x, &[0, 2][..]);
-        let _y = squeeze!(&x, &[0, 2][..], stream);
+        let _y = squeeze!(&x, &[0, 2][..], stream=stream);
     }
 
     #[test]
@@ -328,7 +328,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_1d!(&x);
-        let _y = at_least_1d!(&x, stream);
+        let _y = at_least_1d!(&x, stream=stream);
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_2d!(&x);
-        let _y = at_least_2d!(&x, stream);
+        let _y = at_least_2d!(&x, stream=stream);
     }
 
     #[test]
@@ -348,7 +348,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = at_least_3d!(&x);
-        let _y = at_least_3d!(&x, stream);
+        let _y = at_least_3d!(&x, stream=stream);
     }
 
     #[test]
@@ -358,7 +358,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         let _y = move_axis!(&x, 0, 1);
-        let _y = move_axis!(&x, 0, 1, stream);
+        let _y = move_axis!(&x, 0, 1, stream=stream);
     }
 
     #[test]
@@ -369,7 +369,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = split!(&x, &[3]);
         let _y = split!(&x, &[3], 0);
-        let _y = split!(&x, &[3], 0, stream);
+        let _y = split!(&x, &[3], 0, stream=stream);
     }
 
     #[test]
@@ -380,7 +380,7 @@ mod tests {
         // We are just testing that the macro compiles
         let _y = split_equal!(&x, 3);
         let _y = split_equal!(&x, 3, 0);
-        let _y = split_equal!(&x, 3, 0, stream);
+        let _y = split_equal!(&x, 3, 0, stream=stream);
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod tests {
         // We are just testing that the macro compiles
         pad!(&x, 1);
         pad!(&x, (0, 1), Array::from_int(1));
-        pad!(&x, (0, 1), Array::from_int(1), stream);
+        pad!(&x, (0, 1), Array::from_int(1), stream=stream);
     }
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         stack!(&[&x, &x], 0);
-        stack!(&[&x, &x], 0, stream);
+        stack!(&[&x, &x], 0, stream=stream);
     }
 
     #[test]
@@ -411,7 +411,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         stack_all!(&[&x, &x]);
-        stack_all!(&[&x, &x], stream);
+        stack_all!(&[&x, &x], stream=stream);
     }
 
     #[test]
@@ -421,7 +421,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         swap_axes!(&x, 0, 1);
-        swap_axes!(&x, 0, 1, stream);
+        swap_axes!(&x, 0, 1, stream=stream);
     }
 
     #[test]
@@ -431,7 +431,7 @@ mod tests {
 
         // We are just testing that the macro compiles
         tile!(&x, &[2, 3]);
-        tile!(&x, &[2, 3], stream);
+        tile!(&x, &[2, 3], stream=stream);
     }
 
     #[test]
@@ -442,6 +442,6 @@ mod tests {
         // We are just testing that the macro compiles
         transpose!(&x);
         transpose!(&x, &[1, 0][..]);
-        transpose!(&x, &[1, 0][..], stream);
+        transpose!(&x, &[1, 0][..], stream=stream);
     }
 }

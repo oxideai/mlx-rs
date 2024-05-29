@@ -1,5 +1,6 @@
 // Place the keyword args first to prioritize them when the same number of args is found.
 
+/// See [`crate::Array::zeros`] for details.
 #[macro_export]
 macro_rules! zeros {
     ($shape:expr) => {
@@ -16,6 +17,7 @@ macro_rules! zeros {
     };
 }
 
+/// See [`crate::Array::ones`] for details.
 #[macro_export]
 macro_rules! ones {
     ($shape:expr) => {
@@ -32,6 +34,7 @@ macro_rules! ones {
     };
 }
 
+/// See [`crate::Array::eye`] for details.
 #[macro_export]
 macro_rules! eye {
     ($n:expr) => {
@@ -72,6 +75,7 @@ macro_rules! eye {
     };
 }
 
+/// See [`crate::Array::full`] for details.
 #[macro_export]
 macro_rules! full {
     ($shape:expr, $values:expr) => {
@@ -88,6 +92,7 @@ macro_rules! full {
     };
 }
 
+/// See [`crate::Array::identity`] for details.
 #[macro_export]
 macro_rules! identity {
     ($n:expr) => {
@@ -104,6 +109,7 @@ macro_rules! identity {
     };
 }
 
+/// See [`crate::Array::linspace`] for details.
 #[macro_export]
 macro_rules! linspace {
     ($start:expr, $stop:expr) => {
@@ -132,6 +138,7 @@ macro_rules! linspace {
     };
 }
 
+/// See [`crate::Array::repeat`] for details.
 #[macro_export]
 macro_rules! repeat {
     ($a:expr, $count:expr, $axis:expr) => {
@@ -148,6 +155,7 @@ macro_rules! repeat {
     };
 }
 
+/// See [`crate::Array::repeat_all`] for details.
 #[macro_export]
 macro_rules! repeat_all {
     ($a:expr, $count:expr) => {
@@ -164,6 +172,7 @@ macro_rules! repeat_all {
     };
 }
 
+/// See [`crate::Array::tri`] for details.
 #[macro_export]
 macro_rules! tri {
     ($n:expr) => {

@@ -16,9 +16,9 @@ mod tests {
     fn test_as_type() {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1, 2, 3], &[3]);
-        
+
         // We are just testing that the macro compiles
-        let _ = as_type!(a, dtype=f32);
-        let _ = as_type!(a, dtype=f32, stream=stream);
+        let _ = as_type!(a, dtype = f32);
+        let _ = as_type!(a, dtype = f32, stream = stream);
     }
 }

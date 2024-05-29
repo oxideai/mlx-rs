@@ -91,7 +91,7 @@ mod tests {
         let _b = cummax!(a, 0);
         let _b = cummax!(a, 0, true);
         let _b = cummax!(a, 0, true, true);
-        let _b = cummax!(a, 0, true, true, stream=stream);
+        let _b = cummax!(a, 0, true, true, stream = stream);
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
         let _b = cummin!(a, 0);
         let _b = cummin!(a, 0, true);
         let _b = cummin!(a, 0, true, true);
-        let _b = cummin!(a, 0, true, true, stream=stream);
+        let _b = cummin!(a, 0, true, true, stream = stream);
     }
 
     #[test]
@@ -117,7 +117,7 @@ mod tests {
         let _b = cumprod!(a, 0);
         let _b = cumprod!(a, 0, true);
         let _b = cumprod!(a, 0, true, true);
-        let _b = cumprod!(a, 0, true, true, stream=stream);
+        let _b = cumprod!(a, 0, true, true, stream = stream);
     }
 
     #[test]
@@ -130,6 +130,6 @@ mod tests {
         let _b = cumsum!(a, 0);
         let _b = cumsum!(a, 0, true);
         let _b = cumsum!(a, 0, true, true);
-        let _b = cumsum!(a, 0, true, true, stream=stream);
+        let _b = cumsum!(a, 0, true, true, stream = stream);
     }
 }

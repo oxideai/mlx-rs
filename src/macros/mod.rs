@@ -5,6 +5,7 @@ mod internal;
 mod fft;
 
 mod conversion;
+mod convolution;
 mod cumulative;
 mod factory;
 mod indexing;

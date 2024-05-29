@@ -1456,6 +1456,17 @@ mod tests {
     }
 
     #[test]
+    fn test_take() {
+        let a = Array::from_iter(0..8, &[8]);
+        let indices = Array::from_slice(&[1, 3, 5], &[3]);
+
+        let s = a.take(&indices, 0);
+
+        let expected = Array::from_slice(&[1, 3, 5], &[3]);
+        assert_array_all_close!(s, expected);
+    }
+
+    #[test]
     fn test_array_index_negative_int() {
         let a = Array::from_iter(0i32..8, &[8]);
 

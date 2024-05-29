@@ -1,6 +1,9 @@
 #![deny(unused_unsafe, missing_debug_implementations)]
 #![cfg_attr(test, allow(clippy::approx_constant))]
 
+#[macro_use]
+mod macros; // must be placed before other modules
+
 mod array;
 mod device;
 mod dtype;

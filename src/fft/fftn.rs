@@ -187,7 +187,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
     stream: impl AsRef<Stream>,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    fftn_device_inner(a, &valid_s, &valid_axes, stream)
+    fftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), &stream)
 }
 
 /// n-dimensional discrete Fourier Transform.
@@ -208,7 +208,7 @@ pub fn try_fftn_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, FftError> {
     let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
-    Ok(fftn_device_inner(a, &valid_s, &valid_axes, stream))
+    Ok(fftn_device_inner(a, &valid_s, &valid_axes, &stream))
 }
 
 /// n-dimensional discrete Fourier Transform.
@@ -413,7 +413,7 @@ pub unsafe fn ifftn_device_unchecked<'a>(
     stream: impl AsRef<Stream>,
 ) -> Array {
     let (valid_s, valid_axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
-    ifftn_device_inner(a, &valid_s, &valid_axes, stream)
+    ifftn_device_inner(a, valid_s.as_ref(), valid_axes.as_ref(), &stream)
 }
 
 /// n-dimensional inverse discrete Fourier Transform.
@@ -434,7 +434,7 @@ pub fn try_ifftn_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, FftError> {
     let (valid_s, valid_axes) = try_resolve_sizes_and_axes(a, s.into(), axes.into())?;
-    Ok(ifftn_device_inner(a, &valid_s, &valid_axes, stream))
+    Ok(ifftn_device_inner(a, &valid_s, &valid_axes, &stream))
 }
 
 /// n-dimensional inverse discrete Fourier Transform.

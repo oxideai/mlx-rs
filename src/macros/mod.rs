@@ -4,6 +4,7 @@ mod internal;
 // The mods below define exported macros
 mod fft;
 
+mod conversion;
 mod cumulative;
 mod factory;
 mod indexing;

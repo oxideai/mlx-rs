@@ -241,9 +241,10 @@ pub enum NormError<'a> {
     InvalidMatrixOrd { ord: crate::linalg::Ord },
 
     #[error("Norm {ord} only supported for matrices")]
-    OrdRequiresMatrix {
-        ord: crate::linalg::Ord
-    }
+    OrdRequiresMatrix { ord: crate::linalg::Ord },
+
+    #[error(transparent)]
+    InvalidAxis(#[from] InvalidAxisError),
 }
 
 impl<'a> From<OrdNotImplementedError<'a>> for NormError<'a> {

@@ -47,7 +47,7 @@ pub(super) fn try_resolve_size_and_axis(
 // Use Cow or SmallVec?
 #[inline]
 pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
-    a: &'a Array,
+    a: &Array,
     s: Option<&'a [i32]>,
     axes: Option<&'a [i32]>,
 ) -> (SmallVec<[i32; 4]>, SmallVec<[i32; 4]>) {
@@ -86,7 +86,7 @@ pub(super) fn resolve_sizes_and_axes_unchecked<'a>(
 #[inline]
 #[allow(clippy::type_complexity)]
 pub(super) fn try_resolve_sizes_and_axes<'a>(
-    a: &'a Array,
+    a: &Array,
     s: Option<&'a [i32]>,
     axes: Option<&'a [i32]>,
 ) -> Result<(SmallVec<[i32; 4]>, SmallVec<[i32; 4]>), FftError> {

@@ -57,7 +57,7 @@ impl<'a> TryFrom<&'a str> for Ord {
 
 #[default_device]
 pub unsafe fn norm_p_device_unchecked<'a>(
-    array: &'a Array,
+    array: &Array,
     ord: f64,
     axes: impl Into<Option<&'a [i32]>>,
     keep_dims: impl Into<Option<bool>>,
@@ -95,7 +95,7 @@ pub unsafe fn norm_p_device_unchecked<'a>(
 
 #[default_device]
 pub unsafe fn norm_ord_device_unchecked<'a>(
-    array: &'a Array,
+    array: &Array,
     ord: &'a CStr,
     axes: impl Into<Option<&'a [i32]>>,
     keep_dims: impl Into<Option<bool>>,
@@ -171,23 +171,17 @@ pub unsafe fn norm_ord_device_unchecked<'a>(
 /// - keep_dims: if `true` the axes which are normed over are left in the result as dimensions with size one
 /// - stream: stream to evaluate on
 #[default_device]
-pub fn try_norm_device<'a, Opt, O>(
-    array: &'a Array,
-    ord: Opt,
+pub fn try_norm_device<'a>(
+    array: &Array,
+    ord: impl TryInto<Option<Ord>, Error = impl Into<OrdNotImplementedError<'a>>>,
     axes: impl Into<Option<&'a [i32]>>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, NormError<'a>>
-where
-    Opt: Into<Option<O>>,
-    O: TryInto<Ord>,
-    O::Error: Into<OrdNotImplementedError<'a>>,
-{
+) -> Result<Array, NormError<'a>> {
     let ord: Ord = ord
-        .into()
-        .map(|ord| ord.try_into())
-        .unwrap_or(Ok(Ord::default()))
-        .map_err(Into::into)?;
+        .try_into()
+        .map_err(Into::into)?
+        .unwrap_or(Ord::default());
     let keep_dims = keep_dims.into().unwrap_or(false);
     let axes = axes.into();
 
@@ -228,18 +222,13 @@ where
 }
 
 #[default_device]
-pub fn norm_device<'a, Opt, O>(
-    array: &'a Array,
-    ord: Opt,
+pub fn norm_device<'a>(
+    array: &Array,
+    ord: impl TryInto<Option<Ord>, Error = impl Into<OrdNotImplementedError<'a>>>,
     axes: impl Into<Option<&'a [i32]>>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Array 
-where
-    Opt: Into<Option<O>>,
-    O: TryInto<Ord>,
-    O::Error: Into<OrdNotImplementedError<'a>>,
-{
+) -> Array {
     try_norm_device(array, ord, axes, keep_dims, stream).unwrap()
 }
 
@@ -253,6 +242,9 @@ mod tests {
 
     #[test]
     fn test_norm_no_axes() {
-        let a = &Array::from_iter(0..9, &[9]) - &Array::from_int(4);
+        let a = Array::from_iter(0..9, &[9]).as_ref() - 4;
+        let b = a.reshape(&[3, 3]);
+
+        norm(&a, None, None, None);
     }
 }

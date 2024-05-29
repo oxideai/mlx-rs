@@ -92,7 +92,7 @@ pub fn fft_device(
 /// [`try_fft2_device`] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn fft2_device_unchecked<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -111,7 +111,7 @@ pub unsafe fn fft2_device_unchecked<'a>(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn try_fft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -134,7 +134,7 @@ pub fn try_fft2_device<'a>(
 /// Panics if the input arguments are invalid. See [`try_fft2_device`] for more details.
 #[default_device(device = "cpu")]
 pub fn fft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -181,7 +181,7 @@ fn fftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Stre
 /// [`try_fftn_device`] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn fftn_device_unchecked<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -202,7 +202,7 @@ pub unsafe fn fftn_device_unchecked<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn try_fftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -233,7 +233,7 @@ pub fn try_fftn_device<'a>(
 /// See [`try_fftn_device`] for more details.
 #[default_device(device = "cpu")]
 pub fn fftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -320,7 +320,7 @@ pub fn ifft_device(
 /// [`try_ifft2_device`] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn ifft2_device_unchecked<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -339,7 +339,7 @@ pub unsafe fn ifft2_device_unchecked<'a>(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn try_ifft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -362,7 +362,7 @@ pub fn try_ifft2_device<'a>(
 /// Panics if the input arguments are invalid. See [try_ifft2_device] for more details.
 #[default_device(device = "cpu")]
 pub fn ifft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -407,7 +407,7 @@ fn ifftn_device_inner(a: &Array, s: &[i32], axes: &[i32], stream: impl AsRef<Str
 /// [`try_ifftn_device`] for a safe version of this function.
 #[default_device(device = "cpu")]
 pub unsafe fn ifftn_device_unchecked<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -428,7 +428,7 @@ pub unsafe fn ifftn_device_unchecked<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn try_ifftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
@@ -453,7 +453,7 @@ pub fn try_ifftn_device<'a>(
 /// Panics if the input arguments are invalid. See [try_ifftn_device] for more details.
 #[default_device(device = "cpu")]
 pub fn ifftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl Into<Option<&'a [i32]>>,
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,

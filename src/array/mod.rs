@@ -4,6 +4,7 @@ use num_complex::Complex;
 use std::ffi::c_void;
 
 mod element;
+mod macros;
 mod operators;
 
 use crate::error::DataStoreError;
@@ -447,6 +448,334 @@ impl From<f32> for Array {
 impl AsRef<Array> for Array {
     fn as_ref(&self) -> &Array {
         self
+    }
+}
+
+/// A helper trait to construct `Array` from nested arrays or slices.
+///
+/// Given that this is not intended for use other than the macro [`array!`], we added this trait
+/// instead of directly implementing `From` for `Array` to avoid conflicts with other `From`
+/// implementations.
+///
+/// Beware that this is subject to change in the future should we find a better way to implement
+/// the macro without creating conflicts.
+pub trait FromNested<T> {
+    fn from_nested(data: T) -> Array;
+}
+
+impl<T: ArrayElement> FromNested<&[T]> for Array {
+    fn from_nested(data: &[T]) -> Self {
+        Array::from_slice(data, &[data.len() as i32])
+    }
+}
+
+impl<T: ArrayElement, const N: usize> FromNested<[T; N]> for Array {
+    fn from_nested(data: [T; N]) -> Self {
+        Array::from_slice(&data, &[N as i32])
+    }
+}
+
+impl<T: ArrayElement, const N: usize> FromNested<&[T; N]> for Array {
+    fn from_nested(data: &[T; N]) -> Self {
+        Array::from_slice(data, &[N as i32])
+    }
+}
+
+impl<T: ArrayElement + Copy> FromNested<&[&[T]]> for Array {
+    fn from_nested(data: &[&[T]]) -> Self {
+        // check that all rows have the same length
+        let row_len = data[0].len();
+        assert!(
+            data.iter().all(|row| row.len() == row_len),
+            "Rows must have the same length"
+        );
+
+        let shape = [data.len() as i32, row_len as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter())
+            .copied()
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[T]; N]> for Array {
+    fn from_nested(data: [&[T]; N]) -> Self {
+        // check that all rows have the same length
+        let row_len = data[0].len();
+        assert!(
+            data.iter().all(|row| row.len() == row_len),
+            "Rows must have the same length"
+        );
+
+        let shape = [N as i32, row_len as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter())
+            .copied()
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[T; N]]> for Array {
+    fn from_nested(data: &[[T; N]]) -> Self {
+        let shape = [data.len() as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().copied())
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[T; N]]> for Array {
+    fn from_nested(data: &[&[T; N]]) -> Self {
+        let shape = [data.len() as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().copied())
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[T; N]; M]> for Array {
+    fn from_nested(data: [[T; N]; M]) -> Self {
+        let shape = [M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().copied())
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]; M]> for Array {
+    fn from_nested(data: &[[T; N]; M]) -> Self {
+        let shape = [M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().copied())
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N]; M]> for Array {
+    fn from_nested(data: &[&[T; N]; M]) -> Self {
+        let shape = [M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().copied())
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy> FromNested<&[&[&[T]]]> for Array {
+    fn from_nested(data: &[&[&[T]]]) -> Self {
+        // check that 2nd dimension has the same length
+        let len_2d = data[0].len();
+        assert!(
+            data.iter().all(|x| x.len() == len_2d),
+            "2nd dimension must have the same length"
+        );
+
+        // check that 3rd dimension has the same length
+        let len_3d = data[0][0].len();
+        assert!(
+            data.iter().all(|x| x.iter().all(|y| y.len() == len_3d)),
+            "3rd dimension must have the same length"
+        );
+
+        let shape = [data.len() as i32, len_2d as i32, len_3d as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[&[T]]; N]> for Array {
+    fn from_nested(data: [&[&[T]]; N]) -> Self {
+        // check that 2nd dimension has the same length
+        let len_2d = data[0].len();
+        assert!(
+            data.iter().all(|x| x.len() == len_2d),
+            "2nd dimension must have the same length"
+        );
+
+        // check that 3rd dimension has the same length
+        let len_3d = data[0][0].len();
+        assert!(
+            data.iter().all(|x| x.iter().all(|y| y.len() == len_3d)),
+            "3rd dimension must have the same length"
+        );
+
+        let shape = [N as i32, len_2d as i32, len_3d as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[&[T]; N]]> for Array {
+    fn from_nested(data: &[[&[T]; N]]) -> Self {
+        // check that 3rd dimension has the same length
+        let len_3d = data[0][0].len();
+        assert!(
+            data.iter().all(|x| x.iter().all(|y| y.len() == len_3d)),
+            "3rd dimension must have the same length"
+        );
+
+        let shape = [data.len() as i32, N as i32, len_3d as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[[T; N]]]> for Array {
+    fn from_nested(data: &[&[[T; N]]]) -> Self {
+        // check that 2nd dimension has the same length
+        let len_2d = data[0].len();
+        assert!(
+            data.iter().all(|x| x.len() == len_2d),
+            "2nd dimension must have the same length"
+        );
+
+        let shape = [data.len() as i32, len_2d as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; N]; M]> for Array {
+    fn from_nested(data: [[&[T]; N]; M]) -> Self {
+        // check that 3rd dimension has the same length
+        let len_3d = data[0][0].len();
+        assert!(
+            data.iter().all(|x| x.iter().all(|y| y.len() == len_3d)),
+            "3rd dimension must have the same length"
+        );
+
+        let shape = [M as i32, N as i32, len_3d as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T]; N]; M]> for Array {
+    fn from_nested(data: &[[&[T]; N]; M]) -> Self {
+        // check that 3rd dimension has the same length
+        let len_3d = data[0][0].len();
+        assert!(
+            data.iter().all(|x| x.iter().all(|y| y.len() == len_3d)),
+            "3rd dimension must have the same length"
+        );
+
+        let shape = [M as i32, N as i32, len_3d as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; N]]; M]> for Array {
+    fn from_nested(data: &[&[[T; N]]; M]) -> Self {
+        // check that 2nd dimension has the same length
+        let len_2d = data[0].len();
+        assert!(
+            data.iter().all(|x| x.len() == len_2d),
+            "2nd dimension must have the same length"
+        );
+
+        let shape = [M as i32, len_2d as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+    FromNested<[[[T; N]; M]; O]> for Array
+{
+    fn from_nested(data: [[[T; N]; M]; O]) -> Self {
+        let shape = [O as i32, M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+    FromNested<&[[[T; N]; M]; O]> for Array
+{
+    fn from_nested(data: &[[[T; N]; M]; O]) -> Self {
+        let shape = [O as i32, M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+    FromNested<&[&[[T; N]; M]; O]> for Array
+{
+    fn from_nested(data: &[&[[T; N]; M]; O]) -> Self {
+        let shape = [O as i32, M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+    FromNested<&[[&[T; N]; M]; O]> for Array
+{
+    fn from_nested(data: &[[&[T; N]; M]; O]) -> Self {
+        let shape = [O as i32, M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
+    }
+}
+
+impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+    FromNested<&[&[&[T; N]; M]; O]> for Array
+{
+    fn from_nested(data: &[&[&[T; N]; M]; O]) -> Self {
+        let shape = [O as i32, M as i32, N as i32];
+        let data = data
+            .iter()
+            .flat_map(|x| x.iter().flat_map(|y| y.iter().copied()))
+            .collect::<Vec<T>>();
+        Array::from_slice(&data, &shape)
     }
 }
 

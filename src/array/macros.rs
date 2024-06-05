@@ -1,31 +1,31 @@
 //! Macros for creating arrays.
-//! 
+//!
 //! TODO: This will be moved to the `crate::macros::array` module in the future.
 
 /// A helper macro to create an array with up to 3 dimensions.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use mlx_rs::array;
-/// 
+///
 /// // Create a 1D array
 /// let a1 = array![1, 2, 3];
-/// 
+///
 /// // Create a 2D array
 /// let a2 = array![
-///     [1, 2, 3], 
+///     [1, 2, 3],
 ///     [4, 5, 6]
 /// ];
-/// 
+///
 /// // Create a 3D array
 /// let a3 = array![
 ///     [
-///         [1, 2, 3], 
+///         [1, 2, 3],
 ///         [4, 5, 6]
-///     ], 
+///     ],
 ///     [
-///         [7, 8, 9], 
+///         [7, 8, 9],
 ///         [10, 11, 12]
 ///     ]
 /// ];

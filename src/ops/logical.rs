@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::{DataStoreError, OperationError};
 use crate::stream::StreamOrDevice;
-use crate::utils::{axes_or_default_to_all, can_reduce_shape, is_broadcastable};
+use crate::utils::{axes_or_default_to_all, can_reduce_shape, is_broadcastable, IntoOption};
 use crate::Stream;
 use mlx_macros::default_device;
 
@@ -1032,7 +1032,7 @@ impl Array {
     #[default_device]
     pub fn any_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -1064,7 +1064,7 @@ impl Array {
     #[default_device]
     pub unsafe fn any_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -1102,7 +1102,7 @@ impl Array {
     #[default_device]
     pub fn try_any_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {

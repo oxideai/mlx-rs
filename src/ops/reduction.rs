@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::OperationError;
 use crate::stream::StreamOrDevice;
-use crate::utils::{axes_or_default_to_all, can_reduce_shape};
+use crate::utils::{axes_or_default_to_all, can_reduce_shape, IntoOption};
 use crate::Stream;
 use mlx_macros::default_device;
 
@@ -26,7 +26,7 @@ impl Array {
     #[default_device]
     pub fn all_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -57,7 +57,7 @@ impl Array {
     #[default_device]
     pub unsafe fn all_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -92,7 +92,7 @@ impl Array {
     #[default_device]
     pub fn try_all_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -133,7 +133,7 @@ impl Array {
     #[default_device]
     pub fn prod_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -163,7 +163,7 @@ impl Array {
     #[default_device]
     pub unsafe fn prod_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -197,7 +197,7 @@ impl Array {
     #[default_device]
     pub fn try_prod_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -238,7 +238,7 @@ impl Array {
     #[default_device]
     pub fn max_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -269,7 +269,7 @@ impl Array {
     #[default_device]
     pub unsafe fn max_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -303,7 +303,7 @@ impl Array {
     #[default_device]
     pub fn try_max_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -350,7 +350,7 @@ impl Array {
     #[default_device]
     pub fn sum_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -380,7 +380,7 @@ impl Array {
     #[default_device]
     pub unsafe fn sum_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -414,7 +414,7 @@ impl Array {
     #[default_device]
     pub fn try_sum_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -455,7 +455,7 @@ impl Array {
     #[default_device]
     pub fn mean_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -485,7 +485,7 @@ impl Array {
     #[default_device]
     pub unsafe fn mean_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -519,7 +519,7 @@ impl Array {
     #[default_device]
     pub fn try_mean_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -569,7 +569,7 @@ impl Array {
     #[default_device]
     pub fn min_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -599,7 +599,7 @@ impl Array {
     #[default_device]
     pub unsafe fn min_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -633,7 +633,7 @@ impl Array {
     #[default_device]
     pub fn try_min_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -670,7 +670,7 @@ impl Array {
     #[default_device]
     pub fn variance_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
@@ -693,7 +693,7 @@ impl Array {
     #[default_device]
     pub unsafe fn variance_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
@@ -720,7 +720,7 @@ impl Array {
     #[default_device]
     pub fn try_variance_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
@@ -766,7 +766,7 @@ impl Array {
     #[default_device]
     pub fn log_sum_exp_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -789,7 +789,7 @@ impl Array {
     #[default_device]
     pub unsafe fn log_sum_exp_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -815,7 +815,7 @@ impl Array {
     #[default_device]
     pub fn try_log_sum_exp_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, OperationError> {
@@ -903,7 +903,7 @@ mod tests {
         assert_eq!(y.item::<i32>(), 4);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let mut result = x.max(&[0][..], None);
+        let mut result = x.max(&[0], None);
         assert_eq!(result.as_slice::<i32>(), &[3, 4]);
 
         let mut result = x.max(&[1][..], None);

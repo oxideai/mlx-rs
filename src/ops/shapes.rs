@@ -8,7 +8,7 @@ use crate::{
         BroadcastError, ConcatenateError, ExpandDimsError, FlattenError, InvalidAxisError,
         PadError, ReshapeError, SqueezeError, StackError, TransposeError,
     },
-    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, VectorArray},
+    utils::{all_unique, is_broadcastable, is_same_shape, resolve_index, IntoOption, VectorArray},
     Array, Stream, StreamOrDevice,
 };
 
@@ -119,7 +119,7 @@ impl Array {
     #[default_device]
     pub unsafe fn squeeze_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         squeeze_device_unchecked(self, axes, stream)
@@ -129,7 +129,7 @@ impl Array {
     #[default_device]
     pub fn try_squeeze_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, SqueezeError> {
         try_squeeze_device(self, axes, stream)
@@ -139,7 +139,7 @@ impl Array {
     #[default_device]
     pub fn squeeze_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_squeeze_device(axes, stream).unwrap()
@@ -149,7 +149,7 @@ impl Array {
     #[default_device]
     pub fn as_strided_device<'a>(
         &'a self,
-        shape: impl Into<Option<&'a [i32]>>,
+        shape: impl IntoOption<&'a [i32]>,
         strides: impl Into<Option<&'a [usize]>>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
@@ -321,7 +321,7 @@ impl Array {
     #[default_device]
     pub unsafe fn transpose_device_unchecked<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe { transpose_device_unchecked(self, axes, stream) }
@@ -331,7 +331,7 @@ impl Array {
     #[default_device]
     pub fn try_transpose_device<'a>(
         &self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, TransposeError> {
         try_transpose_device(self, axes, stream)
@@ -341,7 +341,7 @@ impl Array {
     #[default_device]
     pub fn transpose_device<'a>(
         &self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         self.try_transpose_device(axes, stream).unwrap()
@@ -354,10 +354,10 @@ impl Array {
 }
 
 fn axes_or_default_to_all_size_one_axes<'a>(
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     shape: &[i32],
 ) -> Cow<'a, [i32]> {
-    match axes.into() {
+    match axes.into_option() {
         Some(axes) => Cow::Borrowed(axes),
         None => shape
             .iter()
@@ -398,12 +398,12 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
 #[default_device]
 pub fn as_strided_device<'a>(
     a: &'a Array,
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     strides: impl Into<Option<&'a [usize]>>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
 ) -> Array {
-    let shape = shape.into().unwrap_or(a.shape());
+    let shape = shape.into_option().unwrap_or(a.shape());
     let resolved_strides = resolve_strides(shape, strides.into());
     let offset = offset.into().unwrap_or(0);
 
@@ -1003,7 +1003,7 @@ pub fn reshape_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> A
 #[default_device]
 pub unsafe fn squeeze_device_unchecked<'a>(
     a: &'a Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Array {
     // All size 1 axes are removed if axes is None
@@ -1037,7 +1037,7 @@ pub unsafe fn squeeze_device_unchecked<'a>(
 #[default_device]
 pub fn try_squeeze_device<'a>(
     a: &'a Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, SqueezeError> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
@@ -1103,7 +1103,7 @@ pub fn try_squeeze_device<'a>(
 #[default_device]
 pub fn squeeze_device<'a>(
     a: &'a Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Array {
     a.squeeze_device(axes, stream)
@@ -1979,11 +1979,11 @@ pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Array
 #[default_device]
 pub unsafe fn transpose_device_unchecked<'a>(
     a: &'a Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Array {
     unsafe {
-        let c_array = match axes.into() {
+        let c_array = match axes.into_option() {
             Some(axes) => mlx_sys::mlx_transpose(
                 a.c_array,
                 axes.as_ptr(),
@@ -2015,11 +2015,11 @@ pub unsafe fn transpose_device_unchecked<'a>(
 #[default_device]
 pub fn try_transpose_device<'a>(
     a: &Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, TransposeError> {
     unsafe {
-        let c_array = match axes.into() {
+        let c_array = match axes.into_option() {
             Some(axes) => {
                 if axes.len() != a.ndim() {
                     return Err(TransposeError::InvalidArgument {
@@ -2085,7 +2085,7 @@ pub fn try_transpose_device<'a>(
 #[default_device]
 pub fn transpose_device<'a>(
     a: &Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Array {
     try_transpose_device(a, axes, stream).unwrap()

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 
-use crate::{error::Exception, utils::VectorArray, Array, Stream, StreamOrDevice};
+use crate::{error::Exception, utils::{IntoOption, VectorArray}, Array, Stream, StreamOrDevice};
 
 impl Array {
     /// See [`expand_dims`].
@@ -41,7 +41,7 @@ impl Array {
     #[default_device]
     pub fn squeeze_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         squeeze_device(self, axes, stream)
@@ -51,7 +51,7 @@ impl Array {
     #[default_device]
     pub fn as_strided_device<'a>(
         &'a self,
-        shape: impl Into<Option<&'a [i32]>>,
+        shape: impl IntoOption<&'a [i32]>,
         strides: impl Into<Option<&'a [usize]>>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
@@ -125,7 +125,7 @@ impl Array {
     #[default_device]
     pub fn transpose_device<'a>(
         &self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         transpose_device(self, axes, stream)
@@ -139,10 +139,10 @@ impl Array {
 }
 
 fn axes_or_default_to_all_size_one_axes<'a>(
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     shape: &[i32],
 ) -> Cow<'a, [i32]> {
-    match axes.into() {
+    match axes.into_option() {
         Some(axes) => Cow::Borrowed(axes),
         None => shape
             .iter()
@@ -183,12 +183,12 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
 #[default_device]
 pub fn as_strided_device<'a>(
     a: &'a Array,
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     strides: impl Into<Option<&'a [usize]>>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
 ) -> Array {
-    let shape = shape.into().unwrap_or(a.shape());
+    let shape = shape.into_option().unwrap_or(a.shape());
     let resolved_strides = resolve_strides(shape, strides.into());
     let offset = offset.into().unwrap_or(0);
 
@@ -405,7 +405,7 @@ pub fn reshape_device(
 #[default_device]
 pub fn squeeze_device<'a>(
     a: &'a Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
@@ -835,12 +835,12 @@ pub fn tile_device(
 #[default_device]
 pub fn transpose_device<'a>(
     a: &Array,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
-            match axes.into() {
+            match axes.into_option() {
                 Some(axes) => mlx_sys::mlx_transpose(
                     a.c_array,
                     axes.as_ptr(),

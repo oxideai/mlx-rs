@@ -1,3 +1,5 @@
+use std::{cell::RefCell, ffi::c_char};
+
 use crate::Dtype;
 use thiserror::Error;
 
@@ -194,20 +196,75 @@ pub enum PadError {
     NegativeWidth { axis: usize, size: (i32, i32) },
 }
 
-#[derive(Debug, Error)]
-pub enum StackError {
-    #[error("No arrays provided for stacking")]
-    NoInputArray,
+// #[derive(Debug, Error)]
+// pub enum StackError {
+//     #[error("No arrays provided for stacking")]
+//     NoInputArray,
 
-    #[error("All arrays must have the same shape")]
-    InvalidShapes,
+//     #[error("All arrays must have the same shape")]
+//     InvalidShapes,
+// }
+
+// #[derive(Debug, Error)]
+// pub enum SplitEqualError {
+//     #[error(transparent)]
+//     InvalidAxis(#[from] InvalidAxisError),
+
+//     #[error("Cannot split array of size {size} into {num_splits} equal parts")]
+//     InvalidNumSplits { size: usize, num_splits: i32 },
+// }
+
+#[derive(Debug, Error)]
+#[error("{what}")]
+pub struct Exception {
+    what: String,
 }
 
-#[derive(Debug, Error)]
-pub enum SplitEqualError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
+thread_local! {
+    pub static LAST_MLX_ERROR: RefCell<Option<String>> = RefCell::new(None);
+    pub static IS_HANDLER_SET: RefCell<bool> = RefCell::new(false);
+}
 
-    #[error("Cannot split array of size {size} into {num_splits} equal parts")]
-    InvalidNumSplits { size: usize, num_splits: i32 },
+#[no_mangle]
+extern "C" fn default_mlx_error_handler(msg: *const c_char, _data: *mut std::ffi::c_void) {
+    LAST_MLX_ERROR.with(|last_error| {
+        let mut last_error = last_error.borrow_mut();
+        let c_str = unsafe { std::ffi::CStr::from_ptr(msg) };
+        *last_error = Some(c_str.to_string_lossy().into_owned());
+    });
+}
+
+#[no_mangle]
+extern "C" fn noop_mlx_error_handler_data_deleter(_data: *mut std::ffi::c_void) {}
+
+pub fn setup_mlx_error_handler() {
+    let handler = default_mlx_error_handler;
+    let data_ptr = LAST_MLX_ERROR.with(|last_error| last_error.as_ptr() as *mut std::ffi::c_void);
+    let dtor = noop_mlx_error_handler_data_deleter;
+    unsafe {
+        mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
+    }
+
+    IS_HANDLER_SET.with(|is_set| *is_set.borrow_mut() = true);
+}
+
+pub(crate) fn is_mlx_error_handler_set() -> bool {
+    IS_HANDLER_SET.with(|is_set| *is_set.borrow())
+}
+
+pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
+    LAST_MLX_ERROR.with(|last_error| {
+        let mut last_error = last_error.borrow_mut();
+        let last_error = last_error.take();
+        last_error.map(|what| Exception { what })
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_set_error_handler() {
+        super::setup_mlx_error_handler();
+        assert!(super::is_mlx_error_handler_set());
+    }
 }

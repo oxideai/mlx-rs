@@ -276,7 +276,7 @@ mod tests {
         const IN_N: i32 = 8;
         const OUT_N: i32 = IN_N / 2 + 1;
 
-        let a = Array::ones::<f32>(&[IN_N]);
+        let a = Array::ones::<f32>(&[IN_N]).unwrap();
         let rfft = super::rfft(&a, None, None).unwrap();
         assert_eq!(rfft.shape(), &[OUT_N]);
     }
@@ -286,7 +286,7 @@ mod tests {
         const IN_N: i32 = 8;
         const OUT_N: i32 = (IN_N - 1) * 2;
 
-        let a = Array::ones::<f32>(&[IN_N]);
+        let a = Array::ones::<f32>(&[IN_N]).unwrap();
         let irfft = super::irfft(&a, None, None).unwrap();
         assert_eq!(irfft.shape(), &[OUT_N]);
     }
@@ -317,7 +317,7 @@ mod tests {
         const IN_SHAPE: &[i32] = &[6, 6];
         const OUT_SHAPE: &[i32] = &[6, 6 / 2 + 1];
 
-        let a = Array::ones::<f32>(IN_SHAPE);
+        let a = Array::ones::<f32>(IN_SHAPE).unwrap();
         let rfft2 = super::rfft2(&a, None, None).unwrap();
         assert_eq!(rfft2.shape(), OUT_SHAPE);
     }
@@ -327,7 +327,7 @@ mod tests {
         const IN_SHAPE: &[i32] = &[6, 6];
         const OUT_SHAPE: &[i32] = &[6, (6 - 1) * 2];
 
-        let a = Array::ones::<f32>(IN_SHAPE);
+        let a = Array::ones::<f32>(IN_SHAPE).unwrap();
         let irfft2 = super::irfft2(&a, None, None).unwrap();
         assert_eq!(irfft2.shape(), OUT_SHAPE);
     }
@@ -362,7 +362,7 @@ mod tests {
         const IN_SHAPE: &[i32] = &[6, 6, 6];
         const OUT_SHAPE: &[i32] = &[6, 6, 6 / 2 + 1];
 
-        let a = Array::ones::<f32>(IN_SHAPE);
+        let a = Array::ones::<f32>(IN_SHAPE).unwrap();
         let rfftn = super::rfftn(&a, None, None).unwrap();
         assert_eq!(rfftn.shape(), OUT_SHAPE);
     }
@@ -372,7 +372,7 @@ mod tests {
         const IN_SHAPE: &[i32] = &[6, 6, 6];
         const OUT_SHAPE: &[i32] = &[6, 6, (6 - 1) * 2];
 
-        let a = Array::ones::<f32>(IN_SHAPE);
+        let a = Array::ones::<f32>(IN_SHAPE).unwrap();
         let irfftn = super::irfftn(&a, None, None).unwrap();
         assert_eq!(irfftn.shape(), OUT_SHAPE);
     }

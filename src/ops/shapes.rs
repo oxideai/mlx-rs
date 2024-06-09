@@ -865,7 +865,7 @@ mod tests {
 
     #[test]
     fn test_squeeze() {
-        let a = Array::zeros::<i32>(&[2, 1, 2, 1, 2, 1]);
+        let a = Array::zeros::<i32>(&[2, 1, 2, 1, 2, 1]).unwrap();
         assert_eq!(squeeze(&a, &[1, 3, 5][..]).unwrap().shape(), &[2, 2, 2]);
         assert_eq!(squeeze(&a, &[-1, -3, -5][..]).unwrap().shape(), &[2, 2, 2]);
         assert_eq!(squeeze(&a, &[1][..]).unwrap().shape(), &[2, 2, 1, 2, 1]);
@@ -879,7 +879,7 @@ mod tests {
 
     #[test]
     fn test_expand() {
-        let a = Array::zeros::<i32>(&[2, 2]);
+        let a = Array::zeros::<i32>(&[2, 2]).unwrap();
         assert_eq!(expand_dims(&a, &[0][..]).unwrap().shape(), &[1, 2, 2]);
         assert_eq!(expand_dims(&a, &[-1][..]).unwrap().shape(), &[2, 2, 1]);
         assert_eq!(expand_dims(&a, &[1][..]).unwrap().shape(), &[2, 1, 2]);
@@ -900,7 +900,7 @@ mod tests {
 
     #[test]
     fn test_flatten() {
-        let x = Array::zeros::<i32>(&[2, 3, 4]);
+        let x = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
         assert_eq!(flatten(&x, None, None).unwrap().shape(), &[2 * 3 * 4]);
 
         assert_eq!(flatten(&x, 1, 1).unwrap().shape(), &[2, 3, 4]);
@@ -936,7 +936,7 @@ mod tests {
         assert!(reshape(&x, &[1, -1, -1]).is_err());
         assert!(reshape(&x, &[2, -1]).is_err());
 
-        let x = Array::zeros::<i32>(&[2, 2, 2]);
+        let x = Array::zeros::<i32>(&[2, 2, 2]).unwrap();
         let y = reshape(&x, &[8]).unwrap();
         assert_eq!(y.shape(), &[8]);
         assert!(reshape(&x, &[7]).is_err());
@@ -1034,12 +1034,12 @@ mod tests {
         let a = Array::from_int(0);
         assert!(move_axis(&a, 0, 0).is_err());
 
-        let a = Array::zeros::<i32>(&[2]);
+        let a = Array::zeros::<i32>(&[2]).unwrap();
         assert!(move_axis(&a, 0, 1).is_err());
         assert_eq!(move_axis(&a, 0, 0).unwrap().shape(), &[2]);
         assert_eq!(move_axis(&a, -1, -1).unwrap().shape(), &[2]);
 
-        let a = Array::zeros::<i32>(&[2, 3, 4]);
+        let a = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
         assert!(move_axis(&a, 0, -4).is_err());
         assert!(move_axis(&a, 0, 3).is_err());
         assert!(move_axis(&a, 3, 0).is_err());
@@ -1080,7 +1080,7 @@ mod tests {
         assert_eq!(out[1], Array::from_slice(&[1, 4], &[2, 1]));
         assert_eq!(out[2], Array::from_slice(&[2, 5], &[2, 1]));
 
-        let x = Array::zeros::<i32>(&[8, 12]);
+        let x = Array::zeros::<i32>(&[8, 12]).unwrap();
         let out = split_equal(&x, 2, None).unwrap();
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].shape(), &[4, 12]);
@@ -1095,7 +1095,7 @@ mod tests {
 
     #[test]
     fn test_split() {
-        let x = Array::zeros::<i32>(&[8, 12]);
+        let x = Array::zeros::<i32>(&[8, 12]).unwrap();
 
         let out = split(&x, &[], None).unwrap();
         assert_eq!(out.len(), 1);
@@ -1131,7 +1131,7 @@ mod tests {
 
     #[test]
     fn test_pad() {
-        let x = Array::zeros::<f32>(&[1, 2, 3]);
+        let x = Array::zeros::<f32>(&[1, 2, 3]).unwrap();
         assert_eq!(pad(&x, 1, None).unwrap().shape(), &[3, 4, 5]);
         assert_eq!(pad(&x, (0, 1), None).unwrap().shape(), &[2, 3, 4]);
         assert_eq!(
@@ -1177,12 +1177,12 @@ mod tests {
         let a = Array::from_int(0);
         assert!(swap_axes(&a, 0, 0).is_err());
 
-        let a = Array::zeros::<i32>(&[2]);
+        let a = Array::zeros::<i32>(&[2]).unwrap();
         assert!(swap_axes(&a, 0, 1).is_err());
         assert_eq!(swap_axes(&a, 0, 0).unwrap().shape(), &[2]);
         assert_eq!(swap_axes(&a, -1, -1).unwrap().shape(), &[2]);
 
-        let a = Array::zeros::<i32>(&[2, 3, 4]);
+        let a = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
         assert!(swap_axes(&a, 0, -4).is_err());
         assert!(swap_axes(&a, 0, 3).is_err());
         assert!(swap_axes(&a, 3, 0).is_err());

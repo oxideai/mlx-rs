@@ -1324,7 +1324,7 @@ mod tests {
     macro_rules! assert_array_all_close {
         ($a:tt, $b:tt) => {
             let _b: Array = $b.into();
-            let mut assert = $a.all_close(&_b, None, None, None);
+            let mut assert = $a.all_close(&_b, None, None, None).unwrap();
             assert!(assert.item::<bool>());
         };
     }
@@ -1553,7 +1553,7 @@ mod tests {
     fn check(result: Array, shape: &[i32], expected_sum: i32) {
         assert_eq!(result.shape(), shape);
 
-        let mut sum = result.sum(None, None);
+        let mut sum = result.sum(None, None).unwrap();
 
         assert_eq!(sum.item::<i32>(), expected_sum);
     }

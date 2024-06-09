@@ -55,25 +55,25 @@ impl Array {
         strides: impl Into<Option<&'a [usize]>>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Array {
         as_strided_device(self, shape, strides, offset, stream)
     }
 
     /// See [`at_least_1d`]
     #[default_device]
-    pub fn at_least_1d_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn at_least_1d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_1d_device(self, stream)
     }
 
     /// See [`at_least_2d`]
     #[default_device]
-    pub fn at_least_2d_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn at_least_2d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_2d_device(self, stream)
     }
 
     /// See [`at_least_3d`]
     #[default_device]
-    pub fn at_least_3d_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn at_least_3d_device(&self, stream: impl AsRef<Stream>) -> Array {
         at_least_3d_device(self, stream)
     }
 
@@ -187,25 +187,23 @@ pub fn as_strided_device<'a>(
     strides: impl Into<Option<&'a [usize]>>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Array {
     let shape = shape.into().unwrap_or(a.shape());
     let resolved_strides = resolve_strides(shape, strides.into());
     let offset = offset.into().unwrap_or(0);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_as_strided(
-                a.c_array,
-                shape.as_ptr(),
-                shape.len(),
-                resolved_strides.as_ptr(),
-                resolved_strides.len(),
-                offset,
-                stream.as_ref().as_ptr(),
-            )
-        };
+        let c_array = mlx_sys::mlx_as_strided(
+            a.c_array,
+            shape.as_ptr(),
+            shape.len(),
+            resolved_strides.as_ptr(),
+            resolved_strides.len(),
+            offset,
+            stream.as_ref().as_ptr(),
+        );
 
-        Ok(Array::from_ptr(c_array))
+        Array::from_ptr(c_array)
     }
 }
 
@@ -440,14 +438,8 @@ pub fn squeeze_device<'a>(
 /// let out = at_least_1d(&x);
 /// ```
 #[default_device]
-pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_atleast_1d(a.c_array, stream.as_ref().as_ptr())
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_1d(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Convert array to have at least two dimensions.
@@ -465,14 +457,8 @@ pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 /// let out = at_least_2d(&x);
 /// ```
 #[default_device]
-pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_atleast_2d(a.c_array, stream.as_ref().as_ptr())
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_2d(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Convert array to have at least three dimensions.
@@ -490,14 +476,8 @@ pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 /// let out = at_least_3d(&x);
 /// ```
 #[default_device]
-pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_atleast_3d(a.c_array, stream.as_ref().as_ptr())
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_3d(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Move an axis to a new position. Returns an error if the axes are invalid.
@@ -980,17 +960,17 @@ mod tests {
     #[test]
     fn test_as_strided() {
         let x = Array::from_iter(0..10, &[10]);
-        let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0).unwrap();
+        let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0);
         let expected = Array::from_slice(&[0, 1, 2, 1, 2, 3, 2, 3, 4], &[3, 3]);
         assert_eq!(y, expected);
 
-        let y = as_strided(&x, &[3, 3][..], &[0, 3][..], 0).unwrap();
+        let y = as_strided(&x, &[3, 3][..], &[0, 3][..], 0);
         let expected = Array::from_slice(&[0, 3, 6, 0, 3, 6, 0, 3, 6], &[3, 3]);
         assert_eq!(y, expected);
 
         let x = x.reshape(&[2, 5]).unwrap();
         let x = x.transpose(&[1, 0][..]).unwrap();
-        let y = as_strided(&x, &[3, 3][..], &[2, 1][..], 1).unwrap();
+        let y = as_strided(&x, &[3, 3][..], &[2, 1][..], 1);
         let expected = Array::from_slice(&[5, 1, 6, 6, 2, 7, 7, 3, 8], &[3, 3]);
         assert_eq!(y, expected);
     }
@@ -998,17 +978,17 @@ mod tests {
     #[test]
     fn test_at_least_1d() {
         let x = Array::from_int(1);
-        let out = at_least_1d(&x).unwrap();
+        let out = at_least_1d(&x);
         assert_eq!(out.ndim(), 1);
         assert_eq!(out.shape(), &[1]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3]);
-        let out = at_least_1d(&x).unwrap();
+        let out = at_least_1d(&x);
         assert_eq!(out.ndim(), 1);
         assert_eq!(out.shape(), &[3]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
-        let out = at_least_1d(&x).unwrap();
+        let out = at_least_1d(&x);
         assert_eq!(out.ndim(), 2);
         assert_eq!(out.shape(), &[3, 1]);
     }
@@ -1016,17 +996,17 @@ mod tests {
     #[test]
     fn test_at_least_2d() {
         let x = Array::from_int(1);
-        let out = at_least_2d(&x).unwrap();
+        let out = at_least_2d(&x);
         assert_eq!(out.ndim(), 2);
         assert_eq!(out.shape(), &[1, 1]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3]);
-        let out = at_least_2d(&x).unwrap();
+        let out = at_least_2d(&x);
         assert_eq!(out.ndim(), 2);
         assert_eq!(out.shape(), &[1, 3]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
-        let out = at_least_2d(&x).unwrap();
+        let out = at_least_2d(&x);
         assert_eq!(out.ndim(), 2);
         assert_eq!(out.shape(), &[3, 1]);
     }
@@ -1034,17 +1014,17 @@ mod tests {
     #[test]
     fn test_at_least_3d() {
         let x = Array::from_int(1);
-        let out = at_least_3d(&x).unwrap();
+        let out = at_least_3d(&x);
         assert_eq!(out.ndim(), 3);
         assert_eq!(out.shape(), &[1, 1, 1]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3]);
-        let out = at_least_3d(&x).unwrap();
+        let out = at_least_3d(&x);
         assert_eq!(out.ndim(), 3);
         assert_eq!(out.shape(), &[1, 3, 1]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3, 1]);
-        let out = at_least_3d(&x).unwrap();
+        let out = at_least_3d(&x);
         assert_eq!(out.ndim(), 3);
         assert_eq!(out.shape(), &[3, 1, 1]);
     }

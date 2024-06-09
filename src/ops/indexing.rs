@@ -68,7 +68,7 @@ use mlx_macros::default_device;
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
+    error::Exception,
     utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
     Array, Stream, StreamOrDevice,
 };
@@ -356,104 +356,38 @@ impl Array {
     /// - `indices`: The indices to take from the array.
     /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
     /// flattened 1-D vector.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check if the arguments are valid.
-    #[default_device]
-    pub unsafe fn take_device_unchecked(
-        &self,
-        indices: &Array,
-        axis: impl Into<Option<i32>>,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = match axis.into() {
-                Some(axis) => mlx_sys::mlx_take(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                ),
-                None => {
-                    let shape = &[-1];
-                    // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device_unchecked(shape, &stream);
-
-                    mlx_sys::mlx_take(
-                        reshaped.c_array,
-                        indices.c_array,
-                        0,
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-            };
-
-            Array::from_ptr(c_array)
-        }
-    }
-
-    /// Take elements along an axis.
-    ///
-    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
-    /// the array is treated as a flattened 1-D array prior to performing the take.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
-    #[default_device]
-    pub fn try_take_device(
-        &self,
-        indices: &Array,
-        axis: impl Into<Option<i32>>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, TakeError> {
-        let ndim = self.ndim().min(i32::MAX as usize) as i32;
-
-        let axis = axis.into();
-        if let Some(axis) = axis {
-            // Check for valid axis
-            if axis + ndim < 0 || axis >= ndim {
-                return Err(InvalidAxisError {
-                    axis,
-                    ndim: self.ndim(),
-                }
-                .into());
-            }
-        }
-
-        // Check for valid take
-        if self.size() == 0 && indices.size() != 0 {
-            return Err(TakeError::NonEmptyTakeFromEmptyArray);
-        }
-
-        unsafe { Ok(self.take_device_unchecked(indices, axis, stream)) }
-    }
-
-    /// Take elements along an axis.
-    ///
-    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
-    /// the array is treated as a flattened 1-D array prior to performing the take.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_device(
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_take_device(indices, axis, stream).unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = match axis.into() {
+                Some(axis) => try_catch_c_ptr_expr! {mlx_sys::mlx_take(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                )},
+                None => {
+                    let shape = &[-1];
+                    // SAFETY: &[-1] is a valid shape
+                    let reshaped = self.reshape_device(shape, &stream)?;
+                    try_catch_c_ptr_expr! {
+                        mlx_sys::mlx_take(
+                            reshaped.c_array,
+                            indices.c_array,
+                            0,
+                            stream.as_ref().as_ptr(),
+                        )
+                    }
+                }
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
     }
 
     // NOTE: take and take_long_axis are two separate functions in the c++ code. They don't call
@@ -465,82 +399,25 @@ impl Array {
     ///
     /// - `indices`: The indices to take from the array.
     /// - `axis`: Axis in the input to take the values from.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check if the arguments are valid.
-    #[default_device]
-    pub unsafe fn take_along_axis_device_unchecked(
-        &self,
-        indices: &Array,
-        axis: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = mlx_sys::mlx_take_along_axis(
-                self.c_array,
-                indices.c_array,
-                axis,
-                stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(c_array)
-        }
-    }
-
-    /// Take values along an axis at the specified indices.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: Axis in the input to take the values from.
-    #[default_device]
-    pub fn try_take_along_axis_device(
-        &self,
-        indices: &Array,
-        axis: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, TakeAlongAxisError> {
-        let ndim = self.ndim().min(i32::MAX as usize) as i32;
-
-        // Check for valid axis
-        if axis + ndim < 0 || axis >= ndim {
-            return Err(InvalidAxisError {
-                axis,
-                ndim: self.ndim(),
-            }
-            .into());
-        }
-
-        // Check for dimension mismatch
-        if indices.ndim() != self.ndim() {
-            return Err(TakeAlongAxisError::IndicesDimensionMismatch {
-                array_ndim: self.ndim(),
-                indices_ndim: indices.ndim(),
-            });
-        }
-
-        unsafe { Ok(self.take_along_axis_device_unchecked(indices, axis, stream)) }
-    }
-
-    /// Take values along an axis at the specified indices.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: Axis in the input to take the values from.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_along_axis_device(
         &self,
         indices: &Array,
         axis: i32,
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_take_along_axis_device(indices, axis, stream)
-            .unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take_along_axis(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                )
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
     }
 }
 
@@ -549,7 +426,7 @@ where
     T: ArrayIndex,
 {
     fn index_device(&self, i: T, stream: impl AsRef<Stream>) -> Array {
-        get_item(self, i, stream)
+        get_item(self, i, stream).unwrap()
     }
 }
 
@@ -559,7 +436,7 @@ where
 {
     fn index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op()];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -570,7 +447,7 @@ where
 {
     fn index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op()];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -582,7 +459,7 @@ where
 {
     fn index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -600,7 +477,7 @@ where
             i.2.index_op(),
             i.3.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -620,7 +497,7 @@ where
             i.3.index_op(),
             i.4.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -642,7 +519,7 @@ where
             i.4.index_op(),
             i.5.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -666,7 +543,7 @@ where
             i.5.index_op(),
             i.6.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -692,7 +569,7 @@ where
             i.6.index_op(),
             i.7.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -720,7 +597,7 @@ where
             i.7.index_op(),
             i.8.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -750,7 +627,7 @@ where
             i.8.index_op(),
             i.9.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -786,7 +663,7 @@ where
             i.9.index_op(),
             i.10.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -824,7 +701,7 @@ where
             i.10.index_op(),
             i.11.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -865,7 +742,7 @@ where
             i.11.index_op(),
             i.12.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -908,7 +785,7 @@ where
             i.12.index_op(),
             i.13.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -953,7 +830,7 @@ where
             i.13.index_op(),
             i.14.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -1000,7 +877,7 @@ where
             i.14.index_op(),
             i.15.index_op(),
         ];
-        get_item_nd(self, &i, stream)
+        get_item_nd(self, &i, stream).unwrap()
     }
 }
 
@@ -1009,51 +886,29 @@ impl Array {
     // This is exposed in the c api but not found in the swift or python api
     //
     // Thie is not the same as rust slice. Slice in python is more like `StepBy` iterator in rust
-    pub(crate) unsafe fn slice_device_unchecked(
-        &self,
-        start: &[i32],
-        stop: &[i32],
-        strides: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = mlx_sys::mlx_slice(
-                self.c_array,
-                start.as_ptr(),
-                start.len(),
-                stop.as_ptr(),
-                stop.len(),
-                strides.as_ptr(),
-                strides.len(),
-                stream.as_ref().as_ptr(),
-            );
-
-            Array::from_ptr(c_array)
-        }
-    }
-
-    pub(crate) fn try_slice_device(
-        &self,
-        start: &[i32],
-        stop: &[i32],
-        strides: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, SliceError> {
-        if start.len() != self.ndim() || stop.len() != self.ndim() || strides.len() != self.ndim() {
-            return Err(SliceError { ndim: self.ndim() });
-        }
-
-        unsafe { Ok(self.slice_device_unchecked(start, stop, strides, stream)) }
-    }
-
     pub(crate) fn slice_device(
         &self,
         start: &[i32],
         stop: &[i32],
         strides: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_slice_device(start, stop, strides, stream).unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_slice(
+                    self.c_array,
+                    start.as_ptr(),
+                    start.len(),
+                    stop.as_ptr(),
+                    stop.len(),
+                    strides.as_ptr(),
+                    strides.len(),
+                    stream.as_ref().as_ptr(),
+                )
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
     }
 }
 
@@ -1081,7 +936,7 @@ fn gather_nd<'a>(
     gather_first: bool,
     last_array_or_index: usize,
     stream: impl AsRef<Stream>,
-) -> (usize, Array) {
+) -> Result<(usize, Array), Exception> {
     use ArrayIndexOp::*;
 
     let mut max_dims = 0;
@@ -1140,12 +995,12 @@ fn gather_nd<'a>(
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(0);
-                    *item = Rc::new(item.reshape(&new_shape));
+                    *item = Rc::new(item.reshape(&new_shape)?);
                     slice_index += 1;
                 } else {
                     let mut new_shape = item.shape().to_vec();
                     new_shape.extend((0..slice_count).map(|_| 1));
-                    *item = Rc::new(item.reshape(&new_shape));
+                    *item = Rc::new(item.reshape(&new_shape)?);
                 }
             }
         }
@@ -1154,7 +1009,7 @@ fn gather_nd<'a>(
         for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
             let mut new_shape = vec![1; max_dims + slice_count];
             new_shape[i] = item.dim(0);
-            *item = Rc::new(item.reshape(&new_shape));
+            *item = Rc::new(item.reshape(&new_shape)?);
         }
     }
 
@@ -1185,24 +1040,38 @@ fn gather_nd<'a>(
         .chain(gathered_shape[(max_dims + slice_count + operation_len)..].iter())
         .copied()
         .collect();
-    let result = gathered.reshape(&output_shape);
+    let result = gathered.reshape(&output_shape)?;
 
-    (max_dims, result)
+    Ok((max_dims, result))
 }
 
 #[inline]
-fn get_item_index(src: &Array, index: i32, axis: i32, stream: impl AsRef<Stream>) -> Array {
+fn get_item_index(
+    src: &Array,
+    index: i32,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
     src.take_device(&index.into(), axis, stream)
 }
 
 #[inline]
-fn get_item_array(src: &Array, indices: &Array, axis: i32, stream: impl AsRef<Stream>) -> Array {
+fn get_item_array(
+    src: &Array,
+    indices: &Array,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     src.take_device(indices, axis, stream)
 }
 
 #[inline]
-fn get_item_slice(src: &Array, range: RangeIndex, stream: impl AsRef<Stream>) -> Array {
+fn get_item_slice(
+    src: &Array,
+    range: RangeIndex,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     let ndim = src.ndim();
     let mut starts: SmallVec<[i32; 4]> = smallvec![0; ndim];
     let mut ends: SmallVec<[i32; 4]> = SmallVec::from_slice(src.shape());
@@ -1256,24 +1125,29 @@ fn expand_ellipsis_operations(ndim: usize, operations: &[ArrayIndexOp]) -> Cow<'
 
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item(src: &Array, index: impl ArrayIndex, stream: impl AsRef<Stream>) -> Array {
+fn get_item(
+    src: &Array,
+    index: impl ArrayIndex,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     use ArrayIndexOp::*;
 
     match index.index_op() {
-        Ellipsis => src.clone(),
+        Ellipsis => Ok(src.clone()),
         TakeIndex { index } => get_item_index(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
-        ExpandDims => unsafe {
-            // SAFETY: 0 is always a valid axis
-            src.expand_dims_device_unchecked(&[0], stream)
-        },
+        ExpandDims => src.expand_dims_device(&[0], stream),
     }
 }
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stream>) -> Array {
+fn get_item_nd(
+    src: &Array,
+    operations: &[ArrayIndexOp],
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     use ArrayIndexOp::*;
 
     let mut src = OwnedOrRef::Ref(src);
@@ -1328,7 +1202,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stre
             gather_first,
             last_array_or_index,
             &stream,
-        );
+        )?;
 
         src = OwnedOrRef::Owned(gathered);
 
@@ -1369,8 +1243,8 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stre
     if have_array && remaining_indices.is_empty() {
         // `clone` returns a new array with the same shape and data
         return match src {
-            OwnedOrRef::Ref(src) => src.clone(),
-            OwnedOrRef::Owned(src) => src,
+            OwnedOrRef::Ref(src) => Ok(src.clone()),
+            OwnedOrRef::Owned(src) => Ok(src),
         };
     }
 
@@ -1409,7 +1283,7 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stre
         axis += 1;
     }
 
-    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream));
+    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -1429,12 +1303,12 @@ fn get_item_nd(src: &Array, operations: &[ArrayIndexOp], stream: impl AsRef<Stre
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = OwnedOrRef::Owned(src.reshape(&new_shape));
+        src = OwnedOrRef::Owned(src.reshape(&new_shape)?);
     }
 
     match src {
-        OwnedOrRef::Ref(src) => src.clone(),
-        OwnedOrRef::Owned(src) => src,
+        OwnedOrRef::Ref(src) => Ok(src.clone()),
+        OwnedOrRef::Owned(src) => Ok(src),
     }
 }
 

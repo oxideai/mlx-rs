@@ -1,4 +1,4 @@
-use std::{cell::RefCell, ffi::c_char};
+use std::{cell::Cell, ffi::c_char};
 
 use crate::Dtype;
 use thiserror::Error;
@@ -221,16 +221,14 @@ pub struct Exception {
 }
 
 thread_local! {
-    pub static LAST_MLX_ERROR: RefCell<Option<String>> = RefCell::new(None);
-    pub static IS_HANDLER_SET: RefCell<bool> = RefCell::new(false);
+    pub static LAST_MLX_ERROR: Cell<*const c_char> = Cell::new(std::ptr::null());
+    pub static IS_HANDLER_SET: Cell<bool> = Cell::new(false);
 }
 
 #[no_mangle]
 extern "C" fn default_mlx_error_handler(msg: *const c_char, _data: *mut std::ffi::c_void) {
     LAST_MLX_ERROR.with(|last_error| {
-        let mut last_error = last_error.borrow_mut();
-        let c_str = unsafe { std::ffi::CStr::from_ptr(msg) };
-        *last_error = Some(c_str.to_string_lossy().into_owned());
+        last_error.set(msg);
     });
 }
 
@@ -245,18 +243,24 @@ pub fn setup_mlx_error_handler() {
         mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
     }
 
-    IS_HANDLER_SET.with(|is_set| *is_set.borrow_mut() = true);
+    IS_HANDLER_SET.with(|is_set| is_set.set(true));
 }
 
 pub(crate) fn is_mlx_error_handler_set() -> bool {
-    IS_HANDLER_SET.with(|is_set| *is_set.borrow())
+    IS_HANDLER_SET.with(|is_set| is_set.get())
 }
 
 pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
     LAST_MLX_ERROR.with(|last_error| {
-        let mut last_error = last_error.borrow_mut();
-        let last_error = last_error.take();
-        last_error.map(|what| Exception { what })
+        let last_err_ptr = last_error.replace(std::ptr::null());
+        if last_err_ptr.is_null() {
+            return None;
+        }
+
+        let last_err = unsafe { std::ffi::CStr::from_ptr(last_err_ptr) };
+        Some(Exception {
+            what: last_err.to_string_lossy().into_owned(),
+        })
     })
 }
 

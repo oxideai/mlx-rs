@@ -11,6 +11,10 @@ impl Array {
     /// Equality comparison on two arrays with
     /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -22,10 +26,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn eq_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -45,6 +45,10 @@ impl Array {
     /// Less than or equal on two arrays with
     /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -56,10 +60,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn le_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -79,6 +79,10 @@ impl Array {
     /// Greater than or equal on two arrays with
     /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -90,10 +94,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn ge_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -113,6 +113,10 @@ impl Array {
     /// Not equal on two arrays with
     /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -124,10 +128,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn ne_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -146,6 +146,10 @@ impl Array {
     ///
     /// Less than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -157,10 +161,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn lt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -179,6 +179,10 @@ impl Array {
     ///
     /// Greater than on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -190,10 +194,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [false, false, false]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn gt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -212,6 +212,10 @@ impl Array {
     ///
     /// Logical and on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -223,10 +227,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, false, false]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn logical_and_device(
         &self,
@@ -249,6 +249,10 @@ impl Array {
     ///
     /// Logical or on two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    ///
     /// # Example
     ///
     /// ```rust
@@ -260,10 +264,6 @@ impl Array {
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true, true, true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
     #[default_device]
     pub fn logical_or_device(
         &self,
@@ -290,25 +290,25 @@ impl Array {
     /// all(abs(a - b) <= (atol + rtol * abs(b)))
     /// ```
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use num_traits::Pow;
-    /// use mlx_rs::Array;
-    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
-    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into()));
-    /// let mut c = a.all_close(&b, None, None, None).unwrap();
-    ///
-    /// let c_data: &[bool] = c.as_slice();
-    /// // c_data == [true]
-    /// ```
-    ///
     /// # Params
     ///
     /// - other: array to compare
     /// - rtol: relative tolerance = defaults to 1e-5 when None
     /// - atol: absolute tolerance - defaults to 1e-8 when None
     /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use num_traits::Pow;
+    /// use mlx_rs::Array;
+    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into())).unwrap();
+    /// let mut c = a.all_close(&b, None, None, None).unwrap();
+    ///
+    /// let c_data: &[bool] = c.as_slice();
+    /// // c_data == [true]
+    /// ```
     #[default_device]
     pub fn all_close_device(
         &self,
@@ -375,6 +375,11 @@ impl Array {
     /// the same shape and their values are equal. The arrays need not have
     /// the same type to be considered equal.
     ///
+    /// # Params
+    ///
+    /// - other: array to compare
+    /// - equal_nan: whether to consider NaNs equal -- default is false when None
+    ///
     /// # Example
     ///
     /// ```rust
@@ -385,11 +390,6 @@ impl Array {
     /// let c = a.array_eq(&b, None);
     /// // c == [true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to compare
-    /// - equal_nan: whether to consider NaNs equal -- default is false when None
     #[default_device]
     pub fn array_eq_device(
         &self,
@@ -409,7 +409,13 @@ impl Array {
 
     /// An `or` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
+    ///
     ///  # Example
+    ///
     /// ```rust
     /// use mlx_rs::Array;
     ///
@@ -421,10 +427,6 @@ impl Array {
     /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
     /// let all_rows = array.any(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    /// - axes: axes to reduce over -- defaults to all axes if not provided
-    /// - keep_dims: if `true` keep reduced axis as singleton dimension -- defaults to false if not provided
     #[default_device]
     pub fn any_device<'a>(
         &'a self,
@@ -455,6 +457,7 @@ impl Array {
 /// with each another.
 ///
 /// # Params
+///
 /// - condition: condition array
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`

@@ -27,20 +27,21 @@ impl Array {
     ///
     /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to add
+    ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.add_device(&b, StreamOrDevice::default());
+    /// let mut c = a.add_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to add
     #[default_device]
     pub fn add_device(
         &self,
@@ -59,21 +60,21 @@ impl Array {
     ///
     /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to subtract
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.sub_device(&b, StreamOrDevice::default());
+    /// let mut c = a.sub_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to subtract
     #[default_device]
     pub fn sub_device(
         &self,
@@ -88,7 +89,7 @@ impl Array {
         }
     }
 
-    /// Unary element-wise negation.
+    /// Unary element-wise negation. Returns an error if the array is of type bool.
     ///
     /// Negate the values in the array.
     ///
@@ -102,10 +103,6 @@ impl Array {
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the array is of type bool.
     #[default_device]
     pub fn neg_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
@@ -148,7 +145,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.mul_device(&b, StreamOrDevice::default());
+    /// let mut c = a.mul_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
@@ -171,21 +168,21 @@ impl Array {
     ///
     /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.div_device(&b, StreamOrDevice::default());
+    /// let mut c = a.div_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
     #[default_device]
     pub fn div_device(
         &self,
@@ -204,21 +201,21 @@ impl Array {
     ///
     /// Raise the elements of the array to the power of the elements of another array.
     ///
+    /// # Params
+    ///
+    /// - other: array to raise to the power of
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.pow_device(&b, StreamOrDevice::default());
+    /// let mut c = a.pow_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to raise to the power of
     #[default_device]
     pub fn pow_device(
         &self,
@@ -237,21 +234,21 @@ impl Array {
     ///
     /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.rem_device(&b, StreamOrDevice::default());
+    /// let mut c = a.rem_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
     #[default_device]
     pub fn rem_device(
         &self,
@@ -326,7 +323,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-    /// let mut b = a.floor_device(StreamOrDevice::default());
+    /// let mut b = a.floor_device(StreamOrDevice::default()).unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
@@ -349,21 +346,21 @@ impl Array {
     /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
     /// after `/`.
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default());
+    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
     #[default_device]
     pub fn floor_divide_device(
         &self,
@@ -461,7 +458,12 @@ impl Array {
     /// - All but the last two dimensions of each input are broadcast with one another using
     ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to multiply
+    ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
@@ -470,10 +472,6 @@ impl Array {
     /// // produces a [2, 3] result
     /// let mut c = a.matmul_device(&b, StreamOrDevice::default());
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to multiply
     #[default_device]
     pub fn matmul_device(
         &self,

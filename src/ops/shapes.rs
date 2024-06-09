@@ -290,7 +290,7 @@ pub fn concatenate_device(
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::*};
 ///
-/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = expand_dims(&x, &[0]);
 /// ```
 #[default_device]
@@ -330,7 +330,7 @@ pub fn expand_dims_device(
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::*};
 ///
-/// let x = Array::zeros::<i32>(&[2, 2, 2]);
+/// let x = Array::zeros::<i32>(&[2, 2, 2]).unwrap();
 /// let y = flatten(&x, None, None);
 /// ```
 #[default_device]
@@ -364,7 +364,7 @@ pub fn flatten_device(
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::*};
 ///
-/// let x = Array::zeros::<i32>(&[2, 2]);
+/// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = reshape(&x, &[4]);
 /// ```
 #[default_device]
@@ -399,7 +399,7 @@ pub fn reshape_device(
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::*};
 ///
-/// let x = Array::zeros::<i32>(&[1, 2, 1, 3]);
+/// let x = Array::zeros::<i32>(&[1, 2, 1, 3]).unwrap();
 /// let result = squeeze(&x, None);
 /// ```
 #[default_device]
@@ -493,7 +493,7 @@ pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::*};
 ///
-/// let a = Array::zeros::<i32>(&[2, 3, 4]);
+/// let a = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
 /// let result = move_axis(&a, 0, 2);
 /// ```
 #[default_device]

@@ -8,6 +8,11 @@ use mlx_macros::default_device;
 impl Array {
     /// An `and` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: The axes to reduce over -- defaults to all axes if not provided
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    ///
     /// # Example
     ///
     /// ```rust
@@ -18,11 +23,6 @@ impl Array {
     /// let results: &[bool] = b.as_slice();
     /// // results == [false, true, true, true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: The axes to reduce over -- defaults to all axes if not provided
-    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
     pub fn all_device<'a>(
         &'a self,
@@ -48,6 +48,11 @@ impl Array {
 
     /// A `product` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    ///
     /// # Example
     ///
     /// ```rust
@@ -57,11 +62,6 @@ impl Array {
     /// // result is [20, 72]
     /// let result = array.prod(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
     pub fn prod_device<'a>(
         &'a self,
@@ -87,6 +87,11 @@ impl Array {
 
     /// A `max` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    ///
     /// # Example
     ///
     /// ```rust
@@ -96,11 +101,6 @@ impl Array {
     /// // result is [5, 9]
     /// let result = array.max(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
     pub fn max_device<'a>(
         &'a self,
@@ -126,6 +126,11 @@ impl Array {
 
     /// Sum reduce the array over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
+    ///
     /// # Example
     ///
     /// ```rust
@@ -135,11 +140,6 @@ impl Array {
     /// // result is [9, 17]
     /// let result = array.sum(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     #[default_device]
     pub fn sum_device<'a>(
         &'a self,
@@ -165,6 +165,11 @@ impl Array {
 
     /// A `mean` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    ///
     /// # Example
     ///
     /// ```rust
@@ -174,11 +179,6 @@ impl Array {
     /// // result is [4.5, 8.5]
     /// let result = array.mean(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
     pub fn mean_device<'a>(
         &'a self,
@@ -204,6 +204,11 @@ impl Array {
 
     /// A `min` reduction over the given axes returning an error if the axes are invalid.
     ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    ///
     /// # Example
     ///
     /// ```rust
@@ -213,11 +218,6 @@ impl Array {
     /// // result is [4, 8]
     /// let result = array.min(&[0][..], None).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - axes: axes to reduce over
-    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
     pub fn min_device<'a>(
         &'a self,

@@ -123,7 +123,7 @@
 //! ```rust
 //! use mlx_rs::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
-//! let mut array = Array::ones::<f32>(&[2, 2, 2]);
+//! let mut array = Array::ones::<f32>(&[2, 2, 2]).unwrap();
 //! let mut fftn_result = fftn(&array, None, None).unwrap();
 //! assert_eq!(fftn_result.dtype(), Dtype::Complex64);
 //!

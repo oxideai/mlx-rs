@@ -8,6 +8,7 @@ use mlx_macros::default_device;
 /// - the default `groups: 1` is currently supported
 ///
 /// # Params
+///
 /// - array: Input array of shape `&[N, ..., C_in]`
 /// - weight: Weight array of shape `&[C_out, ..., C_in]`
 /// - strides: The kernel strides. All dimensions get the same stride if only one number is specified.
@@ -64,9 +65,10 @@ pub fn conv_general_device<'a>(
 
 /// 1D convolution over an input with several channels returning an error if the inputs are invalid.
 ///
-/// > Only the default `groups=1` is currently supported.
+/// Only the default `groups=1` is currently supported.
 ///
 /// # Params
+///
 /// - array: input array of shape `&[N, H, C_in]`
 /// - weight: weight array of shape `&[C_out, H, C_in]`
 /// - stride: kernel stride
@@ -106,9 +108,10 @@ pub fn conv1d_device(
 
 /// 2D convolution over an input with several channels returning an error if the inputs are invalid.
 ///
-/// > Only the default `groups=1` is currently supported.
+/// Only the default `groups=1` is currently supported.
 ///
 /// # Params
+///
 /// - array: input array of shape `[N, H, W, C_in]`
 /// - weight: weight array of shape `[C_out, H, W, C_in]`
 /// - stride: kernel stride

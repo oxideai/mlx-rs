@@ -8,16 +8,16 @@ use num_traits::NumCast;
 impl Array {
     /// Construct an array of zeros returning an error if shape is invalid.
     ///
+    /// # Params
+    ///
+    /// - shape: Desired shape
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::zeros_device::<f32>(&[5, 10], StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - shape: Desired shape
     #[default_device]
     pub fn zeros_device<T: ArrayElement>(
         shape: &[i32],
@@ -38,16 +38,16 @@ impl Array {
 
     /// Construct an array of ones returning an error if shape is invalid.
     ///
+    /// # Params
+    ///
+    /// - shape: Desired shape
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::{Array, StreamOrDevice};
     /// Array::ones_device::<f32>(&[5, 10], StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - shape: Desired shape
     #[default_device]
     pub fn ones_device<T: ArrayElement>(
         shape: &[i32],
@@ -68,6 +68,12 @@ impl Array {
 
     /// Create an identity matrix or a general diagonal matrix returning an error if params are invalid.
     ///
+    /// # Params
+    ///
+    /// - n: number of rows in the output
+    /// - m: number of columns in the output -- equal to `n` if not specified
+    /// - k: index of the diagonal - defaults to 0 if not specified
+    ///
     /// # Example
     ///
     /// ```rust
@@ -75,12 +81,6 @@ impl Array {
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::eye_device::<f32>(10, None, None, StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - n: number of rows in the output
-    /// - m: number of columns in the output -- equal to `n` if not specified
-    /// - k: index of the diagonal - defaults to 0 if not specified
     #[default_device]
     pub fn eye_device<T: ArrayElement>(
         n: i32,
@@ -108,6 +108,11 @@ impl Array {
     /// Constructs an array of size `shape` filled with `values`. If `values`
     /// is an [Array] it must be [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting) to the given `shape`.
     ///
+    /// # Params
+    ///
+    /// - shape: shape of the output array
+    /// - values: values to be broadcast into the array
+    ///
     /// # Example
     ///
     /// ```rust
@@ -115,11 +120,6 @@ impl Array {
     /// //  create [5, 4] array filled with 7
     /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - shape: shape of the output array
-    /// - values: values to be broadcast into the array
     #[default_device]
     pub fn full_device<T: ArrayElement>(
         shape: &[i32],
@@ -142,6 +142,10 @@ impl Array {
 
     /// Create a square identity matrix returning an error if params are invalid.
     ///
+    /// # Params
+    ///
+    /// - n: number of rows and columns in the output
+    ///
     /// # Example
     ///
     /// ```rust
@@ -149,10 +153,6 @@ impl Array {
     /// //  create [10, 10] array with 1's on the diagonal.
     /// let r = Array::identity_device::<f32>(10, StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - n: number of rows and columns in the output
     #[default_device]
     pub fn identity_device<T: ArrayElement>(
         n: i32,
@@ -168,6 +168,12 @@ impl Array {
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]` returning an error if params are invalid.
     ///
+    /// # Params
+    ///
+    /// - start: start value
+    /// - stop: stop value
+    /// - count: number of samples -- defaults to 50 if not specified
+    ///
     /// # Example
     ///
     /// ```rust
@@ -175,12 +181,6 @@ impl Array {
     /// // Create a 50 element 1-D array with values from 0 to 50
     /// let r = Array::linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - start: start value
-    /// - stop: stop value
-    /// - count: number of samples -- defaults to 50 if not specified
     #[default_device]
     pub fn linspace_device<T, U>(
         start: U,
@@ -212,6 +212,12 @@ impl Array {
 
     /// Repeat an array along a specified axis returning an error if params are invalid.
     ///
+    /// # Params
+    ///
+    /// - array: array to repeat
+    /// - count: number of times to repeat
+    /// - axis: axis to repeat along
+    ///
     /// # Example
     ///
     /// ```rust
@@ -220,12 +226,6 @@ impl Array {
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - array: array to repeat
-    /// - count: number of times to repeat
-    /// - axis: axis to repeat along
     #[default_device]
     pub fn repeat_device<T: ArrayElement>(
         array: Array,
@@ -248,6 +248,11 @@ impl Array {
 
     /// Repeat a flattened array along axis 0 returning an error if params are invalid.
     ///
+    /// # Params
+    ///
+    /// - array: array to repeat
+    /// - count: number of times to repeat
+    ///
     /// # Example
     ///
     /// ```rust
@@ -256,11 +261,6 @@ impl Array {
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
     /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default()).unwrap();
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - array: array to repeat
-    /// - count: number of times to repeat
     #[default_device]
     pub fn repeat_all_device<T: ArrayElement>(
         array: Array,
@@ -281,6 +281,12 @@ impl Array {
 
     /// An array with ones at and below the given diagonal and zeros elsewhere.
     ///
+    /// # Params
+    ///
+    /// - n: number of rows in the output
+    /// - m: number of columns in the output -- equal to `n` if not specified
+    /// - k: index of the diagonal -- defaults to 0 if not specified
+    ///
     /// # Example
     ///
     /// ```rust
@@ -288,12 +294,6 @@ impl Array {
     /// // [5, 5] array with the lower triangle filled with 1s
     /// let r = Array::tri_device::<f32>(5, None, None, StreamOrDevice::default());
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - n: number of rows in the output
-    /// - m: number of columns in the output -- equal to `n` if not specified
-    /// - k: index of the diagonal -- defaults to 0 if not specified
     #[default_device]
     pub fn tri_device<T: ArrayElement>(
         n: i32,

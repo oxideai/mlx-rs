@@ -6,11 +6,13 @@ impl Array {
     /// Return the cumulative maximum of the elements along the given axis returning an error if the inputs are invalid.
     ///
     /// # Params
+    ///
     /// - axis: Optional axis to compute the cumulative maximum over. If unspecified the cumulative maximum of the flattened array is returned.
     /// - reverse: If true, the cumulative maximum is computed in reverse - defaults to false if unspecified.
     /// - inclusive: If true, the i-th element of the output includes the i-th element of the input - defaults to true if unspecified.
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
@@ -59,11 +61,13 @@ impl Array {
     /// Return the cumulative minimum of the elements along the given axis returning an error if the inputs are invalid.
     ///
     /// # Params
+    ///
     /// - axis: Optional axis to compute the cumulative minimum over. If unspecified the cumulative maximum of the flattened array is returned.
     /// - reverse: If true, the cumulative minimum is computed in reverse - defaults to false if unspecified.
     /// - inclusive: If true, the i-th element of the output includes the i-th element of the input - defaults to true if unspecified.
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
@@ -112,11 +116,13 @@ impl Array {
     /// Return the cumulative product of the elements along the given axis returning an error if the inputs are invalid.
     ///
     /// # Params
+    ///
     /// - axis: Optional axis to compute the cumulative product over. If unspecified the cumulative maximum of the flattened array is returned.
     /// - reverse: If true, the cumulative product is computed in reverse - defaults to false if unspecified.
     /// - inclusive: If true, the i-th element of the output includes the i-th element of the input - defaults to true if unspecified.
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
@@ -165,11 +171,13 @@ impl Array {
     /// Return the cumulative sum of the elements along the given axis returning an error if the inputs are invalid.
     ///
     /// # Params
+    ///
     /// - axis: Optional axis to compute the cumulative sum over. If unspecified the cumulative maximum of the flattened array is returned.
     /// - reverse: If true, the cumulative sum is computed in reverse - defaults to false if unspecified.
     /// - inclusive: If true, the i-th element of the output includes the i-th element of the input - defaults to true if unspecified.
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);

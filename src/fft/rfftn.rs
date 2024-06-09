@@ -169,8 +169,15 @@ pub fn irfft2_device<'a>(
     axes: impl Into<Option<&'a [i32]>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let s = s.into();
     let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into(), Some(axes));
+    let modify_last_axis = s.is_none();
+
+    let (mut s, axes) = resolve_sizes_and_axes_unchecked(a, s, Some(axes));
+    if modify_last_axis {
+        let end = s.len() - 1;
+        s[end] = (s[end] - 1) * 2;
+    }
 
     let num_s = s.len();
     let num_axes = axes.len();

@@ -1,5 +1,4 @@
 use mlx_rs::{Array, Dtype};
-use std::ops::Add;
 
 fn scalar_basics() {
     // create a scalar array

@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::Exception;
 use crate::stream::StreamOrDevice;
-use crate::utils::{axes_or_default_to_all};
+use crate::utils::axes_or_default_to_all;
 use crate::Stream;
 use mlx_macros::default_device;
 

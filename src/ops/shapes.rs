@@ -29,9 +29,9 @@ impl Array {
 
     /// See [`reshape`].
     #[default_device]
-    pub fn reshape_device<'a>(
+    pub fn reshape_device(
         &self,
-        shape: &'a [i32],
+        shape: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         reshape_device(self, shape, stream)
@@ -368,9 +368,9 @@ pub fn flatten_device(
 /// let result = reshape(&x, &[4]);
 /// ```
 #[default_device]
-pub fn reshape_device<'a>(
+pub fn reshape_device(
     a: &Array,
-    shape: &'a [i32],
+    shape: &[i32],
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {

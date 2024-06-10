@@ -1,4 +1,3 @@
-
 use std::os::raw::c_void;
 
 use mlx_sys::mlx_vector_array;

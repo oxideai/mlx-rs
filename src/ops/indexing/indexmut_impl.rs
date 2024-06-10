@@ -1082,7 +1082,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::{
-        ops::indexing::{index_impl::IndexOp, ArrayIndex},
+        ops::indexing::{ArrayIndex, IndexOp},
         prelude::*,
     };
 

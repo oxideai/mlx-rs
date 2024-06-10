@@ -1,7 +1,4 @@
-use std::{
-    ops::{Bound, RangeBounds},
-    rc::Rc,
-};
+use std::{ops::Bound, rc::Rc};
 
 use smallvec::{smallvec, SmallVec};
 
@@ -10,37 +7,10 @@ use crate::{
     error::Exception,
     ops::indexing::expand_ellipsis_operations,
     utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
-    Array, Stream, StreamOrDevice,
+    Array, Stream,
 };
 
-use super::{ArrayIndexOp, Ellipsis, NewAxis, RangeIndex, StrideBy};
-
-/* -------------------------------------------------------------------------- */
-/*                                Custom traits                               */
-/* -------------------------------------------------------------------------- */
-
-pub trait IndexOp<Idx> {
-    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array;
-
-    fn index(&self, i: Idx) -> Array {
-        self.index_device(i, StreamOrDevice::default())
-    }
-}
-
-/// A marker trait for range bounds that are `i32`.
-pub trait IndexBounds: RangeBounds<i32> {}
-
-impl IndexBounds for std::ops::Range<i32> {}
-
-impl IndexBounds for std::ops::RangeFrom<i32> {}
-
-// impl IndexBounds for std::ops::RangeFull {}
-
-impl IndexBounds for std::ops::RangeInclusive<i32> {}
-
-impl IndexBounds for std::ops::RangeTo<i32> {}
-
-impl IndexBounds for std::ops::RangeToInclusive<i32> {}
+use super::{ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */

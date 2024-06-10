@@ -264,10 +264,6 @@ impl ArrayIndexOp {
     fn is_array(&self) -> bool {
         matches!(self, ArrayIndexOp::TakeArray { .. })
     }
-
-    // pub fn range_full() -> Self {
-    //     ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
-    // }
 }
 
 /* -------------------------------------------------------------------------- */

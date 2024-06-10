@@ -1,6 +1,4 @@
 //! Macros for creating arrays.
-//!
-//! TODO: This will be moved to the `crate::macros::array` module in the future.
 
 /// A helper macro to create an array with up to 3 dimensions.
 ///

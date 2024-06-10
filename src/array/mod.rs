@@ -8,7 +8,6 @@ use num_complex::Complex;
 use std::ffi::c_void;
 
 mod element;
-mod macros;
 mod operators;
 
 pub use element::ArrayElement;

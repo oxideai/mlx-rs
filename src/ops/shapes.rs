@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 
-use crate::{error::Exception, utils::VectorArray, Array, Stream, StreamOrDevice};
+use crate::{
+    constants::DEFAULT_STACK_VEC_LEN, error::Exception, utils::VectorArray, Array, Stream,
+    StreamOrDevice,
+};
 
 impl Array {
     /// See [`expand_dims`].
@@ -170,6 +173,27 @@ fn resolve_strides(
                 .collect::<SmallVec<[usize; DEFAULT_STACK_VEC_LEN]>>();
             result.into_iter().rev().collect()
         }
+    }
+}
+
+/// Broadcast a vector of arrays against one another. Returns an error if the shapes are
+/// broadcastable.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to broadcast.
+#[default_device]
+pub fn broadcast_arrays_device(
+    arrays: &[impl AsRef<Array>],
+    stream: impl AsRef<Stream>,
+) -> Result<Vec<Array>, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {{
+            let c_vec = VectorArray::from_iter(arrays.iter());
+            mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ref().as_ptr())
+        }};
+        let c_vec = VectorArray::from_ptr(c_array);
+        Ok(c_vec.into_values())
     }
 }
 

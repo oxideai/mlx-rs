@@ -2,9 +2,9 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::SliceError,
+    error::Exception,
     ops::{
-        broadcast_arrays_device_unchecked, broadcast_to_device,
+        broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
     },
     utils::{resolve_index_signed_unchecked, OwnedOrRef, VectorArray},
@@ -14,42 +14,6 @@ use crate::{
 use super::{ArrayIndex, ArrayIndexOp, IndexMutOp, RangeIndex};
 
 impl Array {
-    pub(crate) unsafe fn slice_update_device_unchecked(
-        &self,
-        update: &Array,
-        starts: &[i32],
-        ends: &[i32],
-        strides: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = mlx_sys::mlx_slice_update(
-                self.as_ptr(),
-                update.as_ptr(),
-                starts.as_ptr(),
-                starts.len(),
-                ends.as_ptr(),
-                ends.len(),
-                strides.as_ptr(),
-                strides.len(),
-                stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(c_array)
-        }
-    }
-
-    pub(crate) fn try_slice_update_device(
-        &self,
-        update: &Array,
-        starts: &[i32],
-        ends: &[i32],
-        strides: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, SliceError> {
-        self.check_slice_index_dimensions(starts, ends, strides)?;
-        unsafe { Ok(self.slice_update_device_unchecked(update, starts, ends, strides, stream)) }
-    }
-
     pub(crate) fn slice_update_device(
         &self,
         update: &Array,
@@ -57,9 +21,23 @@ impl Array {
         ends: &[i32],
         strides: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_slice_update_device(update, starts, ends, strides, stream)
-            .unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_slice_update(
+                    self.as_ptr(),
+                    update.as_ptr(),
+                    starts.as_ptr(),
+                    starts.len(),
+                    ends.as_ptr(),
+                    ends.len(),
+                    strides.as_ptr(),
+                    strides.len(),
+                    stream.as_ref().as_ptr(),
+                )
+            };
+            Ok(Array::from_ptr(c_array))
+        }
     }
 }
 
@@ -69,16 +47,16 @@ fn update_slice(
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Option<Array> {
+) -> Result<Option<Array>, Exception> {
     use OwnedOrRef::*;
 
     let ndim = src.ndim();
     if ndim == 0 || operations.is_empty() {
-        return None;
+        return Ok(None);
     }
 
     // Remove leading singletons dimensions from the update
-    let mut update = remove_leading_singleton_dimensions(update, &stream);
+    let mut update = remove_leading_singleton_dimensions(update, &stream)?;
 
     // Build slice update params
     let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
@@ -93,13 +71,15 @@ fn update_slice(
             ends[0] = range_index.end(size);
             strides[0] = range_index.stride();
 
-            return Some(src.slice_update_device(&update, &starts, &ends, &strides, &stream));
+            return Ok(Some(src.slice_update_device(
+                &update, &starts, &ends, &strides, &stream,
+            )?));
         }
     }
 
     // Can't route to slice update if any arrays are present
     if operations.iter().any(|op| op.is_array()) {
-        return None;
+        return Ok(None);
     }
 
     // Expand ellipses into a series of ':' (range full) slices
@@ -107,7 +87,7 @@ fn update_slice(
 
     // If no non-None indices return the broadcasted update
     if count_non_new_axis_operations(&operations) == 0 {
-        return Some(broadcast_to_device(&update, src.shape(), &stream));
+        return Ok(Some(broadcast_to_device(&update, src.shape(), &stream)?));
     }
 
     // Process entries
@@ -147,26 +127,28 @@ fn update_slice(
     }
 
     if !update_expand_dims.is_empty() {
-        update = Owned(update.expand_dims_device(&update_expand_dims, &stream));
+        update = Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
     }
 
-    Some(src.slice_update_device(&update, &starts, &ends, &strides, &stream))
+    Ok(Some(src.slice_update_device(
+        &update, &starts, &ends, &strides, &stream,
+    )?))
 }
 
 // See `leadingSingletonDimensionsRemoved` in the swift binding
 fn remove_leading_singleton_dimensions(
     a: &Array,
     stream: impl AsRef<Stream>,
-) -> OwnedOrRef<'_, Array> {
+) -> Result<OwnedOrRef<'_, Array>, Exception> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
         if new_shape.is_empty() {
             new_shape = vec![1];
         }
-        OwnedOrRef::Owned(a.reshape_device(&new_shape, stream))
+        Ok(OwnedOrRef::Owned(a.reshape_device(&new_shape, stream)?))
     } else {
-        OwnedOrRef::Ref(a)
+        Ok(OwnedOrRef::Ref(a))
     }
 }
 
@@ -182,7 +164,7 @@ fn scatter_args<'a>(
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> ScatterArgs<'a> {
+) -> Result<ScatterArgs<'a>, Exception> {
     use ArrayIndexOp::*;
     use OwnedOrRef::*;
 
@@ -191,11 +173,11 @@ fn scatter_args<'a>(
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
             TakeArray { indices } => scatter_args_array(src, Ref(indices), update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
-            ExpandDims => ScatterArgs {
+            ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
-                update: broadcast_to_device(update, src.shape(), &stream),
+                update: broadcast_to_device(update, src.shape(), &stream)?,
                 axes: smallvec![],
-            },
+            }),
             Ellipsis => panic!("Unable to update array with ellipsis argument"),
         };
     }
@@ -208,23 +190,23 @@ fn scatter_args_index<'a>(
     index: i32,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> ScatterArgs<'a> {
+) -> Result<ScatterArgs<'a>, Exception> {
     // mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
     // and then broadcast update to shape of src[0, ...]
-    let update = remove_leading_singleton_dimensions(update, &stream);
+    let update = remove_leading_singleton_dimensions(update, &stream)?;
 
     let mut shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
     shape[0] = 1;
 
-    ScatterArgs {
+    Ok(ScatterArgs {
         indices: smallvec![OwnedOrRef::Owned(Array::from_int(
             resolve_index_signed_unchecked(index, src.dim(0))
         ))],
-        update: broadcast_to_device(&update, &shape, &stream),
+        update: broadcast_to_device(&update, &shape, &stream)?,
         axes: smallvec![0],
-    }
+    })
 }
 
 fn scatter_args_array<'a>(
@@ -232,11 +214,11 @@ fn scatter_args_array<'a>(
     a: OwnedOrRef<'a, Array>,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> ScatterArgs<'a> {
+) -> Result<ScatterArgs<'a>, Exception> {
     // mlx_scatter_args_array
 
     // trim leading singleton dimensions
-    let update = remove_leading_singleton_dimensions(update, &stream);
+    let update = remove_leading_singleton_dimensions(update, &stream)?;
 
     // The update shape must broadcast with indices.shape + [1] + src.shape[1:]
     let mut update_shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = a
@@ -245,16 +227,16 @@ fn scatter_args_array<'a>(
         .chain(src.shape().iter().skip(1))
         .cloned()
         .collect();
-    let update = broadcast_to_device(&update, &update_shape, &stream);
+    let update = broadcast_to_device(&update, &update_shape, &stream)?;
 
     update_shape.insert(a.ndim(), 1);
-    let update = update.reshape_device(&update_shape, &stream);
+    let update = update.reshape_device(&update_shape, &stream)?;
 
-    ScatterArgs {
+    Ok(ScatterArgs {
         indices: smallvec![a],
         update,
         axes: smallvec![0],
-    }
+    })
 }
 
 fn scatter_args_slice<'a>(
@@ -262,20 +244,20 @@ fn scatter_args_slice<'a>(
     range_index: &'a RangeIndex,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> ScatterArgs<'a> {
+) -> Result<ScatterArgs<'a>, Exception> {
     use OwnedOrRef::*;
 
     // mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
     if range_index.is_full() {
-        let update = remove_leading_singleton_dimensions(update, &stream);
+        let update = remove_leading_singleton_dimensions(update, &stream)?;
 
-        return ScatterArgs {
+        return Ok(ScatterArgs {
             indices: smallvec![],
-            update: broadcast_to_device(&update, src.shape(), &stream),
+            update: broadcast_to_device(&update, src.shape(), &stream)?,
             axes: smallvec![],
-        };
+        });
     }
 
     let size = src.dim(0);
@@ -285,20 +267,20 @@ fn scatter_args_slice<'a>(
 
     // If simple stride
     if stride == 1 {
-        let update = remove_leading_singleton_dimensions(update, &stream);
+        let update = remove_leading_singleton_dimensions(update, &stream)?;
 
         // Broadcast update to slice size
         let update_broadcast_shape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (1..end - start)
             .chain(src.shape().iter().skip(1).cloned())
             .collect();
-        let update = broadcast_to_device(&update, &update_broadcast_shape, &stream);
+        let update = broadcast_to_device(&update, &update_broadcast_shape, &stream)?;
 
         let indices = Array::from_slice(&[start], &[1]);
-        ScatterArgs {
+        Ok(ScatterArgs {
             indices: smallvec![Owned(indices)],
             update,
             axes: smallvec![0],
-        }
+        })
     } else {
         // stride != 1, convert the slice to an array
         let a_vals = strided_range_to_vec(start, end, stride);
@@ -313,7 +295,7 @@ fn scatter_args_nd<'a>(
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> ScatterArgs<'a> {
+) -> Result<ScatterArgs<'a>, Exception> {
     use ArrayIndexOp::*;
 
     // mlx_scatter_args_nd
@@ -321,16 +303,16 @@ fn scatter_args_nd<'a>(
     let shape = src.shape();
 
     let operations = expand_ellipsis_operations(src.ndim(), operations);
-    let update = remove_leading_singleton_dimensions(update, &stream);
+    let update = remove_leading_singleton_dimensions(update, &stream)?;
 
     // If no non-newAxis indices return the broadcasted update
     let non_new_axis_operation_count = count_non_new_axis_operations(&operations);
     if non_new_axis_operation_count == 0 {
-        return ScatterArgs {
+        return Ok(ScatterArgs {
             indices: smallvec![],
-            update: broadcast_to_device(&update, shape, &stream),
+            update: broadcast_to_device(&update, shape, &stream)?,
             axes: smallvec![],
-        };
+        });
     }
 
     // Analyse the types of the indices
@@ -416,7 +398,7 @@ fn scatter_args_nd<'a>(
 
                 // If it's a simple slice, we only need to add the start index
                 if array_number >= count_arrays && count_strided_slices <= 0 && stride == 1 {
-                    let index = Array::from_int(start).reshape_device(&index_shape, &stream);
+                    let index = Array::from_int(start).reshape_device(&index_shape, &stream)?;
                     let slice_shape_entry = end - start;
                     slice_shapes.push(slice_shape_entry);
                     array_indices.push(index);
@@ -433,7 +415,7 @@ fn scatter_args_nd<'a>(
                         slice_number
                     };
                     index_shape[location as usize] = index.size() as i32;
-                    array_indices.push(index.reshape_device(&index_shape, &stream));
+                    array_indices.push(index.reshape_device(&index_shape, &stream)?);
 
                     slice_number = slice_number.saturating_add(1);
                     count_strided_slices = count_strided_slices.saturating_sub(1);
@@ -458,7 +440,7 @@ fn scatter_args_nd<'a>(
                     new_shape[start + j] = indices.dim(j as i32);
                 }
 
-                array_indices.push(indices.reshape_device(&new_shape, &stream));
+                array_indices.push(indices.reshape_device(&new_shape, &stream)?);
                 array_number = array_number.saturating_add(1);
 
                 if !arrays_first && array_number == count_arrays {
@@ -475,7 +457,7 @@ fn scatter_args_nd<'a>(
     }
 
     // Broadcast the update to the indices and slices
-    let array_indices = unsafe { broadcast_arrays_device_unchecked(&array_indices, &stream) };
+    let array_indices = broadcast_arrays_device(&array_indices, &stream)?;
     let update_shape_broadcast: Vec<_> = array_indices[0]
         .shape()
         .iter()
@@ -483,7 +465,7 @@ fn scatter_args_nd<'a>(
         .chain(src.shape().iter().skip(non_new_axis_operation_count))
         .cloned()
         .collect();
-    let update = broadcast_to_device(&update, &update_shape_broadcast, &stream);
+    let update = broadcast_to_device(&update, &update_shape_broadcast, &stream)?;
 
     // Reshape the update with the size-1 dims for the int and array indices
     let update_reshape: Vec<_> = array_indices[0]
@@ -494,15 +476,15 @@ fn scatter_args_nd<'a>(
         .cloned()
         .collect();
 
-    let update = update.reshape_device(&update_reshape, &stream);
+    let update = update.reshape_device(&update_reshape, &stream)?;
 
     let array_indices_len = array_indices.len();
 
-    ScatterArgs {
+    Ok(ScatterArgs {
         indices: array_indices.into_iter().map(OwnedOrRef::Owned).collect(),
         update,
         axes: (0..array_indices_len as i32).collect(),
-    }
+    })
 }
 
 fn strided_range_to_vec(start: i32, exclusive_end: i32, stride: i32) -> Vec<i32> {
@@ -556,7 +538,7 @@ impl Array {
         update: &Array,
         stream: impl AsRef<Stream>,
     ) {
-        if let Some(result) = update_slice(self, operations, update, &stream) {
+        if let Some(result) = update_slice(self, operations, update, &stream).unwrap() {
             *self = result;
             return;
         }
@@ -565,7 +547,7 @@ impl Array {
             indices,
             update,
             axes,
-        } = scatter_args(self, operations, update, &stream);
+        } = scatter_args(self, operations, update, &stream).unwrap();
         if !indices.is_empty() {
             let result =
                 unsafe { scatter_device_unchecked(self, &indices, &update, &axes, stream) };
@@ -1099,7 +1081,10 @@ where
 mod tests {
     use std::rc::Rc;
 
-    use crate::{ops::indexing::ArrayIndex, prelude::*};
+    use crate::{
+        ops::indexing::{index_impl::IndexOp, ArrayIndex},
+        prelude::*,
+    };
 
     #[test]
     fn test_array_mutate_single_index() {
@@ -1169,7 +1154,7 @@ mod tests {
             let mut a = Array::from_iter(0..60, &[3, 4, 5]);
 
             a.index_mut(index, Array::from_int(1));
-            let sum = a.sum(None, None).item::<i32>();
+            let sum = a.sum(None, None).unwrap().item::<i32>();
             assert_eq!(sum, expected_sum);
         }
 
@@ -1200,7 +1185,7 @@ mod tests {
                     let mut a = Array::from_iter(0..360, &[2, 3, 4, 5, 3]);
 
                     a.index_mut(($($i),*), Array::from_int(1));
-                    let sum = a.sum(None, None).item::<i32>();
+                    let sum = a.sum(None, None).unwrap().item::<i32>();
                     assert_eq!(sum, $sum);
                 }
             };
@@ -1248,7 +1233,7 @@ mod tests {
                     let mut a = Array::from_iter(0..540, &[3, 3, 4, 5, 3]);
 
                     a.index_mut(($($i),*), Array::from_int(1));
-                    let sum = a.sum(None, None).item::<i32>();
+                    let sum = a.sum(None, None).unwrap().item::<i32>();
                     assert_eq!(sum, $sum);
                 }
             };

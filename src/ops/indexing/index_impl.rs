@@ -1,167 +1,19 @@
-use std::rc::Rc;
+use std::{
+    ops::{Bound, RangeBounds},
+    rc::Rc,
+};
 
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
+    ops::indexing::expand_ellipsis_operations,
     utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
-    Array, Stream,
+    Array, Stream, StreamOrDevice,
 };
 
-/* -------------------------------------------------------------------------- */
-/*                                Custom types                                */
-/* -------------------------------------------------------------------------- */
-
-#[derive(Debug, Clone, Copy)]
-pub struct NewAxis;
-
-#[derive(Debug, Clone, Copy)]
-pub struct Ellipsis;
-
-#[derive(Debug, Clone, Copy)]
-pub struct StrideBy<I> {
-    pub inner: I,
-    pub stride: i32,
-}
-
-pub trait IntoStrideBy: Sized {
-    fn stride_by(self, stride: i32) -> StrideBy<Self>;
-}
-
-impl<T> IntoStrideBy for T {
-    fn stride_by(self, stride: i32) -> StrideBy<Self> {
-        StrideBy {
-            inner: self,
-            stride,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct RangeIndex {
-    start: Bound<i32>,
-    stop: Bound<i32>,
-    stride: i32,
-}
-
-impl RangeIndex {
-    pub(crate) fn new(start: Bound<i32>, stop: Bound<i32>, stride: Option<i32>) -> Self {
-        let stride = stride.unwrap_or(1);
-        Self {
-            start,
-            stop,
-            stride,
-        }
-    }
-
-    pub(crate) fn stride(&self) -> i32 {
-        self.stride
-    }
-
-    pub(crate) fn start(&self, size: i32) -> i32 {
-        match self.start {
-            Bound::Included(start) => start,
-            Bound::Excluded(start) => start + 1,
-            Bound::Unbounded => {
-                // ref swift binding
-                // _start ?? (stride < 0 ? size - 1 : 0)
-
-                if self.stride.is_negative() {
-                    size - 1
-                } else {
-                    0
-                }
-            }
-        }
-    }
-
-    pub(crate) fn absolute_start(&self, size: i32) -> i32 {
-        // ref swift binding
-        // return start < 0 ? start + size : start
-
-        let start = self.start(size);
-        if start.is_negative() {
-            start + size
-        } else {
-            start
-        }
-    }
-
-    pub(crate) fn end(&self, size: i32) -> i32 {
-        match self.stop {
-            Bound::Included(stop) => stop + 1,
-            Bound::Excluded(stop) => stop,
-            Bound::Unbounded => {
-                // ref swift binding
-                // _end ?? (stride < 0 ? -size - 1 : size)
-
-                if self.stride.is_negative() {
-                    -size - 1
-                } else {
-                    size
-                }
-            }
-        }
-    }
-
-    pub(crate) fn absolute_end(&self, size: i32) -> i32 {
-        // ref swift binding
-        // return end < 0 ? end + size : end
-
-        let end = self.end(size);
-        if end.is_negative() {
-            end + size
-        } else {
-            end
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum ArrayIndexOp {
-    /// An `Ellipsis` is used to consume all axes
-    ///
-    /// This is equivalent to `...` in python
-    Ellipsis,
-
-    /// A single index operation
-    ///
-    /// This is equivalent to `arr[1]` in python
-    TakeIndex { index: i32 },
-
-    /// Indexing with an array
-    ///
-    /// The reason an `Rc` is used instead of `Cow` is that even with `Cow`, the compiler will infer
-    /// an `'static` lifetime due to current limitations in the borrow checker.
-    TakeArray { indices: Rc<Array> },
-
-    /// Indexing with a range
-    ///
-    /// This is equivalent to `arr[1:3]` in python
-    Slice(RangeIndex),
-
-    /// New axis operation
-    ///
-    /// This is equivalent to `arr[None]` in python
-    ExpandDims,
-}
-
-impl ArrayIndexOp {
-    fn is_array_or_index(&self) -> bool {
-        matches!(
-            self,
-            ArrayIndexOp::TakeIndex { .. } | ArrayIndexOp::TakeArray { .. }
-        )
-    }
-
-    fn is_array(&self) -> bool {
-        matches!(self, ArrayIndexOp::TakeArray { .. })
-    }
-
-    pub fn range_full() -> Self {
-        ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
-    }
-}
+use super::{ArrayIndexOp, Ellipsis, NewAxis, RangeIndex, StrideBy};
 
 /* -------------------------------------------------------------------------- */
 /*                                Custom traits                               */
@@ -276,83 +128,6 @@ impl ArrayIndex for StrideBy<std::ops::RangeFull> {
             Bound::Unbounded,
             Some(self.stride),
         ))
-    }
-}
-
-// Implement public bindings
-impl Array {
-    /// Take elements along an axis.
-    ///
-    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
-    /// the array is treated as a flattened 1-D array prior to performing the take.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
-    #[default_device]
-    pub fn take_device(
-        &self,
-        indices: &Array,
-        axis: impl Into<Option<i32>>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = match axis.into() {
-                Some(axis) => try_catch_c_ptr_expr! {mlx_sys::mlx_take(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                )},
-                None => {
-                    let shape = &[-1];
-                    // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device(shape, &stream)?;
-                    try_catch_c_ptr_expr! {
-                        mlx_sys::mlx_take(
-                            reshaped.c_array,
-                            indices.c_array,
-                            0,
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                }
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
-    }
-
-    // NOTE: take and take_long_axis are two separate functions in the c++ code. They don't call
-    // each other.
-
-    /// Take values along an axis at the specified indices.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: Axis in the input to take the values from.
-    #[default_device]
-    pub fn take_along_axis_device(
-        &self,
-        indices: &Array,
-        axis: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_take_along_axis(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                )
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
     }
 }
 
@@ -1215,7 +990,12 @@ fn get_item_nd(
 
 #[cfg(test)]
 mod tests {
-    use crate::ops::indexing::{Ellipsis, IntoStrideBy, NewAxis};
+    use std::rc::Rc;
+
+    use crate::{
+        ops::indexing::{index_impl::IndexOp, Ellipsis, IntoStrideBy, NewAxis},
+        Array,
+    };
 
     /// See `assertEqual` in the swift binding tests
     macro_rules! assert_array_all_close {

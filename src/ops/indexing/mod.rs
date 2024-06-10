@@ -104,10 +104,7 @@ use std::{
 
 use mlx_macros::default_device;
 
-use crate::{
-    error::{InvalidAxisError, SliceError, TakeAlongAxisError, TakeError},
-    Array, Stream, StreamOrDevice,
-};
+use crate::{error::Exception, Array, Stream, StreamOrDevice};
 
 mod index_impl;
 mod indexmut_impl;
@@ -410,104 +407,38 @@ impl Array {
     /// - `indices`: The indices to take from the array.
     /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
     /// flattened 1-D vector.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check if the arguments are valid.
-    #[default_device]
-    pub unsafe fn take_device_unchecked(
-        &self,
-        indices: &Array,
-        axis: impl Into<Option<i32>>,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = match axis.into() {
-                Some(axis) => mlx_sys::mlx_take(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                ),
-                None => {
-                    let shape = &[-1];
-                    // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device_unchecked(shape, &stream);
-
-                    mlx_sys::mlx_take(
-                        reshaped.c_array,
-                        indices.c_array,
-                        0,
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-            };
-
-            Array::from_ptr(c_array)
-        }
-    }
-
-    /// Take elements along an axis.
-    ///
-    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
-    /// the array is treated as a flattened 1-D array prior to performing the take.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
-    #[default_device]
-    pub fn try_take_device(
-        &self,
-        indices: &Array,
-        axis: impl Into<Option<i32>>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, TakeError> {
-        let ndim = self.ndim().min(i32::MAX as usize) as i32;
-
-        let axis = axis.into();
-        if let Some(axis) = axis {
-            // Check for valid axis
-            if axis + ndim < 0 || axis >= ndim {
-                return Err(InvalidAxisError {
-                    axis,
-                    ndim: self.ndim(),
-                }
-                .into());
-            }
-        }
-
-        // Check for valid take
-        if self.size() == 0 && indices.size() != 0 {
-            return Err(TakeError::NonEmptyTakeFromEmptyArray);
-        }
-
-        unsafe { Ok(self.take_device_unchecked(indices, axis, stream)) }
-    }
-
-    /// Take elements along an axis.
-    ///
-    /// The elements are taken from `indices` along the specified axis. If the axis is not specified
-    /// the array is treated as a flattened 1-D array prior to performing the take.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_device(
         &self,
         indices: &Array,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_take_device(indices, axis, stream).unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = match axis.into() {
+                Some(axis) => try_catch_c_ptr_expr! {mlx_sys::mlx_take(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                )},
+                None => {
+                    let shape = &[-1];
+                    // SAFETY: &[-1] is a valid shape
+                    let reshaped = self.reshape_device(shape, &stream)?;
+                    try_catch_c_ptr_expr! {
+                        mlx_sys::mlx_take(
+                            reshaped.c_array,
+                            indices.c_array,
+                            0,
+                            stream.as_ref().as_ptr(),
+                        )
+                    }
+                }
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
     }
 
     // NOTE: take and take_long_axis are two separate functions in the c++ code. They don't call
@@ -519,104 +450,31 @@ impl Array {
     ///
     /// - `indices`: The indices to take from the array.
     /// - `axis`: Axis in the input to take the values from.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check if the arguments are valid.
-    #[default_device]
-    pub unsafe fn take_along_axis_device_unchecked(
-        &self,
-        indices: &Array,
-        axis: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            let c_array = mlx_sys::mlx_take_along_axis(
-                self.c_array,
-                indices.c_array,
-                axis,
-                stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(c_array)
-        }
-    }
-
-    /// Take values along an axis at the specified indices.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: Axis in the input to take the values from.
-    #[default_device]
-    pub fn try_take_along_axis_device(
-        &self,
-        indices: &Array,
-        axis: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array, TakeAlongAxisError> {
-        let ndim = self.ndim().min(i32::MAX as usize) as i32;
-
-        // Check for valid axis
-        if axis + ndim < 0 || axis >= ndim {
-            return Err(InvalidAxisError {
-                axis,
-                ndim: self.ndim(),
-            }
-            .into());
-        }
-
-        // Check for dimension mismatch
-        if indices.ndim() != self.ndim() {
-            return Err(TakeAlongAxisError::IndicesDimensionMismatch {
-                array_ndim: self.ndim(),
-                indices_ndim: indices.ndim(),
-            });
-        }
-
-        unsafe { Ok(self.take_along_axis_device_unchecked(indices, axis, stream)) }
-    }
-
-    /// Take values along an axis at the specified indices.
-    ///
-    /// # Params
-    ///
-    /// - `indices`: The indices to take from the array.
-    /// - `axis`: Axis in the input to take the values from.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the arguments are invalid.
     #[default_device]
     pub fn take_along_axis_device(
         &self,
         indices: &Array,
         axis: i32,
         stream: impl AsRef<Stream>,
-    ) -> Array {
-        self.try_take_along_axis_device(indices, axis, stream)
-            .unwrap()
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take_along_axis(
+                    self.c_array,
+                    indices.c_array,
+                    axis,
+                    stream.as_ref().as_ptr(),
+                )
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
     }
 }
 
 /* -------------------------------------------------------------------------- */
 /*                              Helper functions                              */
 /* -------------------------------------------------------------------------- */
-
-impl Array {
-    #[inline]
-    pub(self) fn check_slice_index_dimensions(
-        &self,
-        start: &[i32],
-        stop: &[i32],
-        strides: &[i32],
-    ) -> Result<(), SliceError> {
-        if start.len() != self.ndim() || stop.len() != self.ndim() || strides.len() != self.ndim() {
-            return Err(SliceError { ndim: self.ndim() });
-        }
-
-        Ok(())
-    }
-}
 
 fn count_non_new_axis_operations(operations: &[ArrayIndexOp]) -> usize {
     operations

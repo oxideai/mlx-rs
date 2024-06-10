@@ -29,6 +29,18 @@ pub struct Exception {
     what: String,
 }
 
+impl Exception {
+    pub fn what(&self) -> &str {
+        &self.what
+    }
+}
+
+impl From<Exception> for String {
+    fn from(e: Exception) -> Self {
+        e.what
+    }
+}
+
 thread_local! {
     pub static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     pub static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
@@ -71,96 +83,4 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
             what: last_err.to_string_lossy().into_owned(),
         })
     })
-}
-
-#[derive(Debug, Error)]
-#[error(
-    "GPU sort cannot handle sort axis of >= 2M elements, got array with sort axis size {size} "
-)]
-pub struct ArrayTooLargeForGpuError {
-    pub size: usize,
-}
-
-#[derive(Debug, Error)]
-pub enum SortError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error(transparent)]
-    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
-}
-
-#[derive(Debug, Error)]
-pub enum SortAllError {
-    #[error(transparent)]
-    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
-}
-
-#[derive(Debug, Error)]
-#[error("Received invalid kth {kth} along axis {axis} for array with shape {shape:?}")]
-pub struct InvalidKthError {
-    pub kth: i32,
-    pub axis: i32,
-    pub shape: Vec<i32>,
-}
-
-#[derive(Debug, Error)]
-pub enum PartitionError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error(transparent)]
-    InvalidKth(#[from] InvalidKthError),
-}
-
-#[derive(Debug, Error)]
-pub enum PartitionAllError {
-    #[error(transparent)]
-    InvalidKth(#[from] InvalidKthError),
-}
-
-#[derive(Debug, Error)]
-#[error(
-    "GPU sort cannot handle sort axis of >= 2M elements, got array with sort axis size {size} "
-)]
-pub struct ArrayTooLargeForGpuError {
-    pub size: usize,
-}
-
-#[derive(Debug, Error)]
-pub enum SortError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error(transparent)]
-    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
-}
-
-#[derive(Debug, Error)]
-pub enum SortAllError {
-    #[error(transparent)]
-    ArrayTooLargeForGpu(#[from] ArrayTooLargeForGpuError),
-}
-
-#[derive(Debug, Error)]
-#[error("Received invalid kth {kth} along axis {axis} for array with shape {shape:?}")]
-pub struct InvalidKthError {
-    pub kth: i32,
-    pub axis: i32,
-    pub shape: Vec<i32>,
-}
-
-#[derive(Debug, Error)]
-pub enum PartitionError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error(transparent)]
-    InvalidKth(#[from] InvalidKthError),
-}
-
-#[derive(Debug, Error)]
-pub enum PartitionAllError {
-    #[error(transparent)]
-    InvalidKth(#[from] InvalidKthError),
 }

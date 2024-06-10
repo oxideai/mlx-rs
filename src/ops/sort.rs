@@ -2,10 +2,7 @@
 
 use mlx_macros::default_device;
 
-use crate::{
-    error::Exception,
-    Array, Stream, StreamOrDevice,
-};
+use crate::{error::Exception, Array, Stream, StreamOrDevice};
 
 /// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
 ///
@@ -24,11 +21,7 @@ use crate::{
 /// let result = sort(&a, axis);
 /// ```
 #[default_device]
-pub fn sort_device(
-    a: &Array,
-    axis: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_sort(a.as_ptr(), axis, stream.as_ref().as_ptr())
@@ -107,10 +100,7 @@ pub fn argsort_device(
 /// let result = argsort_all(&a);
 /// ```
 #[default_device]
-pub fn argsort_all_device(
-    a: &Array,
-    stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr())

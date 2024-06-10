@@ -1,8 +1,8 @@
 use crate::array::Array;
-use crate::error::{DataStoreError, MlxError, OperationError};
+use crate::error::Exception;
 use crate::stream::StreamOrDevice;
-use crate::utils::is_broadcastable;
-use crate::{Dtype, Stream};
+
+use crate::Stream;
 use mlx_macros::default_device;
 
 impl Array {
@@ -18,160 +18,41 @@ impl Array {
     /// let data: &[i32] = result.as_slice();
     /// // data == [1, 2, 3, 4, 5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe { Array::from_ptr(mlx_sys::mlx_abs(self.c_array, stream.as_ref().as_ptr())) }
-    }
-
-    /// Element-wise addition.
-    ///
-    /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.add_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [5.0, 7.0, 9.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to add
-    /// - stream: stream or device to evaluate on
-    pub fn add_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_add_device(other, stream).unwrap()
-    }
-
-    /// Element-wise addition without checking broadcastability.
-    ///
-    /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.add_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [5.0, 7.0, 9.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to add
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays have the same shape.
-    #[default_device]
-    pub unsafe fn add_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_add(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
-        }
     }
 
     /// Element-wise addition returning an error if arrays are not broadcastable.
     ///
     /// Add two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to add
+    ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.add_device(&b, StreamOrDevice::default());
+    /// let mut c = a.add_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to add
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_add_device(
+    pub fn add_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        Ok(unsafe { self.add_device_unchecked(other, stream) })
-    }
-
-    /// Element-wise subtraction.
-    ///
-    /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.sub_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [-3.0, -3.0, -3.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
-    pub fn sub_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_sub_device(other, stream).unwrap()
-    }
-
-    /// Element-wise subtraction without checking broadcastability.
-    ///
-    /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.sub_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [-3.0, -3.0, -3.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays have the same shape.
-    #[default_device]
-    pub unsafe fn sub_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
+    ) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_subtract(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_add(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
@@ -179,91 +60,36 @@ impl Array {
     ///
     /// Subtract two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to subtract
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.sub_device(&b, StreamOrDevice::default());
+    /// let mut c = a.sub_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to subtract
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_sub_device(
+    pub fn sub_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        Ok(unsafe { self.sub_device_unchecked(other, stream) })
-    }
-
-    /// Unary element-wise negation.
-    ///
-    /// Negate the values in the array.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.neg();
-    ///
-    /// let b_data: &[f32] = b.as_slice();
-    /// // b_data == [-1.0, -2.0, -3.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    #[default_device]
-    pub fn neg_device(&self, stream: impl AsRef<Stream>) -> Array {
-        self.try_neg_device(stream).unwrap()
-    }
-
-    /// Unary element-wise negation without validating the array type.
-    ///
-    /// Negate the values in the array.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = unsafe { a.neg_unchecked() };
-    ///
-    /// let b_data: &[f32] = b.as_slice();
-    /// // b_data == [-1.0, -2.0, -3.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the array is not a boolean array.
-    #[default_device]
-    pub unsafe fn neg_device_unchecked(&self, stream: impl AsRef<Stream>) -> Array {
+    ) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_negative(
-                self.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_subtract(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
-    /// Unary element-wise negation.
+    /// Unary element-wise negation. Returns an error if the array is of type bool.
     ///
     /// Negate the values in the array.
     ///
@@ -272,28 +98,19 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.try_neg().unwrap();
+    /// let mut b = a.neg().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the array is of type bool.
     #[default_device]
-    pub fn try_neg_device(&self, stream: impl AsRef<Stream>) -> Result<Array, OperationError> {
-        if self.dtype() == Dtype::Bool {
-            return Err(OperationError::NotSupported(
-                "Negation not supported for bool, use logical_not() instead".to_string(),
-            ));
+    pub fn neg_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_negative(self.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
-
-        Ok(unsafe { self.neg_device_unchecked(stream) })
     }
 
     /// Unary element-wise logical not.
@@ -308,64 +125,11 @@ impl Array {
     /// let b_data: &[bool] = b.as_slice();
     /// // b_data == [true]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_logical_not(
                 self.c_array,
-                stream.as_ref().as_ptr(),
-            ))
-        }
-    }
-
-    /// Element-wise multiplication.
-    ///
-    /// Multiply two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.mul_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [4.0, 10.0, 18.0]
-    /// ```
-    pub fn mul_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_mul_device(other, stream).unwrap()
-    }
-
-    /// Element-wise multiplication without checking broadcastability.
-    ///
-    /// Multiply two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.mul_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [4.0, 10.0, 18.0]
-    /// ```
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays are broadcastable.
-    #[default_device]
-    pub unsafe fn mul_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_multiply(
-                self.c_array,
-                other.c_array,
                 stream.as_ref().as_ptr(),
             ))
         }
@@ -381,80 +145,22 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.mul_device(&b, StreamOrDevice::default());
+    /// let mut c = a.mul_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
     #[default_device]
-    pub fn try_mul_device(
+    pub fn mul_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        Ok(unsafe { self.mul_device_unchecked(other, stream) })
-    }
-
-    /// Element-wise division.
-    ///
-    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.div_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [0.25, 0.4, 0.5]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    pub fn div_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_div_device(other, stream).unwrap()
-    }
-
-    /// Element-wise division without checking broadcastability.
-    ///
-    /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.div_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [0.25, 0.4, 0.5]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays are broadcastable.
-    #[default_device]
-    pub unsafe fn div_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
+    ) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_divide(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_multiply(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
@@ -462,91 +168,32 @@ impl Array {
     ///
     /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.div_device(&b, StreamOrDevice::default());
+    /// let mut c = a.div_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_div_device(
+    pub fn div_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        Ok(unsafe { self.div_device_unchecked(other, stream) })
-    }
-
-    /// Element-wise power operation.
-    ///
-    /// Raise the elements of the array to the power of the elements of another array.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.pow_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [1.0, 8.0, 81.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
-    pub fn pow_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_pow_device(other, stream).unwrap()
-    }
-
-    /// Element-wise power operation without checking broadcastability if arrays are different shapes.
-    ///
-    /// Raise the elements of the array to the power of the elements of another array.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.pow_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [1.0, 8.0, 81.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays are broadcastable if they have different shapes.
-    #[default_device]
-    pub unsafe fn pow_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
+    ) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_power(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_divide(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
@@ -554,91 +201,32 @@ impl Array {
     ///
     /// Raise the elements of the array to the power of the elements of another array.
     ///
+    /// # Params
+    ///
+    /// - other: array to raise to the power of
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.pow_device(&b, StreamOrDevice::default());
+    /// let mut c = a.pow_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to raise to the power of
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_pow_device(
+    pub fn pow_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if self.shape() != other.shape() && !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
-        }
-
-        Ok(unsafe { self.pow_device_unchecked(other, stream) })
-    }
-
-    /// Element-wise remainder of division.
-    ///
-    /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
-    /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.rem_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [1.0, 3.0, 2.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    pub fn rem_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_rem_device(other, stream).unwrap()
-    }
-
-    /// Element-wise remainder of division without checking broadcastability.
-    ///
-    /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
-    /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.rem_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [1.0, 3.0, 2.0]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the arrays are broadcastable.
-    #[default_device]
-    pub unsafe fn rem_device_unchecked(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
+    ) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_remainder(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_power(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
@@ -646,33 +234,33 @@ impl Array {
     ///
     /// Computes the remainder of dividing `lhs` with `rhs` with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.rem_device(&b, StreamOrDevice::default());
+    /// let mut c = a.rem_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_rem_device(
+    pub fn rem_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, DataStoreError> {
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError);
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_remainder(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
-
-        Ok(unsafe { self.rem_device_unchecked(other, stream) })
     }
 
     /// Element-wise square root
@@ -728,44 +316,6 @@ impl Array {
         unsafe { Array::from_ptr(mlx_sys::mlx_exp(self.c_array, stream.as_ref().as_ptr())) }
     }
 
-    /// Element-wise floor.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-    /// let mut b = a.floor_device(StreamOrDevice::default());
-    ///
-    /// let b_data: &[f32] = b.as_slice();
-    /// // b_data == [0.0, 1.0, 2.0]
-    /// ```
-    #[default_device]
-    pub fn floor_device(&self, stream: impl AsRef<Stream>) -> Array {
-        self.try_floor_device(stream).unwrap()
-    }
-
-    /// Element-wise floor without checking the array type.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-    /// let mut b = a.floor_device(StreamOrDevice::default());
-    ///
-    /// let b_data: &[f32] = b.as_slice();
-    /// // b_data == [0.0, 1.0, 2.0]
-    /// ```
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the array is not of type complex64.
-    #[default_device]
-    pub unsafe fn floor_device_unchecked(&self, stream: impl AsRef<Stream>) -> Array {
-        unsafe { Array::from_ptr(mlx_sys::mlx_floor(self.c_array, stream.as_ref().as_ptr())) }
-    }
-
     /// Element-wise floor returning an error if the array is of type complex64.
     ///
     /// # Example
@@ -773,92 +323,18 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-    /// let mut b = a.floor_device(StreamOrDevice::default());
+    /// let mut b = a.floor_device(StreamOrDevice::default()).unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
     #[default_device]
-    pub fn try_floor_device(&self, stream: impl AsRef<Stream>) -> Result<Array, OperationError> {
-        if self.dtype() == Dtype::Complex64 {
-            return Err(OperationError::NotSupported(
-                "Floor not supported for complex64".to_string(),
-            ));
-        }
-
-        Ok(unsafe { self.floor_device_unchecked(stream) })
-    }
-
-    /// Element-wise integer division.
-    ///
-    /// Divide two arrays with
-    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
-    /// after `/`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [0.25, 0.4, 0.5]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    #[default_device]
-    pub fn floor_divide_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_floor_divide_device(other, stream).unwrap()
-    }
-
-    /// Element-wise integer division without checking the array type or for broadcastability.
-    ///
-    /// Divide two arrays with
-    /// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
-    /// after `/`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default());
-    ///
-    /// let c_data: &[f32] = c.as_slice();
-    /// // c_data == [0.25, 0.4, 0.5]
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check array types or that the arrays are
-    /// broadcastable.
-    #[default_device]
-    pub unsafe fn floor_divide_device_unchecked(
-        &self,
-        other: &Array,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
+    pub fn floor_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_floor_divide(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_floor(self.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 
@@ -870,40 +346,33 @@ impl Array {
     /// If either array is a floating point type then it is equivalent to calling [`Array::floor()`]
     /// after `/`.
     ///
+    /// # Params
+    ///
+    /// - other: array to divide
+    ///
     /// # Example
     ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default());
+    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to divide
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_floor_divide_device(
+    pub fn floor_divide_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, MlxError> {
-        if self.dtype() == Dtype::Complex64 {
-            return Err(OperationError::NotSupported(
-                "Floor is not supported for complex64".to_string(),
-            )
-            .into());
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_floor_divide(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
-
-        if !is_broadcastable(self.shape(), other.shape()) {
-            return Err(DataStoreError::BroadcastError.into());
-        }
-
-        Ok(unsafe { self.floor_divide_device_unchecked(other, stream) })
     }
 
     /// Element-wise natural logarithm.
@@ -974,88 +443,6 @@ impl Array {
         unsafe { Array::from_ptr(mlx_sys::mlx_log1p(self.c_array, stream.as_ref().as_ptr())) }
     }
 
-    /// Matrix multiplication.
-    ///
-    /// Perform the (possibly batched) matrix multiplication of two arrays. This function supports
-    /// broadcasting for arrays with more than two dimensions.
-    ///
-    /// - If the first array is 1-D then a 1 is prepended to its shape to make it
-    ///   a matrix. Similarly, if the second array is 1-D then a 1 is appended to its
-    ///   shape to make it a matrix. In either case the singleton dimension is removed
-    ///   from the result.
-    /// - A batched matrix multiplication is performed if the arrays have more than
-    ///   2 dimensions.  The matrix dimensions for the matrix product are the last
-    ///   two dimensions of each input.
-    /// - All but the last two dimensions of each input are broadcast with one another using
-    ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-    /// let b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
-    ///
-    /// // produces a [2, 3] result
-    /// let mut c = a.matmul_device(&b, StreamOrDevice::default());
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
-    #[default_device]
-    pub fn matmul_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Array {
-        self.try_matmul_device(other, stream).unwrap()
-    }
-
-    /// Matrix multiplication without validating inputs.
-    ///
-    /// Perform the (possibly batched) matrix multiplication of two arrays. This function supports
-    /// broadcasting for arrays with more than two dimensions.
-    ///
-    /// - If the first array is 1-D then a 1 is prepended to its shape to make it
-    ///   a matrix. Similarly, if the second array is 1-D then a 1 is appended to its
-    ///   shape to make it a matrix. In either case the singleton dimension is removed
-    ///   from the result.
-    /// - A batched matrix multiplication is performed if the arrays have more than
-    ///   2 dimensions.  The matrix dimensions for the matrix product are the last
-    ///   two dimensions of each input.
-    /// - All but the last two dimensions of each input are broadcast with one another using
-    ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
-    ///
-    /// # Example
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-    /// let b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
-    ///
-    /// // produces a [2, 3] result
-    /// let mut c = a.matmul_device(&b, StreamOrDevice::default());
-    /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it does not check that the inputs are valid for matrix multiplication.
-    #[default_device]
-    pub unsafe fn matmul_device_unchecked(
-        &self,
-        other: &Array,
-        stream: impl AsRef<Stream>,
-    ) -> Array {
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_matmul(
-                self.c_array,
-                other.c_array,
-                stream.as_ref().as_ptr(),
-            ))
-        }
-    }
-
     /// Matrix multiplication returning an error if inputs are not valid.
     ///
     /// Perform the (possibly batched) matrix multiplication of two arrays. This function supports
@@ -1071,7 +458,12 @@ impl Array {
     /// - All but the last two dimensions of each input are broadcast with one another using
     ///   standard [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
     ///
+    /// # Params
+    ///
+    /// - other: array to multiply
+    ///
     /// # Example
+    ///
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
@@ -1080,55 +472,18 @@ impl Array {
     /// // produces a [2, 3] result
     /// let mut c = a.matmul_device(&b, StreamOrDevice::default());
     /// ```
-    ///
-    /// # Params
-    ///
-    /// - other: array to multiply
-    /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn try_matmul_device(
+    pub fn matmul_device(
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, OperationError> {
-        if self.ndim() == 0 || other.ndim() == 0 {
-            return Err(OperationError::WrongInput(
-                "Got 0 dimension input. Inputs must have at least one dimension.".to_string(),
-            ));
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_matmul(self.c_array, other.c_array, stream.as_ref().as_ptr())
+            };
+            Ok(Array::from_ptr(c_array))
         }
-
-        // get last dimension of first input and second to last dimension of second input
-        let a_last_dim: i32 = if self.ndim() == 1 {
-            let new_shape = [1, self.size() as i32];
-            new_shape[new_shape.len() - 1]
-        } else {
-            self.shape()[self.shape().len() - 1]
-        };
-
-        let b_semi_last_dim = if other.ndim() == 1 {
-            let new_shape = [other.size() as i32, 1];
-            new_shape[new_shape.len() - 2]
-        } else {
-            other.shape()[other.shape().len() - 2]
-        };
-
-        if a_last_dim != b_semi_last_dim {
-            return Err(OperationError::WrongDimensions(
-                format!("Last dimension of first input with shape {:?} must match second to last dimension of second input with shape {:?}",
-                self.shape(), other.shape())
-            ));
-        }
-
-        let result_type = Dtype::from_promoting_types(self.dtype(), other.dtype());
-
-        if !result_type.is_float() {
-            return Err(OperationError::WrongInput(
-                format!("Only real floating point types are supported but {:?} and {:?} where provided, which is not a real floating point type",
-                self.dtype(), other.dtype())
-            ));
-        }
-
-        Ok(unsafe { self.matmul_device_unchecked(other, stream) })
     }
 
     /// Element-wise reciprocal.
@@ -1158,7 +513,6 @@ impl Array {
     /// # Params
     ///
     /// - decimals: number of decimals to round to - default is 0 if not provided
-    /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn round_device(
         &self,
@@ -1197,7 +551,6 @@ impl Array {
 mod tests {
     use super::*;
     use crate::complex64;
-    use num_traits::Pow;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -1236,7 +589,7 @@ mod tests {
     fn test_add_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.try_add(&b);
+        let c = a.add(&b);
         assert!(c.is_err());
     }
 
@@ -1262,14 +615,14 @@ mod tests {
     fn test_sub_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.try_sub(&b);
+        let c = a.sub(&b);
         assert!(c.is_err());
     }
 
     #[test]
     fn test_neg() {
         let mut a = Array::from_slice::<f32>(&[1.0, 2.0, 3.0], &[3]);
-        let mut b = a.neg();
+        let mut b = a.neg().unwrap();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[-1.0, -2.0, -3.0]);
@@ -1282,7 +635,7 @@ mod tests {
     #[test]
     fn test_neg_bool() {
         let a = Array::from_slice(&[true, false, true], &[3]);
-        let b = a.try_neg();
+        let b = a.neg();
         assert!(b.is_err());
     }
 
@@ -1317,7 +670,7 @@ mod tests {
     fn test_mul_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.try_mul(&b);
+        let c = a.mul(&b);
         assert!(c.is_err());
     }
 
@@ -1343,7 +696,7 @@ mod tests {
     fn test_div_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.try_div(&b);
+        let c = a.div(&b);
         assert!(c.is_err());
     }
 
@@ -1352,7 +705,7 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
 
-        let mut c = a.pow(&b);
+        let mut c = a.pow(&b).unwrap();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[1.0, 8.0, 81.0]);
@@ -1369,7 +722,7 @@ mod tests {
     fn test_pow_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[2.0, 3.0], &[2]);
-        let c = a.try_pow(&b);
+        let c = a.pow(&b);
         assert!(c.is_err());
     }
 
@@ -1395,7 +748,7 @@ mod tests {
     fn test_rem_invalid_broadcast() {
         let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
         let b = Array::from_slice(&[3.0, 4.0], &[2]);
-        let c = a.try_rem(&b);
+        let c = a.rem(&b);
         assert!(c.is_err());
     }
 
@@ -1441,7 +794,7 @@ mod tests {
     #[test]
     fn test_floor() {
         let mut a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-        let mut b = a.floor();
+        let mut b = a.floor().unwrap();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[0.0, 1.0, 2.0]);
@@ -1455,7 +808,7 @@ mod tests {
     fn test_floor_complex64() {
         let val = complex64::new(1.0, 2.0);
         let a = Array::from_complex(val);
-        let b = a.try_floor_device(StreamOrDevice::default());
+        let b = a.floor_device(StreamOrDevice::default());
         assert!(b.is_err());
     }
 
@@ -1464,7 +817,7 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
-        let mut c = a.floor_divide(&b);
+        let mut c = a.floor_divide(&b).unwrap();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[0.0, 0.0, 0.0]);
@@ -1482,7 +835,7 @@ mod tests {
         let val = complex64::new(1.0, 2.0);
         let a = Array::from_complex(val);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-        let c = a.try_floor_divide_device(&b, StreamOrDevice::default());
+        let c = a.floor_divide_device(&b, StreamOrDevice::default());
         assert!(c.is_err());
     }
 
@@ -1490,7 +843,7 @@ mod tests {
     fn test_floor_divide_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.try_floor_divide_device(&b, StreamOrDevice::default());
+        let c = a.floor_divide_device(&b, StreamOrDevice::default());
         assert!(c.is_err());
     }
 
@@ -1551,7 +904,7 @@ mod tests {
         let mut a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         let mut b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
 
-        let mut c = a.matmul(&b);
+        let mut c = a.matmul(&b).unwrap();
 
         assert_eq!(c.shape(), &[2, 3]);
         let c_data: &[f32] = c.as_slice();
@@ -1569,7 +922,7 @@ mod tests {
     fn test_matmul_ndim_zero() {
         let a: Array = 1.0.into();
         let b = Array::from_slice::<i32>(&[1], &[1]);
-        let c = a.try_matmul(&b);
+        let c = a.matmul(&b);
         assert!(c.is_err());
     }
 
@@ -1577,7 +930,7 @@ mod tests {
     fn test_matmul_ndim_one() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[4]);
         let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[4]);
-        let c = a.try_matmul(&b);
+        let c = a.matmul(&b);
         assert!(c.is_ok());
     }
 
@@ -1585,7 +938,7 @@ mod tests {
     fn test_matmul_dim_mismatch() {
         let a = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
         let b = Array::from_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], &[2, 5]);
-        let c = a.try_matmul(&b);
+        let c = a.matmul(&b);
         assert!(c.is_err());
     }
 
@@ -1594,7 +947,7 @@ mod tests {
         let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
         let b = Array::from_slice(&[5, 37, 4, 7, 1, 0], &[2, 3]);
 
-        let c = a.try_matmul(&b);
+        let c = a.matmul(&b);
         assert!(c.is_err());
     }
 

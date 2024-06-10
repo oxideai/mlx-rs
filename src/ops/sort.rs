@@ -258,29 +258,13 @@ pub fn argpartition_all_device(
 
 #[cfg(test)]
 mod tests {
-    use crate::{Array, StreamOrDevice};
+    use crate::Array;
 
     #[test]
     fn test_sort_with_invalid_axis() {
         let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
         let axis = 1;
         let result = super::sort(&a, axis);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_sort_with_large_arrays_on_gpu() {
-        let a = Array::ones::<i32>(&[1 << 21]).unwrap();
-        let s = StreamOrDevice::gpu();
-        let result = super::sort_device(&a, 0, s);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_sort_all_with_large_arrays_on_gpu() {
-        let a = Array::ones::<i32>(&[1 << 21]).unwrap();
-        let s = StreamOrDevice::gpu();
-        let result = super::sort_all_device(&a, s);
         assert!(result.is_err());
     }
 

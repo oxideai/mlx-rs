@@ -482,12 +482,16 @@ mod tests {
         );
 
         assert_float_eq!(
-            norm(&a, f64::NEG_INFINITY, None, None).unwrap().item::<f32>(),
+            norm(&a, f64::NEG_INFINITY, None, None)
+                .unwrap()
+                .item::<f32>(),
             0.0,
             abs <= 0.001
         );
         assert_float_eq!(
-            norm(&b, f64::NEG_INFINITY, None, None).unwrap().item::<f32>(),
+            norm(&b, f64::NEG_INFINITY, None, None)
+                .unwrap()
+                .item::<f32>(),
             2.0,
             abs <= 0.001
         );

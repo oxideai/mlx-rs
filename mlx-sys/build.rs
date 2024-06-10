@@ -45,6 +45,7 @@ fn main() {
     // generate bindings
     let bindings = bindgen::Builder::default()
         .header("src/mlx-c/mlx/c/mlx.h")
+        .header("src/mlx-c/mlx/c/error.h")
         .clang_arg("-Isrc/mlx-c")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()

@@ -8,7 +8,7 @@ macro_rules! impl_binary_op {
             type Output = Array;
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$method _device>](&rhs.into(), StreamOrDevice::default())
+                    self.[<$method _device>](&rhs.into(), StreamOrDevice::default()).unwrap()
                 }
             }
         }
@@ -17,7 +17,7 @@ macro_rules! impl_binary_op {
             type Output = Array;
             fn $method(self, rhs: Self) -> Self::Output {
                 paste::paste! {
-                    self.[<$method _device>](rhs, StreamOrDevice::default())
+                    self.[<$method _device>](rhs, StreamOrDevice::default()).unwrap()
                 }
             }
         }
@@ -29,7 +29,7 @@ macro_rules! impl_binary_op_assign {
         impl<T: Into<Array>> $trait<T> for Array {
             fn $method(&mut self, rhs: T) {
                 let new_array = paste::paste! {
-                    self.[<$c_method _device>](&rhs.into(), StreamOrDevice::default())
+                    self.[<$c_method _device>](&rhs.into(), StreamOrDevice::default()).unwrap()
                 };
                 *self = new_array;
             }
@@ -38,7 +38,7 @@ macro_rules! impl_binary_op_assign {
         impl $trait<&Array> for Array {
             fn $method(&mut self, rhs: &Self) {
                 let new_array = paste::paste! {
-                    self.[<$c_method _device>](rhs, StreamOrDevice::default())
+                    self.[<$c_method _device>](rhs, StreamOrDevice::default()).unwrap()
                 };
                 *self = new_array;
             }
@@ -59,7 +59,7 @@ impl_binary_op!(Rem, rem);
 impl<'a> Pow<&'a Array> for &'a Array {
     type Output = Array;
     fn pow(self, rhs: &'a Array) -> Self::Output {
-        self.pow_device(rhs, StreamOrDevice::default())
+        self.pow_device(rhs, StreamOrDevice::default()).unwrap()
     }
 }
 
@@ -67,6 +67,7 @@ impl<'a, T: Into<Array>> Pow<T> for &'a Array {
     type Output = Array;
     fn pow(self, rhs: T) -> Self::Output {
         self.pow_device(&rhs.into(), StreamOrDevice::default())
+            .unwrap()
     }
 }
 

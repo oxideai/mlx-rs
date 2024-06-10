@@ -1,4 +1,8 @@
-use crate::{dtype::Dtype, error::AsSliceError, StreamOrDevice};
+use crate::{
+    dtype::Dtype,
+    error::{AsSliceError, ItemError},
+    StreamOrDevice,
+};
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::ffi::c_void;
@@ -7,7 +11,6 @@ mod element;
 mod macros;
 mod operators;
 
-use crate::error::DataStoreError;
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
@@ -313,9 +316,9 @@ impl Array {
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, DataStoreError> {
+    pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, ItemError> {
         if self.size() != 1 {
-            return Err(DataStoreError::NotScalar);
+            return Err(ItemError::NotScalar);
         }
 
         // Evaluate the array, so we have content to work with in the conversion

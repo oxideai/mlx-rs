@@ -72,15 +72,3 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
         })
     })
 }
-
-#[derive(Debug, Error)]
-pub enum ArangeError {
-    #[error("{dtype:?} is not supported for arange")]
-    DtypeNotSupported { dtype: Dtype },
-
-    #[error("Cannot compute length.")]
-    CannotComputeLength,
-
-    #[error("Maximum size exceeded.")]
-    MaxSizeExceeded,
-}

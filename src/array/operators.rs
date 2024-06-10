@@ -8,7 +8,7 @@ macro_rules! impl_binary_op {
             type Output = Array;
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$method _device>](&rhs.into(), StreamOrDevice::default())
+                    self.[<$method _device>](&rhs.into(), StreamOrDevice::default()).unwrap()
                 }
             }
         }

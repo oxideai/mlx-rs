@@ -28,7 +28,7 @@
 //! let src = [1.0f32, 2.0, 3.0, 4.0];
 //! let mut array = Array::from_slice(&src[..], &[4]);
 //!
-//! let mut fft_result = fft(&array, 4, 0);
+//! let mut fft_result = fft(&array, 4, 0).unwrap();
 //! assert_eq!(fft_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = &[
@@ -39,7 +39,7 @@
 //! ];
 //! assert_eq!(fft_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut ifft_result = ifft(&fft_result, 4, 0);
+//! let mut ifft_result = ifft(&fft_result, 4, 0).unwrap();
 //! assert_eq!(ifft_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = &[
@@ -50,7 +50,7 @@
 //! ];
 //! assert_eq!(ifft_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut rfft_result = rfft(&array, 4, 0);
+//! let mut rfft_result = rfft(&array, 4, 0).unwrap();
 //! assert_eq!(rfft_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = &[
@@ -60,7 +60,7 @@
 //! ];
 //! assert_eq!(rfft_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut irfft_result = irfft(&rfft_result, 4, 0);
+//! let mut irfft_result = irfft(&rfft_result, 4, 0).unwrap();
 //! assert_eq!(irfft_result.dtype(), Dtype::Float32);
 //! assert_eq!(irfft_result.as_slice::<f32>(), &src[..]);
 //!
@@ -77,7 +77,7 @@
 //! let src = [1.0f32, 1.0, 1.0, 1.0];
 //! let mut array = Array::from_slice(&src[..], &[2, 2]);
 //!
-//! let mut fft2_result = fft2(&array, None, None);
+//! let mut fft2_result = fft2(&array, None, None).unwrap();
 //! assert_eq!(fft2_result.dtype(), Dtype::Complex64);
 //! let expected = &[
 //!     complex64::new(4.0, 0.0),
@@ -87,7 +87,7 @@
 //! ];
 //! assert_eq!(fft2_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut ifft2_result = ifft2(&fft2_result, None, None);
+//! let mut ifft2_result = ifft2(&fft2_result, None, None).unwrap();
 //! assert_eq!(ifft2_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = &[
@@ -98,7 +98,7 @@
 //! ];
 //! assert_eq!(ifft2_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut rfft2_result = rfft2(&array, None, None);
+//! let mut rfft2_result = rfft2(&array, None, None).unwrap();
 //! assert_eq!(rfft2_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = &[
@@ -109,7 +109,7 @@
 //! ];
 //! assert_eq!(rfft2_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut irfft2_result = irfft2(&rfft2_result, None, None);
+//! let mut irfft2_result = irfft2(&rfft2_result, None, None).unwrap();
 //! assert_eq!(irfft2_result.dtype(), Dtype::Float32);
 //! assert_eq!(irfft2_result.as_slice::<f32>(), &src[..]);
 //!
@@ -123,28 +123,28 @@
 //! ```rust
 //! use mlx_rs::{Dtype, Array, StreamOrDevice, complex64, fft::*};
 //!
-//! let mut array = Array::ones::<f32>(&[2, 2, 2]);
-//! let mut fftn_result = fftn(&array, None, None);
+//! let mut array = Array::ones::<f32>(&[2, 2, 2]).unwrap();
+//! let mut fftn_result = fftn(&array, None, None).unwrap();
 //! assert_eq!(fftn_result.dtype(), Dtype::Complex64);
 //!
 //! let mut expected = [complex64::new(0.0, 0.0); 8];
 //! expected[0] = complex64::new(8.0, 0.0);
 //! assert_eq!(fftn_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut ifftn_result = ifftn(&fftn_result, None, None);
+//! let mut ifftn_result = ifftn(&fftn_result, None, None).unwrap();
 //! assert_eq!(ifftn_result.dtype(), Dtype::Complex64);
 //!
 //! let expected = [complex64::new(1.0, 0.0); 8];
 //! assert_eq!(ifftn_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut rfftn_result = rfftn(&array, None, None);
+//! let mut rfftn_result = rfftn(&array, None, None).unwrap();
 //! assert_eq!(rfftn_result.dtype(), Dtype::Complex64);
 //!
 //! let mut expected = [complex64::new(0.0, 0.0); 8];
 //! expected[0] = complex64::new(8.0, 0.0);
 //! assert_eq!(rfftn_result.as_slice::<complex64>(), &expected[..]);
 //!
-//! let mut irfftn_result = irfftn(&rfftn_result, None, None);
+//! let mut irfftn_result = irfftn(&rfftn_result, None, None).unwrap();
 //! assert_eq!(irfftn_result.dtype(), Dtype::Float32);
 //!
 //! let expected = [1.0; 8];

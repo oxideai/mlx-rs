@@ -1,5 +1,4 @@
 use mlx_rs::{Array, Dtype};
-use std::ops::Add;
 
 fn scalar_basics() {
     // create a scalar array
@@ -38,7 +37,7 @@ fn array_basics() {
     // is [1.0, 2.0] and the second row is [3.0, 4.0]
 
     // Make an array of shape {2, 2} filled with ones:
-    let y = Array::ones::<f32>(&[2, 2]);
+    let y = Array::ones::<f32>(&[2, 2]).unwrap();
 
     // Pointwise add x and y:
     let z = x.add(&y);
@@ -65,10 +64,10 @@ fn array_basics() {
 
     // Some functions or methods on arrays implicitly evaluate them. For example
     // accessing a value in an array or printing the array implicitly evaluate it:
-    z = Array::ones::<f32>(&[1]);
+    z = Array::ones::<f32>(&[1]).unwrap();
     z.item::<f32>(); // implicit evaluation
 
-    z = Array::ones::<f32>(&[2, 2]);
+    z = Array::ones::<f32>(&[2, 2]).unwrap();
     println!("{}", z); // implicit evaluation
 }
 

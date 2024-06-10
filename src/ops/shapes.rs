@@ -56,7 +56,7 @@ impl Array {
     pub fn as_strided_device<'a>(
         &'a self,
         shape: impl IntoOption<&'a [i32]>,
-        strides: impl Into<Option<&'a [usize]>>,
+        strides: impl IntoOption<&'a [usize]>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
@@ -182,18 +182,18 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
 /// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_iter(0..10, &[10]);
-/// let y = as_strided(&x, &[3, 3][..], &[1, 1][..], 0);
+/// let y = as_strided(&x, &[3, 3], &[1, 1], 0);
 /// ```
 #[default_device]
 pub fn as_strided_device<'a>(
     a: &'a Array,
     shape: impl IntoOption<&'a [i32]>,
-    strides: impl Into<Option<&'a [usize]>>,
+    strides: impl IntoOption<&'a [usize]>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
 ) -> Array {
     let shape = shape.into_option().unwrap_or(a.shape());
-    let resolved_strides = resolve_strides(shape, strides.into());
+    let resolved_strides = resolve_strides(shape, strides.into_option());
     let offset = offset.into().unwrap_or(0);
 
     unsafe {

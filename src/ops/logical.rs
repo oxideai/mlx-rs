@@ -425,7 +425,7 @@ impl Array {
     /// let all = array.any(None, None).unwrap();
     ///
     /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
-    /// let all_rows = array.any(&[0][..], None).unwrap();
+    /// let all_rows = array.any(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn any_device<'a>(

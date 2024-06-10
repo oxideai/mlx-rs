@@ -111,7 +111,7 @@ impl Stream {
     /// Current default CPU stream.
     pub fn cpu() -> Self {
         unsafe {
-            let c_stream = mlx_sys::MLX_CPU_STREAM;
+            let c_stream = mlx_sys::mlx_cpu_stream();
             mlx_retain(c_stream as *mut std::ffi::c_void);
             Stream { c_stream }
         }
@@ -120,7 +120,7 @@ impl Stream {
     /// Current default GPU stream.
     pub fn gpu() -> Self {
         unsafe {
-            let c_stream = mlx_sys::MLX_GPU_STREAM;
+            let c_stream = mlx_sys::mlx_cpu_stream();
             mlx_retain(c_stream as *mut std::ffi::c_void);
             Stream { c_stream }
         }

@@ -1,6 +1,6 @@
 use mlx_macros::default_device;
 
-use crate::{array::Array, error::Exception, stream::StreamOrDevice, Stream, utils::IntoOption};
+use crate::{array::Array, error::Exception, stream::StreamOrDevice, utils::IntoOption, Stream};
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
 

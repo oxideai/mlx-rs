@@ -132,4 +132,3 @@ impl<'a, T, const N: usize> IntoOption<&'a [T]> for &'a [T; N] {
         Some(self)
     }
 }
-

@@ -3,7 +3,11 @@ use std::borrow::Cow;
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 
-use crate::{error::Exception, utils::{IntoOption, VectorArray}, Array, Stream, StreamOrDevice};
+use crate::{
+    error::Exception,
+    utils::{IntoOption, VectorArray},
+    Array, Stream, StreamOrDevice,
+};
 
 impl Array {
     /// See [`expand_dims`].

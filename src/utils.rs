@@ -41,11 +41,8 @@ pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
 }
 
 /// Helper method to convert an optional slice of axes to a Vec covering all axes.
-pub(crate) fn axes_or_default_to_all<'a>(
-    axes: impl Into<Option<&'a [i32]>>,
-    ndim: i32,
-) -> Vec<i32> {
-    match axes.into() {
+pub(crate) fn axes_or_default_to_all<'a>(axes: impl IntoOption<&'a [i32]>, ndim: i32) -> Vec<i32> {
+    match axes.into_option() {
         Some(axes) => axes.to_vec(),
         None => {
             let axes: Vec<i32> = (0..ndim).collect();
@@ -120,5 +117,29 @@ impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
 
     fn deref(&self) -> &Self::Target {
         self.as_ref()
+    }
+}
+
+/// A helper trait that is just like `Into<Option<T>>` but improves ergonomics by allowing
+/// implicit conversion from &[T; N] to &[T].
+pub trait IntoOption<T> {
+    fn into_option(self) -> Option<T>;
+}
+
+impl<T> IntoOption<T> for Option<T> {
+    fn into_option(self) -> Option<T> {
+        self
+    }
+}
+
+impl<T> IntoOption<T> for T {
+    fn into_option(self) -> Option<T> {
+        Some(self)
+    }
+}
+
+impl<'a, T, const N: usize> IntoOption<&'a [T]> for &'a [T; N] {
+    fn into_option(self) -> Option<&'a [T]> {
+        Some(self)
     }
 }

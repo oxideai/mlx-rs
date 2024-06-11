@@ -1,6 +1,6 @@
 use mlx_macros::default_device;
 
-use crate::{error::Exception, Array, Stream, StreamOrDevice};
+use crate::{error::Exception, utils::IntoOption, Array, Stream, StreamOrDevice};
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
 
@@ -46,12 +46,12 @@ pub fn rfft_device(
 #[default_device(device = "cpu")]
 pub fn rfft2_device<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let axes = axes.into().unwrap_or(&[-2, -1]);
-    let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into(), Some(axes));
+    let axes = axes.into_option().unwrap_or(&[-2, -1]);
+    let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -90,11 +90,11 @@ pub fn rfft2_device<'a>(
 #[default_device(device = "cpu")]
 pub fn rfftn_device<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into(), axes.into());
+    let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -165,12 +165,12 @@ pub fn irfft_device(
 #[default_device(device = "cpu")]
 pub fn irfft2_device<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let s = s.into();
-    let axes = axes.into().unwrap_or(&[-2, -1]);
+    let s = s.into_option();
+    let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let modify_last_axis = s.is_none();
 
     let (mut s, axes) = resolve_sizes_and_axes_unchecked(a, s, Some(axes));
@@ -217,12 +217,12 @@ pub fn irfft2_device<'a>(
 #[default_device(device = "cpu")]
 pub fn irfftn_device<'a>(
     a: &'a Array,
-    s: impl Into<Option<&'a [i32]>>,
-    axes: impl Into<Option<&'a [i32]>>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let s = s.into();
-    let axes = axes.into();
+    let s = s.into_option();
+    let axes = axes.into_option();
     let modify_last_axis = s.is_none();
 
     let (mut s, axes) = resolve_sizes_and_axes_unchecked(a, s, axes);

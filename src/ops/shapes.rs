@@ -227,9 +227,9 @@ pub fn as_strided_device<'a>(
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
-pub fn broadcast_to_device<'a>(
+pub fn broadcast_to_device(
     a: &Array,
-    shape: &'a [i32],
+    shape: &[i32],
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {

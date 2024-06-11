@@ -251,13 +251,13 @@ pub fn norm_device<'a>(
 ///
 /// let a = Array::from_slice(&[2.0f32, 3.0, 1.0, 2.0], &[2, 2]);
 ///
-/// let (q, r) = qr_device(&a, StreamOrDevice::cpu());
+/// let (q, r) = qr_device(&a, StreamOrDevice::cpu()).unwrap();
 ///
 /// let q_expected = Array::from_slice(&[-0.894427, -0.447214, -0.447214, 0.894427], &[2, 2]);
 /// let r_expected = Array::from_slice(&[-2.23607, -3.57771, 0.0, 0.447214], &[2, 2]);
 ///
-/// assert!(q.all_close(&q_expected, None, None, None).item::<bool>());
-/// assert!(r.all_close(&r_expected, None, None, None).item::<bool>());
+/// assert!(q.all_close(&q_expected, None, None, None).unwrap().item::<bool>());
+/// assert!(r.all_close(&r_expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
 pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array), Exception> {
@@ -303,9 +303,9 @@ pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)
 /// let u_expected = Array::from_slice(&[-0.404554, 0.914514, -0.914514, -0.404554], &[2, 2]);
 /// let s_expected = Array::from_slice(&[5.46499, 0.365966], &[2]);
 /// let vt_expected = Array::from_slice(&[-0.576048, -0.817416, -0.817415, 0.576048], &[2, 2]);
-/// assert!(u.all_close(&u_expected, None, None, None).item::<bool>());
-/// assert!(s.all_close(&s_expected, None, None, None).item::<bool>());
-/// assert!(vt.all_close(&vt_expected, None, None, None).item::<bool>());
+/// assert!(u.all_close(&u_expected, None, None, None).unwrap().item::<bool>());
+/// assert!(s.all_close(&s_expected, None, None, None).unwrap().item::<bool>());
+/// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
 pub unsafe fn svd_device_unchecked(
@@ -348,13 +348,13 @@ pub unsafe fn svd_device_unchecked(
 /// use mlx_rs::{prelude::*, linalg::*};
 ///
 /// let a = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[2, 2]);
-/// let (u, s, vt) = try_svd_device(&a, StreamOrDevice::cpu()).unwrap();
+/// let (u, s, vt) = svd_device(&a, StreamOrDevice::cpu()).unwrap();
 /// let u_expected = Array::from_slice(&[-0.404554, 0.914514, -0.914514, -0.404554], &[2, 2]);
 /// let s_expected = Array::from_slice(&[5.46499, 0.365966], &[2]);
 /// let vt_expected = Array::from_slice(&[-0.576048, -0.817416, -0.817415, 0.576048], &[2, 2]);
-/// assert!(u.all_close(&u_expected, None, None, None).item::<bool>());
-/// assert!(s.all_close(&s_expected, None, None, None).item::<bool>());
-/// assert!(vt.all_close(&vt_expected, None, None, None).item::<bool>());
+/// assert!(u.all_close(&u_expected, None, None, None).unwrap().item::<bool>());
+/// assert!(s.all_close(&s_expected, None, None, None).unwrap().item::<bool>());
+/// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
 pub fn svd_device(
@@ -395,9 +395,9 @@ pub fn svd_device(
 /// use mlx_rs::{prelude::*, linalg::*};
 ///
 /// let a = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[2, 2]);
-/// let a_inv = try_inv_device(&a, StreamOrDevice::cpu()).unwrap();
+/// let a_inv = inv_device(&a, StreamOrDevice::cpu()).unwrap();
 /// let expected = Array::from_slice(&[-2.0, 1.0, 1.5, -0.5], &[2, 2]);
-/// assert!(a_inv.all_close(&expected, None, None, None).item::<bool>());
+/// assert!(a_inv.all_close(&expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
 pub fn inv_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {

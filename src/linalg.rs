@@ -1,5 +1,5 @@
 use crate::error::Exception;
-use crate::utils::{MlxString, VectorArray};
+use crate::utils::{IntoOption, MlxString, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 use smallvec::SmallVec;
@@ -26,11 +26,6 @@ impl<'a> std::fmt::Display for Ord<'a> {
     }
 }
 
-// TODO: change to IntoOption<Ord> when available
-pub trait IntoOptionOrd<'a> {
-    fn into_option_ord(self) -> Option<Ord<'a>>;
-}
-
 impl<'a> From<&'a str> for Ord<'a> {
     fn from(value: &'a str) -> Self {
         Ord::Str(value)
@@ -43,20 +38,14 @@ impl<'a> From<f64> for Ord<'a> {
     }
 }
 
-impl<'a> IntoOptionOrd<'a> for Option<Ord<'a>> {
-    fn into_option_ord(self) -> Option<Ord<'a>> {
-        self
-    }
-}
-
-impl<'a> IntoOptionOrd<'a> for &'a str {
-    fn into_option_ord(self) -> Option<Ord<'a>> {
+impl<'a> IntoOption<Ord<'a>> for &'a str {
+    fn into_option(self) -> Option<Ord<'a>> {
         Some(Ord::Str(self))
     }
 }
 
-impl<'a> IntoOptionOrd<'a> for f64 {
-    fn into_option_ord(self) -> Option<Ord<'a>> {
+impl<'a> IntoOption<Ord<'a>> for f64 {
+    fn into_option(self) -> Option<Ord<'a>> {
         Some(Ord::P(self))
     }
 }
@@ -104,7 +93,7 @@ pub fn norm_p_device<'a>(
 /// Matrix or vector norm.
 #[default_device]
 pub fn norm_ord_device<'a>(
-    array: &'a Array,
+    array: &Array,
     ord: &'a str,
     axes: impl Into<Option<&'a [i32]>>,
     keep_dims: impl Into<Option<bool>>,
@@ -182,14 +171,14 @@ pub fn norm_ord_device<'a>(
 ///   with size one
 #[default_device]
 pub fn norm_device<'a>(
-    array: &'a Array,
-    ord: impl IntoOptionOrd<'a>,
-    axes: impl Into<Option<&'a [i32]>>,
+    array: &Array,
+    ord: impl IntoOption<Ord<'a>>,
+    axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let ord = ord.into_option_ord();
-    let axes = axes.into();
+    let ord = ord.into_option();
+    let axes = axes.into_option();
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     match (ord, axes) {

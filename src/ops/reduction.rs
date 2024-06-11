@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::Exception;
 use crate::stream::StreamOrDevice;
-use crate::utils::axes_or_default_to_all;
+use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_macros::default_device;
 
@@ -18,7 +18,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-    /// let mut b = a.all(&[0][..], None).unwrap();
+    /// let mut b = a.all(&[0], None).unwrap();
     ///
     /// let results: &[bool] = b.as_slice();
     /// // results == [false, true, true, true]
@@ -26,7 +26,7 @@ impl Array {
     #[default_device]
     pub fn all_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -60,12 +60,12 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
-    /// let result = array.prod(&[0][..], None).unwrap();
+    /// let result = array.prod(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn prod_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -99,12 +99,12 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [5, 9]
-    /// let result = array.max(&[0][..], None).unwrap();
+    /// let result = array.max(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn max_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -138,12 +138,12 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
-    /// let result = array.sum(&[0][..], None).unwrap();
+    /// let result = array.sum(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn sum_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -177,12 +177,12 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
-    /// let result = array.mean(&[0][..], None).unwrap();
+    /// let result = array.mean(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn mean_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -216,12 +216,12 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]
-    /// let result = array.min(&[0][..], None).unwrap();
+    /// let result = array.min(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn min_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -251,7 +251,7 @@ impl Array {
     #[default_device]
     pub fn variance_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
@@ -284,7 +284,7 @@ impl Array {
     #[default_device]
     pub fn log_sum_exp_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {

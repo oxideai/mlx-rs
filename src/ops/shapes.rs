@@ -4,8 +4,10 @@ use mlx_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{
-    constants::DEFAULT_STACK_VEC_LEN, error::Exception, utils::{IntoOption, VectorArray}, Array, Stream,
-    StreamOrDevice,
+    constants::DEFAULT_STACK_VEC_LEN,
+    error::Exception,
+    utils::{IntoOption, VectorArray},
+    Array, Stream, StreamOrDevice,
 };
 
 impl Array {

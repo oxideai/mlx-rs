@@ -1,4 +1,5 @@
 use crate::error::Exception;
+use crate::utils::IntoOption;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 
@@ -24,18 +25,18 @@ use mlx_macros::default_device;
 pub fn conv_general_device<'a>(
     array: &Array,
     weight: &Array,
-    strides: impl Into<Option<&'a [i32]>>,
-    padding: impl Into<Option<&'a [i32]>>,
-    kernel_dilation: impl Into<Option<&'a [i32]>>,
-    input_dilation: impl Into<Option<&'a [i32]>>,
+    strides: impl IntoOption<&'a [i32]>,
+    padding: impl IntoOption<&'a [i32]>,
+    kernel_dilation: impl IntoOption<&'a [i32]>,
+    input_dilation: impl IntoOption<&'a [i32]>,
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let strides = strides.into().unwrap_or(&[1]);
-    let padding = padding.into().unwrap_or(&[0]);
-    let kernel_dilation = kernel_dilation.into().unwrap_or(&[1]);
-    let input_dilation = input_dilation.into().unwrap_or(&[1]);
+    let strides = strides.into_option().unwrap_or(&[1]);
+    let padding = padding.into_option().unwrap_or(&[0]);
+    let kernel_dilation = kernel_dilation.into_option().unwrap_or(&[1]);
+    let input_dilation = input_dilation.into_option().unwrap_or(&[1]);
     let groups = groups.into().unwrap_or(1);
     let flip = flip.into().unwrap_or(false);
 

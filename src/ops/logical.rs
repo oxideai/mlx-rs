@@ -1,7 +1,7 @@
 use crate::array::Array;
 use crate::error::Exception;
 use crate::stream::StreamOrDevice;
-use crate::utils::axes_or_default_to_all;
+use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_macros::default_device;
 
@@ -425,12 +425,12 @@ impl Array {
     /// let all = array.any(None, None).unwrap();
     ///
     /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
-    /// let all_rows = array.any(&[0][..], None).unwrap();
+    /// let all_rows = array.any(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn any_device<'a>(
         &'a self,
-        axes: impl Into<Option<&'a [i32]>>,
+        axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {

@@ -66,7 +66,10 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn into_values(self) -> Vec<Array> {
+    pub(crate) fn into_values<T>(self) -> T
+    where
+        T: FromIterator<Array>,
+    {
         unsafe {
             let size = mlx_sys::mlx_vector_array_size(self.c_vec);
             (0..size)
@@ -74,7 +77,7 @@ impl VectorArray {
                     let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
                     Array::from_ptr(c_array)
                 })
-                .collect()
+                .collect::<T>()
         }
     }
 }
@@ -106,6 +109,30 @@ impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
 
     fn deref(&self) -> &Self::Target {
         self.as_ref()
+    }
+}
+
+pub(crate) struct MlxString(mlx_sys::mlx_string);
+
+impl MlxString {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
+        self.0
+    }
+}
+
+impl<'a> TryFrom<&'a str> for MlxString {
+    type Error = String;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        let c_str = std::ffi::CString::new(s).map_err(|e| e.to_string())?;
+        let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
+        Ok(Self(ptr))
+    }
+}
+
+impl Drop for MlxString {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.0 as *mut c_void) }
     }
 }
 

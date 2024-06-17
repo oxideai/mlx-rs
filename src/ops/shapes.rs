@@ -186,7 +186,7 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
 /// ```
 #[default_device]
 pub fn as_strided_device<'a>(
-    a: &'a Array,
+    a: &Array,
     shape: impl IntoOption<&'a [i32]>,
     strides: impl IntoOption<&'a [usize]>,
     offset: impl Into<Option<usize>>,
@@ -227,9 +227,9 @@ pub fn as_strided_device<'a>(
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
-pub fn broadcast_to_device<'a>(
-    a: &'a Array,
-    shape: &'a [i32],
+pub fn broadcast_to_device(
+    a: &Array,
+    shape: &[i32],
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
@@ -408,7 +408,7 @@ pub fn reshape_device(
 /// ```
 #[default_device]
 pub fn squeeze_device<'a>(
-    a: &'a Array,
+    a: &Array,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
@@ -639,7 +639,7 @@ impl<'a> PadWidth<'a> {
 ///
 /// # Params
 ///
-/// - `array`: The input array.
+/// - `a`: The input array.
 /// - `width`: Number of padded values to add to the edges of each axis:`((before_1, after_1),
 ///   (before_2, after_2), ..., (before_N, after_N))`. If a single pair of integers is passed then
 ///   `(before_i, after_i)` are all the same. If a single integer or tuple with a single integer is
@@ -656,24 +656,24 @@ impl<'a> PadWidth<'a> {
 /// ```
 #[default_device]
 pub fn pad_device<'a>(
-    array: &'a Array,
+    a: &Array,
     width: impl Into<PadWidth<'a>>,
     value: impl Into<Option<Array>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let width = width.into();
-    let ndim = array.ndim();
+    let ndim = a.ndim();
     let axes: SmallVec<[i32; 4]> = (0..ndim).map(|i| i as i32).collect();
     let low_pads = width.low_pads(ndim);
     let high_pads = width.high_pads(ndim);
     let value = value
         .into()
-        .unwrap_or_else(|| Array::from_int(0).as_dtype(array.dtype()));
+        .unwrap_or_else(|| Array::from_int(0).as_dtype(a.dtype()));
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_pad(
-                array.c_array,
+                a.c_array,
                 axes.as_ptr(),
                 axes.len(),
                 low_pads.as_ptr(),

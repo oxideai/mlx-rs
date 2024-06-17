@@ -26,7 +26,7 @@ pub enum AsSliceError {
 #[derive(Debug, Error)]
 #[error("{what}")]
 pub struct Exception {
-    what: String,
+    pub(crate) what: String,
 }
 
 impl Exception {

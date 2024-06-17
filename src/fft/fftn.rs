@@ -38,7 +38,7 @@ pub fn fft_device(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn fft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
@@ -79,7 +79,7 @@ pub fn fft2_device<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn fftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
@@ -145,7 +145,7 @@ pub fn ifft_device(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device(device = "cpu")]
 pub fn ifft2_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
@@ -187,7 +187,7 @@ pub fn ifft2_device<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device(device = "cpu")]
 pub fn ifftn_device<'a>(
-    a: &'a Array,
+    a: &Array,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,

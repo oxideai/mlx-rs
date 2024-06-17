@@ -26,7 +26,19 @@ pub enum AsSliceError {
 #[derive(Debug, Error)]
 #[error("{what}")]
 pub struct Exception {
-    what: String,
+    pub(crate) what: String,
+}
+
+impl Exception {
+    pub fn what(&self) -> &str {
+        &self.what
+    }
+}
+
+impl From<Exception> for String {
+    fn from(e: Exception) -> Self {
+        e.what
+    }
 }
 
 thread_local! {

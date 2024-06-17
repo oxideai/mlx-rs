@@ -611,7 +611,7 @@ fn absolute_indices(absolute_start: i32, absolute_end: i32, stride: i32) -> Vec<
 // TODO: rewrite this in a more rusty way
 #[inline]
 fn gather_nd<'a>(
-    src: &'a Array,
+    src: &Array,
     operations: impl Iterator<Item = &'a ArrayIndexOp>,
     gather_first: bool,
     last_array_or_index: usize,

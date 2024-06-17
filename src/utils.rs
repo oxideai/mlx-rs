@@ -120,6 +120,30 @@ impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
     }
 }
 
+pub(crate) struct MlxString(mlx_sys::mlx_string);
+
+impl MlxString {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
+        self.0
+    }
+}
+
+impl<'a> TryFrom<&'a str> for MlxString {
+    type Error = String;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        let c_str = std::ffi::CString::new(s).map_err(|e| e.to_string())?;
+        let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
+        Ok(Self(ptr))
+    }
+}
+
+impl Drop for MlxString {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.0 as *mut c_void) }
+    }
+}
+
 /// A helper trait that is just like `Into<Option<T>>` but improves ergonomics by allowing
 /// implicit conversion from &[T; N] to &[T].
 pub trait IntoOption<T> {

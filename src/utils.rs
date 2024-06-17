@@ -24,6 +24,14 @@ pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     description
 }
 
+pub(crate) fn resolve_index_signed_unchecked(index: i32, len: i32) -> i32 {
+    if index < 0 {
+        len.saturating_add(index)
+    } else {
+        index
+    }
+}
+
 pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
     if index.is_negative() {
         (len as i32 + index) as usize

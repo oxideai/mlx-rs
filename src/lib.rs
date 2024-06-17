@@ -24,9 +24,14 @@ pub mod prelude {
     pub use crate::{
         array::Array,
         dtype::Dtype,
-        ops::indexing::{Ellipsis, IndexOp, IntoStrideBy, NewAxis},
+        ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
     };
+}
+
+pub(crate) mod constants {
+    /// The default length of the stack-allocated vector in `SmallVec<[T; DEFAULT_STACK_VEC_LEN]>`
+    pub(crate) const DEFAULT_STACK_VEC_LEN: usize = 4;
 }
 
 pub(crate) mod sealed {

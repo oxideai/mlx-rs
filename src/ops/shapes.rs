@@ -4,6 +4,7 @@ use mlx_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{
+    constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
     utils::{IntoOption, VectorArray},
     Array, Stream, StreamOrDevice,
@@ -156,7 +157,10 @@ fn axes_or_default_to_all_size_one_axes<'a>(
     }
 }
 
-fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize; 4]> {
+fn resolve_strides(
+    shape: &[i32],
+    strides: Option<&[usize]>,
+) -> SmallVec<[usize; DEFAULT_STACK_VEC_LEN]> {
     match strides {
         Some(strides) => SmallVec::from_slice(strides),
         None => {
@@ -168,9 +172,30 @@ fn resolve_strides(shape: &[i32], strides: Option<&[usize]>) -> SmallVec<[usize;
                     *acc *= dim as usize;
                     Some(result)
                 })
-                .collect::<SmallVec<[usize; 4]>>();
+                .collect::<SmallVec<[usize; DEFAULT_STACK_VEC_LEN]>>();
             result.into_iter().rev().collect()
         }
+    }
+}
+
+/// Broadcast a vector of arrays against one another. Returns an error if the shapes are
+/// broadcastable.
+///
+/// # Params
+///
+/// - `arrays`: The arrays to broadcast.
+#[default_device]
+pub fn broadcast_arrays_device(
+    arrays: &[impl AsRef<Array>],
+    stream: impl AsRef<Stream>,
+) -> Result<Vec<Array>, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {{
+            let c_vec = VectorArray::from_iter(arrays.iter());
+            mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ref().as_ptr())
+        }};
+        let c_vec = VectorArray::from_ptr(c_array);
+        Ok(c_vec.into_values())
     }
 }
 
@@ -620,14 +645,14 @@ impl<'a, const N: usize> From<&'a [(i32, i32); N]> for PadWidth<'a> {
 }
 
 impl<'a> PadWidth<'a> {
-    fn low_pads(&self, ndim: usize) -> SmallVec<[i32; 4]> {
+    fn low_pads(&self, ndim: usize) -> SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> {
         match self {
             PadWidth::Same((low, _high)) => (0..ndim).map(|_| *low).collect(),
             PadWidth::Widths(widths) => widths.iter().map(|(low, _high)| *low).collect(),
         }
     }
 
-    fn high_pads(&self, ndim: usize) -> SmallVec<[i32; 4]> {
+    fn high_pads(&self, ndim: usize) -> SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> {
         match self {
             PadWidth::Same((_low, high)) => (0..ndim).map(|_| *high).collect(),
             PadWidth::Widths(widths) => widths.iter().map(|(_low, high)| *high).collect(),
@@ -663,7 +688,7 @@ pub fn pad_device<'a>(
 ) -> Result<Array, Exception> {
     let width = width.into();
     let ndim = a.ndim();
-    let axes: SmallVec<[i32; 4]> = (0..ndim).map(|i| i as i32).collect();
+    let axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (0..ndim).map(|i| i as i32).collect();
     let low_pads = width.low_pads(ndim);
     let high_pads = width.high_pads(ndim);
     let value = value

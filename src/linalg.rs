@@ -54,7 +54,7 @@ impl<'a> IntoOption<Ord<'a>> for f64 {
 pub fn norm_p_device<'a>(
     array: &Array,
     ord: f64,
-    axes: impl Into<Option<&'a [i32]>>, // TODO: use IntoOption
+    axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
@@ -62,7 +62,7 @@ pub fn norm_p_device<'a>(
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
-            match axes.into() {
+            match axes.into_option() {
                 Some(axes) => {
                     mlx_sys::mlx_linalg_norm_p(
                         array.as_ptr(),
@@ -95,7 +95,7 @@ pub fn norm_p_device<'a>(
 pub fn norm_ord_device<'a>(
     array: &Array,
     ord: &'a str,
-    axes: impl Into<Option<&'a [i32]>>,
+    axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
@@ -103,7 +103,7 @@ pub fn norm_ord_device<'a>(
         let ord = MlxString::try_from(ord).map_err(|e| Exception { what: e })?;
 
         let c_array = try_catch_c_ptr_expr! {
-            match axes.into() {
+            match axes.into_option() {
                 Some(axes) => {
                     mlx_sys::mlx_linalg_norm_ord(
                         array.as_ptr(),
@@ -263,58 +263,6 @@ pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)
         let r = iter.next().unwrap();
 
         Ok((q, r))
-    }
-}
-
-/// The Singular Value Decomposition (SVD) of the input matrix.
-///
-/// This function supports arrays with at least 2 dimensions. When the input has more than two
-/// dimensions, the function iterates over all indices of the first a.ndim - 2 dimensions and for
-/// each combination SVD is applied to the last two indices.
-///
-/// Evaluation on the GPU is not yet implemented.
-///
-/// # Params
-///
-/// - `array`: input array
-///
-/// # Safety
-///
-/// This is unsafe because it does not check if the arguments are valid.
-///
-/// # Example
-///
-/// ```rust
-/// use mlx_rs::{prelude::*, linalg::*};
-///
-/// let a = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[2, 2]);
-/// let (u, s, vt) = unsafe { svd_device_unchecked(&a, StreamOrDevice::cpu()) };
-/// let u_expected = Array::from_slice(&[-0.404554, 0.914514, -0.914514, -0.404554], &[2, 2]);
-/// let s_expected = Array::from_slice(&[5.46499, 0.365966], &[2]);
-/// let vt_expected = Array::from_slice(&[-0.576048, -0.817416, -0.817415, 0.576048], &[2, 2]);
-/// assert!(u.all_close(&u_expected, None, None, None).unwrap().item::<bool>());
-/// assert!(s.all_close(&s_expected, None, None, None).unwrap().item::<bool>());
-/// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
-/// ```
-#[default_device]
-pub unsafe fn svd_device_unchecked(
-    array: &Array,
-    stream: impl AsRef<Stream>,
-) -> (Array, Array, Array) {
-    unsafe {
-        let v = VectorArray::from_ptr(mlx_sys::mlx_linalg_svd(
-            array.as_ptr(),
-            stream.as_ref().as_ptr(),
-        ));
-
-        let vals: SmallVec<[Array; 3]> = v.into_values();
-        let mut iter = vals.into_iter();
-
-        let u = iter.next().unwrap();
-        let s = iter.next().unwrap();
-        let vt = iter.next().unwrap();
-
-        (u, s, vt)
     }
 }
 

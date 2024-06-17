@@ -29,6 +29,18 @@ pub struct Exception {
     what: String,
 }
 
+impl Exception {
+    pub fn what(&self) -> &str {
+        &self.what
+    }
+}
+
+impl From<Exception> for String {
+    fn from(e: Exception) -> Self {
+        e.what
+    }
+}
+
 thread_local! {
     pub static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     pub static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };

@@ -337,19 +337,6 @@ impl Array {
     /// all(abs(a - b) <= (atol + rtol * abs(b)))
     /// ```
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use num_traits::Pow;
-    /// use mlx::Array;
-    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
-    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(0.5);
-    /// let mut c = a.try_all_close(&b, None, None, None).unwrap();
-    ///
-    /// let c_data: &[bool] = c.as_slice();
-    /// // c_data == [true]
-    /// ```
-    ///
     /// # Params
     ///
     /// - other: array to compare

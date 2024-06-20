@@ -10,7 +10,6 @@ mod dtype;
 pub mod error;
 pub mod fft;
 pub mod linalg;
-mod macros;
 pub mod ops;
 pub mod random;
 mod stream;

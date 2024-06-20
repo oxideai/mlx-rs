@@ -164,6 +164,14 @@ mod tests {
     use float_eq::float_eq;
 
     #[test]
+    fn test_uniform_no_seed() {
+        let value = uniform::<_, f32>(0, 10, &[3], None);
+        let expected = Array::from_slice(&[4.18, 9.65, 3.14], &[3]);
+
+        assert_array_eq!(value, expected, 0.01);
+    }
+
+    #[test]
     fn test_uniform_single() {
         let key = key(0);
         let mut value = uniform::<_, f32>(0, 10, &[], Some(&key));

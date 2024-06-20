@@ -1,23 +1,39 @@
 use crate::prelude::IndexOp;
-use crate::{Array, ArrayElement, StreamOrDevice};
+use crate::{error::Exception, Array, ArrayElement, StreamOrDevice};
+use mach_sys::mach_time;
 use mlx_macros::default_device;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 
-pub(crate) static SEED: Mutex<Option<StdRng>> = Mutex::new(None);
+struct RandomState {
+    state: Array,
+}
 
-/// Returns a seeded random number generator using entropy.
-#[inline(always)]
-pub fn get_seeded_rng() -> StdRng {
-    StdRng::from_entropy()
+impl RandomState {
+    fn new() -> Self {
+        let now = unsafe { mach_time::mach_approximate_time() };
+        Self { state: key(now) }
+    }
+
+    fn next(&mut self) -> Array {
+        let next = split(&self.state);
+        self.state = next.0;
+        next.1
+    }
+
+    fn seed(&mut self, seed: u64) {
+        self.state = key(seed);
+    }
+}
+
+fn state() -> &'static Mutex<RandomState> {
+    static STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
+    STATE.get_or_init(|| Mutex::new(RandomState::new()))
 }
 
 /// Seed the random number generator.
 pub fn seed(seed: u64) {
-    let rng = StdRng::seed_from_u64(seed);
-    let mut seed = SEED.lock().unwrap();
-    *seed = Some(rng);
+    let mut state = state().lock().unwrap();
+    state.seed(seed);
 }
 
 /// Get a PRNG key from a seed.
@@ -49,13 +65,13 @@ pub fn split_device(key: &Array, stream: StreamOrDevice) -> (Array, Array) {
 /// a larger array.  An optional `key` can be specified to control the PRNG.
 ///
 /// ```rust
-/// let key = mlx::random::key(0);
+/// let key = mlx_rs::random::key(0);
 ///
 /// // create an array of shape `[50]` type Float values in the range `0 ..< 10`
-/// let array = mlx::random::uniform::<_, f32>(0, 10, &[50], &key);
+/// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
 ///
 /// // same, but in range `0.5 ..< 1`
-/// let array = mlx::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
+/// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
 /// ```
 #[default_device]
 pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
@@ -64,38 +80,32 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     shape: &[i32],
     key: impl Into<Option<&'a Array>>,
     stream: StreamOrDevice,
-) -> Array {
+) -> Result<Array, Exception> {
     let lb: Array = lower_bound.into();
     let ub: Array = upper_bound.into();
 
-    let mut seed = SEED.lock().unwrap();
-    let mut rng = match seed.as_ref() {
-        Some(rng_seeded) => rng_seeded.clone(),
-        None => get_seeded_rng(),
-    };
-
     let key = key.into().map_or_else(
         || {
-            let key: i32 = rng.gen();
-            Array::from_int(key)
+            let mut state = state().lock().unwrap();
+            state.next()
         },
         |key| key.clone(),
     );
 
-    let array = unsafe {
-        Array::from_ptr(mlx_sys::mlx_random_uniform(
-            lb.as_ptr(),
-            ub.as_ptr(),
-            shape.as_ptr(),
-            shape.len(),
-            T::DTYPE.into(),
-            key.as_ptr(),
-            stream.as_ptr(),
-        ))
-    };
-
-    *seed = Some(rng);
-    array
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_random_uniform(
+                lb.as_ptr(),
+                ub.as_ptr(),
+                shape.as_ptr(),
+                shape.len(),
+                T::DTYPE.into(),
+                key.as_ptr(),
+                stream.as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
 }
 
 /// Generate normally distributed random numbers.
@@ -104,13 +114,13 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// will be of the given `T`.
 ///
 /// ```rust
-/// let key = mlx::random::key(0);
+/// let key = mlx_rs::random::key(0);
 ///
 /// // generate a single Float with normal distribution
-/// let value = mlx::random::normal::<f32>(None, None, None, &key).item::<f32>();
+/// let value = mlx_rs::random::normal::<f32>(None, None, None, &key).item::<f32>();
 ///
 /// // generate an array of Float with normal distribution in shape [10, 5]
-/// let array = mlx::random::normal::<f32>(&[10, 5][..], None, None, &key);
+/// let array = mlx_rs::random::normal::<f32>(&[10, 5][..], None, None, &key);
 /// ```
 ///
 /// # Params
@@ -125,36 +135,31 @@ pub fn normal_device<'a, T: ArrayElement>(
     scale: impl Into<Option<f32>>,
     key: impl Into<Option<&'a Array>>,
     stream: StreamOrDevice,
-) -> Array {
+) -> Result<Array, Exception> {
     let shape = shape.into().unwrap_or(&[]);
-    let mut seed = SEED.lock().unwrap();
-    let mut rng = match seed.as_ref() {
-        Some(rng_seeded) => rng_seeded.clone(),
-        None => get_seeded_rng(),
-    };
 
     let key = key.into().map_or_else(
         || {
-            let key: i32 = rng.gen();
-            Array::from_int(key)
+            let mut state = state().lock().unwrap();
+            state.next()
         },
         |key| key.clone(),
     );
 
-    let array = unsafe {
-        Array::from_ptr(mlx_sys::mlx_random_normal(
-            shape.as_ptr(),
-            shape.len(),
-            T::DTYPE.into(),
-            loc.into().unwrap_or(0.0),
-            scale.into().unwrap_or(1.0),
-            key.as_ptr(),
-            stream.as_ptr(),
-        ))
-    };
-
-    *seed = Some(rng);
-    array
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_random_normal(
+                shape.as_ptr(),
+                shape.len(),
+                T::DTYPE.into(),
+                loc.into().unwrap_or(0.0),
+                scale.into().unwrap_or(1.0),
+                key.as_ptr(),
+                stream.as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
 }
 
 #[cfg(test)]
@@ -165,23 +170,21 @@ mod tests {
 
     #[test]
     fn test_uniform_no_seed() {
-        let value = uniform::<_, f32>(0, 10, &[3], None);
-        let expected = Array::from_slice(&[4.18, 9.65, 3.14], &[3]);
-
-        assert_array_eq!(value, expected, 0.01);
+        let value = uniform::<_, f32>(0, 10, &[3], None).unwrap();
+        assert_eq!(value.shape(), &[3]);
     }
 
     #[test]
     fn test_uniform_single() {
         let key = key(0);
-        let mut value = uniform::<_, f32>(0, 10, &[], Some(&key));
+        let mut value = uniform::<_, f32>(0, 10, &[], Some(&key)).unwrap();
         float_eq!(value.item::<f32>(), 4.18, abs <= 0.01);
     }
 
     #[test]
     fn test_uniform_multiple() {
         let key = key(0);
-        let value = uniform::<_, f32>(0, 10, &[3], Some(&key));
+        let value = uniform::<_, f32>(0, 10, &[3], Some(&key)).unwrap();
         let expected = Array::from_slice(&[9.65, 3.14, 6.33], &[3]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -190,16 +193,30 @@ mod tests {
     #[test]
     fn test_uniform_multiple_array() {
         let key = key(0);
-        let value = uniform::<_, f32>(&[0, 10][..], &[10, 100][..], &[2], Some(&key));
+        let value = uniform::<_, f32>(&[0, 10][..], &[10, 100][..], &[2], Some(&key)).unwrap();
         let expected = Array::from_slice(&[2.16, 82.37], &[2]);
 
         assert_array_eq!(value, expected, 0.01);
     }
 
     #[test]
+    fn test_uniform_non_float() {
+        let key = key(0);
+        let value = uniform::<_, i32>(&[0, 10][..], &[10, 100][..], &[2], Some(&key));
+        assert!(value.is_err());
+    }
+
+    #[test]
     fn test_normal() {
         let key = key(0);
-        let mut value = normal::<f32>(None, None, None, &key);
+        let mut value = normal::<f32>(None, None, None, &key).unwrap();
         float_eq!(value.item::<f32>(), -0.20, abs <= 0.01);
+    }
+
+    #[test]
+    fn test_normal_non_float() {
+        let key = key(0);
+        let value = normal::<i32>(None, None, None, &key);
+        assert!(value.is_err());
     }
 }

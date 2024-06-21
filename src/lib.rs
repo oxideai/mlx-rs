@@ -12,7 +12,7 @@ pub mod fft;
 pub mod linalg;
 pub mod ops;
 mod stream;
-mod utils;
+pub mod utils;
 
 pub use array::*;
 pub use device::*;
@@ -26,6 +26,7 @@ pub mod prelude {
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
+        utils::{OwnedOrRef, ScalarOrArray},
     };
 }
 

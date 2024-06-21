@@ -1,6 +1,7 @@
 use crate::{
     dtype::Dtype,
     error::{AsSliceError, ItemError},
+    sealed::Sealed,
     StreamOrDevice,
 };
 use mlx_sys::mlx_array;
@@ -20,6 +21,10 @@ pub type complex64 = Complex<f32>;
 pub struct Array {
     pub(crate) c_array: mlx_array,
 }
+
+impl Sealed for Array {}
+
+impl<'a> Sealed for &'a Array {}
 
 impl std::fmt::Debug for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

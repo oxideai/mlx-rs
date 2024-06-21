@@ -10,6 +10,7 @@ mod sort;
 
 pub mod indexing;
 
+pub use arithmetic::*;
 pub use convolution::*;
 pub use logical::*;
 pub use shapes::*;

@@ -2,7 +2,7 @@ use std::os::raw::c_void;
 
 use mlx_sys::mlx_vector_array;
 
-use crate::Array;
+use crate::{complex64, Array, FromNested};
 
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
@@ -98,7 +98,8 @@ impl Drop for VectorArray {
 
 /// A custom type for internal use with `Array` only that is essentially `Cow` but doens't require
 /// the `Clone`
-pub(crate) enum OwnedOrRef<'a, T> {
+#[derive(Debug)]
+pub enum OwnedOrRef<'a, T> {
     Owned(T),
     Ref(&'a T),
 }
@@ -165,5 +166,71 @@ impl<T> IntoOption<T> for T {
 impl<'a, T, const N: usize> IntoOption<&'a [T]> for &'a [T; N] {
     fn into_option(self) -> Option<&'a [T]> {
         Some(self)
+    }
+}
+
+pub trait ScalarOrArray<'a> {
+    type Array: AsRef<Array> + 'a;
+
+    fn into_owned_or_ref_array(self) -> Self::Array;
+}
+
+impl<'a> ScalarOrArray<'a> for Array {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        self
+    }
+}
+
+impl<'a> ScalarOrArray<'a> for &'a Array {
+    type Array = &'a Array;
+
+    // TODO: clippy would complain about `as_array`. Is there a better name?
+    fn into_owned_or_ref_array(self) -> &'a Array {
+        self
+    }
+}
+
+impl ScalarOrArray<'static> for bool {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_bool(self)
+    }
+}
+
+impl ScalarOrArray<'static> for i32 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_int(self)
+    }
+}
+
+impl ScalarOrArray<'static> for f32 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_float(self)
+    }
+}
+
+impl ScalarOrArray<'static> for complex64 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_complex(self)
+    }
+}
+
+impl<T> ScalarOrArray<'static> for T
+where
+    Array: FromNested<T>,
+{
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_nested(self)
     }
 }

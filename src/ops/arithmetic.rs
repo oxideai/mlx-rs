@@ -1,9 +1,77 @@
 use crate::array::Array;
 use crate::error::Exception;
+use crate::prelude::ScalarOrArray;
 use crate::stream::StreamOrDevice;
 
+use crate::utils::{IntoOption, VectorArray};
 use crate::Stream;
 use mlx_macros::default_device;
+use smallvec::SmallVec;
+
+// // Element wise free functions
+// abs(_:stream:)
+// acos(_:stream:)
+// acosh(_:stream:)
+// add(_:_:stream:)
+// asin(_:stream:)
+// asinh(_:stream:)
+// atan(_:stream:)
+// atanh(_:stream:)
+// ceil(_:stream:)
+// clip(_:min:max:stream:)
+// cos(_:stream:)
+// cosh(_:stream:)
+// degrees(_:stream:)
+// divide(_:_:stream:)
+// divmod(_:_:stream:)
+// erf(_:stream:)
+// erfInverse(_:stream:)
+// exp(_:stream:)
+// expm1(_:stream:)
+// floor(_:stream:)
+// floorDivide(_:_:stream:)
+// isNaN(_:stream:)
+// isInf(_:stream:)
+// isPosInf(_:stream:)
+// isNegInf(_:stream:)
+// log(_:stream:)
+// log10(_:stream:)
+// log1p(_:stream:)
+// log2(_:stream:)
+// logAddExp(_:_:stream:)
+// matmul(_:_:stream:)
+// maximum(_:_:stream:)
+// minimum(_:_:stream:)
+// multiply(_:_:stream:)
+// negative(_:stream:)
+// notEqual(_:_:stream:)
+// pow(_:_:stream:)-7pe7j
+// pow(_:_:stream:)-49xi0
+// pow(_:_:stream:)-8ie9c
+// radians(_:stream:)
+// reciprocal(_:stream:)
+// remainder(_:_:stream:)
+// round(_:decimals:stream:)
+// rsqrt(_:stream:)
+// sigmoid(_:stream:)
+// sign(_:stream:)
+// sin(_:stream:)
+// sinh(_:stream:)
+// softmax(_:axes:precise:stream:)
+// sqrt(_:stream:)
+// square(_:stream:)
+// subtract(_:_:stream:)
+// tan(_:stream:)
+// tanh(_:stream:)
+
+// // Vector, Matrix, and Tensor Products
+// matmul(_:_:stream:)
+// blockMaskedMM(_:_:blockSize:maskOut:maskLHS:maskRHS:stream:)
+// addMM(_:_:_:alpha:beta:stream:)
+// inner(_:_:stream:)
+// outer(_:_:stream:)
+// tensordot(_:_:axes:stream:)-3qkgq
+// tensordot(_:_:axes:stream:)-8yqyi
 
 impl Array {
     /// Element-wise absolute value.
@@ -43,14 +111,14 @@ impl Array {
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
     #[default_device]
-    pub fn add_device(
+    pub fn add_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_add(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_add(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -151,14 +219,14 @@ impl Array {
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
     #[default_device]
-    pub fn mul_device(
+    pub fn mul_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_multiply(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_multiply(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -184,14 +252,14 @@ impl Array {
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     #[default_device]
-    pub fn div_device(
+    pub fn div_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_divide(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_divide(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -217,14 +285,14 @@ impl Array {
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
     #[default_device]
-    pub fn pow_device(
+    pub fn pow_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_power(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_power(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -250,14 +318,14 @@ impl Array {
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
     #[default_device]
-    pub fn rem_device(
+    pub fn rem_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_remainder(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_remainder(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -362,14 +430,14 @@ impl Array {
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     #[default_device]
-    pub fn floor_divide_device(
+    pub fn floor_divide_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_floor_divide(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_floor_divide(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -544,6 +612,540 @@ impl Array {
     #[default_device]
     pub fn square_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe { Array::from_ptr(mlx_sys::mlx_square(self.c_array, stream.as_ref().as_ptr())) }
+    }
+}
+
+#[default_device]
+pub fn abs_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.abs_device(stream)
+}
+
+#[default_device]
+pub fn acos_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_arccos(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn acosh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_arccosh(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn add_device<'a, 'b>(
+    lhs: impl ScalarOrArray<'a>,
+    rhs: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    lhs.into_owned_or_ref_array()
+        .as_ref()
+        .add_device(rhs, stream)
+}
+
+#[default_device]
+pub fn asin_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_arcsin(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn asinh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_arcsinh(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn atan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_arctan(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn atanh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_arctanh(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn ceil_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_ceil(array.c_array, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn clip_device<'min, 'max>(
+    array: &Array,
+    min: impl ScalarOrArray<'min>,
+    max: Option<impl ScalarOrArray<'max>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let min_ptr = min.into_owned_or_ref_array().as_ref().as_ptr();
+    let max_ptr = max
+        .map(|max| max.into_owned_or_ref_array().as_ref().as_ptr())
+        .unwrap_or(std::ptr::null_mut());
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_clip(array.as_ptr(), min_ptr, max_ptr, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn cos_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.cos_device(stream)
+}
+
+#[default_device]
+pub fn cosh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_cosh(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn degrees_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_degrees(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn div_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().div_device(b, stream)
+}
+
+#[default_device]
+pub fn divmod_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array), Exception> {
+    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
+    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+
+    unsafe {
+        let c_vec = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_divmod(a_ptr, b_ptr, stream.as_ref().as_ptr())
+        };
+        let vec = VectorArray::from_ptr(c_vec);
+        let vals: SmallVec<[_; 2]> = vec.into_values();
+        let mut iter = vals.into_iter();
+        let quotient = iter.next().unwrap();
+        let remainder = iter.next().unwrap();
+
+        Ok((quotient, remainder))
+    }
+}
+
+#[default_device]
+pub fn erf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_erf(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn erfinv_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_erfinv(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn exp_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.exp_device(stream)
+}
+
+#[default_device]
+pub fn expm1_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_expm1(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn floor_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    array.floor_device(stream)
+}
+
+#[default_device]
+pub fn floor_divide_device<'a>(
+    array: &Array,
+    other: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    array.floor_divide_device(other, stream)
+}
+
+#[default_device]
+pub fn log_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.log_device(stream)
+}
+
+#[default_device]
+pub fn log10_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.log10_device(stream)
+}
+
+#[default_device]
+pub fn log1p_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.log1p_device(stream)
+}
+
+#[default_device]
+pub fn log2_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.log2_device(stream)
+}
+
+#[default_device]
+pub fn log_add_exp_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
+    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_logaddexp(a_ptr, b_ptr, stream.as_ref().as_ptr())
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn matmul_device(
+    lhs: &Array,
+    rhs: &Array,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    lhs.matmul_device(rhs, stream)
+}
+
+#[default_device]
+pub fn maximum_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
+    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_maximum(a_ptr, b_ptr, stream.as_ref().as_ptr())
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn minimum_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
+    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_minimum(a_ptr, b_ptr, stream.as_ref().as_ptr())
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn mul_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().mul_device(b, stream)
+}
+
+#[default_device]
+pub fn negative_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    array.neg_device(stream)
+}
+
+#[default_device]
+pub fn pow_device<'a>(
+    a: &Array,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.pow_device(b, stream)
+}
+
+#[default_device]
+pub fn radians_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_radians(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn reciprocal_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.reciprocal_device(stream)
+}
+
+#[default_device]
+pub fn rem_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().rem_device(b, stream)
+}
+
+#[default_device]
+pub fn round_device(
+    array: &Array,
+    decimals: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    array.round_device(decimals, stream)
+}
+
+#[default_device]
+pub fn rsqrt_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.rsqrt_device(stream)
+}
+
+#[default_device]
+pub fn sigmoid_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_sigmoid(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+#[default_device]
+pub fn sign_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_sign(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn sin_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.sin_device(stream)
+}
+
+#[default_device]
+pub fn sinh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_sinh(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn softmax_device<'a>(
+    array: &Array,
+    axes: impl IntoOption<&'a [i32]>,
+    precise: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    let precise = precise.into().unwrap_or(false);
+    let s = stream.as_ref().as_ptr();
+
+    unsafe {
+        let c_array = match axes.into_option() {
+            Some(axes) => {
+                mlx_sys::mlx_softmax(array.as_ptr(), axes.as_ptr(), axes.len(), precise, s)
+            }
+            None => mlx_sys::mlx_softmax_all(array.as_ptr(), precise, s),
+        };
+
+        Array::from_ptr(c_array)
+    }
+}
+
+#[default_device]
+pub fn sqrt_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.sqrt_device(stream)
+}
+
+#[default_device]
+pub fn square_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    array.square_device(stream)
+}
+
+#[default_device]
+pub fn sub_device(
+    lhs: &Array,
+    rhs: &Array,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    lhs.sub_device(rhs, stream)
+}
+
+#[default_device]
+pub fn tan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_tan(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn tanh_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_tanh(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+#[default_device]
+pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
+    a: &Array,
+    b: &Array,
+    block_size: impl Into<Option<i32>>,
+    mask_out: impl Into<Option<&'mo Array>>,
+    mask_lhs: impl Into<Option<&'lhs Array>>,
+    mask_rhs: impl Into<Option<&'rhs Array>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a_ptr = a.as_ptr();
+    let b_ptr = b.as_ptr();
+    let mask_out_ptr = mask_out
+        .into()
+        .map(|m| m.as_ptr())
+        .unwrap_or(std::ptr::null_mut());
+    let mask_lhs_ptr = mask_lhs
+        .into()
+        .map(|m| m.as_ptr())
+        .unwrap_or(std::ptr::null_mut());
+    let mask_rhs_ptr = mask_rhs
+        .into()
+        .map(|m| m.as_ptr())
+        .unwrap_or(std::ptr::null_mut());
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_block_masked_mm(
+                a_ptr,
+                b_ptr,
+                block_size.into().unwrap_or(32),
+                mask_out_ptr,
+                mask_lhs_ptr,
+                mask_rhs_ptr,
+                stream.as_ref().as_ptr()
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn addmm_device<'c, 'a, 'b>(
+    c: impl ScalarOrArray<'c>,
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    alpha: impl Into<Option<f32>>,
+    beta: impl Into<Option<f32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let c_ptr = c.into_owned_or_ref_array().as_ref().as_ptr();
+    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
+    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let alpha = alpha.into().unwrap_or(1.0);
+    let beta = beta.into().unwrap_or(1.0);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_addmm(
+                c_ptr,
+                a_ptr,
+                b_ptr,
+                alpha,
+                beta,
+                stream.as_ref().as_ptr()
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn inner_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_inner(a.as_ptr(), b.as_ptr(), stream.as_ref().as_ptr())
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[default_device]
+pub fn outer_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_outer(a.as_ptr(), b.as_ptr(), stream.as_ref().as_ptr())
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+#[derive(Debug)]
+pub enum TensorDotDims<'a> {
+    Int(i32),
+    List((&'a [i32], &'a [i32])),
+}
+
+impl From<i32> for TensorDotDims<'_> {
+    fn from(i: i32) -> Self {
+        TensorDotDims::Int(i)
+    }
+}
+
+impl<'a> From<(&'a [i32], &'a [i32])> for TensorDotDims<'a> {
+    fn from((lhs, rhs): (&'a [i32], &'a [i32])) -> Self {
+        TensorDotDims::List((lhs, rhs))
+    }
+}
+
+#[default_device]
+pub fn tensordot_device<'a>(
+    a: &Array,
+    b: &Array,
+    dims: impl Into<TensorDotDims<'a>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a_ptr = a.as_ptr();
+    let b_ptr = b.as_ptr();
+    let s = stream.as_ref().as_ptr();
+
+    unsafe {
+        let c_array = match dims.into() {
+            TensorDotDims::Int(dim) => mlx_sys::mlx_tensordot_along_axis(a_ptr, b_ptr, dim, s),
+            TensorDotDims::List((lhs, rhs)) => mlx_sys::mlx_tensordot(
+                a_ptr,
+                b_ptr,
+                lhs.as_ptr(),
+                lhs.len(),
+                rhs.as_ptr(),
+                rhs.len(),
+                s,
+            ),
+        };
+
+        Ok(Array::from_ptr(c_array))
     }
 }
 

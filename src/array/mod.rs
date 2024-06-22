@@ -1,5 +1,5 @@
 use crate::{
-    dtype::Dtype, error::{AsSliceError, ItemError}, sealed::Sealed, StreamOrDevice
+    dtype::Dtype, error::{get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, AsSliceError, Exception, ItemError}, sealed::Sealed, StreamOrDevice
 };
 use mlx_sys::mlx_array;
 use num_complex::Complex;
@@ -272,8 +272,14 @@ impl Array {
 
     // TODO: document that mlx is lazy
     /// Evaluate the array.
-    pub fn eval(&mut self) {
+    pub fn eval(&mut self) -> Result<(), Exception> {
+        if !is_mlx_error_handler_set() {
+            setup_mlx_error_handler();
+        }
+
         unsafe { mlx_sys::mlx_array_eval(self.c_array) };
+
+        get_and_clear_last_mlx_error().map_or(Ok(()), Err)
     }
 
     /// Access the value of a scalar array.
@@ -294,7 +300,7 @@ impl Array {
     /// This is unsafe because the array is not checked for being a scalar.
     pub fn item_unchecked<T: ArrayElement>(&mut self) -> T {
         // Evaluate the array, so we have content to work with in the conversion
-        self.eval();
+        self.eval().unwrap();
 
         if self.dtype() != T::DTYPE {
             let new_array_ctx = unsafe {
@@ -305,7 +311,7 @@ impl Array {
                 )
             };
             let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
-            new_array.eval();
+            new_array.eval().unwrap();
 
             return T::array_item(&new_array);
         }
@@ -323,7 +329,7 @@ impl Array {
         }
 
         // Evaluate the array, so we have content to work with in the conversion
-        self.eval();
+        self.eval()?;
 
         if self.dtype() != T::DTYPE {
             let new_array_ctx = unsafe {
@@ -334,7 +340,7 @@ impl Array {
                 )
             };
             let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
-            new_array.eval();
+            new_array.eval()?;
 
             return Ok(T::array_item(&new_array));
         }
@@ -364,7 +370,7 @@ impl Array {
     /// }
     /// ```
     pub unsafe fn as_slice_unchecked<T: ArrayElement>(&mut self) -> &[T] {
-        self.eval();
+        self.eval().unwrap();
 
         unsafe {
             let data = T::array_data(self);
@@ -395,7 +401,7 @@ impl Array {
             });
         }
 
-        self.eval();
+        self.eval()?;
 
         unsafe {
             let size = self.size();

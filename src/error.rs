@@ -1,4 +1,7 @@
-use std::{cell::Cell, ffi::{c_char, CStr, CString}};
+use std::{
+    cell::Cell,
+    ffi::{c_char, CStr, CString},
+};
 
 use crate::Dtype;
 use thiserror::Error;
@@ -86,7 +89,7 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
 
         let last_err = unsafe { std::ffi::CStr::from_ptr(last_err_ptr) };
         Some(Exception {
-            what: last_err.to_owned()
+            what: last_err.to_owned(),
         })
     })
 }

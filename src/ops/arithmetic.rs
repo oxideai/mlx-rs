@@ -621,12 +621,7 @@ pub fn acos_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// Element-wise inverse hyperbolic cosine.
 #[default_device]
 pub fn acosh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_arccosh(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_arccosh(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// See [`Array::add`].
@@ -650,12 +645,7 @@ pub fn asin_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// Element-wise inverse hyperbolic sine.
 #[default_device]
 pub fn asinh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_arcsinh(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_arcsinh(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Element-wise inverse tangent.
@@ -667,12 +657,7 @@ pub fn atan_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// Element-wise inverse hyperbolic tangent.
 #[default_device]
 pub fn atanh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_arctanh(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_arctanh(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Element-wise ceiling.
@@ -809,12 +794,7 @@ pub fn cosh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// Convert angles from radians to degrees.
 #[default_device]
 pub fn degrees_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_degrees(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_degrees(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// See [`Array::divide`].
@@ -830,10 +810,10 @@ pub fn divide_device<'a, 'b>(
 }
 
 /// Element-wise quotient and remainder.
-/// 
+///
 /// The fuction `divmod(a, b)` is equivalent to but faster than `(a // b, a % b)`. The function uses
 /// numpy-style broadcasting semantics. Either or both input arrays can also be scalars.
-/// 
+///
 /// Returns Ok((quotient, remainder)) if the operation was successful.
 #[default_device]
 pub fn divmod_device<'a, 'b>(
@@ -923,10 +903,10 @@ pub fn log2_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 /// Element-wise log-add-exp.
-/// 
+///
 /// This is a numerically stable log-add-exp of two arrays with numpy-style broadcasting semantics.
 /// Either or both input arrays can also be scalars.
-/// 
+///
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
 #[default_device]
 pub fn log_add_exp_device<'a, 'b>(
@@ -947,16 +927,12 @@ pub fn log_add_exp_device<'a, 'b>(
 
 /// See [`Array::matmul`].
 #[default_device]
-pub fn matmul_device(
-    a: &Array,
-    b: &Array,
-    stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+pub fn matmul_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     a.matmul_device(b, stream)
 }
 
 /// Element-wise maximum.
-/// 
+///
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 #[default_device]
@@ -977,7 +953,7 @@ pub fn maximum_device<'a, 'b>(
 }
 
 /// Element-wise minimum.
-/// 
+///
 /// Take the element-wise min of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 #[default_device]
@@ -1028,12 +1004,7 @@ pub fn power_device<'a>(
 /// Convert angles from degrees to radians.
 #[default_device]
 pub fn radians_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_radians(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_radians(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// See [`Array::reciprocal`].
@@ -1071,18 +1042,13 @@ pub fn rsqrt_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 /// Element-wise logistic sigmoid.
-/// 
+///
 /// See the [python API
 /// docs](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.sigmoid.html#mlx.core.sigmoid)
 /// for more information
 #[default_device]
 pub fn sigmoid_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe {
-        Array::from_ptr(mlx_sys::mlx_sigmoid(
-            a.c_array,
-            stream.as_ref().as_ptr(),
-        ))
-    }
+    unsafe { Array::from_ptr(mlx_sys::mlx_sigmoid(a.c_array, stream.as_ref().as_ptr())) }
 }
 
 /// Element-wise sign.
@@ -1104,7 +1070,7 @@ pub fn sinh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 /// Perform the softmax along the given axis.
-/// 
+///
 /// See the [python API
 /// docs](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.softmax.html#mlx.core.softmax)
 /// for more information.
@@ -1120,9 +1086,7 @@ pub fn softmax_device<'a>(
 
     unsafe {
         let c_array = match axes.into_option() {
-            Some(axes) => {
-                mlx_sys::mlx_softmax(a.as_ptr(), axes.as_ptr(), axes.len(), precise, s)
-            }
+            Some(axes) => mlx_sys::mlx_softmax(a.as_ptr(), axes.as_ptr(), axes.len(), precise, s),
             None => mlx_sys::mlx_softmax_all(a.as_ptr(), precise, s),
         };
 
@@ -1167,7 +1131,7 @@ pub fn tanh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 /// Matrix multiplication with block masking.
-/// 
+///
 /// See the [python API docs](
 /// https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.block_masked_mm.html#mlx.core.block_masked_mm
 /// ) for more information.
@@ -1213,12 +1177,12 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
 }
 
 /// Matrix multiplication with addition and optional scaling.
-/// 
+///
 /// Perform the (possibly batched) matrix multiplication of two arrays and add to the result with
 /// optional scaling factors.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `c`: input array,
 /// - `a`: input array,
 /// - `b`: input array,
@@ -1303,9 +1267,9 @@ impl<'a, const M: usize, const N: usize> From<(&'a [i32; M], &'a [i32; N])> for 
 }
 
 /// Compute the tensor dot product along the specified axes.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: input array,
 /// - `b`: input array,
 /// - `axes`: The number of dimensions to sum over. If an integer is provided, then sum over
@@ -1319,7 +1283,6 @@ pub fn tensordot_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
-    
         let c_array = try_catch_c_ptr_expr! {
             match axes.into() {
                 TensorDotDims::Int(dim) => mlx_sys::mlx_tensordot_along_axis(a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr()),
@@ -1345,7 +1308,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64, eval, ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal}, Dtype
+        array, complex64, eval,
+        ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal},
+        Dtype,
     };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
@@ -2528,16 +2493,14 @@ mod tests {
         );
         assert_eq!(z, expected);
     }
-    
+
     #[test]
     fn test_outer() {
         let x = arange::<f32, _>(1.0, 5.0, None).unwrap();
         let y = arange::<f32, _>(1.0, 4.0, None).unwrap();
         let z = outer(&x, &y).unwrap();
         let expected = Array::from_slice(
-            &[
-                1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 3.0, 6.0, 9.0, 4.0, 8.0, 12.0,
-            ],
+            &[1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 3.0, 6.0, 9.0, 4.0, 8.0, 12.0],
             &[4, 3],
         );
         assert_eq!(z, expected);
@@ -2547,8 +2510,8 @@ mod tests {
         let z = outer(&x, &y).unwrap();
         let expected = Array::from_slice(
             &[
-                -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0,
-                2.0, -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0,
+                -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0,
+                -2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0,
             ],
             &[5, 5],
         );

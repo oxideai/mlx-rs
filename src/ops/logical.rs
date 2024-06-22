@@ -1051,54 +1051,54 @@ mod tests {
     #[test]
     fn test_unary_logical_not() {
         let x = array!(false);
-        assert_eq!(logical_not(&x).item::<bool>(), true);
+        assert!(logical_not(&x).item::<bool>());
 
         let x = array!(1.0);
         let mut y = logical_not(&x);
         assert_eq!(y.dtype(), Dtype::Bool);
-        assert_eq!(y.item::<bool>(), false);
+        assert!(!y.item::<bool>());
 
         let x = array!(0);
         let mut y = logical_not(&x);
         assert_eq!(y.dtype(), Dtype::Bool);
-        assert_eq!(y.item::<bool>(), true);
+        assert!(y.item::<bool>());
     }
 
     #[test]
     fn test_unary_logical_and() {
         let x = array!(true);
         let y = array!(true);
-        assert_eq!(logical_and(&x, &y).unwrap().item::<bool>(), true);
+        assert!(logical_and(&x, &y).unwrap().item::<bool>());
 
         let x = array!(1.0);
         let y = array!(1.0);
         let mut z = logical_and(&x, &y).unwrap();
         assert_eq!(z.dtype(), Dtype::Bool);
-        assert_eq!(z.item::<bool>(), true);
+        assert!(z.item::<bool>());
 
         let x = array!(0);
         let y = array!(1.0);
         let mut z = logical_and(&x, &y).unwrap();
         assert_eq!(z.dtype(), Dtype::Bool);
-        assert_eq!(z.item::<bool>(), false);
+        assert!(!z.item::<bool>());
     }
 
     #[test]
     fn test_unary_logical_or() {
         let a = array!(false);
         let b = array!(false);
-        assert_eq!(logical_or(&a, &b).unwrap().item::<bool>(), false);
+        assert!(!logical_or(&a, &b).unwrap().item::<bool>());
 
         let a = array!(1.0);
         let b = array!(1.0);
         let mut c = logical_or(&a, &b).unwrap();
         assert_eq!(c.dtype(), Dtype::Bool);
-        assert_eq!(c.item::<bool>(), true);
+        assert!(c.item::<bool>());
 
         let a = array!(0);
         let b = array!(1.0);
         let mut c = logical_or(&a, &b).unwrap();
         assert_eq!(c.dtype(), Dtype::Bool);
-        assert_eq!(c.item::<bool>(), true);
+        assert!(c.item::<bool>());
     }
 }

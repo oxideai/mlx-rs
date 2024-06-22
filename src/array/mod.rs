@@ -1,5 +1,11 @@
 use crate::{
-    dtype::Dtype, error::{get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, AsSliceError, Exception, ItemError}, sealed::Sealed, StreamOrDevice
+    dtype::Dtype,
+    error::{
+        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler,
+        AsSliceError, Exception, ItemError,
+    },
+    sealed::Sealed,
+    StreamOrDevice,
 };
 use mlx_sys::mlx_array;
 use num_complex::Complex;

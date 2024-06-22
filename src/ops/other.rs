@@ -133,7 +133,10 @@ mod tests {
 
         let x = reshape(&arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
         let out = diagonal(&x, 0, 0, 1).unwrap();
-        assert_eq!(out, Array::from_slice(&[0, 12, 1, 13, 2, 14, 3, 15], &[2, 2, 2]));
+        assert_eq!(
+            out,
+            Array::from_slice(&[0, 12, 1, 13, 2, 14, 3, 15], &[2, 2, 2])
+        );
 
         assert!(diagonal(&x, 0, 1, 1).is_err());
 
@@ -152,12 +155,7 @@ mod tests {
         let out = diag(&x, 0).unwrap();
         assert_eq!(
             out,
-            array![
-                [0, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 2, 0],
-                [0, 0, 0, 3]
-            ]
+            array![[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 2, 0], [0, 0, 0, 3]]
         );
 
         let out = diag(&x, 1).unwrap();

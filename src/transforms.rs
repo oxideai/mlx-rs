@@ -1,4 +1,10 @@
-use crate::{error::{get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception}, utils::VectorArray, Array};
+use crate::{
+    error::{
+        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
+    },
+    utils::VectorArray,
+    Array,
+};
 
 /// Evaluate an iterator of [`Array`]s.
 pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), Exception> {

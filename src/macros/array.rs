@@ -1,7 +1,7 @@
 //! Macros for creating arrays.
 
 /// A helper macro to create an array with up to 3 dimensions.
-/// 
+///
 /// Please note that this macro will always create non-scalar arrays. If you need to create a scalar
 /// array, you should use the corresponding function like [`crate::Array::from_float`].
 ///

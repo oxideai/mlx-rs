@@ -1,16 +1,19 @@
-use std::{cell::Cell, ffi::c_char};
+use std::{cell::Cell, ffi::{c_char, CStr, CString}};
 
 use crate::Dtype;
 use thiserror::Error;
 
-#[derive(Error, PartialEq, Debug)]
+#[derive(Error, Debug)]
 pub enum ItemError {
     #[error("not a scalar array")]
     NotScalar,
+
+    #[error(transparent)]
+    Exception(#[from] Exception),
 }
 
 /// Error associated with `Array::try_as_slice()`
-#[derive(Debug, PartialEq, Error)]
+#[derive(Debug, Error)]
 pub enum AsSliceError {
     /// The underlying data pointer is null.
     ///
@@ -21,21 +24,24 @@ pub enum AsSliceError {
     /// The output dtype does not match the data type of the array.
     #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
     DtypeMismatch { expecting: Dtype, found: Dtype },
+
+    #[error(transparent)]
+    Exception(#[from] Exception),
 }
 
 #[derive(Debug, Error)]
-#[error("{what}")]
+#[error("{what:?}")]
 pub struct Exception {
-    pub(crate) what: String,
+    pub(crate) what: CString,
 }
 
 impl Exception {
-    pub fn what(&self) -> &str {
+    pub fn what(&self) -> &CStr {
         &self.what
     }
 }
 
-impl From<Exception> for String {
+impl From<Exception> for CString {
     fn from(e: Exception) -> Self {
         e.what
     }
@@ -80,7 +86,7 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
 
         let last_err = unsafe { std::ffi::CStr::from_ptr(last_err_ptr) };
         Some(Exception {
-            what: last_err.to_string_lossy().into_owned(),
+            what: last_err.to_owned()
         })
     })
 }

@@ -1,4 +1,4 @@
-use std::os::raw::c_void;
+use std::{ffi::NulError, os::raw::c_void};
 
 use mlx_sys::mlx_vector_array;
 
@@ -130,10 +130,10 @@ impl MlxString {
 }
 
 impl<'a> TryFrom<&'a str> for MlxString {
-    type Error = String;
+    type Error = NulError;
 
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        let c_str = std::ffi::CString::new(s).map_err(|e| e.to_string())?;
+        let c_str = std::ffi::CString::new(s)?;
         let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
         Ok(Self(ptr))
     }

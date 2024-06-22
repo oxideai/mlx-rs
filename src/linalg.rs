@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn test_norm_no_axes() {
-        let a = Array::from_iter(0..9, &[9]).as_ref() - 4;
+        let a = Array::from_iter(0..9, &[9]) - 4;
         let b = a.reshape(&[3, 3]).unwrap();
 
         assert_float_eq!(

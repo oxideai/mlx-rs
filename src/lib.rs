@@ -28,6 +28,8 @@ pub mod prelude {
         stream::StreamOrDevice,
         utils::{OwnedOrRef, ScalarOrArray},
     };
+
+    pub use num_traits::Pow;
 }
 
 pub(crate) mod constants {

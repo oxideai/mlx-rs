@@ -30,6 +30,10 @@
 /// ```
 #[macro_export]
 macro_rules! array {
+    // Empty array default to f32
+    () => {
+        $crate::Array::from_slice::<f32>(&[], &[0])
+    };
     ($([$([$($x:expr),*]),*]),*) => {
         {
             let arr = [$([$([$($x,)*],)*],)*];

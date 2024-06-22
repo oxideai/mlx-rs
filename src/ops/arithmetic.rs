@@ -39,6 +39,9 @@ use smallvec::SmallVec;
 // log1p(_:stream:)
 // log2(_:stream:)
 // logAddExp(_:_:stream:)
+// logicalAnd(_:_:stream:)
+// logicalNot(_:stream:)
+// logicalOr(_:_:stream:)
 // matmul(_:_:stream:)
 // maximum(_:_:stream:)
 // minimum(_:_:stream:)
@@ -144,14 +147,14 @@ impl Array {
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
     #[default_device]
-    pub fn sub_device(
+    pub fn sub_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_subtract(self.c_array, other.c_array, stream.as_ref().as_ptr())
+                mlx_sys::mlx_subtract(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -178,28 +181,6 @@ impl Array {
                 mlx_sys::mlx_negative(self.c_array, stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
-        }
-    }
-
-    /// Unary element-wise logical not.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mlx_rs::prelude::*;
-    /// let a: Array = false.into();
-    /// let mut b = a.logical_not_device(StreamOrDevice::default());
-    ///
-    /// let b_data: &[bool] = b.as_slice();
-    /// // b_data == [true]
-    /// ```
-    #[default_device]
-    pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
-        unsafe {
-            Array::from_ptr(mlx_sys::mlx_logical_not(
-                self.c_array,
-                stream.as_ref().as_ptr(),
-            ))
         }
     }
 
@@ -615,11 +596,22 @@ impl Array {
     }
 }
 
+/// Element-wise absolute value.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{prelude::*, ops};
+///
+/// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
+/// let result = ops::abs(&array);
+/// ```
 #[default_device]
 pub fn abs_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     array.abs_device(stream)
 }
 
+/// Element-wise inverse cosine.
 #[default_device]
 pub fn acos_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe { Array::from_ptr(mlx_sys::mlx_arccos(array.c_array, stream.as_ref().as_ptr())) }
@@ -884,7 +876,7 @@ pub fn mul_device<'a, 'b>(
 }
 
 #[default_device]
-pub fn negative_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn neg_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     array.neg_device(stream)
 }
 
@@ -993,12 +985,12 @@ pub fn square_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 #[default_device]
-pub fn sub_device(
-    lhs: &Array,
-    rhs: &Array,
+pub fn sub_device<'a, 'b>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    lhs.sub_device(rhs, stream)
+    a.into_owned_or_ref_array().as_ref().sub_device(b, stream)
 }
 
 #[default_device]
@@ -1151,8 +1143,15 @@ pub fn tensordot_device<'a>(
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::PI;
+
     use super::*;
-    use crate::complex64;
+    use crate::{
+        array, complex64,
+        ops::{all_close, broadcast_to, split_equal},
+        Dtype,
+    };
+    use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -1617,4 +1616,644 @@ mod tests {
         let a_data: &[f32] = a.as_slice();
         assert_eq!(a_data, &[1.0, 2.0, 3.0]);
     }
+
+    // The unit tests below are adapted from the original mlx c++ codebase.
+
+    #[test]
+    fn test_unary_neg() {
+        let x = array!(1.0);
+        assert_eq!(neg(&x).unwrap().item::<f32>(), -1.0);
+        assert_eq!((-x).item::<f32>(), -1.0);
+
+        // works on empty array
+        assert_eq!(-array![], array![]);
+
+        // Throws on bool
+        let x = array!(true);
+        assert!(neg(&x).is_err());
+    }
+
+    #[test]
+    fn test_unary_abs() {
+        let x = array![-1.0, 0.0, 1.0];
+        assert_eq!(abs(&x), array![1.0, 0.0, 1.0]);
+
+        // works on empty array
+        assert_eq!(abs(&array![]), array![]);
+
+        // int32
+        let x = array![-1, 0, 1];
+        assert_eq!(abs(&x), array![1, 0, 1]);
+
+        // uint32
+        let x = array![1u32, 0, 1];
+        assert_eq!(abs(&x), array![1u32, 0, 1]);
+
+        // bool
+        let x = array![false, true];
+        assert_eq!(abs(&x), array![false, true]);
+    }
+
+    #[test]
+    fn test_unary_sign() {
+        let x = array![-1.0, 0.0, 1.0];
+        assert_eq!(sign(&x), x);
+
+        // works on empty array
+        assert_eq!(sign(&array![]), array![]);
+
+        // int32
+        let x = array![-1, 0, 1];
+        assert_eq!(sign(&x), x);
+
+        // uint32
+        let x = array![1u32, 0, 1];
+        assert_eq!(sign(&x), x);
+
+        // bool
+        let x = array![false, true];
+        assert_eq!(sign(&x), x);
+    }
+
+    const NEG_INF: f32 = std::f32::NEG_INFINITY;
+
+    #[test]
+    fn test_unary_floor_ceil() {
+        let x = array![1.0];
+        assert_eq!(floor(&x).unwrap().item::<f32>(), 1.0);
+        assert_eq!(ceil(&x).unwrap().item::<f32>(), 1.0);
+
+        let x = array![1.5];
+        assert_eq!(floor(&x).unwrap().item::<f32>(), 1.0);
+        assert_eq!(ceil(&x).unwrap().item::<f32>(), 2.0);
+
+        let x = array![-1.5];
+        assert_eq!(floor(&x).unwrap().item::<f32>(), -2.0);
+        assert_eq!(ceil(&x).unwrap().item::<f32>(), -1.0);
+
+        let x = array![NEG_INF];
+        assert_eq!(floor(&x).unwrap().item::<f32>(), NEG_INF);
+        assert_eq!(ceil(&x).unwrap().item::<f32>(), NEG_INF);
+
+        let x = array![1.0, 1.0].as_type::<complex64>();
+        assert!(floor(&x).is_err());
+        assert!(ceil(&x).is_err());
+    }
+
+    #[test]
+    fn test_unary_round() {
+        let x = array![0.5, -0.5, 1.5, -1.5, 2.3, 2.6];
+        assert_eq!(round(&x, None), array![0, 0, 2, -2, 2, 3]);
+
+        let x = array![11, 222, 32];
+        assert_eq!(round(&x, -1), array![10, 220, 30]);
+    }
+
+    #[test]
+    fn test_unary_exp() {
+        let x = array![0.0];
+        assert_eq!(exp(&x).item::<f32>(), 1.0);
+
+        let x = array![2.0];
+        assert_float_eq! {
+            exp(&x).item::<f32>(),
+            2.0f32.exp(),
+            abs <= 1e-5
+        };
+
+        assert_eq!(exp(&array![]), array![]);
+
+        let x = array![NEG_INF];
+        assert_eq!(exp(&x).item::<f32>(), 0.0);
+
+        // Integer input type
+        let x = array![2];
+        assert_eq!(x.dtype(), Dtype::Int32);
+        assert_float_eq! {
+            exp(&x).item::<f32>(),
+            2.0f32.exp(),
+            abs <= 1e-5
+        };
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
+        let res = exp(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.exp()).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
+        let x = split_equal(&data, 2, 1).unwrap();
+        let expected = Array::from_slice(&[0.0f32.exp(), 2.0f32.exp()], &[2, 1]);
+        assert!(all_close(&exp(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_expm1() {
+        let x = array![-1.0];
+        assert_float_eq! {
+            expm1(&x).item::<f32>(),
+            (-1.0f32).exp_m1(),
+            abs <= 1e-5
+        };
+
+        let x = array![1.0];
+        assert_float_eq! {
+            expm1(&x).item::<f32>(),
+            1.0f32.exp_m1(),
+            abs <= 1e-5
+        };
+
+        // Integer input type
+        let x = array![1];
+        assert_eq!(expm1(&x).dtype(), Dtype::Float32);
+        assert_float_eq! {
+            expm1(&x).item::<f32>(),
+            1.0f32.exp_m1(),
+            abs <= 1e-5
+        };
+    }
+
+    #[test]
+    fn test_unary_sin() {
+        let x = array![0.0];
+        assert_eq!(sin(&x).item::<f32>(), 0.0);
+
+        let x = array![std::f32::consts::PI / 2.0];
+        assert_float_eq! {
+            sin(&x).item::<f32>(),
+            (std::f32::consts::PI / 2.0f32).sin(),
+            abs <= 1e-5
+        };
+
+        assert_eq!(sin(&array![]), array![]);
+
+        // Integer input type
+        let x = array![0];
+        assert_eq!(x.dtype(), Dtype::Int32);
+        assert_float_eq! {
+            sin(&x).item::<f32>(),
+            0.0f32.sin(),
+            abs <= 1e-5
+        };
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
+        let res = sin(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.sin()).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
+        let x = split_equal(&data, 2, 1).unwrap();
+        let expected = Array::from_slice(&[0.0f32.sin(), 2.0f32.sin()], &[2, 1]);
+        assert!(all_close(&sin(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_cos() {
+        let x = array![0.0];
+        assert_float_eq! {
+            cos(&x).item::<f32>(),
+            0.0f32.cos(),
+            abs <= 1e-5
+        };
+
+        let x = array![std::f32::consts::PI / 2.0];
+        assert_float_eq! {
+            cos(&x).item::<f32>(),
+            (std::f32::consts::PI / 2.0f32).cos(),
+            abs <= 1e-5
+        };
+
+        assert_eq!(cos(&array![]), array![]);
+
+        // Integer input type
+        let x = array![0];
+        assert_eq!(x.dtype(), Dtype::Int32);
+        assert_float_eq! {
+            cos(&x).item::<f32>(),
+            0.0f32.cos(),
+            abs <= 1e-5
+        };
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
+        let res = cos(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.cos()).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
+        let x = split_equal(&data, 2, 1).unwrap();
+        let expected = Array::from_slice(&[0.0f32.cos(), 2.0f32.cos()], &[2, 1]);
+        assert!(all_close(&cos(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_degrees() {
+        let x = array![0.0];
+        assert_eq!(degrees(&x).item::<f32>(), 0.0);
+
+        let x = array![std::f32::consts::PI / 2.0];
+        assert_eq!(degrees(&x).item::<f32>(), 90.0);
+
+        assert_eq!(degrees(&array![]), array![]);
+
+        // Integer input type
+        let x = array![0];
+        assert_eq!(x.dtype(), Dtype::Int32);
+        assert_eq!(degrees(&x).item::<f32>(), 0.0);
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(std::f32::consts::PI / 2.0), &[2, 2, 2]).unwrap();
+        let res = degrees(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 90.0).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
+        let x = split_equal(&angles, 2, 1).unwrap();
+        let expected = Array::from_slice(&[0.0, 180.0], &[2, 1]);
+        assert!(all_close(&degrees(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_radians() {
+        let x = array![0.0];
+        assert_eq!(radians(&x).item::<f32>(), 0.0);
+
+        let x = array![90.0];
+        assert_eq!(radians(&x).item::<f32>(), std::f32::consts::PI / 2.0);
+
+        assert_eq!(radians(&array![]), array![]);
+
+        // Integer input type
+        let x = array![90];
+        assert_eq!(x.dtype(), Dtype::Int32);
+        assert_eq!(radians(&x).item::<f32>(), std::f32::consts::PI / 2.0);
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(90.0), &[2, 2, 2]).unwrap();
+        let res = radians(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], std::f32::consts::PI / 2.0).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
+        let x = split_equal(&angles, 2, 1).unwrap();
+        let expected = Array::from_slice(&[0.0, PI], &[2, 1]);
+        assert!(all_close(&radians(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_log() {
+        let x = array![0.0];
+        assert_eq!(log(&x).item::<f32>(), NEG_INF);
+
+        let x = array![1.0];
+        assert_eq!(log(&x).item::<f32>(), 0.0);
+
+        // Integer input type
+        let x = array![1];
+        assert_eq!(log(&x).dtype(), Dtype::Float32);
+        assert_eq!(log(&x).item::<f32>(), 0.0);
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
+        let res = log(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 0.0).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
+        let x = split_equal(&data, 2, 1).unwrap();
+        let expected = Array::from_slice(&[1.0f32.ln(), 3.0f32.ln()], &[2, 1]);
+        assert!(all_close(&log(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_log2() {
+        let x = array![0.0];
+        assert_eq!(log2(&x).item::<f32>(), NEG_INF);
+
+        let x = array![1.0];
+        assert_eq!(log2(&x).item::<f32>(), 0.0);
+
+        let x = array![1024.0];
+        assert_eq!(log2(&x).item::<f32>(), 10.0);
+    }
+
+    #[test]
+    fn test_unary_log10() {
+        let x = array![0.0];
+        assert_eq!(log10(&x).item::<f32>(), NEG_INF);
+
+        let x = array![1.0];
+        assert_eq!(log10(&x).item::<f32>(), 0.0);
+
+        let x = array![1000.0];
+        assert_eq!(log10(&x).item::<f32>(), 3.0);
+    }
+
+    #[test]
+    fn test_unary_log1p() {
+        let x = array![-1.0];
+        assert_float_eq! {
+            log1p(&x).item::<f32>(),
+            (-1.0f32).ln_1p(),
+            abs <= 1e-5
+        };
+
+        let x = array![1.0];
+        assert_float_eq! {
+            log1p(&x).item::<f32>(),
+            1.0f32.ln_1p(),
+            abs <= 1e-5
+        };
+
+        // Integer input type
+        let x = array![1];
+        assert_eq!(log1p(&x).dtype(), Dtype::Float32);
+        assert_float_eq! {
+            log1p(&x).item::<f32>(),
+            1.0f32.ln_1p(),
+            abs <= 1e-5
+        };
+
+        // Input is irregularly strided
+        let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
+        let res = log1p(&x);
+        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.ln_1p()).unwrap();
+        assert!(all_close(&res, &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+
+        let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
+        let x = split_equal(&data, 2, 1).unwrap();
+        let expected = Array::from_slice(&[1.0f32.ln_1p(), 3.0f32.ln_1p()], &[2, 1]);
+        assert!(all_close(&log1p(&x[0]), &expected, None, None, None)
+            .unwrap()
+            .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_sigmoid() {
+        let x = array![0.0];
+        assert_float_eq! {
+            sigmoid(&x).item::<f32>(),
+            0.5,
+            abs <= 1e-5
+        };
+
+        // Integer input type
+        let x = array![0];
+        assert_eq!(sigmoid(&x).dtype(), Dtype::Float32);
+        assert_float_eq! {
+            sigmoid(&x).item::<f32>(),
+            0.5,
+            abs <= 1e-5
+        };
+
+        let inf = std::f32::INFINITY;
+        let x = array![inf];
+        assert_eq!(sigmoid(&x).item::<f32>(), 1.0);
+
+        let x = array![-inf];
+        assert_eq!(sigmoid(&x).item::<f32>(), 0.0);
+    }
+
+    #[test]
+    fn test_unary_square() {
+        let x = array![3.0];
+        assert_eq!(square(&x).item::<f32>(), 9.0);
+
+        let x = array![2];
+        assert_eq!(square(&x).item::<i32>(), 4);
+
+        let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
+        assert!(all_close(
+            &square(&x),
+            &Array::full::<f32>(&[3, 3], 4.0).unwrap(),
+            None,
+            None,
+            None
+        )
+        .unwrap()
+        .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_sqrt_rsqrt() {
+        let x = array![4.0];
+        assert_eq!(sqrt(&x).item::<f32>(), 2.0);
+        assert_eq!(rsqrt(&x).item::<f32>(), 0.5);
+
+        let x = Array::full::<f32>(&[3, 3], 9.0).unwrap();
+        assert!(all_close(
+            &sqrt(&x),
+            &Array::full::<f32>(&[3, 3], 3.0).unwrap(),
+            None,
+            None,
+            None
+        )
+        .unwrap()
+        .item::<bool>());
+
+        let x = array![4i32];
+        assert_eq!(sqrt(&x).item::<f32>(), 2.0);
+        assert_eq!(rsqrt(&x).item::<f32>(), 0.5);
+    }
+
+    #[test]
+    fn test_unary_reciprocal() {
+        let x = array![8.0];
+        assert_eq!(reciprocal(&x).item::<f32>(), 0.125);
+
+        let x = array![2];
+        let mut out = reciprocal(&x);
+        assert_eq!(out.dtype(), Dtype::Float32);
+        assert_eq!(out.item::<f32>(), 0.5);
+
+        let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
+        assert!(all_close(
+            &reciprocal(&x),
+            &Array::full::<f32>(&[3, 3], 0.5).unwrap(),
+            None,
+            None,
+            None
+        )
+        .unwrap()
+        .item::<bool>());
+    }
+
+    // TEST_CASE("test arithmetic binary ops") {
+    //     array x(1.0);
+    //     array y(1.0);
+    //     auto z = add(x, y);
+    //     CHECK_EQ(z.item<float>(), 2.0);
+    //     z = x + y;
+    //     CHECK_EQ(z.item<float>(), 2.0);
+    //     z = add(z, x);
+    //     CHECK_EQ(z.item<float>(), 3.0);
+    //     z.eval(); // No-op
+    //     CHECK_EQ(z.item<float>(), 3.0);
+
+    //     // Chain a few adds:
+    //     auto out = x;
+    //     for (int i = 0; i < 10; ++i) {
+    //       out = add(out, x);
+    //     }
+    //     CHECK_EQ(out.item<float>(), 11.0);
+
+    //     // Works for different shapes
+    //     x = array({1.0, 2.0, 3.0}, {1, 3});
+    //     y = array({1.0, 2.0, 3.0}, {1, 3});
+    //     z = add(x, y);
+    //     CHECK_EQ(z.shape(), std::vector<int>{1, 3});
+    //     auto eq = array_equal(z, array({2.0, 4.0, 6.0}, {1, 3}));
+    //     CHECK(eq.item<bool>());
+
+    //     // Works with scalars
+    //     x = array({1.0, 2.0, 3.0}, {1, 3});
+    //     y = x + 2.0;
+    //     CHECK_EQ(y.dtype(), float32);
+    //     eq = array_equal(y, array({3.0, 4.0, 5.0}, {1, 3}));
+    //     CHECK(eq.item<bool>());
+    //     y = 2.0 + x;
+    //     CHECK_EQ(y.dtype(), float32);
+    //     eq = array_equal(y, array({3.0, 4.0, 5.0}, {1, 3}));
+    //     CHECK(eq.item<bool>());
+
+    //     // Check type promotion
+    //     y = 2 + x;
+    //     CHECK_EQ(y.dtype(), float32);
+
+    //     y = 2.0 + array({1, 2, 3});
+    //     CHECK_EQ(y.dtype(), float32);
+    //     CHECK(array_equal(y, array({3.0, 4.0, 5.0})).item<bool>());
+
+    //     // Broadcasting works
+    //     x = broadcast_to(array({1.0}), {10});
+    //     y = broadcast_to(array({2.0}), {10});
+    //     z = add(x, y);
+    //     CHECK(array_equal(z, full({10}, 3.0)).item<bool>());
+
+    //     x = array({1.0, 2.0}, {1, 2});
+    //     y = array({1.0, 2.0}, {2, 1});
+    //     z = add(x, y);
+    //     CHECK_EQ(z.shape(), std::vector<int>{2, 2});
+    //     eq = array_equal(z, array({2.0, 3.0, 3.0, 4.0}, {2, 2}));
+    //     CHECK(eq.item<bool>());
+
+    //     x = ones({3, 2, 1});
+    //     z = x + 2.0;
+    //     CHECK_EQ(z.shape(), std::vector<int>{3, 2, 1});
+    //     eq = array_equal(z, array({3.0, 3.0, 3.0, 3.0, 3.0, 3.0}, {3, 2, 1}));
+    //     CHECK(eq.item<bool>());
+
+    //     // Works for empty arrays
+    //     x = array({});
+    //     y = array({});
+    //     z = x + y;
+    //     z.eval();
+    //     CHECK_EQ(z.size(), 0);
+    //     CHECK_EQ(z.shape(), std::vector<int>{0});
+
+    //     // Check subtraction
+    //     x = array({3, 2, 1});
+    //     y = array({1, 1, 1});
+    //     CHECK(array_equal(x - y, array({2, 1, 0})).item<bool>());
+
+    //     // Check multiplication
+    //     x = array({1, 2, 3});
+    //     y = array({2, 2, 2});
+    //     CHECK(array_equal(x * y, array({2, 4, 6})).item<bool>());
+
+    //     // Check division
+    //     x = array(1);
+    //     y = array(1);
+    //     CHECK_EQ(divide(x, y).item<float>(), 1.0f);
+
+    //     x = array(1);
+    //     y = array(0.5);
+    //     CHECK_EQ(divide(x, y).item<float>(), 2.0f);
+
+    //     x = array(1);
+    //     y = array(4);
+    //     CHECK_EQ(divide(x, y).item<float>(), 0.25f);
+
+    //     x = array(true);
+    //     y = array(true);
+    //     CHECK_EQ(divide(x, y).item<float>(), 1.0f);
+
+    //     x = array(false);
+    //     y = array(true);
+    //     CHECK_EQ(divide(x, y).item<float>(), 0.0f);
+
+    //     x = array(true);
+    //     y = array(false);
+    //     CHECK(std::isinf(divide(x, y).item<float>()));
+
+    //     x = array(false);
+    //     y = array(false);
+    //     CHECK(std::isnan(divide(x, y).item<float>()));
+
+    //     // Check maximum and minimum
+    //     x = array(1.0f);
+    //     y = array(0.0f);
+    //     CHECK_EQ(maximum(x, y).item<float>(), 1.0f);
+    //     CHECK_EQ(minimum(x, y).item<float>(), 0.0f);
+    //     y = array(2.0f);
+    //     CHECK_EQ(maximum(x, y).item<float>(), 2.0f);
+    //     CHECK_EQ(minimum(x, y).item<float>(), 1.0f);
+
+    //     // Check logaddexp
+    //     x = array(0.0f);
+    //     y = array(0.0f);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), std::log(2.0f));
+
+    //     x = array(0u);
+    //     y = array(10000u);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), 10000.0f);
+
+    //     constexpr float inf = std::numeric_limits<float>::infinity();
+    //     x = array(inf);
+    //     y = array(3.0f);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
+
+    //     x = array(-inf);
+    //     y = array(3.0f);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), 3.0f);
+
+    //     x = array(-inf);
+    //     y = array(-inf);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), -inf);
+
+    //     x = array(inf);
+    //     y = array(inf);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
+
+    //     x = array(-inf);
+    //     y = array(inf);
+    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
+    //   }
 }

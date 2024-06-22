@@ -1,5 +1,6 @@
 use crate::array::ArrayElement;
 use crate::error::Exception;
+use crate::prelude::ScalarOrArray;
 use crate::Stream;
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_macros::default_device;
@@ -121,9 +122,9 @@ impl Array {
     /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn full_device<T: ArrayElement>(
+    pub fn full_device<'a, T: ArrayElement>(
         shape: &[i32],
-        values: Array,
+        values: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
@@ -131,7 +132,7 @@ impl Array {
                 mlx_sys::mlx_full(
                     shape.as_ptr(),
                     shape.len(),
-                    values.c_array,
+                    values.into_owned_or_ref_array().as_ref().as_ptr(),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
                 )
@@ -407,7 +408,7 @@ mod tests {
 
     #[test]
     fn test_full_scalar() {
-        let mut array = Array::full::<f32>(&[2, 3], 7f32.into()).unwrap();
+        let mut array = Array::full::<f32>(&[2, 3], 7f32).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 

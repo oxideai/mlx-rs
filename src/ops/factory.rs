@@ -361,6 +361,106 @@ impl Array {
     }
 }
 
+#[default_device]
+pub fn zeros_device<T: ArrayElement>(
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::zeros_device::<T>(shape, stream)
+}
+
+#[default_device]
+pub fn ones_device<T: ArrayElement>(
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::ones_device::<T>(shape, stream)
+}
+
+#[default_device]
+pub fn eye_device<T: ArrayElement>(
+    n: i32,
+    m: Option<i32>,
+    k: Option<i32>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::eye_device::<T>(n, m, k, stream)
+}
+
+#[default_device]
+pub fn full_device<'a, T: ArrayElement>(
+    shape: &[i32],
+    values: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::full_device::<T>(shape, values, stream)
+}
+
+#[default_device]
+pub fn identity_device<T: ArrayElement>(
+    n: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::identity_device::<T>(n, stream)
+}
+
+#[default_device]
+pub fn arange_device<T, U>(
+    start: impl Into<Option<U>>,
+    stop: U,
+    step: impl Into<Option<U>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception>
+where
+    T: ArrayElement,
+    U: NumCast,
+{
+    Array::arange_device::<T, U>(start, stop, step, stream)
+}
+
+#[default_device]
+pub fn linspace_device<T, U>(
+    start: U,
+    stop: U,
+    count: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception>
+where
+    T: ArrayElement,
+    U: NumCast,
+{
+    Array::linspace_device::<T, U>(start, stop, count, stream)
+}
+
+#[default_device]
+pub fn repeat_device<T: ArrayElement>(
+    array: Array,
+    count: i32,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::repeat_device::<T>(array, count, axis, stream)
+}
+
+#[default_device]
+pub fn repeat_all_device<T: ArrayElement>(
+    array: Array,
+    count: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::repeat_all_device::<T>(array, count, stream)
+}
+
+#[default_device]
+pub fn tri_device<T: ArrayElement>(
+    n: i32,
+    m: Option<i32>,
+    k: Option<i32>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    Array::tri_device::<T>(n, m, k, stream)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

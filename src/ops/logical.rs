@@ -937,7 +937,9 @@ mod tests {
     #[test]
     fn test_all_close() {
         let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
-        let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(0.5).unwrap();
+        let b = Array::from_slice(&[0., 1., 2., 3.], &[4])
+            .power(0.5)
+            .unwrap();
         let mut c = a.all_close(&b, 1e-5, None, None).unwrap();
 
         let c_data: &[bool] = c.as_slice();

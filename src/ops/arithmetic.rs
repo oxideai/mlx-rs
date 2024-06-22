@@ -141,13 +141,13 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.sub_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.subtract_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
     #[default_device]
-    pub fn sub_device<'a>(
+    pub fn subtract_device<'a>(
         &self,
         other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
@@ -175,7 +175,7 @@ impl Array {
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
     #[default_device]
-    pub fn neg_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn negative_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_negative(self.c_array, stream.as_ref().as_ptr())
@@ -194,13 +194,13 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.mul_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.multiply(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
     #[default_device]
-    pub fn mul_device<'a>(
+    pub fn multiply_device<'a>(
         &self,
         other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
@@ -227,13 +227,13 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.div_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.divide_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     #[default_device]
-    pub fn div_device<'a>(
+    pub fn divide_device<'a>(
         &self,
         other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
@@ -260,13 +260,13 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.pow_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.power_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
     #[default_device]
-    pub fn pow_device<'a>(
+    pub fn power_device<'a>(
         &self,
         other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
@@ -293,13 +293,13 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.rem_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.remainder_device(&b, StreamOrDevice::default()).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
     #[default_device]
-    pub fn rem_device<'a>(
+    pub fn remainder_device<'a>(
         &self,
         other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
@@ -721,12 +721,14 @@ pub fn degrees_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 #[default_device]
-pub fn div_device<'a, 'b>(
+pub fn divide_device<'a, 'b>(
     a: impl ScalarOrArray<'a>,
     b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array().as_ref().div_device(b, stream)
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .divide_device(b, stream)
 }
 
 #[default_device]
@@ -867,26 +869,28 @@ pub fn minimum_device<'a, 'b>(
 }
 
 #[default_device]
-pub fn mul_device<'a, 'b>(
+pub fn multiply_device<'a, 'b>(
     a: impl ScalarOrArray<'a>,
     b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array().as_ref().mul_device(b, stream)
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .multiply_device(b, stream)
 }
 
 #[default_device]
-pub fn neg_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
-    array.neg_device(stream)
+pub fn negative_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    array.negative_device(stream)
 }
 
 #[default_device]
-pub fn pow_device<'a>(
+pub fn power_device<'a>(
     a: &Array,
     b: impl ScalarOrArray<'a>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.pow_device(b, stream)
+    a.power_device(b, stream)
 }
 
 #[default_device]
@@ -905,12 +909,14 @@ pub fn reciprocal_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 #[default_device]
-pub fn rem_device<'a, 'b>(
+pub fn remainder_device<'a, 'b>(
     a: impl ScalarOrArray<'a>,
     b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array().as_ref().rem_device(b, stream)
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .remainder_device(b, stream)
 }
 
 #[default_device]
@@ -985,12 +991,14 @@ pub fn square_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 #[default_device]
-pub fn sub_device<'a, 'b>(
+pub fn subtract_device<'a, 'b>(
     a: impl ScalarOrArray<'a>,
     b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array().as_ref().sub_device(b, stream)
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .subtract_device(b, stream)
 }
 
 #[default_device]
@@ -1148,7 +1156,7 @@ mod tests {
     use super::*;
     use crate::{
         array, complex64,
-        ops::{all_close, broadcast_to, split_equal},
+        ops::{all_close, broadcast_to, full, ones, split_equal},
         Dtype,
     };
     use float_eq::assert_float_eq;
@@ -1216,14 +1224,14 @@ mod tests {
     fn test_sub_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.sub(&b);
+        let c = a.subtract(&b);
         assert!(c.is_err());
     }
 
     #[test]
     fn test_neg() {
         let mut a = Array::from_slice::<f32>(&[1.0, 2.0, 3.0], &[3]);
-        let mut b = a.neg().unwrap();
+        let mut b = a.negative().unwrap();
 
         let b_data: &[f32] = b.as_slice();
         assert_eq!(b_data, &[-1.0, -2.0, -3.0]);
@@ -1236,7 +1244,7 @@ mod tests {
     #[test]
     fn test_neg_bool() {
         let a = Array::from_slice(&[true, false, true], &[3]);
-        let b = a.neg();
+        let b = a.negative();
         assert!(b.is_err());
     }
 
@@ -1271,7 +1279,7 @@ mod tests {
     fn test_mul_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.mul(&b);
+        let c = a.multiply(&b);
         assert!(c.is_err());
     }
 
@@ -1297,7 +1305,7 @@ mod tests {
     fn test_div_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
-        let c = a.div(&b);
+        let c = a.divide(&b);
         assert!(c.is_err());
     }
 
@@ -1306,7 +1314,7 @@ mod tests {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
 
-        let mut c = a.pow(&b).unwrap();
+        let mut c = a.power(&b).unwrap();
 
         let c_data: &[f32] = c.as_slice();
         assert_eq!(c_data, &[1.0, 8.0, 81.0]);
@@ -1323,7 +1331,7 @@ mod tests {
     fn test_pow_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[2.0, 3.0], &[2]);
-        let c = a.pow(&b);
+        let c = a.power(&b);
         assert!(c.is_err());
     }
 
@@ -1349,7 +1357,7 @@ mod tests {
     fn test_rem_invalid_broadcast() {
         let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
         let b = Array::from_slice(&[3.0, 4.0], &[2]);
-        let c = a.rem(&b);
+        let c = a.remainder(&b);
         assert!(c.is_err());
     }
 
@@ -1622,7 +1630,7 @@ mod tests {
     #[test]
     fn test_unary_neg() {
         let x = array!(1.0);
-        assert_eq!(neg(&x).unwrap().item::<f32>(), -1.0);
+        assert_eq!(negative(&x).unwrap().item::<f32>(), -1.0);
         assert_eq!((-x).item::<f32>(), -1.0);
 
         // works on empty array
@@ -1630,7 +1638,7 @@ mod tests {
 
         // Throws on bool
         let x = array!(true);
-        assert!(neg(&x).is_err());
+        assert!(negative(&x).is_err());
     }
 
     #[test]
@@ -2105,155 +2113,179 @@ mod tests {
         .item::<bool>());
     }
 
-    // TEST_CASE("test arithmetic binary ops") {
-    //     array x(1.0);
-    //     array y(1.0);
-    //     auto z = add(x, y);
-    //     CHECK_EQ(z.item<float>(), 2.0);
-    //     z = x + y;
-    //     CHECK_EQ(z.item<float>(), 2.0);
-    //     z = add(z, x);
-    //     CHECK_EQ(z.item<float>(), 3.0);
-    //     z.eval(); // No-op
-    //     CHECK_EQ(z.item<float>(), 3.0);
+    #[test]
+    fn test_binary_add() {
+        let x = array![1.0];
+        let y = array![1.0];
+        let mut z = add(&x, &y).unwrap();
+        assert_eq!(z.item::<f32>(), 2.0);
 
-    //     // Chain a few adds:
-    //     auto out = x;
-    //     for (int i = 0; i < 10; ++i) {
-    //       out = add(out, x);
-    //     }
-    //     CHECK_EQ(out.item<float>(), 11.0);
+        let mut z = &x + y;
+        assert_eq!(z.item::<f32>(), 2.0);
 
-    //     // Works for different shapes
-    //     x = array({1.0, 2.0, 3.0}, {1, 3});
-    //     y = array({1.0, 2.0, 3.0}, {1, 3});
-    //     z = add(x, y);
-    //     CHECK_EQ(z.shape(), std::vector<int>{1, 3});
-    //     auto eq = array_equal(z, array({2.0, 4.0, 6.0}, {1, 3}));
-    //     CHECK(eq.item<bool>());
+        let mut z = add(z, &x).unwrap();
+        assert_eq!(z.item::<f32>(), 3.0);
 
-    //     // Works with scalars
-    //     x = array({1.0, 2.0, 3.0}, {1, 3});
-    //     y = x + 2.0;
-    //     CHECK_EQ(y.dtype(), float32);
-    //     eq = array_equal(y, array({3.0, 4.0, 5.0}, {1, 3}));
-    //     CHECK(eq.item<bool>());
-    //     y = 2.0 + x;
-    //     CHECK_EQ(y.dtype(), float32);
-    //     eq = array_equal(y, array({3.0, 4.0, 5.0}, {1, 3}));
-    //     CHECK(eq.item<bool>());
+        // Chain a few adds:
+        let mut out = x.clone();
+        for _ in 0..10 {
+            out = add(&out, &x).unwrap();
+        }
+        assert_eq!(out.item::<f32>(), 11.0);
 
-    //     // Check type promotion
-    //     y = 2 + x;
-    //     CHECK_EQ(y.dtype(), float32);
+        // Works for different shapes
+        let x = array![1.0, 2.0, 3.0];
+        let y = array![1.0, 2.0, 3.0];
+        let z = add(&x, &y).unwrap();
+        assert_eq!(z.shape(), &[3]);
+        assert_eq!(z, array![2.0, 4.0, 6.0]);
 
-    //     y = 2.0 + array({1, 2, 3});
-    //     CHECK_EQ(y.dtype(), float32);
-    //     CHECK(array_equal(y, array({3.0, 4.0, 5.0})).item<bool>());
+        // Works with scalars
+        let x = array![1.0, 2.0, 3.0];
+        let y = &x + 2.0;
+        assert_eq!(y.dtype(), Dtype::Float32);
+        assert_eq!(y, array![3.0, 4.0, 5.0]);
+        let y = &x + 2.0;
+        assert_eq!(y.dtype(), Dtype::Float32);
+        assert_eq!(y, array![3.0, 4.0, 5.0]);
 
-    //     // Broadcasting works
-    //     x = broadcast_to(array({1.0}), {10});
-    //     y = broadcast_to(array({2.0}), {10});
-    //     z = add(x, y);
-    //     CHECK(array_equal(z, full({10}, 3.0)).item<bool>());
+        // Check type promotion
+        let y = x + 2;
+        assert_eq!(y.dtype(), Dtype::Float32);
 
-    //     x = array({1.0, 2.0}, {1, 2});
-    //     y = array({1.0, 2.0}, {2, 1});
-    //     z = add(x, y);
-    //     CHECK_EQ(z.shape(), std::vector<int>{2, 2});
-    //     eq = array_equal(z, array({2.0, 3.0, 3.0, 4.0}, {2, 2}));
-    //     CHECK(eq.item<bool>());
+        let y = array![1, 2, 3] + 2.0;
+        assert_eq!(y.dtype(), Dtype::Float32);
+        // assert!(array_equal(&y, &array![3.0, 4.0, 5.0]).item::<bool>());
+        assert_eq!(y, array![3.0, 4.0, 5.0]);
 
-    //     x = ones({3, 2, 1});
-    //     z = x + 2.0;
-    //     CHECK_EQ(z.shape(), std::vector<int>{3, 2, 1});
-    //     eq = array_equal(z, array({3.0, 3.0, 3.0, 3.0, 3.0, 3.0}, {3, 2, 1}));
-    //     CHECK(eq.item<bool>());
+        // Broadcasting works
+        let x = broadcast_to(&array![1.0], &[10]).unwrap();
+        let y = broadcast_to(&array![2.0], &[10]).unwrap();
+        let z = add(&x, &y).unwrap();
+        assert_eq!(z, full::<f32>(&[10], 3.0).unwrap());
 
-    //     // Works for empty arrays
-    //     x = array({});
-    //     y = array({});
-    //     z = x + y;
-    //     z.eval();
-    //     CHECK_EQ(z.size(), 0);
-    //     CHECK_EQ(z.shape(), std::vector<int>{0});
+        let x = Array::from_slice(&[1.0, 2.0], &[1, 2]);
+        let y = Array::from_slice(&[1.0, 2.0], &[2, 1]);
+        let z = add(&x, &y).unwrap();
+        assert_eq!(z.shape(), &[2, 2]);
+        assert_eq!(z, Array::from_slice(&[2.0, 3.0, 3.0, 4.0], &[2, 2]));
 
-    //     // Check subtraction
-    //     x = array({3, 2, 1});
-    //     y = array({1, 1, 1});
-    //     CHECK(array_equal(x - y, array({2, 1, 0})).item<bool>());
+        let x = ones::<f32>(&[3, 2, 1]).unwrap();
+        let z = x + 2.0;
+        assert_eq!(z.shape(), &[3, 2, 1]);
+        let expected = Array::from_slice(&[3.0, 3.0, 3.0, 3.0, 3.0, 3.0], &[3, 2, 1]);
+        assert_eq!(z, expected);
 
-    //     // Check multiplication
-    //     x = array({1, 2, 3});
-    //     y = array({2, 2, 2});
-    //     CHECK(array_equal(x * y, array({2, 4, 6})).item<bool>());
+        // Works for empty arrays
+        let x = array![];
+        let y = array![];
+        let mut z = x + y;
+        z.eval();
+        assert_eq!(z.size(), 0);
+        assert_eq!(z.shape(), &[0]);
+    }
 
-    //     // Check division
-    //     x = array(1);
-    //     y = array(1);
-    //     CHECK_EQ(divide(x, y).item<float>(), 1.0f);
+    #[test]
+    fn test_binary_sub() {
+        let x = array![3.0, 2.0, 1.0];
+        let y = array![1.0, 1.0, 1.0];
+        assert_eq!(x - y, array![2.0, 1.0, 0.0]);
+    }
 
-    //     x = array(1);
-    //     y = array(0.5);
-    //     CHECK_EQ(divide(x, y).item<float>(), 2.0f);
+    #[test]
+    fn test_binary_mul() {
+        let x = array![1.0, 2.0, 3.0];
+        let y = array![2.0, 2.0, 2.0];
+        assert_eq!(x * y, array![2.0, 4.0, 6.0]);
+    }
 
-    //     x = array(1);
-    //     y = array(4);
-    //     CHECK_EQ(divide(x, y).item<float>(), 0.25f);
+    #[test]
+    fn test_binary_div() {
+        let x = array![1.0];
+        let y = array![1.0];
+        assert_eq!(divide(&x, &y).unwrap().item::<f32>(), 1.0);
 
-    //     x = array(true);
-    //     y = array(true);
-    //     CHECK_EQ(divide(x, y).item<float>(), 1.0f);
+        let x = array![1.0];
+        let y = array![0.5];
+        assert_eq!(divide(&x, &y).unwrap().item::<f32>(), 2.0);
 
-    //     x = array(false);
-    //     y = array(true);
-    //     CHECK_EQ(divide(x, y).item<float>(), 0.0f);
+        let x = array![1.0];
+        let y = array![4.0];
+        assert_eq!(divide(&x, &y).unwrap().item::<f32>(), 0.25);
 
-    //     x = array(true);
-    //     y = array(false);
-    //     CHECK(std::isinf(divide(x, y).item<float>()));
+        let x = array![true];
+        let y = array![true];
+        assert_eq!(divide(&x, &y).unwrap().item::<f32>(), 1.0);
 
-    //     x = array(false);
-    //     y = array(false);
-    //     CHECK(std::isnan(divide(x, y).item<float>()));
+        let x = array![false];
+        let y = array![true];
+        assert_eq!(divide(&x, &y).unwrap().item::<f32>(), 0.0);
 
-    //     // Check maximum and minimum
-    //     x = array(1.0f);
-    //     y = array(0.0f);
-    //     CHECK_EQ(maximum(x, y).item<float>(), 1.0f);
-    //     CHECK_EQ(minimum(x, y).item<float>(), 0.0f);
-    //     y = array(2.0f);
-    //     CHECK_EQ(maximum(x, y).item<float>(), 2.0f);
-    //     CHECK_EQ(minimum(x, y).item<float>(), 1.0f);
+        let x = array![true];
+        let y = array![false];
+        assert!(divide(&x, &y).unwrap().item::<f32>().is_infinite());
 
-    //     // Check logaddexp
-    //     x = array(0.0f);
-    //     y = array(0.0f);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), std::log(2.0f));
+        let x = array![false];
+        let y = array![false];
+        assert!(divide(&x, &y).unwrap().item::<f32>().is_nan());
+    }
 
-    //     x = array(0u);
-    //     y = array(10000u);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), 10000.0f);
+    #[test]
+    fn test_binary_maximum_minimum() {
+        let x = array![1.0];
+        let y = array![0.0];
+        assert_eq!(maximum(&x, &y).unwrap().item::<f32>(), 1.0);
+        assert_eq!(minimum(&x, &y).unwrap().item::<f32>(), 0.0);
 
-    //     constexpr float inf = std::numeric_limits<float>::infinity();
-    //     x = array(inf);
-    //     y = array(3.0f);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
+        let y = array![2.0];
+        assert_eq!(maximum(&x, &y).unwrap().item::<f32>(), 2.0);
+        assert_eq!(minimum(&x, &y).unwrap().item::<f32>(), 1.0);
+    }
 
-    //     x = array(-inf);
-    //     y = array(3.0f);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), 3.0f);
+    #[test]
+    fn test_binary_logaddexp() {
+        let x = array![0.0];
+        let y = array![0.0];
+        assert_float_eq! {
+            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            2.0f32.ln(),
+            abs <= 1e-5
+        };
 
-    //     x = array(-inf);
-    //     y = array(-inf);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), -inf);
+        let x = array![0u32];
+        let y = array![10000u32];
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 10000.0);
 
-    //     x = array(inf);
-    //     y = array(inf);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
+        let x = array![std::f32::INFINITY];
+        let y = array![3.0];
+        assert_eq!(
+            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            std::f32::INFINITY
+        );
 
-    //     x = array(-inf);
-    //     y = array(inf);
-    //     CHECK_EQ(logaddexp(x, y).item<float>(), inf);
-    //   }
+        let x = array![std::f32::NEG_INFINITY];
+        let y = array![3.0];
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 3.0);
+
+        let x = array![std::f32::NEG_INFINITY];
+        let y = array![std::f32::NEG_INFINITY];
+        assert_eq!(
+            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            std::f32::NEG_INFINITY
+        );
+
+        let x = array![std::f32::INFINITY];
+        let y = array![std::f32::INFINITY];
+        assert_eq!(
+            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            std::f32::INFINITY
+        );
+
+        let x = array![std::f32::NEG_INFINITY];
+        let y = array![std::f32::INFINITY];
+        assert_eq!(
+            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            std::f32::INFINITY
+        );
+    }
 }

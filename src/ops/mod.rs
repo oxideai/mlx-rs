@@ -12,6 +12,7 @@ pub mod indexing;
 
 pub use arithmetic::*;
 pub use convolution::*;
+pub use factory::*;
 pub use logical::*;
 pub use reduction::*;
 pub use shapes::*;

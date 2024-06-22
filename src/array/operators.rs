@@ -5,7 +5,7 @@ use std::ops::{
 };
 
 macro_rules! impl_binary_op {
-    ($trait:ident, $method:ident) => {
+    ($trait:ident, $method:ident, $c_method:ident) => {
         impl<'a, T> $trait<T> for Array
         where
             T: ScalarOrArray<'a>,
@@ -14,20 +14,20 @@ macro_rules! impl_binary_op {
 
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$method _device>](rhs, StreamOrDevice::default()).unwrap()
+                    self.[<$c_method _device>](rhs, StreamOrDevice::default()).unwrap()
                 }
             }
         }
 
-        impl<'a, T> $trait<T> for &'a Array
+        impl<'a, 't: 'a, T> $trait<T> for &'a Array
         where
-            T: ScalarOrArray<'a>,
+            T: ScalarOrArray<'t>,
         {
             type Output = Array;
 
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$method _device>](rhs, StreamOrDevice::default()).unwrap()
+                    self.[<$c_method _device>](rhs, StreamOrDevice::default()).unwrap()
                 }
             }
         }
@@ -56,28 +56,28 @@ macro_rules! impl_binary_op_assign {
     };
 }
 
-impl_binary_op!(Add, add);
+impl_binary_op!(Add, add, add);
 impl_binary_op_assign!(AddAssign, add_assign, add);
-impl_binary_op!(Sub, sub);
-impl_binary_op_assign!(SubAssign, sub_assign, sub);
-impl_binary_op!(Mul, mul);
-impl_binary_op_assign!(MulAssign, mul_assign, mul);
-impl_binary_op!(Div, div);
-impl_binary_op_assign!(DivAssign, div_assign, div);
-impl_binary_op!(Rem, rem);
-impl_binary_op_assign!(RemAssign, rem_assign, rem);
-impl_binary_op!(Pow, pow);
+impl_binary_op!(Sub, sub, subtract);
+impl_binary_op_assign!(SubAssign, sub_assign, subtract);
+impl_binary_op!(Mul, mul, multiply);
+impl_binary_op_assign!(MulAssign, mul_assign, multiply);
+impl_binary_op!(Div, div, divide);
+impl_binary_op_assign!(DivAssign, div_assign, divide);
+impl_binary_op!(Rem, rem, remainder);
+impl_binary_op_assign!(RemAssign, rem_assign, remainder);
+impl_binary_op!(Pow, pow, power);
 
 impl<'a> Neg for &'a Array {
     type Output = Array;
     fn neg(self) -> Self::Output {
-        self.neg_device(StreamOrDevice::default()).unwrap()
+        self.negative_device(StreamOrDevice::default()).unwrap()
     }
 }
 impl Neg for Array {
     type Output = Array;
     fn neg(self) -> Self::Output {
-        self.neg_device(StreamOrDevice::default()).unwrap()
+        self.negative_device(StreamOrDevice::default()).unwrap()
     }
 }
 

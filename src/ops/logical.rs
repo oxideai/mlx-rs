@@ -307,6 +307,28 @@ impl Array {
         }
     }
 
+    /// Unary element-wise logical not.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::prelude::*;
+    /// let a: Array = false.into();
+    /// let mut b = a.logical_not_device(StreamOrDevice::default());
+    ///
+    /// let b_data: &[bool] = b.as_slice();
+    /// // b_data == [true]
+    /// ```
+    #[default_device]
+    pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_logical_not(
+                self.c_array,
+                stream.as_ref().as_ptr(),
+            ))
+        }
+    }
+
     /// Approximate comparison of two arrays returning an error if the inputs aren't valid.
     ///
     /// The arrays are considered equal if:
@@ -454,7 +476,7 @@ impl Array {
     /// ```
     #[default_device]
     pub fn any_device<'a>(
-        &'a self,
+        &self,
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
@@ -474,6 +496,133 @@ impl Array {
             Ok(Array::from_ptr(c_array))
         }
     }
+}
+
+#[default_device]
+pub fn any_device<'a>(
+    array: &Array,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    array.any_device(axes, keep_dims, stream)
+}
+
+#[default_device]
+pub fn logical_and_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .logical_and_device(b, StreamOrDevice::default())
+}
+
+#[default_device]
+pub fn logical_or_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .logical_or_device(b, StreamOrDevice::default())
+}
+
+#[default_device]
+pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    a.logical_not_device(stream)
+}
+
+#[default_device]
+pub fn all_close_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    rtol: impl Into<Option<f64>>,
+    atol: impl Into<Option<f64>>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .all_close_device(b, rtol, atol, equal_nan, stream)
+}
+
+#[default_device]
+pub fn is_close_device(
+    a: &Array,
+    b: &Array,
+    rtol: impl Into<Option<f64>>,
+    atol: impl Into<Option<f64>>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.is_close_device(b, rtol, atol, equal_nan, stream)
+}
+
+#[default_device]
+pub fn array_eq_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .array_eq_device(b, equal_nan, stream)
+}
+
+#[default_device]
+pub fn eq_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().eq_device(b, stream)
+}
+
+#[default_device]
+pub fn le_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().le_device(b, stream)
+}
+
+#[default_device]
+pub fn ge_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().ge_device(b, stream)
+}
+
+#[default_device]
+pub fn ne_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().ne_device(b, stream)
+}
+
+#[default_device]
+pub fn lt_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().lt_device(b, stream)
+}
+
+#[default_device]
+pub fn gt_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().gt_device(b, stream)
 }
 
 // TODO: check if the functions below could throw an exception.
@@ -581,6 +730,8 @@ pub fn which_device<'a, 'b>(
 
 #[cfg(test)]
 mod tests {
+    use crate::{array, Dtype};
+
     use super::*;
 
     #[test]
@@ -892,5 +1043,61 @@ mod tests {
         let b = Array::from_slice(&[4, 5, 6, 7], &[4]);
         let c = which(&condition, &a, &b);
         assert!(c.is_err());
+    }
+
+    // The unit tests below are adapted from the mlx c++ codebase
+
+    #[test]
+    fn test_unary_logical_not() {
+        let x = array!(false);
+        assert_eq!(logical_not(&x).item::<bool>(), true);
+
+        let x = array!(1.0);
+        let mut y = logical_not(&x);
+        assert_eq!(y.dtype(), Dtype::Bool);
+        assert_eq!(y.item::<bool>(), false);
+
+        let x = array!(0);
+        let mut y = logical_not(&x);
+        assert_eq!(y.dtype(), Dtype::Bool);
+        assert_eq!(y.item::<bool>(), true);
+    }
+
+    #[test]
+    fn test_unary_logical_and() {
+        let x = array!(true);
+        let y = array!(true);
+        assert_eq!(logical_and(&x, &y).unwrap().item::<bool>(), true);
+
+        let x = array!(1.0);
+        let y = array!(1.0);
+        let mut z = logical_and(&x, &y).unwrap();
+        assert_eq!(z.dtype(), Dtype::Bool);
+        assert_eq!(z.item::<bool>(), true);
+
+        let x = array!(0);
+        let y = array!(1.0);
+        let mut z = logical_and(&x, &y).unwrap();
+        assert_eq!(z.dtype(), Dtype::Bool);
+        assert_eq!(z.item::<bool>(), false);
+    }
+
+    #[test]
+    fn test_unary_logical_or() {
+        let a = array!(false);
+        let b = array!(false);
+        assert_eq!(logical_or(&a, &b).unwrap().item::<bool>(), false);
+
+        let a = array!(1.0);
+        let b = array!(1.0);
+        let mut c = logical_or(&a, &b).unwrap();
+        assert_eq!(c.dtype(), Dtype::Bool);
+        assert_eq!(c.item::<bool>(), true);
+
+        let a = array!(0);
+        let b = array!(1.0);
+        let mut c = logical_or(&a, &b).unwrap();
+        assert_eq!(c.dtype(), Dtype::Bool);
+        assert_eq!(c.item::<bool>(), true);
     }
 }

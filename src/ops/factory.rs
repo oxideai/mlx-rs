@@ -119,7 +119,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
-    /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()).unwrap();
+    /// let r = Array::full_device::<f32>(&[5, 4], 7.0f32, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
     pub fn full_device<'a, T: ArrayElement>(

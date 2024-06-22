@@ -108,7 +108,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.add_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.add(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [5.0, 7.0, 9.0]
@@ -141,7 +141,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.subtract_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.subtract(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [-3.0, -3.0, -3.0]
@@ -169,7 +169,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.neg().unwrap();
+    /// let mut b = a.negative().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [-1.0, -2.0, -3.0]
@@ -227,7 +227,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.divide_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.divide(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
@@ -260,7 +260,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
-    /// let mut c = a.power_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.power(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 8.0, 81.0]
@@ -293,7 +293,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
-    /// let mut c = a.remainder_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.remainder(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [1.0, 3.0, 2.0]
@@ -319,7 +319,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
-    /// let mut b = a.sqrt_device(StreamOrDevice::default());
+    /// let mut b = a.sqrt();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.0, 3.0]
@@ -336,7 +336,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
-    /// let mut b = a.cos_device(StreamOrDevice::default());
+    /// let mut b = a.cos();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.54030234, -0.41614687]
@@ -355,7 +355,7 @@ impl Array {
     ///
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
-    /// let mut b = a.exp_device(StreamOrDevice::default());
+    /// let mut b = a.exp();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.7182817, 7.389056]
@@ -372,7 +372,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
-    /// let mut b = a.floor_device(StreamOrDevice::default()).unwrap();
+    /// let mut b = a.floor().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
@@ -405,7 +405,7 @@ impl Array {
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-    /// let mut c = a.floor_divide_device(&b, StreamOrDevice::default()).unwrap();
+    /// let mut c = a.floor_divide(&b).unwrap();
     ///
     /// let c_data: &[f32] = c.as_slice();
     /// // c_data == [0.25, 0.4, 0.5]
@@ -431,7 +431,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.log_device(StreamOrDevice::default());
+    /// let mut b = a.log();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 0.6931472, 1.0986123]
@@ -448,7 +448,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
-    /// let mut b = a.log2_device(StreamOrDevice::default());
+    /// let mut b = a.log2();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0, 3.0]
@@ -465,7 +465,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
-    /// let mut b = a.log10_device(StreamOrDevice::default());
+    /// let mut b = a.log10();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
@@ -482,7 +482,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.log1p_device(StreamOrDevice::default());
+    /// let mut b = a.log1p();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.6931472, 1.0986123, 1.3862944]
@@ -519,7 +519,7 @@ impl Array {
     /// let b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
     ///
     /// // produces a [2, 3] result
-    /// let mut c = a.matmul_device(&b, StreamOrDevice::default());
+    /// let mut c = a.matmul(&b);
     /// ```
     #[default_device]
     pub fn matmul_device(
@@ -542,7 +542,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
-    /// let mut b = a.reciprocal_device(StreamOrDevice::default());
+    /// let mut b = a.reciprocal();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.5, 0.25]

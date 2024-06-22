@@ -338,22 +338,31 @@ pub fn max_device<'a>(
     array.max_device(axes, keep_dims, stream)
 }
 
+/// Compute the standard deviation(s) over the given axes.
+///
+/// # Params
+///
+/// - `a`: Input array
+/// - `axes`: Optional axis or axes to reduce over. If unspecified this defaults to reducing over
+///   the entire array.
+/// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+/// - `ddof`: The divisor to compute the variance is `N - ddof`, defaults to `0`.
 #[default_device]
 pub fn std_device<'a>(
-    array: &Array,
+    a: &Array,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let axes = axes_or_default_to_all(axes, array.ndim() as i32);
+    let axes = axes_or_default_to_all(axes, a.ndim() as i32);
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_std(
-                array.c_array,
+                a.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims,

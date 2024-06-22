@@ -1,8 +1,5 @@
 use crate::{
-    dtype::Dtype,
-    error::{AsSliceError, ItemError},
-    sealed::Sealed,
-    StreamOrDevice,
+    dtype::Dtype, error::{AsSliceError, ItemError}, sealed::Sealed, StreamOrDevice
 };
 use mlx_sys::mlx_array;
 use num_complex::Complex;

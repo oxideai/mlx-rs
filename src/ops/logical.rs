@@ -498,6 +498,7 @@ impl Array {
     }
 }
 
+/// See [`Array::any`]
 #[default_device]
 pub fn any_device<'a>(
     array: &Array,
@@ -508,6 +509,7 @@ pub fn any_device<'a>(
     array.any_device(axes, keep_dims, stream)
 }
 
+/// See [`Array::logical_and`]
 #[default_device]
 pub fn logical_and_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -518,6 +520,7 @@ pub fn logical_and_device<'a>(
         .logical_and_device(b, StreamOrDevice::default())
 }
 
+/// See [`Array::logical_or`]
 #[default_device]
 pub fn logical_or_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -528,11 +531,13 @@ pub fn logical_or_device<'a>(
         .logical_or_device(b, StreamOrDevice::default())
 }
 
+/// See [`Array::logical_not`]
 #[default_device]
 pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
     a.logical_not_device(stream)
 }
 
+/// See [`Array::all_close`]
 #[default_device]
 pub fn all_close_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -547,6 +552,7 @@ pub fn all_close_device<'a>(
         .all_close_device(b, rtol, atol, equal_nan, stream)
 }
 
+/// See [`Array::is_close`]
 #[default_device]
 pub fn is_close_device(
     a: &Array,
@@ -559,6 +565,7 @@ pub fn is_close_device(
     a.is_close_device(b, rtol, atol, equal_nan, stream)
 }
 
+/// See [`Array::array_eq`]
 #[default_device]
 pub fn array_eq_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -571,6 +578,7 @@ pub fn array_eq_device<'a>(
         .array_eq_device(b, equal_nan, stream)
 }
 
+/// See [`Array::eq`]
 #[default_device]
 pub fn eq_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -580,6 +588,7 @@ pub fn eq_device<'a>(
     a.into_owned_or_ref_array().as_ref().eq_device(b, stream)
 }
 
+/// See [`Array::le`]
 #[default_device]
 pub fn le_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -589,6 +598,7 @@ pub fn le_device<'a>(
     a.into_owned_or_ref_array().as_ref().le_device(b, stream)
 }
 
+/// See [`Array::ge`]
 #[default_device]
 pub fn ge_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -598,6 +608,7 @@ pub fn ge_device<'a>(
     a.into_owned_or_ref_array().as_ref().ge_device(b, stream)
 }
 
+/// See [`Array::ne`]
 #[default_device]
 pub fn ne_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -607,6 +618,7 @@ pub fn ne_device<'a>(
     a.into_owned_or_ref_array().as_ref().ne_device(b, stream)
 }
 
+/// See [`Array::lt`]
 #[default_device]
 pub fn lt_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -616,6 +628,7 @@ pub fn lt_device<'a>(
     a.into_owned_or_ref_array().as_ref().lt_device(b, stream)
 }
 
+/// See [`Array::gt`]
 #[default_device]
 pub fn gt_device<'a>(
     a: impl ScalarOrArray<'a>,
@@ -627,16 +640,19 @@ pub fn gt_device<'a>(
 
 // TODO: check if the functions below could throw an exception.
 
+/// Return a boolean array indicating which elements are NaN.
 #[default_device]
 pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe { Array::from_ptr(mlx_sys::mlx_isnan(array.c_array, stream.as_ref().as_ptr())) }
 }
 
+/// Return a boolean array indicating which elements are +/- inifnity.
 #[default_device]
 pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe { Array::from_ptr(mlx_sys::mlx_isinf(array.c_array, stream.as_ref().as_ptr())) }
 }
 
+/// Return a boolean array indicating which elements are positive infinity.
 #[default_device]
 pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
@@ -647,6 +663,7 @@ pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     }
 }
 
+/// Return a boolean array indicating which elements are negative infinity.
 #[default_device]
 pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
@@ -654,24 +671,6 @@ pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
             array.c_array,
             stream.as_ref().as_ptr(),
         ))
-    }
-}
-
-#[default_device]
-pub fn not_equal_device(
-    lhs: &Array,
-    rhs: &Array,
-    stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_not_equal(
-                lhs.c_array,
-                rhs.c_array,
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
     }
 }
 

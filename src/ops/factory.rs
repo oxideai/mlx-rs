@@ -361,6 +361,7 @@ impl Array {
     }
 }
 
+/// See [`Array::zeros`]
 #[default_device]
 pub fn zeros_device<T: ArrayElement>(
     shape: &[i32],
@@ -369,6 +370,7 @@ pub fn zeros_device<T: ArrayElement>(
     Array::zeros_device::<T>(shape, stream)
 }
 
+/// See [`Array::ones`]
 #[default_device]
 pub fn ones_device<T: ArrayElement>(
     shape: &[i32],
@@ -377,6 +379,7 @@ pub fn ones_device<T: ArrayElement>(
     Array::ones_device::<T>(shape, stream)
 }
 
+/// See [`Array::eye`]
 #[default_device]
 pub fn eye_device<T: ArrayElement>(
     n: i32,
@@ -387,6 +390,7 @@ pub fn eye_device<T: ArrayElement>(
     Array::eye_device::<T>(n, m, k, stream)
 }
 
+/// See [`Array::full`]
 #[default_device]
 pub fn full_device<'a, T: ArrayElement>(
     shape: &[i32],
@@ -396,6 +400,7 @@ pub fn full_device<'a, T: ArrayElement>(
     Array::full_device::<T>(shape, values, stream)
 }
 
+/// See [`Array::identity`]
 #[default_device]
 pub fn identity_device<T: ArrayElement>(
     n: i32,
@@ -404,6 +409,7 @@ pub fn identity_device<T: ArrayElement>(
     Array::identity_device::<T>(n, stream)
 }
 
+/// See [`Array::arange`]
 #[default_device]
 pub fn arange_device<T, U>(
     start: impl Into<Option<U>>,
@@ -418,6 +424,7 @@ where
     Array::arange_device::<T, U>(start, stop, step, stream)
 }
 
+/// See [`Array::linspace`]
 #[default_device]
 pub fn linspace_device<T, U>(
     start: U,
@@ -432,6 +439,7 @@ where
     Array::linspace_device::<T, U>(start, stop, count, stream)
 }
 
+/// See [`Array::repeat`]
 #[default_device]
 pub fn repeat_device<T: ArrayElement>(
     array: Array,
@@ -442,6 +450,7 @@ pub fn repeat_device<T: ArrayElement>(
     Array::repeat_device::<T>(array, count, axis, stream)
 }
 
+/// See [`Array::repeat_all`]
 #[default_device]
 pub fn repeat_all_device<T: ArrayElement>(
     array: Array,
@@ -451,6 +460,7 @@ pub fn repeat_all_device<T: ArrayElement>(
     Array::repeat_all_device::<T>(array, count, stream)
 }
 
+/// See [`Array::tri`]
 #[default_device]
 pub fn tri_device<T: ArrayElement>(
     n: i32,

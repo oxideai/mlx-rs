@@ -954,7 +954,7 @@ mod tests {
     #[test]
     fn test_reshape() {
         let x = Array::from_int(1);
-        assert_eq!(reshape(&x, &[]).unwrap().shape(), &[]);
+        assert!(reshape(&x, &[]).unwrap().shape().is_empty());
         assert!(reshape(&x, &[2]).is_err());
         let y = reshape(&x, &[1, 1, 1]).unwrap();
         assert_eq!(y.shape(), &[1, 1, 1]);
@@ -1261,7 +1261,7 @@ mod tests {
     fn test_transpose() {
         let x = Array::from_int(1);
         let mut y = transpose(&x, None).unwrap();
-        assert_eq!(y.shape(), &[]);
+        assert!(y.shape().is_empty());
         assert_eq!(y.item::<i32>(), 1);
         assert!(transpose(&x, &[0][..]).is_err());
         assert!(transpose(&x, &[1][..]).is_err());

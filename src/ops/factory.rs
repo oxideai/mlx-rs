@@ -1,5 +1,6 @@
 use crate::array::ArrayElement;
 use crate::error::Exception;
+use crate::prelude::ScalarOrArray;
 use crate::Stream;
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_macros::default_device;
@@ -118,12 +119,12 @@ impl Array {
     /// ```rust
     /// use mlx_rs::{Array, StreamOrDevice};
     /// //  create [5, 4] array filled with 7
-    /// let r = Array::full_device::<f32>(&[5, 4], 7f32.into(), StreamOrDevice::default()).unwrap();
+    /// let r = Array::full_device::<f32>(&[5, 4], 7.0f32, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn full_device<T: ArrayElement>(
+    pub fn full_device<'a, T: ArrayElement>(
         shape: &[i32],
-        values: Array,
+        values: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
@@ -131,7 +132,7 @@ impl Array {
                 mlx_sys::mlx_full(
                     shape.as_ptr(),
                     shape.len(),
-                    values.c_array,
+                    values.into_owned_or_ref_array().as_ref().as_ptr(),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
                 )
@@ -360,6 +361,116 @@ impl Array {
     }
 }
 
+/// See [`Array::zeros`]
+#[default_device]
+pub fn zeros_device<T: ArrayElement>(
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::zeros_device::<T>(shape, stream)
+}
+
+/// See [`Array::ones`]
+#[default_device]
+pub fn ones_device<T: ArrayElement>(
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::ones_device::<T>(shape, stream)
+}
+
+/// See [`Array::eye`]
+#[default_device]
+pub fn eye_device<T: ArrayElement>(
+    n: i32,
+    m: Option<i32>,
+    k: Option<i32>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::eye_device::<T>(n, m, k, stream)
+}
+
+/// See [`Array::full`]
+#[default_device]
+pub fn full_device<'a, T: ArrayElement>(
+    shape: &[i32],
+    values: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::full_device::<T>(shape, values, stream)
+}
+
+/// See [`Array::identity`]
+#[default_device]
+pub fn identity_device<T: ArrayElement>(
+    n: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::identity_device::<T>(n, stream)
+}
+
+/// See [`Array::arange`]
+#[default_device]
+pub fn arange_device<T, U>(
+    start: impl Into<Option<U>>,
+    stop: U,
+    step: impl Into<Option<U>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception>
+where
+    T: ArrayElement,
+    U: NumCast,
+{
+    Array::arange_device::<T, U>(start, stop, step, stream)
+}
+
+/// See [`Array::linspace`]
+#[default_device]
+pub fn linspace_device<T, U>(
+    start: U,
+    stop: U,
+    count: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception>
+where
+    T: ArrayElement,
+    U: NumCast,
+{
+    Array::linspace_device::<T, U>(start, stop, count, stream)
+}
+
+/// See [`Array::repeat`]
+#[default_device]
+pub fn repeat_device<T: ArrayElement>(
+    array: Array,
+    count: i32,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::repeat_device::<T>(array, count, axis, stream)
+}
+
+/// See [`Array::repeat_all`]
+#[default_device]
+pub fn repeat_all_device<T: ArrayElement>(
+    array: Array,
+    count: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    Array::repeat_all_device::<T>(array, count, stream)
+}
+
+/// See [`Array::tri`]
+#[default_device]
+pub fn tri_device<T: ArrayElement>(
+    n: i32,
+    m: Option<i32>,
+    k: Option<i32>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    Array::tri_device::<T>(n, m, k, stream)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -407,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_full_scalar() {
-        let mut array = Array::full::<f32>(&[2, 3], 7f32.into()).unwrap();
+        let mut array = Array::full::<f32>(&[2, 3], 7f32).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 

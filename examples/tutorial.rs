@@ -56,11 +56,11 @@ fn array_basics() {
     // and inputs. When `eval` is called on an array (or arrays), the array and
     // all of its dependencies are recursively evaluated to produce the result.
     // Once an array is evaluated, it has data and is detached from its inputs.
-    z.eval();
+    z.eval().unwrap();
 
     // Of course the array can still be an input to other operations. You can even
     // call eval on the array again, this will just be a no-op:
-    z.eval(); // no-op
+    z.eval().unwrap(); // no-op
 
     // Some functions or methods on arrays implicitly evaluate them. For example
     // accessing a value in an array or printing the array implicitly evaluate it:

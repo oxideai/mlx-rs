@@ -1,5 +1,6 @@
 use crate::array::Array;
 use crate::error::Exception;
+use crate::prelude::ScalarOrArray;
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
@@ -27,12 +28,16 @@ impl Array {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn eq_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn eq_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_equal(
-                    self.c_array,
-                    other.c_array,
+                    self.as_ptr(),
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -61,12 +66,16 @@ impl Array {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn le_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn le_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_less_equal(
-                    self.c_array,
-                    other.c_array,
+                    self.as_ptr(),
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -95,12 +104,16 @@ impl Array {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn ge_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn ge_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_greater_equal(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -129,12 +142,16 @@ impl Array {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn ne_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn ne_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_not_equal(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -162,12 +179,16 @@ impl Array {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn lt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn lt_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_less(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -195,12 +216,16 @@ impl Array {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn gt_device(&self, other: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn gt_device<'a>(
+        &self,
+        other: impl ScalarOrArray<'a>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_greater(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -228,16 +253,16 @@ impl Array {
     /// // c_data == [true, false, false]
     /// ```
     #[default_device]
-    pub fn logical_and_device(
+    pub fn logical_and_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_logical_and(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -265,20 +290,42 @@ impl Array {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn logical_or_device(
+    pub fn logical_or_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_logical_or(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
             Ok(Array::from_ptr(c_array))
+        }
+    }
+
+    /// Unary element-wise logical not.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::prelude::*;
+    /// let a: Array = false.into();
+    /// let mut b = a.logical_not_device(StreamOrDevice::default());
+    ///
+    /// let b_data: &[bool] = b.as_slice();
+    /// // b_data == [true]
+    /// ```
+    #[default_device]
+    pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_logical_not(
+                self.c_array,
+                stream.as_ref().as_ptr(),
+            ))
         }
     }
 
@@ -303,16 +350,16 @@ impl Array {
     /// use num_traits::Pow;
     /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
-    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).pow(&(0.5.into())).unwrap();
+    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).power(0.5).unwrap();
     /// let mut c = a.all_close(&b, None, None, None).unwrap();
     ///
     /// let c_data: &[bool] = c.as_slice();
     /// // c_data == [true]
     /// ```
     #[default_device]
-    pub fn all_close_device(
+    pub fn all_close_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
@@ -322,7 +369,7 @@ impl Array {
             let c_array = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_allclose(
                     self.c_array,
-                    other.c_array,
+                    other.into_owned_or_ref_array().as_ref().as_ptr(),
                     rtol.into().unwrap_or(1e-5),
                     atol.into().unwrap_or(1e-8),
                     equal_nan.into().unwrap_or(false),
@@ -391,16 +438,16 @@ impl Array {
     /// // c == [true]
     /// ```
     #[default_device]
-    pub fn array_eq_device(
+    pub fn array_eq_device<'a>(
         &self,
-        other: &Array,
+        other: impl ScalarOrArray<'a>,
         equal_nan: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
             Array::from_ptr(mlx_sys::mlx_array_equal(
                 self.c_array,
-                other.c_array,
+                other.into_owned_or_ref_array().as_ref().as_ptr(),
                 equal_nan.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             ))
@@ -429,7 +476,7 @@ impl Array {
     /// ```
     #[default_device]
     pub fn any_device<'a>(
-        &'a self,
+        &self,
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
@@ -451,9 +498,187 @@ impl Array {
     }
 }
 
-/// Select from `a` or `b` according to `condition` returning an error if the arrays are not broadcastable.
+/// See [`Array::any`]
+#[default_device]
+pub fn any_device<'a>(
+    array: &Array,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    array.any_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::logical_and`]
+#[default_device]
+pub fn logical_and_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .logical_and_device(b, StreamOrDevice::default())
+}
+
+/// See [`Array::logical_or`]
+#[default_device]
+pub fn logical_or_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .logical_or_device(b, StreamOrDevice::default())
+}
+
+/// See [`Array::logical_not`]
+#[default_device]
+pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    a.logical_not_device(stream)
+}
+
+/// See [`Array::all_close`]
+#[default_device]
+pub fn all_close_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    rtol: impl Into<Option<f64>>,
+    atol: impl Into<Option<f64>>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .all_close_device(b, rtol, atol, equal_nan, stream)
+}
+
+/// See [`Array::is_close`]
+#[default_device]
+pub fn is_close_device(
+    a: &Array,
+    b: &Array,
+    rtol: impl Into<Option<f64>>,
+    atol: impl Into<Option<f64>>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.is_close_device(b, rtol, atol, equal_nan, stream)
+}
+
+/// See [`Array::array_eq`]
+#[default_device]
+pub fn array_eq_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    equal_nan: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Array {
+    a.into_owned_or_ref_array()
+        .as_ref()
+        .array_eq_device(b, equal_nan, stream)
+}
+
+/// See [`Array::eq`]
+#[default_device]
+pub fn eq_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().eq_device(b, stream)
+}
+
+/// See [`Array::le`]
+#[default_device]
+pub fn le_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().le_device(b, stream)
+}
+
+/// See [`Array::ge`]
+#[default_device]
+pub fn ge_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().ge_device(b, stream)
+}
+
+/// See [`Array::ne`]
+#[default_device]
+pub fn ne_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().ne_device(b, stream)
+}
+
+/// See [`Array::lt`]
+#[default_device]
+pub fn lt_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().lt_device(b, stream)
+}
+
+/// See [`Array::gt`]
+#[default_device]
+pub fn gt_device<'a>(
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'a>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.into_owned_or_ref_array().as_ref().gt_device(b, stream)
+}
+
+// TODO: check if the functions below could throw an exception.
+
+/// Return a boolean array indicating which elements are NaN.
+#[default_device]
+pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_isnan(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+/// Return a boolean array indicating which elements are +/- inifnity.
+#[default_device]
+pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe { Array::from_ptr(mlx_sys::mlx_isinf(array.c_array, stream.as_ref().as_ptr())) }
+}
+
+/// Return a boolean array indicating which elements are positive infinity.
+#[default_device]
+pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_isposinf(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+/// Return a boolean array indicating which elements are negative infinity.
+#[default_device]
+pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_isneginf(
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        ))
+    }
+}
+
+/// Select from `a` or `b` according to `condition` returning an error if the arrays are not
+/// broadcastable.
 ///
-/// The condition and input arrays must be the same shape or [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
+/// The condition and input arrays must be the same shape or
+/// [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting)
 /// with each another.
 ///
 /// # Params
@@ -462,18 +687,39 @@ impl Array {
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
 #[default_device]
-pub fn which_device(
+pub fn r#where_device<'a, 'b>(
     condition: &Array,
-    a: &Array,
-    b: &Array,
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_where(
                 condition.c_array,
-                a.c_array,
-                b.c_array,
+                a.into_owned_or_ref_array().as_ref().as_ptr(),
+                b.into_owned_or_ref_array().as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Alias for [`r#where`]
+#[default_device]
+pub fn which_device<'a, 'b>(
+    condition: &Array,
+    a: impl ScalarOrArray<'a>,
+    b: impl ScalarOrArray<'b>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_where(
+                condition.c_array,
+                a.into_owned_or_ref_array().as_ref().as_ptr(),
+                b.into_owned_or_ref_array().as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
         };
@@ -483,6 +729,8 @@ pub fn which_device(
 
 #[cfg(test)]
 mod tests {
+    use crate::{array, Dtype};
+
     use super::*;
 
     #[test]
@@ -689,7 +937,7 @@ mod tests {
     fn test_all_close() {
         let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
         let b = Array::from_slice(&[0., 1., 2., 3.], &[4])
-            .pow(&(0.5.into()))
+            .power(0.5)
             .unwrap();
         let mut c = a.all_close(&b, 1e-5, None, None).unwrap();
 
@@ -796,5 +1044,61 @@ mod tests {
         let b = Array::from_slice(&[4, 5, 6, 7], &[4]);
         let c = which(&condition, &a, &b);
         assert!(c.is_err());
+    }
+
+    // The unit tests below are adapted from the mlx c++ codebase
+
+    #[test]
+    fn test_unary_logical_not() {
+        let x = array!(false);
+        assert!(logical_not(&x).item::<bool>());
+
+        let x = array!(1.0);
+        let mut y = logical_not(&x);
+        assert_eq!(y.dtype(), Dtype::Bool);
+        assert!(!y.item::<bool>());
+
+        let x = array!(0);
+        let mut y = logical_not(&x);
+        assert_eq!(y.dtype(), Dtype::Bool);
+        assert!(y.item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_logical_and() {
+        let x = array!(true);
+        let y = array!(true);
+        assert!(logical_and(&x, &y).unwrap().item::<bool>());
+
+        let x = array!(1.0);
+        let y = array!(1.0);
+        let mut z = logical_and(&x, &y).unwrap();
+        assert_eq!(z.dtype(), Dtype::Bool);
+        assert!(z.item::<bool>());
+
+        let x = array!(0);
+        let y = array!(1.0);
+        let mut z = logical_and(&x, &y).unwrap();
+        assert_eq!(z.dtype(), Dtype::Bool);
+        assert!(!z.item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_logical_or() {
+        let a = array!(false);
+        let b = array!(false);
+        assert!(!logical_or(&a, &b).unwrap().item::<bool>());
+
+        let a = array!(1.0);
+        let b = array!(1.0);
+        let mut c = logical_or(&a, &b).unwrap();
+        assert_eq!(c.dtype(), Dtype::Bool);
+        assert!(c.item::<bool>());
+
+        let a = array!(0);
+        let b = array!(1.0);
+        let mut c = logical_or(&a, &b).unwrap();
+        assert_eq!(c.dtype(), Dtype::Bool);
+        assert!(c.item::<bool>());
     }
 }

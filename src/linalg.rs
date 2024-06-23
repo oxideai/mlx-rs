@@ -4,6 +4,7 @@ use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 use std::f64;
+use std::ffi::CString;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Ord<'a> {
@@ -100,7 +101,9 @@ pub fn norm_ord_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
-        let ord = MlxString::try_from(ord).map_err(|e| Exception { what: e })?;
+        let ord = MlxString::try_from(ord).map_err(|_e| Exception {
+            what: CString::new("NulError").unwrap(),
+        })?;
 
         let c_array = try_catch_c_ptr_expr! {
             match axes.into_option() {
@@ -387,7 +390,7 @@ mod tests {
 
     #[test]
     fn test_norm_no_axes() {
-        let a = Array::from_iter(0..9, &[9]).as_ref() - 4;
+        let a = Array::from_iter(0..9, &[9]) - 4;
         let b = a.reshape(&[3, 3]).unwrap();
 
         assert_float_eq!(

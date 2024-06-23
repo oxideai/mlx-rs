@@ -2,6 +2,9 @@
 
 /// A helper macro to create an array with up to 3 dimensions.
 ///
+/// Please note that this macro will always create non-scalar arrays. If you need to create a scalar
+/// array, you should use the corresponding function like [`crate::Array::from_float`].
+///
 /// # Examples
 ///
 /// ```rust
@@ -30,6 +33,10 @@
 /// ```
 #[macro_export]
 macro_rules! array {
+    // Empty array default to f32
+    () => {
+        $crate::Array::from_slice::<f32>(&[], &[0])
+    };
     ($([$([$($x:expr),*]),*]),*) => {
         {
             let arr = [$([$([$($x,)*],)*],)*];

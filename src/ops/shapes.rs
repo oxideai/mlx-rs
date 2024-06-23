@@ -978,7 +978,7 @@ mod tests {
         let x = Array::from_slice::<i32>(&[], &[0]);
         let mut y = reshape(&x, &[0, 0, 0]).unwrap();
         assert_eq!(y.shape(), &[0, 0, 0]);
-        y.eval();
+        y.eval().unwrap();
         assert_eq!(y.size(), 0);
         assert!(reshape(&x, &[]).is_err());
         assert!(reshape(&x, &[1]).is_err());
@@ -1281,7 +1281,7 @@ mod tests {
         let x = Array::from_slice::<i32>(&[], &[0]);
         let mut y = transpose(&x, None).unwrap();
         assert_eq!(y.shape(), &[0]);
-        y.eval();
+        y.eval().unwrap();
         assert_eq!(y.size(), 0);
 
         let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
@@ -1291,7 +1291,7 @@ mod tests {
         assert_eq!(y.shape(), &[3, 2]);
         y = transpose(&x, &[-1, -2][..]).unwrap();
         assert_eq!(y.shape(), &[3, 2]);
-        y.eval();
+        y.eval().unwrap();
         assert_eq!(y, Array::from_slice(&[1, 4, 2, 5, 3, 6], &[3, 2]));
 
         let y = transpose(&x, &[0, 1][..]).unwrap();
@@ -1336,7 +1336,7 @@ mod tests {
         let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[1, 4, 1, 2]);
         // assert!(x.flags().row_contiguous);
         x = transpose(&x, &[2, 1, 0, 3][..]).unwrap();
-        x.eval();
+        x.eval().unwrap();
         // assert!(x.flags().row_contiguous);
     }
 }

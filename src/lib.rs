@@ -12,12 +12,14 @@ pub mod fft;
 pub mod linalg;
 pub mod ops;
 mod stream;
-mod utils;
+mod transforms;
+pub mod utils;
 
 pub use array::*;
 pub use device::*;
 pub use dtype::*;
 pub use stream::*;
+pub use transforms::*;
 
 // TODO: what to put in the prelude?
 pub mod prelude {
@@ -26,7 +28,10 @@ pub mod prelude {
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
+        utils::{OwnedOrRef, ScalarOrArray},
     };
+
+    pub use num_traits::Pow;
 }
 
 pub(crate) mod constants {
@@ -37,4 +42,21 @@ pub(crate) mod constants {
 pub(crate) mod sealed {
     /// A marker trait to prevent external implementations of the `Sealed` trait.
     pub trait Sealed {}
+
+    impl Sealed for () {}
+
+    impl<A> Sealed for (A,) where A: Sealed {}
+    impl<A, B> Sealed for (A, B)
+    where
+        A: Sealed,
+        B: Sealed,
+    {
+    }
+    impl<A, B, C> Sealed for (A, B, C)
+    where
+        A: Sealed,
+        B: Sealed,
+        C: Sealed,
+    {
+    }
 }

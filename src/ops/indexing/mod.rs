@@ -398,6 +398,8 @@ impl Array {
     /// The elements are taken from `indices` along the specified axis. If the axis is not specified
     /// the array is treated as a flattened 1-D array prior to performing the take.
     ///
+    /// See [`Array::take_all`] for the flattened array.
+    ///
     /// # Params
     ///
     /// - `indices`: The indices to take from the array.

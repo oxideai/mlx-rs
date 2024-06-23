@@ -2378,7 +2378,7 @@ mod tests {
     fn test_basic_clip() {
         let a = array![1.0, 4.0, 3.0, 8.0, 5.0];
         let expected = array![2.0, 4.0, 3.0, 6.0, 5.0];
-        let clipped = clip(&a, ((), 6.0)).unwrap();
+        let clipped = clip(&a, (2.0, 6.0)).unwrap();
         assert_eq!(clipped, expected);
     }
 

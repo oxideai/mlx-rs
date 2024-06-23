@@ -676,9 +676,9 @@ where
 /// ```rust
 /// use mlx_rs::{prelude::*, ops::clip, array};
 ///
-/// let a = array![1.0, 4.0, 3.0, 8.0, 5.0];
-/// let expected = array![2.0, 4.0, 3.0, 6.0, 5.0];
-/// let clipped = clip(&a, (2.0, array![6.0])).unwrap();
+/// let a = array!([1.0, 4.0, 3.0, 8.0, 5.0]);
+/// let expected = array!([2.0, 4.0, 3.0, 6.0, 5.0]);
+/// let clipped = clip(&a, (2.0, 6.0)).unwrap();
 /// assert_eq!(clipped, expected);
 /// ```
 #[default_device]
@@ -1719,7 +1719,7 @@ mod tests {
         assert_eq!((-x).item::<f32>(), -1.0);
 
         // works on empty array
-        assert_eq!(-array![], array![]);
+        assert_eq!(-array!(), array!());
 
         // Throws on bool
         let x = array!(true);
@@ -1732,7 +1732,7 @@ mod tests {
         assert_eq!(abs(&x), array!([1.0, 0.0, 1.0]));
 
         // works on empty array
-        assert_eq!(abs(&array![]), array![]);
+        assert_eq!(abs(&array!()), array!());
 
         // int32
         let x = array!([-1, 0, 1]);
@@ -1753,7 +1753,7 @@ mod tests {
         assert_eq!(sign(&x), x);
 
         // works on empty array
-        assert_eq!(sign(&array!()), array![]);
+        assert_eq!(sign(&array!()), array!());
 
         // int32
         let x = array!([-1, 0, 1]);
@@ -1814,7 +1814,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(exp(&array![]), array![]);
+        assert_eq!(exp(&array!()), array!());
 
         let x = array![NEG_INF];
         assert_eq!(exp(&x).item::<f32>(), 0.0);
@@ -1882,7 +1882,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(sin(&array![]), array![]);
+        assert_eq!(sin(&array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -1925,7 +1925,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(cos(&array![]), array![]);
+        assert_eq!(cos(&array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -1960,7 +1960,7 @@ mod tests {
         let x = array![std::f32::consts::PI / 2.0];
         assert_eq!(degrees(&x).item::<f32>(), 90.0);
 
-        assert_eq!(degrees(&array![]), array![]);
+        assert_eq!(degrees(&array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -1991,7 +1991,7 @@ mod tests {
         let x = array![90.0];
         assert_eq!(radians(&x).item::<f32>(), std::f32::consts::PI / 2.0);
 
-        assert_eq!(radians(&array![]), array![]);
+        assert_eq!(radians(&array!()), array!());
 
         // Integer input type
         let x = array![90];
@@ -2262,8 +2262,8 @@ mod tests {
         assert_eq!(z, expected);
 
         // Works for empty arrays
-        let x = array![];
-        let y = array![];
+        let x = array!();
+        let y = array!();
         let mut z = x + y;
         z.eval().unwrap();
         assert_eq!(z.size(), 0);

@@ -112,7 +112,7 @@ mod tests {
 
         let x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
         let out = diagonal(&x, 2, 1, 0).unwrap();
-        assert_eq!(out, array![8]);
+        assert_eq!(out, array!([8]));
 
         let out = diagonal(&x, -1, 0, 1).unwrap();
         assert_eq!(out, array!([4, 9]));

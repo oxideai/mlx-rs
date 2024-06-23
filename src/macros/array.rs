@@ -6,7 +6,7 @@
 ///
 /// ```rust
 /// use mlx_rs::array;
-/// 
+///
 /// // Create an empty array
 /// // Note that an empty array defaults to f32 and one dimension
 /// let empty = array!();
@@ -15,12 +15,12 @@
 /// let s = array!(1);
 /// // Scalar array has 0 dimension
 /// assert!(s.ndim() == 0);
-/// 
+///
 /// // Create a one-element array (singleton matrix)
 /// let s = array!([1]);
 /// // Singleton array has 1 dimension
 /// assert!(s.ndim() == 1);
-/// 
+///
 /// // Create a 1D array
 /// let a1 = array!([1, 2, 3]);
 ///

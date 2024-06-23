@@ -12,6 +12,7 @@ mod sort;
 pub mod indexing;
 
 pub use convolution::*;
+pub use cumulative::*;
 pub use logical::*;
 pub use quantization::*;
 pub use shapes::*;

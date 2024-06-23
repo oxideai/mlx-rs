@@ -401,36 +401,37 @@ impl Array {
     /// # Params
     ///
     /// - `indices`: The indices to take from the array.
-    /// - `axis`: The axis along which to take the elements. If `None`, the array is treated as a
-    /// flattened 1-D vector.
+    /// - `axis`: The axis along which to take the elements.
     #[default_device]
     pub fn take_device(
         &self,
         indices: &Array,
-        axis: impl Into<Option<i32>>,
+        axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
-            let c_array = match axis.into() {
-                Some(axis) => try_catch_c_ptr_expr! {mlx_sys::mlx_take(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                )},
-                None => {
-                    let shape = &[-1];
-                    // SAFETY: &[-1] is a valid shape
-                    let reshaped = self.reshape_device(shape, &stream)?;
-                    try_catch_c_ptr_expr! {
-                        mlx_sys::mlx_take(
-                            reshaped.c_array,
-                            indices.c_array,
-                            0,
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                }
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
+    }
+
+    /// Take elements from flattened 1-D array.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    #[default_device]
+    pub fn take_all_device(
+        &self,
+        indices: &Array,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take_all(self.c_array, indices.c_array, stream.as_ref().as_ptr())
             };
 
             Ok(Array::from_ptr(c_array))
@@ -465,6 +466,270 @@ impl Array {
 
             Ok(Array::from_ptr(c_array))
         }
+    }
+}
+
+/// Indices of the maximum values along the axis.
+///
+/// See [`argmax_all`] for the flattened array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis`: Axis to reduce over
+/// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[default_device]
+pub fn argmax_device(
+    a: &Array,
+    axis: i32,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let keep_dims = keep_dims.into().unwrap_or(false);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argmax(a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Indices of the maximum value over the entire array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[default_device]
+pub fn argmax_all_device(
+    a: &Array,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let keep_dims = keep_dims.into().unwrap_or(false);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argmax_all(a.as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Indices of the minimum values along the axis.
+///
+/// See [`argmin_all`] for the flattened array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis`: Axis to reduce over.
+/// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[default_device]
+pub fn argmin_device(
+    a: &Array,
+    axis: i32,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let keep_dims = keep_dims.into().unwrap_or(false);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argmin(a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Indices of the minimum value over the entire array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[default_device]
+pub fn argmin_all_device(
+    a: &Array,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let keep_dims = keep_dims.into().unwrap_or(false);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argmin_all(a.as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Returns the indices that partition the array.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// See [`argpartition_all`] for the flattened array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `kth`: Element index at the `kth` position in the output will give the sorted position. All
+///   indices before the `kth` position will be of elements less or equal to the element at the
+///   `kth` index and all indices after will be of elements greater or equal to the element at the
+///   `kth` index.
+/// - `axis`: Axis to partition over
+#[default_device]
+pub fn argpartition_device(
+    a: &Array,
+    kth: i32,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Returns the indices that partition the flattened array.
+///
+/// The ordering of the elements within a partition in given by the indices is undefined.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `kth`: Element index at the `kth` position in the output will give the sorted position.  All
+///   indices before the`kth` position will be of elements less than or equal to the element at the
+///   `kth` index and all indices after will be elemenents greater than or equal to the element at
+///   the `kth` position.
+#[default_device]
+pub fn argpartition_all_device(
+    a: &Array,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Returns the indices that sort the array.
+///
+/// See [`argsort_all`] for the flattened array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axis`: Axis to sort over.
+#[default_device]
+pub fn argsort_device(
+    a: &Array,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Returns the indices that sort the flattened array.
+#[default_device]
+pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// See [`Array::take_along_axis`]
+#[default_device]
+pub fn take_along_axis_device(
+    a: &Array,
+    indices: &Array,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.take_along_axis_device(indices, axis, stream)
+}
+
+/// See [`Array::take`]
+#[default_device]
+pub fn take_device(
+    a: &Array,
+    indices: &Array,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.take_device(indices, axis, stream)
+}
+
+/// See [`Array::take_all`]
+#[default_device]
+pub fn take_all_device(
+    a: &Array,
+    indices: &Array,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.take_all_device(indices, stream)
+}
+
+/// Returns the `k` largest elements from the input along a given axis.
+///
+/// The elements will not necessarily be in sorted order.
+///
+/// See [`topk_all`] for the flattened array.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `k`: The number of elements to return.
+/// - `axis`: Axis to sort over. Default to `-1` if not specified.
+#[default_device]
+pub fn topk_device(
+    a: &Array,
+    k: i32,
+    axis: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let axis = axis.into().unwrap_or(-1);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_topk(a.as_ptr(), k, axis, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// Returns the `k` largest elements from the flattened input array.
+#[default_device]
+pub fn topk_all_device(a: &Array, k: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_topk_all(a.as_ptr(), k, stream.as_ref().as_ptr())
+        };
+
+        Ok(Array::from_ptr(c_array))
     }
 }
 

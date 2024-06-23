@@ -120,3 +120,30 @@ pub fn dequantize_device(
         Ok(Array::from_ptr(c_vec))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        ops::{dequantize, expand_dims, quantize},
+        Array,
+    };
+
+    #[test]
+    fn test_quantize_dequantize() {
+        let x1 = Array::ones::<f32>(&[128, 1]).unwrap();
+        let x2 = expand_dims(&Array::arange::<f32, _>(0, 512, None).unwrap(), &[0]).unwrap();
+        let x = x1 * x2;
+
+        for i in [2, 4, 8].iter() {
+            let el_per_int = 32 / i;
+            let (x_q, scales, biases) = quantize(&x, 128, *i).unwrap();
+            assert_eq!(x_q.shape(), [128, 512 / el_per_int]);
+            assert_eq!(scales.shape(), [128, 4]);
+            assert_eq!(biases.shape(), [128, 4]);
+
+            let x_hat = dequantize(&x_q, &scales, &biases, 128, *i).unwrap();
+            let max_diff = ((&x - &x_hat).abs().max(None, None).unwrap()).item::<f32>();
+            assert!(max_diff <= 127.0 / (1 << i) as f32);
+        }
+    }
+}

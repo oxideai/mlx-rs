@@ -6,7 +6,7 @@ use std::{
 use crate::Dtype;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, PartialEq, Debug)]
 pub enum ItemError {
     #[error("not a scalar array")]
     NotScalar,
@@ -16,7 +16,7 @@ pub enum ItemError {
 }
 
 /// Error associated with `Array::try_as_slice()`
-#[derive(Debug, Error)]
+#[derive(Debug, PartialEq, Error)]
 pub enum AsSliceError {
     /// The underlying data pointer is null.
     ///
@@ -32,7 +32,7 @@ pub enum AsSliceError {
     Exception(#[from] Exception),
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, PartialEq, Error)]
 #[error("{what:?}")]
 pub struct Exception {
     pub(crate) what: CString,

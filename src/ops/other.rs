@@ -105,7 +105,7 @@ mod tests {
     fn test_diagonal() {
         let x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[4, 2]);
         let out = diagonal(&x, None, None, None).unwrap();
-        assert_eq!(out, array![0, 3]);
+        assert_eq!(out, array!([0, 3]));
 
         assert!(diagonal(&x, 1, 6, 0).is_err());
         assert!(diagonal(&x, 1, 0, -3).is_err());
@@ -115,7 +115,7 @@ mod tests {
         assert_eq!(out, array![8]);
 
         let out = diagonal(&x, -1, 0, 1).unwrap();
-        assert_eq!(out, array![4, 9]);
+        assert_eq!(out, array!([4, 9]));
 
         let mut out = diagonal(&x, -5, 0, 1).unwrap();
         out.eval().unwrap();
@@ -123,13 +123,13 @@ mod tests {
 
         let x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 2, 2]);
         let out = diagonal(&x, 1, 0, 1).unwrap();
-        assert_eq!(out, array![[2], [3]]);
+        assert_eq!(out, array!([[2], [3]]));
 
         let out = diagonal(&x, 0, 2, 0).unwrap();
-        assert_eq!(out, array![[0, 5], [2, 7]]);
+        assert_eq!(out, array!([[0, 5], [2, 7]]));
 
         let out = diagonal(&x, 1, -1, 0).unwrap();
-        assert_eq!(out, array![[4, 9], [6, 11]]);
+        assert_eq!(out, array!([[4, 9], [6, 11]]));
 
         let x = reshape(&arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
         let out = diagonal(&x, 0, 0, 1).unwrap();
@@ -140,7 +140,7 @@ mod tests {
 
         assert!(diagonal(&x, 0, 1, 1).is_err());
 
-        let x = array![0, 1];
+        let x = array!([0, 1]);
         assert!(diagonal(&x, 0, 0, 1).is_err());
     }
 
@@ -151,46 +151,46 @@ mod tests {
         assert!(diag(&Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array
-        let x = array![0, 1, 2, 3];
+        let x = array!([0, 1, 2, 3]);
         let out = diag(&x, 0).unwrap();
         assert_eq!(
             out,
-            array![[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 2, 0], [0, 0, 0, 3]]
+            array!([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 2, 0], [0, 0, 0, 3]])
         );
 
         let out = diag(&x, 1).unwrap();
         assert_eq!(
             out,
-            array![
+            array!([
                 [0, 0, 0, 0, 0],
                 [0, 0, 1, 0, 0],
                 [0, 0, 0, 2, 0],
                 [0, 0, 0, 0, 3],
                 [0, 0, 0, 0, 0]
-            ]
+            ])
         );
 
         let out = diag(&x, -1).unwrap();
         assert_eq!(
             out,
-            array![
+            array!([
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0],
                 [0, 0, 2, 0, 0],
                 [0, 0, 0, 3, 0]
-            ]
+            ])
         );
 
         // Test with 2D array
         let x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8], &[3, 3]);
         let out = diag(&x, 0).unwrap();
-        assert_eq!(out, array![0, 4, 8]);
+        assert_eq!(out, array!([0, 4, 8]));
 
         let out = diag(&x, 1).unwrap();
-        assert_eq!(out, array![1, 5]);
+        assert_eq!(out, array!([1, 5]));
 
         let out = diag(&x, -1).unwrap();
-        assert_eq!(out, array![3, 7]);
+        assert_eq!(out, array!([3, 7]));
     }
 }

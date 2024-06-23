@@ -1728,43 +1728,43 @@ mod tests {
 
     #[test]
     fn test_unary_abs() {
-        let x = array![-1.0, 0.0, 1.0];
-        assert_eq!(abs(&x), array![1.0, 0.0, 1.0]);
+        let x = array!([-1.0, 0.0, 1.0]);
+        assert_eq!(abs(&x), array!([1.0, 0.0, 1.0]));
 
         // works on empty array
         assert_eq!(abs(&array![]), array![]);
 
         // int32
-        let x = array![-1, 0, 1];
-        assert_eq!(abs(&x), array![1, 0, 1]);
+        let x = array!([-1, 0, 1]);
+        assert_eq!(abs(&x), array!([1, 0, 1]));
 
         // uint32
-        let x = array![1u32, 0, 1];
-        assert_eq!(abs(&x), array![1u32, 0, 1]);
+        let x = array!([1u32, 0, 1]);
+        assert_eq!(abs(&x), array!([1u32, 0, 1]));
 
         // bool
-        let x = array![false, true];
-        assert_eq!(abs(&x), array![false, true]);
+        let x = array!([false, true]);
+        assert_eq!(abs(&x), array!([false, true]));
     }
 
     #[test]
     fn test_unary_sign() {
-        let x = array![-1.0, 0.0, 1.0];
+        let x = array!([-1.0, 0.0, 1.0]);
         assert_eq!(sign(&x), x);
 
         // works on empty array
-        assert_eq!(sign(&array![]), array![]);
+        assert_eq!(sign(&array!()), array![]);
 
         // int32
-        let x = array![-1, 0, 1];
+        let x = array!([-1, 0, 1]);
         assert_eq!(sign(&x), x);
 
         // uint32
-        let x = array![1u32, 0, 1];
+        let x = array!([1u32, 0, 1]);
         assert_eq!(sign(&x), x);
 
         // bool
-        let x = array![false, true];
+        let x = array!([false, true]);
         assert_eq!(sign(&x), x);
     }
 
@@ -1788,18 +1788,18 @@ mod tests {
         assert_eq!(floor(&x).unwrap().item::<f32>(), NEG_INF);
         assert_eq!(ceil(&x).unwrap().item::<f32>(), NEG_INF);
 
-        let x = array![1.0, 1.0].as_type::<complex64>();
+        let x = array!([1.0, 1.0]).as_type::<complex64>();
         assert!(floor(&x).is_err());
         assert!(ceil(&x).is_err());
     }
 
     #[test]
     fn test_unary_round() {
-        let x = array![0.5, -0.5, 1.5, -1.5, 2.3, 2.6];
-        assert_eq!(round(&x, None), array![0, 0, 2, -2, 2, 3]);
+        let x = array!([0.5, -0.5, 1.5, -1.5, 2.3, 2.6]);
+        assert_eq!(round(&x, None), array!([0, 0, 2, -2, 2, 3]));
 
-        let x = array![11, 222, 32];
-        assert_eq!(round(&x, -1), array![10, 220, 30]);
+        let x = array!([11, 222, 32]);
+        assert_eq!(round(&x, -1), array!([10, 220, 30]));
     }
 
     #[test]
@@ -2219,33 +2219,33 @@ mod tests {
         assert_eq!(out.item::<f32>(), 11.0);
 
         // Works for different shapes
-        let x = array![1.0, 2.0, 3.0];
-        let y = array![1.0, 2.0, 3.0];
+        let x = array!([1.0, 2.0, 3.0]);
+        let y = array!([1.0, 2.0, 3.0]);
         let z = add(&x, &y).unwrap();
         assert_eq!(z.shape(), &[3]);
-        assert_eq!(z, array![2.0, 4.0, 6.0]);
+        assert_eq!(z, array!([2.0, 4.0, 6.0]));
 
         // Works with scalars
-        let x = array![1.0, 2.0, 3.0];
+        let x = array!([1.0, 2.0, 3.0]);
         let y = &x + 2.0;
         assert_eq!(y.dtype(), Dtype::Float32);
-        assert_eq!(y, array![3.0, 4.0, 5.0]);
+        assert_eq!(y, array!([3.0, 4.0, 5.0]));
         let y = &x + 2.0;
         assert_eq!(y.dtype(), Dtype::Float32);
-        assert_eq!(y, array![3.0, 4.0, 5.0]);
+        assert_eq!(y, array!([3.0, 4.0, 5.0]));
 
         // Check type promotion
         let y = x + 2;
         assert_eq!(y.dtype(), Dtype::Float32);
 
-        let y = array![1, 2, 3] + 2.0;
+        let y = array!([1, 2, 3]) + 2.0;
         assert_eq!(y.dtype(), Dtype::Float32);
         // assert!(array_equal(&y, &array![3.0, 4.0, 5.0]).item::<bool>());
-        assert_eq!(y, array![3.0, 4.0, 5.0]);
+        assert_eq!(y, array!([3.0, 4.0, 5.0]));
 
         // Broadcasting works
-        let x = broadcast_to(&array![1.0], &[10]).unwrap();
-        let y = broadcast_to(&array![2.0], &[10]).unwrap();
+        let x = broadcast_to(&array!(1.0), &[10]).unwrap();
+        let y = broadcast_to(&array!(2.0), &[10]).unwrap();
         let z = add(&x, &y).unwrap();
         assert_eq!(z, full::<f32>(&[10], 3.0).unwrap());
 
@@ -2272,16 +2272,16 @@ mod tests {
 
     #[test]
     fn test_binary_sub() {
-        let x = array![3.0, 2.0, 1.0];
-        let y = array![1.0, 1.0, 1.0];
-        assert_eq!(x - y, array![2.0, 1.0, 0.0]);
+        let x = array!([3.0, 2.0, 1.0]);
+        let y = array!([1.0, 1.0, 1.0]);
+        assert_eq!(x - y, array!([2.0, 1.0, 0.0]));
     }
 
     #[test]
     fn test_binary_mul() {
-        let x = array![1.0, 2.0, 3.0];
-        let y = array![2.0, 2.0, 2.0];
-        assert_eq!(x * y, array![2.0, 4.0, 6.0]);
+        let x = array!([1.0, 2.0, 3.0]);
+        let y = array!([2.0, 2.0, 2.0]);
+        assert_eq!(x * y, array!([2.0, 4.0, 6.0]));
     }
 
     #[test]
@@ -2337,8 +2337,8 @@ mod tests {
             abs <= 1e-5
         };
 
-        let x = array![0u32];
-        let y = array![10000u32];
+        let x = array!([0u32]);
+        let y = array!([10000u32]);
         assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 10000.0);
 
         let x = array![std::f32::INFINITY];
@@ -2376,24 +2376,24 @@ mod tests {
 
     #[test]
     fn test_basic_clip() {
-        let a = array![1.0, 4.0, 3.0, 8.0, 5.0];
-        let expected = array![2.0, 4.0, 3.0, 6.0, 5.0];
+        let a = array!([1.0, 4.0, 3.0, 8.0, 5.0]);
+        let expected = array!([2.0, 4.0, 3.0, 6.0, 5.0]);
         let clipped = clip(&a, (2.0, 6.0)).unwrap();
         assert_eq!(clipped, expected);
     }
 
     #[test]
     fn test_clip_with_only_min() {
-        let a = array![-1.0, 1.0, 0.0, 5.0];
-        let expected = array![0.0, 1.0, 0.0, 5.0];
+        let a = array!([-1.0, 1.0, 0.0, 5.0]);
+        let expected = array!([0.0, 1.0, 0.0, 5.0]);
         let clipped = clip(&a, (0.0, ())).unwrap();
         assert_eq!(clipped, expected);
     }
 
     #[test]
     fn test_clip_with_only_max() {
-        let a = array![2.0, 3.0, 4.0, 5.0];
-        let expected = array![2.0, 3.0, 4.0, 4.0];
+        let a = array!([2.0, 3.0, 4.0, 5.0]);
+        let expected = array!([2.0, 3.0, 4.0, 4.0]);
         let clipped = clip(&a, ((), 4.0)).unwrap();
         assert_eq!(clipped, expected);
     }
@@ -2456,8 +2456,8 @@ mod tests {
         let y = reshape(&arange::<f32, _>(None, 6.0, None).unwrap(), &[2, 3]).unwrap();
         assert!(inner(&x, &y).is_err());
 
-        let x = array![1.0, 2.0, 3.0];
-        let y = array![0.0, 1.0, 0.0];
+        let x = array!([1.0, 2.0, 3.0]);
+        let y = array!([0.0, 1.0, 0.0]);
         let mut z = inner(&x, &y).unwrap();
         assert_eq!(z.item::<f32>(), 2.0);
 
@@ -2482,23 +2482,23 @@ mod tests {
 
     #[test]
     fn test_divmod() {
-        let x = array![1.0, 2.0, 3.0];
-        let y = array![1.0, 1.0, 1.0];
+        let x = array!([1.0, 2.0, 3.0]);
+        let y = array!([1.0, 1.0, 1.0]);
         let out = divmod(&x, &y).unwrap();
-        assert_eq!(out.0, array![1.0, 2.0, 3.0]);
-        assert_eq!(out.1, array![0.0, 0.0, 0.0]);
+        assert_eq!(out.0, array!([1.0, 2.0, 3.0]));
+        assert_eq!(out.1, array!([0.0, 0.0, 0.0]));
 
-        let x = array![5.0, 6.0, 7.0];
-        let y = array![2.0, 2.0, 2.0];
+        let x = array!([5.0, 6.0, 7.0]);
+        let y = array!([2.0, 2.0, 2.0]);
         let out = divmod(&x, &y).unwrap();
-        assert_eq!(out.0, array![2.0, 3.0, 3.0]);
-        assert_eq!(out.1, array![1.0, 0.0, 1.0]);
+        assert_eq!(out.0, array!([2.0, 3.0, 3.0]));
+        assert_eq!(out.1, array!([1.0, 0.0, 1.0]));
 
-        let x = array![5.0, 6.0, 7.0];
-        let y = array![2.0, 2.0, 2.0];
+        let x = array!([5.0, 6.0, 7.0]);
+        let y = array!([2.0, 2.0, 2.0]);
         let out = divmod(&x, &y).unwrap();
-        assert_eq!(out.0, array![2.0, 3.0, 3.0]);
-        assert_eq!(out.1, array![1.0, 0.0, 1.0]);
+        assert_eq!(out.0, array!([2.0, 3.0, 3.0]));
+        assert_eq!(out.1, array!([1.0, 0.0, 1.0]));
 
         let x = array![complex64::new(1.0, 0.0)];
         let y = array![complex64::new(2.0, 0.0)];

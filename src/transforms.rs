@@ -1,8 +1,10 @@
+use smallvec::SmallVec;
+
 use crate::{
     error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
     },
-    utils::VectorArray,
+    utils::{new_mlx_closure, VectorArray, VectorVectorArray},
     Array,
 };
 
@@ -19,4 +21,130 @@ pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), 
     }
 
     get_and_clear_last_mlx_error().map_or(Ok(()), Err)
+}
+
+/// Compute the Jacobian-vector product.
+///
+/// This computes the product of the Jacobian of a function `f` evaluated at `primals` with the
+/// `tangents`.
+///
+/// # Params:
+///
+/// - `f`: function which takes an array of `Array` and returns an array of `Array`
+/// - `primals`: array of `Array` at which to evaluate the Jacobian
+/// - `tangents`: array of `Array` which are the "vector" in the Jacobian-vector product.  The
+///     `tangents` should be the same in number, shape and type as the inputs of `f`, e.g. the
+///     `primals`
+///
+/// # Returns:
+///
+/// Array of the Jacobian-vector products which is the same in number, shape and type of
+/// the outputs of `f`
+pub fn jvp<F>(
+    f: F,
+    primals: &[Array],
+    tangents: &[Array],
+) -> Result<(Vec<Array>, Vec<Array>), Exception>
+where
+    F: Fn(&[Array]) -> Vec<Array> + 'static,
+{
+    let closure = new_mlx_closure(f);
+
+    let c_primals = VectorArray::from_iter(primals.iter());
+    let c_tangents = VectorArray::from_iter(tangents.iter());
+
+    let vector_pair = unsafe {
+        let c_vector_pair = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_jvp(
+                closure,
+                c_primals.as_ptr(),
+                c_tangents.as_ptr(),
+            )
+        };
+        VectorVectorArray::from_ptr(c_vector_pair)
+    };
+
+    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
+    let mut iter = vector_pair_values.into_iter();
+    let v1 = iter.next().unwrap().into_values();
+    let v2 = iter.next().unwrap().into_values();
+
+    Ok((v1, v2))
+}
+
+/// Compute the vector-Jacobian product.
+///
+/// Computes the product of the `cotangents` with the Jacobian of a function `f` evaluated at
+/// `primals`.
+///
+/// # Params:
+///
+/// - f: function which takes an array of `Array` and returns an array of `Array`
+/// - primals: array of `Array` at which to evaluate the Jacobian
+/// - cotangents: array of `Array` which are the "vector" in the vector-Jacobian product. The
+///   `cotangents` should be the same in number, shape and type as the outputs of `f`
+///
+/// # Returns:
+///
+/// array of the vector-Jacobian products which is the same in number, shape and type of the outputs
+/// of `f`
+pub fn vjp<F>(
+    f: F,
+    primals: &[Array],
+    cotangents: &[Array],
+) -> Result<(Vec<Array>, Vec<Array>), Exception>
+where
+    F: Fn(&[Array]) -> Vec<Array> + 'static,
+{
+    let closure = new_mlx_closure(f);
+
+    let c_primals = VectorArray::from_iter(primals.iter());
+    let c_cotangents = VectorArray::from_iter(cotangents.iter());
+
+    let vector_pair = unsafe {
+        let c_vector_pair = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_vjp(
+                closure,
+                c_primals.as_ptr(),
+                c_cotangents.as_ptr(),
+            )
+        };
+        VectorVectorArray::from_ptr(c_vector_pair)
+    };
+
+    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
+    let mut iter = vector_pair_values.into_iter();
+    let v1 = iter.next().unwrap().into_values();
+    let v2 = iter.next().unwrap().into_values();
+
+    Ok((v1, v2))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{array, jvp, vjp, Array};
+
+    // The unit tests below are adapted from the mlx c++ codebase
+
+    #[test]
+    fn test_jvp() {
+        let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] + &inputs[1]] };
+        let x = array!(1.0f32);
+        let y = array!(1.0f32);
+        let (mut out, mut dout) = jvp(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
+        assert_eq!((&mut out[0]).item::<f32>(), 2.0f32);
+        assert_eq!((&mut dout[0]).item::<f32>(), 4.0f32);
+    }
+
+    #[test]
+    fn test_vjp() {
+        let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] + &inputs[1]] };
+        let x = array!(1.0f32);
+        let y = array!(1.0f32);
+        let primals = vec![x, y];
+        let cotangents = vec![array!(1.0f32)];
+        let (mut out, mut dout) = vjp(f, &primals, &cotangents).unwrap();
+        assert_eq!((&mut out[0]).item::<f32>(), 2.0f32);
+        assert_eq!((&mut dout[0]).item::<f32>(), 1.0f32);
+    }
 }

@@ -5,8 +5,9 @@ use crate::{
         AsSliceError, Exception, ItemError,
     },
     sealed::Sealed,
-    StreamOrDevice,
+    Stream, StreamOrDevice,
 };
+use mlx_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::ffi::c_void;
@@ -440,6 +441,20 @@ impl Array {
     /// ```
     pub fn as_slice<T: ArrayElement>(&mut self) -> &[T] {
         self.try_as_slice().unwrap()
+    }
+}
+
+/// Stop gradients from being computed.
+///
+/// The operation is the identity but it prevents gradients from flowing
+/// through the array.
+#[default_device]
+pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+    unsafe {
+        Array::from_ptr(mlx_sys::mlx_stop_gradient(
+            a.as_ptr(),
+            stream.as_ref().as_ptr(),
+        ))
     }
 }
 

@@ -238,22 +238,25 @@ where
 /// Helper method to create a mlx_closure from a Rust closure.
 pub(crate) fn new_mlx_closure<F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: 'static + Fn(&[Array]) -> Vec<Array>,
+    F: Fn(&[Array]) -> Vec<Array> + 'static,
 {
     // Box the closure to keep it on the heap
-    let closure_box = Box::new(closure);
+    let boxed = Box::new(closure);
 
     // Create a raw pointer from the Box, transferring ownership to C
-    let payload = Box::into_raw(Box::new(closure_box)) as *mut std::ffi::c_void;
+    let raw_closure = Box::into_raw(boxed);
+    let payload = raw_closure as *mut std::ffi::c_void;
 
-    unsafe { mlx_sys::mlx_closure_new_with_payload(Some(trampoline), payload, Some(free_closure)) }
+    unsafe {
+        mlx_sys::mlx_closure_new_with_payload(Some(trampoline::<F>), payload, Some(noop_dtor))
+    }
 }
 
 /// Function to create a new (+1 reference) mlx_vector_array from a vector of Array
 fn new_mlx_vector_array(arrays: Vec<Array>) -> mlx_sys::mlx_vector_array {
     unsafe {
         let result = mlx_sys::mlx_vector_array_new();
-        let ctx_ptrs: Vec<mlx_sys::mlx_array> = arrays.iter().map(|array| array.ctx()).collect();
+        let ctx_ptrs: Vec<mlx_sys::mlx_array> = arrays.iter().map(|array| array.as_ptr()).collect();
         mlx_sys::mlx_vector_array_add_arrays(result, ctx_ptrs.as_ptr(), arrays.len());
         result
     }
@@ -265,28 +268,61 @@ fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Vec<Array
         (0..size)
             .map(|index| {
                 // ctx is a +1 reference, the array takes ownership
-                let ctx = mlx_sys::mlx_vector_array_get(vector_array, index);
-                Array::new(ctx)
+                let c_array = mlx_sys::mlx_vector_array_get(vector_array, index);
+                Array::from_ptr(c_array)
             })
             .collect()
     }
 }
 
-extern "C" fn trampoline(
+extern "C" fn trampoline<F>(
     vector_array: mlx_sys::mlx_vector_array,
     payload: *mut std::ffi::c_void,
-) -> mlx_sys::mlx_vector_array {
+) -> mlx_sys::mlx_vector_array
+where
+    F: Fn(&[Array]) -> Vec<Array> + 'static,
+{
     unsafe {
-        let closure: &mut Box<dyn Fn(&[Array]) -> Vec<Array>> = &mut *(payload as *mut _);
+        let raw_closure: *mut F = payload as *mut _;
+        // Let the box take care of freeing the closure
+        let closure = Box::from_raw(raw_closure);
         let arrays = mlx_vector_array_values(vector_array);
         let result = closure(&arrays);
+        // We should probably keep using new_mlx_vector_array here instead of VectorArray
+        // since we probably don't want to drop the arrays in the closure
         new_mlx_vector_array(result)
     }
 }
 
-extern "C" fn free_closure(payload: *mut std::ffi::c_void) {
-    unsafe {
-        let _dropped_box: Box<Box<dyn Fn(&[Array]) -> Vec<Array>>> =
-            Box::from_raw(payload as *mut _);
+extern "C" fn noop_dtor(_data: *mut std::ffi::c_void) {}
+
+pub(crate) struct VectorVectorArray {
+    c_vec: mlx_sys::mlx_vector_vector_array,
+}
+
+impl Drop for VectorVectorArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_vec as *mut c_void) }
+    }
+}
+
+impl VectorVectorArray {
+    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_vector_array) -> Self {
+        Self { c_vec }
+    }
+
+    pub(crate) fn into_values<T>(self) -> T
+    where
+        T: FromIterator<VectorArray>,
+    {
+        unsafe {
+            let size = mlx_sys::mlx_vector_vector_array_size(self.c_vec);
+            (0..size)
+                .map(|i| {
+                    let c_array = mlx_sys::mlx_vector_vector_array_get(self.c_vec, i);
+                    VectorArray::from_ptr(c_array)
+                })
+                .collect::<T>()
+        }
     }
 }

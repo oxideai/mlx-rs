@@ -2343,10 +2343,7 @@ mod tests {
 
         let x = array![f32::INFINITY];
         let y = array![3.0];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            f32::INFINITY
-        );
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![3.0];
@@ -2361,17 +2358,11 @@ mod tests {
 
         let x = array![f32::INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            f32::INFINITY
-        );
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            f32::INFINITY
-        );
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
     }
 
     #[test]

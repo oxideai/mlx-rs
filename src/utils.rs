@@ -1,6 +1,6 @@
-use std::{ffi::NulError, os::raw::c_void};
+use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
-use mlx_sys::mlx_vector_array;
+use mlx_sys::{mlx_closure, mlx_vector_array};
 
 use crate::{complex64, Array, FromNested};
 
@@ -235,17 +235,46 @@ where
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct Closure<'a> {
+    c_closure: mlx_closure,
+    lt_marker: PhantomData<&'a ()>,
+}
+
+impl<'a> Closure<'a> {
+    pub(crate) fn new<F>(closure: F) -> Self
+    where
+        F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    {
+        let c_closure = new_mlx_closure(closure);
+        Self {
+            c_closure,
+            lt_marker: PhantomData,
+        }
+    }
+
+    pub(crate) fn as_ptr(&self) -> mlx_closure {
+        self.c_closure
+    }
+}
+
+impl<'a> Drop for Closure<'a> {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_closure as *mut _) }
+    }
+}
+
 /// Helper method to create a mlx_closure from a Rust closure.
-pub(crate) fn new_mlx_closure<F>(closure: F) -> mlx_sys::mlx_closure
+fn new_mlx_closure<'a, F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: Fn(&[Array]) -> Vec<Array> + 'static,
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
 {
     // Box the closure to keep it on the heap
     let boxed = Box::new(closure);
 
     // Create a raw pointer from the Box, transferring ownership to C
-    let raw_closure = Box::into_raw(boxed);
-    let payload = raw_closure as *mut std::ffi::c_void;
+    let leaked = Box::into_raw(boxed);
+    let payload = leaked as *mut F as *mut std::ffi::c_void;
 
     unsafe {
         mlx_sys::mlx_closure_new_with_payload(Some(trampoline::<F>), payload, Some(noop_dtor))
@@ -275,12 +304,12 @@ fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Vec<Array
     }
 }
 
-extern "C" fn trampoline<F>(
+extern "C" fn trampoline<'a, F>(
     vector_array: mlx_sys::mlx_vector_array,
     payload: *mut std::ffi::c_void,
 ) -> mlx_sys::mlx_vector_array
 where
-    F: Fn(&[Array]) -> Vec<Array> + 'static,
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
 {
     unsafe {
         let raw_closure: *mut F = payload as *mut _;

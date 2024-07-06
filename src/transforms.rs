@@ -1,10 +1,11 @@
+use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 use smallvec::SmallVec;
 
 use crate::{
     error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
     },
-    utils::{new_mlx_closure, VectorArray, VectorVectorArray},
+    utils::{Closure, VectorArray, VectorVectorArray},
     Array,
 };
 
@@ -40,15 +41,15 @@ pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), 
 ///
 /// Array of the Jacobian-vector products which is the same in number, shape and type of
 /// the outputs of `f`
-pub fn jvp<F>(
+pub fn jvp<'a, F>(
     f: F,
     primals: &[Array],
     tangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception>
 where
-    F: Fn(&[Array]) -> Vec<Array> + 'static,
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
 {
-    let closure = new_mlx_closure(f);
+    let closure = Closure::new(f);
 
     let c_primals = VectorArray::from_iter(primals.iter());
     let c_tangents = VectorArray::from_iter(tangents.iter());
@@ -56,7 +57,7 @@ where
     let vector_pair = unsafe {
         let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_sys::mlx_jvp(
-                closure,
+                closure.as_ptr(),
                 c_primals.as_ptr(),
                 c_tangents.as_ptr(),
             )
@@ -88,15 +89,15 @@ where
 ///
 /// array of the vector-Jacobian products which is the same in number, shape and type of the outputs
 /// of `f`
-pub fn vjp<F>(
+pub fn vjp<'a, F>(
     f: F,
     primals: &[Array],
     cotangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception>
 where
-    F: Fn(&[Array]) -> Vec<Array> + 'static,
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
 {
-    let closure = new_mlx_closure(f);
+    let closure = Closure::new(f);
 
     let c_primals = VectorArray::from_iter(primals.iter());
     let c_cotangents = VectorArray::from_iter(cotangents.iter());
@@ -104,7 +105,7 @@ where
     let vector_pair = unsafe {
         let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_sys::mlx_vjp(
-                closure,
+                closure.as_ptr(),
                 c_primals.as_ptr(),
                 c_cotangents.as_ptr(),
             )
@@ -120,9 +121,99 @@ where
     Ok((v1, v2))
 }
 
+fn value_and_gradient(
+    value_and_grad: mlx_closure_value_and_grad,
+    arrays: impl Iterator<Item = impl AsRef<Array>>,
+) -> Result<(Vec<Array>, Vec<Array>), Exception> {
+    let input_vector = VectorArray::from_iter(arrays);
+
+    let vector_pair = unsafe {
+        // TODO: replace with VectorVectorArray once #26 is merged
+        let c_vector_pair = try_catch_c_ptr_expr! {
+            mlx_closure_value_and_grad_apply(value_and_grad, input_vector.as_ptr())
+        };
+        VectorVectorArray::from_ptr(c_vector_pair)
+    };
+
+    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
+    let mut iter = vector_pair_values.into_iter();
+    let values_vec = iter.next().unwrap().into_values();
+    let gradients_vec = iter.next().unwrap().into_values();
+
+    Ok((values_vec, gradients_vec))
+}
+
+fn build_gradient<'a, F>(
+    f: F,
+    argument_numbers: &'a [i32],
+) -> impl FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+where
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+{
+    move |arrays: &[Array]| -> Result<Vec<Array>, Exception> {
+        unsafe {
+            let closure = Closure::new(f);
+            let c_value_and_grad = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_value_and_grad(
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            };
+
+            let result = value_and_gradient(c_value_and_grad, arrays.iter())?;
+            Ok(result.1)
+        }
+    }
+}
+
+fn build_value_and_gradient<'a, F>(
+    f: F,
+    argument_numbers: &'a [i32],
+) -> impl FnOnce(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+where
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+{
+    |arrays: &[Array]| {
+        let closure = Closure::new(f);
+        let c_value_and_grad = unsafe {
+            try_catch_c_ptr_expr! {
+                mlx_sys::mlx_value_and_grad(
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            }
+        };
+
+        value_and_gradient(c_value_and_grad, arrays.iter())
+    }
+}
+
+pub fn value_and_grad<'a, F>(
+    f: F,
+    argument_numbers: &'a [i32],
+) -> impl FnOnce(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+where
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+{
+    build_value_and_gradient(f, argument_numbers)
+}
+
+pub fn grad<'a, F>(
+    f: F,
+    argument_numbers: &'a [i32],
+) -> impl FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+where
+    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+{
+    build_gradient(f, argument_numbers)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{array, jvp, vjp, Array};
+
+    use crate::{array, grad, jvp, value_and_grad, vjp, Array};
 
     // The unit tests below are adapted from the mlx c++ codebase
 
@@ -146,5 +237,22 @@ mod tests {
         let (mut out, mut dout) = vjp(f, &primals, &cotangents).unwrap();
         assert_eq!((&mut out[0]).item::<f32>(), 2.0f32);
         assert_eq!((&mut dout[0]).item::<f32>(), 1.0f32);
+    }
+
+    #[test]
+    fn test_grad() {
+        let x = &[Array::from_float(1.0)];
+        let fun = |argin: &[Array]| -> Vec<Array> { vec![&argin[0] + 1.0] };
+        let argnums = &[0];
+        let (mut y, mut dfdx) = value_and_grad(fun, argnums)(x).unwrap();
+
+        assert_eq!(y[0].item::<f32>(), 2.0);
+        assert_eq!(dfdx[0].item::<f32>(), 1.0);
+
+        let grad_fn = move |argin: &[Array]| -> Vec<Array> { grad(fun, argnums)(argin).unwrap() };
+        let (mut z, mut d2fdx2) = value_and_grad(grad_fn, argnums)(x).unwrap();
+
+        assert_eq!(z[0].item::<f32>(), 1.0);
+        assert_eq!(d2fdx2[0].item::<f32>(), 0.0);
     }
 }

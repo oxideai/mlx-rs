@@ -26,23 +26,6 @@ pub struct Array {
     pub(crate) c_array: mlx_array,
 }
 
-#[derive(Debug)]
-pub struct LeakedArray {
-    arr: Array,
-}
-
-impl AsRef<Array> for LeakedArray {
-    fn as_ref(&self) -> &Array {
-        &self.arr
-    }
-}
-
-impl AsMut<Array> for LeakedArray {
-    fn as_mut(&mut self) -> &mut Array {
-        &mut self.arr
-    }
-}
-
 impl Sealed for Array {}
 
 impl<'a> Sealed for &'a Array {}
@@ -65,10 +48,6 @@ impl std::fmt::Display for Array {
 // reference counted but not guarded by a mutex.
 
 impl Array {
-    pub fn leak(self) -> LeakedArray {
-        LeakedArray { arr: self }
-    }
-
     /// Clone the array by copying the data.
     pub(crate) fn clone(&self) -> Self {
         unsafe {

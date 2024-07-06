@@ -273,8 +273,8 @@ where
     let boxed = Box::new(closure);
 
     // Create a raw pointer from the Box, transferring ownership to C
-    let leaked = Box::into_raw(boxed);
-    let payload = leaked as *mut F as *mut std::ffi::c_void;
+    let raw = Box::into_raw(boxed);
+    let payload = raw as *mut std::ffi::c_void;
 
     unsafe {
         mlx_sys::mlx_closure_new_with_payload(Some(trampoline::<F>), payload, Some(noop_dtor))

@@ -210,10 +210,46 @@ where
     build_gradient(f, argument_numbers)
 }
 
+/// Helper trait to make working with transforms ops more ergonomic.
+pub trait TransformsExt: Sized {
+    /// The Ok output type of Self.
+    type Ok;
+
+    /// Compose the current closure with another closure.
+    fn and_then<F, T>(self, op: F) -> impl FnOnce(&[Array]) -> Result<T, Exception>
+    where
+        F: FnOnce(&[Array]) -> Result<T, Exception>;
+
+    /// Returns a closure that unwraps the result of the current closure.
+    fn unwrapped(self) -> impl FnOnce(&[Array]) -> Self::Ok
+    where
+        Self: FnOnce(&[Array]) -> Result<Self::Ok, Exception>,
+    {
+        move |args| self(args).unwrap()
+    }
+}
+
+impl<F> TransformsExt for F
+where
+    for<'a> F: FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    type Ok = Vec<Array>;
+
+    fn and_then<F2, T>(self, op: F2) -> impl FnOnce(&[Array]) -> Result<T, Exception>
+    where
+        F2: FnOnce(&[Array]) -> Result<T, Exception>,
+    {
+        move |args| {
+            let arrays = self(args)?;
+            op(&arrays)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
-    use crate::{array, grad, jvp, value_and_grad, vjp, Array};
+    use crate::{array, grad, jvp, value_and_grad, vjp, Array, TransformsExt};
 
     // The unit tests below are adapted from the mlx c++ codebase
 
@@ -223,8 +259,8 @@ mod tests {
         let x = array!(1.0f32);
         let y = array!(1.0f32);
         let (mut out, mut dout) = jvp(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
-        assert_eq!((&mut out[0]).item::<f32>(), 2.0f32);
-        assert_eq!((&mut dout[0]).item::<f32>(), 4.0f32);
+        assert_eq!(out[0].item::<f32>(), 2.0f32);
+        assert_eq!(dout[0].item::<f32>(), 4.0f32);
     }
 
     #[test]
@@ -235,8 +271,8 @@ mod tests {
         let primals = vec![x, y];
         let cotangents = vec![array!(1.0f32)];
         let (mut out, mut dout) = vjp(f, &primals, &cotangents).unwrap();
-        assert_eq!((&mut out[0]).item::<f32>(), 2.0f32);
-        assert_eq!((&mut dout[0]).item::<f32>(), 1.0f32);
+        assert_eq!(out[0].item::<f32>(), 2.0f32);
+        assert_eq!(dout[0].item::<f32>(), 1.0f32);
     }
 
     #[test]
@@ -249,8 +285,9 @@ mod tests {
         assert_eq!(y[0].item::<f32>(), 2.0);
         assert_eq!(dfdx[0].item::<f32>(), 1.0);
 
-        let grad_fn = move |argin: &[Array]| -> Vec<Array> { grad(fun, argnums)(argin).unwrap() };
-        let (mut z, mut d2fdx2) = value_and_grad(grad_fn, argnums)(x).unwrap();
+        // TODO: how to make this more "functional"?
+        let (mut z, mut d2fdx2) =
+            value_and_grad(grad(fun, argnums).unwrapped(), argnums)(x).unwrap();
 
         assert_eq!(z[0].item::<f32>(), 1.0);
         assert_eq!(d2fdx2[0].item::<f32>(), 0.0);

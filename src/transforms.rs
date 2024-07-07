@@ -190,6 +190,7 @@ where
     }
 }
 
+/// Returns a function which computes the value and gradient of `f`.
 pub fn value_and_grad<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
@@ -200,6 +201,7 @@ where
     build_value_and_gradient(f, argument_numbers)
 }
 
+/// Returns a function which computes the gradient of `f`.
 pub fn grad<'a, F>(
     f: F,
     argument_numbers: &'a [i32],

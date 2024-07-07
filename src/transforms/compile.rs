@@ -1,6 +1,7 @@
 use std::{
     cell::RefCell,
-    hash::{DefaultHasher, Hash, Hasher},
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
     rc::Rc,
 };
 

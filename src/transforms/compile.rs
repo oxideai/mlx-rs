@@ -223,9 +223,27 @@ fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
     }
 }
 
+pub fn compile<'a, F>(
+    f: F,
+    shapeless: Option<bool>,
+    inputs: Option<&'a mut [Array]>,
+    outputs: Option<&'a mut [Array]>,
+) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+where
+    F: FnMut(&[Array]) -> Vec<Array> + 'static,
+{
+    let shapeless = shapeless.unwrap_or(false);
+    let mut compiled = Compiled::new(inputs, outputs, shapeless, f);
+    move |args| compiled.call_mut(args)
+}
+
 #[cfg(test)]
 mod tests {
     use core::panic;
+
+    use crate::{ops::ones, Array};
+
+    use super::compile;
 
     fn example_fn_0(x: f32) -> f32 {
         x + 1.0
@@ -266,5 +284,28 @@ mod tests {
         ids.push(id3);
 
         assert_eq!(ids.len(), 4);
+    }
+
+    #[test]
+    fn test_compile() {
+        // This unit test is modified from the mlx-swift codebase
+
+        let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] * &inputs[1]] };
+
+        let i1 = ones::<f32>(&[20, 20]).unwrap();
+        let i2 = ones::<f32>(&[20, 20]).unwrap();
+        let args = [i1, i2];
+
+        // evaluate directly
+        let r1 = f(&args).drain(0..1).next().unwrap();
+
+        // evaluate compiled
+        let mut compiled = compile(f, None, None, None);
+        let r2 = compiled(&args).unwrap().drain(0..1).next().unwrap();
+
+        assert_eq!(&r1, &r2);
+
+        let r3 = compiled(&args).unwrap().drain(0..1).next().unwrap();
+        assert_eq!(&r1, &r3);
     }
 }

@@ -16,12 +16,18 @@ use crate::{
     Array,
 };
 
+/// Globally enable the compilation of functions.
+/// 
+/// Default is enabled.
 pub fn enable_compile() {
     unsafe {
         mlx_enable_compile();
     }
 }
 
+/// Globally disable the compilation of functions.
+/// 
+/// Default is enabled.
 pub fn disable_compile() {
     unsafe {
         mlx_disable_compile();

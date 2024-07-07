@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// Globally enable the compilation of functions.
-/// 
+///
 /// Default is enabled.
 pub fn enable_compile() {
     unsafe {
@@ -26,7 +26,7 @@ pub fn enable_compile() {
 }
 
 /// Globally disable the compilation of functions.
-/// 
+///
 /// Default is enabled.
 pub fn disable_compile() {
     unsafe {

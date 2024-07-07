@@ -28,7 +28,7 @@ pub fn disable_compile() {
 }
 
 #[derive(Debug)]
-pub struct Compiled<'a, F>
+struct Compiled<'a, F>
 where
     F: 'a,
 {
@@ -78,13 +78,10 @@ where
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            let saved_state_inputs: Option<Vec<Array>> =
-                state_inputs_clone.borrow().as_ref().map(|inputs| {
-                    inputs
-                        .iter()
-                        .map(|x| clone_by_increment_ref_count(x))
-                        .collect()
-                });
+            let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
+                .borrow()
+                .as_ref()
+                .map(|inputs| inputs.iter().map(clone_by_increment_ref_count).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -97,13 +94,10 @@ where
             let mut result = (f)(tracer_args);
 
             // recapture the state as it may have changed
-            let state_output_tracers: Option<Vec<Array>> =
-                state_outputs_clone.borrow().as_ref().map(|outputs| {
-                    outputs
-                        .iter()
-                        .map(|x| clone_by_increment_ref_count(x))
-                        .collect()
-                });
+            let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
+                .borrow()
+                .as_ref()
+                .map(|outputs| outputs.iter().map(clone_by_increment_ref_count).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -223,6 +217,11 @@ fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
     }
 }
 
+/// Returns a compiled function that produces the same output as `f`.
+///
+/// Please refer to the [swift binding
+/// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
+/// for more information.
 pub fn compile<'a, F>(
     f: F,
     shapeless: Option<bool>,

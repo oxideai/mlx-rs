@@ -9,6 +9,8 @@ use crate::{
     Array,
 };
 
+pub mod compile;
+
 /// Evaluate an iterator of [`Array`]s.
 pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), Exception> {
     if !is_mlx_error_handler_set() {
@@ -251,7 +253,11 @@ where
 #[cfg(test)]
 mod tests {
 
-    use crate::{array, grad, jvp, value_and_grad, vjp, Array, TransformsExt};
+    use crate::{
+        array,
+        transforms::{grad, jvp, value_and_grad, vjp, TransformsExt},
+        Array,
+    };
 
     // The unit tests below are adapted from the mlx c++ codebase
 

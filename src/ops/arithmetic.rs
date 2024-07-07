@@ -1240,8 +1240,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64, eval,
+        array, complex64,
         ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal},
+        transforms::eval,
         Dtype,
     };
     use float_eq::assert_float_eq;

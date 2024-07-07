@@ -242,6 +242,13 @@ pub(crate) struct Closure<'a> {
 }
 
 impl<'a> Closure<'a> {
+    pub(crate) fn from_ptr(c_closure: mlx_closure) -> Self {
+        Self {
+            c_closure,
+            lt_marker: PhantomData,
+        }
+    }
+
     pub(crate) fn new<F>(closure: F) -> Self
     where
         F: FnOnce(&[Array]) -> Vec<Array> + 'a,

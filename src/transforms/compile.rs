@@ -1,0 +1,270 @@
+use std::{
+    cell::RefCell,
+    hash::{DefaultHasher, Hash, Hasher},
+    rc::Rc,
+};
+
+use mlx_sys::{
+    mlx_closure_apply, mlx_detail_compile, mlx_detail_compile_erase, mlx_disable_compile,
+    mlx_enable_compile, mlx_free, mlx_retain,
+};
+
+use crate::{
+    error::Exception,
+    utils::{Closure, VectorArray},
+    Array,
+};
+
+pub fn enable_compile() {
+    unsafe {
+        mlx_enable_compile();
+    }
+}
+
+pub fn disable_compile() {
+    unsafe {
+        mlx_disable_compile();
+    }
+}
+
+#[derive(Debug)]
+pub struct Compiled<'a, F>
+where
+    F: 'a,
+{
+    f: F,
+    inputs: Option<&'a mut [Array]>,
+    outputs: Option<&'a mut [Array]>,
+    shapeless: bool,
+    id: usize,
+}
+
+impl<'a, F> Compiled<'a, F>
+where
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
+{
+    pub fn new(
+        inputs: Option<&'a mut [Array]>,
+        outputs: Option<&'a mut [Array]>,
+        shapeless: bool,
+        f: F,
+    ) -> Self
+    where
+        F: 'static,
+    {
+        let id = type_id_to_usize(&f);
+        Self {
+            f,
+            inputs,
+            outputs,
+            shapeless,
+            id,
+        }
+    }
+
+    pub fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
+        let args_len = args.len();
+        let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
+        let state_outputs = Rc::new(RefCell::new(&mut self.outputs));
+        let f = &mut self.f;
+
+        let state_inputs_clone = Rc::clone(&state_inputs);
+        let state_outputs_clone = Rc::clone(&state_outputs);
+        let inner = move |tracers: &[Array]| -> Vec<Array> {
+            // put the tracers in their appropriate places:
+            // - arguments to the function
+            // - inner state
+
+            let tracer_args = &tracers[..args_len];
+
+            // save a snapshot of the inner state
+            let saved_state_inputs: Option<Vec<Array>> =
+                state_inputs_clone.borrow().as_ref().map(|inputs| {
+                    inputs
+                        .iter()
+                        .map(|x| clone_by_increment_ref_count(x))
+                        .collect()
+                });
+
+            // replace the inner state with the tracers
+            if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
+                for (s, tracer) in inputs.iter_mut().zip(tracers.iter().skip(args_len)) {
+                    update_by_replace_with_ref_to_new_array(s, tracer);
+                }
+            }
+
+            // call the function with the tracer arguments and the state holding tracers
+            let mut result = (f)(tracer_args);
+
+            // recapture the state as it may have changed
+            let state_output_tracers: Option<Vec<Array>> =
+                state_outputs_clone.borrow().as_ref().map(|outputs| {
+                    outputs
+                        .iter()
+                        .map(|x| clone_by_increment_ref_count(x))
+                        .collect()
+                });
+
+            // put the original values back in the state
+            if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
+                for (s, saved) in inputs.iter_mut().zip(saved_state_inputs.unwrap()) {
+                    update_by_replace_with_ref_to_new_array(s, &saved);
+                }
+            }
+
+            // return the result of the function and the state
+            if let Some(mut state_output_tracers) = state_output_tracers {
+                result.append(&mut state_output_tracers);
+            }
+
+            result
+        };
+
+        let inner_closure = Closure::new(inner);
+
+        // note: this will use the cached compile (via the id)
+        // but will be able to re-evaluate with fresh state if needed
+        let compiled = unsafe {
+            let constants = &[];
+            let c_closure = try_catch_c_ptr_expr! {
+                mlx_detail_compile(
+                    inner_closure.as_ptr(),
+                    self.id,
+                    self.shapeless,
+                    constants.as_ptr(),
+                    0,
+                )
+            };
+            Closure::from_ptr(c_closure)
+        };
+
+        let inner_inputs_vector = match state_inputs.borrow().as_ref() {
+            Some(s) => VectorArray::from_iter(args.iter().chain(s.iter())),
+            None => VectorArray::from_iter(args.iter()),
+        };
+
+        // will compile the function (if needed) and evaluate the
+        // compiled graph
+        let result_vector = unsafe {
+            let c_vector = try_catch_c_ptr_expr! {
+                mlx_closure_apply(compiled.as_ptr(), inner_inputs_vector.as_ptr())
+            };
+            VectorArray::from_ptr(c_vector)
+        };
+        let result_plus_state_output: Vec<Array> = result_vector.into_values();
+
+        // // push the stateOutput into the state
+        // let stateOutput = outputs.flatMap { $0.innerState() }
+        // for (s, newValues) in zip(stateOutput, resultsPlusStateOutput.suffix(stateOutput.count)) {
+        //     s.update(newValues)
+        // }
+        if let Some(outputs) = state_outputs.borrow_mut().as_mut() {
+            let result_plus_state_output_len = result_plus_state_output.len();
+            let state_output_len = outputs.len();
+            let suffix_len = result_plus_state_output_len - state_output_len;
+            for (s, new_values) in outputs
+                .iter_mut()
+                .zip(result_plus_state_output[suffix_len..].iter())
+            {
+                update_by_replace_with_ref_to_new_array(s, new_values);
+            }
+        }
+
+        // let resultLength = resultsPlusStateOutput.count - stateOutput.count
+        // let results = Array(resultsPlusStateOutput.prefix(resultLength))
+        // return results
+        let result_len = result_plus_state_output.len()
+            - state_outputs
+                .borrow()
+                .as_ref()
+                .map(|x| x.len())
+                .unwrap_or(0);
+        Ok(result_plus_state_output
+            .into_iter()
+            .take(result_len)
+            .collect())
+    }
+}
+
+impl<'a, F> Drop for Compiled<'a, F> {
+    fn drop(&mut self) {
+        unsafe {
+            // remove the compiled structure from the back end
+            mlx_detail_compile_erase(self.id);
+        }
+    }
+}
+
+fn clone_by_increment_ref_count(src: &Array) -> Array {
+    unsafe {
+        mlx_retain(src.as_ptr() as *mut _);
+        Array::from_ptr(src.as_ptr())
+    }
+}
+
+fn type_id_to_usize<T>(_val: &T) -> usize
+where
+    T: 'static,
+{
+    // hash type id to usize
+    let type_id = std::any::TypeId::of::<T>();
+    let mut hasher = DefaultHasher::new();
+    type_id.hash(&mut hasher);
+    hasher.finish() as usize
+}
+
+fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
+    if src.as_ptr() != new_array.as_ptr() {
+        unsafe {
+            mlx_retain(new_array.as_ptr() as *mut _);
+            mlx_free(src.as_ptr() as *mut _);
+            src.c_array = new_array.c_array;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::panic;
+
+    fn example_fn_0(x: f32) -> f32 {
+        x + 1.0
+    }
+
+    fn example_fn_3(x: f32) -> f32 {
+        x + 1.0
+    }
+
+    #[test]
+    fn test_type_id_to_usize() {
+        // We would like to check that different functions that share the same signature can produce
+        // different ids
+
+        let example_fn_1 = |x: f32| x + 1.0;
+        let example_fn_2 = |x: f32| x + 1.0;
+
+        let mut ids = Vec::new();
+
+        ids.push(super::type_id_to_usize(&example_fn_0));
+
+        let id1 = super::type_id_to_usize(&example_fn_1);
+        if ids.contains(&id1) {
+            panic!("id1 already exists");
+        }
+        ids.push(id1);
+
+        let id2 = super::type_id_to_usize(&example_fn_2);
+        if ids.contains(&id2) {
+            panic!("id2 already exists");
+        }
+        ids.push(id2);
+
+        let id3 = super::type_id_to_usize(&example_fn_3);
+        if ids.contains(&id3) {
+            panic!("id3 already exists");
+        }
+        ids.push(id3);
+
+        assert_eq!(ids.len(), 4);
+    }
+}

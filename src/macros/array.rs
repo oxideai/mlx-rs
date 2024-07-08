@@ -84,7 +84,7 @@ mod tests {
         // Scalar array has 0 dimension
         assert!(arr.ndim() == 0);
         // Scalar array has empty shape
-        assert_eq!(arr.shape(), &[]);
+        assert!(arr.shape().is_empty());
         assert_eq!(arr.item::<i32>(), 1);
     }
 

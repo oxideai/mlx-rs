@@ -443,19 +443,27 @@ impl Array {
     }
 }
 
-impl<T> From<T> for Array
-where
-    T: ArrayElement,
-    Array: FromScalar<T>,
-{
-    fn from(val: T) -> Self {
-        Array::from_scalar(val)
+impl From<bool> for Array {
+    fn from(value: bool) -> Self {
+        Array::from_bool(value)
+    }
+}
+
+impl From<i32> for Array {
+    fn from(value: i32) -> Self {
+        Array::from_int(value)
+    }
+}
+
+impl From<f32> for Array {
+    fn from(value: f32) -> Self {
+        Array::from_float(value)
     }
 }
 
 impl From<complex64> for Array {
-    fn from(val: complex64) -> Self {
-        Array::from_complex(val)
+    fn from(value: complex64) -> Self {
+        Array::from_complex(value)
     }
 }
 

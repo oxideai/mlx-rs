@@ -219,7 +219,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
 /// let key = random::key(0);
 ///
 /// // generate an array of Int values, one in the range [0, 20) and one in the range [10, 100)
-/// let array = random::randint::<_, i32>(array![0, 20], array![10, 100], None, &key);
+/// let array = random::randint::<_, i32>(array!([0, 20]), array!([10, 100]), None, &key);
 /// ```
 #[default_device]
 pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
@@ -269,7 +269,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
 /// let array = random::bernoulli(&p, &[50, 2], &key);
 ///
 /// // generate an array of [3] Bool with the given p values
-/// let array = random::bernoulli(&array![0.1, 0.5, 0.8], None, &key);
+/// let array = random::bernoulli(&array!([0.1, 0.5, 0.8]), None, &key);
 /// ```
 #[default_device]
 pub fn bernoulli_device<'a>(
@@ -311,7 +311,7 @@ pub fn bernoulli_device<'a>(
 ///
 /// // generate an array of two Float values, one in the range 0 ..< 10
 /// // and one in the range 10 ..< 100
-/// let value = random::truncated_normal::<_, f32>(array![0, 10], array![10, 100], None, &key);
+/// let value = random::truncated_normal::<_, f32>(array!([0, 10]), array!([10, 100]), None, &key);
 /// ```
 #[default_device]
 pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(

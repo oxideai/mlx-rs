@@ -219,7 +219,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
 /// let key = random::key(0);
 ///
 /// // generate an array of Int values, one in the range [0, 20) and one in the range [10, 100)
-/// let array = random::randint::<_, i32>(array![0, 20], array![10, 100], None, &key);
+/// let array = random::randint::<_, i32>(array!([0, 20]), array!([10, 100]), None, &key);
 /// ```
 #[default_device]
 pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
@@ -269,7 +269,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
 /// let array = random::bernoulli(&p, &[50, 2], &key);
 ///
 /// // generate an array of [3] Bool with the given p values
-/// let array = random::bernoulli(&array![0.1, 0.5, 0.8], None, &key);
+/// let array = random::bernoulli(&array!([0.1, 0.5, 0.8]), None, &key);
 /// ```
 #[default_device]
 pub fn bernoulli_device<'a>(
@@ -311,7 +311,7 @@ pub fn bernoulli_device<'a>(
 ///
 /// // generate an array of two Float values, one in the range 0 ..< 10
 /// // and one in the range 10 ..< 100
-/// let value = random::truncated_normal::<_, f32>(array![0, 10], array![10, 100], None, &key);
+/// let value = random::truncated_normal::<_, f32>(array!([0, 10]), array!([10, 100]), None, &key);
 /// ```
 #[default_device]
 pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
@@ -578,7 +578,8 @@ mod tests {
     #[test]
     fn test_randint_multiple() {
         let key = key(0);
-        let value = randint::<_, i32>(array![0, 10], array![10, 100], None, Some(&key)).unwrap();
+        let value =
+            randint::<_, i32>(array!([0, 10]), array!([10, 100]), None, Some(&key)).unwrap();
         let expected = Array::from_slice(&[2, 82], &[2]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -587,7 +588,7 @@ mod tests {
     #[test]
     fn test_randint_non_int() {
         let key = key(0);
-        let value = randint::<_, f32>(array![0, 10], array![10, 100], None, Some(&key));
+        let value = randint::<_, f32>(array!([0, 10]), array!([10, 100]), None, Some(&key));
         assert!(value.is_err());
     }
 
@@ -620,7 +621,7 @@ mod tests {
     #[test]
     fn test_bernoulli_p_array() {
         let key = key(0);
-        let value = bernoulli(&array![0.1, 0.5, 0.8], None, &key).unwrap();
+        let value = bernoulli(&array!([0.1, 0.5, 0.8]), None, &key).unwrap();
         let expected = Array::from_slice(&[false, true, true], &[3]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -646,7 +647,7 @@ mod tests {
     fn test_truncated_normal_multiple_array() {
         let key = key(0);
         let value =
-            truncated_normal::<_, f32>(array![0.0, 0.5], array![0.5, 1.0], None, &key).unwrap();
+            truncated_normal::<_, f32>(array!([0.0, 0.5]), array!([0.5, 1.0]), None, &key).unwrap();
         let expected = Array::from_slice(&[0.10, 0.88], &[2]);
 
         assert_array_eq!(value, expected, 0.01);

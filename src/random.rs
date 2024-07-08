@@ -1,8 +1,9 @@
 use crate::prelude::IndexOp;
-use crate::{error::Exception, Array, ArrayElement, StreamOrDevice};
+use crate::{error::Exception, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_macros::default_device;
 use std::sync::{Mutex, OnceLock};
+use crate::utils::{IntoOption, OwnedOrRef};
 
 struct RandomState {
     state: Array,
@@ -47,49 +48,56 @@ pub fn key(seed: u64) -> Array {
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
-pub fn split_device(key: &Array, stream: StreamOrDevice) -> (Array, Array) {
+pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
     let keys = unsafe {
         Array::from_ptr(mlx_sys::mlx_random_split_equal_parts(
             key.as_ptr(),
             2,
-            stream.as_ptr(),
+            stream.as_ref().as_ptr(),
         ))
     };
 
     (keys.index(0), keys.index(1))
 }
 
-/// Generate uniformly distributed random numbers with a given interval (`lower_bound:` and `upper_bound:`).
+/// Generate uniformly distributed random numbers.
+/// The values are sampled uniformly in the half-open interval `[lower, upper)`.
+/// The lower and upper bound can be scalars or arrays and must be broadcastable to `shape`.
 ///
-/// The values are sampled uniformly in the range.  An optional shape can be used to broadcast into
-/// a larger array.  An optional `key` can be specified to control the PRNG.
+/// # Params
+///
+/// - `lower`: Lower bound of the distribution.
+/// - `upper`: Upper bound of the distribution.
+/// - `shape` (optional): Shape of the output. Default is `&[]`.
+/// - `key` (optional): A PRNG key.
 ///
 /// ```rust
 /// let key = mlx_rs::random::key(0);
 ///
-/// // create an array of shape `[50]` type Float values in the range [0, 10)
-/// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
+/// // create an array of shape `[50]` type f32 values in the range [0, 10)
+/// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50][..], &key);
 ///
 /// // same, but in range [0.5, 1)
-/// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
+/// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50][..], &key);
 /// ```
 #[default_device]
 pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
-    lower_bound: E,
-    upper_bound: E,
-    shape: &[i32],
+    lower: E,
+    upper: E,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let lb: Array = lower_bound.into();
-    let ub: Array = upper_bound.into();
+    let lb: Array = lower.into();
+    let ub: Array = upper.into();
+    let shape = shape.into_option().unwrap_or(&[]);
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -101,7 +109,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
@@ -113,6 +121,15 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// Generate an array of random numbers using the optional shape. The result
 /// will be of the given `T`. `T` must be a floating point type.
 ///
+/// # Params
+///
+///  - shape: shape of the output, if `None` a single value is returned
+///  - loc: mean of the distribution, default is `0.0`
+///  - scale: standard deviation of the distribution, default is `1.0`
+///  - key: PRNG key
+///
+/// # Example
+///
 /// ```rust
 /// let key = mlx_rs::random::key(0);
 ///
@@ -122,28 +139,22 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// // generate an array of f32 with normal distribution in shape [10, 5]
 /// let array = mlx_rs::random::normal::<f32>(&[10, 5], None, None, &key);
 /// ```
-///
-/// # Params
-///  - shape: shape of the output, if `None` a single value is returned
-///  - loc: mean of the distribution, default is `0.0`
-///  - scale: standard deviation of the distribution, default is `1.0`
-///  - key: PRNG key
 #[default_device]
 pub fn normal_device<'a, T: ArrayElement>(
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     loc: impl Into<Option<f32>>,
     scale: impl Into<Option<f32>>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let shape = shape.into().unwrap_or(&[]);
+    let shape = shape.into_option().unwrap_or(&[]);
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -155,7 +166,7 @@ pub fn normal_device<'a, T: ArrayElement>(
                 loc.into().unwrap_or(0.0),
                 scale.into().unwrap_or(1.0),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
@@ -168,31 +179,26 @@ pub fn normal_device<'a, T: ArrayElement>(
 /// undefined if it is not.  The only supported output type is f32.
 ///
 /// # Params
-/// - mean: array of shape `[..., n]`, the mean of the distribution.
-/// - covariance: array  of shape `[..., n, n]`, the covariance
-/// matrix of the distribution. The batch shape `...` must be
-/// broadcast-compatible with that of `mean`.
-/// - shape: The output shape must be
-/// broadcast-compatible with `mean.shape.dropLast()` and `covariance.shape.dropLast(2)`.
-/// If empty, the result shape is determined by broadcasting the batch
-/// shapes of `mean` and `covariance`.
-/// - key: PRNG key
+/// - `mean`: array of shape `[..., n]`, the mean of the distribution.
+/// - `covariance`: array  of shape `[..., n, n]`, the covariance matrix of the distribution. The batch shape `...` must be broadcast-compatible with that of `mean`.
+/// - `shape`: The output shape must be broadcast-compatible with `&mean.shape[..mean.shape.len()-1]` and `&covariance.shape[..covariance.shape.len()-2]`. If empty, the result shape is determined by broadcasting the batch shapes of `mean` and `covariance`.
+/// - `key`: PRNG key.
 #[default_device]
 pub fn multivariate_normal_device<'a, T: ArrayElement>(
     mean: &Array,
     covariance: &Array,
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let shape = shape.into().unwrap_or(&[]);
+    let shape = shape.into_option().unwrap_or(&[]);
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -204,14 +210,14 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
     }
 }
 
-/// Generate random integers from the given interval (`lower_bound:` and `upper_bound:`).
+/// Generate random integers from the given interval (`lower:` and `upper:`).
 ///
 /// The values are sampled with equal probability from the integers in
 /// half-open interval `[lb, ub)`. The lower and upper bound can be
@@ -222,28 +228,27 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
 ///
 /// let key = random::key(0);
 ///
-/// // generate an array of Int values, one in the range 0 ..< 10
-/// // and one in the range 10 ..< 100
-/// let array = random::randint::<_, i32>(array![0, 10], array![10, 100], None, &key);
+/// // generate an array of Int values, one in the range [0, 20) and one in the range [10, 100)
+/// let array = random::randint::<_, i32>(array![0, 20], array![10, 100], None, &key);
 /// ```
 #[default_device]
 pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
-    lower_bound: E,
-    upper_bound: E,
-    shape: impl Into<Option<&'a [i32]>>,
+    lower: E,
+    upper: E,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let lb: Array = lower_bound.into();
-    let ub: Array = upper_bound.into();
-    let shape = shape.into().unwrap_or(lb.shape());
+    let lb: Array = lower.into();
+    let ub: Array = upper.into();
+    let shape = shape.into_option().unwrap_or(lb.shape());
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -255,7 +260,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
@@ -286,21 +291,21 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
 #[default_device]
 pub fn bernoulli_device<'a>(
     p: impl Into<Option<&'a Array>>,
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let default_array = Array::from_float(0.5);
     let p = p.into().unwrap_or(&default_array);
 
-    let shape = shape.into().unwrap_or(p.shape());
+    let shape = shape.into_option().unwrap_or(p.shape());
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -310,7 +315,7 @@ pub fn bernoulli_device<'a>(
                 shape.as_ptr(),
                 shape.len(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
@@ -334,22 +339,22 @@ pub fn bernoulli_device<'a>(
 /// ```
 #[default_device]
 pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
-    lower_bound: E,
-    upper_bound: E,
-    shape: impl Into<Option<&'a [i32]>>,
+    lower: E,
+    upper: E,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let lb: Array = lower_bound.into();
-    let ub: Array = upper_bound.into();
-    let shape = shape.into().unwrap_or(lb.shape());
+    let lb: Array = lower.into();
+    let ub: Array = upper.into();
+    let shape = shape.into_option().unwrap_or(lb.shape());
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -361,7 +366,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
@@ -384,17 +389,17 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
 /// ```
 #[default_device]
 pub fn gumbel_device<'a, T: ArrayElement>(
-    shape: impl Into<Option<&'a [i32]>>,
+    shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let shape = shape.into().unwrap_or(&[]);
+    let shape = shape.into_option().unwrap_or(&[]);
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
     unsafe {
@@ -404,11 +409,18 @@ pub fn gumbel_device<'a, T: ArrayElement>(
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
-                stream.as_ptr(),
+                stream.as_ref().as_ptr(),
             )
         };
         Ok(Array::from_ptr(c_array))
     }
+}
+
+/// Shape or count for the categorical distribution.
+#[derive(Debug, Clone, Copy)]
+pub enum ShapeOrCount<'a> {
+    Shape(&'a [i32]),
+    Count(i32)
 }
 
 /// Sample from a categorical distribution.
@@ -418,85 +430,87 @@ pub fn gumbel_device<'a, T: ArrayElement>(
 /// the result shape will be the same shape as `logits` with the `axis`
 /// dimension removed.
 ///
+/// /// # Params
+/// # Params
+///
+/// - `logits`: The *unnormalized* categorical distribution(s).
+/// - `axis`(optional): The axis which specifies the distribution. Default is `-1`.
+/// - `shape_or_count`(optional):
+/// - - `Shape`: The shape of the output. This must be broadcast compatible with `logits.shape` with the `axis` dimension removed.
+/// - - `Count`: The number of samples to draw from each of the categorical distributions in `logits`. The output will have the number of samples in the last dimension.
+/// - `key` (optional): A PRNG key.
+/// - `stream`: A stream to execute the operation.
+///
+/// # Example
+///
 /// ```rust
 /// let key = mlx_rs::random::key(0);
 ///
 /// let logits = mlx_rs::Array::zeros::<u32>(&[5, 20]).unwrap();
 ///
 /// // produces Array of u32 shape &[5]
-/// let result = mlx_rs::random::categorical(&logits, None, None, None, &key);
+/// let result = mlx_rs::random::categorical(&logits, None, None, &key);
 /// ```
-///
-/// - Parameters:
-///     - logits: The *unnormalized* categorical distribution(s).
 #[default_device]
 pub fn categorical_device<'a>(
     logits: &Array,
     axis: impl Into<Option<i32>>,
-    shape: impl Into<Option<&'a [i32]>>,
-    num_samples: impl Into<Option<i32>>,
+    shape_or_count: impl Into<Option<ShapeOrCount<'a>>>,
     key: impl Into<Option<&'a Array>>,
-    stream: StreamOrDevice,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let axis = axis.into().unwrap_or(-1);
 
     let key = key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            state.next()
+            OwnedOrRef::Owned(state.next())
         },
-        |key| key.clone(),
+        |key| OwnedOrRef::Ref(key),
     );
 
-    let shape = shape.into();
-    let num_samples = num_samples.into();
-
-    // if we have both shape and num_samples, we need to error out
-    if shape.is_some() && num_samples.is_some() {
-        let what = "[categorical] Cannot specify both shape and num_samples";
-        let c_string = std::ffi::CString::new(what).expect("CString::new failed");
-
-        return Err(Exception { what: c_string });
-    }
-
-    if let Some(shape) = shape {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_random_categorical_shape(
-                    logits.as_ptr(),
-                    axis,
-                    shape.as_ptr(),
-                    shape.len(),
-                    key.as_ptr(),
-                    stream.as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
+    match shape_or_count.into() {
+        Some(ShapeOrCount::Shape(shape)) => {
+            unsafe {
+                let c_array = try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_random_categorical_shape(
+                        logits.as_ptr(),
+                        axis,
+                        shape.as_ptr(),
+                        shape.len(),
+                        key.as_ptr(),
+                        stream.as_ref().as_ptr(),
+                    )
+                };
+                Ok(Array::from_ptr(c_array))
+            }
         }
-    } else if let Some(num_samples) = num_samples {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_random_categorical_num_samples(
-                    logits.as_ptr(),
-                    axis,
-                    num_samples,
-                    key.as_ptr(),
-                    stream.as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
+        Some(ShapeOrCount::Count(num_samples)) => {
+            unsafe {
+                let c_array = try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_random_categorical_num_samples(
+                        logits.as_ptr(),
+                        axis,
+                        num_samples,
+                        key.as_ptr(),
+                        stream.as_ref().as_ptr(),
+                    )
+                };
+                Ok(Array::from_ptr(c_array))
+            }
         }
-    } else {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_random_categorical(
-                    logits.as_ptr(),
-                    axis,
-                    key.as_ptr(),
-                    stream.as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
+        None => {
+            unsafe {
+                let c_array = try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_random_categorical(
+                        logits.as_ptr(),
+                        axis,
+                        key.as_ptr(),
+                        stream.as_ref().as_ptr(),
+                    )
+                };
+                Ok(Array::from_ptr(c_array))
+            }
         }
     }
 }
@@ -510,12 +524,12 @@ mod tests {
     #[test]
     fn test_global_rng() {
         seed(3);
-        let a = uniform::<_, f32>(0, 1, &[], None).unwrap();
-        let b = uniform::<_, f32>(0, 1, &[], None).unwrap();
+        let a = uniform::<_, f32>(0, 1, None, None).unwrap();
+        let b = uniform::<_, f32>(0, 1, None, None).unwrap();
 
         seed(3);
-        let x = uniform::<_, f32>(0, 1, &[], None).unwrap();
-        let y = uniform::<_, f32>(0, 1, &[], None).unwrap();
+        let x = uniform::<_, f32>(0, 1, None, None).unwrap();
+        let y = uniform::<_, f32>(0, 1, None, None).unwrap();
 
         assert_array_eq!(a, x, 0.01);
         assert_array_eq!(b, y, 0.01);
@@ -545,21 +559,21 @@ mod tests {
 
     #[test]
     fn test_uniform_no_seed() {
-        let value = uniform::<_, f32>(0, 10, &[3], None).unwrap();
+        let value = uniform::<_, f32>(0, 10, &[3][..], None).unwrap();
         assert_eq!(value.shape(), &[3]);
     }
 
     #[test]
     fn test_uniform_single() {
         let key = key(0);
-        let mut value = uniform::<_, f32>(0, 10, &[], Some(&key)).unwrap();
+        let mut value = uniform::<_, f32>(0, 10, None, Some(&key)).unwrap();
         float_eq!(value.item::<f32>(), 4.18, abs <= 0.01);
     }
 
     #[test]
     fn test_uniform_multiple() {
         let key = key(0);
-        let value = uniform::<_, f32>(0, 10, &[3], Some(&key)).unwrap();
+        let value = uniform::<_, f32>(0, 10, &[3][..], Some(&key)).unwrap();
         let expected = Array::from_slice(&[9.65, 3.14, 6.33], &[3]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -568,7 +582,7 @@ mod tests {
     #[test]
     fn test_uniform_multiple_array() {
         let key = key(0);
-        let value = uniform::<_, f32>(&[0, 10][..], &[10, 100][..], &[2], Some(&key)).unwrap();
+        let value = uniform::<_, f32>(&[0, 10][..], &[10, 100][..], &[2][..], Some(&key)).unwrap();
         let expected = Array::from_slice(&[2.16, 82.37], &[2]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -577,7 +591,7 @@ mod tests {
     #[test]
     fn test_uniform_non_float() {
         let key = key(0);
-        let value = uniform::<_, i32>(&[0, 10][..], &[10, 100][..], &[2], Some(&key));
+        let value = uniform::<_, i32>(&[0, 10][..], &[10, 100][..], &[2][..], Some(&key));
         assert!(value.is_err());
     }
 
@@ -700,9 +714,9 @@ mod tests {
     fn test_logits() {
         let key = key(0);
         let logits = Array::zeros::<u32>(&[5, 20]).unwrap();
-        let result = categorical(&logits, None, None, None, &key).unwrap();
+        let result = categorical(&logits, None, None, &key).unwrap();
 
-        assert!(result.shape() == [5]);
+        assert_eq!(result.shape(), [5]);
 
         let expected = Array::from_slice(&[1, 1, 17, 17, 17], &[5]);
         assert_array_eq!(result, expected, 0.01);
@@ -712,9 +726,9 @@ mod tests {
     fn test_logits_count() {
         let key = key(0);
         let logits = Array::zeros::<u32>(&[5, 20]).unwrap();
-        let result = categorical(&logits, None, None, 2, &key).unwrap();
+        let result = categorical(&logits, None, ShapeOrCount::Count(2), &key).unwrap();
 
-        assert!(result.shape() == [5, 2]);
+        assert_eq!(result.shape(), [5, 2]);
 
         let expected = Array::from_slice(&[16, 3, 14, 10, 17, 7, 6, 8, 12, 8], &[5, 2]);
         assert_array_eq!(result, expected, 0.01);

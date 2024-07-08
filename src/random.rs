@@ -67,10 +67,10 @@ pub fn split_device(key: &Array, stream: StreamOrDevice) -> (Array, Array) {
 /// ```rust
 /// let key = mlx_rs::random::key(0);
 ///
-/// // create an array of shape `[50]` type Float values in the range `0 ..< 10`
+/// // create an array of shape `[50]` type Float values in the range [0, 10)
 /// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
 ///
-/// // same, but in range `0.5 ..< 1`
+/// // same, but in range [0.5, 1)
 /// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
 /// ```
 #[default_device]
@@ -116,11 +116,11 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// ```rust
 /// let key = mlx_rs::random::key(0);
 ///
-/// // generate a single Float with normal distribution
+/// // generate a single f32 with normal distribution
 /// let value = mlx_rs::random::normal::<f32>(None, None, None, &key).unwrap().item::<f32>();
 ///
-/// // generate an array of Float with normal distribution in shape [10, 5]
-/// let array = mlx_rs::random::normal::<f32>(&[10, 5][..], None, None, &key);
+/// // generate an array of f32 with normal distribution in shape [10, 5]
+/// let array = mlx_rs::random::normal::<f32>(&[10, 5], None, None, &key);
 /// ```
 ///
 /// # Params
@@ -278,7 +278,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
 /// let value = random::bernoulli(&p, None, &key);
 ///
 /// // generate an array of shape [50, 2] of random Bool with p = 0.8
-/// let array = random::bernoulli(&p, &[50, 2][..], &key);
+/// let array = random::bernoulli(&p, &[50, 2], &key);
 ///
 /// // generate an array of [3] Bool with the given p values
 /// let array = random::bernoulli(&array![0.1, 0.5, 0.8], None, &key);

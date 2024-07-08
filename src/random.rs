@@ -1,9 +1,9 @@
 use crate::prelude::IndexOp;
+use crate::utils::{IntoOption, OwnedOrRef};
 use crate::{error::Exception, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_macros::default_device;
 use std::sync::{Mutex, OnceLock};
-use crate::utils::{IntoOption, OwnedOrRef};
 
 struct RandomState {
     state: Array,
@@ -420,7 +420,7 @@ pub fn gumbel_device<'a, T: ArrayElement>(
 #[derive(Debug, Clone, Copy)]
 pub enum ShapeOrCount<'a> {
     Shape(&'a [i32]),
-    Count(i32)
+    Count(i32),
 }
 
 /// Sample from a categorical distribution.
@@ -470,48 +470,42 @@ pub fn categorical_device<'a>(
     );
 
     match shape_or_count.into() {
-        Some(ShapeOrCount::Shape(shape)) => {
-            unsafe {
-                let c_array = try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_random_categorical_shape(
-                        logits.as_ptr(),
-                        axis,
-                        shape.as_ptr(),
-                        shape.len(),
-                        key.as_ptr(),
-                        stream.as_ref().as_ptr(),
-                    )
-                };
-                Ok(Array::from_ptr(c_array))
-            }
-        }
-        Some(ShapeOrCount::Count(num_samples)) => {
-            unsafe {
-                let c_array = try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_random_categorical_num_samples(
-                        logits.as_ptr(),
-                        axis,
-                        num_samples,
-                        key.as_ptr(),
-                        stream.as_ref().as_ptr(),
-                    )
-                };
-                Ok(Array::from_ptr(c_array))
-            }
-        }
-        None => {
-            unsafe {
-                let c_array = try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_random_categorical(
-                        logits.as_ptr(),
-                        axis,
-                        key.as_ptr(),
-                        stream.as_ref().as_ptr(),
-                    )
-                };
-                Ok(Array::from_ptr(c_array))
-            }
-        }
+        Some(ShapeOrCount::Shape(shape)) => unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_random_categorical_shape(
+                    logits.as_ptr(),
+                    axis,
+                    shape.as_ptr(),
+                    shape.len(),
+                    key.as_ptr(),
+                    stream.as_ref().as_ptr(),
+                )
+            };
+            Ok(Array::from_ptr(c_array))
+        },
+        Some(ShapeOrCount::Count(num_samples)) => unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_random_categorical_num_samples(
+                    logits.as_ptr(),
+                    axis,
+                    num_samples,
+                    key.as_ptr(),
+                    stream.as_ref().as_ptr(),
+                )
+            };
+            Ok(Array::from_ptr(c_array))
+        },
+        None => unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_random_categorical(
+                    logits.as_ptr(),
+                    axis,
+                    key.as_ptr(),
+                    stream.as_ref().as_ptr(),
+                )
+            };
+            Ok(Array::from_ptr(c_array))
+        },
     }
 }
 

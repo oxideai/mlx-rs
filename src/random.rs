@@ -31,6 +31,17 @@ fn state() -> &'static Mutex<RandomState> {
     STATE.get_or_init(|| Mutex::new(RandomState::new()))
 }
 
+/// Use given key or generate a new one if `None`.
+fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> OwnedOrRef<'a, Array> {
+    key.into().map_or_else(
+        || {
+            let mut state = state().lock().unwrap();
+            OwnedOrRef::Owned(state.next())
+        },
+        OwnedOrRef::Ref,
+    )
+}
+
 /// Seed the random number generator.
 pub fn seed(seed: u64) {
     let mut state = state().lock().unwrap();
@@ -91,14 +102,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(&[]);
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -148,14 +152,7 @@ pub fn normal_device<'a, T: ArrayElement>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let shape = shape.into_option().unwrap_or(&[]);
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -192,14 +189,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let shape = shape.into_option().unwrap_or(&[]);
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -242,14 +232,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -299,14 +282,7 @@ pub fn bernoulli_device<'a>(
     let p = p.into().unwrap_or(&default_array);
 
     let shape = shape.into_option().unwrap_or(p.shape());
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -348,14 +324,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -394,13 +363,7 @@ pub fn gumbel_device<'a, T: ArrayElement>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -459,14 +422,7 @@ pub fn categorical_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let axis = axis.into().unwrap_or(-1);
-
-    let key = key.into().map_or_else(
-        || {
-            let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
-        },
-        OwnedOrRef::Ref,
-    );
+    let key = key_or_next(key);
 
     match shape_or_count.into() {
         Some(ShapeOrCount::Shape(shape)) => unsafe {

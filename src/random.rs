@@ -86,10 +86,10 @@ pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
 /// let key = mlx_rs::random::key(0);
 ///
 /// // create an array of shape `[50]` type f32 values in the range [0, 10)
-/// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50][..], &key);
+/// let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
 ///
 /// // same, but in range [0.5, 1)
-/// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50][..], &key);
+/// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
 /// ```
 #[default_device]
 pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
@@ -354,7 +354,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
 /// let value = mlx_rs::random::gumbel::<f32>(None, &key).unwrap().item::<f32>();
 ///
 /// // generate an array of Float with Gumbel distribution in shape [10, 5]
-/// let array = mlx_rs::random::gumbel::<f32>(&[10, 5][..], &key);
+/// let array = mlx_rs::random::gumbel::<f32>(&[10, 5], &key);
 /// ```
 #[default_device]
 pub fn gumbel_device<'a, T: ArrayElement>(
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_uniform_no_seed() {
-        let value = uniform::<_, f32>(0, 10, &[3][..], None).unwrap();
+        let value = uniform::<_, f32>(0, 10, &[3], None).unwrap();
         assert_eq!(value.shape(), &[3]);
     }
 
@@ -522,7 +522,7 @@ mod tests {
     #[test]
     fn test_uniform_multiple() {
         let key = key(0);
-        let value = uniform::<_, f32>(0, 10, &[3][..], Some(&key)).unwrap();
+        let value = uniform::<_, f32>(0, 10, &[3], Some(&key)).unwrap();
         let expected = Array::from_slice(&[9.65, 3.14, 6.33], &[3]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -531,7 +531,7 @@ mod tests {
     #[test]
     fn test_uniform_multiple_array() {
         let key = key(0);
-        let value = uniform::<_, f32>(&[0, 10][..], &[10, 100][..], &[2][..], Some(&key)).unwrap();
+        let value = uniform::<_, f32>(&[0, 10], &[10, 100], &[2], Some(&key)).unwrap();
         let expected = Array::from_slice(&[2.16, 82.37], &[2]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -540,7 +540,7 @@ mod tests {
     #[test]
     fn test_uniform_non_float() {
         let key = key(0);
-        let value = uniform::<_, i32>(&[0, 10][..], &[10, 100][..], &[2][..], Some(&key));
+        let value = uniform::<_, i32>(&[0, 10], &[10, 100], &[2], Some(&key));
         assert!(value.is_err());
     }
 
@@ -564,7 +564,7 @@ mod tests {
         let mean = Array::from_slice(&[0.0, 0.0], &[2]);
         let covariance = Array::from_slice(&[1.0, 0.0, 0.0, 1.0], &[2, 2]);
 
-        let a = multivariate_normal::<f32>(&mean, &covariance, &[3][..], &key).unwrap();
+        let a = multivariate_normal::<f32>(&mean, &covariance, &[3], &key).unwrap();
         assert!(a.shape() == [3, 2]);
     }
 
@@ -601,7 +601,7 @@ mod tests {
     #[test]
     fn test_bernoulli_multiple() {
         let key = key(0);
-        let value = bernoulli(None, &[4][..], &key).unwrap();
+        let value = bernoulli(None, &[4], &key).unwrap();
         let expected = Array::from_slice(&[false, true, false, true], &[4]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -611,7 +611,7 @@ mod tests {
     fn test_bernoulli_p() {
         let key = key(0);
         let p: Array = 0.8.into();
-        let value = bernoulli(&p, &[4][..], &key).unwrap();
+        let value = bernoulli(&p, &[4], &key).unwrap();
         let expected = Array::from_slice(&[false, true, true, true], &[4]);
 
         assert_array_eq!(value, expected, 0.01);
@@ -636,7 +636,7 @@ mod tests {
     #[test]
     fn test_truncated_normal_multiple() {
         let key = key(0);
-        let value = truncated_normal::<_, f32>(0.0, 0.5, &[3][..], &key).unwrap();
+        let value = truncated_normal::<_, f32>(0.0, 0.5, &[3], &key).unwrap();
         let expected = Array::from_slice(&[0.48, 0.15, 0.30], &[3]);
 
         assert_array_eq!(value, expected, 0.01);

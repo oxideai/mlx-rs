@@ -443,16 +443,36 @@ impl Array {
     }
 }
 
-impl<T: ArrayElement> From<T> for Array {
-    fn from(val: T) -> Array {
-        let slice = [val];
-        Array::from_slice(&slice, &[])
+impl From<bool> for Array {
+    fn from(val: bool) -> Self {
+        Array::from_bool(val)
     }
 }
 
-impl<T: ArrayElement> From<&[T]> for Array {
-    fn from(val: &[T]) -> Array {
-        Array::from_slice(val, &[val.len() as i32])
+impl From<i32> for Array {
+    fn from(val: i32) -> Self {
+        Array::from_int(val)
+    }
+}
+
+impl From<f32> for Array {
+    fn from(val: f32) -> Self {
+        Array::from_float(val)
+    }
+}
+
+impl From<complex64> for Array {
+    fn from(val: complex64) -> Self {
+        Array::from_complex(val)
+    }
+}
+
+impl<T> From<T> for Array
+where
+    Array: FromNested<T>,
+{
+    fn from(value: T) -> Self {
+        Array::from_nested(value)
     }
 }
 

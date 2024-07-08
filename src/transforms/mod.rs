@@ -49,7 +49,7 @@ pub fn jvp<'a, F>(
     tangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception>
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     let closure = Closure::new(f);
 
@@ -97,7 +97,7 @@ pub fn vjp<'a, F>(
     cotangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception>
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     let closure = Closure::new(f);
 
@@ -130,7 +130,6 @@ fn value_and_gradient(
     let input_vector = VectorArray::from_iter(arrays);
 
     let vector_pair = unsafe {
-        // TODO: replace with VectorVectorArray once #26 is merged
         let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_closure_value_and_grad_apply(value_and_grad, input_vector.as_ptr())
         };
@@ -148,13 +147,13 @@ fn value_and_gradient(
 fn build_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
+    let closure = Closure::new(f);
     move |arrays: &[Array]| -> Result<Vec<Array>, Exception> {
         unsafe {
-            let closure = Closure::new(f);
             let c_value_and_grad = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_value_and_grad(
                     closure.as_ptr(),
@@ -172,12 +171,12 @@ where
 fn build_value_and_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnOnce(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
-    |arrays: &[Array]| {
-        let closure = Closure::new(f);
+    let closure = Closure::new(f);
+    move |arrays: &[Array]| {
         let c_value_and_grad = unsafe {
             try_catch_c_ptr_expr! {
                 mlx_sys::mlx_value_and_grad(
@@ -196,9 +195,9 @@ where
 pub fn value_and_grad<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnOnce(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     build_value_and_gradient(f, argument_numbers)
 }
@@ -207,9 +206,9 @@ where
 pub fn grad<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     build_gradient(f, argument_numbers)
 }
@@ -220,14 +219,14 @@ pub trait TransformsExt: Sized {
     type Ok;
 
     /// Compose the current closure with another closure.
-    fn and_then<F, T>(self, op: F) -> impl FnOnce(&[Array]) -> Result<T, Exception>
+    fn and_then<F, T>(self, op: F) -> impl FnMut(&[Array]) -> Result<T, Exception>
     where
-        F: FnOnce(&[Array]) -> Result<T, Exception>;
+        F: FnMut(&[Array]) -> Result<T, Exception>;
 
     /// Returns a closure that unwraps the result of the current closure.
-    fn unwrapped(self) -> impl FnOnce(&[Array]) -> Self::Ok
+    fn unwrapped(mut self) -> impl FnMut(&[Array]) -> Self::Ok
     where
-        Self: FnOnce(&[Array]) -> Result<Self::Ok, Exception>,
+        Self: FnMut(&[Array]) -> Result<Self::Ok, Exception>,
     {
         move |args| self(args).unwrap()
     }
@@ -235,13 +234,13 @@ pub trait TransformsExt: Sized {
 
 impl<F> TransformsExt for F
 where
-    for<'a> F: FnOnce(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    for<'a> F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     type Ok = Vec<Array>;
 
-    fn and_then<F2, T>(self, op: F2) -> impl FnOnce(&[Array]) -> Result<T, Exception>
+    fn and_then<F2, T>(mut self, mut op: F2) -> impl FnMut(&[Array]) -> Result<T, Exception>
     where
-        F2: FnOnce(&[Array]) -> Result<T, Exception>,
+        F2: FnMut(&[Array]) -> Result<T, Exception>,
     {
         move |args| {
             let arrays = self(args)?;

@@ -251,7 +251,7 @@ impl<'a> Closure<'a> {
 
     pub(crate) fn new<F>(closure: F) -> Self
     where
-        F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+        F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
         let c_closure = new_mlx_closure(closure);
         Self {
@@ -274,7 +274,7 @@ impl<'a> Drop for Closure<'a> {
 /// Helper method to create a mlx_closure from a Rust closure.
 fn new_mlx_closure<'a, F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     // Box the closure to keep it on the heap
     let boxed = Box::new(closure);
@@ -316,12 +316,12 @@ extern "C" fn trampoline<'a, F>(
     payload: *mut std::ffi::c_void,
 ) -> mlx_sys::mlx_vector_array
 where
-    F: FnOnce(&[Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     unsafe {
         let raw_closure: *mut F = payload as *mut _;
         // Let the box take care of freeing the closure
-        let closure = Box::from_raw(raw_closure);
+        let mut closure = Box::from_raw(raw_closure);
         let arrays = mlx_vector_array_values(vector_array);
         let result = closure(&arrays);
         // We should probably keep using new_mlx_vector_array here instead of VectorArray

@@ -97,7 +97,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -154,7 +154,7 @@ pub fn normal_device<'a, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -198,7 +198,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -248,7 +248,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -305,7 +305,7 @@ pub fn bernoulli_device<'a>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -354,7 +354,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -399,7 +399,7 @@ pub fn gumbel_device<'a, T: ArrayElement>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     unsafe {
@@ -465,7 +465,7 @@ pub fn categorical_device<'a>(
             let mut state = state().lock().unwrap();
             OwnedOrRef::Owned(state.next())
         },
-        |key| OwnedOrRef::Ref(key),
+        OwnedOrRef::Ref,
     );
 
     match shape_or_count.into() {

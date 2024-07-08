@@ -443,21 +443,13 @@ impl Array {
     }
 }
 
-impl From<bool> for Array {
-    fn from(val: bool) -> Self {
-        Array::from_bool(val)
-    }
-}
-
-impl From<i32> for Array {
-    fn from(val: i32) -> Self {
-        Array::from_int(val)
-    }
-}
-
-impl From<f32> for Array {
-    fn from(val: f32) -> Self {
-        Array::from_float(val)
+impl<T> From<T> for Array
+where
+    T: ArrayElement,
+    Array: FromScalar<T>,
+{
+    fn from(val: T) -> Self {
+        Array::from_scalar(val)
     }
 }
 
@@ -479,6 +471,40 @@ where
 impl AsRef<Array> for Array {
     fn as_ref(&self) -> &Array {
         self
+    }
+}
+
+/// A helper trait to construct `Array` from scalar values.
+///
+/// This trait is intended to be used with the macro [`array!`] but can be used directly if needed.
+pub trait FromScalar<T>
+where
+    T: ArrayElement,
+{
+    fn from_scalar(val: T) -> Array;
+}
+
+impl FromScalar<bool> for Array {
+    fn from_scalar(val: bool) -> Array {
+        Array::from_bool(val)
+    }
+}
+
+impl FromScalar<i32> for Array {
+    fn from_scalar(val: i32) -> Array {
+        Array::from_int(val)
+    }
+}
+
+impl FromScalar<f32> for Array {
+    fn from_scalar(val: f32) -> Array {
+        Array::from_float(val)
+    }
+}
+
+impl FromScalar<complex64> for Array {
+    fn from_scalar(val: complex64) -> Array {
+        Array::from_complex(val)
     }
 }
 

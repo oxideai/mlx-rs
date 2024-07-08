@@ -17,6 +17,8 @@ use crate::{
     Array,
 };
 
+use super::clone_by_increment_ref_count;
+
 /// Globally enable the compilation of functions.
 ///
 /// Default is enabled.
@@ -35,13 +37,13 @@ pub fn disable_compile() {
     }
 }
 
-pub trait Compile<'a, Args, Ok>: Sized {
+pub trait Compile<'a, Args, Output>: Sized {
     fn compile(
         self,
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> impl CallMut<'a, Args, Ok>;
+    ) -> impl CallMut<'a, Args, Output>;
 }
 
 impl<'a, F> Compile<'a, &'a [Array], Vec<Array>> for F
@@ -156,8 +158,8 @@ where
     }
 }
 
-pub trait CallMut<'a, Args, Ok> {
-    fn call_mut(&mut self, args: Args) -> Result<Ok, Exception>;
+pub trait CallMut<'a, Args, Output> {
+    fn call_mut(&mut self, args: Args) -> Result<Output, Exception>;
 }
 
 #[derive(Debug)]
@@ -358,13 +360,6 @@ impl<'a, F> Drop for CompiledState<'a, F> {
     }
 }
 
-fn clone_by_increment_ref_count(src: &Array) -> Array {
-    unsafe {
-        mlx_retain(src.as_ptr() as *mut _);
-        Array::from_ptr(src.as_ptr())
-    }
-}
-
 fn type_id_to_usize<T>(_val: &T) -> usize
 where
     T: 'static,
@@ -391,16 +386,16 @@ fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
 /// Please refer to the [swift binding
 /// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
 /// for more information.
-pub fn compile<'a, F, Args, Ok>(
+pub fn compile<'a, F, Args, Output>(
     f: F,
     shapeless: Option<bool>,
     inputs: Option<&'a mut [Array]>,
     outputs: Option<&'a mut [Array]>,
-) -> impl FnMut(Args) -> Result<Ok, Exception> + 'a
+) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
 where
-    F: Compile<'a, Args, Ok> + 'static,
+    F: Compile<'a, Args, Output> + 'static,
     Args: 'a,
-    Ok: 'a,
+    Output: 'a,
 {
     let shapeless = shapeless.unwrap_or(false);
     // let mut compiled = Compiled::new(inputs, outputs, shapeless, f);

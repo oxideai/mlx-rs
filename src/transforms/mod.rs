@@ -1,4 +1,4 @@
-use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
+use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply, mlx_retain};
 use smallvec::SmallVec;
 
 use crate::{
@@ -191,6 +191,13 @@ where
     }
 }
 
+fn clone_by_increment_ref_count(src: &Array) -> Array {
+    unsafe {
+        mlx_retain(src.as_ptr() as *mut _);
+        Array::from_ptr(src.as_ptr())
+    }
+}
+
 /// Returns a function which computes the value and gradient of `f`.
 pub fn value_and_grad<'a, F>(
     f: F,
@@ -202,59 +209,100 @@ where
     build_value_and_gradient(f, argument_numbers)
 }
 
-/// Returns a function which computes the gradient of `f`.
-pub fn grad<'a, F>(
-    f: F,
-    argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
+pub trait Grad<'a, Args, Output> {
+    fn grad(
+        self,
+        argument_numbers: &'a [i32],
+    ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a;
+}
+
+impl<'a, F> Grad<'a, &[Array], Vec<Array>> for F
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
-    build_gradient(f, argument_numbers)
-}
-
-/// Helper trait to make working with transforms ops more ergonomic.
-pub trait TransformsExt: Sized {
-    /// The Ok output type of Self.
-    type Ok;
-
-    /// Compose the current closure with another closure.
-    fn and_then<F, T>(self, op: F) -> impl FnMut(&[Array]) -> Result<T, Exception>
-    where
-        F: FnMut(&[Array]) -> Result<T, Exception>;
-
-    /// Returns a closure that unwraps the result of the current closure.
-    fn unwrapped(mut self) -> impl FnMut(&[Array]) -> Self::Ok
-    where
-        Self: FnMut(&[Array]) -> Result<Self::Ok, Exception>,
-    {
-        move |args| self(args).unwrap()
+    // refining_impl_trait is fine here because we have restricted the Args and Output types
+    // in the generics.
+    #[allow(refining_impl_trait)]
+    fn grad(
+        self,
+        argument_numbers: &'a [i32],
+    ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
+        build_gradient(self, argument_numbers)
     }
 }
 
-impl<F> TransformsExt for F
+impl<'a, F> Grad<'a, &Array, Array> for F
 where
-    for<'a> F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(&Array) -> Array + 'a,
 {
-    type Ok = Vec<Array>;
-
-    fn and_then<F2, T>(mut self, mut op: F2) -> impl FnMut(&[Array]) -> Result<T, Exception>
-    where
-        F2: FnMut(&[Array]) -> Result<T, Exception>,
-    {
-        move |args| {
-            let arrays = self(args)?;
-            op(&arrays)
+    #[allow(refining_impl_trait)]
+    fn grad(
+        mut self,
+        argument_numbers: &'a [i32],
+    ) -> impl FnMut(&Array) -> Result<Array, Exception> + 'a {
+        let f = move |args: &[Array]| -> Vec<Array> { vec![self(&args[0])] };
+        let mut g = build_gradient(f, argument_numbers);
+        move |args: &Array| -> Result<Array, Exception> {
+            let args_clone = &[clone_by_increment_ref_count(args)];
+            let result = g(args_clone)?;
+            Ok(result.into_iter().next().unwrap())
         }
     }
 }
 
+impl<'a, F> Grad<'a, &[Array], Array> for F
+where
+    F: FnMut(&[Array]) -> Array + 'a,
+{
+    #[allow(refining_impl_trait)]
+    fn grad(
+        mut self,
+        argument_numbers: &'a [i32],
+    ) -> impl FnMut(&[Array]) -> Result<Array, Exception> + 'a {
+        let f = move |args: &[Array]| -> Vec<Array> { vec![self(args)] };
+        let mut g = build_gradient(f, argument_numbers);
+        move |args: &[Array]| -> Result<Array, Exception> {
+            let result = g(args)?;
+            Ok(result.into_iter().next().unwrap())
+        }
+    }
+}
+
+impl<'a, F> Grad<'a, &Array, Vec<Array>> for F
+where
+    F: FnMut(&Array) -> Vec<Array> + 'a,
+{
+    #[allow(refining_impl_trait)]
+    fn grad(
+        mut self,
+        argument_numbers: &'a [i32],
+    ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
+        let f = move |args: &[Array]| -> Vec<Array> { self(&args[0]) };
+        let mut g = build_gradient(f, argument_numbers);
+        move |args: &Array| -> Result<Vec<Array>, Exception> {
+            let args_clone = &[clone_by_increment_ref_count(args)];
+            let result = g(args_clone)?;
+            Ok(result)
+        }
+    }
+}
+
+/// Returns a function which computes the gradient of `f`.
+pub fn grad<'a, F, Args, Output>(
+    f: F,
+    argument_numbers: &'a [i32],
+) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
+where
+    F: Grad<'a, Args, Output>,
+{
+    f.grad(argument_numbers)
+}
+
 #[cfg(test)]
 mod tests {
-
     use crate::{
         array,
-        transforms::{grad, jvp, value_and_grad, vjp, TransformsExt},
+        transforms::{grad, jvp, value_and_grad, vjp},
         Array,
     };
 
@@ -293,8 +341,8 @@ mod tests {
         assert_eq!(dfdx[0].item::<f32>(), 1.0);
 
         // TODO: how to make this more "functional"?
-        let (mut z, mut d2fdx2) =
-            value_and_grad(grad(fun, argnums).unwrapped(), argnums)(x).unwrap();
+        let grad_fn = move |args: &[Array]| -> Vec<Array> { grad(fun, argnums)(args).unwrap() };
+        let (mut z, mut d2fdx2) = value_and_grad(grad_fn, argnums)(x).unwrap();
 
         assert_eq!(z[0].item::<f32>(), 1.0);
         assert_eq!(d2fdx2[0].item::<f32>(), 0.0);

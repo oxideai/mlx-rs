@@ -398,9 +398,28 @@ where
     Output: 'a,
 {
     let shapeless = shapeless.unwrap_or(false);
-    // let mut compiled = Compiled::new(inputs, outputs, shapeless, f);
     let mut compiled = f.compile(inputs, outputs, shapeless);
     move |args| compiled.call_mut(args)
+}
+
+/// Similar to `compile`, but unwraps the result.
+///
+/// This is useful when the function is known to be compiled correctly and will not throw an
+/// exception.
+pub fn compile_unwrapped<'a, F, Args, Output>(
+    f: F,
+    shapeless: Option<bool>,
+    inputs: Option<&'a mut [Array]>,
+    outputs: Option<&'a mut [Array]>,
+) -> impl FnMut(Args) -> Output + 'a
+where
+    F: Compile<'a, Args, Output> + 'static,
+    Args: 'a,
+    Output: 'a,
+{
+    let shapeless = shapeless.unwrap_or(false);
+    let mut compiled = f.compile(inputs, outputs, shapeless);
+    move |args| compiled.call_mut(args).unwrap()
 }
 
 #[cfg(test)]

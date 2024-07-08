@@ -1,5 +1,9 @@
 use std::{
-    cell::RefCell, collections::hash_map::DefaultHasher, hash::{Hash, Hasher}, marker::PhantomData, rc::Rc
+    cell::RefCell,
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+    rc::Rc,
 };
 
 use mlx_sys::{
@@ -37,11 +41,11 @@ pub trait Compile<'a, Args, Ok>: Sized {
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> Compiled<'a, Self, impl FnMut(&[Array]) -> Vec<Array>>;
+    ) -> impl CallMut<'a, Args, Ok>;
 }
 
 impl<'a, F> Compile<'a, &'a [Array], Vec<Array>> for F
-where 
+where
     F: FnMut(&[Array]) -> Vec<Array> + 'static,
 {
     fn compile(
@@ -49,7 +53,7 @@ where
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> Compiled<'a, Self, impl FnMut(&[Array]) -> Vec<Array>> {
+    ) -> impl CallMut<'a, &'a [Array], Vec<Array>> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -59,14 +63,14 @@ where
             id,
         };
         Compiled {
-            f_marker: PhantomData,
+            f_marker: PhantomData::<F>,
             state,
         }
     }
 }
 
-impl<'a, F> Compile<'a, Array, Array> for F
-where 
+impl<'a, F> Compile<'a, &'a Array, Array> for F
+where
     F: FnMut(&Array) -> Array + 'static,
 {
     fn compile(
@@ -74,7 +78,7 @@ where
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> Compiled<'a, Self, impl FnMut(&[Array]) -> Vec<Array>> {
+    ) -> impl CallMut<'a, &'a Array, Array> {
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)(&args[0]);
             vec![result]
@@ -88,61 +92,69 @@ where
             id,
         };
         Compiled {
-            f_marker: PhantomData,
+            f_marker: PhantomData::<F>,
             state,
         }
     }
 }
 
-// impl<'a, F> Compile<'a, (Array, Array), Array> for F
-// where 
-//     F: FnMut(&Array, &Array) -> Array + 'static,
-// {
-//     fn compile(
-//         mut self,
-//         inputs: Option<&'a mut [Array]>,
-//         outputs: Option<&'a mut [Array]>,
-//         shapeless: bool,
-//     ) -> Compiled<'a, impl FnMut(&[Array]) -> Vec<Array>> {
-//         let f = move |args: &[Array]| -> Vec<Array> {
-//             let result = (self)(&args[0], &args[1]);
-//             vec![result]
-//         };
-//         let id = type_id_to_usize(&f);
-//         Compiled {
-//             f,
-//             inputs,
-//             outputs,
-//             shapeless,
-//             id,
-//         }
-//     }
-// }
+impl<'a, F> Compile<'a, (&'a Array, &'a Array), Array> for F
+where
+    F: FnMut((&Array, &Array)) -> Array + 'static,
+{
+    fn compile(
+        mut self,
+        inputs: Option<&'a mut [Array]>,
+        outputs: Option<&'a mut [Array]>,
+        shapeless: bool,
+    ) -> impl CallMut<'a, (&'a Array, &'a Array), Array> {
+        let f = move |args: &[Array]| -> Vec<Array> {
+            let result = (self)((&args[0], &args[1]));
+            vec![result]
+        };
+        let id = type_id_to_usize(&f);
+        let state = CompiledState {
+            f,
+            inputs,
+            outputs,
+            shapeless,
+            id,
+        };
+        Compiled {
+            f_marker: PhantomData::<F>,
+            state,
+        }
+    }
+}
 
-// impl<'a, F> Compile<'a, (Array, Array, Array), Array> for F
-// where 
-//     F: FnMut(&Array, &Array, &Array) -> Array + 'static,
-// {
-//     fn compile(
-//         mut self,
-//         inputs: Option<&'a mut [Array]>,
-//         outputs: Option<&'a mut [Array]>,
-//         shapeless: bool,
-//     ) -> Compiled<'a, impl FnMut(&[Array]) -> Vec<Array>> {
-//         let f = move |args: &[Array]| -> Vec<Array> {
-//             let result = (self)(&args[0], &args[1], &args[2]);
-//             vec![result]
-//         };
-//         let id = type_id_to_usize(&f);
-//         Compiled {
-//             f,
-//             inputs,
-//             outputs,
-//             shapeless,
-//             id,
-//         }
-//     }
-// }
+impl<'a, F> Compile<'a, (&'a Array, &'a Array, &'a Array), Array> for F
+where
+    F: FnMut((&Array, &Array, &Array)) -> Array + 'static,
+{
+    fn compile(
+        mut self,
+        inputs: Option<&'a mut [Array]>,
+        outputs: Option<&'a mut [Array]>,
+        shapeless: bool,
+    ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array> {
+        let f = move |args: &[Array]| -> Vec<Array> {
+            let result = (self)((&args[0], &args[1], &args[2]));
+            vec![result]
+        };
+        let id = type_id_to_usize(&f);
+        let state = CompiledState {
+            f,
+            inputs,
+            outputs,
+            shapeless,
+            id,
+        };
+        Compiled {
+            f_marker: PhantomData::<F>,
+            state,
+        }
+    }
+}
 
 pub trait CallMut<'a, Args, Ok> {
     fn call_mut(&mut self, args: Args) -> Result<Ok, Exception>;
@@ -154,9 +166,9 @@ pub struct Compiled<'a, F, G> {
     state: CompiledState<'a, G>,
 }
 
-impl<'a, F, G> CallMut<'a, &[Array], Vec<Array>> for Compiled<'a, F, G>
-where 
-    F: FnMut(&Array) -> Array + 'a,
+impl<'a, F, G> CallMut<'a, &'a [Array], Vec<Array>> for Compiled<'a, F, G>
+where
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
@@ -164,14 +176,48 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, Array, Array> for Compiled<'a, F, G>
-where 
+impl<'a, F, G> CallMut<'a, &'a Array, Array> for Compiled<'a, F, G>
+where
     F: FnMut(&Array) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
-    // TODO: is there any way to make `call_mut` take the same args as `F`?
-    fn call_mut(&mut self, args: Array) -> Result<Array, Exception> {
-        let result = self.state.call_mut(&[args])?;
+    fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
+        // Is there any way to avoid this shallow clone?
+        let args = &[clone_by_increment_ref_count(args)];
+        let result = self.state.call_mut(args)?;
+        Ok(result.into_iter().next().unwrap())
+    }
+}
+
+impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array> for Compiled<'a, F, G>
+where
+    F: FnMut((&Array, &Array)) -> Array + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
+{
+    fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
+        // Is there any way to avoid this shallow clone?
+        let args = &[
+            clone_by_increment_ref_count(args.0),
+            clone_by_increment_ref_count(args.1),
+        ];
+        let result = self.state.call_mut(args)?;
+        Ok(result.into_iter().next().unwrap())
+    }
+}
+
+impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array> for Compiled<'a, F, G>
+where
+    F: FnMut((&Array, &Array, &Array)) -> Array + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
+{
+    fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
+        // Is there any way to avoid this shallow clone?
+        let args = &[
+            clone_by_increment_ref_count(args.0),
+            clone_by_increment_ref_count(args.1),
+            clone_by_increment_ref_count(args.2),
+        ];
+        let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
@@ -189,7 +235,7 @@ where
 }
 
 impl<'a, F> CompiledState<'a, F> {
-    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> 
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
     where
         F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
@@ -277,11 +323,7 @@ impl<'a, F> CompiledState<'a, F> {
         };
         let result_plus_state_output: Vec<Array> = result_vector.into_values();
 
-        // // push the stateOutput into the state
-        // let stateOutput = outputs.flatMap { $0.innerState() }
-        // for (s, newValues) in zip(stateOutput, resultsPlusStateOutput.suffix(stateOutput.count)) {
-        //     s.update(newValues)
-        // }
+        // push the stateOutput into the state
         if let Some(outputs) = state_outputs.borrow_mut().as_mut() {
             let result_plus_state_output_len = result_plus_state_output.len();
             let state_output_len = outputs.len();
@@ -294,9 +336,6 @@ impl<'a, F> CompiledState<'a, F> {
             }
         }
 
-        // let resultLength = resultsPlusStateOutput.count - stateOutput.count
-        // let results = Array(resultsPlusStateOutput.prefix(resultLength))
-        // return results
         let result_len = result_plus_state_output.len()
             - state_outputs
                 .borrow()
@@ -347,112 +386,157 @@ fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
     }
 }
 
-// /// Returns a compiled function that produces the same output as `f`.
-// ///
-// /// Please refer to the [swift binding
-// /// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
-// /// for more information.
-// pub fn compile<'a, F, Args, Ok>(
-//     f: F,
-//     shapeless: Option<bool>,
-//     inputs: Option<&'a mut [Array]>,
-//     outputs: Option<&'a mut [Array]>,
-// ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
-// where
-//     F: Compile<'a, Args, Ok> + 'static,
-//     Args: 'a,
-//     Ok: 'a,
-// {
-//     let shapeless = shapeless.unwrap_or(false);
-//     // let mut compiled = Compiled::new(inputs, outputs, shapeless, f);
-//     let mut compiled = f.compile(inputs, outputs, shapeless);
-//     move |args| compiled.call_mut(args)
-// }
+/// Returns a compiled function that produces the same output as `f`.
+///
+/// Please refer to the [swift binding
+/// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
+/// for more information.
+pub fn compile<'a, F, Args, Ok>(
+    f: F,
+    shapeless: Option<bool>,
+    inputs: Option<&'a mut [Array]>,
+    outputs: Option<&'a mut [Array]>,
+) -> impl FnMut(Args) -> Result<Ok, Exception> + 'a
+where
+    F: Compile<'a, Args, Ok> + 'static,
+    Args: 'a,
+    Ok: 'a,
+{
+    let shapeless = shapeless.unwrap_or(false);
+    // let mut compiled = Compiled::new(inputs, outputs, shapeless, f);
+    let mut compiled = f.compile(inputs, outputs, shapeless);
+    move |args| compiled.call_mut(args)
+}
 
-// #[cfg(test)]
-// mod tests {
-//     use core::panic;
+#[cfg(test)]
+mod tests {
+    use core::panic;
 
-//     use crate::{ops::ones, Array};
+    use crate::{ops::ones, Array};
 
-//     use super::compile;
+    use super::compile;
 
-//     fn example_fn_0(x: f32) -> f32 {
-//         x + 1.0
-//     }
+    fn example_fn_0(x: f32) -> f32 {
+        x + 1.0
+    }
 
-//     fn example_fn_3(x: f32) -> f32 {
-//         x + 1.0
-//     }
+    fn example_fn_3(x: f32) -> f32 {
+        x + 1.0
+    }
 
-//     #[test]
-//     fn test_type_id_to_usize() {
-//         // We would like to check that different functions that share the same signature can produce
-//         // different ids
+    #[test]
+    fn test_type_id_to_usize() {
+        // We would like to check that different functions that share the same signature can produce
+        // different ids
 
-//         let example_fn_1 = |x: f32| x + 1.0;
-//         let example_fn_2 = |x: f32| x + 1.0;
+        let example_fn_1 = |x: f32| x + 1.0;
+        let example_fn_2 = |x: f32| x + 1.0;
 
-//         let mut ids = Vec::new();
+        let mut ids = Vec::new();
 
-//         ids.push(super::type_id_to_usize(&example_fn_0));
+        ids.push(super::type_id_to_usize(&example_fn_0));
 
-//         let id1 = super::type_id_to_usize(&example_fn_1);
-//         if ids.contains(&id1) {
-//             panic!("id1 already exists");
-//         }
-//         ids.push(id1);
+        let id1 = super::type_id_to_usize(&example_fn_1);
+        if ids.contains(&id1) {
+            panic!("id1 already exists");
+        }
+        ids.push(id1);
 
-//         let id2 = super::type_id_to_usize(&example_fn_2);
-//         if ids.contains(&id2) {
-//             panic!("id2 already exists");
-//         }
-//         ids.push(id2);
+        let id2 = super::type_id_to_usize(&example_fn_2);
+        if ids.contains(&id2) {
+            panic!("id2 already exists");
+        }
+        ids.push(id2);
 
-//         let id3 = super::type_id_to_usize(&example_fn_3);
-//         if ids.contains(&id3) {
-//             panic!("id3 already exists");
-//         }
-//         ids.push(id3);
+        let id3 = super::type_id_to_usize(&example_fn_3);
+        if ids.contains(&id3) {
+            panic!("id3 already exists");
+        }
+        ids.push(id3);
 
-//         assert_eq!(ids.len(), 4);
-//     }
+        assert_eq!(ids.len(), 4);
+    }
 
-//     #[test]
-//     fn test_compile() {
-//         // This unit test is modified from the mlx-swift codebase
+    #[test]
+    fn test_compile() {
+        // This unit test is modified from the mlx-swift codebase
 
-//         let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] * &inputs[1]] };
+        let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] * &inputs[1]] };
 
-//         let i1 = ones::<f32>(&[20, 20]).unwrap();
-//         let i2 = ones::<f32>(&[20, 20]).unwrap();
-//         let args = [i1, i2];
+        let i1 = ones::<f32>(&[20, 20]).unwrap();
+        let i2 = ones::<f32>(&[20, 20]).unwrap();
+        let args = [i1, i2];
 
-//         // evaluate directly
-//         let r1 = f(&args).drain(0..1).next().unwrap();
+        // evaluate directly
+        let r1 = f(&args).drain(0..1).next().unwrap();
 
-//         // evaluate compiled
-//         let mut compiled = compile(f, None, None, None);
-//         let r2 = compiled(&args).unwrap().drain(0..1).next().unwrap();
+        // evaluate compiled
+        let mut compiled = compile(f, None, None, None);
+        let r2 = compiled(&args).unwrap().drain(0..1).next().unwrap();
 
-//         assert_eq!(&r1, &r2);
+        assert_eq!(&r1, &r2);
 
-//         let r3 = compiled(&args).unwrap().drain(0..1).next().unwrap();
-//         assert_eq!(&r1, &r3);
-//     }
+        let r3 = compiled(&args).unwrap().drain(0..1).next().unwrap();
+        assert_eq!(&r1, &r3);
+    }
 
-//     #[test]
-//     fn test_compile_with_one_arg() {
-//         let f = |x: &Array| x * x;
+    #[test]
+    fn test_compile_with_one_arg() {
+        let f = |x: &Array| x * x;
 
-//         let i = ones::<f32>(&[20, 20]).unwrap();
+        let i = ones::<f32>(&[20, 20]).unwrap();
 
-//         // evaluate directly
-//         let r1 = f(&i);
+        // evaluate directly
+        let r1 = f(&i);
 
-//         // evaluate compiled
-//         let mut compiled = compile(f, None, None, None);
-//         let r2 = compiled(&i).unwrap();
+        // evaluate compiled
+        let mut compiled = compile(f, None, None, None);
+        let r2 = compiled(&i).unwrap();
 
-//     }
-// }
+        assert_eq!(&r1, &r2);
+
+        let r3 = compiled(&i).unwrap();
+        assert_eq!(&r1, &r3);
+    }
+
+    #[test]
+    fn test_compile_with_two_args() {
+        let f = |(x, y): (&Array, &Array)| x * y;
+
+        let i1 = ones::<f32>(&[20, 20]).unwrap();
+        let i2 = ones::<f32>(&[20, 20]).unwrap();
+
+        // evaluate directly
+        let r1 = f((&i1, &i2));
+
+        // evaluate compiled
+        let mut compiled = compile(f, None, None, None);
+        let r2 = compiled((&i1, &i2)).unwrap();
+
+        assert_eq!(&r1, &r2);
+
+        let r3 = compiled((&i1, &i2)).unwrap();
+        assert_eq!(&r1, &r3);
+    }
+
+    #[test]
+    fn test_compile_with_three_args() {
+        let f = |(x, y, z): (&Array, &Array, &Array)| x * y * z;
+
+        let i1 = ones::<f32>(&[20, 20]).unwrap();
+        let i2 = ones::<f32>(&[20, 20]).unwrap();
+        let i3 = ones::<f32>(&[20, 20]).unwrap();
+
+        // evaluate directly
+        let r1 = f((&i1, &i2, &i3));
+
+        // evaluate compiled
+        let mut compiled = compile(f, None, None, None);
+        let r2 = compiled((&i1, &i2, &i3)).unwrap();
+
+        assert_eq!(&r1, &r2);
+
+        let r3 = compiled((&i1, &i2, &i3)).unwrap();
+        assert_eq!(&r1, &r3);
+    }
+}

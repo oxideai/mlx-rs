@@ -461,6 +461,21 @@ impl From<f32> for Array {
     }
 }
 
+impl From<complex64> for Array {
+    fn from(val: complex64) -> Self {
+        Array::from_complex(val)
+    }
+}
+
+impl<T> From<T> for Array
+where
+    Array: FromNested<T>,
+{
+    fn from(value: T) -> Self {
+        Array::from_nested(value)
+    }
+}
+
 impl AsRef<Array> for Array {
     fn as_ref(&self) -> &Array {
         self

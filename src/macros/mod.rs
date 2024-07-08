@@ -2,3 +2,4 @@
 mod internal;
 
 mod array;
+mod assert;

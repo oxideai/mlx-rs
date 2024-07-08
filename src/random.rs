@@ -439,7 +439,6 @@ pub enum ShapeOrCount<'a> {
 /// - - `Shape`: The shape of the output. This must be broadcast compatible with `logits.shape` with the `axis` dimension removed.
 /// - - `Count`: The number of samples to draw from each of the categorical distributions in `logits`. The output will have the number of samples in the last dimension.
 /// - `key` (optional): A PRNG key.
-/// - `stream`: A stream to execute the operation.
 ///
 /// # Example
 ///

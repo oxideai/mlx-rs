@@ -1,9 +1,7 @@
-use std::{
-    cell::Cell,
-    ffi::{c_char, CStr, CString},
-};
+use std::{cell::Cell, ffi::c_char};
 
 use crate::Dtype;
+use libc::strdup;
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
@@ -35,18 +33,12 @@ pub enum AsSliceError {
 #[derive(Debug, PartialEq, Error)]
 #[error("{what:?}")]
 pub struct Exception {
-    pub(crate) what: CString,
+    pub(crate) what: String,
 }
 
 impl Exception {
-    pub fn what(&self) -> &CStr {
+    pub fn what(&self) -> &str {
         &self.what
-    }
-}
-
-impl From<Exception> for CString {
-    fn from(e: Exception) -> Self {
-        e.what
     }
 }
 
@@ -57,9 +49,11 @@ thread_local! {
 
 #[no_mangle]
 extern "C" fn default_mlx_error_handler(msg: *const c_char, _data: *mut std::ffi::c_void) {
-    LAST_MLX_ERROR.with(|last_error| {
-        last_error.set(msg);
-    });
+    unsafe {
+        LAST_MLX_ERROR.with(|last_error| {
+            last_error.set(strdup(msg));
+        });
+    }
 }
 
 #[no_mangle]
@@ -87,9 +81,34 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
             return None;
         }
 
-        let last_err = unsafe { std::ffi::CStr::from_ptr(last_err_ptr) };
-        Some(Exception {
-            what: last_err.to_owned(),
-        })
+        let last_err = unsafe {
+            std::ffi::CStr::from_ptr(last_err_ptr)
+                .to_string_lossy()
+                .into_owned()
+        };
+        unsafe {
+            libc::free(last_err_ptr as *mut libc::c_void);
+        }
+        Some(Exception { what: last_err })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::array;
+
+    #[test]
+    fn test_exception() {
+        let a = array!([1.0, 2.0, 3.0]);
+        let b = array!([4.0, 5.0]);
+
+        let result = a.add(&b);
+        let error = result.expect_err("Expected error");
+
+        // The full error message would also contain the full path to the original c++ file,
+        // so we just check for a substring
+        assert!(error
+            .what()
+            .contains("Shapes (3) and (2) cannot be broadcast."))
+    }
 }

@@ -1283,6 +1283,7 @@ mod tests {
     fn test_add_invalid_broadcast() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
+
         let c = a.add(&b);
         assert!(c.is_err());
     }

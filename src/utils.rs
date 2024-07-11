@@ -1,9 +1,8 @@
-use std::os::raw::c_void;
+use std::{ffi::NulError, os::raw::c_void};
 
 use mlx_sys::mlx_vector_array;
 
-use crate::error::{OperationError, ReshapeError};
-use crate::Array;
+use crate::{complex64, Array, FromNested};
 
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
@@ -25,6 +24,14 @@ pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
     description
 }
 
+pub(crate) fn resolve_index_signed_unchecked(index: i32, len: i32) -> i32 {
+    if index < 0 {
+        len.saturating_add(index)
+    } else {
+        index
+    }
+}
+
 pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
     if index.is_negative() {
         (len as i32 + index) as usize
@@ -33,139 +40,14 @@ pub(crate) fn resolve_index_unchecked(index: i32, len: usize) -> usize {
     }
 }
 
-pub(crate) fn resolve_index(index: i32, len: usize) -> Option<usize> {
-    let abs_index = index.unsigned_abs() as usize;
-
-    if index.is_negative() {
-        if abs_index <= len {
-            Some(len - abs_index)
-        } else {
-            None
-        }
-    } else if abs_index < len {
-        Some(abs_index)
-    } else {
-        None
-    }
-}
-
-pub(crate) fn all_unique(arr: &[i32]) -> Result<(), i32> {
-    let mut unique = std::collections::HashSet::new();
-    for &x in arr {
-        if !unique.insert(x) {
-            return Err(x);
-        }
-    }
-
-    Ok(())
-}
-
 /// Helper method to convert an optional slice of axes to a Vec covering all axes.
-pub(crate) fn axes_or_default_to_all<'a>(
-    axes: impl Into<Option<&'a [i32]>>,
-    ndim: i32,
-) -> Vec<i32> {
-    match axes.into() {
+pub(crate) fn axes_or_default_to_all<'a>(axes: impl IntoOption<&'a [i32]>, ndim: i32) -> Vec<i32> {
+    match axes.into_option() {
         Some(axes) => axes.to_vec(),
         None => {
             let axes: Vec<i32> = (0..ndim).collect();
             axes
         }
-    }
-}
-
-/// Helper method to check if two arrays are broadcastable.
-///
-/// Uses the same broadcasting rules as numpy.
-/// https://numpy.org/doc/1.20/user/theory.broadcasting.html
-///
-/// "The size of the trailing axes for both arrays in an operation must
-/// either be the same size or one of them must be one."
-pub(crate) fn is_broadcastable(a: &[i32], b: &[i32]) -> bool {
-    a.iter()
-        .rev()
-        .zip(b.iter().rev())
-        .all(|(a, b)| *a == 1 || *b == 1 || a == b)
-}
-
-pub(crate) fn can_reduce_shape(shape: &[i32], axes: &[i32]) -> Result<(), OperationError> {
-    let ndim = shape.len() as i32;
-    let mut axes_set = std::collections::HashSet::new();
-    for &axis in axes {
-        let ax = if axis < 0 { axis + ndim } else { axis };
-        if ax < 0 || ax >= ndim {
-            return Err(OperationError::AxisOutOfBounds {
-                axis,
-                dim: shape.len(),
-            });
-        }
-
-        axes_set.insert(ax);
-    }
-
-    if axes_set.len() != axes.len() {
-        return Err(OperationError::WrongInput(format!(
-            "Duplicate axes in {:?}",
-            axes
-        )));
-    }
-
-    Ok(())
-}
-
-impl Array {
-    /// Helper method to check if an array can be reshaped to a given shape.
-    pub fn can_reshape_to<'a>(&self, shape: &'a [i32]) -> Result<(), ReshapeError<'a>> {
-        if self.shape() == shape {
-            return Ok(());
-        }
-
-        let mut size = 1;
-        let mut infer_idx: isize = -1;
-        for (i, dim) in shape.iter().enumerate() {
-            if *dim == -1 {
-                if infer_idx >= 0 {
-                    return Err(ReshapeError::MultipleInferredDims);
-                }
-
-                infer_idx = i as isize;
-            } else {
-                size *= shape[i];
-            }
-        }
-
-        if size > 0 {
-            let quotient = self.size() / size as usize;
-            if infer_idx >= 0 {
-                size *= quotient as i32;
-            }
-        } else if infer_idx >= 0 {
-            return Err(ReshapeError::EmptyArray);
-        }
-
-        // validate the reshaping is valid
-        if self.size() != size as usize {
-            return Err(ReshapeError::InvalidShape {
-                size: self.size(),
-                shape,
-            });
-        }
-
-        Ok(())
-    }
-
-    /// Helper method to validate an axis is in bounds.
-    pub fn validate_axis_in_bounds(&self, axis: Option<i32>) -> Result<(), OperationError> {
-        if let Some(axis) = axis {
-            if axis >= self.ndim() as i32 || axis < -(self.ndim() as i32) {
-                return Err(OperationError::AxisOutOfBounds {
-                    axis,
-                    dim: self.ndim(),
-                });
-            }
-        }
-
-        Ok(())
     }
 }
 
@@ -178,8 +60,8 @@ impl VectorArray {
         self.c_vec
     }
 
-    pub(crate) fn from_op(f: impl FnOnce() -> mlx_vector_array) -> Self {
-        Self { c_vec: f() }
+    pub(crate) unsafe fn from_ptr(c_vec: mlx_vector_array) -> Self {
+        Self { c_vec }
     }
 
     pub(crate) fn from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Self {
@@ -192,7 +74,10 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn into_values(self) -> Vec<Array> {
+    pub(crate) fn into_values<T>(self) -> T
+    where
+        T: FromIterator<Array>,
+    {
         unsafe {
             let size = mlx_sys::mlx_vector_array_size(self.c_vec);
             (0..size)
@@ -200,7 +85,7 @@ impl VectorArray {
                     let c_array = mlx_sys::mlx_vector_array_get(self.c_vec, i);
                     Array::from_ptr(c_array)
                 })
-                .collect()
+                .collect::<T>()
         }
     }
 }
@@ -211,18 +96,10 @@ impl Drop for VectorArray {
     }
 }
 
-pub(crate) fn is_same_shape(arrays: &[impl AsRef<Array>]) -> bool {
-    if arrays.is_empty() {
-        return true;
-    }
-
-    let shape = arrays[0].as_ref().shape();
-    arrays.iter().all(|array| array.as_ref().shape() == shape)
-}
-
 /// A custom type for internal use with `Array` only that is essentially `Cow` but doens't require
 /// the `Clone`
-pub(crate) enum OwnedOrRef<'a, T> {
+#[derive(Debug)]
+pub enum OwnedOrRef<'a, T> {
     Owned(T),
     Ref(&'a T),
 }
@@ -244,126 +121,120 @@ impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub(crate) struct MlxString(mlx_sys::mlx_string);
 
-    #[test]
-    fn test_is_broadcastable() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[2.0, 2.0, 2.0], &[3]);
-        assert!(is_broadcastable(a.shape(), b.shape()));
-
-        let a = Array::from_slice(
-            &[
-                0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 20.0, 20.0, 20.0, 30.0, 30.0, 30.0,
-            ],
-            &[4, 3],
-        );
-        let b = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(is_broadcastable(a.shape(), b.shape()));
-
-        let a = Array::from_slice(
-            &[
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
-            ],
-            &[2, 2, 4],
-        );
-        let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[2, 4]);
-        assert!(is_broadcastable(a.shape(), b.shape()));
+impl MlxString {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
+        self.0
     }
+}
 
-    #[test]
-    fn test_is_broadcastable_scalar() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b: Array = 2.0.into();
-        assert!(is_broadcastable(a.shape(), b.shape()));
+impl<'a> TryFrom<&'a str> for MlxString {
+    type Error = NulError;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        let c_str = std::ffi::CString::new(s)?;
+        let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
+        Ok(Self(ptr))
     }
+}
 
-    #[test]
-    fn test_is_broadcastable_empty() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(is_broadcastable(&[], a.shape()));
+impl Drop for MlxString {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.0 as *mut c_void) }
     }
+}
 
-    #[test]
-    fn test_not_broadcastable() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[2.0, 2.0, 2.0, 2.0], &[4]);
-        assert!(!is_broadcastable(a.shape(), b.shape()));
+/// A helper trait that is just like `Into<Option<T>>` but improves ergonomics by allowing
+/// implicit conversion from &[T; N] to &[T].
+pub trait IntoOption<T> {
+    fn into_option(self) -> Option<T>;
+}
 
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[2.0, 2.0], &[1, 2]);
-        assert!(!is_broadcastable(a.shape(), b.shape()));
+impl<T> IntoOption<T> for Option<T> {
+    fn into_option(self) -> Option<T> {
+        self
     }
+}
 
-    #[test]
-    fn test_can_reshape_to() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[3]).is_ok());
-        assert!(a.can_reshape_to(&[1, 3]).is_ok());
-        assert!(a.can_reshape_to(&[3, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 3]).is_ok());
-        assert!(a.can_reshape_to(&[1, 3, 1]).is_ok());
-        assert!(a.can_reshape_to(&[3, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 3]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 3, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 3, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[3, 1, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 1, 3]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 1, 3, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 1, 3, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 1, 3, 1, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[1, 3, 1, 1, 1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[3, 1, 1, 1, 1, 1]).is_ok());
+impl<T> IntoOption<T> for T {
+    fn into_option(self) -> Option<T> {
+        Some(self)
     }
+}
 
-    #[test]
-    fn test_reshape_negative_dim() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[1, -1]).is_ok());
-        assert!(a.can_reshape_to(&[-1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[-1]).is_ok());
-        assert!(a.can_reshape_to(&[1, -1, 1]).is_ok());
-        assert!(a.can_reshape_to(&[-1, 1, 1]).is_ok());
-
-        assert!(a.can_reshape_to(&[1, -2]).is_err());
+impl<'a, T, const N: usize> IntoOption<&'a [T]> for &'a [T; N] {
+    fn into_option(self) -> Option<&'a [T]> {
+        Some(self)
     }
+}
 
-    #[test]
-    fn test_cannot_reshape_to() {
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        assert!(a.can_reshape_to(&[2]).is_err());
-        assert!(a.can_reshape_to(&[2, 2]).is_err());
-        assert!(a.can_reshape_to(&[2, 2, 2]).is_err());
-        assert!(a.can_reshape_to(&[2, 2, 2, 2]).is_err());
-        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2]).is_err());
-        assert!(a.can_reshape_to(&[2, 2, 2, 2, 2, 2]).is_err());
+pub trait ScalarOrArray<'a> {
+    type Array: AsRef<Array> + 'a;
+
+    fn into_owned_or_ref_array(self) -> Self::Array;
+}
+
+impl<'a> ScalarOrArray<'a> for Array {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        self
     }
+}
 
-    #[test]
-    fn test_can_reduce_shape() {
-        let shape = [2, 3, 4];
-        can_reduce_shape(&shape, &[0, 1]).unwrap();
-        can_reduce_shape(&shape, &[0, 1, 2]).unwrap();
+impl<'a> ScalarOrArray<'a> for &'a Array {
+    type Array = &'a Array;
+
+    // TODO: clippy would complain about `as_array`. Is there a better name?
+    fn into_owned_or_ref_array(self) -> &'a Array {
+        self
     }
+}
 
-    #[test]
-    fn test_can_reduce_shape_out_of_bounds() {
-        let shape = [2, 3, 4];
-        let result = can_reduce_shape(&shape, &[0, 1, 3]);
-        assert!(result.is_err());
+// We can't replace the following four impls with `FromScalar` trait bound
+// because compiler would complain about conflicting implementations with
+// `FromNested`.
+
+impl ScalarOrArray<'static> for bool {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_bool(self)
     }
+}
 
-    #[test]
-    fn test_can_reduce_shape_duplicate_axes() {
-        let shape = [2, 3, 4];
-        let result = can_reduce_shape(&shape, &[0, 0]);
-        assert!(result.is_err());
+impl ScalarOrArray<'static> for i32 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_int(self)
+    }
+}
+
+impl ScalarOrArray<'static> for f32 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_float(self)
+    }
+}
+
+impl ScalarOrArray<'static> for complex64 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_complex(self)
+    }
+}
+
+impl<T> ScalarOrArray<'static> for T
+where
+    Array: FromNested<T>,
+{
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_nested(self)
     }
 }

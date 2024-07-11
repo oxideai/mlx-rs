@@ -1,44 +1,16 @@
+use std::{cell::Cell, ffi::c_char};
+
 use crate::Dtype;
+use libc::strdup;
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
-pub enum MlxError {
-    #[error("data store error: {0}")]
-    DataStore(#[from] DataStoreError),
-    #[error("operation error: {0}")]
-    Operation(#[from] OperationError),
-    #[error("as slice error: {0}")]
-    AsSlice(#[from] AsSliceError),
-}
-
-#[derive(Error, PartialEq, Debug)]
-pub enum DataStoreError {
-    #[error("negative dimension: {0}")]
-    NegativeDimensions(String),
-
-    #[error("negative integer: {0}")]
-    NegativeInteger(String),
-
-    #[error("broadcast error")]
-    BroadcastError,
-
+pub enum ItemError {
     #[error("not a scalar array")]
     NotScalar,
-}
 
-#[derive(Error, PartialEq, Debug)]
-pub enum OperationError {
-    #[error("operation not supported: {0}")]
-    NotSupported(String),
-
-    #[error("wrong input: {0}")]
-    WrongInput(String),
-
-    #[error("wrong dimensions: {0}")]
-    WrongDimensions(String),
-
-    #[error("axis out of bounds: axis {axis} for array with {dim} dimensions")]
-    AxisOutOfBounds { axis: i32, dim: usize },
+    #[error(transparent)]
+    Exception(#[from] Exception),
 }
 
 /// Error associated with `Array::try_as_slice()`
@@ -53,161 +25,90 @@ pub enum AsSliceError {
     /// The output dtype does not match the data type of the array.
     #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
     DtypeMismatch { expecting: Dtype, found: Dtype },
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum FftError {
-    #[error("fftn requires at least one dimension")]
-    ScalarArray,
 
     #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error("Shape and axes/axis have different sizes")]
-    IncompatibleShapeAndAxes { shape_size: usize, axes_size: usize },
-
-    #[error("Received duplicate axis")]
-    DuplicateAxis,
-
-    #[error("Invalid output size requested")]
-    InvalidOutputSize,
-}
-
-#[derive(Error, Debug, PartialEq)]
-#[error("Invalid axis {axis} for array with {ndim} dimensions")]
-pub struct InvalidAxisError {
-    pub axis: i32,
-    pub ndim: usize,
+    Exception(#[from] Exception),
 }
 
 #[derive(Debug, PartialEq, Error)]
-pub enum TakeError {
-    #[error("Cannot do a non-empty take from an array with zero elements.")]
-    NonEmptyTakeFromEmptyArray,
-
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
+#[error("{what:?}")]
+pub struct Exception {
+    pub(crate) what: String,
 }
 
-#[derive(Debug, PartialEq, Error)]
-pub enum TakeAlongAxisError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error(
-        "Indices of dimension {indices_ndim} does not match the array of dimension {array_ndim}"
-    )]
-    IndicesDimensionMismatch {
-        array_ndim: usize,
-        indices_ndim: usize,
-    },
+impl Exception {
+    pub fn what(&self) -> &str {
+        &self.what
+    }
 }
 
-#[derive(Debug, PartialEq, Error)]
-pub enum ExpandDimsError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error("Received duplicate axis")]
-    DuplicateAxis,
+thread_local! {
+    pub static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
+    pub static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
 }
 
-#[derive(Debug, Error)]
-#[error("Invalid number of indices or strides for array with dimension {ndim}")]
-pub struct SliceError {
-    pub ndim: usize,
+#[no_mangle]
+extern "C" fn default_mlx_error_handler(msg: *const c_char, _data: *mut std::ffi::c_void) {
+    unsafe {
+        LAST_MLX_ERROR.with(|last_error| {
+            last_error.set(strdup(msg));
+        });
+    }
 }
 
-#[derive(Debug, Error)]
-pub enum FlattenError {
-    #[error("Start axis must be less than or equal to end axis. Found start: {start}, end: {end}")]
-    StartAxisGreaterThanEndAxis { start: i32, end: i32 },
+#[no_mangle]
+extern "C" fn noop_mlx_error_handler_data_deleter(_data: *mut std::ffi::c_void) {}
 
-    #[error(transparent)]
-    InvalidStartAxis(InvalidAxisError),
+pub fn setup_mlx_error_handler() {
+    let handler = default_mlx_error_handler;
+    let data_ptr = LAST_MLX_ERROR.with(|last_error| last_error.as_ptr() as *mut std::ffi::c_void);
+    let dtor = noop_mlx_error_handler_data_deleter;
+    unsafe {
+        mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
+    }
 
-    #[error(transparent)]
-    InvalidEndAxis(InvalidAxisError),
+    IS_HANDLER_SET.with(|is_set| is_set.set(true));
 }
 
-#[derive(Debug, Error)]
-pub enum ReshapeError<'a> {
-    #[error("Can only infer one dimension")]
-    MultipleInferredDims,
-
-    #[error("Cannot infer the shape of an empty array")]
-    EmptyArray,
-
-    #[error("Cannot reshape array of size {size} into shape {shape:?}")]
-    InvalidShape { size: usize, shape: &'a [i32] },
+pub(crate) fn is_mlx_error_handler_set() -> bool {
+    IS_HANDLER_SET.with(|is_set| is_set.get())
 }
 
-#[derive(Debug, Error)]
-pub enum SqueezeError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
+pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
+    LAST_MLX_ERROR.with(|last_error| {
+        let last_err_ptr = last_error.replace(std::ptr::null());
+        if last_err_ptr.is_null() {
+            return None;
+        }
 
-    #[error("Cannot squeeze axis {axis} with size {size} which is not equal to 1")]
-    AxisSizeGreaterThanOne { axis: i32, size: i32 },
-
-    #[error("Received duplicate axis")]
-    DuplicateAxis,
+        let last_err = unsafe {
+            std::ffi::CStr::from_ptr(last_err_ptr)
+                .to_string_lossy()
+                .into_owned()
+        };
+        unsafe {
+            libc::free(last_err_ptr as *mut libc::c_void);
+        }
+        Some(Exception { what: last_err })
+    })
 }
 
-#[derive(Debug, Error)]
-pub enum TransposeError {
-    #[error("Received {num_axes} axes for array with {ndim} dimensions")]
-    InvalidArgument { num_axes: usize, ndim: usize },
+#[cfg(test)]
+mod tests {
+    use crate::array;
 
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
+    #[test]
+    fn test_exception() {
+        let a = array!([1.0, 2.0, 3.0]);
+        let b = array!([4.0, 5.0]);
 
-    #[error("Received duplicate axis")]
-    DuplicateAxis,
-}
+        let result = a.add(&b);
+        let error = result.expect_err("Expected error");
 
-#[derive(Debug, Error)]
-#[error("Cannot broadcast array of shape {src_shape:?} into shape {dst_shape:?}")]
-pub struct BroadcastError<'a> {
-    pub src_shape: &'a [i32],
-    pub dst_shape: &'a [i32],
-}
-
-#[derive(Debug, Error)]
-pub enum ConcatenateError {
-    #[error("No arrays provided for concatenation")]
-    NoInputArray,
-
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error("All the input array dimensions must match exactly except for the concatenation axis. However, the provided shapes are {0:?}")]
-    InvalidShapes(Vec<Vec<i32>>),
-}
-
-#[derive(Debug, Error)]
-pub enum PadError {
-    #[error("Invalid number of padding sizes passed to pad with axes of size {axes_size}")]
-    InvalidWidths { axes_size: usize },
-
-    #[error("Invalid padding size {size:?} for axis {axis}. Padding sizes must be non-negative")]
-    NegativeWidth { axis: usize, size: (i32, i32) },
-}
-
-#[derive(Debug, Error)]
-pub enum StackError {
-    #[error("No arrays provided for stacking")]
-    NoInputArray,
-
-    #[error("All arrays must have the same shape")]
-    InvalidShapes,
-}
-
-#[derive(Debug, Error)]
-pub enum SplitEqualError {
-    #[error(transparent)]
-    InvalidAxis(#[from] InvalidAxisError),
-
-    #[error("Cannot split array of size {size} into {num_splits} equal parts")]
-    InvalidNumSplits { size: usize, num_splits: i32 },
+        // The full error message would also contain the full path to the original c++ file,
+        // so we just check for a substring
+        assert!(error
+            .what()
+            .contains("Shapes (3) and (2) cannot be broadcast."))
+    }
 }

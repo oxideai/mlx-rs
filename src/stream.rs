@@ -1,3 +1,5 @@
+use mlx_sys::mlx_retain;
+
 use crate::device::Device;
 use crate::utils::mlx_describe;
 
@@ -7,7 +9,7 @@ use crate::utils::mlx_describe;
 ///
 /// If omitted it will use the [Default::default()], which will be [Device::gpu()] unless
 /// set otherwise.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct StreamOrDevice {
     pub(crate) stream: Stream,
 }
@@ -23,17 +25,17 @@ impl StreamOrDevice {
         }
     }
 
-    /// The `[Stream::default_stream_on_device()] on the [Device::cpu()]
+    /// Current default CPU stream.
     pub fn cpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream_on_device(&Device::cpu()),
+            stream: Stream::cpu(),
         }
     }
 
-    /// The `[Stream::default_stream_on_device()] on the [Device::gpu()]
+    /// Current default GPU stream.
     pub fn gpu() -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream_on_device(&Device::gpu()),
+            stream: Stream::gpu(),
         }
     }
 
@@ -105,6 +107,24 @@ impl Stream {
     pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
         self.c_stream
     }
+
+    /// Current default CPU stream.
+    pub fn cpu() -> Self {
+        unsafe {
+            let c_stream = mlx_sys::mlx_cpu_stream();
+            mlx_retain(c_stream as *mut std::ffi::c_void);
+            Stream { c_stream }
+        }
+    }
+
+    /// Current default GPU stream.
+    pub fn gpu() -> Self {
+        unsafe {
+            let c_stream = mlx_sys::mlx_cpu_stream();
+            mlx_retain(c_stream as *mut std::ffi::c_void);
+            Stream { c_stream }
+        }
+    }
 }
 
 /// The `Stream` is a simple struct on the c++ side
@@ -156,5 +176,11 @@ impl std::fmt::Display for Stream {
         let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
         let description = description.unwrap_or_else(|| "Stream".to_string());
         write!(f, "{}", description)
+    }
+}
+
+impl PartialEq for Stream {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { mlx_sys::mlx_stream_equal(self.c_stream, other.c_stream) }
     }
 }

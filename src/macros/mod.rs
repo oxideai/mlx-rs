@@ -13,3 +13,5 @@ mod indexing;
 mod logical;
 mod reduction;
 mod shapes;
+mod array;
+mod assert;

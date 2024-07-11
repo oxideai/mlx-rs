@@ -1,5 +1,4 @@
 use mlx_rs::{Array, Dtype};
-use std::ops::Add;
 
 fn scalar_basics() {
     // create a scalar array
@@ -26,7 +25,7 @@ fn scalar_basics() {
 
     // scalar shapes are empty arrays
     let shape = x.shape();
-    assert_eq!(shape, vec![]);
+    assert!(shape.is_empty());
 }
 
 #[allow(unused_variables)]
@@ -38,7 +37,7 @@ fn array_basics() {
     // is [1.0, 2.0] and the second row is [3.0, 4.0]
 
     // Make an array of shape {2, 2} filled with ones:
-    let y = Array::ones::<f32>(&[2, 2]);
+    let y = Array::ones::<f32>(&[2, 2]).unwrap();
 
     // Pointwise add x and y:
     let z = x.add(&y);
@@ -57,18 +56,18 @@ fn array_basics() {
     // and inputs. When `eval` is called on an array (or arrays), the array and
     // all of its dependencies are recursively evaluated to produce the result.
     // Once an array is evaluated, it has data and is detached from its inputs.
-    z.eval();
+    z.eval().unwrap();
 
     // Of course the array can still be an input to other operations. You can even
     // call eval on the array again, this will just be a no-op:
-    z.eval(); // no-op
+    z.eval().unwrap(); // no-op
 
     // Some functions or methods on arrays implicitly evaluate them. For example
     // accessing a value in an array or printing the array implicitly evaluate it:
-    z = Array::ones::<f32>(&[1]);
+    z = Array::ones::<f32>(&[1]).unwrap();
     z.item::<f32>(); // implicit evaluation
 
-    z = Array::ones::<f32>(&[2, 2]);
+    z = Array::ones::<f32>(&[2, 2]).unwrap();
     println!("{}", z); // implicit evaluation
 }
 

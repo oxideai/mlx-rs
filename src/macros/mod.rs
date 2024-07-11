@@ -5,6 +5,8 @@ mod internal;
 mod fft;
 
 mod arithmetic;
+mod array;
+mod assert;
 mod conversion;
 mod convolution;
 mod cumulative;
@@ -13,5 +15,3 @@ mod indexing;
 mod logical;
 mod reduction;
 mod shapes;
-mod array;
-mod assert;

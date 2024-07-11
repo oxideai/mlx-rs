@@ -21,20 +21,20 @@ macro_rules! add {
 #[macro_export]
 macro_rules! sub {
     ($a:expr, $b:expr) => {
-        $a.sub_device($b.as_ref(), $crate::StreamOrDevice::default())
+        $a.subtract_device($b.as_ref(), $crate::StreamOrDevice::default())
     };
     ($a:expr, $b:expr, stream=$stream:expr) => {
-        $a.sub_device($b.as_ref(), $stream)
+        $a.subtract_device($b.as_ref(), $stream)
     };
 }
 
 #[macro_export]
 macro_rules! neg {
     ($a:expr) => {
-        $a.neg()
+        $a.negative()
     };
     ($a:expr, stream=$stream:expr) => {
-        $a.neg_device($stream)
+        $a.negative_device($stream)
     };
 }
 
@@ -51,40 +51,40 @@ macro_rules! logical_not {
 #[macro_export]
 macro_rules! mul {
     ($a:expr, $b:expr) => {
-        $a.mul_device($b.as_ref(), $crate::StreamOrDevice::default())
+        $a.multiply_device($b.as_ref(), $crate::StreamOrDevice::default())
     };
     ($a:expr, $b:expr, stream=$stream:expr) => {
-        $a.mul_device($b.as_ref(), $stream)
+        $a.multiply_device($b.as_ref(), $stream)
     };
 }
 
 #[macro_export]
 macro_rules! div {
     ($a:expr, $b:expr) => {
-        $a.div_device($b.as_ref(), $crate::StreamOrDevice::default())
+        $a.divide_device($b.as_ref(), $crate::StreamOrDevice::default())
     };
     ($a:expr, $b:expr, stream=$stream:expr) => {
-        $a.div_device($b.as_ref(), $stream)
+        $a.divide_device($b.as_ref(), $stream)
     };
 }
 
 #[macro_export]
 macro_rules! pow {
     ($a:expr, $b:expr) => {
-        $a.pow_device($b.as_ref(), $crate::StreamOrDevice::default())
+        $a.power_device($b.as_ref(), $crate::StreamOrDevice::default())
     };
     ($a:expr, $b:expr, stream=$stream:expr) => {
-        $a.pow_device($b.as_ref(), $stream)
+        $a.power_device($b.as_ref(), $stream)
     };
 }
 
 #[macro_export]
 macro_rules! rem {
     ($a:expr, $b:expr) => {
-        $a.rem_device($b.as_ref(), $crate::StreamOrDevice::default())
+        $a.remainder_device($b.as_ref(), $crate::StreamOrDevice::default())
     };
     ($a:expr, $b:expr, stream=$stream:expr) => {
-        $a.rem_device($b.as_ref(), $stream)
+        $a.remainder_device($b.as_ref(), $stream)
     };
 }
 

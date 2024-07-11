@@ -242,7 +242,7 @@ macro_rules! transpose {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Array, StreamOrDevice};
+    use crate::{ops::zeros, Array, StreamOrDevice};
 
     #[test]
     fn test_as_strided() {
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn test_squeeze() {
         let stream = StreamOrDevice::default();
-        let x = Array::zeros::<i32>(&[1, 2, 1, 3]);
+        let x = zeros::<i32>(&[1, 2, 1, 3]).unwrap();
 
         // We are just testing that the macro compiles
         let _y = squeeze!(&x);
@@ -386,12 +386,12 @@ mod tests {
     #[test]
     fn test_pad() {
         let stream = StreamOrDevice::default();
-        let x = Array::zeros::<f32>(&[1, 2, 3]);
+        let x = zeros::<f32>(&[1, 2, 3]).unwrap();
 
         // We are just testing that the macro compiles
-        pad!(&x, 1);
-        pad!(&x, (0, 1), Array::from_int(1));
-        pad!(&x, (0, 1), Array::from_int(1), stream = stream);
+        pad!(&x, 1).unwrap();
+        pad!(&x, (0, 1), Array::from_int(1)).unwrap();
+        pad!(&x, (0, 1), Array::from_int(1), stream = stream).unwrap();
     }
 
     #[test]
@@ -400,8 +400,8 @@ mod tests {
         let x = Array::from_iter(0..10, &[10]);
 
         // We are just testing that the macro compiles
-        stack!(&[&x, &x], 0);
-        stack!(&[&x, &x], 0, stream = stream);
+        stack!(&[&x, &x], 0).unwrap();
+        stack!(&[&x, &x], 0, stream = stream).unwrap();
     }
 
     #[test]
@@ -410,8 +410,8 @@ mod tests {
         let x = Array::from_iter(0..10, &[10]);
 
         // We are just testing that the macro compiles
-        stack_all!(&[&x, &x]);
-        stack_all!(&[&x, &x], stream = stream);
+        stack_all!(&[&x, &x]).unwrap();
+        stack_all!(&[&x, &x], stream = stream).unwrap();
     }
 
     #[test]
@@ -420,8 +420,8 @@ mod tests {
         let x = Array::from_iter(0..10, &[2, 5]);
 
         // We are just testing that the macro compiles
-        swap_axes!(&x, 0, 1);
-        swap_axes!(&x, 0, 1, stream = stream);
+        swap_axes!(&x, 0, 1).unwrap();
+        swap_axes!(&x, 0, 1, stream = stream).unwrap();
     }
 
     #[test]
@@ -430,8 +430,8 @@ mod tests {
         let x = Array::from_iter(0..10, &[2, 5]);
 
         // We are just testing that the macro compiles
-        tile!(&x, &[2, 3]);
-        tile!(&x, &[2, 3], stream = stream);
+        tile!(&x, &[2, 3]).unwrap();
+        tile!(&x, &[2, 3], stream = stream).unwrap();
     }
 
     #[test]
@@ -440,8 +440,8 @@ mod tests {
         let x = Array::from_iter(0..10, &[2, 5]);
 
         // We are just testing that the macro compiles
-        transpose!(&x);
-        transpose!(&x, &[1, 0][..]);
-        transpose!(&x, &[1, 0][..], stream = stream);
+        transpose!(&x).unwrap();
+        transpose!(&x, &[1, 0][..]).unwrap();
+        transpose!(&x, &[1, 0][..], stream = stream).unwrap();
     }
 }

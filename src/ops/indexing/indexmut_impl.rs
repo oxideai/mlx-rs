@@ -1093,7 +1093,7 @@ mod tests {
         a.index_mut(1, new_value);
 
         let expected = Array::from_slice(&[0, 1, 2, 3, 77, 77, 77, 77, 8, 9, 10, 11], &[3, 4]);
-        assert_array_all_close!(a, expected);
+        assert_eq!(a, expected);
     }
 
     #[test]
@@ -1115,7 +1115,7 @@ mod tests {
             ],
             &[2, 2, 5],
         );
-        assert_array_all_close!(a, expected);
+        assert_eq!(a, expected);
     }
 
     #[test]
@@ -1131,7 +1131,7 @@ mod tests {
             ],
             &[2, 2, 5],
         );
-        assert_array_all_close!(a, expected);
+        assert_eq!(a, expected);
     }
 
     #[test]

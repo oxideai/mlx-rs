@@ -973,10 +973,10 @@ mod tests {
         let a = Array::from_iter(0..8, &[8]);
         let indices = Array::from_slice(&[1, 3, 5], &[3]);
 
-        let s = a.take(&indices, 0);
+        let s = a.take(&indices, 0).unwrap();
 
         let expected = Array::from_slice(&[1, 3, 5], &[3]);
-        assert_array_all_close!(s, expected);
+        assert_eq!(s, expected);
     }
 
     #[test]
@@ -1182,7 +1182,7 @@ mod tests {
         for i in 0..2 {
             let row = a.index(i);
             let expected = Array::from_iter((i * 10)..(i * 10 + 10), &[2, 5]);
-            assert_array_all_close!(row, expected);
+            assert_eq!(row, expected);
         }
     }
 

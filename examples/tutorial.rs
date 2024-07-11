@@ -25,7 +25,7 @@ fn scalar_basics() {
 
     // scalar shapes are empty arrays
     let shape = x.shape();
-    assert_eq!(shape, vec![]);
+    assert!(shape.is_empty());
 }
 
 #[allow(unused_variables)]

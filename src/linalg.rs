@@ -4,7 +4,6 @@ use crate::{Array, Stream, StreamOrDevice};
 use mlx_macros::default_device;
 use smallvec::SmallVec;
 use std::f64;
-use std::ffi::CString;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Ord<'a> {
@@ -102,7 +101,7 @@ pub fn norm_ord_device<'a>(
 ) -> Result<Array, Exception> {
     unsafe {
         let ord = MlxString::try_from(ord).map_err(|_e| Exception {
-            what: CString::new("NulError").unwrap(),
+            what: String::from("NulError"),
         })?;
 
         let c_array = try_catch_c_ptr_expr! {

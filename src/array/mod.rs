@@ -459,26 +459,75 @@ pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 }
 
 impl From<bool> for Array {
-    fn from(val: bool) -> Self {
-        Array::from_bool(val)
+    fn from(value: bool) -> Self {
+        Array::from_bool(value)
     }
 }
 
 impl From<i32> for Array {
-    fn from(val: i32) -> Self {
-        Array::from_int(val)
+    fn from(value: i32) -> Self {
+        Array::from_int(value)
     }
 }
 
 impl From<f32> for Array {
-    fn from(val: f32) -> Self {
-        Array::from_float(val)
+    fn from(value: f32) -> Self {
+        Array::from_float(value)
+    }
+}
+
+impl From<complex64> for Array {
+    fn from(value: complex64) -> Self {
+        Array::from_complex(value)
+    }
+}
+
+impl<T> From<T> for Array
+where
+    Array: FromNested<T>,
+{
+    fn from(value: T) -> Self {
+        Array::from_nested(value)
     }
 }
 
 impl AsRef<Array> for Array {
     fn as_ref(&self) -> &Array {
         self
+    }
+}
+
+/// A helper trait to construct `Array` from scalar values.
+///
+/// This trait is intended to be used with the macro [`array!`] but can be used directly if needed.
+pub trait FromScalar<T>
+where
+    T: ArrayElement,
+{
+    fn from_scalar(val: T) -> Array;
+}
+
+impl FromScalar<bool> for Array {
+    fn from_scalar(val: bool) -> Array {
+        Array::from_bool(val)
+    }
+}
+
+impl FromScalar<i32> for Array {
+    fn from_scalar(val: i32) -> Array {
+        Array::from_int(val)
+    }
+}
+
+impl FromScalar<f32> for Array {
+    fn from_scalar(val: f32) -> Array {
+        Array::from_float(val)
+    }
+}
+
+impl FromScalar<complex64> for Array {
+    fn from_scalar(val: complex64) -> Array {
+        Array::from_complex(val)
     }
 }
 

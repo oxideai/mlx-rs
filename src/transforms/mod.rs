@@ -226,18 +226,6 @@ where
     build_value_and_gradient(f, argument_numbers)
 }
 
-/// Similar to `value_and_grad`, but unwraps the result.
-pub fn value_and_grad_unwrapped<'a, F>(
-    f: F,
-    argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> (Vec<Array>, Vec<Array>) + 'a
-where
-    F: FnMut(&[Array]) -> Vec<Array> + 'a,
-{
-    let mut g = build_value_and_gradient(f, argument_numbers);
-    move |args: &[Array]| -> (Vec<Array>, Vec<Array>) { g(args).unwrap() }
-}
-
 pub trait Grad<'a, Args, Output> {
     fn grad(
         self,
@@ -325,23 +313,6 @@ where
     F: Grad<'a, Args, Output>,
 {
     f.grad(argument_numbers)
-}
-
-/// Similar to `grad`, but unwraps the result.
-///
-/// This is useful when
-///
-/// - you are sure that the arguments are correct
-/// - you would like to chain the operation with other operations (eg. 2nd order gradient)
-pub fn grad_unwrapped<'a, F, Args, Output>(
-    f: F,
-    argument_numbers: &'a [i32],
-) -> impl FnMut(Args) -> Output + 'a
-where
-    F: Grad<'a, Args, Output>,
-{
-    let mut g = f.grad(argument_numbers);
-    move |args: Args| -> Output { g(args).unwrap() }
 }
 
 #[cfg(test)]

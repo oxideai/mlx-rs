@@ -1240,8 +1240,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64, eval,
+        array, complex64,
         ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal},
+        transforms::eval,
         Dtype,
     };
     use float_eq::assert_float_eq;
@@ -1769,7 +1770,7 @@ mod tests {
         assert_eq!(sign(&x), x);
     }
 
-    const NEG_INF: f32 = std::f32::NEG_INFINITY;
+    const NEG_INF: f32 = f32::NEG_INFINITY;
 
     #[test]
     fn test_unary_floor_ceil() {
@@ -2127,7 +2128,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        let inf = std::f32::INFINITY;
+        let inf = f32::INFINITY;
         let x = array![inf];
         assert_eq!(sigmoid(&x).item::<f32>(), 1.0);
 
@@ -2342,37 +2343,28 @@ mod tests {
         let y = array!([10000u32]);
         assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 10000.0);
 
-        let x = array![std::f32::INFINITY];
+        let x = array![f32::INFINITY];
         let y = array![3.0];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            std::f32::INFINITY
-        );
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
-        let x = array![std::f32::NEG_INFINITY];
+        let x = array![f32::NEG_INFINITY];
         let y = array![3.0];
         assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 3.0);
 
-        let x = array![std::f32::NEG_INFINITY];
-        let y = array![std::f32::NEG_INFINITY];
+        let x = array![f32::NEG_INFINITY];
+        let y = array![f32::NEG_INFINITY];
         assert_eq!(
             log_add_exp(&x, &y).unwrap().item::<f32>(),
-            std::f32::NEG_INFINITY
+            f32::NEG_INFINITY
         );
 
-        let x = array![std::f32::INFINITY];
-        let y = array![std::f32::INFINITY];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            std::f32::INFINITY
-        );
+        let x = array![f32::INFINITY];
+        let y = array![f32::INFINITY];
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
-        let x = array![std::f32::NEG_INFINITY];
-        let y = array![std::f32::INFINITY];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            std::f32::INFINITY
-        );
+        let x = array![f32::NEG_INFINITY];
+        let y = array![f32::INFINITY];
+        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
     }
 
     #[test]

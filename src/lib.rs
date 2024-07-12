@@ -13,14 +13,13 @@ pub mod linalg;
 pub mod ops;
 pub mod random;
 mod stream;
-mod transforms;
+pub mod transforms;
 pub mod utils;
 
 pub use array::*;
 pub use device::*;
 pub use dtype::*;
 pub use stream::*;
-pub use transforms::*;
 
 // TODO: what to put in the prelude?
 pub mod prelude {

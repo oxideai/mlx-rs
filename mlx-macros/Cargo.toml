@@ -1,6 +1,6 @@
 [package]
 name = "mlx-macros"
-version = "0.10.0-alpha.0"
+version = "0.1.0"
 authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
 edition = "2021"
 

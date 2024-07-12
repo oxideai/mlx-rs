@@ -1,6 +1,6 @@
 [package]
 name = "mlx-rs"
-version = "0.10.0-alpha.0"
+version = "0.14.0"
 authors = [
   "Minghua Wu <michael.wu1107@gmail.com>",
   "David Chavez <david@dcvz.io>",
@@ -15,8 +15,8 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 
 [dependencies]
-mlx-sys = { version = "0.10.0-alpha.0", path = "mlx-sys" }
-mlx-macros = { version = "0.10.0-alpha.0", path = "mlx-macros" }
+mlx-sys = { version = "0.0.8", path = "mlx-sys" }
+mlx-macros = { version = "0.1.0", path = "mlx-macros" }
 half = "2"
 mach-sys = "0.5.4"
 num-complex = "0.4"

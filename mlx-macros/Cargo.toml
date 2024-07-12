@@ -1,24 +1,20 @@
 [package]
-name = "mlx-sys"
+name = "mlx-macros"
 version = "0.10.0-alpha.0"
 authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
 edition = "2021"
 
-description = "Low-level interface and binding generation for the mlx library"
+description = "Code generation crate for mlx-rs"
 repository = "https://github.com/minghuaw/mlx-rs"
 keywords = ["mlx", "deep-learning", "machine-learning"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
-readme = "README.md"
 
-[features]
-default = ["accelerate", "metal"]
 
-accelerate = []
-metal = []
+[lib]
+proc-macro = true
 
 [dependencies]
-
-[build-dependencies]
-bindgen = "0.69.4"
-cmake = "0.1.31"
+syn = { version = "2.0.60", features = ["full"] }
+quote = "1.0"
+darling = "0.20"

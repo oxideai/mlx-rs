@@ -7,8 +7,8 @@ authors = [
 ]
 edition = "2021"
 
-description = "Rust wrapper for Apple's mlx machine learning library."
-repository = "https://github.com/minghuaw/mlx-rs"
+description = "Unofficial rust wrapper for Apple's mlx machine learning library."
+repository = "https://github.com/oxideai/mlx-rs"
 keywords = ["mlx", "deep-learning", "machine-learning"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"

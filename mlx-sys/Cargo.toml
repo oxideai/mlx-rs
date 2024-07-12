@@ -5,7 +5,7 @@ authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io
 edition = "2021"
 
 description = "Low-level interface and binding generation for the mlx library"
-repository = "https://github.com/minghuaw/mlx-rs"
+repository = "https://github.com/oxideai/mlx-rs"
 keywords = ["mlx", "deep-learning", "machine-learning"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"

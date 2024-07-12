@@ -8,6 +8,17 @@ fn main() {
     let mut config = Config::new("src/mlx-c");
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
+
+    #[cfg(debug_assertions)]
+    {
+        config.define("CMAKE_BUILD_TYPE", "Debug");
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        config.define("CMAKE_BUILD_TYPE", "Release");
+    }
+
     config.define("MLX_BUILD_METAL", "OFF");
     config.define("MLX_BUILD_ACCELERATE", "OFF");
 

@@ -11,6 +11,13 @@ categories = ["science"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+targets = [
+  "aarch64-apple-darwin",
+  "aarch64-apple-ios",
+  "aarch64-apple-ios-sim",
+]
+
 [features]
 default = ["accelerate", "metal"]
 

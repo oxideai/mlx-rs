@@ -14,6 +14,21 @@ Rust bindings for Apple's mlx machine learning library.
 > **⚠️ Project is still in development - contributors welcome!**
 
 ---
+
+<div align="left" valign="middle">
+<a href="https://runblaze.dev">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://www.runblaze.dev/logo_dark.png">
+   <img align="right" src="https://www.runblaze.dev/logo_light.png" height="102px"/>
+ </picture>
+</a>
+
+<br style="display: none;"/>
+
+_[Blaze](https://runblaze.dev) supports this project by providing ultra-fast Apple Silicon macOS Github Action Runners. Apply the discount code `AI50` at checkout to enjoy 25% off your first year._
+
+</div>
+
 </div>
 
 ## Feature Flags

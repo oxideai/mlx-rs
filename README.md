@@ -36,6 +36,10 @@ _[Blaze](https://runblaze.dev) supports this project by providing ultra-fast App
 * `metal` - enables metal (GPU) usage in MLX
 * `accelerate` - enables using the accelerate framework in MLX
 
+## Versioning
+
+For simplicity, the main crate `mls-rs` follows MLX’s versioning, allowing you to easily see which MLX version you’re using under the hood. The `mlx-sys` crate follows the versioning of `mlx-c`, as that is the version from which the API is generated. The `mlx-macros` crate uses its own versioning, as those macros are developed independently by us.
+
 ## Community
 
 If you are excited about the project or want to contribute, don't hesitate to join our [Discord](https://discord.gg/jZvTsxDX49)!

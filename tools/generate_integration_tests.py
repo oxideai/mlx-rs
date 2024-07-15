@@ -96,36 +96,23 @@ def create_argument(indent, name, value) -> t.Tuple[str, mx.array]:
         return f"let {name} = mlx_rs::random::normal::<f32>(None, None, None, None).unwrap();", mx.random.normal()
 
     if isinstance(value, t.Tuple):
-        # TODO: Create uniform array entirely in Rust
-        # mx_array = mx.random.uniform(0, 1, value)
-        # flattened_list = list(flatten_generator(mx_array.tolist()))
-        # let a = uniform::<_, f32>(0, 1, None, None).unwrap();
-        # let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
         return (
             f"let {name} = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, {tuple_to_rust_slice(value)}, None).unwrap();",
-            # f"let {name} =  mlx_rs::random::uniform(&{flattened_list}, {tuple_to_rust_slice(value)});",
             mx.random.uniform(0, 1, value),
-            # f"let {name} = Array::from_slice(&{flattened_list}, {tuple_to_rust_slice(value)});",
-            # mx_array,
         )
 
     if isinstance(value, int) or isinstance(value, float):
         return f"let {name}: Array = {value}.into();", value
 
     if isinstance(value, dict) and "low" in value:
-        # TODO: Create uniform array entirely in Rust
-        mx_array = mx.random.uniform(value["low"], value["high"], [4, 3])
-        flattened_list = list(flatten_generator(mx_array.tolist()))
         return (
-            # f"let {name} = mlx::random::uniform(low: {value['low']}, high: {value['high']}, [4, 3])",
-            # mx.random.uniform(value["low"], value["high"], [4, 3]),
-            f"let {name} = Array::from_slice(&{flattened_list}, &[4, 3]);",
-            mx_array,
+            f"let {name} = mlx_rs::random::uniform::<_, f32>({value['low']}f32, {value['high']}f32, &[4, 3], None).unwrap();",
+            mx.random.uniform(value["low"], value["high"], [4, 3]),
         )
 
     if isinstance(value, dict) and "int" in value:
         return (
-            f"let {name} = MLXRandom.randInt(low: 0, high: 10, {tuple_to_rust_slice(value['shape'])})",
+            f"let {name} = mlx_rs::random::randint::<i32>(0, 10, {tuple_to_rust_slice(value['shape'])}).unwrap();",
             mx.random.randint(0, 10, value["shape"]),
         )
 

@@ -7,6 +7,7 @@ use mlx_rs::{
         fft2_device, fft_device, fftn_device, ifft2_device, ifft_device, ifftn_device,
         irfft2_device, irfft_device, irfftn_device, rfft2_device, rfft_device, rfftn_device,
     },
+    ops::{acos, indexing::argmax},
     Array, Dtype, StreamOrDevice,
 };
 use num_complex::Complex32;
@@ -771,7 +772,7 @@ fn test_all2() {
 }
 
 #[test]
-fn test_floor() {
+fn test_any() {
     mlx_rs::random::seed(142);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -786,147 +787,123 @@ fn test_floor() {
         2.595086097717285,
         abs <= 0.051901721954345705
     );
-    let result = a.floor().unwrap();
-    assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Float32);
-    float_eq!(
-        result.mean(None, None).unwrap().item::<f32>(),
-        -0.3333333432674408,
-        abs <= -0.006666666865348816
-    );
-    float_eq!(
-        result.sum(None, None).unwrap().item::<f32>(),
-        -4.0,
-        abs <= -0.08
-    );
+    let result = a.any(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
 }
 
 #[test]
-fn test_log() {
+fn test_any1() {
     mlx_rs::random::seed(288);
-    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.9068121910095215,
-        abs <= 0.01813624382019043
+        -0.19039803743362427,
+        abs <= -0.0038079607486724855
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        10.881746292114258,
-        abs <= 0.21763492584228517
+        -2.284776449203491,
+        abs <= -0.045695528984069825
     );
-    let result = a.log();
-    assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Float32);
-    float_eq!(
-        result.mean(None, None).unwrap().item::<f32>(),
-        -0.420678973197937,
-        abs <= -0.00841357946395874
-    );
-    float_eq!(
-        result.sum(None, None).unwrap().item::<f32>(),
-        -5.048147678375244,
-        abs <= -0.10096295356750488
-    );
+    let result = a.any(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
 }
 
 #[test]
-fn test_log2() {
+fn test_any2() {
     mlx_rs::random::seed(143);
-    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
-    assert_eq!(a.shape(), &[4, 3]);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        1.0360649824142456,
-        abs <= 0.020721299648284914
+        0.5121428966522217,
+        abs <= 0.010242857933044434
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        12.432779312133789,
-        abs <= 0.24865558624267578
+        36.87428665161133,
+        abs <= 0.7374857330322265
     );
-    let result = a.log2();
-    assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Float32);
-    float_eq!(
-        result.mean(None, None).unwrap().item::<f32>(),
-        -0.06925849616527557,
-        abs <= -0.0013851699233055116
-    );
-    float_eq!(
-        result.sum(None, None).unwrap().item::<f32>(),
-        -0.8311018943786621,
-        abs <= -0.016622037887573243
-    );
+    let result = a.any(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
 }
 
 #[test]
-fn test_log10() {
+fn test_cummax() {
     mlx_rs::random::seed(773);
-    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.9159950613975525,
-        abs <= 0.01831990122795105
+        -0.18657740950584412,
+        abs <= -0.003731548190116882
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        10.99194049835205,
-        abs <= 0.21983880996704103
+        -2.23892879486084,
+        abs <= -0.044778575897216795
     );
-    let result = a.log10();
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.cummax(None, None, None).unwrap();
+    assert_eq!(result.shape(), &[12]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.11017629504203796,
-        abs <= -0.002203525900840759
+        0.7695443630218506,
+        abs <= 0.015390887260437013
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -1.3221155405044556,
-        abs <= -0.02644231081008911
+        9.234532356262207,
+        abs <= 0.18469064712524413
     );
 }
 
 #[test]
-fn test_log1p() {
+fn test_cummax1() {
     mlx_rs::random::seed(97);
-    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        1.069392442703247,
-        abs <= 0.02138784885406494
+        -0.04777970910072327,
+        abs <= -0.0009555941820144654
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        12.832709312438965,
-        abs <= 0.2566541862487793
+        -0.5733565092086792,
+        abs <= -0.011467130184173583
     );
-    let result = a.log1p();
+    let result = a.cummax(-1, None, None).unwrap();
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.6707672476768494,
-        abs <= 0.013415344953536988
+        0.6276893615722656,
+        abs <= 0.012553787231445313
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        8.049206733703613,
-        abs <= 0.16098413467407227
+        7.5322723388671875,
+        abs <= 0.15064544677734376
     );
 }
 
 #[test]
-fn test_reciprocal() {
+fn test_cummin() {
     mlx_rs::random::seed(633);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -941,23 +918,23 @@ fn test_reciprocal() {
         2.0814566612243652,
         abs <= 0.0416291332244873
     );
-    let result = a.reciprocal();
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.cummin(None, None, None).unwrap();
+    assert_eq!(result.shape(), &[12]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.442837655544281,
-        abs <= -0.00885675311088562
+        -0.9077428579330444,
+        abs <= -0.01815485715866089
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -5.314051628112793,
-        abs <= -0.10628103256225586
+        -10.892913818359375,
+        abs <= -0.2178582763671875
     );
 }
 
 #[test]
-fn test_round() {
+fn test_cummin1() {
     mlx_rs::random::seed(818);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -972,23 +949,23 @@ fn test_round() {
         -0.20920497179031372,
         abs <= -0.004184099435806275
     );
-    let result = a.round(None);
+    let result = a.cummin(-1, None, None).unwrap();
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.0833333358168602,
-        abs <= 0.001666666716337204
+        -0.39502769708633423,
+        abs <= -0.007900553941726684
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        1.0,
-        abs <= 0.02
+        -4.740332126617432,
+        abs <= -0.09480664253234863
     );
 }
 
 #[test]
-fn test_sin() {
+fn test_cumprod() {
     mlx_rs::random::seed(256);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1003,23 +980,23 @@ fn test_sin() {
         -1.8892598152160645,
         abs <= -0.03778519630432129
     );
-    let result = a.sin();
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.cumprod(None, None, None).unwrap();
+    assert_eq!(result.shape(), &[12]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.20018330216407776,
-        abs <= -0.004003666043281555
+        -0.06458740681409836,
+        abs <= -0.0012917481362819672
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -2.4021995067596436,
-        abs <= -0.04804399013519287
+        -0.7750488519668579,
+        abs <= -0.01550097703933716
     );
 }
 
 #[test]
-fn test_cos() {
+fn test_cumprod1() {
     mlx_rs::random::seed(931);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1034,54 +1011,54 @@ fn test_cos() {
         -2.6941077709198,
         abs <= -0.053882155418396
     );
-    let result = a.cos();
+    let result = a.cumprod(-1, None, None).unwrap();
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.6940907835960388,
-        abs <= 0.013881815671920776
+        -0.15857845544815063,
+        abs <= -0.0031715691089630126
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        8.329089164733887,
-        abs <= 0.16658178329467774
+        -1.9029414653778076,
+        abs <= -0.038058829307556157
     );
 }
 
 #[test]
-fn test_sqrt() {
+fn test_cumsum() {
     mlx_rs::random::seed(545);
-    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        1.0316438674926758,
-        abs <= 0.020632877349853515
+        0.05837365239858627,
+        abs <= 0.0011674730479717256
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        12.37972640991211,
-        abs <= 0.24759452819824218
+        0.7004837989807129,
+        abs <= 0.014009675979614259
     );
-    let result = a.sqrt();
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.cumsum(None, None, None).unwrap();
+    assert_eq!(result.shape(), &[12]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.9801419973373413,
-        abs <= 0.019602839946746827
+        1.3769497871398926,
+        abs <= 0.02753899574279785
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        11.761703491210938,
-        abs <= 0.23523406982421877
+        16.52339744567871,
+        abs <= 0.3304679489135742
     );
 }
 
 #[test]
-fn test_logical_not() {
+fn test_cumsum1() {
     mlx_rs::random::seed(722);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1096,15 +1073,23 @@ fn test_logical_not() {
         -0.2374630719423294,
         abs <= -0.004749261438846588
     );
-    let result = a.logical_not();
+    let result = a.cumsum(-1, None, None).unwrap();
     assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.1743556708097458,
+        abs <= -0.003487113416194916
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -2.0922679901123047,
+        abs <= -0.041845359802246095
+    );
 }
 
 #[test]
-fn test_negative() {
+fn test_expand_dims() {
     mlx_rs::random::seed(829);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1119,67 +1104,54 @@ fn test_negative() {
         0.4230349063873291,
         abs <= 0.008460698127746582
     );
-    let result = a.negative().unwrap();
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.expand_dims(&[-1][..]).unwrap();
+    assert_eq!(result.shape(), &[4, 3, 1]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.03525291010737419,
-        abs <= -0.0007050582021474838
+        0.03525291010737419,
+        abs <= 0.0007050582021474838
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -0.4230349063873291,
-        abs <= -0.008460698127746582
+        0.4230349063873291,
+        abs <= 0.008460698127746582
     );
 }
 
 #[test]
-fn test_add() {
+fn test_expand_dims1() {
     mlx_rs::random::seed(616);
-    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(a.shape(), &[4, 3]);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.1122930571436882,
-        abs <= 0.002245861142873764
+        0.49660220742225647,
+        abs <= 0.00993204414844513
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        1.347516655921936,
-        abs <= 0.02695033311843872
+        35.7553596496582,
+        abs <= 0.715107192993164
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        0.305597722530365,
-        abs <= 0.0061119544506073
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        3.66717267036438,
-        abs <= 0.0733434534072876
-    );
-    let result = a.add(&b);
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.expand_dims(&[0, -1][..]).unwrap();
+    assert_eq!(result.shape(), &[1, 2, 3, 4, 3, 1]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.4178907573223114,
-        abs <= 0.008357815146446228
+        0.49660220742225647,
+        abs <= 0.00993204414844513
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        5.014688968658447,
-        abs <= 0.10029377937316895
+        35.7553596496582,
+        abs <= 0.715107192993164
     );
 }
 
 #[test]
-fn test_div() {
+fn test_floor() {
     mlx_rs::random::seed(923);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1194,180 +1166,147 @@ fn test_div() {
         -1.871446132659912,
         abs <= -0.03742892265319824
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        0.17053499817848206,
-        abs <= 0.0034106999635696413
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        2.046419858932495,
-        abs <= 0.040928397178649906
-    );
-    let result = a.div(&b);
+    let result = a.floor().unwrap();
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        1.9432785511016846,
-        abs <= 0.03886557102203369
+        -0.8333333730697632,
+        abs <= -0.016666667461395265
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        23.3193416595459,
-        abs <= 0.466386833190918
+        -10.0,
+        abs <= -0.2
     );
 }
 
 #[test]
-fn test_eq() {
+fn test_log() {
     mlx_rs::random::seed(150);
-    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        -0.02183736488223076,
-        abs <= -0.0004367472976446152
+        1.0339899063110352,
+        abs <= 0.020679798126220703
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        -0.2620483636856079,
-        abs <= -0.005240967273712158
+        12.407877922058105,
+        abs <= 0.2481575584411621
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        0.04139445349574089,
-        abs <= 0.0008278890699148178
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        0.4967334270477295,
-        abs <= 0.00993466854095459
-    );
-    let result = a.eq(&b).unwrap();
+    let result = a.log();
     assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.21842311322689056,
+        abs <= -0.004368462264537811
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -2.621077299118042,
+        abs <= -0.05242154598236084
+    );
 }
 
 #[test]
-fn test_gt() {
+fn test_log2() {
     mlx_rs::random::seed(317);
-    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        -0.1289883852005005,
-        abs <= -0.0025797677040100097
+        0.9941028356552124,
+        abs <= 0.019882056713104248
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        -1.5478605031967163,
-        abs <= -0.030957210063934325
+        11.92923355102539,
+        abs <= 0.23858467102050782
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.5541751980781555,
-        abs <= -0.01108350396156311
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -6.650102138519287,
-        abs <= -0.13300204277038574
-    );
-    let result = a.gt(&b).unwrap();
+    let result = a.log2();
     assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.2265104502439499,
+        abs <= -0.004530209004878998
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -2.718125343322754,
+        abs <= -0.05436250686645508
+    );
 }
 
 #[test]
-fn test_ge() {
+fn test_log10() {
     mlx_rs::random::seed(101);
-    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        -0.08150328695774078,
-        abs <= -0.0016300657391548157
+        1.0013518333435059,
+        abs <= 0.020027036666870116
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        -0.9780394434928894,
-        abs <= -0.01956078886985779
+        12.016221046447754,
+        abs <= 0.2403244209289551
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.32622432708740234,
-        abs <= -0.006524486541748047
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -3.914691925048828,
-        abs <= -0.07829383850097657
-    );
-    let result = a.ge(&b).unwrap();
+    let result = a.log10();
     assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.0408567413687706,
+        abs <= -0.000817134827375412
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -0.4902808666229248,
+        abs <= -0.009805617332458496
+    );
 }
 
 #[test]
-fn test_lt() {
+fn test_log1p() {
     mlx_rs::random::seed(747);
-    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.23745165765285492,
-        abs <= 0.004749033153057099
+        1.1675840616226196,
+        abs <= 0.023351681232452393
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        2.8494198322296143,
-        abs <= 0.056988396644592286
+        14.011008262634277,
+        abs <= 0.28022016525268556
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.009038388729095459,
-        abs <= -0.0001807677745819092
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -0.10846066474914551,
-        abs <= -0.00216921329498291
-    );
-    let result = a.lt(&b).unwrap();
+    let result = a.log1p();
     assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.7285978198051453,
+        abs <= 0.014571956396102906
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        8.743173599243164,
+        abs <= 0.1748634719848633
+    );
 }
 
 #[test]
-fn test_le() {
+fn test_log_sum_exp() {
     mlx_rs::random::seed(75);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1382,116 +1321,85 @@ fn test_le() {
         -3.647083282470703,
         abs <= -0.07294166564941407
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.24271723628044128,
-        abs <= -0.004854344725608826
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -2.912606716156006,
-        abs <= -0.05825213432312012
-    );
-    let result = a.le(&b).unwrap();
-    assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
-}
-
-#[test]
-fn test_matmul() {
-    mlx_rs::random::seed(920);
-    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[10, 8], None).unwrap();
-    assert_eq!(a.shape(), &[10, 8]);
-    assert_eq!(a.dtype(), Dtype::Float32);
-    float_eq!(
-        a.mean(None, None).unwrap().item::<f32>(),
-        0.5571629405021667,
-        abs <= 0.011143258810043336
-    );
-    float_eq!(
-        a.sum(None, None).unwrap().item::<f32>(),
-        44.57303237915039,
-        abs <= 0.8914606475830078
-    );
-    let b = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 13], None).unwrap();
-    assert_eq!(b.shape(), &[8, 13]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        0.48261433839797974,
-        abs <= 0.009652286767959595
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        50.191890716552734,
-        abs <= 1.0038378143310547
-    );
-    let result = a.matmul(&b).unwrap();
-    assert_eq!(result.shape(), &[10, 13]);
+    let result = a.log_sum_exp(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        2.173865795135498,
-        abs <= 0.043477315902709965
+        2.6077346801757812,
+        abs <= 0.05215469360351563
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        282.6025390625,
-        abs <= 5.65205078125
+        2.6077346801757812,
+        abs <= 0.05215469360351563
     );
 }
 
 #[test]
-fn test_mul() {
-    mlx_rs::random::seed(870);
+fn test_log_sum_exp1() {
+    mlx_rs::random::seed(920);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.32090985774993896,
-        abs <= 0.006418197154998779
+        0.13196566700935364,
+        abs <= 0.002639313340187073
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        3.8509180545806885,
-        abs <= 0.07701836109161377
+        1.5835880041122437,
+        abs <= 0.03167176008224487
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
-    float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.0976833924651146,
-        abs <= -0.0019536678493022918
-    );
-    float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -1.1722006797790527,
-        abs <= -0.023444013595581056
-    );
-    let result = a.mul(&b);
-    assert_eq!(result.shape(), &[4, 3]);
+    let result = a.log_sum_exp(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.16028836369514465,
-        abs <= -0.003205767273902893
+        1.4452545642852783,
+        abs <= 0.028905091285705568
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -1.9234602451324463,
-        abs <= -0.03846920490264893
+        5.781018257141113,
+        abs <= 0.11562036514282227
     );
 }
 
 #[test]
-fn test_ne() {
+fn test_log_sum_exp2() {
+    mlx_rs::random::seed(870);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5518582463264465,
+        abs <= 0.01103716492652893
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        39.73379135131836,
+        abs <= 0.7946758270263672
+    );
+    let result = a.log_sum_exp(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        2.371975898742676,
+        abs <= 0.04743951797485352
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        28.46371078491211,
+        abs <= 0.5692742156982422
+    );
+}
+
+#[test]
+fn test_max() {
     mlx_rs::random::seed(700);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1506,28 +1414,23 @@ fn test_ne() {
         -2.50846266746521,
         abs <= -0.0501692533493042
     );
-    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-    assert_eq!(b.shape(), &[4, 3]);
-    assert_eq!(b.dtype(), Dtype::Float32);
+    let result = a.max(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
-        b.mean(None, None).unwrap().item::<f32>(),
-        -0.012717477977275848,
-        abs <= -0.000254349559545517
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.603740930557251,
+        abs <= 0.01207481861114502
     );
     float_eq!(
-        b.sum(None, None).unwrap().item::<f32>(),
-        -0.15260973572731018,
-        abs <= -0.0030521947145462037
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.603740930557251,
+        abs <= 0.01207481861114502
     );
-    let result = a.ne(&b).unwrap();
-    assert_eq!(result.shape(), &[4, 3]);
-    assert_eq!(result.dtype(), Dtype::Bool);
-    assert_eq!(result.all(None, None).unwrap().item::<bool>(), true);
-    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
 }
 
 #[test]
-fn test_rem() {
+fn test_max1() {
     mlx_rs::random::seed(338);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
@@ -1542,106 +1445,1234 @@ fn test_rem() {
         0.8622983694076538,
         abs <= 0.017245967388153077
     );
+    let result = a.max(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.8161057233810425,
+        abs <= 0.01632211446762085
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        3.26442289352417,
+        abs <= 0.0652884578704834
+    );
+}
+
+#[test]
+fn test_max2() {
+    mlx_rs::random::seed(483);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5281925201416016,
+        abs <= 0.010563850402832031
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        38.02986145019531,
+        abs <= 0.7605972290039062
+    );
+    let result = a.max(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.8834829330444336,
+        abs <= 0.01766965866088867
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        10.601795196533203,
+        abs <= 0.21203590393066407
+    );
+}
+
+#[test]
+fn test_mean() {
+    mlx_rs::random::seed(573);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5405035018920898,
+        abs <= 0.010810070037841797
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        6.48604154586792,
+        abs <= 0.1297208309173584
+    );
+    let result = a.mean(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.5405035018920898,
+        abs <= 0.010810070037841797
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.5405035018920898,
+        abs <= 0.010810070037841797
+    );
+}
+
+#[test]
+fn test_mean1() {
+    mlx_rs::random::seed(103);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.2983229458332062,
+        abs <= 0.005966458916664124
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        3.5798752307891846,
+        abs <= 0.0715975046157837
+    );
+    let result = a.mean(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.2983229160308838,
+        abs <= 0.005966458320617676
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        1.1932916641235352,
+        abs <= 0.023865833282470703
+    );
+}
+
+#[test]
+fn test_mean2() {
+    mlx_rs::random::seed(362);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5048888921737671,
+        abs <= 0.010097777843475342
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        36.35200119018555,
+        abs <= 0.7270400238037109
+    );
+    let result = a.mean(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.5048888921737671,
+        abs <= 0.010097777843475342
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        6.058666706085205,
+        abs <= 0.1211733341217041
+    );
+}
+
+#[test]
+fn test_min() {
+    mlx_rs::random::seed(444);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.22760924696922302,
+        abs <= 0.004552184939384461
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        2.7313108444213867,
+        abs <= 0.05462621688842773
+    );
+    let result = a.min(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -3.278625249862671,
+        abs <= -0.06557250499725342
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -3.278625249862671,
+        abs <= -0.06557250499725342
+    );
+}
+
+#[test]
+fn test_min1() {
+    mlx_rs::random::seed(323);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.4485395550727844,
+        abs <= -0.008970791101455688
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -5.382474422454834,
+        abs <= -0.10764948844909668
+    );
+    let result = a.min(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -1.5538299083709717,
+        abs <= -0.031076598167419433
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -6.215319633483887,
+        abs <= -0.12430639266967773
+    );
+}
+
+#[test]
+fn test_min2() {
+    mlx_rs::random::seed(625);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.464836984872818,
+        abs <= 0.00929673969745636
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        33.46826171875,
+        abs <= 0.6693652343750001
+    );
+    let result = a.min(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.10299011319875717,
+        abs <= 0.0020598022639751433
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        1.2358813285827637,
+        abs <= 0.024717626571655275
+    );
+}
+
+#[test]
+fn test_prod() {
+    mlx_rs::random::seed(655);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.37031763792037964,
+        abs <= 0.0074063527584075925
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        4.443811416625977,
+        abs <= 0.08887622833251953
+    );
+    let result = a.prod(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.00019838762818835676,
+        abs <= -3.967752563767135e-06
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -0.00019838762818835676,
+        abs <= -3.967752563767135e-06
+    );
+}
+
+#[test]
+fn test_prod1() {
+    mlx_rs::random::seed(934);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.05676526948809624,
+        abs <= -0.0011353053897619249
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -0.6811832189559937,
+        abs <= -0.013623664379119873
+    );
+    let result = a.prod(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.012540563941001892,
+        abs <= -0.00025081127882003784
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -0.05016225576400757,
+        abs <= -0.0010032451152801514
+    );
+}
+
+#[test]
+fn test_prod2() {
+    mlx_rs::random::seed(209);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.4606572389602661,
+        abs <= 0.009213144779205323
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        33.167320251464844,
+        abs <= 0.6633464050292969
+    );
+    let result = a.prod(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.0043785953894257545,
+        abs <= 8.757190778851509e-05
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.052543144673109055,
+        abs <= 0.001050862893462181
+    );
+}
+
+#[test]
+fn test_reciprocal() {
+    mlx_rs::random::seed(989);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.16920256614685059,
+        abs <= -0.0033840513229370117
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -2.030430793762207,
+        abs <= -0.04060861587524414
+    );
+    let result = a.reciprocal();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.7970253825187683,
+        abs <= 0.015940507650375368
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        9.56430435180664,
+        abs <= 0.1912860870361328
+    );
+}
+
+#[test]
+fn test_round() {
+    mlx_rs::random::seed(565);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.644216775894165,
+        abs <= -0.0128843355178833
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -7.7306013107299805,
+        abs <= -0.1546120262145996
+    );
+    let result = a.round(None);
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.5,
+        abs <= -0.01
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -6.0,
+        abs <= -0.12
+    );
+}
+
+#[test]
+fn test_sin() {
+    mlx_rs::random::seed(488);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.398279070854187,
+        abs <= -0.00796558141708374
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -4.779348850250244,
+        abs <= -0.09558697700500489
+    );
+    let result = a.sin();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.27413636445999146,
+        abs <= -0.00548272728919983
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -3.2896363735198975,
+        abs <= -0.06579272747039795
+    );
+}
+
+#[test]
+fn test_cos() {
+    mlx_rs::random::seed(453);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.0004353722033556551,
+        abs <= 8.707444067113101e-06
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        0.005224466323852539,
+        abs <= 0.00010448932647705078
+    );
+    let result = a.cos();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.6913535594940186,
+        abs <= 0.013827071189880372
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        8.296242713928223,
+        abs <= 0.16592485427856446
+    );
+}
+
+#[test]
+fn test_sqrt() {
+    mlx_rs::random::seed(886);
+    let a = mlx_rs::random::uniform::<_, f32>(0.1f32, 2.0f32, &[4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        1.1043514013290405,
+        abs <= 0.022087028026580812
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        13.252216339111328,
+        abs <= 0.26504432678222656
+    );
+    let result = a.sqrt();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.9762437343597412,
+        abs <= 0.019524874687194823
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        11.714924812316895,
+        abs <= 0.2342984962463379
+    );
+}
+
+#[test]
+fn test_sum() {
+    mlx_rs::random::seed(533);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.12974336743354797,
+        abs <= -0.0025948673486709596
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -1.5569202899932861,
+        abs <= -0.031138405799865723
+    );
+    let result = a.sum(None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -1.5569202899932861,
+        abs <= -0.031138405799865723
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -1.5569202899932861,
+        abs <= -0.031138405799865723
+    );
+}
+
+#[test]
+fn test_sum1() {
+    mlx_rs::random::seed(266);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.20902606844902039,
+        abs <= 0.004180521368980407
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        2.508312702178955,
+        abs <= 0.050166254043579106
+    );
+    let result = a.sum(&[-1][..], None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.6270781755447388,
+        abs <= 0.012541563510894777
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        2.508312702178955,
+        abs <= 0.050166254043579106
+    );
+}
+
+#[test]
+fn test_sum2() {
+    mlx_rs::random::seed(63);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5236221551895142,
+        abs <= 0.010472443103790283
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        37.7007942199707,
+        abs <= 0.754015884399414
+    );
+    let result = a.sum(&[0, -1][..], None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        3.141733169555664,
+        abs <= 0.06283466339111328
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        37.70079803466797,
+        abs <= 0.7540159606933594
+    );
+}
+
+#[test]
+fn test_variance() {
+    mlx_rs::random::seed(824);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.07800808548927307,
+        abs <= 0.0015601617097854615
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        0.9360969662666321,
+        abs <= 0.018721939325332643
+    );
+    let result = a.variance(None, None, None).unwrap();
+    assert_eq!(result.shape().is_empty(), true);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.6466346383094788,
+        abs <= 0.012932692766189576
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.6466346383094788,
+        abs <= 0.012932692766189576
+    );
+}
+
+#[test]
+fn test_variance1() {
+    mlx_rs::random::seed(940);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.3181919455528259,
+        abs <= -0.0063638389110565186
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -3.818303346633911,
+        abs <= -0.07636606693267822
+    );
+    let result = a.variance(&[-1][..], None, None).unwrap();
+    assert_eq!(result.shape(), &[4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        1.0459537506103516,
+        abs <= 0.020919075012207033
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        4.183815002441406,
+        abs <= 0.08367630004882813
+    );
+}
+
+#[test]
+fn test_variance2() {
+    mlx_rs::random::seed(561);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[2, 3, 4, 3], None).unwrap();
+    assert_eq!(a.shape(), &[2, 3, 4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.4851457178592682,
+        abs <= 0.009702914357185365
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        34.93049240112305,
+        abs <= 0.698609848022461
+    );
+    let result = a.variance(&[0, -1][..], None, None).unwrap();
+    assert_eq!(result.shape(), &[3, 4]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.06911133974790573,
+        abs <= 0.0013822267949581146
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.8293360471725464,
+        abs <= 0.016586720943450928
+    );
+}
+
+#[test]
+fn test_logical_not() {
+    mlx_rs::random::seed(937);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.38423240184783936,
+        abs <= -0.007684648036956787
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -4.610788822174072,
+        abs <= -0.09221577644348145
+    );
+    let result = a.logical_not();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), false);
+}
+
+#[test]
+fn test_negative() {
+    mlx_rs::random::seed(14);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.20228910446166992,
+        abs <= -0.004045782089233399
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -2.427469253540039,
+        abs <= -0.04854938507080078
+    );
+    let result = a.negative().unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.20228910446166992,
+        abs <= 0.004045782089233399
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        2.427469253540039,
+        abs <= 0.04854938507080078
+    );
+}
+
+#[test]
+fn test_add() {
+    mlx_rs::random::seed(95);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.4827702045440674,
+        abs <= -0.009655404090881349
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -5.793242454528809,
+        abs <= -0.11586484909057618
+    );
     let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(b.shape(), &[4, 3]);
     assert_eq!(b.dtype(), Dtype::Float32);
     float_eq!(
         b.mean(None, None).unwrap().item::<f32>(),
-        -0.46045729517936707,
-        abs <= -0.009209145903587342
+        0.5239288210868835,
+        abs <= 0.01047857642173767
     );
     float_eq!(
         b.sum(None, None).unwrap().item::<f32>(),
-        -5.525487422943115,
-        abs <= -0.1105097484588623
+        6.287145614624023,
+        abs <= 0.12574291229248047
+    );
+    let result = a.add(&b);
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.041158583015203476,
+        abs <= 0.0008231716603040695
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        0.4939029812812805,
+        abs <= 0.00987805962562561
+    );
+}
+
+#[test]
+fn test_div() {
+    mlx_rs::random::seed(736);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.035255465656518936,
+        abs <= -0.0007051093131303787
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -0.42306557297706604,
+        abs <= -0.00846131145954132
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.3421180248260498,
+        abs <= 0.006842360496520997
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        4.105416297912598,
+        abs <= 0.08210832595825196
+    );
+    let result = a.div(&b);
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        -0.5086089968681335,
+        abs <= -0.010172179937362672
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        -6.103307723999023,
+        abs <= -0.12206615447998047
+    );
+}
+
+#[test]
+fn test_eq() {
+    mlx_rs::random::seed(860);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.06692855060100555,
+        abs <= -0.001338571012020111
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -0.8031426072120667,
+        abs <= -0.016062852144241333
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.4205962121486664,
+        abs <= 0.008411924242973328
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        5.047154426574707,
+        abs <= 0.10094308853149414
+    );
+    let result = a.eq(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), false);
+}
+
+#[test]
+fn test_gt() {
+    mlx_rs::random::seed(408);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.23098725080490112,
+        abs <= 0.004619745016098023
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        2.7718470096588135,
+        abs <= 0.05543694019317627
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.2717320919036865,
+        abs <= 0.005434641838073731
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        3.260784864425659,
+        abs <= 0.06521569728851319
+    );
+    let result = a.gt(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+}
+
+#[test]
+fn test_ge() {
+    mlx_rs::random::seed(727);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.03287608548998833,
+        abs <= 0.0006575217097997666
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        0.39451301097869873,
+        abs <= 0.007890260219573975
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.10557165741920471,
+        abs <= 0.0021114331483840943
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        1.2668598890304565,
+        abs <= 0.02533719778060913
+    );
+    let result = a.ge(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+}
+
+#[test]
+fn test_lt() {
+    mlx_rs::random::seed(844);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.09410222619771957,
+        abs <= 0.0018820445239543916
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        1.1292266845703125,
+        abs <= 0.022584533691406252
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.09581458568572998,
+        abs <= 0.0019162917137145997
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        1.1497750282287598,
+        abs <= 0.022995500564575194
+    );
+    let result = a.lt(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+}
+
+#[test]
+fn test_le() {
+    mlx_rs::random::seed(803);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.12041991204023361,
+        abs <= 0.002408398240804672
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        1.445038914680481,
+        abs <= 0.02890077829360962
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        -0.22826477885246277,
+        abs <= -0.004565295577049255
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        -2.7391772270202637,
+        abs <= -0.05478354454040527
+    );
+    let result = a.le(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), false);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+}
+
+#[test]
+fn test_matmul() {
+    mlx_rs::random::seed(684);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[10, 8], None).unwrap();
+    assert_eq!(a.shape(), &[10, 8]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.5106630325317383,
+        abs <= 0.010213260650634767
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        40.85304260253906,
+        abs <= 0.8170608520507813
+    );
+    let b = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 13], None).unwrap();
+    assert_eq!(b.shape(), &[8, 13]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.44409504532814026,
+        abs <= 0.008881900906562806
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        46.185882568359375,
+        abs <= 0.9237176513671875
+    );
+    let result = a.matmul(&b).unwrap();
+    assert_eq!(result.shape(), &[10, 13]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        1.7970799207687378,
+        abs <= 0.035941598415374754
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        233.62039184570312,
+        abs <= 4.672407836914062
+    );
+}
+
+#[test]
+fn test_mul() {
+    mlx_rs::random::seed(640);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.3832053542137146,
+        abs <= 0.007664107084274292
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        4.598464012145996,
+        abs <= 0.09196928024291992
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.11748751252889633,
+        abs <= 0.0023497502505779267
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        1.4098501205444336,
+        abs <= 0.028197002410888673
+    );
+    let result = a.mul(&b);
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Float32);
+    float_eq!(
+        result.mean(None, None).unwrap().item::<f32>(),
+        0.1429433673620224,
+        abs <= 0.002858867347240448
+    );
+    float_eq!(
+        result.sum(None, None).unwrap().item::<f32>(),
+        1.715320348739624,
+        abs <= 0.03430640697479248
+    );
+}
+
+#[test]
+fn test_ne() {
+    mlx_rs::random::seed(1);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        0.01741863414645195,
+        abs <= 0.000348372682929039
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        0.2090235948562622,
+        abs <= 0.004180471897125245
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.26430201530456543,
+        abs <= 0.005286040306091309
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        3.171624183654785,
+        abs <= 0.0634324836730957
+    );
+    let result = a.ne(&b).unwrap();
+    assert_eq!(result.shape(), &[4, 3]);
+    assert_eq!(result.dtype(), Dtype::Bool);
+    assert_eq!(result.all(None, None).unwrap().item::<bool>(), true);
+    assert_eq!(result.any(None, None).unwrap().item::<bool>(), true);
+}
+
+#[test]
+fn test_rem() {
+    mlx_rs::random::seed(626);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    float_eq!(
+        a.mean(None, None).unwrap().item::<f32>(),
+        -0.09981077909469604,
+        abs <= -0.001996215581893921
+    );
+    float_eq!(
+        a.sum(None, None).unwrap().item::<f32>(),
+        -1.1977293491363525,
+        abs <= -0.023954586982727052
+    );
+    let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(b.shape(), &[4, 3]);
+    assert_eq!(b.dtype(), Dtype::Float32);
+    float_eq!(
+        b.mean(None, None).unwrap().item::<f32>(),
+        0.00018940618610940874,
+        abs <= 3.788123722188175e-06
+    );
+    float_eq!(
+        b.sum(None, None).unwrap().item::<f32>(),
+        0.002272874116897583,
+        abs <= 4.545748233795166e-05
     );
     let result = a.rem(&b);
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        -0.20333433151245117,
-        abs <= -0.004066686630249024
+        -0.0356670580804348,
+        abs <= -0.000713341161608696
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        -2.440011978149414,
-        abs <= -0.04880023956298828
+        -0.4280046820640564,
+        abs <= -0.008560093641281128
     );
 }
 
 #[test]
 fn test_sub() {
-    mlx_rs::random::seed(483);
+    mlx_rs::random::seed(505);
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     float_eq!(
         a.mean(None, None).unwrap().item::<f32>(),
-        0.0843842476606369,
-        abs <= 0.001687684953212738
+        0.16046583652496338,
+        abs <= 0.0032093167304992677
     );
     float_eq!(
         a.sum(None, None).unwrap().item::<f32>(),
-        1.012610912322998,
-        abs <= 0.020252218246459962
+        1.9255900382995605,
+        abs <= 0.038511800765991214
     );
     let b = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(b.shape(), &[4, 3]);
     assert_eq!(b.dtype(), Dtype::Float32);
     float_eq!(
         b.mean(None, None).unwrap().item::<f32>(),
-        -0.48673853278160095,
-        abs <= -0.00973477065563202
+        0.030347442254424095,
+        abs <= 0.0006069488450884819
     );
     float_eq!(
         b.sum(None, None).unwrap().item::<f32>(),
-        -5.840862274169922,
-        abs <= -0.11681724548339845
+        0.36416929960250854,
+        abs <= 0.007283385992050171
     );
     let result = a.sub(&b);
     assert_eq!(result.shape(), &[4, 3]);
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.5711227655410767,
-        abs <= 0.011422455310821533
+        0.13011842966079712,
+        abs <= 0.0026023685932159424
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        6.853472709655762,
-        abs <= 0.13706945419311523
+        1.5614210367202759,
+        abs <= 0.03122842073440552
     );
 }
 
 #[test]
 fn test_fft_() {
-    mlx_rs::random::seed(573);
+    mlx_rs::random::seed(847);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(r.shape(), &[100, 100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49193280935287476,
-        abs <= 0.009838656187057496
+        0.5007054805755615,
+        abs <= 0.01001410961151123
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        4919.328125,
-        abs <= 98.3865625
+        5007.0546875,
+        abs <= 100.14109375
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(i.shape(), &[100, 100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5002716779708862,
-        abs <= 0.010005433559417725
+        0.49497225880622864,
+        abs <= 0.009899445176124573
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        5002.716796875,
-        abs <= 100.0543359375
+        4949.72265625,
+        abs <= 98.994453125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1653,56 +2684,56 @@ fn test_fft_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.49204036593437195,
-        abs <= 0.00984080731868744
+        0.43397900462150574,
+        abs <= 0.008679580092430115
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        4920.40380859375,
-        abs <= 98.408076171875
+        4339.7900390625,
+        abs <= 86.79580078125001
     );
     assert_eq!(result_imaginary.shape(), &[100, 100]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.48183417320251465,
-        abs <= 0.009636683464050293
+        0.4830464720726013,
+        abs <= 0.009660929441452026
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4818.341796875,
-        abs <= 96.3668359375
+        4830.46484375,
+        abs <= 96.609296875
     );
 }
 
 #[test]
 fn test_fft_1() {
-    mlx_rs::random::seed(103);
+    mlx_rs::random::seed(888);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(r.shape(), &[100, 100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49980759620666504,
-        abs <= 0.009996151924133301
+        0.5045462846755981,
+        abs <= 0.010090925693511964
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        4998.076171875,
-        abs <= 99.9615234375
+        5045.462890625,
+        abs <= 100.9092578125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(i.shape(), &[100, 100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.502456545829773,
-        abs <= 0.010049130916595459
+        0.5018342733383179,
+        abs <= 0.010036685466766358
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        5024.5654296875,
-        abs <= 100.49130859375
+        5018.3427734375,
+        abs <= 100.36685546875
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1714,56 +2745,56 @@ fn test_fft_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.525657057762146,
-        abs <= 0.01051314115524292
+        0.5137150883674622,
+        abs <= 0.010274301767349243
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        4205.25634765625,
-        abs <= 84.10512695312501
+        4109.720703125,
+        abs <= 82.1944140625
     );
     assert_eq!(result_imaginary.shape(), &[100, 80]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.5449963808059692,
-        abs <= 0.010899927616119385
+        0.4860946536064148,
+        abs <= 0.009721893072128297
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4359.970703125,
-        abs <= 87.1994140625
+        3888.757080078125,
+        abs <= 77.7751416015625
     );
 }
 
 #[test]
 fn test_fft_2() {
-    mlx_rs::random::seed(362);
+    mlx_rs::random::seed(341);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(r.shape(), &[100, 100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5030828714370728,
-        abs <= 0.010061657428741455
+        0.49718374013900757,
+        abs <= 0.009943674802780151
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        5030.82861328125,
-        abs <= 100.616572265625
+        4971.83740234375,
+        abs <= 99.436748046875
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(i.shape(), &[100, 100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5047697424888611,
-        abs <= 0.010095394849777221
+        0.49666014313697815,
+        abs <= 0.009933202862739562
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        5047.69775390625,
-        abs <= 100.953955078125
+        4966.6015625,
+        abs <= 99.33203125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1775,56 +2806,56 @@ fn test_fft_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.48604658246040344,
-        abs <= 0.00972093164920807
+        0.5023841857910156,
+        abs <= 0.010047683715820313
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        5832.55908203125,
-        abs <= 116.651181640625
+        6028.6103515625,
+        abs <= 120.57220703125
     );
     assert_eq!(result_imaginary.shape(), &[100, 120]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.49679213762283325,
-        abs <= 0.009935842752456665
+        0.4944274127483368,
+        abs <= 0.009888548254966736
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        5961.505859375,
-        abs <= 119.2301171875
+        5933.12890625,
+        abs <= 118.662578125
     );
 }
 
 #[test]
 fn test_fft_3() {
-    mlx_rs::random::seed(444);
+    mlx_rs::random::seed(249);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(r.shape(), &[100, 100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5001579523086548,
-        abs <= 0.010003159046173096
+        0.5039095878601074,
+        abs <= 0.010078191757202148
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        5001.57958984375,
-        abs <= 100.031591796875
+        5039.09619140625,
+        abs <= 100.781923828125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100, 100], None).unwrap();
     assert_eq!(i.shape(), &[100, 100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4949095547199249,
-        abs <= 0.009898191094398498
+        0.5026064515113831,
+        abs <= 0.01005212903022766
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        4949.095703125,
-        abs <= 98.9819140625
+        5026.064453125,
+        abs <= 100.5212890625
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1836,56 +2867,56 @@ fn test_fft_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.5385338068008423,
-        abs <= 0.010770676136016845
+        0.513243556022644,
+        abs <= 0.01026487112045288
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        5385.33837890625,
-        abs <= 107.706767578125
+        5132.435546875,
+        abs <= 102.6487109375
     );
     assert_eq!(result_imaginary.shape(), &[100, 100]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.45679911971092224,
-        abs <= 0.009135982394218445
+        0.5406439900398254,
+        abs <= 0.010812879800796508
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4567.9912109375,
-        abs <= 91.35982421875
+        5406.43994140625,
+        abs <= 108.128798828125
     );
 }
 
 #[test]
 fn test_ifft_() {
-    mlx_rs::random::seed(323);
+    mlx_rs::random::seed(747);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5185670256614685,
-        abs <= 0.01037134051322937
+        0.5141125321388245,
+        abs <= 0.01028225064277649
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        51.85670471191406,
-        abs <= 1.0371340942382812
+        51.4112548828125,
+        abs <= 1.02822509765625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5397436618804932,
-        abs <= 0.010794873237609864
+        0.5041785836219788,
+        abs <= 0.010083571672439576
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        53.974369049072266,
-        abs <= 1.0794873809814454
+        50.41786193847656,
+        abs <= 1.0083572387695312
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1897,56 +2928,56 @@ fn test_ifft_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.00946841575205326,
-        abs <= 0.0001893683150410652
+        0.006141522899270058,
+        abs <= 0.00012283045798540116
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        0.9468415975570679,
-        abs <= 0.018936831951141358
+        0.6141523122787476,
+        abs <= 0.012283046245574952
     );
     assert_eq!(result_imaginary.shape(), &[100]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.000429909530794248,
-        abs <= 8.59819061588496e-06
+        0.003964241128414869,
+        abs <= 7.928482256829739e-05
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        0.04299095273017883,
-        abs <= 0.0008598190546035767
+        0.3964241147041321,
+        abs <= 0.007928482294082643
     );
 }
 
 #[test]
 fn test_ifft_1() {
-    mlx_rs::random::seed(625);
+    mlx_rs::random::seed(333);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5344315767288208,
-        abs <= 0.010688631534576417
+        0.5019962787628174,
+        abs <= 0.010039925575256348
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        53.44315719604492,
-        abs <= 1.0688631439208984
+        50.19963073730469,
+        abs <= 1.0039926147460938
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4382143020629883,
-        abs <= 0.008764286041259766
+        0.5151471495628357,
+        abs <= 0.010302942991256715
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        43.82143020629883,
-        abs <= 0.8764286041259766
+        51.51471710205078,
+        abs <= 1.0302943420410156
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -1958,56 +2989,56 @@ fn test_ifft_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.00830454844981432,
-        abs <= 0.0001660909689962864
+        0.004122489131987095,
+        abs <= 8.24497826397419e-05
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        0.6643638610839844,
-        abs <= 0.013287277221679689
+        0.3297991156578064,
+        abs <= 0.006595982313156128
     );
     assert_eq!(result_imaginary.shape(), &[80]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.005878332536667585,
-        abs <= 0.0001175666507333517
+        0.007016895804554224,
+        abs <= 0.00014033791609108448
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        0.47026658058166504,
-        abs <= 0.0094053316116333
+        0.5613516569137573,
+        abs <= 0.011227033138275147
     );
 }
 
 #[test]
 fn test_ifft_2() {
-    mlx_rs::random::seed(655);
+    mlx_rs::random::seed(720);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4874846041202545,
-        abs <= 0.00974969208240509
+        0.49332067370414734,
+        abs <= 0.009866413474082947
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        48.74846267700195,
-        abs <= 0.974969253540039
+        49.332069396972656,
+        abs <= 0.9866413879394531
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.45154982805252075,
-        abs <= 0.009030996561050416
+        0.5439444780349731,
+        abs <= 0.010878889560699464
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        45.15498352050781,
-        abs <= 0.9030996704101563
+        54.394447326660156,
+        abs <= 1.0878889465332031
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2019,56 +3050,56 @@ fn test_ifft_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.00010435631702421233,
-        abs <= 2.0871263404842468e-06
+        0.0003795814991462976,
+        abs <= 7.591629982925952e-06
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        0.012522757053375244,
-        abs <= 0.0002504551410675049
+        0.045549776405096054,
+        abs <= 0.0009109955281019211
     );
     assert_eq!(result_imaginary.shape(), &[120]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.00566977309063077,
-        abs <= 0.00011339546181261539
+        0.0017317747697234154,
+        abs <= 3.463549539446831e-05
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        0.6803727149963379,
-        abs <= 0.013607454299926759
+        0.20781296491622925,
+        abs <= 0.004156259298324585
     );
 }
 
 #[test]
 fn test_ifft_3() {
-    mlx_rs::random::seed(934);
+    mlx_rs::random::seed(891);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4756808280944824,
-        abs <= 0.009513616561889648
+        0.5180004239082336,
+        abs <= 0.010360008478164673
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        47.568084716796875,
-        abs <= 0.9513616943359375
+        51.800045013427734,
+        abs <= 1.0360009002685546
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4751310348510742,
-        abs <= 0.009502620697021484
+        0.5371186137199402,
+        abs <= 0.010742372274398804
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        47.51310348510742,
-        abs <= 0.9502620697021484
+        53.71186065673828,
+        abs <= 1.0742372131347657
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2080,56 +3111,56 @@ fn test_ifft_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.002144426107406616,
-        abs <= 4.288852214813233e-05
+        0.0070659504272043705,
+        abs <= 0.00014131900854408741
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        0.21444261074066162,
-        abs <= 0.004288852214813232
+        0.7065950632095337,
+        abs <= 0.014131901264190673
     );
     assert_eq!(result_imaginary.shape(), &[100]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.0032059226650744677,
-        abs <= 6.411845330148936e-05
+        0.00964914821088314,
+        abs <= 0.00019298296421766282
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        0.3205922842025757,
-        abs <= 0.006411845684051514
+        0.964914858341217,
+        abs <= 0.01929829716682434
     );
 }
 
 #[test]
 fn test_rfft_() {
-    mlx_rs::random::seed(209);
+    mlx_rs::random::seed(64);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5249843597412109,
-        abs <= 0.010499687194824218
+        0.5024406909942627,
+        abs <= 0.010048813819885254
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        52.49843978881836,
-        abs <= 1.0499687957763673
+        50.24406814575195,
+        abs <= 1.004881362915039
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4521765112876892,
-        abs <= 0.009043530225753785
+        0.485763818025589,
+        abs <= 0.00971527636051178
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        45.2176513671875,
-        abs <= 0.90435302734375
+        48.57638168334961,
+        abs <= 0.9715276336669922
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2141,56 +3172,56 @@ fn test_rfft_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        1.4385855197906494,
-        abs <= 0.02877171039581299
+        1.2354509830474854,
+        abs <= 0.024709019660949707
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        73.36785888671875,
-        abs <= 1.467357177734375
+        63.007999420166016,
+        abs <= 1.2601599884033203
     );
     assert_eq!(result_imaginary.shape(), &[51]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.18436123430728912,
-        abs <= 0.0036872246861457823
+        0.0517939031124115,
+        abs <= 0.00103587806224823
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        9.402422904968262,
-        abs <= 0.18804845809936524
+        2.641489028930664,
+        abs <= 0.05282978057861328
     );
 }
 
 #[test]
 fn test_rfft_1() {
-    mlx_rs::random::seed(989);
+    mlx_rs::random::seed(195);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4915032386779785,
-        abs <= 0.00983006477355957
+        0.5456475615501404,
+        abs <= 0.010912951231002808
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        49.150325775146484,
-        abs <= 0.9830065155029297
+        54.56475830078125,
+        abs <= 1.091295166015625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5130519866943359,
-        abs <= 0.010261039733886718
+        0.46791213750839233,
+        abs <= 0.009358242750167847
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        51.305198669433594,
-        abs <= 1.0261039733886719
+        46.79121398925781,
+        abs <= 0.9358242797851563
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2202,56 +3233,56 @@ fn test_rfft_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.7166604995727539,
-        abs <= 0.014333209991455079
+        1.383946180343628,
+        abs <= 0.02767892360687256
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        29.383081436157227,
-        abs <= 0.5876616287231445
+        56.74179458618164,
+        abs <= 1.1348358917236328
     );
     assert_eq!(result_imaginary.shape(), &[41]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.027098461985588074,
-        abs <= -0.0005419692397117615
+        0.3393508493900299,
+        abs <= 0.006787016987800598
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -1.111037015914917,
-        abs <= -0.022220740318298342
+        13.913385391235352,
+        abs <= 0.27826770782470706
     );
 }
 
 #[test]
 fn test_rfft_2() {
-    mlx_rs::random::seed(565);
+    mlx_rs::random::seed(939);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5205792188644409,
-        abs <= 0.010411584377288818
+        0.5062872767448425,
+        abs <= 0.010125745534896851
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        52.05792236328125,
-        abs <= 1.041158447265625
+        50.62873077392578,
+        abs <= 1.0125746154785156
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5202609896659851,
-        abs <= 0.010405219793319702
+        0.46000048518180847,
+        abs <= 0.00920000970363617
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        52.026100158691406,
-        abs <= 1.040522003173828
+        46.00004959106445,
+        abs <= 0.920000991821289
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2263,56 +3294,56 @@ fn test_rfft_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        1.1741952896118164,
-        abs <= 0.023483905792236328
+        0.9275043606758118,
+        abs <= 0.018550087213516236
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        71.62591552734375,
-        abs <= 1.432518310546875
+        56.5777702331543,
+        abs <= 1.131555404663086
     );
     assert_eq!(result_imaginary.shape(), &[61]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.3835507035255432,
-        abs <= -0.007671014070510865
+        -0.4460233449935913,
+        abs <= -0.008920466899871827
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -23.396595001220703,
-        abs <= -0.4679319000244141
+        -27.207426071166992,
+        abs <= -0.5441485214233398
     );
 }
 
 #[test]
 fn test_rfft_3() {
-    mlx_rs::random::seed(488);
+    mlx_rs::random::seed(581);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.45263075828552246,
-        abs <= 0.009052615165710449
+        0.5043460726737976,
+        abs <= 0.010086921453475952
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        45.26307678222656,
-        abs <= 0.9052615356445313
+        50.434608459472656,
+        abs <= 1.008692169189453
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5480838418006897,
-        abs <= 0.010961676836013795
+        0.4744887351989746,
+        abs <= 0.009489774703979492
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        54.808387756347656,
-        abs <= 1.096167755126953
+        47.448875427246094,
+        abs <= 0.9489775085449219
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2324,56 +3355,56 @@ fn test_rfft_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        1.3197729587554932,
-        abs <= 0.026395459175109864
+        1.385237693786621,
+        abs <= 0.027704753875732423
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        67.30841827392578,
-        abs <= 1.3461683654785157
+        70.6471176147461,
+        abs <= 1.4129423522949218
     );
     assert_eq!(result_imaginary.shape(), &[51]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.4907066524028778,
-        abs <= 0.009814133048057557
+        -0.41986793279647827,
+        abs <= -0.008397358655929566
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        25.026039123535156,
-        abs <= 0.5005207824707031
+        -21.41326332092285,
+        abs <= -0.428265266418457
     );
 }
 
 #[test]
 fn test_irfft_() {
-    mlx_rs::random::seed(453);
+    mlx_rs::random::seed(227);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5243486762046814,
-        abs <= 0.010486973524093628
+        0.5469672083854675,
+        abs <= 0.01093934416770935
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        52.434871673583984,
-        abs <= 1.0486974334716797
+        54.69672393798828,
+        abs <= 1.0939344787597656
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.49039560556411743,
-        abs <= 0.009807912111282348
+        0.4862267076969147,
+        abs <= 0.009724534153938294
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        49.0395622253418,
-        abs <= 0.980791244506836
+        48.62267303466797,
+        abs <= 0.9724534606933594
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2382,44 +3413,44 @@ fn test_irfft_() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.004540972411632538,
-        abs <= 9.081944823265076e-05
+        0.0008334845770150423,
+        abs <= 1.6669691540300846e-05
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        0.8991125822067261,
-        abs <= 0.01798225164413452
+        0.16502994298934937,
+        abs <= 0.0033005988597869873
     );
 }
 
 #[test]
 fn test_irfft_1() {
-    mlx_rs::random::seed(886);
+    mlx_rs::random::seed(244);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49428874254226685,
-        abs <= 0.009885774850845337
+        0.47569480538368225,
+        abs <= 0.009513896107673645
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        49.42887496948242,
-        abs <= 0.9885774993896485
+        47.569480895996094,
+        abs <= 0.9513896179199219
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5252950191497803,
-        abs <= 0.010505900382995606
+        0.5246427059173584,
+        abs <= 0.010492854118347168
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        52.529502868652344,
-        abs <= 1.050590057373047
+        52.464271545410156,
+        abs <= 1.0492854309082031
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2428,44 +3459,44 @@ fn test_irfft_1() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.0017666377825662494,
-        abs <= 3.533275565132499e-05
+        0.004286589566618204,
+        abs <= 8.573179133236408e-05
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        0.1413310170173645,
-        abs <= 0.00282662034034729
+        0.34292715787887573,
+        abs <= 0.006858543157577515
     );
 }
 
 #[test]
 fn test_irfft_2() {
-    mlx_rs::random::seed(533);
+    mlx_rs::random::seed(822);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.48901960253715515,
-        abs <= 0.009780392050743103
+        0.5265682935714722,
+        abs <= 0.010531365871429443
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        48.90196228027344,
-        abs <= 0.9780392456054687
+        52.656829833984375,
+        abs <= 1.0531365966796875
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5153160691261292,
-        abs <= 0.010306321382522583
+        0.4986616373062134,
+        abs <= 0.009973232746124269
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        51.53160858154297,
-        abs <= 1.0306321716308593
+        49.86616516113281,
+        abs <= 0.9973233032226563
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2474,44 +3505,44 @@ fn test_irfft_2() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.001325542340055108,
-        abs <= 2.651084680110216e-05
+        0.006049197632819414,
+        abs <= 0.00012098395265638828
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        0.15906506776809692,
-        abs <= 0.0031813013553619388
+        0.7259036898612976,
+        abs <= 0.014518073797225953
     );
 }
 
 #[test]
 fn test_irfft_3() {
-    mlx_rs::random::seed(266);
+    mlx_rs::random::seed(990);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(r.shape(), &[100]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5051288604736328,
-        abs <= 0.010102577209472656
+        0.45289382338523865,
+        abs <= 0.009057876467704774
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        50.51288604736328,
-        abs <= 1.0102577209472656
+        45.28938293457031,
+        abs <= 0.9057876586914063
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[100], None).unwrap();
     assert_eq!(i.shape(), &[100]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5190264582633972,
-        abs <= 0.010380529165267945
+        0.4839046895503998,
+        abs <= 0.009678093791007996
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        51.902645111083984,
-        abs <= 1.0380529022216798
+        48.39046859741211,
+        abs <= 0.9678093719482422
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2520,44 +3551,44 @@ fn test_irfft_3() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.0004920950159430504,
-        abs <= 9.841900318861008e-06
+        0.003870729124173522,
+        abs <= 7.741458248347045e-05
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        0.09743481874465942,
-        abs <= 0.0019486963748931885
+        0.766404390335083,
+        abs <= 0.015328087806701661
     );
 }
 
 #[test]
 fn test_fft2_() {
-    mlx_rs::random::seed(63);
+    mlx_rs::random::seed(145);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5128694772720337,
-        abs <= 0.010257389545440674
+        0.5309334993362427,
+        abs <= 0.010618669986724854
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        262.58917236328125,
-        abs <= 5.251783447265625
+        271.83795166015625,
+        abs <= 5.436759033203125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4861868619918823,
-        abs <= 0.009723737239837646
+        0.4856289327144623,
+        abs <= 0.009712578654289246
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        248.92767333984375,
-        abs <= 4.978553466796875
+        248.6420135498047,
+        abs <= 4.972840270996094
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2569,56 +3600,56 @@ fn test_fft2_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.3187246322631836,
-        abs <= 0.006374492645263672
+        0.5889886617660522,
+        abs <= 0.011779773235321046
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        163.18701171875,
-        abs <= 3.263740234375
+        301.56219482421875,
+        abs <= 6.0312438964843755
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.592434287071228,
-        abs <= 0.01184868574142456
+        0.7139421105384827,
+        abs <= 0.014278842210769653
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        303.32635498046875,
-        abs <= 6.066527099609375
+        365.5383605957031,
+        abs <= 7.3107672119140625
     );
 }
 
 #[test]
 fn test_fft2_1() {
-    mlx_rs::random::seed(824);
+    mlx_rs::random::seed(822);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.53097003698349,
-        abs <= 0.0106194007396698
+        0.4860720932483673,
+        abs <= 0.009721441864967347
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        271.8566589355469,
-        abs <= 5.437133178710938
+        248.86891174316406,
+        abs <= 4.977378234863282
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.48926323652267456,
-        abs <= 0.009785264730453491
+        0.4944270849227905,
+        abs <= 0.009888541698455811
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.50277709960938,
-        abs <= 5.0100555419921875
+        253.14666748046875,
+        abs <= 5.062933349609375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2630,56 +3661,56 @@ fn test_fft2_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.4241769015789032,
-        abs <= 0.008483538031578064
+        0.3709833323955536,
+        abs <= 0.007419666647911072
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        40.72098159790039,
-        abs <= 0.8144196319580078
+        35.61439895629883,
+        abs <= 0.7122879791259765
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 4]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.5665144324302673,
-        abs <= 0.011330288648605347
+        0.44221943616867065,
+        abs <= 0.008844388723373413
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        54.38538360595703,
-        abs <= 1.0877076721191405
+        42.45306396484375,
+        abs <= 0.849061279296875
     );
 }
 
 #[test]
 fn test_fft2_2() {
-    mlx_rs::random::seed(940);
+    mlx_rs::random::seed(556);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4929702877998352,
-        abs <= 0.009859405755996704
+        0.5140165686607361,
+        abs <= 0.010280331373214721
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        252.40078735351562,
-        abs <= 5.048015747070313
+        263.1764831542969,
+        abs <= 5.263529663085937
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4889233112335205,
-        abs <= 0.00977846622467041
+        0.4826129078865051,
+        abs <= 0.009652258157730102
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.3287353515625,
-        abs <= 5.00657470703125
+        247.09780883789062,
+        abs <= 4.941956176757812
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2691,56 +3722,56 @@ fn test_fft2_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.6756632924079895,
-        abs <= 0.01351326584815979
+        0.36782383918762207,
+        abs <= 0.007356476783752441
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        345.9396057128906,
-        abs <= 6.918792114257813
+        188.3258056640625,
+        abs <= 3.76651611328125
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.45924657583236694,
-        abs <= 0.00918493151664734
+        0.6532519459724426,
+        abs <= 0.013065038919448853
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        235.13424682617188,
-        abs <= 4.702684936523438
+        334.4649963378906,
+        abs <= 6.689299926757813
     );
 }
 
 #[test]
 fn test_fft2_3() {
-    mlx_rs::random::seed(561);
+    mlx_rs::random::seed(458);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4980977773666382,
-        abs <= 0.009961955547332764
+        0.5016442537307739,
+        abs <= 0.010032885074615479
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        255.02606201171875,
-        abs <= 5.100521240234375
+        256.84185791015625,
+        abs <= 5.136837158203125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.49254220724105835,
-        abs <= 0.009850844144821166
+        0.5152808427810669,
+        abs <= 0.010305616855621338
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        252.18161010742188,
-        abs <= 5.043632202148437
+        263.82379150390625,
+        abs <= 5.276475830078125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2752,56 +3783,56 @@ fn test_fft2_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.32460662722587585,
-        abs <= 0.006492132544517517
+        0.5505414605140686,
+        abs <= 0.011010829210281372
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        129.8426513671875,
-        abs <= 2.5968530273437502
+        220.2165985107422,
+        abs <= 4.404331970214844
     );
     assert_eq!(result_imaginary.shape(), &[8, 5, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.6641926169395447,
-        abs <= 0.013283852338790893
+        0.43627724051475525,
+        abs <= 0.008725544810295105
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        265.67706298828125,
-        abs <= 5.313541259765625
+        174.51089477539062,
+        abs <= 3.4902178955078127
     );
 }
 
 #[test]
 fn test_ifft2_() {
-    mlx_rs::random::seed(937);
+    mlx_rs::random::seed(93);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.47373050451278687,
-        abs <= 0.009474610090255738
+        0.4963112473487854,
+        abs <= 0.009926224946975709
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        242.55001831054688,
-        abs <= 4.851000366210938
+        254.11135864257812,
+        abs <= 5.082227172851563
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.48451608419418335,
-        abs <= 0.009690321683883667
+        0.5207446813583374,
+        abs <= 0.010414893627166749
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        248.07223510742188,
-        abs <= 4.961444702148437
+        266.62127685546875,
+        abs <= 5.332425537109375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2813,56 +3844,56 @@ fn test_ifft2_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.007376520894467831,
-        abs <= 0.00014753041788935663
+        0.009550755843520164,
+        abs <= 0.0001910151168704033
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        3.7767786979675293,
-        abs <= 0.0755355739593506
+        4.889986991882324,
+        abs <= 0.09779973983764649
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.0069538913667202,
-        abs <= 0.00013907782733440399
+        0.004560721106827259,
+        abs <= 9.121442213654519e-05
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        3.560392379760742,
-        abs <= 0.07120784759521484
+        2.3350892066955566,
+        abs <= 0.046701784133911135
     );
 }
 
 #[test]
 fn test_ifft2_1() {
-    mlx_rs::random::seed(14);
+    mlx_rs::random::seed(82);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4912901818752289,
-        abs <= 0.009825803637504578
+        0.4956161677837372,
+        abs <= 0.009912323355674744
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        251.5405731201172,
-        abs <= 5.030811462402344
+        253.75547790527344,
+        abs <= 5.075109558105469
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5084747076034546,
-        abs <= 0.010169494152069093
+        0.4866083264350891,
+        abs <= 0.009732166528701782
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        260.33905029296875,
-        abs <= 5.2067810058593755
+        249.14346313476562,
+        abs <= 4.982869262695313
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2874,56 +3905,56 @@ fn test_ifft2_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.03991732746362686,
-        abs <= 0.0007983465492725373
+        0.02791469171643257,
+        abs <= 0.0005582938343286515
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        3.8320631980895996,
-        abs <= 0.076641263961792
+        2.6798102855682373,
+        abs <= 0.053596205711364746
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 4]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.049577318131923676,
-        abs <= 0.0009915463626384736
+        0.04051833227276802,
+        abs <= 0.0008103666454553605
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4.759422302246094,
-        abs <= 0.09518844604492188
+        3.8897597789764404,
+        abs <= 0.07779519557952881
     );
 }
 
 #[test]
 fn test_ifft2_2() {
-    mlx_rs::random::seed(95);
+    mlx_rs::random::seed(327);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5085955262184143,
-        abs <= 0.010171910524368286
+        0.5238617062568665,
+        abs <= 0.01047723412513733
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        260.4009094238281,
-        abs <= 5.208018188476562
+        268.2171936035156,
+        abs <= 5.364343872070313
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5179280638694763,
-        abs <= 0.010358561277389527
+        0.5001866817474365,
+        abs <= 0.010003733634948732
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        265.1791687011719,
-        abs <= 5.303583374023438
+        256.0955810546875,
+        abs <= 5.1219116210937505
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2935,56 +3966,56 @@ fn test_ifft2_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.0076621831394732,
-        abs <= 0.000153243662789464
+        0.00974555779248476,
+        abs <= 0.00019491115584969521
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        3.9230377674102783,
-        abs <= 0.07846075534820557
+        4.989725589752197,
+        abs <= 0.09979451179504395
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.009670466184616089,
-        abs <= 0.00019340932369232177
+        0.00883837416768074,
+        abs <= 0.00017676748335361482
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4.9512786865234375,
-        abs <= 0.09902557373046875
+        4.525247573852539,
+        abs <= 0.09050495147705079
     );
 }
 
 #[test]
 fn test_ifft2_3() {
-    mlx_rs::random::seed(736);
+    mlx_rs::random::seed(896);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.48021820187568665,
-        abs <= 0.009604364037513732
+        0.5029885768890381,
+        abs <= 0.010059771537780761
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        245.87171936035156,
-        abs <= 4.917434387207031
+        257.5301513671875,
+        abs <= 5.15060302734375
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4987150728702545,
-        abs <= 0.009974301457405091
+        0.5023524761199951,
+        abs <= 0.010047049522399902
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        255.3421173095703,
-        abs <= 5.1068423461914065
+        257.2044677734375,
+        abs <= 5.14408935546875
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -2996,56 +4027,56 @@ fn test_ifft2_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.010824865661561489,
-        abs <= 0.00021649731323122978
+        0.006394672207534313,
+        abs <= 0.00012789344415068627
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        4.329946517944336,
-        abs <= 0.08659893035888672
+        2.5578689575195312,
+        abs <= 0.051157379150390626
     );
     assert_eq!(result_imaginary.shape(), &[8, 5, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.008488722145557404,
-        abs <= 0.00016977444291114808
+        0.010991804301738739,
+        abs <= 0.0002198360860347748
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        3.395488977432251,
-        abs <= 0.06790977954864502
+        4.396721839904785,
+        abs <= 0.0879344367980957
     );
 }
 
 #[test]
 fn test_fftn_() {
-    mlx_rs::random::seed(860);
+    mlx_rs::random::seed(520);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49968665838241577,
-        abs <= 0.009993733167648315
+        0.5022993087768555,
+        abs <= 0.010045986175537109
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        255.83956909179688,
-        abs <= 5.116791381835937
+        257.17724609375,
+        abs <= 5.143544921875
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5132207870483398,
-        abs <= 0.010264415740966797
+        0.48411473631858826,
+        abs <= 0.009682294726371766
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        262.76904296875,
-        abs <= 5.255380859375
+        247.8667449951172,
+        abs <= 4.957334899902344
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3057,56 +4088,56 @@ fn test_fftn_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.09350237250328064,
-        abs <= 0.001870047450065613
+        0.5277829170227051,
+        abs <= 0.010555658340454101
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        47.87321472167969,
-        abs <= 0.9574642944335938
+        270.224853515625,
+        abs <= 5.4044970703125
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.45623522996902466,
-        abs <= 0.009124704599380494
+        0.6845148801803589,
+        abs <= 0.013690297603607179
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        233.59243774414062,
-        abs <= 4.671848754882813
+        350.47161865234375,
+        abs <= 7.0094323730468755
     );
 }
 
 #[test]
 fn test_fftn_1() {
-    mlx_rs::random::seed(408);
+    mlx_rs::random::seed(955);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49094921350479126,
-        abs <= 0.009818984270095825
+        0.49090325832366943,
+        abs <= 0.00981806516647339
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        251.36599731445312,
-        abs <= 5.0273199462890625
+        251.34246826171875,
+        abs <= 5.0268493652343755
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.48952794075012207,
-        abs <= 0.009790558815002442
+        0.5094687342643738,
+        abs <= 0.010189374685287475
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.6383056640625,
-        abs <= 5.01276611328125
+        260.8479919433594,
+        abs <= 5.216959838867187
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3118,56 +4149,56 @@ fn test_fftn_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.365003764629364,
-        abs <= 0.00730007529258728
+        0.6670697927474976,
+        abs <= 0.013341395854949952
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        35.04035949707031,
-        abs <= 0.7008071899414062
+        64.0386962890625,
+        abs <= 1.28077392578125
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 4]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.6621917486190796,
-        abs <= 0.013243834972381591
+        0.6635832786560059,
+        abs <= 0.013271665573120118
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        63.570404052734375,
-        abs <= 1.2714080810546875
+        63.70399475097656,
+        abs <= 1.2740798950195313
     );
 }
 
 #[test]
 fn test_fftn_2() {
-    mlx_rs::random::seed(727);
+    mlx_rs::random::seed(501);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.48969122767448425,
-        abs <= 0.009793824553489686
+        0.5009453296661377,
+        abs <= 0.010018906593322755
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        250.72190856933594,
-        abs <= 5.014438171386719
+        256.4840087890625,
+        abs <= 5.1296801757812505
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.515756368637085,
-        abs <= 0.010315127372741699
+        0.5054906010627747,
+        abs <= 0.010109812021255493
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        264.0672607421875,
-        abs <= 5.28134521484375
+        258.8111877441406,
+        abs <= 5.1762237548828125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3179,56 +4210,56 @@ fn test_fftn_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.7373149394989014,
-        abs <= 0.014746298789978027
+        0.5580601096153259,
+        abs <= 0.011161202192306518
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        377.5052490234375,
-        abs <= 7.55010498046875
+        285.7267761230469,
+        abs <= 5.714535522460937
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.4909225404262543,
-        abs <= 0.009818450808525085
+        0.33298391103744507,
+        abs <= 0.006659678220748901
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        251.3523406982422,
-        abs <= 5.027046813964843
+        170.48776245117188,
+        abs <= 3.4097552490234375
     );
 }
 
 #[test]
 fn test_fftn_3() {
-    mlx_rs::random::seed(844);
+    mlx_rs::random::seed(111);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5011866092681885,
-        abs <= 0.01002373218536377
+        0.5158265829086304,
+        abs <= 0.010316531658172607
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.6075439453125,
-        abs <= 5.13215087890625
+        264.10321044921875,
+        abs <= 5.282064208984375
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.515597939491272,
-        abs <= 0.010311958789825439
+        0.5017120242118835,
+        abs <= 0.01003424048423767
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        263.98614501953125,
-        abs <= 5.279722900390625
+        256.8765563964844,
+        abs <= 5.137531127929687
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3240,56 +4271,56 @@ fn test_fftn_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.5863966345787048,
-        abs <= 0.011727932691574097
+        0.6044555306434631,
+        abs <= 0.012089110612869262
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        234.55865478515625,
-        abs <= 4.6911730957031255
+        241.78221130371094,
+        abs <= 4.835644226074219
     );
     assert_eq!(result_imaginary.shape(), &[8, 5, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.5272870063781738,
-        abs <= 0.010545740127563477
+        0.4900858998298645,
+        abs <= 0.00980171799659729
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        210.91481018066406,
-        abs <= 4.218296203613281
+        196.03436279296875,
+        abs <= 3.920687255859375
     );
 }
 
 #[test]
 fn test_ifftn_() {
-    mlx_rs::random::seed(803);
+    mlx_rs::random::seed(308);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.48484981060028076,
-        abs <= 0.009696996212005616
+        0.4836384654045105,
+        abs <= 0.00967276930809021
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        248.24310302734375,
-        abs <= 4.964862060546875
+        247.62289428710938,
+        abs <= 4.952457885742188
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4952506721019745,
-        abs <= 0.00990501344203949
+        0.5090489387512207,
+        abs <= 0.010180978775024415
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        253.56834411621094,
-        abs <= 5.071366882324219
+        260.633056640625,
+        abs <= 5.2126611328125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3301,56 +4332,56 @@ fn test_ifftn_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.0007352348766289651,
-        abs <= 1.4704697532579303e-05
+        0.0015133769484236836,
+        abs <= 3.0267538968473672e-05
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        0.37644025683403015,
-        abs <= 0.007528805136680603
+        0.774848997592926,
+        abs <= 0.01549697995185852
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.00012243445962667465,
-        abs <= 2.4486891925334932e-06
+        0.00027416125521995127,
+        abs <= 5.483225104399025e-06
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        0.06268644332885742,
-        abs <= 0.0012537288665771485
+        0.14037056267261505,
+        abs <= 0.002807411253452301
     );
 }
 
 #[test]
 fn test_ifftn_1() {
-    mlx_rs::random::seed(684);
+    mlx_rs::random::seed(564);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4867005944252014,
-        abs <= 0.009734011888504028
+        0.5046117305755615,
+        abs <= 0.01009223461151123
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        249.19070434570312,
-        abs <= 4.983814086914062
+        258.3612060546875,
+        abs <= 5.16722412109375
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.532753050327301,
-        abs <= 0.010655061006546021
+        0.5177386999130249,
+        abs <= 0.010354773998260498
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        272.7695617675781,
-        abs <= 5.455391235351563
+        265.08221435546875,
+        abs <= 5.301644287109375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3362,56 +4393,56 @@ fn test_ifftn_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.054848313331604004,
-        abs <= 0.0010969662666320801
+        0.050308696925640106,
+        abs <= 0.0010061739385128022
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        5.265438079833984,
-        abs <= 0.10530876159667969
+        4.829634666442871,
+        abs <= 0.09659269332885742
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 4]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.04062918573617935,
-        abs <= 0.000812583714723587
+        0.04328717291355133,
+        abs <= 0.0008657434582710266
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        3.9004018306732178,
-        abs <= 0.07800803661346435
+        4.155568599700928,
+        abs <= 0.08311137199401855
     );
 }
 
 #[test]
 fn test_ifftn_2() {
-    mlx_rs::random::seed(640);
+    mlx_rs::random::seed(298);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.482965350151062,
-        abs <= 0.00965930700302124
+        0.4898819327354431,
+        abs <= 0.009797638654708863
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        247.27825927734375,
-        abs <= 4.945565185546875
+        250.81954956054688,
+        abs <= 5.016390991210938
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4901072382926941,
-        abs <= 0.009802144765853883
+        0.5009774565696716,
+        abs <= 0.010019549131393433
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.93490600585938,
-        abs <= 5.018698120117188
+        256.5004577636719,
+        abs <= 5.130009155273438
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3423,56 +4454,56 @@ fn test_ifftn_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.010085294023156166,
-        abs <= 0.00020170588046312333
+        0.009732687845826149,
+        abs <= 0.00019465375691652298
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        5.163670539855957,
-        abs <= 0.10327341079711914
+        4.983136177062988,
+        abs <= 0.09966272354125977
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 8]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.007911873050034046,
-        abs <= 0.00015823746100068092
+        0.009057389572262764,
+        abs <= 0.00018114779144525527
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        4.050879001617432,
-        abs <= 0.08101758003234863
+        4.637383460998535,
+        abs <= 0.0927476692199707
     );
 }
 
 #[test]
 fn test_ifftn_3() {
-    mlx_rs::random::seed(1);
+    mlx_rs::random::seed(723);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5098339319229126,
-        abs <= 0.010196678638458252
+        0.48206543922424316,
+        abs <= 0.009641308784484864
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        261.03497314453125,
-        abs <= 5.220699462890625
+        246.8175048828125,
+        abs <= 4.93635009765625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.521202564239502,
-        abs <= 0.010424051284790039
+        0.5036561489105225,
+        abs <= 0.010073122978210449
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        266.855712890625,
-        abs <= 5.3371142578125
+        257.8719482421875,
+        abs <= 5.15743896484375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3484,56 +4515,56 @@ fn test_ifftn_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.010544955730438232,
-        abs <= 0.00021089911460876466
+        0.009908727370202541,
+        abs <= 0.00019817454740405084
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        4.217982292175293,
-        abs <= 0.08435964584350586
+        3.9634909629821777,
+        abs <= 0.07926981925964356
     );
     assert_eq!(result_imaginary.shape(), &[8, 5, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.00933288224041462,
-        abs <= 0.00018665764480829238
+        0.007171704433858395,
+        abs <= 0.00014343408867716789
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        3.7331531047821045,
-        abs <= 0.0746630620956421
+        2.8686819076538086,
+        abs <= 0.057373638153076174
     );
 }
 
 #[test]
 fn test_rfft2_() {
-    mlx_rs::random::seed(626);
+    mlx_rs::random::seed(127);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5090211629867554,
-        abs <= 0.010180423259735108
+        0.49905115365982056,
+        abs <= 0.009981023073196411
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        260.61883544921875,
-        abs <= 5.212376708984375
+        255.51419067382812,
+        abs <= 5.1102838134765625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5061042904853821,
-        abs <= 0.010122085809707642
+        0.5015949010848999,
+        abs <= 0.010031898021697998
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        259.1253967285156,
-        abs <= 5.182507934570313
+        256.81658935546875,
+        abs <= 5.136331787109375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3545,56 +4576,56 @@ fn test_rfft2_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.8268927931785583,
-        abs <= 0.016537855863571167
+        0.7036224603652954,
+        abs <= 0.01407244920730591
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        264.6056823730469,
-        abs <= 5.292113647460938
+        225.1591796875,
+        abs <= 4.50318359375
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 5]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.05014235898852348,
-        abs <= -0.0010028471797704696
+        0.04579969123005867,
+        abs <= 0.0009159938246011734
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -16.045555114746094,
-        abs <= -0.32091110229492187
+        14.655900955200195,
+        abs <= 0.2931180191040039
     );
 }
 
 #[test]
 fn test_rfft2_1() {
-    mlx_rs::random::seed(505);
+    mlx_rs::random::seed(560);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4949999451637268,
-        abs <= 0.009899998903274537
+        0.5175658464431763,
+        abs <= 0.010351316928863525
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        253.43997192382812,
-        abs <= 5.068799438476563
+        264.99371337890625,
+        abs <= 5.299874267578125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.49041298031806946,
-        abs <= 0.00980825960636139
+        0.4965159595012665,
+        abs <= 0.00993031919002533
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        251.09144592285156,
-        abs <= 5.0218289184570315
+        254.21617126464844,
+        abs <= 5.084323425292969
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3606,56 +4637,56 @@ fn test_rfft2_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.5439317226409912,
-        abs <= 0.010878634452819825
+        0.6362794637680054,
+        abs <= 0.012725589275360107
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        39.163082122802734,
-        abs <= 0.7832616424560547
+        45.8121223449707,
+        abs <= 0.916242446899414
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 3]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.12916846573352814,
-        abs <= -0.002583369314670563
+        0.006633823271840811,
+        abs <= 0.0001326764654368162
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -9.300128936767578,
-        abs <= -0.18600257873535156
+        0.4776352643966675,
+        abs <= 0.00955270528793335
     );
 }
 
 #[test]
 fn test_rfft2_2() {
-    mlx_rs::random::seed(847);
+    mlx_rs::random::seed(340);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5017592906951904,
-        abs <= 0.01003518581390381
+        0.5179769992828369,
+        abs <= 0.010359539985656738
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.9007568359375,
-        abs <= 5.13801513671875
+        265.2042236328125,
+        abs <= 5.30408447265625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.48960810899734497,
-        abs <= 0.0097921621799469
+        0.5126595497131348,
+        abs <= 0.010253190994262695
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.67935180664062,
-        abs <= 5.0135870361328125
+        262.481689453125,
+        abs <= 5.2496337890625
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3667,56 +4698,56 @@ fn test_rfft2_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.767216145992279,
-        abs <= 0.015344322919845582
+        0.7708581686019897,
+        abs <= 0.015417163372039796
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        245.50917053222656,
-        abs <= 4.910183410644532
+        246.6746063232422,
+        abs <= 4.933492126464844
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 5]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.03494918346405029,
-        abs <= 0.0006989836692810059
+        0.07671049237251282,
+        abs <= 0.0015342098474502564
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        11.183738708496094,
-        abs <= 0.22367477416992188
+        24.5473575592041,
+        abs <= 0.49094715118408205
     );
 }
 
 #[test]
 fn test_rfft2_3() {
-    mlx_rs::random::seed(888);
+    mlx_rs::random::seed(834);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4932956099510193,
-        abs <= 0.009865912199020386
+        0.5043363571166992,
+        abs <= 0.010086727142333985
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        252.56735229492188,
-        abs <= 5.051347045898438
+        258.22021484375,
+        abs <= 5.164404296875
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.48510468006134033,
-        abs <= 0.009702093601226806
+        0.47958165407180786,
+        abs <= 0.009591633081436157
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        248.37359619140625,
-        abs <= 4.967471923828125
+        245.54580688476562,
+        abs <= 4.910916137695312
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3728,56 +4759,56 @@ fn test_rfft2_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.593315839767456,
-        abs <= 0.011866316795349122
+        1.07588791847229,
+        abs <= 0.021517758369445802
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        142.3957977294922,
-        abs <= 2.8479159545898436
+        258.21307373046875,
+        abs <= 5.164261474609375
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.05620301887392998,
-        abs <= -0.0011240603774785997
+        -0.09886153787374496,
+        abs <= -0.001977230757474899
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -13.488723754882812,
-        abs <= -0.26977447509765623
+        -23.726768493652344,
+        abs <= -0.4745353698730469
     );
 }
 
 #[test]
 fn test_irfft2_() {
-    mlx_rs::random::seed(341);
+    mlx_rs::random::seed(944);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5171229839324951,
-        abs <= 0.010342459678649902
+        0.4829619526863098,
+        abs <= 0.009659239053726197
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        264.7669677734375,
-        abs <= 5.29533935546875
+        247.27651977539062,
+        abs <= 4.945530395507813
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4887220859527588,
-        abs <= 0.009774441719055177
+        0.4935220181941986,
+        abs <= 0.009870440363883973
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.2257080078125,
-        abs <= 5.00451416015625
+        252.6832733154297,
+        abs <= 5.053665466308594
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3786,44 +4817,44 @@ fn test_irfft2_() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.005863568279892206,
-        abs <= 0.00011727136559784412
+        0.0043796817772090435,
+        abs <= 8.759363554418087e-05
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        5.253756999969482,
-        abs <= 0.10507513999938965
+        3.924194812774658,
+        abs <= 0.07848389625549317
     );
 }
 
 #[test]
 fn test_irfft2_1() {
-    mlx_rs::random::seed(249);
+    mlx_rs::random::seed(553);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5012624263763428,
-        abs <= 0.010025248527526856
+        0.4974929690361023,
+        abs <= 0.009949859380722046
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.6463623046875,
-        abs <= 5.13292724609375
+        254.71640014648438,
+        abs <= 5.094328002929688
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5042414665222168,
-        abs <= 0.010084829330444337
+        0.48707208037376404,
+        abs <= 0.00974144160747528
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        258.171630859375,
-        abs <= 5.1634326171875005
+        249.3809051513672,
+        abs <= 4.987618103027343
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3832,44 +4863,44 @@ fn test_irfft2_1() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.044041357934474945,
-        abs <= 0.0008808271586894989
+        0.05143756791949272,
+        abs <= 0.0010287513583898545
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        4.227970123291016,
-        abs <= 0.08455940246582032
+        4.938006401062012,
+        abs <= 0.09876012802124023
     );
 }
 
 #[test]
 fn test_irfft2_2() {
-    mlx_rs::random::seed(747);
+    mlx_rs::random::seed(208);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5070213675498962,
-        abs <= 0.010140427350997926
+        0.5030007362365723,
+        abs <= 0.010060014724731446
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        259.5949401855469,
-        abs <= 5.191898803710938
+        257.536376953125,
+        abs <= 5.1507275390625
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4889640808105469,
-        abs <= 0.009779281616210937
+        0.4929494857788086,
+        abs <= 0.009858989715576172
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.349609375,
-        abs <= 5.0069921875
+        252.39013671875,
+        abs <= 5.047802734375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3878,44 +4909,44 @@ fn test_irfft2_2() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.0025466096121817827,
-        abs <= 5.0932192243635656e-05
+        0.003681441303342581,
+        abs <= 7.362882606685162e-05
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        2.28176212310791,
-        abs <= 0.04563524246215821
+        3.2985713481903076,
+        abs <= 0.06597142696380616
     );
 }
 
 #[test]
 fn test_irfft2_3() {
-    mlx_rs::random::seed(333);
+    mlx_rs::random::seed(986);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.4962257742881775,
-        abs <= 0.00992451548576355
+        0.4997028708457947,
+        abs <= 0.009994057416915893
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        254.06759643554688,
-        abs <= 5.081351928710937
+        255.84786987304688,
+        abs <= 5.116957397460937
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4898005723953247,
-        abs <= 0.009796011447906495
+        0.5007650852203369,
+        abs <= 0.010015301704406739
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        250.77789306640625,
-        abs <= 5.0155578613281255
+        256.3917236328125,
+        abs <= 5.12783447265625
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3924,44 +4955,44 @@ fn test_irfft2_3() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.007385803386569023,
-        abs <= 0.00014771606773138047
+        0.008232497610151768,
+        abs <= 0.00016464995220303536
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        2.9543213844299316,
-        abs <= 0.05908642768859863
+        3.292999267578125,
+        abs <= 0.0658599853515625
     );
 }
 
 #[test]
 fn test_rfftn_() {
-    mlx_rs::random::seed(720);
+    mlx_rs::random::seed(818);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49897629022598267,
-        abs <= 0.009979525804519654
+        0.48226839303970337,
+        abs <= 0.009645367860794068
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        255.47586059570312,
-        abs <= 5.109517211914063
+        246.92141723632812,
+        abs <= 4.938428344726563
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.49348247051239014,
-        abs <= 0.009869649410247802
+        0.5025488138198853,
+        abs <= 0.010050976276397705
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        252.66302490234375,
-        abs <= 5.053260498046875
+        257.30499267578125,
+        abs <= 5.146099853515625
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -3973,56 +5004,56 @@ fn test_rfftn_() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.4979190528392792,
-        abs <= 0.009958381056785584
+        0.5361243486404419,
+        abs <= 0.010722486972808839
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        159.33409118652344,
-        abs <= 3.186681823730469
+        171.55978393554688,
+        abs <= 3.4311956787109374
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 5]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.1638980507850647,
-        abs <= -0.003277961015701294
+        0.26368817687034607,
+        abs <= 0.005273763537406922
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -52.4473762512207,
-        abs <= -1.048947525024414
+        84.38021850585938,
+        abs <= 1.6876043701171874
     );
 }
 
 #[test]
 fn test_rfftn_1() {
-    mlx_rs::random::seed(891);
+    mlx_rs::random::seed(617);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5014437437057495,
-        abs <= 0.01002887487411499
+        0.4843568205833435,
+        abs <= 0.00968713641166687
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.73919677734375,
-        abs <= 5.134783935546875
+        247.99069213867188,
+        abs <= 4.959813842773437
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4999062418937683,
-        abs <= 0.009998124837875367
+        0.4924560785293579,
+        abs <= 0.009849121570587158
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        255.95199584960938,
-        abs <= 5.119039916992188
+        252.13751220703125,
+        abs <= 5.042750244140625
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4034,56 +5065,56 @@ fn test_rfftn_1() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.528995156288147,
-        abs <= 0.01057990312576294
+        0.6229143142700195,
+        abs <= 0.012458286285400392
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        38.087650299072266,
-        abs <= 0.7617530059814454
+        44.849830627441406,
+        abs <= 0.8969966125488281
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 3]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.00255977688357234,
-        abs <= -5.11955376714468e-05
+        -0.16469447314739227,
+        abs <= -0.0032938894629478454
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -0.18430393934249878,
-        abs <= -0.0036860787868499756
+        -11.858001708984375,
+        abs <= -0.2371600341796875
     );
 }
 
 #[test]
 fn test_rfftn_2() {
-    mlx_rs::random::seed(64);
+    mlx_rs::random::seed(560);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.504144012928009,
-        abs <= 0.010082880258560181
+        0.5175658464431763,
+        abs <= 0.010351316928863525
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        258.1217346191406,
-        abs <= 5.162434692382813
+        264.99371337890625,
+        abs <= 5.299874267578125
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5128475427627563,
-        abs <= 0.010256950855255128
+        0.4965159595012665,
+        abs <= 0.00993031919002533
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        262.57794189453125,
-        abs <= 5.2515588378906255
+        254.21617126464844,
+        abs <= 5.084323425292969
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4095,56 +5126,56 @@ fn test_rfftn_2() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.6959240436553955,
-        abs <= 0.013918480873107911
+        0.8323643803596497,
+        abs <= 0.016647287607192994
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        222.69569396972656,
-        abs <= 4.453913879394531
+        266.3565979003906,
+        abs <= 5.327131958007812
     );
     assert_eq!(result_imaginary.shape(), &[8, 8, 5]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        -0.04897644743323326,
-        abs <= -0.0009795289486646652
+        -0.03909113630652428,
+        abs <= -0.0007818227261304855
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        -15.672462463378906,
-        abs <= -0.3134492492675781
+        -12.509162902832031,
+        abs <= -0.25018325805664066
     );
 }
 
 #[test]
 fn test_rfftn_3() {
-    mlx_rs::random::seed(195);
+    mlx_rs::random::seed(601);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.49985283613204956,
-        abs <= 0.009997056722640991
+        0.5043255686759949,
+        abs <= 0.010086511373519898
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        255.92465209960938,
-        abs <= 5.1184930419921875
+        258.2146911621094,
+        abs <= 5.164293823242188
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.4984889328479767,
-        abs <= 0.009969778656959534
+        0.5282406806945801,
+        abs <= 0.010564813613891602
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        255.22633361816406,
-        abs <= 5.104526672363281
+        270.459228515625,
+        abs <= 5.4091845703125
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4156,56 +5187,56 @@ fn test_rfftn_3() {
     assert_eq!(result_real.dtype(), Dtype::Float32);
     float_eq!(
         result_real.mean(None, None).unwrap().item::<f32>(),
-        0.9620382189750671,
-        abs <= 0.019240764379501344
+        0.9173946976661682,
+        abs <= 0.018347893953323365
     );
     float_eq!(
         result_real.sum(None, None).unwrap().item::<f32>(),
-        230.88916015625,
-        abs <= 4.617783203125
+        220.17471313476562,
+        abs <= 4.403494262695313
     );
     assert_eq!(result_imaginary.shape(), &[8, 3, 10]);
     assert_eq!(result_imaginary.dtype(), Dtype::Float32);
     float_eq!(
         result_imaginary.mean(None, None).unwrap().item::<f32>(),
-        0.010663948953151703,
-        abs <= 0.00021327897906303406
+        0.0469416007399559,
+        abs <= 0.0009388320147991181
     );
     float_eq!(
         result_imaginary.sum(None, None).unwrap().item::<f32>(),
-        2.559347629547119,
-        abs <= 0.051186952590942386
+        11.265983581542969,
+        abs <= 0.2253196716308594
     );
 }
 
 #[test]
 fn test_irfftn_() {
-    mlx_rs::random::seed(939);
+    mlx_rs::random::seed(294);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.500404953956604,
-        abs <= 0.01000809907913208
+        0.4871825575828552,
+        abs <= 0.009743651151657104
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.20733642578125,
-        abs <= 5.124146728515625
+        249.43746948242188,
+        abs <= 4.988749389648437
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5033134818077087,
-        abs <= 0.010066269636154175
+        0.4953872263431549,
+        abs <= 0.009907744526863098
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        257.6965026855469,
-        abs <= 5.153930053710938
+        253.6382598876953,
+        abs <= 5.072765197753906
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4214,44 +5245,44 @@ fn test_irfftn_() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.0006362688727676868,
-        abs <= 1.2725377455353737e-05
+        0.00021691754227504134,
+        abs <= 4.338350845500827e-06
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        0.5700969099998474,
-        abs <= 0.011401938199996948
+        0.19435811042785645,
+        abs <= 0.003887162208557129
     );
 }
 
 #[test]
 fn test_irfftn_1() {
-    mlx_rs::random::seed(581);
+    mlx_rs::random::seed(455);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5188198089599609,
-        abs <= 0.01037639617919922
+        0.515022337436676,
+        abs <= 0.010300446748733521
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        265.6357421875,
-        abs <= 5.31271484375
+        263.6914367675781,
+        abs <= 5.273828735351563
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5097910165786743,
-        abs <= 0.010195820331573487
+        0.4912371039390564,
+        abs <= 0.009824742078781128
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        261.01300048828125,
-        abs <= 5.220260009765625
+        251.51339721679688,
+        abs <= 5.030267944335938
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4260,44 +5291,44 @@ fn test_irfftn_1() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.03443935140967369,
-        abs <= 0.0006887870281934739
+        0.037452831864356995,
+        abs <= 0.00074905663728714
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        3.3061776161193848,
-        abs <= 0.0661235523223877
+        3.5954716205596924,
+        abs <= 0.07190943241119385
     );
 }
 
 #[test]
 fn test_irfftn_2() {
-    mlx_rs::random::seed(227);
+    mlx_rs::random::seed(93);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.5004875659942627,
-        abs <= 0.010009751319885254
+        0.4963112473487854,
+        abs <= 0.009926224946975709
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        256.2496337890625,
-        abs <= 5.12499267578125
+        254.11135864257812,
+        abs <= 5.082227172851563
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5212831497192383,
-        abs <= 0.010425662994384766
+        0.5207446813583374,
+        abs <= 0.010414893627166749
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        266.89697265625,
-        abs <= 5.337939453125
+        266.62127685546875,
+        abs <= 5.332425537109375
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4306,44 +5337,44 @@ fn test_irfftn_2() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.004834582097828388,
-        abs <= 9.669164195656776e-05
+        0.005017807707190514,
+        abs <= 0.00010035615414381028
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        4.331785202026367,
-        abs <= 0.08663570404052734
+        4.495955467224121,
+        abs <= 0.08991910934448243
     );
 }
 
 #[test]
 fn test_irfftn_3() {
-    mlx_rs::random::seed(244);
+    mlx_rs::random::seed(610);
     let r = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(r.shape(), &[8, 8, 8]);
     assert_eq!(r.dtype(), Dtype::Float32);
     float_eq!(
         r.mean(None, None).unwrap().item::<f32>(),
-        0.513688862323761,
-        abs <= 0.01027377724647522
+        0.5089226365089417,
+        abs <= 0.010178452730178833
     );
     float_eq!(
         r.sum(None, None).unwrap().item::<f32>(),
-        263.0086975097656,
-        abs <= 5.260173950195313
+        260.5683898925781,
+        abs <= 5.211367797851563
     );
     let i = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, &[8, 8, 8], None).unwrap();
     assert_eq!(i.shape(), &[8, 8, 8]);
     assert_eq!(i.dtype(), Dtype::Float32);
     float_eq!(
         i.mean(None, None).unwrap().item::<f32>(),
-        0.5022491812705994,
-        abs <= 0.010044983625411988
+        0.4861883819103241,
+        abs <= 0.009723767638206482
     );
     float_eq!(
         i.sum(None, None).unwrap().item::<f32>(),
-        257.1515808105469,
-        abs <= 5.143031616210938
+        248.92845153808594,
+        abs <= 4.978569030761719
     );
     let c: Array = &(&r + &i) * &Array::from_complex(Complex32::new(0., 1.));
     assert_eq!(c.dtype(), Dtype::Complex64);
@@ -4352,12 +5383,12 @@ fn test_irfftn_3() {
     assert_eq!(result.dtype(), Dtype::Float32);
     float_eq!(
         result.mean(None, None).unwrap().item::<f32>(),
-        0.010228637605905533,
-        abs <= 0.00020457275211811066
+        0.012043984606862068,
+        abs <= 0.00024087969213724137
     );
     float_eq!(
         result.sum(None, None).unwrap().item::<f32>(),
-        4.091454982757568,
-        abs <= 0.08182909965515137
+        4.817594051361084,
+        abs <= 0.09635188102722168
     );
 }

@@ -14,15 +14,6 @@ def new_seed() -> int:
     return random.randint(0, 1000)
 
 
-def flatten_generator(nested_list):
-    for element in nested_list:
-        if isinstance(element, list):
-            for item in flatten_generator(element):
-                yield item
-        else:
-            yield element
-
-
 def assert_equal(indent, lhs, rhs, accuracy=None) -> str:
     if accuracy is None:
         return f'{" " * indent}assert_eq!({lhs}, {rhs});\n'
@@ -247,7 +238,7 @@ def test_free_function1(
     else:
         result += (
                           " " * indent
-                  ) + f"let result = {rust_name or function_name}(a{sep}{rust_extra});\n"
+                  ) + f"let result = {rust_name or function_name}(&a{sep}{rust_extra});\n"
 
     c = eval(f"mx.{function_name}(lhs{sep}{extra})")
 
@@ -450,7 +441,7 @@ def generate_integration_tests():
         f.write("use num_traits::Pow;\n")
         f.write("use pretty_assertions::assert_eq;\n")
         f.write("use num_complex::Complex32;\n")
-        f.write("use mlx_rs::{Array, Dtype, StreamOrDevice, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
+        f.write("use mlx_rs::{Array, Dtype, StreamOrDevice, ops::{indexing::{argmax}, acos}, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
         f.write("use float_eq::float_eq;\n")
         f.write("\n")
 
@@ -494,17 +485,34 @@ def generate_integration_tests():
 
         array_only_functions = [
             dict(name="abs", array_only=True),
-            dict(name="all", array_only=True, axis=True, axes=True, rust_extra="None, None"),
+            dict(name="all", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="any", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            # dict(name="argmax", non_axis_name="argmax_all", free_only=True, axis=True, rust_extra="None"),
+            # dict(name="argmin", free_only=True, axis=True, rust_extra="None"),
+            dict(name="cummax", array_only=True, axis=dict(rust_extra="-1, None, None"), rust_extra="None, None, None"),
+            dict(name="cummin", array_only=True, axis=dict(rust_extra="-1, None, None"), rust_extra="None, None, None"),
+            dict(name="cumprod", array_only=True, axis=dict(rust_extra="-1, None, None"), rust_extra="None, None, None"),
+            dict(name="cumsum", array_only=True, axis=dict(rust_extra="-1, None, None"), rust_extra="None, None, None"),
+            dict(name="expand_dims", no_bare=True, rust_array_only=True, axis=dict(rust_extra="&[-1][..]"), axes=dict(rust_extra="&[0, -1][..]")),
             dict(name="floor", rust_array_only=True),
             dict(name="log", array_only=True, lhs=dict(low=0.1, high=2.0)),
             dict(name="log2", array_only=True, lhs=dict(low=0.1, high=2.0)),
             dict(name="log10", array_only=True, lhs=dict(low=0.1, high=2.0)),
             dict(name="log1p", array_only=True, lhs=dict(low=0.1, high=2.0)),
+            dict(name="logsumexp", rust_name="log_sum_exp", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="max", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="mean", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="min", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="prod", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
             dict(name="reciprocal", array_only=True),
             dict(name="round", array_only=True, rust_extra="None"),
             dict(name="sin", array_only=True),
             dict(name="cos", array_only=True),
             dict(name="sqrt", array_only=True, lhs=dict(low=0.1, high=2.0)),
+            dict(name="sum", array_only=True, axis=dict(rust_extra="&[-1][..], None"), axes=dict(rust_extra="&[0, -1][..], None"), rust_extra="None, None"),
+            dict(name="var", rust_name="variance", array_only=True, axis=dict(rust_extra="&[-1][..], None, None"), axes=dict(rust_extra="&[0, -1][..], None, None"), rust_extra="None, None, None"),
+            # free functions only
+            # dict(name="arccos", rust_name="acos", free_only=True, lhs=dict(low=0.1, high=2.0)),
             dict(name="logical_not", rust_array_only=True),
             dict(name="negative", rust_array_only=True),
         ]
@@ -515,68 +523,100 @@ def generate_integration_tests():
             rust_extra = config.get("rust_extra", "")
             lhs = config.get("lhs", None)
 
-            if "rust_array_only" not in config:
-                if "free_only" not in config:
-                    f.write(
-                        test_array_function1(
-                            rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs
+            if "no_bare" not in config:
+                if "rust_array_only" not in config:
+                    if "free_only" not in config:
+                        f.write(
+                            test_array_function1(
+                                rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs
+                            )
                         )
-                    )
-                if "array_only" not in config:
+                    if "array_only" not in config:
+                        f.write(
+                            test_free_function1(
+                                rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs
+                            )
+                        )
+                else:
                     f.write(
                         test_free_function1(
-                            rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs
+                            rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs,
+                            via_rust_array=True
                         )
                     )
-            else:
-                f.write(
-                    test_free_function1(
-                        rust_name, function_name, rust_name=rust_name, rust_extra=rust_extra, lhs=lhs,
-                        via_rust_array=True
-                    )
-                )
 
             if "axis" in config:
-                if "free_only" not in config:
-                    f.write(
-                        test_array_function1(
-                            rust_name,
-                            function_name,
-                            "axis=-1",
-                            rust_extra="&[-1][..], None",
-                            lhs=lhs,
+                if "rust_array_only" not in config:
+                    if "free_only" not in config:
+                        f.write(
+                            test_array_function1(
+                                rust_name,
+                                function_name,
+                                "axis=-1",
+                                rust_name=rust_name,
+                                # grab the rust_extra from the config otherwise use the default
+                                rust_extra= config["axis"].get("rust_extra", "-1, None"),
+                                lhs=lhs,
+                            )
                         )
-                    )
-                if "array_only" not in config:
+                    if "array_only" not in config:
+                        f.write(
+                            test_free_function1(
+                                rust_name,
+                                function_name,
+                                "axis=-1",
+                                rust_name=rust_name,
+                                rust_extra= config["axis"].get("rust_extra", "-1, None"),
+                                lhs=lhs,
+                            )
+                        )
+                else:
                     f.write(
                         test_free_function1(
                             rust_name,
                             function_name,
                             "axis=-1",
-                            rust_extra="&[-1][..], None",
+                            rust_name=rust_name,
+                            rust_extra= config["axis"].get("rust_extra", "-1, None"),
                             lhs=lhs,
+                            via_rust_array=True
                         )
                     )
 
             if "axes" in config:
-                if "free_only" not in config:
-                    f.write(
-                        test_array_function1(
-                            rust_name,
-                            function_name,
-                            "axis=[0, -1]",
-                            rust_extra="&[0, -1][..], None",
-                            lhs=(2, 3, 4, 3),
+                if "rust_array_only" not in config:
+                    if "free_only" not in config:
+                        f.write(
+                            test_array_function1(
+                                rust_name,
+                                function_name,
+                                "axis=[0, -1]",
+                                rust_name=rust_name,
+                                rust_extra= config["axes"].get("rust_extra", "-1, None"),
+                                lhs=(2, 3, 4, 3),
+                            )
                         )
-                    )
-                if "array_only" not in config:
+                    if "array_only" not in config:
+                        f.write(
+                            test_free_function1(
+                                rust_name,
+                                function_name,
+                                "axis=[0, -1]",
+                                rust_name=rust_name,
+                                rust_extra= config["axes"].get("rust_extra", "-1, None"),
+                                lhs=(2, 3, 4, 3),
+                            )
+                        )
+                else:
                     f.write(
                         test_free_function1(
                             rust_name,
                             function_name,
                             "axis=[0, -1]",
-                            rust_extra="&[0, -1][..], None",
+                            rust_name=rust_name,
+                            rust_extra= config["axes"].get("rust_extra", "-1, None"),
                             lhs=(2, 3, 4, 3),
+                            via_rust_array=True
                         )
                     )
 

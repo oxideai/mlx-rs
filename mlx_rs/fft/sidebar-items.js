@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["fft","fft2","fft2_device","fft_device","fftn","fftn_device","ifft","ifft2","ifft2_device","ifft_device","ifftn","ifftn_device","irfft","irfft2","irfft2_device","irfft_device","irfftn","irfftn_device","rfft","rfft2","rfft2_device","rfft_device","rfftn","rfftn_device"]};

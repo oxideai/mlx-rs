@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Ord"],"fn":["cholesky","inv","inv_device","norm","norm_device","norm_ord","norm_ord_device","norm_p","norm_p_device","qr","qr_device","svd","svd_device"]};

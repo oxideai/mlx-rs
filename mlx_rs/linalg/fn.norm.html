@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Matrix or vector norm."><title>norm in mlx_rs::linalg - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0 (129f3b996 2024-06-10)" data-channel="1.79.0" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../mlx_rs/index.html">mlx_rs</a><span class="version">0.14.0</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In mlx_rs::linalg</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../mlx_rs/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../index.html">mlx_rs</a>::<wbr><a href="index.html">linalg</a>::<wbr><a class="fn" href="#">norm</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/mlx_rs/linalg.rs.html#175-225">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn norm&lt;'a&gt;(
+    array: &amp;<a class="struct" href="../prelude/struct.Array.html" title="struct mlx_rs::prelude::Array">Array</a>,
+    ord: impl <a class="trait" href="../utils/trait.IntoOption.html" title="trait mlx_rs::utils::IntoOption">IntoOption</a>&lt;<a class="enum" href="enum.Ord.html" title="enum mlx_rs::linalg::Ord">Ord</a>&lt;'a&gt;&gt;,
+    axes: impl <a class="trait" href="../utils/trait.IntoOption.html" title="trait mlx_rs::utils::IntoOption">IntoOption</a>&lt;&amp;'a [<a class="primitive" href="https://doc.rust-lang.org/1.79.0/std/primitive.i32.html">i32</a>]&gt;,
+    keep_dims: impl <a class="trait" href="https://doc.rust-lang.org/1.79.0/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.79.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.79.0/std/primitive.bool.html">bool</a>&gt;&gt;
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.79.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="../prelude/struct.Array.html" title="struct mlx_rs::prelude::Array">Array</a>, <a class="struct" href="../error/struct.Exception.html" title="struct mlx_rs::error::Exception">Exception</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Matrix or vector norm.</p>
+<p>For values of <code>ord &lt; 1</code>, the result is, strictly speaking, not a
+mathematical norm, but it may still be useful for various numerical
+purposes.</p>
+<p>The following norms can be calculated:</p>
+<div><table><thead><tr><th>ord</th><th>norm for matrices</th><th>norm for vectors</th></tr></thead><tbody>
+<tr><td>None</td><td>Frobenius norm</td><td>2-norm</td></tr>
+<tr><td>‘fro’</td><td>Frobenius norm</td><td>–</td></tr>
+<tr><td>inf</td><td>max(sum(abs(x), axis-1))</td><td>max(abs(x))</td></tr>
+<tr><td>-inf</td><td>min(sum(abs(x), axis-1))</td><td>min(abs(x))</td></tr>
+<tr><td>0</td><td>–</td><td>sum(x !- 0)</td></tr>
+<tr><td>1</td><td>max(sum(abs(x), axis-0))</td><td>as below</td></tr>
+<tr><td>-1</td><td>min(sum(abs(x), axis-0))</td><td>as below</td></tr>
+<tr><td>2</td><td>2-norm (largest sing. value)</td><td>as below</td></tr>
+<tr><td>-2</td><td>smallest singular value</td><td>as below</td></tr>
+<tr><td>other</td><td>–</td><td>sum(abs(x)<strong>ord)</strong>(1./ord)</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p>Nuclear norm and norms based on singular values are not yet implemented.</p>
+</blockquote>
+<p>The Frobenius norm is given by G. H. Golub and C. F. Van Loan, <em>Matrix Computations</em>,
+Baltimore, MD, Johns Hopkins University Press, 1985, pg. 15</p>
+<p>The nuclear norm is the sum of the singular values.</p>
+<p>Both the Frobenius and nuclear norm orders are only defined for
+matrices and produce a fatal error when <code>array.ndim != 2</code></p>
+<h2 id="params"><a class="doc-anchor" href="#params">§</a>Params</h2>
+<ul>
+<li><code>array</code>: input array</li>
+<li><code>ord</code>: order of the norm, see table</li>
+<li><code>axes</code>: axes that hold 2d matrices</li>
+<li><code>keep_dims</code>: if <code>true</code> the axes which are normed over are left in the result as dimensions
+with size one</li>
+</ul>
+</div></details></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DeviceType","Dtype"],"fn":["stop_gradient","stop_gradient_device"],"macro":["array","assert_array_eq"],"mod":["error","fft","linalg","ops","prelude","random","transforms","utils"],"struct":["Array","Device","DtypeIter","Stream","StreamOrDevice"],"trait":["ArrayElement","FromNested","FromScalar"],"type":["complex64"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["async_eval","eval","grad","jvp","value_and_grad","vjp"],"mod":["compile"],"trait":["Grad"]};

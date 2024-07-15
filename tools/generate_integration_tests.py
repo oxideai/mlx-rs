@@ -27,7 +27,7 @@ def assert_equal(indent, lhs, rhs, accuracy=None) -> str:
     if accuracy is None:
         return f'{" " * indent}assert_eq!({lhs}, {rhs});\n'
     else:
-        return f'{" " * indent}assert_eq!({lhs}, {rhs}, accuracy: {accuracy});\n'
+        return f'{" " * indent}float_eq!({lhs}, {rhs}, abs <= {accuracy});\n'
 
 
 def tuple_to_rust_slice(t) -> str:
@@ -73,17 +73,15 @@ def verify_array(indent, name: str, array: mx.array) -> str:
         )
 
     else:
-        # TODO: update this once we support mean and sum
-        # mean = mx.mean(array).item()
-        # result += assert_equal(
-        #     indent, f"{name}.mean().item(Float.self)", mean, mean * 0.02
-        # )
-        #
-        # sum = mx.sum(array).item()
-        # result += assert_equal(
-        #     indent, f"{name}.sum().item(Float.self)", sum, sum * 0.02
-        # )
-        print("Skipping mean and sum tests for now")
+        mean = mx.mean(array).item()
+        result += assert_equal(
+            indent, f"{name}.mean(None, None).unwrap().item::<f32>()", mean, mean * 0.02
+        )
+
+        sum = mx.sum(array).item()
+        result += assert_equal(
+            indent, f"{name}.sum(None, None).unwrap().item::<f32>()", sum, sum * 0.02
+        )
 
     return result
 
@@ -453,6 +451,7 @@ def generate_integration_tests():
         f.write("use pretty_assertions::assert_eq;\n")
         f.write("use num_complex::Complex32;\n")
         f.write("use mlx_rs::{Array, Dtype, StreamOrDevice, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
+        f.write("use float_eq::float_eq;\n")
         f.write("\n")
 
         # TODO: test for random seed

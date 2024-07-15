@@ -1,4 +1,4 @@
-#!/usr/bin/env -S pkgx python@3.10
+#!/usr/bin/env -S pkgx python@3.11
 
 import typing as t
 import mlx.core as mx
@@ -64,12 +64,12 @@ def verify_array(indent, name: str, array: mx.array) -> str:
     if dtype == mx.bool_:
         all = mx.all(array).item()
         result += assert_equal(
-            indent, f"{name}.all(None, None).item::<bool>()", "true" if all else "false"
+            indent, f"{name}.all(None, None).unwrap().item::<bool>()", "true" if all else "false"
         )
 
         any = mx.any(array).item()
         result += assert_equal(
-            indent, f"{name}.any(None, None).item::<bool>()", "true" if any else "false"
+            indent, f"{name}.any(None, None).unwrap().item::<bool>()", "true" if any else "false"
         )
 
     else:
@@ -90,28 +90,27 @@ def verify_array(indent, name: str, array: mx.array) -> str:
 
 def create_argument(indent, name, value) -> t.Tuple[str, mx.array]:
     if value is None:
-        # TODO: Create random array entirely in Rust
-        # return f"let {name} = mlx::random::normal([4, 3])", mx.random.normal([4, 3])
-        mx_array = mx.random.normal([4, 3])
-        flattened_list = list(flatten_generator(mx_array.tolist()))
-        return f"let {name} = Array::from_slice(&{flattened_list}, {tuple_to_rust_slice(mx_array.shape)});", mx_array
+        return f"let {name} = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();", mx.random.normal([4, 3])
 
     if value == "scalar":
-        return f"let {name} = MLXRandom.normal()", mx.random.normal()
+        return f"let {name} = mlx_rs::random::normal::<f32>(None, None, None, None).unwrap();", mx.random.normal()
 
     if isinstance(value, t.Tuple):
         # TODO: Create uniform array entirely in Rust
-        mx_array = mx.random.uniform(0, 1, value)
-        flattened_list = list(flatten_generator(mx_array.tolist()))
+        # mx_array = mx.random.uniform(0, 1, value)
+        # flattened_list = list(flatten_generator(mx_array.tolist()))
+        # let a = uniform::<_, f32>(0, 1, None, None).unwrap();
+        # let array = mlx_rs::random::uniform::<_, f32>(0, 10, &[50], &key);
         return (
-            # f"let {name} = mlx::random::uniform(0.0 ..< 1.0, {tuple_to_rust_slice(value)})",
-            # mx.random.uniform(0, 1, value),
-            f"let {name} = Array::from_slice(&{flattened_list}, {tuple_to_rust_slice(value)});",
-            mx_array,
+            f"let {name} = mlx_rs::random::uniform::<_, f32>(0.0f32, 1.0f32, {tuple_to_rust_slice(value)}, None).unwrap();",
+            # f"let {name} =  mlx_rs::random::uniform(&{flattened_list}, {tuple_to_rust_slice(value)});",
+            mx.random.uniform(0, 1, value),
+            # f"let {name} = Array::from_slice(&{flattened_list}, {tuple_to_rust_slice(value)});",
+            # mx_array,
         )
 
     if isinstance(value, int) or isinstance(value, float):
-        return f"let {name} = {value}.into();", value
+        return f"let {name}: Array = {value}.into();", value
 
     if isinstance(value, dict) and "low" in value:
         # TODO: Create uniform array entirely in Rust
@@ -141,8 +140,7 @@ def test_operator(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (lhs_decl, lhs) = create_argument(indent, "a", lhs)
@@ -157,7 +155,11 @@ def test_operator(
         result += verify_array(indent, "b", rhs)
 
     if rust_name:
-        result += (" " * indent) + f"let result = a.{rust_name}(&b);\n"
+        # if its pow, we don't unwrap the result
+        if rust_name == "pow":
+            result += (" " * indent) + f"let result = a.{rust_name}(&b);\n"
+        else:
+            result += (" " * indent) + f"let result = a.{rust_name}(&b).unwrap();\n"
     else:
         result += (" " * indent) + f"let result = &a {rust_name or op} &b;\n"
 
@@ -189,8 +191,7 @@ def test_array_function1(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (lhs_decl, lhs) = create_argument(indent, "a", lhs)
@@ -199,9 +200,15 @@ def test_array_function1(
     if isinstance(lhs, mx.array):
         result += verify_array(indent, "a", lhs)
 
-    result += (
+    nounwrap = ["abs", "sqrt", "cos", "sin", "round", "reciprocal", "log1p", "log10", "log2", "log"]
+    if rust_name in nounwrap:
+        result += (
                       " " * indent
               ) + f"let result = a.{rust_name or function_name}({rust_extra});\n"
+    else:
+        result += (
+                      " " * indent
+              ) + f"let result = a.{rust_name or function_name}({rust_extra}).unwrap();\n"
 
     c = eval(f"lhs.{function_name}({extra})")
 
@@ -232,8 +239,7 @@ def test_free_function1(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (lhs_decl, lhs) = create_argument(indent, "a", lhs)
@@ -244,9 +250,15 @@ def test_free_function1(
 
     sep = ", " if len(rust_extra) != 0 else ""
     if via_rust_array:
-        result += (
+        nounwrap = ["logical_not"]
+        if rust_name in nounwrap:
+            result += (
+                            " " * indent
+                    ) + f"let result = a.{rust_name or function_name}({rust_extra});\n"
+        else:
+            result += (
                           " " * indent
-                  ) + f"let result = a.{rust_name or function_name}({rust_extra});\n"
+                  ) + f"let result = a.{rust_name or function_name}({rust_extra}).unwrap();\n"
     else:
         result += (
                           " " * indent
@@ -280,8 +292,7 @@ def test_array_function2(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (lhs_decl, lhs) = create_argument(indent, "a", lhs)
@@ -330,8 +341,7 @@ def test_free_function2(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (lhs_decl, lhs) = create_argument(indent, "a", lhs)
@@ -347,9 +357,15 @@ def test_free_function2(
 
     sep = ", " if len(rust_extra) != 0 else ""
     if via_rust_array:
-        result += (
+        nounwrap = ["mul", "rem", "sub", "div", "add"]
+        if rust_name in nounwrap:
+            result += (
+                            " " * indent
+                    ) + f"let result = a.{rust_name or function_name}(&b{sep}{rust_extra});\n"
+        else:
+            result += (
                           " " * indent
-                  ) + f"let result = a.{rust_name or function_name}(&b{sep}{rust_extra});\n"
+                  ) + f"let result = a.{rust_name or function_name}(&b{sep}{rust_extra}).unwrap();\n"
     else:
         result += (
                           " " * indent
@@ -376,8 +392,7 @@ def test_fft(
 
     seed = new_seed()
     indent += 4
-    # TODO: seed the random number generator in Rust
-    # result += (" " * indent) + f"MLXRandom.seed({seed})\n"
+    result += (" " * indent) + f"mlx_rs::random::seed({seed});\n"
     mx.random.seed(seed)
 
     (r_decl, r) = create_argument(indent, "r", value)
@@ -415,7 +430,7 @@ def test_fft(
     if axis is None and axes is None:
         result += f", None"
 
-    result += ", StreamOrDevice::cpu());\n"
+    result += ", StreamOrDevice::cpu()).unwrap();\n"
     e += ", stream=mx.cpu)"
 
     c = eval(e)
@@ -450,7 +465,7 @@ def generate_integration_tests():
         f.write("use num_traits::Pow;\n")
         f.write("use pretty_assertions::assert_eq;\n")
         f.write("use num_complex::Complex32;\n")
-        f.write("use mlx::{Array, Dtype, StreamOrDevice, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
+        f.write("use mlx_rs::{Array, Dtype, StreamOrDevice, fft::{fft_device, ifft_device, rfft_device, irfft_device, fft2_device, ifft2_device, fftn_device, ifftn_device, rfft2_device, irfft2_device, rfftn_device, irfftn_device}};\n")
         f.write("\n")
 
         # TODO: test for random seed
@@ -505,7 +520,7 @@ def generate_integration_tests():
             dict(name="cos", array_only=True),
             dict(name="sqrt", array_only=True, lhs=dict(low=0.1, high=2.0)),
             dict(name="logical_not", rust_array_only=True),
-            dict(name="negative", rust_array_only=True, rust_name="neg"),
+            dict(name="negative", rust_array_only=True),
         ]
 
         for config in array_only_functions:

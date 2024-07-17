@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["mlx_rs"];
+window.ALL_CRATES = ["mlx_macros","mlx_rs","mlx_sys"];

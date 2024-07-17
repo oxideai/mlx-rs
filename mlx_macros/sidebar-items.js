@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["default_device"],"derive":["GenerateDtypeTestCases"]};

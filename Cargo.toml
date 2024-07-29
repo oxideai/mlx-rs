@@ -1,6 +1,6 @@
 
 [workspace]
-members = ["mlx-macros", "mlx-sys", "mlx-rs", "mlx-nn"]
+members = ["mlx-macros", "mlx-sys", "mlx-rs", "mlx-nn", "mlx-ext"]
 
 resolver = "2"
 

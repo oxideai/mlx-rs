@@ -1,0 +1,1 @@
+//! Extension crate for the `mlx` with a focus on improving the ergonomics.

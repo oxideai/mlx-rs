@@ -19,7 +19,7 @@ macro_rules! add {
 }
 
 #[macro_export]
-macro_rules! sub {
+macro_rules! subtract {
     ($a:expr, $b:expr) => {
         $a.subtract_device($b.as_ref(), $crate::mlx_rs::StreamOrDevice::default())
     };
@@ -29,7 +29,7 @@ macro_rules! sub {
 }
 
 #[macro_export]
-macro_rules! neg {
+macro_rules! negative {
     ($a:expr) => {
         $a.negative()
     };
@@ -49,7 +49,7 @@ macro_rules! logical_not {
 }
 
 #[macro_export]
-macro_rules! mul {
+macro_rules! multiply {
     ($a:expr, $b:expr) => {
         $a.multiply_device($b.as_ref(), $crate::mlx_rs::StreamOrDevice::default())
     };
@@ -59,7 +59,7 @@ macro_rules! mul {
 }
 
 #[macro_export]
-macro_rules! div {
+macro_rules! divide {
     ($a:expr, $b:expr) => {
         $a.divide_device($b.as_ref(), $crate::mlx_rs::StreamOrDevice::default())
     };
@@ -79,7 +79,7 @@ macro_rules! pow {
 }
 
 #[macro_export]
-macro_rules! rem {
+macro_rules! remainder {
     ($a:expr, $b:expr) => {
         $a.remainder_device($b.as_ref(), $crate::mlx_rs::StreamOrDevice::default())
     };
@@ -266,8 +266,8 @@ mod tests {
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
-        let _ = sub!(a, b);
-        let _ = sub!(a, b, stream = stream);
+        let _ = subtract!(a, b);
+        let _ = subtract!(a, b, stream = stream);
     }
 
     #[test]
@@ -276,8 +276,8 @@ mod tests {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
 
         // We are just testing that the macro compiles
-        let _ = neg!(a);
-        let _ = neg!(a, stream = stream);
+        let _ = negative!(a);
+        let _ = negative!(a, stream = stream);
     }
 
     #[test]
@@ -297,8 +297,8 @@ mod tests {
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
-        let _ = mul!(a, b);
-        let _ = mul!(a, b, stream = stream);
+        let _ = multiply!(a, b);
+        let _ = multiply!(a, b, stream = stream);
     }
 
     #[test]
@@ -308,8 +308,8 @@ mod tests {
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
-        let _ = div!(a, b);
-        let _ = div!(a, b, stream = stream);
+        let _ = divide!(a, b);
+        let _ = divide!(a, b, stream = stream);
     }
 
     #[test]
@@ -330,8 +330,8 @@ mod tests {
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
 
         // We are just testing that the macro compiles
-        let _ = rem!(a, b);
-        let _ = rem!(a, b, stream = stream);
+        let _ = remainder!(a, b);
+        let _ = remainder!(a, b, stream = stream);
     }
 
     #[test]

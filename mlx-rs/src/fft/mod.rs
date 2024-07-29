@@ -7,12 +7,12 @@
 //! The difference are explained below using `fftn` as an example:
 //!
 //! 1. `fftn_unchecked`/`fftn_device_unchecked`: This function is simply a wrapper around the C API
-//!   and does not perform any checks on the input. It may panic or get an fatal error that cannot
-//!   be caught by the rust runtime if the input is invalid.
+//!    and does not perform any checks on the input. It may panic or get an fatal error that cannot
+//!    be caught by the rust runtime if the input is invalid.
 //! 2. `try_fftn`/`try_fftn_device`: This function performs checks on the input and returns a
-//!   `Result` instead of panicking.
+//!    `Result` instead of panicking.
 //! 3. `fftn`/`fftn_device`: This function is a wrapper around `try_fftn` and unwraps the result. It
-//!   panics if the input is invalid.
+//!    panics if the input is invalid.
 //!
 //! The functions that contains `device` in their name are meant to be used with a user-specified
 //! `StreamOrDevice`. If you don't care about the stream, you can use the functions without `device`

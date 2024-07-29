@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"mlx_rs":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.79.0/core/convert/trait.TryFrom.html\" title=\"trait core::convert::TryFrom\">TryFrom</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.79.0/std/primitive.u32.html\">u32</a>&gt; for <a class=\"enum\" href=\"mlx_rs/prelude/enum.Dtype.html\" title=\"enum mlx_rs::prelude::Dtype\">Dtype</a>"]]
+"mlx_rs":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.80.0/core/convert/trait.TryFrom.html\" title=\"trait core::convert::TryFrom\">TryFrom</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.80.0/std/primitive.u32.html\">u32</a>&gt; for <a class=\"enum\" href=\"mlx_rs/prelude/enum.Dtype.html\" title=\"enum mlx_rs::prelude::Dtype\">Dtype</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

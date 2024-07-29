@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"mlx_rs":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.79.0/core/iter/traits/exact_size/trait.ExactSizeIterator.html\" title=\"trait core::iter::traits::exact_size::ExactSizeIterator\">ExactSizeIterator</a> for <a class=\"struct\" href=\"mlx_rs/struct.DtypeIter.html\" title=\"struct mlx_rs::DtypeIter\">DtypeIter</a>"]]
+"mlx_rs":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.80.0/core/iter/traits/exact_size/trait.ExactSizeIterator.html\" title=\"trait core::iter::traits::exact_size::ExactSizeIterator\">ExactSizeIterator</a> for <a class=\"struct\" href=\"mlx_rs/struct.DtypeIter.html\" title=\"struct mlx_rs::DtypeIter\">DtypeIter</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

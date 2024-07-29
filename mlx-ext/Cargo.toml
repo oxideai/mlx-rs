@@ -3,4 +3,12 @@ name = "mlx-ext"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = [
+    "macros",
+]
+
+macros = []
+
 [dependencies]
+mlx-rs = { workspace = true }

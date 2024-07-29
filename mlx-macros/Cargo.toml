@@ -1,11 +1,11 @@
 [package]
 name = "mlx-macros"
-version = "0.10.0-alpha.0"
+version = "0.1.0"
 authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
 edition = "2021"
 
 description = "Code generation crate for mlx-rs"
-repository = "https://github.com/minghuaw/mlx-rs"
+repository = "https://github.com/oxideai/mlx-rs"
 keywords = ["mlx", "deep-learning", "machine-learning"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"

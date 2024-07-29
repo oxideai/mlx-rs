@@ -1,0 +1,46 @@
+[package]
+name = "mlx-rs"
+version = "0.14.0"
+authors = [
+  "Minghua Wu <michael.wu1107@gmail.com>",
+  "David Chavez <david@dcvz.io>",
+]
+edition = "2021"
+
+description = "Unofficial rust wrapper for Apple's mlx machine learning library."
+repository = "https://github.com/oxideai/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = [
+  "aarch64-apple-darwin",
+  "aarch64-apple-ios",
+  "aarch64-apple-ios-sim",
+]
+
+[dependencies]
+mlx-sys = { workspace = true }
+mlx-macros = { workspace = true }
+half = "2"
+mach-sys = "0.5.4"
+num-complex = "0.4"
+num_enum = "0.7.2"
+num-traits = "0.2.18"
+paste = "1.0.14"
+smallvec = "1"
+strum = { version = "0.26", features = ["derive"] }
+thiserror = "1.0.58"
+libc = "0.2"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+float_eq = "1"
+
+[features]
+default = ["accelerate", "metal"]
+
+accelerate = ["mlx-sys/accelerate"]
+metal = ["mlx-sys/metal"]

@@ -8,6 +8,17 @@ fn main() {
     let mut config = Config::new("src/mlx-c");
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
+
+    #[cfg(debug_assertions)]
+    {
+        config.define("CMAKE_BUILD_TYPE", "Debug");
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        config.define("CMAKE_BUILD_TYPE", "Release");
+    }
+
     config.define("MLX_BUILD_METAL", "OFF");
     config.define("MLX_BUILD_ACCELERATE", "OFF");
 
@@ -47,6 +58,7 @@ fn main() {
         .header("src/mlx-c/mlx/c/mlx.h")
         .header("src/mlx-c/mlx/c/linalg.h")
         .header("src/mlx-c/mlx/c/error.h")
+        .header("src/mlx-c/mlx/c/transforms_impl.h")
         .clang_arg("-Isrc/mlx-c")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()

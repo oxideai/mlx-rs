@@ -1117,7 +1117,7 @@ mod tests {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
         let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[3, 2]);
-        let c = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 2]);
+        let c = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
 
         // We are just testing that the macro compiles
         let _ = addmm!(&a, &b, &c);

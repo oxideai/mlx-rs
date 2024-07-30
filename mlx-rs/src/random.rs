@@ -596,7 +596,7 @@ mod tests {
     fn test_bernoulli_single() {
         let key = key(0);
         let mut value = bernoulli(None, None, &key).unwrap();
-        assert_eq!(value.item::<bool>(), true);
+        assert!(value.item::<bool>());
     }
 
     #[test]

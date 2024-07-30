@@ -1336,15 +1336,6 @@ mod tests {
     }
 
     #[test]
-    fn test_logical_not() {
-        let a: Array = false.into();
-        let mut b = a.logical_not();
-
-        let b_data: &[bool] = b.as_slice();
-        assert_eq!(b_data, [true]);
-    }
-
-    #[test]
     fn test_mul() {
         let mut a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let mut b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);

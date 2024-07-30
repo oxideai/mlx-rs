@@ -1,0 +1,18 @@
+[package]
+name = "mlx-ext"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = [
+    "macros",
+    "builders",
+]
+
+macros = []
+builders = []
+
+[dependencies]
+mlx-rs = { workspace = true }
+
+paste = "1"

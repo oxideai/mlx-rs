@@ -163,6 +163,12 @@ impl Default for Stream {
     }
 }
 
+impl AsRef<Stream> for Stream {
+    fn as_ref(&self) -> &Stream {
+        self
+    }
+}
+
 impl std::fmt::Debug for Stream {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);

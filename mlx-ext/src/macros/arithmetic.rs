@@ -309,16 +309,6 @@ macro_rules! negative {
 }
 
 #[macro_export]
-macro_rules! logical_not {
-    ($a:expr) => {
-        $a.logical_not()
-    };
-    ($a:expr, stream=$stream:expr) => {
-        $a.logical_not_device($stream)
-    };
-}
-
-#[macro_export]
 macro_rules! power {
     ($a:expr, $b:expr) => {
         $a.power_device($b.as_ref(), $crate::mlx_rs::StreamOrDevice::default())
@@ -518,21 +508,45 @@ macro_rules! block_masked_mm {
         $crate::mlx_rs::ops::block_masked_mm($a, $b, $block_size, $mask_out, None, None)
     };
     ($a:expr, $b:expr, $block_size:expr, $mask_out:expr, stream=$stream:expr) => {
-        $crate::mlx_rs::ops::block_masked_mm_device($a, $b, $block_size, $mask_out, None, None, $stream)
+        $crate::mlx_rs::ops::block_masked_mm_device(
+            $a,
+            $b,
+            $block_size,
+            $mask_out,
+            None,
+            None,
+            $stream,
+        )
     };
 
     ($a:expr, $b:expr, $block_size:expr, $mask_out:expr, $mask_lhs:expr) => {
         $crate::mlx_rs::ops::block_masked_mm($a, $b, $block_size, $mask_out, $mask_lhs, None)
     };
     ($a:expr, $b:expr, $block_size:expr, $mask_out:expr, $mask_lhs:expr, stream=$stream:expr) => {
-        $crate::mlx_rs::ops::block_masked_mm_device($a, $b, $block_size, $mask_out, $mask_lhs, None, $stream)
+        $crate::mlx_rs::ops::block_masked_mm_device(
+            $a,
+            $b,
+            $block_size,
+            $mask_out,
+            $mask_lhs,
+            None,
+            $stream,
+        )
     };
 
     ($a:expr, $b:expr, $block_size:expr, $mask_out:expr, $mask_lhs:expr, $mask_rhs:expr) => {
         $crate::mlx_rs::ops::block_masked_mm($a, $b, $block_size, $mask_out, $mask_lhs, $mask_rhs)
     };
     ($a:expr, $b:expr, $block_size:expr, $mask_out:expr, $mask_lhs:expr, $mask_rhs:expr, stream=$stream:expr) => {
-        $crate::mlx_rs::ops::block_masked_mm_device($a, $b, $block_size, $mask_out, $mask_lhs, $mask_rhs, $stream)
+        $crate::mlx_rs::ops::block_masked_mm_device(
+            $a,
+            $b,
+            $block_size,
+            $mask_out,
+            $mask_lhs,
+            $mask_rhs,
+            $stream,
+        )
     };
 }
 
@@ -592,7 +606,10 @@ macro_rules! tensordot {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{Array, StreamOrDevice};
+    use mlx_rs::{
+        ops::{arange, reshape},
+        Array, StreamOrDevice,
+    };
 
     #[test]
     fn test_abs() {
@@ -696,111 +713,6 @@ mod tests {
     }
 
     #[test]
-    fn test_sub() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = subtract!(a, b);
-        let _ = subtract!(a, b, stream = stream);
-    }
-
-    #[test]
-    fn test_tan() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[0.5, 0.6, 0.7], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = tan!(&a);
-        let _ = tan!(&a, stream = stream);
-    }
-
-    #[test]
-    fn test_tanh() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[0.5, 0.6, 0.7], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = tanh!(&a);
-        let _ = tanh!(&a, stream = stream);
-    }
-
-    #[test]
-    fn test_neg() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = negative!(a);
-        let _ = negative!(a, stream = stream);
-    }
-
-    #[test]
-    fn test_logical_not() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 0, 1], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = logical_not!(a);
-        let _ = logical_not!(a, stream = stream);
-    }
-
-    #[test]
-    fn test_mul() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = multiply!(a, b);
-        let _ = multiply!(a, b, stream = stream);
-    }
-
-    #[test]
-    fn test_div() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = divide!(a, b);
-        let _ = divide!(a, b, stream = stream);
-    }
-
-    #[test]
-    fn test_pow() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = power!(a, b);
-        let _ = power!(a, b, stream = stream);
-    }
-
-    #[test]
-    fn test_rem() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = remainder!(a, b);
-        let _ = remainder!(a, b, stream = stream);
-    }
-
-    #[test]
-    fn test_sqrt() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = sqrt!(a);
-        let _ = sqrt!(a, stream = stream);
-    }
-
-    #[test]
     fn test_cos() {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
@@ -818,6 +730,38 @@ mod tests {
         // We are just testing that the macro compiles
         let _ = cosh!(&a);
         let _ = cosh!(&a, stream = stream);
+    }
+
+    #[test]
+    fn test_degrees() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = degrees!(&a);
+        let _ = degrees!(&a, stream = stream);
+    }
+
+    #[test]
+    fn test_div() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = divide!(a, b);
+        let _ = divide!(a, b, stream = stream);
+    }
+
+    #[test]
+    fn test_divmod() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+        let b = Array::from_slice(&[4, 5, 6], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = divmod!(&a, &b);
+        let _ = divmod!(&a, &b, stream = stream);
     }
 
     #[test]
@@ -966,6 +910,48 @@ mod tests {
     }
 
     #[test]
+    fn test_mul() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = multiply!(a, b);
+        let _ = multiply!(a, b, stream = stream);
+    }
+
+    #[test]
+    fn test_neg() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = negative!(a);
+        let _ = negative!(a, stream = stream);
+    }
+
+    #[test]
+    fn test_pow() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = power!(a, b);
+        let _ = power!(a, b, stream = stream);
+    }
+
+    #[test]
+    fn test_radians() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = radians!(&a);
+        let _ = radians!(&a, stream = stream);
+    }
+
+    #[test]
     fn test_reciprocal() {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
@@ -973,6 +959,17 @@ mod tests {
         // We are just testing that the macro compiles
         let _ = reciprocal!(a);
         let _ = reciprocal!(a, stream = stream);
+    }
+
+    #[test]
+    fn test_rem() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = remainder!(a, b);
+        let _ = remainder!(a, b, stream = stream);
     }
 
     #[test]
@@ -1017,20 +1014,6 @@ mod tests {
     }
 
     #[test]
-    fn test_softmax() {
-        let stream = StreamOrDevice::default();
-        let a = Array::from_slice(&[1, 2, 3], &[3]);
-
-        // We are just testing that the macro compiles
-        let _ = softmax!(&a);
-        let _ = softmax!(&a, &[0]);
-        let _ = softmax!(&a, &[0], true);
-        let _ = softmax!(&a, stream = &stream);
-        let _ = softmax!(&a, &[0], stream = &stream);
-        let _ = softmax!(&a, &[0], true, stream = &stream);
-    }
-
-    #[test]
     fn test_sin() {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
@@ -1051,6 +1034,30 @@ mod tests {
     }
 
     #[test]
+    fn test_softmax() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1, 2, 3], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = softmax!(&a);
+        let _ = softmax!(&a, &[0]);
+        let _ = softmax!(&a, &[0], true);
+        let _ = softmax!(&a, stream = &stream);
+        let _ = softmax!(&a, &[0], stream = &stream);
+        let _ = softmax!(&a, &[0], true, stream = &stream);
+    }
+
+    #[test]
+    fn test_sqrt() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = sqrt!(a);
+        let _ = sqrt!(a, stream = stream);
+    }
+
+    #[test]
     fn test_square() {
         let stream = StreamOrDevice::default();
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
@@ -1058,5 +1065,98 @@ mod tests {
         // We are just testing that the macro compiles
         let _ = square!(a);
         let _ = square!(a, stream = stream);
+    }
+
+    #[test]
+    fn test_sub() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = subtract!(a, b);
+        let _ = subtract!(a, b, stream = stream);
+    }
+
+    #[test]
+    fn test_tan() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[0.5, 0.6, 0.7], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = tan!(&a);
+        let _ = tan!(&a, stream = stream);
+    }
+
+    #[test]
+    fn test_tanh() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[0.5, 0.6, 0.7], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = tanh!(&a);
+        let _ = tanh!(&a, stream = stream);
+    }
+
+    #[test]
+    fn test_block_masked_mm() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
+        let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[3, 2]);
+
+        // We are just testing that the macro compiles
+        let _ = block_masked_mm!(&a, &b);
+        let _ = block_masked_mm!(&a, &b, None);
+        let _ = block_masked_mm!(&a, &b, None, None);
+        let _ = block_masked_mm!(&a, &b, None, None, None);
+        let _ = block_masked_mm!(&a, &b, None, None, None, stream = stream);
+    }
+
+    #[test]
+    fn test_addmm() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
+        let b = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[3, 2]);
+        let c = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 2]);
+
+        // We are just testing that the macro compiles
+        let _ = addmm!(&a, &b, &c);
+        let _ = addmm!(&a, &b, &c, None);
+        let _ = addmm!(&a, &b, &c, None, None);
+        let _ = addmm!(&a, &b, &c, None, None, stream = stream);
+    }
+
+    #[test]
+    fn test_inner() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = inner!(&a, &b);
+        let _ = inner!(&a, &b, stream = stream);
+    }
+
+    #[test]
+    fn test_outer() {
+        let stream = StreamOrDevice::default();
+        let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+        let b = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
+
+        // We are just testing that the macro compiles
+        let _ = outer!(&a, &b);
+        let _ = outer!(&a, &b, stream = stream);
+    }
+
+    #[test]
+    fn test_tensordot() {
+        let stream = StreamOrDevice::default();
+        let x = reshape(&arange::<f32, _>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
+        let y = reshape(&arange::<f32, _>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
+        let axes = (&[1i32, 0], &[0i32, 1]);
+
+        // We are just testing that the macro compiles
+        let _ = tensordot!(&x, &y, axes);
+        let _ = tensordot!(&x, &y, axes, stream = stream);
     }
 }

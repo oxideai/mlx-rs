@@ -6,3 +6,6 @@ pub use mlx_rs;
 
 #[cfg(feature = "macros")]
 mod macros;
+
+#[cfg(feature = "builders")]
+pub mod builders;

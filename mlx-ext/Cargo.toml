@@ -14,3 +14,5 @@ builders = []
 
 [dependencies]
 mlx-rs = { workspace = true }
+
+paste = "1"

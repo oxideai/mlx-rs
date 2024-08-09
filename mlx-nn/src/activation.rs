@@ -83,92 +83,9 @@ pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
     mlx_rs::ops::log_add_exp(x.as_ref(), 0)
 }
 
-// // MARK: - Compiled Activation Functions
-
-// private let compiledLeakyRelu: (MLXArray, MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x, negativeSlope in
-//         maximum(negativeSlope * x, x)
-//     }
-// }()
-
-// private let compiledElu: (MLXArray, MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x, alpha in
-//         which(x .> 0, x, alpha * (MLX.exp(x) - 1))
-//     }
-// }()
-
-// private let compiledRelu6: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         minimum(maximum(x, 0), 6)
-//     }
-// }()
-
-// private let compiledSoftsign: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         x / (1 + abs(x))
-//     }
-// }()
-
-// private let compiledCelu: (MLXArray, MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x, alpha in
-//         maximum(x, 0.0) + alpha * (exp(minimum(x, 0.0) / alpha) - 1)
-//     }
-// }()
-
-// private let compiledSilu: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         x * sigmoid(x)
-//     }
-// }()
-
-// private let compiledLogSigmoid: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         -softplus(-x)
-//     }
-// }()
-
-// private let compiledGelu: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         x * (1 + erf(x / sqrt(2))) / 2
-//     }
-// }()
-
-// private let compiledGeluApproximate: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         0.5 * x * (1 + tanh(sqrt(2 / Float.pi) * (x + 0.044715 * x ** 3)))
-//     }
-// }()
-
-// private let compiledGeluFastApproximate: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         x * sigmoid(1.773 * x)
-//     }
-// }()
-
-// private let compiledSelu: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         elu(x, alpha: 1.67326) * 1.0507
-//     }
-// }()
-
-// private let compiledPrelu: (MLXArray, MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x, alpha in
-//         maximum(0, x) + alpha * minimum(0, x)
-//     }
-// }()
-
-// private let compiledMish: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         x * tanh(softplus(x))
-//     }
-// }()
-
-// private let compiledHardSwish: (MLXArray) -> MLXArray = {
-//     compile(shapeless: true) { x in
-//         let maxXPlus3 = maximum(x + 3, 0)
-//         return x * minimum(maxXPlus3, 6) / 6
-//     }
-// }()
+/* -------------------------------------------------------------------------- */
+/*                        Compiled activation functions                       */
+/* -------------------------------------------------------------------------- */
 
 #[inline]
 fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception> {

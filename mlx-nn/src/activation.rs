@@ -59,6 +59,18 @@ pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result
     x.subtract(log_sum_exp(x, &[axis], true)?)
 }
 
+/// Applies the Exponential Linear Unit.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// which(x.gt(0), x, alpha * (exp(x) - 1))
+/// ```
+/// 
+/// # Arguments
+/// 
+/// - `x`: The input array
+/// - `alpha`: Default to 1.0 if not provided
 pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
@@ -66,10 +78,8 @@ pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array,
     compiled_elu(x.as_ref(), &alpha)
 }
 
-pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
-    let split = x.as_ref().split_equal(2, axis)?;
-    let (a, b) = (&split[0], &split[1]);
-    Ok(a * sigmoid(b))
+pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_relu6(x.as_ref())
 }
 
 /// Applies the Exponential Linear Unit.
@@ -81,6 +91,64 @@ pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, 
 /// ```
 pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
     mlx_rs::ops::log_add_exp(x.as_ref(), 0)
+}
+
+pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_softsign(x.as_ref())
+}
+
+pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
+    let alpha = array!(alpha.into().unwrap_or(1.0));
+    // We have to use this indirection, otherwise the compiler cannot
+    // infer the lifetime of the value returned by the closure properly
+    compiled_celu(x.as_ref(), &alpha)
+}
+
+pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_silu(x.as_ref())
+}
+
+pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_log_sigmoid(x.as_ref())
+}
+
+pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_gelu(x.as_ref())
+}
+
+pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_gelu_approximate(x.as_ref())
+}
+
+pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_gelu_fast_approximate(x.as_ref())
+}
+
+pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
+    let split = x.as_ref().split_equal(2, axis)?;
+    let (a, b) = (&split[0], &split[1]);
+    Ok(a * sigmoid(b))
+}
+
+pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array, Exception> {
+    let threshold = threshold.into().unwrap_or(0.0);
+    mlx_rs::ops::r#where(&x.as_ref().gt(threshold)?, 1, 0)
+}
+
+pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_selu(x.as_ref())
+}
+
+pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_prelu(x.as_ref(), alpha.as_ref())
+}
+
+pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_mish(x.as_ref())
+}
+
+pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+    compiled_hard_swish(x.as_ref())
 }
 
 /* -------------------------------------------------------------------------- */

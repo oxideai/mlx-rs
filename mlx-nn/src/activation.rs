@@ -78,6 +78,13 @@ pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array,
     compiled_elu(x.as_ref(), &alpha)
 }
 
+/// Applies the Rectified Linear Unit 6.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// minimum(maximum(x, 0), 6)
+/// ```
 pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_relu6(x.as_ref())
 }
@@ -93,10 +100,24 @@ pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
     mlx_rs::ops::log_add_exp(x.as_ref(), 0)
 }
 
+/// Applies the Softsign function.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// x / (1 + abs(x))
+/// ```
 pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_softsign(x.as_ref())
 }
 
+/// Applies the Continuously Differentiable Exponential Linear Unit.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// maximum(x, 0) + alpha * (exp(minimum(x, 0) / alpha) - 1)
+/// ```
 pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
@@ -104,49 +125,130 @@ pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array
     compiled_celu(x.as_ref(), &alpha)
 }
 
+/// Applies the Sigmoid Linear Unit. Also known as Swish.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// x * sigmoid(x)
+/// ```
 pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_silu(x.as_ref())
 }
 
+/// Applies the Log Sigmoid function.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// -softplus(-x)
+/// ```
 pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_log_sigmoid(x.as_ref())
 }
 
+/// Applies the Gaussian Error Linear Units function.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// x * (1 + erf(x / 2.sqrt())) / 2
+/// ```
 pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_gelu(x.as_ref())
 }
 
+/// An approximation to Gaussian Error Linear Unit.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// 0.5 * x * (1 + tanh(sqrt(2 / PI) * (x + 0.044715 * x ** 3)))
+/// ```
 pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_gelu_approximate(x.as_ref())
 }
 
+/// A fast approximation to Gaussian Error Linear Unit.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// x * sigmoid(1.773 * x)
+/// ```
 pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_gelu_fast_approximate(x.as_ref())
 }
 
+/// Applies the gated linear unit function.
+/// 
+/// This function splits the `axis` dimension of the input into two halves
+/// (`a` and `b`) and applies `a * sigmoid(b)`.
 pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
     let split = x.as_ref().split_equal(2, axis)?;
     let (a, b) = (&split[0], &split[1]);
     Ok(a * sigmoid(b))
 }
 
+/// Applies the Step Activation Function.
+///
+/// This function implements a binary step activation, where the output is set
+/// to 1 if the input is greater than a specified threshold, and 0 otherwise.
+///
+/// This is:
+///
+/// ```rust
+/// where(x.gt(threshold), 1, 0)
+/// ```
 pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array, Exception> {
     let threshold = threshold.into().unwrap_or(0.0);
     mlx_rs::ops::r#where(&x.as_ref().gt(threshold)?, 1, 0)
 }
 
+/// Applies the Scaled Exponential Linear Unit.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// elu(x, 1.67326) * 1.0507
+/// ```
 pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_selu(x.as_ref())
 }
 
+/// Applies the element-wise parametric ReLU.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// maximum(0, x) + alpha * minimum(0, x)
+/// ```
 pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_prelu(x.as_ref(), alpha.as_ref())
 }
 
+/// Applies the Mish function, element-wise.
+/// 
+/// Mish: A Self Regularized Non-Monotonic Neural Activation Function.
+///
+/// Reference: [https://arxiv.org/abs/1908.08681](https://arxiv.org/abs/1908.08681)
+///
+/// This is:
+///
+/// ```rust
+/// x * tanh(softplus(x))
+/// ```
 pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_mish(x.as_ref())
 }
 
+/// Applies the hardswish function, element-wise.
+/// 
+/// This is:
+/// 
+/// ```rust
+/// x * minimum(maximum(x + 3, 0), 6) / 6
+/// ```
 pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_hard_swish(x.as_ref())
 }
@@ -183,7 +285,7 @@ fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
 
 #[inline]
 fn compiled_softsign(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ / (mlx_rs::ops::abs(x_).add(1).unwrap());
+    let f = |x_: &Array| x_ / (array!(1) + mlx_rs::ops::abs(x_));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -215,7 +317,7 @@ fn compiled_log_sigmoid(x: &Array) -> Result<Array, Exception> {
 #[inline]
 fn compiled_gelu(x: &Array) -> Result<Array, Exception> {
     use mlx_rs::ops::erf;
-    let f = |x_: &Array| x_ * (erf(&(x_ / 2f32.sqrt())) + 1) / 2;
+    let f = |x_: &Array| x_ * (array!(1) + erf(&(x_ / 2f32.sqrt()))) / 2;
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -228,7 +330,7 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
         // 0.5 * x * (1 + tanh(sqrt(2 / Float.pi) * (x + 0.044715 * x ** 3)))
         array!(0.5)
             * x_
-            * (array!(0.5)
+            * (array!(1.0)
                 + tanh(&(sqrt(&array!(2.0 / PI)) * (x_ + array!(0.044715) * x_.power(3).unwrap()))))
     };
     let mut compiled = compile(f, Some(true), None, None);

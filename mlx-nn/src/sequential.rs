@@ -15,12 +15,18 @@ impl Module for Sequential {
     }
 }
 
+impl Default for Sequential {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Sequential {
     pub fn new() -> Self {
         Self { layers: Vec::new() }
     }
 
-    pub fn add(mut self, layer: impl Module + 'static) -> Self {
+    pub fn append(mut self, layer: impl Module + 'static) -> Self {
         self.layers.push(Box::new(layer));
         self
     }

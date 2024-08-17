@@ -753,7 +753,7 @@ impl Tanh {
 
 impl Module for Tanh {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
-        Ok(mlx_rs::ops::tanh(&x))
+        Ok(mlx_rs::ops::tanh(x))
     }
 }
 

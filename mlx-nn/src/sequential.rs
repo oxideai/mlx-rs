@@ -1,4 +1,4 @@
-use mlx_rs::{error::Exception, Array};
+use mlx_rs::{error::Exception, utils::OwnedOrRef, Array};
 
 use crate::Module;
 
@@ -7,11 +7,17 @@ pub struct Sequential {
 }
 
 impl Module for Sequential {
-    fn forward(&self, mut x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
+        let mut x = OwnedOrRef::Ref(x);
+
         for layer in &self.layers {
-            x = layer.forward(x)?;
+            x = OwnedOrRef::Owned(layer.forward(x.as_ref())?);
         }
-        Ok(x)
+
+        match x {
+            OwnedOrRef::Owned(array) => Ok(array),
+            OwnedOrRef::Ref(array) => Ok(array.deep_clone()),
+        }
     }
 }
 

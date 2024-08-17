@@ -775,7 +775,7 @@ fn get_item(
     use ArrayIndexOp::*;
 
     match index.index_op() {
-        Ellipsis => Ok(src.clone()),
+        Ellipsis => Ok(src.deep_clone()),
         TakeIndex { index } => get_item_index(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
@@ -885,7 +885,7 @@ fn get_item_nd(
     if have_array && remaining_indices.is_empty() {
         // `clone` returns a new array with the same shape and data
         return match src {
-            OwnedOrRef::Ref(src) => Ok(src.clone()),
+            OwnedOrRef::Ref(src) => Ok(src.deep_clone()),
             OwnedOrRef::Owned(src) => Ok(src),
         };
     }
@@ -949,7 +949,7 @@ fn get_item_nd(
     }
 
     match src {
-        OwnedOrRef::Ref(src) => Ok(src.clone()),
+        OwnedOrRef::Ref(src) => Ok(src.deep_clone()),
         OwnedOrRef::Owned(src) => Ok(src),
     }
 }

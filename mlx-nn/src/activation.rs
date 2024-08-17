@@ -288,7 +288,7 @@ impl Glu {
 }
 
 impl Module for Glu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         glu(x, self.axis)
     }
 }
@@ -319,7 +319,7 @@ impl Sigmoid {
 }
 
 impl Module for Sigmoid {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         Ok(sigmoid(x))
     }
 }
@@ -350,7 +350,7 @@ impl Mish {
 }
 
 impl Module for Mish {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         mish(x)
     }
 }
@@ -377,7 +377,7 @@ impl Relu {
 }
 
 impl Module for Relu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         relu(x)
     }
 }
@@ -413,7 +413,7 @@ impl LeakyReLU {
 }
 
 impl Module for LeakyReLU {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         leaky_relu(x, self.neg_slope)
     }
 }
@@ -440,7 +440,7 @@ impl Relu6 {
 }
 
 impl Module for Relu6 {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         relu6(x)
     }
 }
@@ -474,7 +474,7 @@ impl Softmax {
 }
 
 impl Module for Softmax {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         match self.axis {
             Some(axis) => Ok(mlx_rs::ops::softmax(&x, &[axis], None)),
             None => Ok(mlx_rs::ops::softmax(&x, None, None)),
@@ -504,7 +504,7 @@ impl Softplus {
 }
 
 impl Module for Softplus {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         softplus(x)
     }
 }
@@ -531,7 +531,7 @@ impl Softsign {
 }
 
 impl Module for Softsign {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         softsign(x)
     }
 }
@@ -566,7 +566,7 @@ impl Celu {
 }
 
 impl Module for Celu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         celu(x, self.alpha)
     }
 }
@@ -593,7 +593,7 @@ impl Silu {
 }
 
 impl Module for Silu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         silu(x)
     }
 }
@@ -627,7 +627,7 @@ impl LogSoftmax {
 }
 
 impl Module for LogSoftmax {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         log_softmax(x, self.axis)
     }
 }
@@ -654,7 +654,7 @@ impl LogSigmoid {
 }
 
 impl Module for LogSigmoid {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         log_sigmoid(x)
     }
 }
@@ -677,7 +677,7 @@ impl Prelu {
 }
 
 impl Module for Prelu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         prelu(x, &self.alpha)
     }
 }
@@ -727,7 +727,7 @@ impl Gelu {
 }
 
 impl Module for Gelu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         match self.approximate {
             GeluApprox::None => gelu(x),
             GeluApprox::Precise => gelu_approximate(x),
@@ -752,7 +752,7 @@ impl Tanh {
 }
 
 impl Module for Tanh {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         Ok(mlx_rs::ops::tanh(&x))
     }
 }
@@ -779,7 +779,7 @@ impl HardSwish {
 }
 
 impl Module for HardSwish {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         hard_swish(x)
     }
 }
@@ -816,7 +816,7 @@ impl Step {
 }
 
 impl Module for Step {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         step(x, self.threshold)
     }
 }
@@ -843,7 +843,7 @@ impl Selu {
 }
 
 impl Module for Selu {
-    fn forward(&self, x: Array) -> Result<Array, Exception> {
+    fn forward(&self, x: &Array) -> Result<Array, Exception> {
         selu(x)
     }
 }

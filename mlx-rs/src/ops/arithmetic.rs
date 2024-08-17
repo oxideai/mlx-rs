@@ -2214,7 +2214,7 @@ mod tests {
         assert_eq!(z.item::<f32>(), 3.0);
 
         // Chain a few adds:
-        let mut out = x.clone();
+        let mut out = x.deep_clone();
         for _ in 0..10 {
             out = add(&out, &x).unwrap();
         }

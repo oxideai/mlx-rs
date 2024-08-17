@@ -476,8 +476,8 @@ impl Softmax {
 impl Module for Softmax {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         match self.axis {
-            Some(axis) => Ok(mlx_rs::ops::softmax(&x, &[axis], None)),
-            None => Ok(mlx_rs::ops::softmax(&x, None, None)),
+            Some(axis) => Ok(mlx_rs::ops::softmax(x, &[axis], None)),
+            None => Ok(mlx_rs::ops::softmax(x, None, None)),
         }
     }
 }
@@ -753,7 +753,7 @@ impl Tanh {
 
 impl Module for Tanh {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
-        Ok(mlx_rs::ops::tanh(&x))
+        Ok(mlx_rs::ops::tanh(x))
     }
 }
 

@@ -49,7 +49,7 @@ impl std::fmt::Display for Array {
 
 impl Array {
     /// Clone the array by copying the data.
-    /// 
+    ///
     /// This is named `deep_clone` to avoid confusion with the `Clone` trait.
     pub fn deep_clone(&self) -> Self {
         unsafe {

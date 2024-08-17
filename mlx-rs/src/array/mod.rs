@@ -49,7 +49,9 @@ impl std::fmt::Display for Array {
 
 impl Array {
     /// Clone the array by copying the data.
-    pub(crate) fn clone(&self) -> Self {
+    /// 
+    /// This is named `deep_clone` to avoid confusion with the `Clone` trait.
+    pub fn deep_clone(&self) -> Self {
         unsafe {
             let dtype = self.dtype();
             let shape = self.shape();
@@ -969,7 +971,7 @@ mod tests {
     fn cloned_array_has_different_ptr() {
         let data = [1i32, 2, 3, 4, 5];
         let mut orig = Array::from_slice(&data, &[5]);
-        let mut clone = orig.clone();
+        let mut clone = orig.deep_clone();
 
         // Data should be the same
         assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());

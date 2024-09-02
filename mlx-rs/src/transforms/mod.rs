@@ -5,7 +5,7 @@ use crate::{
     error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
     },
-    utils::{Closure, VectorArray, VectorVectorArray},
+    utils::{Closure, IntoOption, VectorArray, VectorVectorArray},
     Array,
 };
 
@@ -218,18 +218,19 @@ fn clone_by_increment_ref_count(src: &Array) -> Array {
 /// Returns a function which computes the value and gradient of `f`.
 pub fn value_and_grad<'a, F>(
     f: F,
-    argument_numbers: &'a [i32],
+    argument_numbers: impl IntoOption<&'a [i32]>,
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
+    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
     build_value_and_gradient(f, argument_numbers)
 }
 
 pub trait Grad<'a, Args, Output> {
     fn grad(
         self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a;
 }
 
@@ -242,8 +243,9 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         build_gradient(self, argument_numbers)
     }
 }
@@ -255,9 +257,10 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array, Exception> + 'a {
         let f = move |args: &[Array]| -> Vec<Array> { vec![self(&args[0])] };
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array, Exception> {
             let args_clone = &[clone_by_increment_ref_count(args)];
@@ -274,9 +277,10 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Array, Exception> + 'a {
         let f = move |args: &[Array]| -> Vec<Array> { vec![self(args)] };
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &[Array]| -> Result<Array, Exception> {
             let result = g(args)?;
@@ -292,9 +296,10 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
         let f = move |args: &[Array]| -> Vec<Array> { self(&args[0]) };
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>, Exception> {
             let args_clone = &[clone_by_increment_ref_count(args)];
@@ -307,7 +312,7 @@ where
 /// Returns a function which computes the gradient of `f`.
 pub fn grad<'a, F, Args, Output>(
     f: F,
-    argument_numbers: &'a [i32],
+    argument_numbers: impl IntoOption<&'a [i32]>,
 ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
 where
     F: Grad<'a, Args, Output>,

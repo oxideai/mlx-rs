@@ -215,72 +215,43 @@ fn clone_by_increment_ref_count(src: &Array) -> Array {
     }
 }
 
-pub trait ValueAndGrad<'a, Args, ArgNums, Output> {
-    fn value_and_grad(
-        self,
-        argument_numbers: ArgNums,
-    ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a;
-}
-
-impl<'a, F, ArgNums> ValueAndGrad<'a, &[Array], ArgNums, (Vec<Array>, Vec<Array>)> for F
+/// Returns a function which computes the value and gradient of `f`.
+pub fn value_and_grad<'a, F>(
+    f: F,
+    argument_numbers: impl IntoOption<&'a [i32]>,
+) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
-    ArgNums: IntoOption<&'a [i32]>,
 {
-    // refining_impl_trait is fine here because we have restricted the Args and Output types
-    // in the generics.
-    #[allow(refining_impl_trait)]
-    fn value_and_grad(
-        self,
-        argument_numbers: ArgNums,
-    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
-        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
-        build_value_and_gradient(self, argument_numbers)
-    }
+    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+    build_value_and_gradient(f, argument_numbers)
 }
 
-impl<'a, F, T> ValueAndGrad<'a, (&[Array], T), (), (Vec<Array>, Vec<Array>)> for F
+pub fn value_and_grad_with_payload<'a, F, T>(
+    mut f: F,
+) -> impl FnMut((&[Array], T)) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut((&[Array], T)) -> Vec<Array> + 'a,
-    T: Copy,
+    T: Clone,
 {
-    /// The `argument_numbers` parameter is not used in this implementation.
-    #[allow(refining_impl_trait)]
-    fn value_and_grad(
-        self,
-        _argument_numbers: (),
-    ) -> impl FnMut((&[Array], T)) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
-        let mut f = self;
-        move |(parameters, arrays): (&[Array], T)| -> Result<(Vec<Array>, Vec<Array>), Exception> {
-            let inner = |params: &[Array]| -> Vec<Array> { (f)((params, arrays)) };
-            let argument_numbers = (0..parameters.len() as i32).collect::<Vec<_>>();
+    move |(parameters, arrays): (&[Array], T)| -> Result<(Vec<Array>, Vec<Array>), Exception> {
+        let inner = |params: &[Array]| -> Vec<Array> { f((params, arrays.clone())) };
+        let argument_numbers = (0..parameters.len() as i32).collect::<Vec<_>>();
 
-            let closure = Closure::new(inner);
-            let c_value_and_grad = unsafe {
-                try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_value_and_grad(
-                        closure.as_ptr(),
-                        argument_numbers.as_ptr(),
-                        argument_numbers.len(),
-                    )
-                }
-            };
+        let closure = Closure::new(inner);
+        let c_value_and_grad = unsafe {
+            try_catch_c_ptr_expr! {
+                mlx_sys::mlx_value_and_grad(
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            }
+        };
 
-            let result = value_and_gradient(c_value_and_grad, parameters.iter())?;
-            Ok(result)
-        }
+        let result = value_and_gradient(c_value_and_grad, parameters.iter())?;
+        Ok(result)
     }
-}
-
-/// Returns a function which computes the value and gradient of `f`.
-pub fn value_and_grad<'a, F, Args, ArgNums, Output>(
-    f: F,
-    argument_numbers: ArgNums,
-) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
-where
-    F: ValueAndGrad<'a, Args, ArgNums, Output>,
-{
-    f.value_and_grad(argument_numbers)
 }
 
 pub trait Grad<'a, Args, Output> {

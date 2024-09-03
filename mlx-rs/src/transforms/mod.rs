@@ -227,6 +227,10 @@ where
     build_value_and_gradient(f, argument_numbers)
 }
 
+/// Returns a function that computes the gradient and result of `f`, computing the gradient with
+/// respect to the first argument.
+///
+/// Note that this allows any parameters `<T>` s they will not be part of the gradient.
 pub fn value_and_grad_with_payload<'a, F, T>(
     mut f: F,
 ) -> impl FnMut((&[Array], T)) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a

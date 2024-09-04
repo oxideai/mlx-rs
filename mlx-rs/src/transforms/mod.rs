@@ -140,7 +140,7 @@ where
     Ok((v1, v2))
 }
 
-fn value_and_gradient(
+pub fn value_and_gradient(
     value_and_grad: mlx_closure_value_and_grad,
     arrays: impl Iterator<Item = impl AsRef<Array>>,
 ) -> Result<(Vec<Array>, Vec<Array>), Exception> {
@@ -231,7 +231,7 @@ where
 /// respect to the first argument.
 ///
 /// Note that this allows any parameters `<T>` s they will not be part of the gradient.
-pub fn value_and_grad_with_payload<'a, F, T>(
+pub fn value_and_grad_with_payload<'a, F, Arr, T>(
     mut f: F,
 ) -> impl FnMut((&[Array], T)) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
@@ -257,6 +257,8 @@ where
         Ok(result)
     }
 }
+
+
 
 pub trait Grad<'a, Args, Output> {
     fn grad(

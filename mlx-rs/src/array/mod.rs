@@ -47,40 +47,11 @@ impl std::fmt::Display for Array {
 // TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
 
-impl Array {
-    /// Clone the array by copying the data.
-    ///
-    /// This is named `deep_clone` to avoid confusion with the `Clone` trait.
-    pub fn deep_clone(&self) -> Self {
-        unsafe {
-            let dtype = self.dtype();
-            let shape = self.shape();
-            let data = match dtype {
-                Dtype::Bool => mlx_sys::mlx_array_data_bool(self.c_array) as *const c_void,
-                Dtype::Uint8 => mlx_sys::mlx_array_data_uint8(self.c_array) as *const c_void,
-                Dtype::Uint16 => mlx_sys::mlx_array_data_uint16(self.c_array) as *const c_void,
-                Dtype::Uint32 => mlx_sys::mlx_array_data_uint32(self.c_array) as *const c_void,
-                Dtype::Uint64 => mlx_sys::mlx_array_data_uint64(self.c_array) as *const c_void,
-                Dtype::Int8 => mlx_sys::mlx_array_data_int8(self.c_array) as *const c_void,
-                Dtype::Int16 => mlx_sys::mlx_array_data_int16(self.c_array) as *const c_void,
-                Dtype::Int32 => mlx_sys::mlx_array_data_int32(self.c_array) as *const c_void,
-                Dtype::Int64 => mlx_sys::mlx_array_data_int64(self.c_array) as *const c_void,
-                Dtype::Float16 => mlx_sys::mlx_array_data_float16(self.c_array) as *const c_void,
-                Dtype::Float32 => mlx_sys::mlx_array_data_float32(self.c_array) as *const c_void,
-                Dtype::Bfloat16 => mlx_sys::mlx_array_data_bfloat16(self.c_array) as *const c_void,
-                Dtype::Complex64 => {
-                    mlx_sys::mlx_array_data_complex64(self.c_array) as *const c_void
-                }
-            };
-
-            let new_c_array = mlx_sys::mlx_array_from_data(
-                data,
-                shape.as_ptr(),
-                shape.len() as i32,
-                dtype.into(),
-            );
-
-            Array::from_ptr(new_c_array)
+impl Clone for Array {
+    fn clone(&self) -> Self {
+        unsafe { mlx_sys::mlx_retain(self.c_array as *mut c_void) };
+        Self {
+            c_array: self.c_array,
         }
     }
 }
@@ -281,7 +252,7 @@ impl Array {
 
     // TODO: document that mlx is lazy
     /// Evaluate the array.
-    pub fn eval(&mut self) -> Result<(), Exception> {
+    pub fn eval(&self) -> Result<(), Exception> {
         if !is_mlx_error_handler_set() {
             setup_mlx_error_handler();
         }
@@ -295,7 +266,7 @@ impl Array {
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    pub fn item<T: ArrayElement>(&mut self) -> T {
+    pub fn item<T: ArrayElement>(&self) -> T {
         self.try_item().unwrap()
     }
 
@@ -307,7 +278,7 @@ impl Array {
     /// # Safety
     ///
     /// This is unsafe because the array is not checked for being a scalar.
-    pub fn item_unchecked<T: ArrayElement>(&mut self) -> T {
+    pub fn item_unchecked<T: ArrayElement>(&self) -> T {
         // Evaluate the array, so we have content to work with in the conversion
         self.eval().unwrap();
 
@@ -319,7 +290,7 @@ impl Array {
                     StreamOrDevice::default().as_ptr(),
                 )
             };
-            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            let new_array = unsafe { Array::from_ptr(new_array_ctx) };
             new_array.eval().unwrap();
 
             return T::array_item(&new_array);
@@ -332,7 +303,7 @@ impl Array {
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    pub fn try_item<T: ArrayElement>(&mut self) -> Result<T, ItemError> {
+    pub fn try_item<T: ArrayElement>(&self) -> Result<T, ItemError> {
         if self.size() != 1 {
             return Err(ItemError::NotScalar);
         }
@@ -348,7 +319,7 @@ impl Array {
                     StreamOrDevice::default().as_ptr(),
                 )
             };
-            let mut new_array = unsafe { Array::from_ptr(new_array_ctx) };
+            let new_array = unsafe { Array::from_ptr(new_array_ctx) };
             new_array.eval()?;
 
             return Ok(T::array_item(&new_array));
@@ -358,7 +329,6 @@ impl Array {
     }
 
     /// Returns a slice of the array data without validating the dtype.
-    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Safety
     ///
@@ -378,7 +348,7 @@ impl Array {
     ///    assert_eq!(slice, &[1, 2, 3, 4, 5]);
     /// }
     /// ```
-    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&mut self) -> &[T] {
+    pub unsafe fn as_slice_unchecked<T: ArrayElement>(&self) -> &[T] {
         self.eval().unwrap();
 
         unsafe {
@@ -389,7 +359,6 @@ impl Array {
     }
 
     /// Returns a slice of the array data returning an error if the dtype does not match the actual dtype.
-    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
     ///
     /// # Example
     ///
@@ -402,7 +371,7 @@ impl Array {
     /// let slice = array.try_as_slice::<i32>();
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
-    pub fn try_as_slice<T: ArrayElement>(&mut self) -> Result<&[T], AsSliceError> {
+    pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
         if self.dtype() != T::DTYPE {
             return Err(AsSliceError::DtypeMismatch {
                 expecting: T::DTYPE,
@@ -424,7 +393,7 @@ impl Array {
     }
 
     /// Returns a slice of the array data.
-    /// This method requires a mutable reference (`&mut self`) because it evaluates the array.
+    /// This method requires a mutable reference (`&self`) because it evaluates the array.
     ///
     /// # Panics
     ///
@@ -441,8 +410,44 @@ impl Array {
     /// let slice = array.as_slice::<i32>();
     /// assert_eq!(slice, &data[..]);
     /// ```
-    pub fn as_slice<T: ArrayElement>(&mut self) -> &[T] {
+    pub fn as_slice<T: ArrayElement>(&self) -> &[T] {
         self.try_as_slice().unwrap()
+    }
+
+    /// Clone the array by copying the data.
+    ///
+    /// This is named `deep_clone` to avoid confusion with the `Clone` trait.
+    pub fn deep_clone(&self) -> Self {
+        unsafe {
+            let dtype = self.dtype();
+            let shape = self.shape();
+            let data = match dtype {
+                Dtype::Bool => mlx_sys::mlx_array_data_bool(self.c_array) as *const c_void,
+                Dtype::Uint8 => mlx_sys::mlx_array_data_uint8(self.c_array) as *const c_void,
+                Dtype::Uint16 => mlx_sys::mlx_array_data_uint16(self.c_array) as *const c_void,
+                Dtype::Uint32 => mlx_sys::mlx_array_data_uint32(self.c_array) as *const c_void,
+                Dtype::Uint64 => mlx_sys::mlx_array_data_uint64(self.c_array) as *const c_void,
+                Dtype::Int8 => mlx_sys::mlx_array_data_int8(self.c_array) as *const c_void,
+                Dtype::Int16 => mlx_sys::mlx_array_data_int16(self.c_array) as *const c_void,
+                Dtype::Int32 => mlx_sys::mlx_array_data_int32(self.c_array) as *const c_void,
+                Dtype::Int64 => mlx_sys::mlx_array_data_int64(self.c_array) as *const c_void,
+                Dtype::Float16 => mlx_sys::mlx_array_data_float16(self.c_array) as *const c_void,
+                Dtype::Float32 => mlx_sys::mlx_array_data_float32(self.c_array) as *const c_void,
+                Dtype::Bfloat16 => mlx_sys::mlx_array_data_bfloat16(self.c_array) as *const c_void,
+                Dtype::Complex64 => {
+                    mlx_sys::mlx_array_data_complex64(self.c_array) as *const c_void
+                }
+            };
+
+            let new_c_array = mlx_sys::mlx_array_from_data(
+                data,
+                shape.as_ptr(),
+                shape.len() as i32,
+                dtype.into(),
+            );
+
+            Array::from_ptr(new_c_array)
+        }
     }
 }
 
@@ -867,7 +872,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_bool() {
-        let mut array = Array::from_bool(true);
+        let array = Array::from_bool(true);
         assert!(array.item::<bool>());
         assert_eq!(array.item_size(), 1);
         assert_eq!(array.size(), 1);
@@ -880,7 +885,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_int() {
-        let mut array = Array::from_int(42);
+        let array = Array::from_int(42);
         assert_eq!(array.item::<i32>(), 42);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -893,7 +898,7 @@ mod tests {
 
     #[test]
     fn new_scalar_array_from_float() {
-        let mut array = Array::from_float(3.14);
+        let array = Array::from_float(3.14);
         assert_eq!(array.item::<f32>(), 3.14);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -907,7 +912,7 @@ mod tests {
     #[test]
     fn new_scalar_array_from_complex() {
         let val = complex64::new(1.0, 2.0);
-        let mut array = Array::from_complex(val);
+        let array = Array::from_complex(val);
         assert_eq!(array.item::<complex64>(), val);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 1);
@@ -921,7 +926,7 @@ mod tests {
     #[test]
     fn new_array_from_single_element_slice() {
         let data = [1i32];
-        let mut array = Array::from_slice(&data, &[1]);
+        let array = Array::from_slice(&data, &[1]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item_size(), 4);
@@ -937,7 +942,7 @@ mod tests {
     #[test]
     fn new_array_from_multi_element_slice() {
         let data = [1i32, 2, 3, 4, 5];
-        let mut array = Array::from_slice(&data, &[5]);
+        let array = Array::from_slice(&data, &[5]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 5);
@@ -952,7 +957,7 @@ mod tests {
     #[test]
     fn new_2d_array_from_slice() {
         let data = [1i32, 2, 3, 4, 5, 6];
-        let mut array = Array::from_slice(&data, &[2, 3]);
+        let array = Array::from_slice(&data, &[2, 3]);
         assert_eq!(array.as_slice::<i32>(), &data[..]);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 6);
@@ -968,10 +973,10 @@ mod tests {
     }
 
     #[test]
-    fn cloned_array_has_different_ptr() {
+    fn deep_cloned_array_has_different_ptr() {
         let data = [1i32, 2, 3, 4, 5];
-        let mut orig = Array::from_slice(&data, &[5]);
-        let mut clone = orig.deep_clone();
+        let orig = Array::from_slice(&data, &[5]);
+        let clone = orig.deep_clone();
 
         // Data should be the same
         assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
@@ -1000,13 +1005,13 @@ mod tests {
     #[test]
     fn test_array_item_non_scalar() {
         let data = [1i32, 2, 3, 4, 5];
-        let mut array = Array::from_slice(&data, &[5]);
+        let array = Array::from_slice(&data, &[5]);
         assert!(array.try_item::<i32>().is_err());
     }
 
     #[test]
     fn test_item_type_conversion() {
-        let mut array = Array::from_float(1.0);
+        let array = Array::from_float(1.0);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item::<complex64>(), complex64::new(1.0, 0.0));
         assert_eq!(array.item::<u8>(), 1);

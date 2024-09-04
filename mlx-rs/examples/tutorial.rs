@@ -2,7 +2,7 @@ use mlx_rs::{Array, Dtype};
 
 fn scalar_basics() {
     // create a scalar array
-    let mut x: Array = 1.0.into();
+    let x: Array = 1.0.into();
 
     // the datatype is .float32
     let dtype = x.dtype();

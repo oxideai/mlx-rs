@@ -1,8 +1,9 @@
 use crate::prelude::IndexOp;
-use crate::utils::{IntoOption, OwnedOrRef};
+use crate::utils::IntoOption;
 use crate::{error::Exception, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_macros::default_device;
+use std::borrow::Cow;
 use std::sync::{Mutex, OnceLock};
 
 struct RandomState {
@@ -32,13 +33,13 @@ fn state() -> &'static Mutex<RandomState> {
 }
 
 /// Use given key or generate a new one if `None`.
-fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> OwnedOrRef<'a, Array> {
+fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Cow<'a, Array> {
     key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
+            Cow::Owned(state.next())
         },
-        OwnedOrRef::Ref,
+        Cow::Borrowed,
     )
 }
 
@@ -515,7 +516,7 @@ mod tests {
     #[test]
     fn test_uniform_single() {
         let key = key(0);
-        let mut value = uniform::<_, f32>(0, 10, None, Some(&key)).unwrap();
+        let value = uniform::<_, f32>(0, 10, None, Some(&key)).unwrap();
         float_eq!(value.item::<f32>(), 4.18, abs <= 0.01);
     }
 
@@ -547,7 +548,7 @@ mod tests {
     #[test]
     fn test_normal() {
         let key = key(0);
-        let mut value = normal::<f32>(None, None, None, &key).unwrap();
+        let value = normal::<f32>(None, None, None, &key).unwrap();
         float_eq!(value.item::<f32>(), -0.20, abs <= 0.01);
     }
 
@@ -571,7 +572,7 @@ mod tests {
     #[test]
     fn test_randint_single() {
         let key = key(0);
-        let mut value = randint::<_, i32>(0, 100, None, Some(&key)).unwrap();
+        let value = randint::<_, i32>(0, 100, None, Some(&key)).unwrap();
         assert_eq!(value.item::<i32>(), 41);
     }
 
@@ -595,7 +596,7 @@ mod tests {
     #[test]
     fn test_bernoulli_single() {
         let key = key(0);
-        let mut value = bernoulli(None, None, &key).unwrap();
+        let value = bernoulli(None, None, &key).unwrap();
         assert!(value.item::<bool>());
     }
 

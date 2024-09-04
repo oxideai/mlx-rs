@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
@@ -7,7 +9,7 @@ use crate::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
     },
-    utils::{resolve_index_signed_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_signed_unchecked, VectorArray},
     Array, Stream,
 };
 
@@ -48,8 +50,6 @@ fn update_slice(
     update: &Array,
     stream: impl AsRef<Stream>,
 ) -> Result<Option<Array>, Exception> {
-    use OwnedOrRef::*;
-
     let ndim = src.ndim();
     if ndim == 0 || operations.is_empty() {
         return Ok(None);
@@ -127,7 +127,7 @@ fn update_slice(
     }
 
     if !update_expand_dims.is_empty() {
-        update = Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
+        update = Cow::Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
     }
 
     Ok(Some(src.slice_update_device(
@@ -139,39 +139,38 @@ fn update_slice(
 fn remove_leading_singleton_dimensions(
     a: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<OwnedOrRef<'_, Array>, Exception> {
+) -> Result<Cow<'_, Array>, Exception> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
         if new_shape.is_empty() {
             new_shape = vec![1];
         }
-        Ok(OwnedOrRef::Owned(a.reshape_device(&new_shape, stream)?))
+        Ok(Cow::Owned(a.reshape_device(&new_shape, stream)?))
     } else {
-        Ok(OwnedOrRef::Ref(a))
+        Ok(Cow::Borrowed(a))
     }
 }
 
-struct ScatterArgs<'a> {
-    indices: SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
+struct ScatterArgs {
+    indices: SmallVec<[Array; DEFAULT_STACK_VEC_LEN]>,
     update: Array,
     axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 }
 
 /// See `scatterArguments` in the swift binding
-fn scatter_args<'a>(
+fn scatter_args(
     src: &Array,
-    operations: &'a [ArrayIndexOp],
+    operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs, Exception> {
     use ArrayIndexOp::*;
-    use OwnedOrRef::*;
 
     if operations.len() == 1 {
         return match &operations[0] {
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
-            TakeArray { indices } => scatter_args_array(src, Ref(indices), update, stream),
+            TakeArray { indices } => scatter_args_array(src, indices, update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
             ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
@@ -185,12 +184,12 @@ fn scatter_args<'a>(
     scatter_args_nd(src, operations, update, stream)
 }
 
-fn scatter_args_index<'a>(
+fn scatter_args_index(
     src: &Array,
     index: i32,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs, Exception> {
     // mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
@@ -201,20 +200,21 @@ fn scatter_args_index<'a>(
     shape[0] = 1;
 
     Ok(ScatterArgs {
-        indices: smallvec![OwnedOrRef::Owned(Array::from_int(
-            resolve_index_signed_unchecked(index, src.dim(0))
+        indices: smallvec![Array::from_int(resolve_index_signed_unchecked(
+            index,
+            src.dim(0)
         ))],
         update: broadcast_to_device(&update, &shape, &stream)?,
         axes: smallvec![0],
     })
 }
 
-fn scatter_args_array<'a>(
+fn scatter_args_array(
     src: &Array,
-    a: OwnedOrRef<'a, Array>,
+    a: &Array,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs, Exception> {
     // mlx_scatter_args_array
 
     // trim leading singleton dimensions
@@ -233,20 +233,18 @@ fn scatter_args_array<'a>(
     let update = update.reshape_device(&update_shape, &stream)?;
 
     Ok(ScatterArgs {
-        indices: smallvec![a],
+        indices: smallvec![a.clone()],
         update,
         axes: smallvec![0],
     })
 }
 
-fn scatter_args_slice<'a>(
+fn scatter_args_slice(
     src: &Array,
-    range_index: &'a RangeIndex,
+    range_index: &RangeIndex,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
-    use OwnedOrRef::*;
-
+) -> Result<ScatterArgs, Exception> {
     // mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
@@ -277,7 +275,7 @@ fn scatter_args_slice<'a>(
 
         let indices = Array::from_slice(&[start], &[1]);
         Ok(ScatterArgs {
-            indices: smallvec![Owned(indices)],
+            indices: smallvec![indices],
             update,
             axes: smallvec![0],
         })
@@ -286,16 +284,16 @@ fn scatter_args_slice<'a>(
         let a_vals = strided_range_to_vec(start, end, stride);
         let a = Array::from_slice(&a_vals, &[a_vals.len() as i32]);
 
-        scatter_args_array(src, Owned(a), update, stream)
+        scatter_args_array(src, &a, update, stream)
     }
 }
 
-fn scatter_args_nd<'a>(
+fn scatter_args_nd(
     src: &Array,
-    operations: &'a [ArrayIndexOp],
+    operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs, Exception> {
     use ArrayIndexOp::*;
 
     // mlx_scatter_args_nd
@@ -481,7 +479,7 @@ fn scatter_args_nd<'a>(
     let array_indices_len = array_indices.len();
 
     Ok(ScatterArgs {
-        indices: array_indices.into_iter().map(OwnedOrRef::Owned).collect(),
+        indices: array_indices.into(),
         update,
         axes: (0..array_indices_len as i32).collect(),
     })
@@ -1079,8 +1077,6 @@ where
 /// The unit tests below are adapted from the Swift binding tests
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::{
         ops::indexing::{ArrayIndex, IndexOp},
         prelude::*,
@@ -1240,7 +1236,7 @@ mod tests {
         }
 
         // i = mx.array([2, 1])
-        let i = Rc::new(Array::from_slice(&[2, 1], &[2]));
+        let i = Array::from_slice(&[2, 1], &[2]);
 
         // a[0, i] = 1
         check!((0, i.clone()), 131310);

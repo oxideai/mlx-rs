@@ -479,7 +479,7 @@ mod tests {
 
     #[test]
     fn test_zeros() {
-        let mut array = Array::zeros::<f32>(&[2, 3]).unwrap();
+        let array = Array::zeros::<f32>(&[2, 3]).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn test_ones() {
-        let mut array = Array::ones::<f16>(&[2, 3]).unwrap();
+        let array = Array::ones::<f16>(&[2, 3]).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float16);
 
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_eye() {
-        let mut array = Array::eye::<f32>(3, None, None).unwrap();
+        let array = Array::eye::<f32>(3, None, None).unwrap();
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -518,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_full_scalar() {
-        let mut array = Array::full::<f32>(&[2, 3], 7f32).unwrap();
+        let array = Array::full::<f32>(&[2, 3], 7f32).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -529,7 +529,7 @@ mod tests {
     #[test]
     fn test_full_array() {
         let source = Array::zeros_device::<f32>(&[1, 3], StreamOrDevice::cpu()).unwrap();
-        let mut array = Array::full::<f32>(&[2, 3], source).unwrap();
+        let array = Array::full::<f32>(&[2, 3], source).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -550,7 +550,7 @@ mod tests {
 
     #[test]
     fn test_identity() {
-        let mut array = Array::identity::<f32>(3).unwrap();
+        let array = Array::identity::<f32>(3).unwrap();
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -560,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_arange() {
-        let mut array = Array::arange::<f32, _>(None, 50, None).unwrap();
+        let array = Array::arange::<f32, _>(None, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -568,7 +568,7 @@ mod tests {
         let expected: Vec<f32> = (0..50).map(|x| x as f32).collect();
         assert_eq!(data, expected.as_slice());
 
-        let mut array = Array::arange::<i32, _>(0, 50, None).unwrap();
+        let array = Array::arange::<i32, _>(0, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -600,7 +600,7 @@ mod tests {
 
     #[test]
     fn test_linspace_int() {
-        let mut array = Array::linspace::<f32, _>(0, 50, None).unwrap();
+        let array = Array::linspace::<f32, _>(0, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -611,7 +611,7 @@ mod tests {
 
     #[test]
     fn test_linspace_float() {
-        let mut array = Array::linspace::<f32, _>(0., 50., None).unwrap();
+        let array = Array::linspace::<f32, _>(0., 50., None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -632,7 +632,7 @@ mod tests {
     #[test]
     fn test_repeat() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let mut array = Array::repeat::<i32>(source, 4, 1).unwrap();
+        let array = Array::repeat::<i32>(source, 4, 1).unwrap();
         assert_eq!(array.shape(), &[2, 8]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -654,7 +654,7 @@ mod tests {
     #[test]
     fn test_repeat_all() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let mut array = Array::repeat_all::<i32>(source, 4).unwrap();
+        let array = Array::repeat_all::<i32>(source, 4).unwrap();
         assert_eq!(array.shape(), &[16]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -675,7 +675,7 @@ mod tests {
 
     #[test]
     fn test_tri() {
-        let mut array = Array::tri::<f32>(3, None, None);
+        let array = Array::tri::<f32>(3, None, None);
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 

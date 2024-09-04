@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/array/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/array/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1012,6 +1012,13 @@
 <a href="#1012" id="1012">1012</a>
 <a href="#1013" id="1013">1013</a>
 <a href="#1014" id="1014">1014</a>
+<a href="#1015" id="1015">1015</a>
+<a href="#1016" id="1016">1016</a>
+<a href="#1017" id="1017">1017</a>
+<a href="#1018" id="1018">1018</a>
+<a href="#1019" id="1019">1019</a>
+<a href="#1020" id="1020">1020</a>
+<a href="#1021" id="1021">1021</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     dtype::Dtype,
     error::{
@@ -1061,38 +1068,11 @@
 <span class="comment">// TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
 // reference counted but not guarded by a mutex.
 
-</span><span class="kw">impl </span>Array {
-    <span class="doccomment">/// Clone the array by copying the data.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
-        <span class="kw">unsafe </span>{
-            <span class="kw">let </span>dtype = <span class="self">self</span>.dtype();
-            <span class="kw">let </span>shape = <span class="self">self</span>.shape();
-            <span class="kw">let </span>data = <span class="kw">match </span>dtype {
-                Dtype::Bool =&gt; mlx_sys::mlx_array_data_bool(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Uint8 =&gt; mlx_sys::mlx_array_data_uint8(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Uint16 =&gt; mlx_sys::mlx_array_data_uint16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Uint32 =&gt; mlx_sys::mlx_array_data_uint32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Uint64 =&gt; mlx_sys::mlx_array_data_uint64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Int8 =&gt; mlx_sys::mlx_array_data_int8(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Int16 =&gt; mlx_sys::mlx_array_data_int16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Int32 =&gt; mlx_sys::mlx_array_data_int32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Int64 =&gt; mlx_sys::mlx_array_data_int64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Float16 =&gt; mlx_sys::mlx_array_data_float16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Float32 =&gt; mlx_sys::mlx_array_data_float32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Bfloat16 =&gt; mlx_sys::mlx_array_data_bfloat16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
-                Dtype::Complex64 =&gt; {
-                    mlx_sys::mlx_array_data_complex64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void
-                }
-            };
-
-            <span class="kw">let </span>new_c_array = mlx_sys::mlx_array_from_data(
-                data,
-                shape.as_ptr(),
-                shape.len() <span class="kw">as </span>i32,
-                dtype.into(),
-            );
-
-            Array::from_ptr(new_c_array)
+</span><span class="kw">impl </span>Clone <span class="kw">for </span>Array {
+    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">unsafe </span>{ mlx_sys::mlx_retain(<span class="self">self</span>.c_array <span class="kw">as </span><span class="kw-2">*mut </span>c_void) };
+        <span class="self">Self </span>{
+            c_array: <span class="self">self</span>.c_array,
         }
     }
 }
@@ -1293,7 +1273,7 @@
 
     <span class="comment">// TODO: document that mlx is lazy
     </span><span class="doccomment">/// Evaluate the array.
-    </span><span class="kw">pub fn </span>eval(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), Exception&gt; {
+    </span><span class="kw">pub fn </span>eval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), Exception&gt; {
         <span class="kw">if </span>!is_mlx_error_handler_set() {
             setup_mlx_error_handler();
         }
@@ -1307,7 +1287,7 @@
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    </span><span class="kw">pub fn </span>item&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; T {
+    </span><span class="kw">pub fn </span>item&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; T {
         <span class="self">self</span>.try_item().unwrap()
     }
 
@@ -1319,7 +1299,7 @@
     /// # Safety
     ///
     /// This is unsafe because the array is not checked for being a scalar.
-    </span><span class="kw">pub fn </span>item_unchecked&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; T {
+    </span><span class="kw">pub fn </span>item_unchecked&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; T {
         <span class="comment">// Evaluate the array, so we have content to work with in the conversion
         </span><span class="self">self</span>.eval().unwrap();
 
@@ -1331,7 +1311,7 @@
                     StreamOrDevice::default().as_ptr(),
                 )
             };
-            <span class="kw">let </span><span class="kw-2">mut </span>new_array = <span class="kw">unsafe </span>{ Array::from_ptr(new_array_ctx) };
+            <span class="kw">let </span>new_array = <span class="kw">unsafe </span>{ Array::from_ptr(new_array_ctx) };
             new_array.eval().unwrap();
 
             <span class="kw">return </span>T::array_item(<span class="kw-2">&amp;</span>new_array);
@@ -1344,7 +1324,7 @@
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    </span><span class="kw">pub fn </span>try_item&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T, ItemError&gt; {
+    </span><span class="kw">pub fn </span>try_item&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T, ItemError&gt; {
         <span class="kw">if </span><span class="self">self</span>.size() != <span class="number">1 </span>{
             <span class="kw">return </span><span class="prelude-val">Err</span>(ItemError::NotScalar);
         }
@@ -1360,7 +1340,7 @@
                     StreamOrDevice::default().as_ptr(),
                 )
             };
-            <span class="kw">let </span><span class="kw-2">mut </span>new_array = <span class="kw">unsafe </span>{ Array::from_ptr(new_array_ctx) };
+            <span class="kw">let </span>new_array = <span class="kw">unsafe </span>{ Array::from_ptr(new_array_ctx) };
             new_array.eval()<span class="question-mark">?</span>;
 
             <span class="kw">return </span><span class="prelude-val">Ok</span>(T::array_item(<span class="kw-2">&amp;</span>new_array));
@@ -1370,7 +1350,6 @@
     }
 
     <span class="doccomment">/// Returns a slice of the array data without validating the dtype.
-    /// This method requires a mutable reference (`&amp;mut self`) because it evaluates the array.
     ///
     /// # Safety
     ///
@@ -1390,7 +1369,7 @@
     ///    assert_eq!(slice, &amp;[1, 2, 3, 4, 5]);
     /// }
     /// ```
-    </span><span class="kw">pub unsafe fn </span>as_slice_unchecked&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
+    </span><span class="kw">pub unsafe fn </span>as_slice_unchecked&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
         <span class="self">self</span>.eval().unwrap();
 
         <span class="kw">unsafe </span>{
@@ -1401,7 +1380,6 @@
     }
 
     <span class="doccomment">/// Returns a slice of the array data returning an error if the dtype does not match the actual dtype.
-    /// This method requires a mutable reference (`&amp;mut self`) because it evaluates the array.
     ///
     /// # Example
     ///
@@ -1414,7 +1392,7 @@
     /// let slice = array.try_as_slice::&lt;i32&gt;();
     /// assert_eq!(slice, Ok(&amp;data[..]));
     /// ```
-    </span><span class="kw">pub fn </span>try_as_slice&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[T], AsSliceError&gt; {
+    </span><span class="kw">pub fn </span>try_as_slice&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[T], AsSliceError&gt; {
         <span class="kw">if </span><span class="self">self</span>.dtype() != T::DTYPE {
             <span class="kw">return </span><span class="prelude-val">Err</span>(AsSliceError::DtypeMismatch {
                 expecting: T::DTYPE,
@@ -1436,7 +1414,7 @@
     }
 
     <span class="doccomment">/// Returns a slice of the array data.
-    /// This method requires a mutable reference (`&amp;mut self`) because it evaluates the array.
+    /// This method requires a mutable reference (`&amp;self`) because it evaluates the array.
     ///
     /// # Panics
     ///
@@ -1453,8 +1431,44 @@
     /// let slice = array.as_slice::&lt;i32&gt;();
     /// assert_eq!(slice, &amp;data[..]);
     /// ```
-    </span><span class="kw">pub fn </span>as_slice&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
+    </span><span class="kw">pub fn </span>as_slice&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
         <span class="self">self</span>.try_as_slice().unwrap()
+    }
+
+    <span class="doccomment">/// Clone the array by copying the data.
+    ///
+    /// This is named `deep_clone` to avoid confusion with the `Clone` trait.
+    </span><span class="kw">pub fn </span>deep_clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">unsafe </span>{
+            <span class="kw">let </span>dtype = <span class="self">self</span>.dtype();
+            <span class="kw">let </span>shape = <span class="self">self</span>.shape();
+            <span class="kw">let </span>data = <span class="kw">match </span>dtype {
+                Dtype::Bool =&gt; mlx_sys::mlx_array_data_bool(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Uint8 =&gt; mlx_sys::mlx_array_data_uint8(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Uint16 =&gt; mlx_sys::mlx_array_data_uint16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Uint32 =&gt; mlx_sys::mlx_array_data_uint32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Uint64 =&gt; mlx_sys::mlx_array_data_uint64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Int8 =&gt; mlx_sys::mlx_array_data_int8(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Int16 =&gt; mlx_sys::mlx_array_data_int16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Int32 =&gt; mlx_sys::mlx_array_data_int32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Int64 =&gt; mlx_sys::mlx_array_data_int64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Float16 =&gt; mlx_sys::mlx_array_data_float16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Float32 =&gt; mlx_sys::mlx_array_data_float32(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Bfloat16 =&gt; mlx_sys::mlx_array_data_bfloat16(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void,
+                Dtype::Complex64 =&gt; {
+                    mlx_sys::mlx_array_data_complex64(<span class="self">self</span>.c_array) <span class="kw">as </span><span class="kw-2">*const </span>c_void
+                }
+            };
+
+            <span class="kw">let </span>new_c_array = mlx_sys::mlx_array_from_data(
+                data,
+                shape.as_ptr(),
+                shape.len() <span class="kw">as </span>i32,
+                dtype.into(),
+            );
+
+            Array::from_ptr(new_c_array)
+        }
     }
 }
 
@@ -1879,7 +1893,7 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_scalar_array_from_bool() {
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_bool(<span class="bool-val">true</span>);
+        <span class="kw">let </span>array = Array::from_bool(<span class="bool-val">true</span>);
         <span class="macro">assert!</span>(array.item::&lt;bool&gt;());
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">1</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">1</span>);
@@ -1892,7 +1906,7 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_scalar_array_from_int() {
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_int(<span class="number">42</span>);
+        <span class="kw">let </span>array = Array::from_int(<span class="number">42</span>);
         <span class="macro">assert_eq!</span>(array.item::&lt;i32&gt;(), <span class="number">42</span>);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">4</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">1</span>);
@@ -1905,7 +1919,7 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_scalar_array_from_float() {
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_float(<span class="number">3.14</span>);
+        <span class="kw">let </span>array = Array::from_float(<span class="number">3.14</span>);
         <span class="macro">assert_eq!</span>(array.item::&lt;f32&gt;(), <span class="number">3.14</span>);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">4</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">1</span>);
@@ -1919,7 +1933,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_scalar_array_from_complex() {
         <span class="kw">let </span>val = complex64::new(<span class="number">1.0</span>, <span class="number">2.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_complex(val);
+        <span class="kw">let </span>array = Array::from_complex(val);
         <span class="macro">assert_eq!</span>(array.item::&lt;complex64&gt;(), val);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">8</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">1</span>);
@@ -1933,7 +1947,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_array_from_single_element_slice() {
         <span class="kw">let </span>data = [<span class="number">1i32</span>];
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">1</span>]);
+        <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">1</span>]);
         <span class="macro">assert_eq!</span>(array.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>data[..]);
         <span class="macro">assert_eq!</span>(array.item::&lt;i32&gt;(), <span class="number">1</span>);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">4</span>);
@@ -1949,7 +1963,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_array_from_multi_element_slice() {
         <span class="kw">let </span>data = [<span class="number">1i32</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
+        <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
         <span class="macro">assert_eq!</span>(array.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>data[..]);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">4</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">5</span>);
@@ -1964,7 +1978,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new_2d_array_from_slice() {
         <span class="kw">let </span>data = [<span class="number">1i32</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>];
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>]);
+        <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>]);
         <span class="macro">assert_eq!</span>(array.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>data[..]);
         <span class="macro">assert_eq!</span>(array.item_size(), <span class="number">4</span>);
         <span class="macro">assert_eq!</span>(array.size(), <span class="number">6</span>);
@@ -1980,10 +1994,10 @@
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>cloned_array_has_different_ptr() {
+    </span><span class="kw">fn </span>deep_cloned_array_has_different_ptr() {
         <span class="kw">let </span>data = [<span class="number">1i32</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
-        <span class="kw">let </span><span class="kw-2">mut </span>orig = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>clone = orig.clone();
+        <span class="kw">let </span>orig = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
+        <span class="kw">let </span>clone = orig.deep_clone();
 
         <span class="comment">// Data should be the same
         </span><span class="macro">assert_eq!</span>(orig.as_slice::&lt;i32&gt;(), clone.as_slice::&lt;i32&gt;());
@@ -2012,13 +2026,13 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_array_item_non_scalar() {
         <span class="kw">let </span>data = [<span class="number">1i32</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>];
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
+        <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>[<span class="number">5</span>]);
         <span class="macro">assert!</span>(array.try_item::&lt;i32&gt;().is_err());
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_item_type_conversion() {
-        <span class="kw">let </span><span class="kw-2">mut </span>array = Array::from_float(<span class="number">1.0</span>);
+        <span class="kw">let </span>array = Array::from_float(<span class="number">1.0</span>);
         <span class="macro">assert_eq!</span>(array.item::&lt;i32&gt;(), <span class="number">1</span>);
         <span class="macro">assert_eq!</span>(array.item::&lt;complex64&gt;(), complex64::new(<span class="number">1.0</span>, <span class="number">0.0</span>));
         <span class="macro">assert_eq!</span>(array.item::&lt;u8&gt;(), <span class="number">1</span>);

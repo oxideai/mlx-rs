@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["OwnedOrRef"],"trait":["IntoOption","ScalarOrArray"]};
+window.SIDEBAR_ITEMS = {"trait":["IntoOption","ScalarOrArray"]};

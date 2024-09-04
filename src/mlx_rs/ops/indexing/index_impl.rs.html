@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/indexing/index_impl.rs`."><title>index_impl.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/indexing/index_impl.rs`."><title>index_impl.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1300,27 +1300,7 @@
 <a href="#1300" id="1300">1300</a>
 <a href="#1301" id="1301">1301</a>
 <a href="#1302" id="1302">1302</a>
-<a href="#1303" id="1303">1303</a>
-<a href="#1304" id="1304">1304</a>
-<a href="#1305" id="1305">1305</a>
-<a href="#1306" id="1306">1306</a>
-<a href="#1307" id="1307">1307</a>
-<a href="#1308" id="1308">1308</a>
-<a href="#1309" id="1309">1309</a>
-<a href="#1310" id="1310">1310</a>
-<a href="#1311" id="1311">1311</a>
-<a href="#1312" id="1312">1312</a>
-<a href="#1313" id="1313">1313</a>
-<a href="#1314" id="1314">1314</a>
-<a href="#1315" id="1315">1315</a>
-<a href="#1316" id="1316">1316</a>
-<a href="#1317" id="1317">1317</a>
-<a href="#1318" id="1318">1318</a>
-<a href="#1319" id="1319">1319</a>
-<a href="#1320" id="1320">1320</a>
-<a href="#1321" id="1321">1321</a>
-<a href="#1322" id="1322">1322</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::{ops::Bound, rc::Rc};
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Bound;
 
 <span class="kw">use </span>smallvec::{smallvec, SmallVec};
 
@@ -1328,22 +1308,19 @@
     constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
     ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_unchecked, VectorArray},
     Array, Stream,
 };
 
-<span class="kw">use super</span>::{ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy};
+<span class="kw">use super</span>::{
+    ArrayIndex, ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy,
+};
 
 <span class="comment">/* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
 /* -------------------------------------------------------------------------- */
 
-</span><span class="kw">pub trait </span>ArrayIndex {
-    <span class="doccomment">/// `mlx` allows out of bounds indexing.
-    </span><span class="kw">fn </span>index_op(<span class="self">self</span>) -&gt; ArrayIndexOp;
-}
-
-<span class="kw">impl </span>ArrayIndex <span class="kw">for </span>i32 {
+</span><span class="kw">impl </span>ArrayIndex <span class="kw">for </span>i32 {
     <span class="kw">fn </span>index_op(<span class="self">self</span>) -&gt; ArrayIndexOp {
         ArrayIndexOp::TakeIndex { index: <span class="self">self </span>}
     }
@@ -1362,14 +1339,6 @@
 }
 
 <span class="kw">impl </span>ArrayIndex <span class="kw">for </span>Array {
-    <span class="kw">fn </span>index_op(<span class="self">self</span>) -&gt; ArrayIndexOp {
-        ArrayIndexOp::TakeArray {
-            indices: Rc::new(<span class="self">self</span>),
-        }
-    }
-}
-
-<span class="kw">impl </span>ArrayIndex <span class="kw">for </span>Rc&lt;Array&gt; {
     <span class="kw">fn </span>index_op(<span class="self">self</span>) -&gt; ArrayIndexOp {
         ArrayIndexOp::TakeArray { indices: <span class="self">self </span>}
     }
@@ -1944,7 +1913,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>max_dims = <span class="number">0</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>slice_count = <span class="number">0</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>is_slice: Vec&lt;bool&gt; = Vec::with_capacity(last_array_or_index);
-    <span class="kw">let </span><span class="kw-2">mut </span>gather_indices: Vec&lt;Rc&lt;Array&gt;&gt; = Vec::with_capacity(last_array_or_index);
+    <span class="kw">let </span><span class="kw-2">mut </span>gather_indices: Vec&lt;Array&gt; = Vec::with_capacity(last_array_or_index);
 
     <span class="kw">let </span>shape = src.shape();
 
@@ -1962,7 +1931,7 @@
                     <span class="kw-2">*</span>index,
                     src.dim(i <span class="kw">as </span>i32) <span class="kw">as </span>usize,
                 ) <span class="kw">as </span>i32);
-                gather_indices.push(Rc::new(item));
+                gather_indices.push(item);
                 is_slice.push(<span class="bool-val">false</span>);
             }
             Slice(range) =&gt; {
@@ -1976,12 +1945,12 @@
 
                 <span class="kw">let </span>item = Array::from_slice(<span class="kw-2">&amp;</span>indices, <span class="kw-2">&amp;</span>[indices.len() <span class="kw">as </span>i32]);
 
-                gather_indices.push(Rc::new(item));
+                gather_indices.push(item);
             }
             TakeArray { indices } =&gt; {
                 is_slice.push(<span class="bool-val">false</span>);
                 max_dims = max_dims.max(indices.ndim());
-                gather_indices.push(Rc::clone(indices));
+                gather_indices.push(indices.clone());
             }
             Ellipsis | ExpandDims =&gt; {
                 <span class="macro">unreachable!</span>(<span class="string">"Unexpected operation in gather_nd"</span>)
@@ -1997,12 +1966,12 @@
                 <span class="kw">if </span>is_slice[i] {
                     <span class="kw">let </span><span class="kw-2">mut </span>new_shape = <span class="macro">vec!</span>[<span class="number">1</span>; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(<span class="number">0</span>);
-                    <span class="kw-2">*</span>item = Rc::new(item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>);
+                    <span class="kw-2">*</span>item = item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>;
                     slice_index += <span class="number">1</span>;
                 } <span class="kw">else </span>{
                     <span class="kw">let </span><span class="kw-2">mut </span>new_shape = item.shape().to_vec();
                     new_shape.extend((<span class="number">0</span>..slice_count).map(|<span class="kw">_</span>| <span class="number">1</span>));
-                    <span class="kw-2">*</span>item = Rc::new(item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>);
+                    <span class="kw-2">*</span>item = item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>;
                 }
             }
         }
@@ -2011,7 +1980,7 @@
         </span><span class="kw">for </span>(i, item) <span class="kw">in </span>gather_indices[..slice_count].iter_mut().enumerate() {
             <span class="kw">let </span><span class="kw-2">mut </span>new_shape = <span class="macro">vec!</span>[<span class="number">1</span>; max_dims + slice_count];
             new_shape[i] = item.dim(<span class="number">0</span>);
-            <span class="kw-2">*</span>item = Rc::new(item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>);
+            <span class="kw-2">*</span>item = item.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>;
         }
     }
 
@@ -2114,7 +2083,7 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     <span class="kw">use </span>ArrayIndexOp::<span class="kw-2">*</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>src = OwnedOrRef::Ref(src);
+    <span class="kw">let </span><span class="kw-2">mut </span>src = src.clone();
 
     <span class="comment">// The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -2168,7 +2137,7 @@
             <span class="kw-2">&amp;</span>stream,
         )<span class="question-mark">?</span>;
 
-        src = OwnedOrRef::Owned(gathered);
+        src = gathered;
 
         <span class="comment">// Reassemble the indices for the slicing or reshaping if there are any
         </span><span class="kw">if </span>gather_first {
@@ -2205,11 +2174,7 @@
     }
 
     <span class="kw">if </span>have_array &amp;&amp; remaining_indices.is_empty() {
-        <span class="comment">// `clone` returns a new array with the same shape and data
-        </span><span class="kw">return match </span>src {
-            OwnedOrRef::Ref(src) =&gt; <span class="prelude-val">Ok</span>(src.clone()),
-            OwnedOrRef::Owned(src) =&gt; <span class="prelude-val">Ok</span>(src),
-        };
+        <span class="kw">return </span><span class="prelude-val">Ok</span>(src);
     }
 
     <span class="kw">if </span>remaining_indices.is_empty() {
@@ -2247,7 +2212,7 @@
         axis += <span class="number">1</span>;
     }
 
-    src = OwnedOrRef::Owned(src.slice_device(<span class="kw-2">&amp;</span>starts, <span class="kw-2">&amp;</span>ends, <span class="kw-2">&amp;</span>strides, stream)<span class="question-mark">?</span>);
+    src = src.slice_device(<span class="kw-2">&amp;</span>starts, <span class="kw-2">&amp;</span>ends, <span class="kw-2">&amp;</span>strides, stream)<span class="question-mark">?</span>;
 
     <span class="comment">// Unsqueeze handling
     </span><span class="kw">if </span>remaining_indices.len() &gt; ndim || squeeze_needed {
@@ -2267,13 +2232,10 @@
         }
         new_shape.extend(src.shape()[(axis_ <span class="kw">as </span>usize)..].iter().cloned());
 
-        src = OwnedOrRef::Owned(src.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>);
+        src = src.reshape(<span class="kw-2">&amp;</span>new_shape)<span class="question-mark">?</span>;
     }
 
-    <span class="kw">match </span>src {
-        OwnedOrRef::Ref(src) =&gt; <span class="prelude-val">Ok</span>(src.clone()),
-        OwnedOrRef::Owned(src) =&gt; <span class="prelude-val">Ok</span>(src),
-    }
+    <span class="prelude-val">Ok</span>(src)
 }
 
 <span class="comment">/* -------------------------------------------------------------------------- */
@@ -2282,8 +2244,6 @@
 
 </span><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>std::rc::Rc;
-
     <span class="kw">use crate</span>::{
         assert_array_eq,
         ops::indexing::{index_impl::IndexOp, Ellipsis, IntoStrideBy, NewAxis},
@@ -2294,12 +2254,12 @@
     </span><span class="kw">fn </span>test_array_index_negative_int() {
         <span class="kw">let </span>a = Array::from_iter(<span class="number">0i32</span>..<span class="number">8</span>, <span class="kw-2">&amp;</span>[<span class="number">8</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>s = a.index(-<span class="number">1</span>);
+        <span class="kw">let </span>s = a.index(-<span class="number">1</span>);
 
         <span class="macro">assert_eq!</span>(s.ndim(), <span class="number">0</span>);
         <span class="macro">assert_eq!</span>(s.item::&lt;i32&gt;(), <span class="number">7</span>);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>s = a.index(-<span class="number">8</span>);
+        <span class="kw">let </span>s = a.index(-<span class="number">8</span>);
 
         <span class="macro">assert_eq!</span>(s.ndim(), <span class="number">0</span>);
         <span class="macro">assert_eq!</span>(s.item::&lt;i32&gt;(), <span class="number">0</span>);
@@ -2374,7 +2334,7 @@
         <span class="kw">let </span>expected = Array::from_iter(<span class="number">80</span>..<span class="number">88</span>, <span class="kw-2">&amp;</span>[<span class="number">8</span>]);
         <span class="macro">assert_array_eq!</span>(s1, expected, <span class="number">0.01</span>);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>s2 = a.index((<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));
+        <span class="kw">let </span>s2 = a.index((<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));
 
         <span class="macro">assert_eq!</span>(s2.ndim(), <span class="number">0</span>);
         <span class="macro">assert!</span>(s2.shape().is_empty());
@@ -2406,7 +2366,7 @@
     </span><span class="kw">fn </span>test_array_subscript_from_end() {
         <span class="kw">let </span>a = Array::from_iter(<span class="number">0i32</span>..<span class="number">12</span>, <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>s = a.index((-<span class="number">1</span>, -<span class="number">2</span>));
+        <span class="kw">let </span>s = a.index((-<span class="number">1</span>, -<span class="number">2</span>));
 
         <span class="macro">assert_eq!</span>(s.ndim(), <span class="number">0</span>);
         <span class="macro">assert_eq!</span>(s.item::&lt;i32&gt;(), <span class="number">10</span>);
@@ -2526,7 +2486,7 @@
     <span class="kw">fn </span>check(result: Array, shape: <span class="kw-2">&amp;</span>[i32], expected_sum: i32) {
         <span class="macro">assert_eq!</span>(result.shape(), shape);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>sum = result.sum(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>sum = result.sum(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
 
         <span class="macro">assert_eq!</span>(sum.item::&lt;i32&gt;(), expected_sum);
     }
@@ -2598,7 +2558,7 @@
         </span><span class="kw">let </span>a = Array::from_iter(<span class="number">0</span>..<span class="number">540</span>, <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">3</span>]);
 
         <span class="comment">// i = mx.array([2, 1])
-        </span><span class="kw">let </span>i = Rc::new(Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">1</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>]));
+        </span><span class="kw">let </span>i = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">1</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>]);
 
         <span class="comment">// a[0, i]
         </span>check(a.index((<span class="number">0</span>, i.clone())), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">3</span>], <span class="number">14340</span>);

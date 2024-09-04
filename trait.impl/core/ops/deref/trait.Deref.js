@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"mlx_rs":[["impl&lt;'a, T&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.80.0/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"enum\" href=\"mlx_rs/utils/enum.OwnedOrRef.html\" title=\"enum mlx_rs::utils::OwnedOrRef\">OwnedOrRef</a>&lt;'a, T&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/reduction.rs`."><title>reduction.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/reduction.rs`."><title>reduction.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1075,17 +1075,17 @@
         <span class="macro">assert_eq!</span>(array.all(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap().shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
         <span class="macro">assert_eq!</span>(array.all(<span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap().item::&lt;bool&gt;(), <span class="bool-val">false</span>);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.all(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.all(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;bool&gt;(), <span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.all(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.all(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;bool&gt;(), <span class="kw-2">&amp;</span>[<span class="bool-val">false</span>, <span class="bool-val">false</span>]);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_all_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">11</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>all = array.all(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>all = array.all(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[bool] = all.as_slice();
         <span class="macro">assert_eq!</span>(
@@ -1099,21 +1099,21 @@
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
         <span class="macro">assert_eq!</span>(x.prod(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap().item::&lt;i32&gt;(), <span class="number">18</span>);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>y = x.prod(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
+        <span class="kw">let </span>y = x.prod(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
         <span class="macro">assert_eq!</span>(y.item::&lt;i32&gt;(), <span class="number">18</span>);
         <span class="macro">assert_eq!</span>(y.shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.prod(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.prod(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">6</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.prod(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.prod(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">9</span>])
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_prod_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.prod(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.prod(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[i32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>]);
@@ -1123,21 +1123,21 @@
     </span><span class="kw">fn </span>test_max() {
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
         <span class="macro">assert_eq!</span>(x.max(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap().item::&lt;i32&gt;(), <span class="number">4</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = x.max(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
+        <span class="kw">let </span>y = x.max(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
         <span class="macro">assert_eq!</span>(y.item::&lt;i32&gt;(), <span class="number">4</span>);
         <span class="macro">assert_eq!</span>(y.shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.max(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.max(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.max(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.max(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">4</span>]);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_max_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.max(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.max(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[i32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>]);
@@ -1146,7 +1146,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_sum() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.sum(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.sum(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[i32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">9</span>, <span class="number">17</span>]);
@@ -1155,7 +1155,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_sum_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.sum(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.sum(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[i32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>]);
@@ -1165,21 +1165,21 @@
     </span><span class="kw">fn </span>test_mean() {
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
         <span class="macro">assert_eq!</span>(x.mean(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap().item::&lt;f32&gt;(), <span class="number">2.5</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = x.mean(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
+        <span class="kw">let </span>y = x.mean(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
         <span class="macro">assert_eq!</span>(y.item::&lt;f32&gt;(), <span class="number">2.5</span>);
         <span class="macro">assert_eq!</span>(y.shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.mean(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.mean(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;f32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">2.0</span>, <span class="number">3.0</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.mean(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.mean(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;f32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">1.5</span>, <span class="number">3.5</span>]);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_mean_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.mean(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.mean(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[f32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5.0</span>, <span class="number">8.0</span>, <span class="number">4.0</span>, <span class="number">9.0</span>]);
@@ -1196,21 +1196,21 @@
     </span><span class="kw">fn </span>test_min() {
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
         <span class="macro">assert_eq!</span>(x.min(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap().item::&lt;i32&gt;(), <span class="number">1</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = x.min(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
+        <span class="kw">let </span>y = x.min(<span class="prelude-val">None</span>, <span class="bool-val">true</span>).unwrap();
         <span class="macro">assert_eq!</span>(y.item::&lt;i32&gt;(), <span class="number">1</span>);
         <span class="macro">assert_eq!</span>(y.shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.min(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.min(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.min(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.min(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;i32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">3</span>]);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_min_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.min(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.min(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[i32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>]);
@@ -1220,25 +1220,25 @@
     </span><span class="kw">fn </span>test_var() {
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
         <span class="macro">assert_eq!</span>(x.variance(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap().item::&lt;f32&gt;(), <span class="number">1.25</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = x.variance(<span class="prelude-val">None</span>, <span class="bool-val">true</span>, <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>y = x.variance(<span class="prelude-val">None</span>, <span class="bool-val">true</span>, <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(y.item::&lt;f32&gt;(), <span class="number">1.25</span>);
         <span class="macro">assert_eq!</span>(y.shape(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">1</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.variance(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.variance(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;f32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">1.0</span>]);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>result = x.variance(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = x.variance(<span class="kw-2">&amp;</span>[<span class="number">1</span>][..], <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
         <span class="macro">assert_eq!</span>(result.as_slice::&lt;f32&gt;(), <span class="kw-2">&amp;</span>[<span class="number">0.25</span>, <span class="number">0.25</span>]);
 
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">2.0</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>out = x.variance(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="number">3</span>)).unwrap();
+        <span class="kw">let </span>out = x.variance(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="number">3</span>)).unwrap();
         <span class="macro">assert_eq!</span>(out.item::&lt;f32&gt;(), f32::INFINITY);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_var_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.variance(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>, <span class="number">0</span>).unwrap();
+        <span class="kw">let </span>result = array.variance(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>, <span class="number">0</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[f32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>]);
@@ -1247,7 +1247,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_log_sum_exp() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.log_sum_exp(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.log_sum_exp(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[f32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5.3132615</span>, <span class="number">9.313262</span>]);
@@ -1256,7 +1256,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_log_sum_exp_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">5</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">9</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>result = array.log_sum_exp(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>result = array.log_sum_exp(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[f32] = result.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="number">5.0</span>, <span class="number">8.0</span>, <span class="number">4.0</span>, <span class="number">9.0</span>]);

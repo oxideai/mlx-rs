@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/logical.rs`."><title>logical.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/logical.rs`."><title>logical.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1839,9 +1839,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_eq() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.eq(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.eq(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -1864,9 +1864,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_le() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.le(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.le(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -1889,9 +1889,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_ge() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.ge(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.ge(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -1914,9 +1914,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_ne() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.ne(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.ne(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>]);
@@ -1939,9 +1939,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_lt() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">0</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.lt(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">0</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.lt(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>]);
@@ -1964,9 +1964,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_gt() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">4</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.gt(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">4</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.gt(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>]);
@@ -1989,9 +1989,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_logical_and() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.logical_and(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.logical_and(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>]);
@@ -2014,9 +2014,9 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_logical_or() {
-        <span class="kw">let </span><span class="kw-2">mut </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.logical_or(<span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span>c = a.logical_or(<span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -2043,7 +2043,7 @@
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0.</span>, <span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">4</span>])
             .power(<span class="number">0.5</span>)
             .unwrap();
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.all_close(<span class="kw-2">&amp;</span>b, <span class="number">1e-5</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>c = a.all_close(<span class="kw-2">&amp;</span>b, <span class="number">1e-5</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>]);
@@ -2061,7 +2061,7 @@
     </span><span class="kw">fn </span>test_is_close_false() {
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.1</span>, <span class="number">2.2</span>, <span class="number">3.3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.is_close(<span class="kw-2">&amp;</span>b, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="bool-val">false</span>).unwrap();
+        <span class="kw">let </span>c = a.is_close(<span class="kw-2">&amp;</span>b, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="bool-val">false</span>).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>]);
@@ -2071,7 +2071,7 @@
     </span><span class="kw">fn </span>test_is_close_true() {
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.1</span>, <span class="number">2.2</span>, <span class="number">3.3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.is_close(<span class="kw-2">&amp;</span>b, <span class="number">0.1</span>, <span class="number">0.2</span>, <span class="bool-val">true</span>).unwrap();
+        <span class="kw">let </span>c = a.is_close(<span class="kw-2">&amp;</span>b, <span class="number">0.1</span>, <span class="number">0.2</span>, <span class="bool-val">true</span>).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -2089,7 +2089,7 @@
     </span><span class="kw">fn </span>test_array_eq() {
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">4</span>]);
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0.</span>, <span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">4</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = a.array_eq(<span class="kw-2">&amp;</span>b, <span class="prelude-val">None</span>);
+        <span class="kw">let </span>c = a.array_eq(<span class="kw-2">&amp;</span>b, <span class="prelude-val">None</span>);
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[bool] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="bool-val">true</span>]);
@@ -2098,7 +2098,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_any() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">11</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>all = array.any(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>all = array.any(<span class="kw-2">&amp;</span>[<span class="number">0</span>][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[bool] = all.as_slice();
         <span class="macro">assert_eq!</span>(results, <span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>]);
@@ -2107,7 +2107,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_any_empty_axes() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">11</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>all = array.any(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
+        <span class="kw">let </span>all = array.any(<span class="kw-2">&amp;</span>[][..], <span class="prelude-val">None</span>).unwrap();
 
         <span class="kw">let </span>results: <span class="kw-2">&amp;</span>[bool] = all.as_slice();
         <span class="macro">assert_eq!</span>(
@@ -2135,7 +2135,7 @@
         <span class="kw">let </span>condition = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = which(<span class="kw-2">&amp;</span>condition, <span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>c = which(<span class="kw-2">&amp;</span>condition, <span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
 
         <span class="kw">let </span>c_data: <span class="kw-2">&amp;</span>[i32] = c.as_slice();
         <span class="macro">assert_eq!</span>(c_data, [<span class="number">1</span>, <span class="number">5</span>, <span class="number">3</span>]);
@@ -2158,12 +2158,12 @@
         <span class="macro">assert!</span>(logical_not(<span class="kw-2">&amp;</span>x).item::&lt;bool&gt;());
 
         <span class="kw">let </span>x = <span class="macro">array!</span>(<span class="number">1.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = logical_not(<span class="kw-2">&amp;</span>x);
+        <span class="kw">let </span>y = logical_not(<span class="kw-2">&amp;</span>x);
         <span class="macro">assert_eq!</span>(y.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(!y.item::&lt;bool&gt;());
 
         <span class="kw">let </span>x = <span class="macro">array!</span>(<span class="number">0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>y = logical_not(<span class="kw-2">&amp;</span>x);
+        <span class="kw">let </span>y = logical_not(<span class="kw-2">&amp;</span>x);
         <span class="macro">assert_eq!</span>(y.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(y.item::&lt;bool&gt;());
     }
@@ -2176,13 +2176,13 @@
 
         <span class="kw">let </span>x = <span class="macro">array!</span>(<span class="number">1.0</span>);
         <span class="kw">let </span>y = <span class="macro">array!</span>(<span class="number">1.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>z = logical_and(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y).unwrap();
+        <span class="kw">let </span>z = logical_and(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y).unwrap();
         <span class="macro">assert_eq!</span>(z.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(z.item::&lt;bool&gt;());
 
         <span class="kw">let </span>x = <span class="macro">array!</span>(<span class="number">0</span>);
         <span class="kw">let </span>y = <span class="macro">array!</span>(<span class="number">1.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>z = logical_and(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y).unwrap();
+        <span class="kw">let </span>z = logical_and(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y).unwrap();
         <span class="macro">assert_eq!</span>(z.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(!z.item::&lt;bool&gt;());
     }
@@ -2195,13 +2195,13 @@
 
         <span class="kw">let </span>a = <span class="macro">array!</span>(<span class="number">1.0</span>);
         <span class="kw">let </span>b = <span class="macro">array!</span>(<span class="number">1.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = logical_or(<span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>c = logical_or(<span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
         <span class="macro">assert_eq!</span>(c.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(c.item::&lt;bool&gt;());
 
         <span class="kw">let </span>a = <span class="macro">array!</span>(<span class="number">0</span>);
         <span class="kw">let </span>b = <span class="macro">array!</span>(<span class="number">1.0</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>c = logical_or(<span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
+        <span class="kw">let </span>c = logical_or(<span class="kw-2">&amp;</span>a, <span class="kw-2">&amp;</span>b).unwrap();
         <span class="macro">assert_eq!</span>(c.dtype(), Dtype::Bool);
         <span class="macro">assert!</span>(c.item::&lt;bool&gt;());
     }

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/indexing/indexmut_impl.rs`."><title>indexmut_impl.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/indexing/indexmut_impl.rs`."><title>indexmut_impl.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1277,11 +1277,9 @@
 <a href="#1277" id="1277">1277</a>
 <a href="#1278" id="1278">1278</a>
 <a href="#1279" id="1279">1279</a>
-<a href="#1280" id="1280">1280</a>
-<a href="#1281" id="1281">1281</a>
-<a href="#1282" id="1282">1282</a>
-<a href="#1283" id="1283">1283</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>smallvec::{smallvec, SmallVec};
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::borrow::Cow;
+
+<span class="kw">use </span>smallvec::{smallvec, SmallVec};
 
 <span class="kw">use crate</span>::{
     constants::DEFAULT_STACK_VEC_LEN,
@@ -1290,7 +1288,7 @@
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
     },
-    utils::{resolve_index_signed_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_signed_unchecked, VectorArray},
     Array, Stream,
 };
 
@@ -1331,8 +1329,6 @@
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Array&gt;, Exception&gt; {
-    <span class="kw">use </span>OwnedOrRef::<span class="kw-2">*</span>;
-
     <span class="kw">let </span>ndim = src.ndim();
     <span class="kw">if </span>ndim == <span class="number">0 </span>|| operations.is_empty() {
         <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
@@ -1410,7 +1406,7 @@
     }
 
     <span class="kw">if </span>!update_expand_dims.is_empty() {
-        update = Owned(update.expand_dims_device(<span class="kw-2">&amp;</span>update_expand_dims, <span class="kw-2">&amp;</span>stream)<span class="question-mark">?</span>);
+        update = Cow::Owned(update.expand_dims_device(<span class="kw-2">&amp;</span>update_expand_dims, <span class="kw-2">&amp;</span>stream)<span class="question-mark">?</span>);
     }
 
     <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(src.slice_update_device(
@@ -1422,39 +1418,38 @@
 </span><span class="kw">fn </span>remove_leading_singleton_dimensions(
     a: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;OwnedOrRef&lt;<span class="lifetime">'_</span>, Array&gt;, Exception&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;Cow&lt;<span class="lifetime">'_</span>, Array&gt;, Exception&gt; {
     <span class="kw">let </span>shape = a.shape();
     <span class="kw">let </span><span class="kw-2">mut </span>new_shape: Vec&lt;<span class="kw">_</span>&gt; = shape.iter().skip_while(|&amp;&amp;dim| dim == <span class="number">1</span>).cloned().collect();
     <span class="kw">if </span>shape != new_shape {
         <span class="kw">if </span>new_shape.is_empty() {
             new_shape = <span class="macro">vec!</span>[<span class="number">1</span>];
         }
-        <span class="prelude-val">Ok</span>(OwnedOrRef::Owned(a.reshape_device(<span class="kw-2">&amp;</span>new_shape, stream)<span class="question-mark">?</span>))
+        <span class="prelude-val">Ok</span>(Cow::Owned(a.reshape_device(<span class="kw-2">&amp;</span>new_shape, stream)<span class="question-mark">?</span>))
     } <span class="kw">else </span>{
-        <span class="prelude-val">Ok</span>(OwnedOrRef::Ref(a))
+        <span class="prelude-val">Ok</span>(Cow::Borrowed(a))
     }
 }
 
-<span class="kw">struct </span>ScatterArgs&lt;<span class="lifetime">'a</span>&gt; {
-    indices: SmallVec&lt;[OwnedOrRef&lt;<span class="lifetime">'a</span>, Array&gt;; DEFAULT_STACK_VEC_LEN]&gt;,
+<span class="kw">struct </span>ScatterArgs {
+    indices: SmallVec&lt;[Array; DEFAULT_STACK_VEC_LEN]&gt;,
     update: Array,
     axes: SmallVec&lt;[i32; DEFAULT_STACK_VEC_LEN]&gt;,
 }
 
 <span class="doccomment">/// See `scatterArguments` in the swift binding
-</span><span class="kw">fn </span>scatter_args&lt;<span class="lifetime">'a</span>&gt;(
+</span><span class="kw">fn </span>scatter_args(
     src: <span class="kw-2">&amp;</span>Array,
-    operations: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[ArrayIndexOp],
+    operations: <span class="kw-2">&amp;</span>[ArrayIndexOp],
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs&lt;<span class="lifetime">'a</span>&gt;, Exception&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs, Exception&gt; {
     <span class="kw">use </span>ArrayIndexOp::<span class="kw-2">*</span>;
-    <span class="kw">use </span>OwnedOrRef::<span class="kw-2">*</span>;
 
     <span class="kw">if </span>operations.len() == <span class="number">1 </span>{
         <span class="kw">return match </span><span class="kw-2">&amp;</span>operations[<span class="number">0</span>] {
             TakeIndex { index } =&gt; scatter_args_index(src, <span class="kw-2">*</span>index, update, stream),
-            TakeArray { indices } =&gt; scatter_args_array(src, Ref(indices), update, stream),
+            TakeArray { indices } =&gt; scatter_args_array(src, indices, update, stream),
             Slice(range_index) =&gt; scatter_args_slice(src, range_index, update, stream),
             ExpandDims =&gt; <span class="prelude-val">Ok</span>(ScatterArgs {
                 indices: <span class="macro">smallvec!</span>[],
@@ -1468,12 +1463,12 @@
     scatter_args_nd(src, operations, update, stream)
 }
 
-<span class="kw">fn </span>scatter_args_index&lt;<span class="lifetime">'a</span>&gt;(
+<span class="kw">fn </span>scatter_args_index(
     src: <span class="kw-2">&amp;</span>Array,
     index: i32,
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs&lt;<span class="lifetime">'a</span>&gt;, Exception&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs, Exception&gt; {
     <span class="comment">// mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
@@ -1484,20 +1479,21 @@
     shape[<span class="number">0</span>] = <span class="number">1</span>;
 
     <span class="prelude-val">Ok</span>(ScatterArgs {
-        indices: <span class="macro">smallvec!</span>[OwnedOrRef::Owned(Array::from_int(
-            resolve_index_signed_unchecked(index, src.dim(<span class="number">0</span>))
+        indices: <span class="macro">smallvec!</span>[Array::from_int(resolve_index_signed_unchecked(
+            index,
+            src.dim(<span class="number">0</span>)
         ))],
         update: broadcast_to_device(<span class="kw-2">&amp;</span>update, <span class="kw-2">&amp;</span>shape, <span class="kw-2">&amp;</span>stream)<span class="question-mark">?</span>,
         axes: <span class="macro">smallvec!</span>[<span class="number">0</span>],
     })
 }
 
-<span class="kw">fn </span>scatter_args_array&lt;<span class="lifetime">'a</span>&gt;(
+<span class="kw">fn </span>scatter_args_array(
     src: <span class="kw-2">&amp;</span>Array,
-    a: OwnedOrRef&lt;<span class="lifetime">'a</span>, Array&gt;,
+    a: <span class="kw-2">&amp;</span>Array,
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs&lt;<span class="lifetime">'a</span>&gt;, Exception&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs, Exception&gt; {
     <span class="comment">// mlx_scatter_args_array
 
     // trim leading singleton dimensions
@@ -1516,20 +1512,18 @@
     <span class="kw">let </span>update = update.reshape_device(<span class="kw-2">&amp;</span>update_shape, <span class="kw-2">&amp;</span>stream)<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(ScatterArgs {
-        indices: <span class="macro">smallvec!</span>[a],
+        indices: <span class="macro">smallvec!</span>[a.clone()],
         update,
         axes: <span class="macro">smallvec!</span>[<span class="number">0</span>],
     })
 }
 
-<span class="kw">fn </span>scatter_args_slice&lt;<span class="lifetime">'a</span>&gt;(
+<span class="kw">fn </span>scatter_args_slice(
     src: <span class="kw-2">&amp;</span>Array,
-    range_index: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>RangeIndex,
+    range_index: <span class="kw-2">&amp;</span>RangeIndex,
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs&lt;<span class="lifetime">'a</span>&gt;, Exception&gt; {
-    <span class="kw">use </span>OwnedOrRef::<span class="kw-2">*</span>;
-
+) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs, Exception&gt; {
     <span class="comment">// mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
@@ -1560,7 +1554,7 @@
 
         <span class="kw">let </span>indices = Array::from_slice(<span class="kw-2">&amp;</span>[start], <span class="kw-2">&amp;</span>[<span class="number">1</span>]);
         <span class="prelude-val">Ok</span>(ScatterArgs {
-            indices: <span class="macro">smallvec!</span>[Owned(indices)],
+            indices: <span class="macro">smallvec!</span>[indices],
             update,
             axes: <span class="macro">smallvec!</span>[<span class="number">0</span>],
         })
@@ -1569,16 +1563,16 @@
         </span><span class="kw">let </span>a_vals = strided_range_to_vec(start, end, stride);
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>a_vals, <span class="kw-2">&amp;</span>[a_vals.len() <span class="kw">as </span>i32]);
 
-        scatter_args_array(src, Owned(a), update, stream)
+        scatter_args_array(src, <span class="kw-2">&amp;</span>a, update, stream)
     }
 }
 
-<span class="kw">fn </span>scatter_args_nd&lt;<span class="lifetime">'a</span>&gt;(
+<span class="kw">fn </span>scatter_args_nd(
     src: <span class="kw-2">&amp;</span>Array,
-    operations: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[ArrayIndexOp],
+    operations: <span class="kw-2">&amp;</span>[ArrayIndexOp],
     update: <span class="kw-2">&amp;</span>Array,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs&lt;<span class="lifetime">'a</span>&gt;, Exception&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;ScatterArgs, Exception&gt; {
     <span class="kw">use </span>ArrayIndexOp::<span class="kw-2">*</span>;
 
     <span class="comment">// mlx_scatter_args_nd
@@ -1764,7 +1758,7 @@
     <span class="kw">let </span>array_indices_len = array_indices.len();
 
     <span class="prelude-val">Ok</span>(ScatterArgs {
-        indices: array_indices.into_iter().map(OwnedOrRef::Owned).collect(),
+        indices: array_indices.into(),
         update,
         axes: (<span class="number">0</span>..array_indices_len <span class="kw">as </span>i32).collect(),
     })
@@ -2362,8 +2356,6 @@
 <span class="doccomment">/// The unit tests below are adapted from the Swift binding tests
 </span><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>std::rc::Rc;
-
     <span class="kw">use crate</span>::{
         ops::indexing::{ArrayIndex, IndexOp},
         prelude::<span class="kw-2">*</span>,
@@ -2523,7 +2515,7 @@
         }
 
         <span class="comment">// i = mx.array([2, 1])
-        </span><span class="kw">let </span>i = Rc::new(Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">1</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>]));
+        </span><span class="kw">let </span>i = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">1</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>]);
 
         <span class="comment">// a[0, i] = 1
         </span><span class="macro">check!</span>((<span class="number">0</span>, i.clone()), <span class="number">131310</span>);

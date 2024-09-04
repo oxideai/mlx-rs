@@ -6,7 +6,7 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
     ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_unchecked, VectorArray},
     Array, Stream,
 };
 
@@ -781,7 +781,7 @@ fn get_item_nd(
 ) -> Result<Array, Exception> {
     use ArrayIndexOp::*;
 
-    let mut src = OwnedOrRef::Ref(src);
+    let mut src = src.clone();
 
     // The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -835,7 +835,7 @@ fn get_item_nd(
             &stream,
         )?;
 
-        src = OwnedOrRef::Owned(gathered);
+        src = gathered;
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -872,11 +872,7 @@ fn get_item_nd(
     }
 
     if have_array && remaining_indices.is_empty() {
-        // `clone` returns a new array with the same shape and data
-        return match src {
-            OwnedOrRef::Ref(src) => Ok(src.clone()),
-            OwnedOrRef::Owned(src) => Ok(src),
-        };
+        return Ok(src);
     }
 
     if remaining_indices.is_empty() {
@@ -914,7 +910,7 @@ fn get_item_nd(
         axis += 1;
     }
 
-    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
+    src = src.slice_device(&starts, &ends, &strides, stream)?;
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -934,13 +930,10 @@ fn get_item_nd(
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = OwnedOrRef::Owned(src.reshape(&new_shape)?);
+        src = src.reshape(&new_shape)?;
     }
 
-    match src {
-        OwnedOrRef::Ref(src) => Ok(src.clone()),
-        OwnedOrRef::Owned(src) => Ok(src),
-    }
+    Ok(src)
 }
 
 /* -------------------------------------------------------------------------- */

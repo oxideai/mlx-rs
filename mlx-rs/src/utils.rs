@@ -96,31 +96,6 @@ impl Drop for VectorArray {
     }
 }
 
-/// A custom type for internal use with `Array` only that is essentially `Cow` but doens't require
-/// the `Clone`
-#[derive(Debug)]
-pub enum OwnedOrRef<'a, T> {
-    Owned(T),
-    Ref(&'a T),
-}
-
-impl<'a, T> AsRef<T> for OwnedOrRef<'a, T> {
-    fn as_ref(&self) -> &T {
-        match self {
-            OwnedOrRef::Owned(array) => array,
-            OwnedOrRef::Ref(array) => array,
-        }
-    }
-}
-
-impl<'a, T> std::ops::Deref for OwnedOrRef<'a, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.as_ref()
-    }
-}
-
 pub(crate) struct MlxString(mlx_sys::mlx_string);
 
 impl MlxString {

@@ -49,8 +49,7 @@ impl Array {
     #[default_device]
     pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
         unsafe {
-            let new_array =
-                mlx_sys::mlx_view(self.c_array, dtype.into(), stream.as_ref().as_ptr());
+            let new_array = mlx_sys::mlx_view(self.c_array, dtype.into(), stream.as_ref().as_ptr());
             Array::from_ptr(new_array)
         }
     }
@@ -58,10 +57,10 @@ impl Array {
 
 #[cfg(test)]
 mod tests {
-    use half::{bf16, f16};
-    use crate::complex64;
-    use pretty_assertions::assert_eq;
     use super::*;
+    use crate::complex64;
+    use half::{bf16, f16};
+    use pretty_assertions::assert_eq;
 
     macro_rules! test_as_type {
         ($src_type:ty, $src_val:expr, $dst_type:ty, $dst_val:expr, $len:expr) => {

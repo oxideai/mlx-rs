@@ -976,7 +976,7 @@ mod tests {
         assert!(reshape(&x, &[-1, 7]).is_err());
 
         let x = Array::from_slice::<i32>(&[], &[0]);
-        let mut y = reshape(&x, &[0, 0, 0]).unwrap();
+        let y = reshape(&x, &[0, 0, 0]).unwrap();
         assert_eq!(y.shape(), &[0, 0, 0]);
         y.eval().unwrap();
         assert_eq!(y.size(), 0);
@@ -1260,18 +1260,18 @@ mod tests {
     #[test]
     fn test_transpose() {
         let x = Array::from_int(1);
-        let mut y = transpose(&x, None).unwrap();
+        let y = transpose(&x, None).unwrap();
         assert!(y.shape().is_empty());
         assert_eq!(y.item::<i32>(), 1);
         assert!(transpose(&x, &[0][..]).is_err());
         assert!(transpose(&x, &[1][..]).is_err());
 
         let x = Array::from_slice(&[1], &[1]);
-        let mut y = transpose(&x, None).unwrap();
+        let y = transpose(&x, None).unwrap();
         assert_eq!(y.shape(), &[1]);
         assert_eq!(y.item::<i32>(), 1);
 
-        let mut y = transpose(&x, &[-1][..]).unwrap();
+        let y = transpose(&x, &[-1][..]).unwrap();
         assert_eq!(y.shape(), &[1]);
         assert_eq!(y.item::<i32>(), 1);
 
@@ -1279,7 +1279,7 @@ mod tests {
         assert!(transpose(&x, &[0, 0][..]).is_err());
 
         let x = Array::from_slice::<i32>(&[], &[0]);
-        let mut y = transpose(&x, None).unwrap();
+        let y = transpose(&x, None).unwrap();
         assert_eq!(y.shape(), &[0]);
         y.eval().unwrap();
         assert_eq!(y.size(), 0);

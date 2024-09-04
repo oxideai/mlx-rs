@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn test_scalar_array() {
-        let mut arr = array!(1);
+        let arr = array!(1);
 
         // Scalar array has 0 dimension
         assert!(arr.ndim() == 0);

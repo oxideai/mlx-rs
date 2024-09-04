@@ -47,7 +47,7 @@ mod tests {
                 #[test]
                 fn [<test_as_type_ $src_type _ $dst_type>]() {
                     let array = Array::from_slice(&[$src_val; $len], &[$len as i32]);
-                    let mut new_array = array.as_type::<$dst_type>();
+                    let new_array = array.as_type::<$dst_type>();
 
                     assert_eq!(new_array.dtype(), $dst_type::DTYPE);
                     assert_eq!(new_array.shape(), &[3]);

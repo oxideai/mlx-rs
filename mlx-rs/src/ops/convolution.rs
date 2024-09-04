@@ -169,7 +169,7 @@ mod tests {
         let weight_data = [0.5, 0.0, -0.5, 1.0, 0.0, 1.5, 2.0, 0.0, -2.0, 1.5, 0.0, 1.0];
         let weight_array = Array::from_slice(&weight_data, &[2, 3, 2]);
 
-        let mut result = conv1d(
+        let result = conv1d(
             &input_array,
             &weight_array,
             Some(1), // stride
@@ -197,7 +197,7 @@ mod tests {
         let weight_array = Array::from_slice(&weight_data, &weight_shape);
 
         // Perform the convolution with no padding and stride of 1
-        let mut result = conv2d(
+        let result = conv2d(
             &input_array,
             &weight_array,
             Some((1, 1)), // stride

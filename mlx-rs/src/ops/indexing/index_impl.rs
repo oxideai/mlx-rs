@@ -1,4 +1,4 @@
-use std::{ops::Bound, rc::Rc};
+use std::ops::Bound;
 
 use smallvec::{smallvec, SmallVec};
 
@@ -6,20 +6,17 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
     ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_unchecked, VectorArray},
     Array, Stream,
 };
 
-use super::{ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy};
+use super::{
+    ArrayIndex, ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy,
+};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
 /* -------------------------------------------------------------------------- */
-
-pub trait ArrayIndex {
-    /// `mlx` allows out of bounds indexing.
-    fn index_op(self) -> ArrayIndexOp;
-}
 
 impl ArrayIndex for i32 {
     fn index_op(self) -> ArrayIndexOp {
@@ -40,14 +37,6 @@ impl ArrayIndex for Ellipsis {
 }
 
 impl ArrayIndex for Array {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeArray {
-            indices: Rc::new(self),
-        }
-    }
-}
-
-impl ArrayIndex for Rc<Array> {
     fn index_op(self) -> ArrayIndexOp {
         ArrayIndexOp::TakeArray { indices: self }
     }
@@ -622,7 +611,7 @@ fn gather_nd<'a>(
     let mut max_dims = 0;
     let mut slice_count = 0;
     let mut is_slice: Vec<bool> = Vec::with_capacity(last_array_or_index);
-    let mut gather_indices: Vec<Rc<Array>> = Vec::with_capacity(last_array_or_index);
+    let mut gather_indices: Vec<Array> = Vec::with_capacity(last_array_or_index);
 
     let shape = src.shape();
 
@@ -640,7 +629,7 @@ fn gather_nd<'a>(
                     *index,
                     src.dim(i as i32) as usize,
                 ) as i32);
-                gather_indices.push(Rc::new(item));
+                gather_indices.push(item);
                 is_slice.push(false);
             }
             Slice(range) => {
@@ -654,12 +643,12 @@ fn gather_nd<'a>(
 
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
 
-                gather_indices.push(Rc::new(item));
+                gather_indices.push(item);
             }
             TakeArray { indices } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
-                gather_indices.push(Rc::clone(indices));
+                gather_indices.push(indices.clone());
             }
             Ellipsis | ExpandDims => {
                 unreachable!("Unexpected operation in gather_nd")
@@ -675,12 +664,12 @@ fn gather_nd<'a>(
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(0);
-                    *item = Rc::new(item.reshape(&new_shape)?);
+                    *item = item.reshape(&new_shape)?;
                     slice_index += 1;
                 } else {
                     let mut new_shape = item.shape().to_vec();
                     new_shape.extend((0..slice_count).map(|_| 1));
-                    *item = Rc::new(item.reshape(&new_shape)?);
+                    *item = item.reshape(&new_shape)?;
                 }
             }
         }
@@ -689,7 +678,7 @@ fn gather_nd<'a>(
         for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
             let mut new_shape = vec![1; max_dims + slice_count];
             new_shape[i] = item.dim(0);
-            *item = Rc::new(item.reshape(&new_shape)?);
+            *item = item.reshape(&new_shape)?;
         }
     }
 
@@ -792,7 +781,7 @@ fn get_item_nd(
 ) -> Result<Array, Exception> {
     use ArrayIndexOp::*;
 
-    let mut src = OwnedOrRef::Ref(src);
+    let mut src = src.clone();
 
     // The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -846,7 +835,7 @@ fn get_item_nd(
             &stream,
         )?;
 
-        src = OwnedOrRef::Owned(gathered);
+        src = gathered;
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -883,11 +872,7 @@ fn get_item_nd(
     }
 
     if have_array && remaining_indices.is_empty() {
-        // `clone` returns a new array with the same shape and data
-        return match src {
-            OwnedOrRef::Ref(src) => Ok(src.clone()),
-            OwnedOrRef::Owned(src) => Ok(src),
-        };
+        return Ok(src);
     }
 
     if remaining_indices.is_empty() {
@@ -925,7 +910,7 @@ fn get_item_nd(
         axis += 1;
     }
 
-    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
+    src = src.slice_device(&starts, &ends, &strides, stream)?;
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -945,13 +930,10 @@ fn get_item_nd(
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = OwnedOrRef::Owned(src.reshape(&new_shape)?);
+        src = src.reshape(&new_shape)?;
     }
 
-    match src {
-        OwnedOrRef::Ref(src) => Ok(src.clone()),
-        OwnedOrRef::Owned(src) => Ok(src),
-    }
+    Ok(src)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -960,8 +942,6 @@ fn get_item_nd(
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::{
         assert_array_eq,
         ops::indexing::{index_impl::IndexOp, Ellipsis, IntoStrideBy, NewAxis},
@@ -972,12 +952,12 @@ mod tests {
     fn test_array_index_negative_int() {
         let a = Array::from_iter(0i32..8, &[8]);
 
-        let mut s = a.index(-1);
+        let s = a.index(-1);
 
         assert_eq!(s.ndim(), 0);
         assert_eq!(s.item::<i32>(), 7);
 
-        let mut s = a.index(-8);
+        let s = a.index(-8);
 
         assert_eq!(s.ndim(), 0);
         assert_eq!(s.item::<i32>(), 0);
@@ -1052,7 +1032,7 @@ mod tests {
         let expected = Array::from_iter(80..88, &[8]);
         assert_array_eq!(s1, expected, 0.01);
 
-        let mut s2 = a.index((1, 2, 3));
+        let s2 = a.index((1, 2, 3));
 
         assert_eq!(s2.ndim(), 0);
         assert!(s2.shape().is_empty());
@@ -1084,7 +1064,7 @@ mod tests {
     fn test_array_subscript_from_end() {
         let a = Array::from_iter(0i32..12, &[3, 4]);
 
-        let mut s = a.index((-1, -2));
+        let s = a.index((-1, -2));
 
         assert_eq!(s.ndim(), 0);
         assert_eq!(s.item::<i32>(), 10);
@@ -1204,7 +1184,7 @@ mod tests {
     fn check(result: Array, shape: &[i32], expected_sum: i32) {
         assert_eq!(result.shape(), shape);
 
-        let mut sum = result.sum(None, None).unwrap();
+        let sum = result.sum(None, None).unwrap();
 
         assert_eq!(sum.item::<i32>(), expected_sum);
     }
@@ -1276,7 +1256,7 @@ mod tests {
         let a = Array::from_iter(0..540, &[3, 3, 4, 5, 3]);
 
         // i = mx.array([2, 1])
-        let i = Rc::new(Array::from_slice(&[2, 1], &[2]));
+        let i = Array::from_slice(&[2, 1], &[2]);
 
         // a[0, i]
         check(a.index((0, i.clone())), &[2, 4, 5, 3], 14340);

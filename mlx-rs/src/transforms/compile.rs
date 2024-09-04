@@ -402,7 +402,7 @@ where
     move |args| compiled.call_mut(args)
 }
 
-fn clear_cache() {
+pub fn clear_cache() {
     unsafe {
         mlx_detail_compile_clear_cache();
     }

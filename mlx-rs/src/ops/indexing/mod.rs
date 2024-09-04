@@ -99,7 +99,6 @@
 use std::{
     borrow::Cow,
     ops::{Bound, RangeBounds},
-    rc::Rc,
 };
 
 use mlx_macros::default_device;
@@ -237,10 +236,7 @@ pub enum ArrayIndexOp {
     TakeIndex { index: i32 },
 
     /// Indexing with an array
-    ///
-    /// The reason an `Rc` is used instead of `Cow` is that even with `Cow`, the compiler will infer
-    /// an `'static` lifetime due to current limitations in the borrow checker.
-    TakeArray { indices: Rc<Array> },
+    TakeArray { indices: Array },
 
     /// Indexing with a range
     ///
@@ -302,94 +298,15 @@ impl IndexBounds for std::ops::RangeTo<i32> {}
 
 impl IndexBounds for std::ops::RangeToInclusive<i32> {}
 
-/* -------------------------------------------------------------------------- */
-/*                               Implementation                               */
-/* -------------------------------------------------------------------------- */
-
+/// Trait for custom indexing operations.
 pub trait ArrayIndex {
     /// `mlx` allows out of bounds indexing.
     fn index_op(self) -> ArrayIndexOp;
 }
 
-impl ArrayIndex for i32 {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeIndex { index: self }
-    }
-}
-
-impl ArrayIndex for NewAxis {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::ExpandDims
-    }
-}
-
-impl ArrayIndex for Ellipsis {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Ellipsis
-    }
-}
-
-impl ArrayIndex for Array {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeArray {
-            indices: Rc::new(self),
-        }
-    }
-}
-
-impl ArrayIndex for Rc<Array> {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::TakeArray { indices: self }
-    }
-}
-
-impl ArrayIndex for ArrayIndexOp {
-    fn index_op(self) -> ArrayIndexOp {
-        self
-    }
-}
-
-impl<T> ArrayIndex for T
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.start_bound().cloned(),
-            self.end_bound().cloned(),
-            Some(1),
-        ))
-    }
-}
-
-impl ArrayIndex for std::ops::RangeFull {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
-    }
-}
-
-impl<T> ArrayIndex for StrideBy<T>
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.inner.start_bound().cloned(),
-            self.inner.end_bound().cloned(),
-            Some(self.stride),
-        ))
-    }
-}
-
-impl ArrayIndex for StrideBy<std::ops::RangeFull> {
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            Bound::Unbounded,
-            Bound::Unbounded,
-            Some(self.stride),
-        ))
-    }
-}
+/* -------------------------------------------------------------------------- */
+/*                               Implementation                               */
+/* -------------------------------------------------------------------------- */
 
 // Implement public bindings
 impl Array {

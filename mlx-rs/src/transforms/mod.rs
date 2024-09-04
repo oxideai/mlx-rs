@@ -330,7 +330,7 @@ mod tests {
         let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] + &inputs[1]] };
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let (mut out, mut dout) = jvp(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
+        let (out, dout) = jvp(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 4.0f32);
     }
@@ -342,7 +342,7 @@ mod tests {
         let y = array!(1.0f32);
         let primals = vec![x, y];
         let cotangents = vec![array!(1.0f32)];
-        let (mut out, mut dout) = vjp(f, &primals, &cotangents).unwrap();
+        let (out, dout) = vjp(f, &primals, &cotangents).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 1.0f32);
     }
@@ -352,14 +352,14 @@ mod tests {
         let x = &[Array::from_float(1.0)];
         let fun = |argin: &[Array]| -> Vec<Array> { vec![&argin[0] + 1.0] };
         let argnums = &[0];
-        let (mut y, mut dfdx) = value_and_grad(fun, argnums)(x).unwrap();
+        let (y, dfdx) = value_and_grad(fun, argnums)(x).unwrap();
 
         assert_eq!(y[0].item::<f32>(), 2.0);
         assert_eq!(dfdx[0].item::<f32>(), 1.0);
 
         // TODO: how to make this more "functional"?
         let grad_fn = move |args: &[Array]| -> Vec<Array> { grad(fun, argnums)(args).unwrap() };
-        let (mut z, mut d2fdx2) = value_and_grad(grad_fn, argnums)(x).unwrap();
+        let (z, d2fdx2) = value_and_grad(grad_fn, argnums)(x).unwrap();
 
         assert_eq!(z[0].item::<f32>(), 1.0);
         assert_eq!(d2fdx2[0].item::<f32>(), 0.0);

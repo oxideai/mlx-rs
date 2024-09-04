@@ -117,7 +117,7 @@ mod tests {
         let out = diagonal(&x, -1, 0, 1).unwrap();
         assert_eq!(out, array!([4, 9]));
 
-        let mut out = diagonal(&x, -5, 0, 1).unwrap();
+        let out = diagonal(&x, -5, 0, 1).unwrap();
         out.eval().unwrap();
         assert_eq!(out.shape(), &[0]);
 

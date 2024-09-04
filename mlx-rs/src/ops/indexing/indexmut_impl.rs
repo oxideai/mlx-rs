@@ -1079,8 +1079,6 @@ where
 /// The unit tests below are adapted from the Swift binding tests
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::{
         ops::indexing::{ArrayIndex, IndexOp},
         prelude::*,
@@ -1240,7 +1238,7 @@ mod tests {
         }
 
         // i = mx.array([2, 1])
-        let i = Rc::new(Array::from_slice(&[2, 1], &[2]));
+        let i = Array::from_slice(&[2, 1], &[2]);
 
         // a[0, i] = 1
         check!((0, i.clone()), 131310);

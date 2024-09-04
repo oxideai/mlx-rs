@@ -515,7 +515,7 @@ mod tests {
     #[test]
     fn test_uniform_single() {
         let key = key(0);
-        let mut value = uniform::<_, f32>(0, 10, None, Some(&key)).unwrap();
+        let value = uniform::<_, f32>(0, 10, None, Some(&key)).unwrap();
         float_eq!(value.item::<f32>(), 4.18, abs <= 0.01);
     }
 
@@ -547,7 +547,7 @@ mod tests {
     #[test]
     fn test_normal() {
         let key = key(0);
-        let mut value = normal::<f32>(None, None, None, &key).unwrap();
+        let value = normal::<f32>(None, None, None, &key).unwrap();
         float_eq!(value.item::<f32>(), -0.20, abs <= 0.01);
     }
 
@@ -571,7 +571,7 @@ mod tests {
     #[test]
     fn test_randint_single() {
         let key = key(0);
-        let mut value = randint::<_, i32>(0, 100, None, Some(&key)).unwrap();
+        let value = randint::<_, i32>(0, 100, None, Some(&key)).unwrap();
         assert_eq!(value.item::<i32>(), 41);
     }
 
@@ -595,7 +595,7 @@ mod tests {
     #[test]
     fn test_bernoulli_single() {
         let key = key(0);
-        let mut value = bernoulli(None, None, &key).unwrap();
+        let value = bernoulli(None, None, &key).unwrap();
         assert_eq!(value.item::<bool>(), true);
     }
 

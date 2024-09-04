@@ -269,11 +269,11 @@ mod tests {
         ];
 
         let a = Array::from_slice(RFFT_DATA, RFFT_SHAPE);
-        let mut rfft = super::rfft(&a, RFFT_N, RFFT_AXIS).unwrap();
+        let rfft = super::rfft(&a, RFFT_N, RFFT_AXIS).unwrap();
         assert_eq!(rfft.dtype(), Dtype::Complex64);
         assert_eq!(rfft.as_slice::<complex64>(), RFFT_EXPECTED);
 
-        let mut irfft = super::irfft(&rfft, RFFT_N, RFFT_AXIS).unwrap();
+        let irfft = super::irfft(&rfft, RFFT_N, RFFT_AXIS).unwrap();
         assert_eq!(irfft.dtype(), Dtype::Float32);
         assert_eq!(irfft.as_slice::<f32>(), RFFT_DATA);
     }
@@ -310,11 +310,11 @@ mod tests {
         ];
 
         let a = Array::from_slice(RFFT2_DATA, RFFT2_SHAPE);
-        let mut rfft2 = super::rfft2(&a, None, None).unwrap();
+        let rfft2 = super::rfft2(&a, None, None).unwrap();
         assert_eq!(rfft2.dtype(), Dtype::Complex64);
         assert_eq!(rfft2.as_slice::<complex64>(), RFFT2_EXPECTED);
 
-        let mut irfft2 = super::irfft2(&rfft2, None, None).unwrap();
+        let irfft2 = super::irfft2(&rfft2, None, None).unwrap();
         assert_eq!(irfft2.dtype(), Dtype::Float32);
         assert_eq!(irfft2.as_slice::<f32>(), RFFT2_DATA);
     }
@@ -355,11 +355,11 @@ mod tests {
         ];
 
         let a = Array::from_slice(RFFTN_DATA, RFFTN_SHAPE);
-        let mut rfftn = super::rfftn(&a, None, None).unwrap();
+        let rfftn = super::rfftn(&a, None, None).unwrap();
         assert_eq!(rfftn.dtype(), Dtype::Complex64);
         assert_eq!(rfftn.as_slice::<complex64>(), RFFTN_EXPECTED);
 
-        let mut irfftn = super::irfftn(&rfftn, None, None).unwrap();
+        let irfftn = super::irfftn(&rfftn, None, None).unwrap();
         assert_eq!(irfftn.dtype(), Dtype::Float32);
         assert_eq!(irfftn.as_slice::<f32>(), RFFTN_DATA);
     }

@@ -1,3 +1,4 @@
+use mlx_rs::transforms::grad;
 use mlx_rs::{Array, Dtype};
 
 fn scalar_basics() {
@@ -71,7 +72,26 @@ fn array_basics() {
     println!("{}", z); // implicit evaluation
 }
 
+fn automatic_differentiation() {
+    fn f(x: &Array) -> Array {
+        x.square()
+    }
+
+    fn calculate_grad(func: impl Fn(&Array) -> Array, arg: &Array) -> Array {
+        grad(&func, &[0])(arg).unwrap()
+    }
+
+    let x = Array::from(1.5);
+
+    let mut dfdx = calculate_grad(f, &x);
+    assert_eq!(dfdx.item::<f32>(), 2.0 * 1.5);
+
+    let mut dfdx2 = calculate_grad(|args| calculate_grad(f, args), &x);
+    assert_eq!(dfdx2.item::<f32>(), 2.0);
+}
+
 fn main() {
     scalar_basics();
     array_basics();
+    automatic_differentiation();
 }

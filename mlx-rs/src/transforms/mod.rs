@@ -1,4 +1,4 @@
-use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply, mlx_retain};
+use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 use smallvec::SmallVec;
 
 use crate::{
@@ -208,13 +208,6 @@ where
     }
 }
 
-fn clone_by_increment_ref_count(src: &Array) -> Array {
-    unsafe {
-        mlx_retain(src.as_ptr() as *mut _);
-        Array::from_ptr(src.as_ptr())
-    }
-}
-
 /// Returns a function which computes the value and gradient of `f`.
 pub fn value_and_grad<'a, F>(
     f: F,
@@ -260,7 +253,7 @@ where
         let f = move |args: &[Array]| -> Vec<Array> { vec![self(&args[0])] };
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array, Exception> {
-            let args_clone = &[clone_by_increment_ref_count(args)];
+            let args_clone = &[args.clone()];
             let result = g(args_clone)?;
             Ok(result.into_iter().next().unwrap())
         }
@@ -297,7 +290,7 @@ where
         let f = move |args: &[Array]| -> Vec<Array> { self(&args[0]) };
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>, Exception> {
-            let args_clone = &[clone_by_increment_ref_count(args)];
+            let args_clone = &[args.clone()];
             let result = g(args_clone)?;
             Ok(result)
         }

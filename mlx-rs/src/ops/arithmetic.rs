@@ -1841,7 +1841,7 @@ mod tests {
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.exp(), 2.0f32.exp()], &[2, 1]);
-        assert!(all_close(&exp(&x[0]), &expected, None, None, None)
+        assert!(all_close(exp(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -1906,7 +1906,7 @@ mod tests {
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.sin(), 2.0f32.sin()], &[2, 1]);
-        assert!(all_close(&sin(&x[0]), &expected, None, None, None)
+        assert!(all_close(sin(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -1949,7 +1949,7 @@ mod tests {
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.cos(), 2.0f32.cos()], &[2, 1]);
-        assert!(all_close(&cos(&x[0]), &expected, None, None, None)
+        assert!(all_close(cos(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -1980,7 +1980,7 @@ mod tests {
         let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
         let x = split_equal(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, 180.0], &[2, 1]);
-        assert!(all_close(&degrees(&x[0]), &expected, None, None, None)
+        assert!(all_close(degrees(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -2011,7 +2011,7 @@ mod tests {
         let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
         let x = split_equal(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, PI], &[2, 1]);
-        assert!(all_close(&radians(&x[0]), &expected, None, None, None)
+        assert!(all_close(radians(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -2040,7 +2040,7 @@ mod tests {
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln(), 3.0f32.ln()], &[2, 1]);
-        assert!(all_close(&log(&x[0]), &expected, None, None, None)
+        assert!(all_close(log(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -2105,7 +2105,7 @@ mod tests {
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln_1p(), 3.0f32.ln_1p()], &[2, 1]);
-        assert!(all_close(&log1p(&x[0]), &expected, None, None, None)
+        assert!(all_close(log1p(&x[0]), &expected, None, None, None)
             .unwrap()
             .item::<bool>());
     }
@@ -2146,8 +2146,8 @@ mod tests {
 
         let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
         assert!(all_close(
-            &square(&x),
-            &Array::full::<f32>(&[3, 3], 4.0).unwrap(),
+            square(&x),
+            Array::full::<f32>(&[3, 3], 4.0).unwrap(),
             None,
             None,
             None
@@ -2164,8 +2164,8 @@ mod tests {
 
         let x = Array::full::<f32>(&[3, 3], 9.0).unwrap();
         assert!(all_close(
-            &sqrt(&x),
-            &Array::full::<f32>(&[3, 3], 3.0).unwrap(),
+            sqrt(&x),
+            Array::full::<f32>(&[3, 3], 3.0).unwrap(),
             None,
             None,
             None
@@ -2190,8 +2190,8 @@ mod tests {
 
         let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
         assert!(all_close(
-            &reciprocal(&x),
-            &Array::full::<f32>(&[3, 3], 0.5).unwrap(),
+            reciprocal(&x),
+            Array::full::<f32>(&[3, 3], 0.5).unwrap(),
             None,
             None,
             None

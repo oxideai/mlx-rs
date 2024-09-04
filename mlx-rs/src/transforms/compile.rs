@@ -17,8 +17,6 @@ use crate::{
     Array,
 };
 
-use super::clone_by_increment_ref_count;
-
 /// Globally enable the compilation of functions.
 ///
 /// Default is enabled.
@@ -185,7 +183,7 @@ where
 {
     fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[clone_by_increment_ref_count(args)];
+        let args = &[args.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -198,10 +196,7 @@ where
 {
     fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[
-            clone_by_increment_ref_count(args.0),
-            clone_by_increment_ref_count(args.1),
-        ];
+        let args = &[args.0.clone(), args.1.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -214,11 +209,7 @@ where
 {
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[
-            clone_by_increment_ref_count(args.0),
-            clone_by_increment_ref_count(args.1),
-            clone_by_increment_ref_count(args.2),
-        ];
+        let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -259,7 +250,7 @@ impl<'a, F> CompiledState<'a, F> {
             let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
                 .borrow()
                 .as_ref()
-                .map(|inputs| inputs.iter().map(clone_by_increment_ref_count).collect());
+                .map(|inputs| inputs.iter().map(Clone::clone).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -275,7 +266,7 @@ impl<'a, F> CompiledState<'a, F> {
             let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
                 .borrow()
                 .as_ref()
-                .map(|outputs| outputs.iter().map(clone_by_increment_ref_count).collect());
+                .map(|outputs| outputs.iter().map(Clone::clone).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {

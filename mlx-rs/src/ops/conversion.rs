@@ -20,14 +20,27 @@ impl Array {
     /// ```
     #[default_device]
     pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
-        self.as_dtype_device(T::DTYPE, stream)
-    }
-
-    #[default_device]
-    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
         unsafe {
             let new_array =
-                mlx_sys::mlx_astype(self.c_array, dtype.into(), stream.as_ref().as_ptr());
+                mlx_sys::mlx_astype(self.c_array, T::DTYPE.into(), stream.as_ref().as_ptr());
+            Array::from_ptr(new_array)
+        }
+    }
+
+    /// View the array as a different type.
+    ///
+    /// The output array will change along the last axis if the input array's
+    /// type and the output array's type do not have the same size.
+    ///
+    /// _Note: the view op does not imply that the input and output arrays share
+    /// their underlying data. The view only guarantees that the binary
+    /// representation of each element (or group of elements) is the same._
+    ///
+    #[default_device]
+    pub fn view<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe {
+            let new_array =
+                mlx_sys::mlx_view(self.c_array, T::DTYPE.into(), stream.as_ref().as_ptr());
             Array::from_ptr(new_array)
         }
     }
@@ -243,4 +256,7 @@ mod tests {
         bf16::from_f32(1.0),
         3
     );
+
+    #[test]
+    fn test_view() {}
 }

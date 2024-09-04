@@ -7,8 +7,8 @@ use std::{
 };
 
 use mlx_sys::{
-    mlx_closure_apply, mlx_detail_compile, mlx_detail_compile_erase, mlx_disable_compile,
-    mlx_enable_compile, mlx_free, mlx_retain,
+    mlx_closure_apply, mlx_detail_compile, mlx_detail_compile_clear_cache,
+    mlx_detail_compile_erase, mlx_disable_compile, mlx_enable_compile, mlx_free, mlx_retain,
 };
 
 use crate::{
@@ -400,6 +400,12 @@ where
     let shapeless = shapeless.unwrap_or(false);
     let mut compiled = f.compile(inputs, outputs, shapeless);
     move |args| compiled.call_mut(args)
+}
+
+fn clear_cache() {
+    unsafe {
+        mlx_detail_compile_clear_cache();
+    }
 }
 
 #[cfg(test)]

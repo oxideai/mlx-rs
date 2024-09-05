@@ -3,7 +3,7 @@ use mlx_macros::default_device;
 use crate::{Array, ArrayElement, Dtype, Stream, StreamOrDevice};
 
 impl Array {
-    /// Cast the array to a specified type.
+    /// Create a new array with the contents converted to the given [ArrayElement] type.
     ///
     /// # Example
     ///
@@ -31,15 +31,36 @@ impl Array {
             Array::from_ptr(new_array)
         }
     }
+
+    /// View the array as a different type.
+    ///
+    /// The output array will change along the last axis if the input array's
+    /// type and the output array's type do not have the same size.
+    ///
+    /// _Note: the view op does not imply that the input and output arrays share
+    /// their underlying data. The view only guarantees that the binary
+    /// representation of each element (or group of elements) is the same._
+    ///
+    #[default_device]
+    pub fn view_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+        self.view_dtype_device(T::DTYPE, stream)
+    }
+
+    #[default_device]
+    pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
+        unsafe {
+            let new_array = mlx_sys::mlx_view(self.c_array, dtype.into(), stream.as_ref().as_ptr());
+            Array::from_ptr(new_array)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use half::{bf16, f16};
-
-    use crate::complex64;
-
     use super::*;
+    use crate::complex64;
+    use half::{bf16, f16};
+    use pretty_assertions::assert_eq;
 
     macro_rules! test_as_type {
         ($src_type:ty, $src_val:expr, $dst_type:ty, $dst_val:expr, $len:expr) => {
@@ -243,4 +264,15 @@ mod tests {
         bf16::from_f32(1.0),
         3
     );
+
+    #[test]
+    fn test_view() {
+        let array = Array::from_slice(&[1i16, 2, 3], &[3]);
+        let mut new_array = array.view::<i8>();
+
+        assert_eq!(new_array.dtype(), Dtype::Int8);
+        assert_eq!(new_array.shape(), &[6]);
+        assert_eq!(new_array.item_size(), 1);
+        assert_eq!(new_array.as_slice::<i8>(), &[1, 0, 2, 0, 3, 0]);
+    }
 }

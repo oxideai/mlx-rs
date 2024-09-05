@@ -244,12 +244,44 @@
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>mlx_macros::default_device;
 
 <span class="kw">use crate</span>::{Array, ArrayElement, Dtype, Stream, StreamOrDevice};
 
 <span class="kw">impl </span>Array {
-    <span class="doccomment">/// Cast the array to a specified type.
+    <span class="doccomment">/// Create a new array with the contents converted to the given [ArrayElement] type.
     ///
     /// # Example
     ///
@@ -277,15 +309,36 @@
             Array::from_ptr(new_array)
         }
     }
+
+    <span class="doccomment">/// View the array as a different type.
+    ///
+    /// The output array will change along the last axis if the input array's
+    /// type and the output array's type do not have the same size.
+    ///
+    /// _Note: the view op does not imply that the input and output arrays share
+    /// their underlying data. The view only guarantees that the binary
+    /// representation of each element (or group of elements) is the same._
+    ///
+    </span><span class="attr">#[default_device]
+    </span><span class="kw">pub fn </span>view_device&lt;T: ArrayElement&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;) -&gt; Array {
+        <span class="self">self</span>.view_dtype_device(T::DTYPE, stream)
+    }
+
+    <span class="attr">#[default_device]
+    </span><span class="kw">pub fn </span>view_dtype_device(<span class="kw-2">&amp;</span><span class="self">self</span>, dtype: Dtype, stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;) -&gt; Array {
+        <span class="kw">unsafe </span>{
+            <span class="kw">let </span>new_array = mlx_sys::mlx_view(<span class="self">self</span>.c_array, dtype.into(), stream.as_ref().as_ptr());
+            Array::from_ptr(new_array)
+        }
+    }
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>half::{bf16, f16};
-
-    <span class="kw">use </span><span class="kw">crate</span>::complex64;
-
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use </span><span class="kw">crate</span>::complex64;
+    <span class="kw">use </span>half::{bf16, f16};
+    <span class="kw">use </span>pretty_assertions::assert_eq;
 
     <span class="macro">macro_rules!</span> test_as_type {
         (<span class="macro-nonterminal">$src_type</span>:ty, <span class="macro-nonterminal">$src_val</span>:expr, <span class="macro-nonterminal">$dst_type</span>:ty, <span class="macro-nonterminal">$dst_val</span>:expr, <span class="macro-nonterminal">$len</span>:expr) =&gt; {
@@ -489,5 +542,16 @@
         bf16::from_f32(<span class="number">1.0</span>),
         <span class="number">3
     </span>);
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_view() {
+        <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1i16</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
+        <span class="kw">let </span><span class="kw-2">mut </span>new_array = array.view::&lt;i8&gt;();
+
+        <span class="macro">assert_eq!</span>(new_array.dtype(), Dtype::Int8);
+        <span class="macro">assert_eq!</span>(new_array.shape(), <span class="kw-2">&amp;</span>[<span class="number">6</span>]);
+        <span class="macro">assert_eq!</span>(new_array.item_size(), <span class="number">1</span>);
+        <span class="macro">assert_eq!</span>(new_array.as_slice::&lt;i8&gt;(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="number">0</span>]);
+    }
 }
 </code></pre></div></section></main></body></html>

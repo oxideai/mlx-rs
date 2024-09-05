@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["compile","disable_compile","enable_compile"],"struct":["Compiled"],"trait":["CallMut","Compile"]};
+window.SIDEBAR_ITEMS = {"fn":["clear_cache","compile","disable_compile","enable_compile"],"struct":["Compiled"],"trait":["CallMut","Compile"]};

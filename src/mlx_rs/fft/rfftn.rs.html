@@ -401,7 +401,7 @@
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>rfft_device(
     a: <span class="kw-2">&amp;</span>Array,
     n: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;i32&gt;&gt;,
@@ -417,7 +417,7 @@
     }
 }
 
-<span class="doccomment">/// Two dimensional real discrete Fourier Transform.
+<span class="doccomment">/// Two-dimensional real discrete Fourier Transform.
 ///
 /// The output has the same shape as the input except along the dimensions in `axes` in which case
 /// it has sizes from `s`. The last axis in `axes` is treated as the real axis and will have size
@@ -429,7 +429,7 @@
 /// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>rfft2_device&lt;<span class="lifetime">'a</span>&gt;(
     a: <span class="kw-2">&amp;</span>Array,
     s: <span class="kw">impl </span>IntoOption&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[i32]&gt;,
@@ -473,7 +473,7 @@
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is over
 ///   the last `len(s)` axes or all axes if `s` is also `None`.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>rfftn_device&lt;<span class="lifetime">'a</span>&gt;(
     a: <span class="kw-2">&amp;</span>Array,
     s: <span class="kw">impl </span>IntoOption&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[i32]&gt;,
@@ -513,7 +513,7 @@
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1`.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>irfft_device(
     a: <span class="kw-2">&amp;</span>Array,
     n: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;i32&gt;&gt;,
@@ -548,7 +548,7 @@
 ///   padded with zeros to match the sizes in `s` except for the last axis which has size
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>irfft2_device&lt;<span class="lifetime">'a</span>&gt;(
     a: <span class="kw-2">&amp;</span>Array,
     s: <span class="kw">impl </span>IntoOption&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[i32]&gt;,
@@ -600,7 +600,7 @@
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 ///  over the last `len(s)` axes or all axes if `s` is also `None`.
-</span><span class="attr">#[default_device(device = <span class="string">"cpu"</span>)]
+</span><span class="attr">#[default_device]
 </span><span class="kw">pub fn </span>irfftn_device&lt;<span class="lifetime">'a</span>&gt;(
     a: <span class="kw-2">&amp;</span>Array,
     s: <span class="kw">impl </span>IntoOption&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[i32]&gt;,

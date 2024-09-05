@@ -5,7 +5,7 @@ members = ["mlx-macros", "mlx-sys", "mlx-rs", "mlx-nn", "mlx-nn-module"]
 resolver = "2"
 
 [workspace.dependencies]
-mlx-sys = { version = "0.0.8", path = "mlx-sys" }
+mlx-sys = { version = "0.0.9", path = "mlx-sys" }
 mlx-macros = { version = "0.1.0", path = "mlx-macros" }
 mlx-rs = { version = "0.14.0", path = "mlx-rs" }
 mlx-nn-module = { version = "0.1.0", path = "mlx-nn-module" }

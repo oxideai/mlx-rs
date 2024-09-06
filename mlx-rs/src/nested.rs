@@ -34,8 +34,8 @@ pub struct NesteHashMap<K, V> {
     pub entries: HashMap<K, NestedValue<K, V>>,
 }
 
-impl<K, T> NesteHashMap<K, T> {
-    pub fn flatten(self) -> HashMap<String, T>
+impl<K, V> NesteHashMap<K, V> {
+    pub fn flatten(self) -> HashMap<String, V>
     where 
         K: AsRef<str> + Display,
     {

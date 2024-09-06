@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 use smallvec::SmallVec;
 
@@ -253,16 +251,18 @@ where
     }
 }
 
-impl<'a, F, T> ValueAndGrad<'a, (HashMap<String, Array>, T), (), (Vec<Array>, HashMap<String, Array>)> for F 
+// TODO: can we avoid the clone or have cheaper clone?
+impl<'a, F, M, T> ValueAndGrad<'a, (M, T), (), (Vec<Array>, M)> for F 
 where 
-    F: FnMut((HashMap<String, Array>, T)) -> Vec<Array> + 'a,
+    F: FnMut((M, T)) -> Vec<Array> + 'a,
+    M: IntoIterator<Item = (String, Array)> + FromIterator<(String, Array)>,
     T: Clone,
 {
     fn value_and_grad(
         mut self,
         _argument_numbers: (),
-    ) -> impl FnMut((HashMap<String, Array>, T)) -> Result<(Vec<Array>, HashMap<String, Array>), Exception> + 'a {
-        move |(parameters, arrays): (HashMap<String, Array>, T)| -> Result<(Vec<Array>, HashMap<String, Array>), Exception> {
+    ) -> impl FnMut((M, T)) -> Result<(Vec<Array>, M), Exception> + 'a {
+        move |(parameters, arrays): (M, T)| -> Result<(Vec<Array>, M), Exception> {
             let (flattened_keys, flattened_values): (Vec<String>, Vec<Array>) = parameters.into_iter().unzip();
 
             let inner = |flattened_arrays: &[Array]| -> Vec<Array> {

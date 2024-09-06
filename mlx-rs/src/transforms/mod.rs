@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 use smallvec::SmallVec;
@@ -187,120 +187,74 @@ where
     }
 }
 
-pub trait ValueAndGrad<'a, Args, ArgNums, Output> {
-    fn value_and_grad(
-        self,
-        argument_numbers: ArgNums,
-    ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a;
-}
-
-impl<'a, F, ArgNums> ValueAndGrad<'a, &[Array], ArgNums, (Vec<Array>, Vec<Array>)> for F
+pub fn value_and_grad<'a, F>(
+    f: F,
+    argument_numbers: impl IntoOption<&'a [i32]>,
+) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
-    ArgNums: IntoOption<&'a [i32]>,
 {
-    #[allow(refining_impl_trait)]
-    fn value_and_grad(
-        self,
-        argument_numbers: ArgNums,
-    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
-        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
-        let closure = Closure::new(self);
-        move |arrays: &[Array]| {
-            let c_value_and_grad = unsafe {
-                try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_value_and_grad(
-                        closure.as_ptr(),
-                        argument_numbers.as_ptr(),
-                        argument_numbers.len(),
-                    )
-                }
-            };
-    
-            value_and_gradient(c_value_and_grad, arrays.iter())
-        }
+    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+    let closure = Closure::new(f);
+    move |arrays: &[Array]| {
+        let c_value_and_grad = unsafe {
+            try_catch_c_ptr_expr! {
+                mlx_sys::mlx_value_and_grad(
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            }
+        };
+
+        value_and_gradient(c_value_and_grad, arrays.iter())
     }
 }
 
-impl<'a, F, T> ValueAndGrad<'a, (&[Array], T), (), (Vec<Array>, Vec<Array>)> for F
-where
-    F: FnMut((&[Array], T)) -> Vec<Array> + 'a,
-    T: Clone,
-{
-    #[allow(refining_impl_trait)]
-    fn value_and_grad(
-        mut self,
-        _argument_numbers: (),
-    ) -> impl FnMut((&[Array], T)) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
-        move |(parameters, arrays): (&[Array], T)| -> Result<(Vec<Array>, Vec<Array>), Exception> {
-            let inner = |params: &[Array]| -> Vec<Array> { self((params, arrays.clone())) };
-            let argument_numbers = (0..parameters.len() as i32).collect::<Vec<_>>();
-
-            let closure = Closure::new(inner);
-            let c_value_and_grad = unsafe {
-                try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_value_and_grad(
-                        closure.as_ptr(),
-                        argument_numbers.as_ptr(),
-                        argument_numbers.len(),
-                    )
-                }
-            };
-
-            let result = value_and_gradient(c_value_and_grad, parameters.iter())?;
-            Ok(result)
-        }
-    }
-}
-
-impl<'a, F, M, T> ValueAndGrad<'a, (M, T), (), (Vec<Array>, M)> for F 
+pub fn value_and_grad_with_hashmap<'a, F, T>(
+    mut f: F,
+) -> impl FnMut(
+    (HashMap<Rc<str>, &'a Array>, T),
+) -> Result<(Vec<Array>, HashMap<Rc<str>, Array>), Exception> + 'a 
 where 
-    F: FnMut((M, T)) -> Vec<Array> + 'a,
-    M: IntoIterator<Item = (Rc<str>, Array)> + FromIterator<(Rc<str>, Array)>,
+    F: FnMut((HashMap<Rc<str>, &Array>, T)) -> Vec<Array> + 'a,
     T: Clone,
 {
-    fn value_and_grad(
-        mut self,
-        _argument_numbers: (),
-    ) -> impl FnMut((M, T)) -> Result<(Vec<Array>, M), Exception> + 'a {
-        move |(parameters, arrays): (M, T)| -> Result<(Vec<Array>, M), Exception> {
-            let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
+    move |(parameters, arrays): (HashMap<Rc<str>, &Array>, T)| -> Result<(Vec<Array>, HashMap<Rc<str>, Array>), Exception> {
+        let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
 
-            let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
-                let parameters = flattened_keys.iter().cloned().zip(flattened_arrays.into_iter().cloned()).collect();
-                self((parameters, arrays.clone()))
-            };
+        let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
+            let parameters = flattened_keys
+                .iter()
+                .cloned()
+                .zip(flattened_arrays.into_iter())
+                .collect();
+            f((parameters, arrays.clone()))
+        };
 
-            let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
+        let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
 
-            let closure = Closure::new(inner);
-            let c_value_and_grad = unsafe {
-                try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_value_and_grad(
-                        closure.as_ptr(),
-                        argument_numbers.as_ptr(),
-                        argument_numbers.len(),
-                    )
-                }
-            };
+        let closure = Closure::new(inner);
+        let c_value_and_grad = unsafe {
+            try_catch_c_ptr_expr! {
+                mlx_sys::mlx_value_and_grad(
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            }
+        };
 
-            let (value, grads) = value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
+        let (value, grads) = value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
 
-            let grads_map = flattened_keys.iter().cloned().zip(grads.into_iter()).collect();
+        let grads_map = flattened_keys
+            .iter()
+            .cloned()
+            .zip(grads.into_iter())
+            .collect();
 
-            Ok((value, grads_map))
-        }
+        Ok((value, grads_map))
     }
-}
-
-pub fn value_and_grad<'a, F, Args, ArgNums, Output>(
-    f: F,
-    argument_numbers: ArgNums,
-) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
-where
-    F: ValueAndGrad<'a, Args, ArgNums, Output> + 'a,
-{
-    f.value_and_grad(argument_numbers)
 }
 
 pub trait Grad<'a, Args, Output> {
@@ -398,11 +352,15 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::{collections::HashMap, rc::Rc};
+
     use crate::{
         array,
         transforms::{grad, jvp, value_and_grad, vjp},
         Array,
     };
+
+    use super::value_and_grad_with_hashmap;
 
     // The unit tests below are adapted from the mlx c++ codebase
 
@@ -448,9 +406,7 @@ mod tests {
 
     #[test]
     fn test_value_and_grad() {
-        let f = |x: &[Array]| -> Vec<Array> {
-            vec![&x[0] * &x[0]]
-        };
+        let f = |x: &[Array]| -> Vec<Array> { vec![&x[0] * &x[0]] };
 
         let x = array!(1.5f32);
 
@@ -463,18 +419,23 @@ mod tests {
     }
 
     #[test]
-    fn test_value_and_grad2() {
-        let f = |x: &[Array]| {
-            vec![&x[0] * &x[1]]
+    fn test_value_and_grad_hash_map() {
+        let f = |(parameters, _): (HashMap<Rc<str>, &Array>, i32)| -> Vec<Array> {
+            vec![parameters["x"] * parameters["y"]]
         };
 
-        let x = vec![array!(1.0f32), array!(2.0f32)];
+        let x = array!(1.5f32);
+        let y = array!(2.0f32);
+        let parameters = vec![("x", &x), ("y", &y)].into_iter()
+            .map(|(k, v)| (k.into(), v))
+            .collect();
 
-        let mut vg = value_and_grad(f, &[0, 1]);
+        let mut vg = value_and_grad_with_hashmap(f);
 
-        let (value, grad) = vg(&x).unwrap();
+        let (value, grad) = vg((parameters, 0)).unwrap();
 
-        println!("{:?}", value);
-        println!("{:?}", grad);
+        assert_eq!(value[0].item::<f32>(), 1.5 * 2.0);
+        assert_eq!(grad["x"].item::<f32>(), 2.0);
+        assert_eq!(grad["y"].item::<f32>(), 1.5);
     }
 }

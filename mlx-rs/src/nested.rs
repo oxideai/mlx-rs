@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 const DELIMITER: char = '.';
 
@@ -9,14 +9,14 @@ pub enum NestedValue<K, T> {
 }
 
 impl<K, V> NestedValue<K, V> {
-    pub fn flatten(self, prefix: &str) -> HashMap<String, V> 
+    pub fn flatten(self, prefix: &str) -> HashMap<Rc<str>, V> 
     where 
         K: Display,
     {
         match self {
             NestedValue::Value(array) => {
                 let mut map = HashMap::new();
-                map.insert(prefix.to_string(), array);
+                map.insert(prefix.into(), array);
                 map
             }
             NestedValue::Map(entries) => {
@@ -35,7 +35,7 @@ pub struct NestedHashMap<K, V> {
 }
 
 impl<K, V> NestedHashMap<K, V> {
-    pub fn flatten(self) -> HashMap<String, V>
+    pub fn flatten(self) -> HashMap<Rc<str>, V>
     where 
         K: AsRef<str> + Display,
     {

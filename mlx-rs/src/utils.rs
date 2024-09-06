@@ -239,17 +239,6 @@ impl<'a> Closure<'a> {
         }
     }
 
-    pub(crate) fn new_owned<F>(closure: F) -> Self
-    where
-        F: FnMut(Vec<Array>) -> Vec<Array> + 'a,
-    {
-        let c_closure = new_mlx_closure_owned(closure);
-        Self {
-            c_closure,
-            lt_marker: PhantomData,
-        }
-    }
-
     pub(crate) fn as_ptr(&self) -> mlx_closure {
         self.c_closure
     }
@@ -275,23 +264,6 @@ where
 
     unsafe {
         mlx_sys::mlx_closure_new_with_payload(Some(trampoline::<F>), payload, Some(noop_dtor))
-    }
-}
-
-/// Like new_mlx_closure, but the closure takes ownership of the input arrays.
-fn new_mlx_closure_owned<'a, F>(closure: F) -> mlx_sys::mlx_closure
-where
-    F: FnMut(Vec<Array>) -> Vec<Array> + 'a,
-{
-    // Box the closure to keep it on the heap
-    let boxed = Box::new(closure);
-
-    // Create a raw pointer from the Box, transferring ownership to C
-    let raw = Box::into_raw(boxed);
-    let payload = raw as *mut std::ffi::c_void;
-
-    unsafe {
-        mlx_sys::mlx_closure_new_with_payload(Some(trampoline_owned::<F>), payload, Some(noop_dtor))
     }
 }
 
@@ -333,24 +305,6 @@ where
         let result = closure(&arrays);
         // We should probably keep using new_mlx_vector_array here instead of VectorArray
         // since we probably don't want to drop the arrays in the closure
-        new_mlx_vector_array(result)
-    }
-}
-
-/// Like trampline, but takes ownership of the input arrays.
-extern "C" fn trampoline_owned<'a, F>(
-    vector_array: mlx_sys::mlx_vector_array,
-    payload: *mut std::ffi::c_void,
-) -> mlx_sys::mlx_vector_array
-where
-    F: FnMut(Vec<Array>) -> Vec<Array> + 'a,
-{
-    unsafe {
-        let raw_closure: *mut F = payload as *mut _;
-        // Let the box take care of freeing the closure
-        let mut closure = Box::from_raw(raw_closure);
-        let arrays = mlx_vector_array_values(vector_array);
-        let result = closure(arrays);
         new_mlx_vector_array(result)
     }
 }

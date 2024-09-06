@@ -30,11 +30,11 @@ impl<K, V> NestedValue<K, V> {
 }
 
 #[derive(Debug)]
-pub struct NesteHashMap<K, V> {
+pub struct NestedHashMap<K, V> {
     pub entries: HashMap<K, NestedValue<K, V>>,
 }
 
-impl<K, V> NesteHashMap<K, V> {
+impl<K, V> NestedHashMap<K, V> {
     pub fn flatten(self) -> HashMap<String, V>
     where 
         K: AsRef<str> + Display,
@@ -48,7 +48,7 @@ impl<K, V> NesteHashMap<K, V> {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::array;
+    use crate::array;
 
     use super::*;
 
@@ -62,7 +62,7 @@ mod tests {
             map
         });
 
-        let map = NesteHashMap {
+        let map = NestedHashMap {
             entries: {
                 let mut map = HashMap::new();
                 map.insert("first", first_entry);
@@ -93,7 +93,7 @@ mod tests {
             map
         });
 
-        let map = NesteHashMap {
+        let map = NestedHashMap {
             entries: {
                 let mut map = HashMap::new();
                 map.insert("first", first_entry);
@@ -124,7 +124,7 @@ mod tests {
             map
         });
 
-        let map = NesteHashMap {
+        let map = NestedHashMap {
             entries: {
                 let mut map = HashMap::new();
                 map.insert("first", first_entry);

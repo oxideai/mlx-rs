@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 use smallvec::SmallVec;
 
@@ -251,11 +253,10 @@ where
     }
 }
 
-// TODO: can we avoid the clone or have cheaper clone?
 impl<'a, F, M, T> ValueAndGrad<'a, (M, T), (), (Vec<Array>, M)> for F 
 where 
     F: FnMut((M, T)) -> Vec<Array> + 'a,
-    M: IntoIterator<Item = (String, Array)> + FromIterator<(String, Array)>,
+    M: IntoIterator<Item = (Rc<str>, Array)> + FromIterator<(Rc<str>, Array)>,
     T: Clone,
 {
     fn value_and_grad(
@@ -263,7 +264,7 @@ where
         _argument_numbers: (),
     ) -> impl FnMut((M, T)) -> Result<(Vec<Array>, M), Exception> + 'a {
         move |(parameters, arrays): (M, T)| -> Result<(Vec<Array>, M), Exception> {
-            let (flattened_keys, flattened_values): (Vec<String>, Vec<Array>) = parameters.into_iter().unzip();
+            let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
 
             let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
                 let parameters = flattened_keys.iter().cloned().zip(flattened_arrays.into_iter().cloned()).collect();

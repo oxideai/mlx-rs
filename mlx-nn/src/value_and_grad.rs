@@ -1,46 +1,35 @@
 use mlx_rs::{error::Exception, Array};
 
-use crate::{Module, ModuleParameters};
+use crate::{update_flattened_parameters, FlattenedModuleParameters, FlattenedModuleParametersRef, Module};
 
-// pub fn value_and_grad<'a, M, F>(model: M, f: F) -> impl FnMut(&M, &Array, &Array) -> (Array, ModuleParameters)
-// where
-//     M: Module + 'a,
-//     F: FnMut(&M, &Array, &Array) -> Array,
-// {
-//     // let vg = mlx_rs::transforms::value_and_grad(inner, argument_numbers)
-
-//     |model, x, y| {
-//         todo!()
-//     }
-// }
-
-pub trait ValueAndGrad<'a, Args, Output> {
-    fn value_and_grad(self) -> impl FnMut(Args) -> Result<(Output, ModuleParameters), Exception>;
-}
-
-impl<'a, M, F> ValueAndGrad<'a, (&'a M, &'a Array, &'a Array), Array> for (M, F)
-where
+/// Transform the passed function `f(model, args)` to a function that computes the gradients of `f`
+/// with regard to the model's trainable parameters and also its value.
+/// 
+/// TODO: a better name? swift binding uses just `value_and_grad` but the base crate `mlx-rs` also
+/// has one
+pub fn value_and_grad<'a, M, F, Args>(
+    model: &'a mut M,
+    mut f: F,
+) -> impl FnMut((&'a mut M, Args)) -> Result<(Vec<Array>, FlattenedModuleParameters), Exception> + 'a
+where 
     M: Module + 'a,
-    F: FnMut(&M, &Array, &Array) -> Array,
+    F: FnMut(&mut M, Args) -> Vec<Array> + 'a,
+    Args: Clone,
 {
-    fn value_and_grad(
-        self,
-    ) -> impl FnMut((&'a M, &'a Array, &'a Array)) -> Result<(Array, ModuleParameters), Exception>
-    {
-        let (model, f) = self;
+    let inner = move |(parameters, arrays): (FlattenedModuleParametersRef, Args)| -> Vec<Array> {
+        // We either have to clone here or clone inside value_and_grad
+        let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
 
-        move |(model, x, y)| todo!()
+        // Not sure why the swift binding does this. It seems to be the same parameters
+        update_flattened_parameters(model, flattened_parameters);
+        f(model, arrays)
+    };
+
+    let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
+
+    move |(model, arrays)| {
+        let trainable_parameters = model.trainable_parameters().flatten();
+        let (v, g) = vg((trainable_parameters, arrays))?;
+        Ok((v, g))
     }
-}
-
-pub fn value_and_grad<'a, M, F, Args, Output>(
-    model: M,
-    f: F,
-) -> impl FnMut(Args) -> Result<(Output, ModuleParameters), Exception> + 'a
-where
-    (M, F): ValueAndGrad<'a, Args, Output> + 'a,
-    Args: 'a,
-    Output: 'a,
-{
-    (model, f).value_and_grad()
 }

@@ -35,6 +35,19 @@ pub struct NestedHashMap<K, V> {
 }
 
 impl<K, V> NestedHashMap<K, V> {
+    pub fn new() -> Self {
+        Self {
+            entries: HashMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, key: K, value: NestedValue<K, V>) 
+    where 
+        K: Eq + std::hash::Hash,
+    {
+        self.entries.insert(key, value);
+    }
+
     pub fn flatten(self) -> HashMap<Rc<str>, V>
     where 
         K: AsRef<str> + Display,
@@ -139,5 +152,21 @@ mod tests {
         assert_eq!(flattened["first"], &mut array!([1, 2, 3]));
         assert_eq!(flattened["second.a"], &mut array!([4, 5, 6]));
         assert_eq!(flattened["second.b"], &mut array!([7, 8, 9]));
+    }
+
+    #[test]
+    fn test_flatten_empty_nested_hash_map() {
+        let map = NestedHashMap::<&str, i32>::new();
+        let flattened = map.flatten();
+
+        assert!(flattened.is_empty());
+
+        // Insert another empty map
+        let mut map = NestedHashMap::<&str, i32>::new();
+        let empty_map = NestedValue::Map(HashMap::new());
+        map.insert("empty", empty_map);
+
+        let flattened = map.flatten();
+        assert!(flattened.is_empty());
     }
 }

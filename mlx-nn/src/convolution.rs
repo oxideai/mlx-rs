@@ -1,6 +1,5 @@
+use mlx_nn_module::Module;
 use mlx_rs::{error::Exception, ops::{conv1d, zeros}, random::uniform, Array};
-
-use crate::Module;
 
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
 pub struct Conv1d {

@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
+use mlx_macros::ModuleParameters;
+use mlx_nn_module::Module;
 use mlx_rs::{array, error::Exception, ops::log_sum_exp, transforms::compile::compile, Array};
-
-use crate::Module;
 
 /// Applies the element-wise sigmoid logistic sigmoid.
 ///
@@ -259,6 +259,7 @@ pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
+#[derive(ModuleParameters)]
 pub struct Glu {
     /// The axis to split the input tensor. Default to -1 if not provided.
     pub axis: Option<i32>,

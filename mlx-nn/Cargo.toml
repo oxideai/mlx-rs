@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 mlx-rs = { workspace = true }
+mlx-macros = { workspace = true }
+mlx-nn-module = { workspace = true }

@@ -1,11 +1,24 @@
 use std::borrow::Cow;
 
+use mlx_nn_module::{Module, ModuleParameters};
 use mlx_rs::{error::Exception, Array};
-
-use crate::Module;
 
 pub struct Sequential {
     layers: Vec<Box<dyn Module>>,
+}
+
+impl ModuleParameters for Sequential {
+    fn parameters(&self) -> mlx_nn_module::ModuleParamRef<'_> {
+        todo!()
+    }
+
+    fn parameters_mut(&mut self) -> mlx_nn_module::ModuleParamMut<'_> {
+        todo!()
+    }
+
+    fn trainable_parameters(&self) -> mlx_nn_module::ModuleParamRef<'_> {
+        todo!()
+    }
 }
 
 impl Module for Sequential {

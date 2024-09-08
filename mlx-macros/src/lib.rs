@@ -5,6 +5,8 @@ use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, Pat};
 
+mod module_parameters;
+
 #[derive(Debug, FromMeta)]
 enum DeviceType {
     Cpu,
@@ -141,4 +143,18 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(tests)
+}
+
+#[proc_macro_derive(ModuleParameters, attributes(param))]
+pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let module_param_impl = module_parameters::expand_module_parameters(&input).unwrap();
+
+    let output = quote! {
+        const _: () = {
+            extern crate mlx_nn_module as _mlx_nn_module;
+            #module_param_impl
+        };
+    };
+    TokenStream::from(output)
 }

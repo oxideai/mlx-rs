@@ -1,11 +1,14 @@
+pub mod macros;
 pub mod value_and_grad;
 
 mod activation;
 mod convolution;
+mod linear;
 mod sequential;
 
 pub use activation::*;
 pub use convolution::*;
+pub use linear::*;
 pub use sequential::*;
 
 pub mod module {

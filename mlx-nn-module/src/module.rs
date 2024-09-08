@@ -30,8 +30,8 @@ pub trait ModuleParameters {
     }
 }
 
-pub fn update_flattened_parameters<M, I>(module: &mut M, flattened_parameters: I) 
-where 
+pub fn update_flattened_parameters<M, I>(module: &mut M, flattened_parameters: I)
+where
     M: ModuleParameters + ?Sized,
     I: IntoIterator<Item = (Rc<str>, Array)>,
 {

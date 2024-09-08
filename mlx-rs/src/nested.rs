@@ -9,8 +9,8 @@ pub enum NestedValue<K, T> {
 }
 
 impl<K, V> NestedValue<K, V> {
-    pub fn flatten(self, prefix: &str) -> HashMap<Rc<str>, V> 
-    where 
+    pub fn flatten(self, prefix: &str) -> HashMap<Rc<str>, V>
+    where
         K: Display,
     {
         match self {
@@ -19,12 +19,10 @@ impl<K, V> NestedValue<K, V> {
                 map.insert(prefix.into(), array);
                 map
             }
-            NestedValue::Map(entries) => {
-                entries
-                    .into_iter()
-                    .flat_map(|(key, value)| value.flatten(&format!("{}{}{}", prefix, DELIMITER, key)))
-                    .collect()
-            }
+            NestedValue::Map(entries) => entries
+                .into_iter()
+                .flat_map(|(key, value)| value.flatten(&format!("{}{}{}", prefix, DELIMITER, key)))
+                .collect(),
         }
     }
 }
@@ -34,6 +32,12 @@ pub struct NestedHashMap<K, V> {
     pub entries: HashMap<K, NestedValue<K, V>>,
 }
 
+impl<K, V> Default for NestedHashMap<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K, V> NestedHashMap<K, V> {
     pub fn new() -> Self {
         Self {
@@ -41,15 +45,15 @@ impl<K, V> NestedHashMap<K, V> {
         }
     }
 
-    pub fn insert(&mut self, key: K, value: NestedValue<K, V>) 
-    where 
+    pub fn insert(&mut self, key: K, value: NestedValue<K, V>)
+    where
         K: Eq + std::hash::Hash,
     {
         self.entries.insert(key, value);
     }
 
     pub fn flatten(self) -> HashMap<Rc<str>, V>
-    where 
+    where
         K: AsRef<str> + Display,
     {
         self.entries
@@ -92,7 +96,7 @@ mod tests {
         assert_eq!(flattened["second.b"], array!([7, 8, 9]));
     }
 
-    #[test]   
+    #[test]
     fn test_flatten_nested_hash_map_of_borrowed_arrays() {
         let first_entry_content = array!([1, 2, 3]);
         let first_entry = NestedValue::Value(&first_entry_content);

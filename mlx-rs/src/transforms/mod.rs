@@ -142,7 +142,7 @@ where
     Ok((v1, v2))
 }
 
-pub fn value_and_gradient(
+fn value_and_gradient(
     value_and_grad: mlx_closure_value_and_grad,
     arrays: impl Iterator<Item = impl AsRef<Array>>,
 ) -> Result<(Vec<Array>, Vec<Array>), Exception> {
@@ -211,23 +211,23 @@ where
     }
 }
 
+pub type HashMapGrad = HashMap<Rc<str>, Array>;
+
 pub fn value_and_grad_with_hashmap<'a, F, T>(
     mut f: F,
-) -> impl FnMut(
-    (HashMap<Rc<str>, &'a Array>, T),
-) -> Result<(Vec<Array>, HashMap<Rc<str>, Array>), Exception> + 'a 
-where 
+) -> impl FnMut((HashMap<Rc<str>, &'a Array>, T)) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+where
     F: FnMut((HashMap<Rc<str>, &Array>, T)) -> Vec<Array> + 'a,
     T: Clone,
 {
-    move |(parameters, arrays): (HashMap<Rc<str>, &Array>, T)| -> Result<(Vec<Array>, HashMap<Rc<str>, Array>), Exception> {
+    move |(parameters, arrays): (HashMap<Rc<str>, &Array>, T)| -> Result<(Vec<Array>, HashMapGrad), Exception> {
         let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
 
         let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
             let parameters = flattened_keys
                 .iter()
                 .cloned()
-                .zip(flattened_arrays.into_iter())
+                .zip(flattened_arrays)
                 .collect();
             f((parameters, arrays.clone()))
         };
@@ -250,7 +250,7 @@ where
         let grads_map = flattened_keys
             .iter()
             .cloned()
-            .zip(grads.into_iter())
+            .zip(grads)
             .collect();
 
         Ok((value, grads_map))
@@ -426,7 +426,8 @@ mod tests {
 
         let x = array!(1.5f32);
         let y = array!(2.0f32);
-        let parameters = vec![("x", &x), ("y", &y)].into_iter()
+        let parameters = vec![("x", &x), ("y", &y)]
+            .into_iter()
             .map(|(k, v)| (k.into(), v))
             .collect();
 

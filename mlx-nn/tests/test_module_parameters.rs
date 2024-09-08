@@ -1,9 +1,9 @@
 use mlx_macros::ModuleParameters;
+use mlx_nn_module::{ModuleParameters, Param, Parameter};
 use mlx_rs::{array, Array};
-use mlx_nn_module::{Param, ModuleParameters, Parameter};
 
 #[derive(ModuleParameters)]
-pub struct TestModule {
+pub struct StructModule {
     #[param]
     a: Param<Array>,
 
@@ -14,9 +14,12 @@ pub struct TestModule {
     c: Param<Option<Array>>,
 }
 
+#[derive(ModuleParameters)]
+pub struct UnitStructModule;
+
 #[test]
 fn test_module_parameters() {
-    let m = TestModule {
+    let m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(None),
@@ -27,7 +30,7 @@ fn test_module_parameters() {
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
 
-    let m = TestModule {
+    let m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(Some(array!(3.0))),
@@ -42,7 +45,7 @@ fn test_module_parameters() {
 
 #[test]
 fn test_module_parameters_mut() {
-    let mut m = TestModule {
+    let mut m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(None),
@@ -53,7 +56,7 @@ fn test_module_parameters_mut() {
     assert_eq!(flattened["a"], &mut array!(1.0));
     assert_eq!(flattened["b"], &mut array!(2.0));
 
-    let mut m = TestModule {
+    let mut m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(Some(array!(3.0))),
@@ -68,7 +71,7 @@ fn test_module_parameters_mut() {
 
 #[test]
 fn test_module_trainable_parameters_all_trainable() {
-    let m = TestModule {
+    let m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(None),
@@ -79,7 +82,7 @@ fn test_module_trainable_parameters_all_trainable() {
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
 
-    let m = TestModule {
+    let m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(Some(array!(3.0))),
@@ -94,7 +97,7 @@ fn test_module_trainable_parameters_all_trainable() {
 
 #[test]
 fn test_module_trainable_parameters_partial_freeze() {
-    let mut m = TestModule {
+    let mut m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
         c: Param::new(None),
@@ -123,7 +126,7 @@ fn test_module_trainable_parameters_partial_freeze() {
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Set the optional parameter to Some but still frozen
-    m.c.inner = Some(array!(3.0));
+    m.c.value = Some(array!(3.0));
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 2);
@@ -138,4 +141,28 @@ fn test_module_trainable_parameters_partial_freeze() {
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
     assert_eq!(flattened["c"], &array!(3.0));
+}
+
+#[test]
+fn test_unit_struct_module_parameters() {
+    let m = UnitStructModule;
+
+    let flattened = m.parameters().flatten();
+    assert_eq!(flattened.len(), 0);
+}
+
+#[test]
+fn test_unit_struct_module_parameters_mut() {
+    let mut m = UnitStructModule;
+
+    let flattened = m.parameters_mut().flatten();
+    assert_eq!(flattened.len(), 0);
+}
+
+#[test]
+fn test_unit_struct_module_trainable_parameters() {
+    let m = UnitStructModule;
+
+    let flattened = m.trainable_parameters().flatten();
+    assert_eq!(flattened.len(), 0);
 }

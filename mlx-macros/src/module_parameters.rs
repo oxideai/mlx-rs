@@ -24,17 +24,19 @@ fn expand_module_parameters_for_struct(
     let fields = match &data.fields {
         syn::Fields::Named(fields) => {
             // filter out fields with #[param]
-            fields.named.iter().filter(|field| {
-                field.attrs.iter().any(|attr| {
-                    attr.path().is_ident("param")
-                })
-            }).collect()
-        },
+            fields
+                .named
+                .iter()
+                .filter(|field| field.attrs.iter().any(|attr| attr.path().is_ident("param")))
+                .collect()
+        }
         syn::Fields::Unit => vec![],
-        syn::Fields::Unnamed(_) => return Err(syn::Error::new_spanned(
-            ident,
-            "ModuleParameters cannot be derived for structs with unnamed fields",
-        )),
+        syn::Fields::Unnamed(_) => {
+            return Err(syn::Error::new_spanned(
+                ident,
+                "ModuleParameters cannot be derived for structs with unnamed fields",
+            ))
+        }
     };
 
     Ok(impl_module_parameters_for_struct(ident, generics, fields))

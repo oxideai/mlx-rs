@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use mlx_macros::ModuleParameters;
-use mlx_nn_module::Module;
+use mlx_nn_module::{Module, Param};
 use mlx_rs::{array, error::Exception, ops::log_sum_exp, transforms::compile::compile, Array};
 
 /// Applies the element-wise sigmoid logistic sigmoid.
@@ -304,6 +304,7 @@ impl Module for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Sigmoid;
 
 // We implement this just for the sake of consistency
@@ -336,6 +337,7 @@ impl Module for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
+#[derive(ModuleParameters)]
 pub struct Mish;
 
 impl Default for Mish {
@@ -363,6 +365,7 @@ impl Module for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Relu;
 
 impl Default for Relu {
@@ -390,6 +393,7 @@ impl Module for Relu {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct LeakyReLU {
     /// The negative slope. Default to 0.01 if not provided.
     pub neg_slope: Option<f32>,
@@ -426,6 +430,7 @@ impl Module for LeakyReLU {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
+#[derive(ModuleParameters)]
 pub struct Relu6;
 
 impl Default for Relu6 {
@@ -453,6 +458,7 @@ impl Module for Relu6 {
 /// ```rust, ignore
 /// softmax(&x, None, None)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Softmax {
     pub axis: Option<i32>,
 }
@@ -490,6 +496,7 @@ impl Module for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Softplus;
 
 impl Default for Softplus {
@@ -517,6 +524,7 @@ impl Module for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Softsign;
 
 impl Default for Softsign {
@@ -545,6 +553,7 @@ impl Module for Softsign {
 /// maximum(x, 0.0).unwrap()
 ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Celu {
     pub alpha: Option<f32>,
 }
@@ -579,6 +588,7 @@ impl Module for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Silu;
 
 impl Default for Silu {
@@ -606,6 +616,7 @@ impl Module for Silu {
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
+#[derive(ModuleParameters)]
 pub struct LogSoftmax {
     pub axis: Option<i32>,
 }
@@ -640,6 +651,7 @@ impl Module for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct LogSigmoid;
 
 impl Default for LogSigmoid {
@@ -667,13 +679,17 @@ impl Module for LogSigmoid {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Prelu {
-    pub alpha: Array,
+    #[param]
+    pub alpha: Param<Array>, // TODO: double check if this is trainable
 }
 
 impl Prelu {
     pub fn new(alpha: Array) -> Self {
-        Self { alpha }
+        Self {
+            alpha: Param::new(alpha),
+        }
     }
 }
 
@@ -704,6 +720,7 @@ pub enum GeluApprox {
 /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
 /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
 /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
+#[derive(ModuleParameters)]
 pub struct Gelu {
     pub approximate: GeluApprox,
 }
@@ -738,6 +755,7 @@ impl Module for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
+#[derive(ModuleParameters)]
 pub struct Tanh;
 
 impl Default for Tanh {
@@ -765,6 +783,7 @@ impl Module for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
+#[derive(ModuleParameters)]
 pub struct HardSwish;
 
 impl Default for HardSwish {
@@ -795,6 +814,7 @@ impl Module for HardSwish {
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
+#[derive(ModuleParameters)]
 pub struct Step {
     pub threshold: Option<f32>,
 }
@@ -829,6 +849,7 @@ impl Module for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
+#[derive(ModuleParameters)]
 pub struct Selu;
 
 impl Default for Selu {

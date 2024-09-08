@@ -347,9 +347,9 @@ impl Array {
     ///
     /// ```rust
     /// use num_traits::Pow;
-    /// use mlx_rs::Array;
-    /// let a = Array::from_slice(&[0., 1., 2., 3.], &[4]).sqrt();
-    /// let b = Array::from_slice(&[0., 1., 2., 3.], &[4]).power(0.5).unwrap();
+    /// use mlx_rs::array;
+    /// let a = array!([0., 1., 2., 3.]).sqrt();
+    /// let b = array!([0., 1., 2., 3.]).power(array!(0.5)).unwrap();
     /// let mut c = a.all_close(&b, None, None, None).unwrap();
     ///
     /// let c_data: &[bool] = c.as_slice();

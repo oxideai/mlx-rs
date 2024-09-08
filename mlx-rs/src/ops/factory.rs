@@ -116,9 +116,9 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice, array};
     /// //  create [5, 4] array filled with 7
-    /// let r = Array::full_device::<f32>(&[5, 4], 7.0f32, StreamOrDevice::default()).unwrap();
+    /// let r = Array::full_device::<f32>(&[5, 4], array!(7.0f32), StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
     pub fn full_device<T: ArrayElement>(

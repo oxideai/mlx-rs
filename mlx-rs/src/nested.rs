@@ -32,6 +32,12 @@ pub struct NestedHashMap<K, V> {
     pub entries: HashMap<K, NestedValue<K, V>>,
 }
 
+impl<K, V> From<NestedHashMap<K, V>> for NestedValue<K, V> {
+    fn from(map: NestedHashMap<K, V>) -> Self {
+        NestedValue::Map(map.entries)
+    }
+}
+
 impl<K, V> Default for NestedHashMap<K, V> {
     fn default() -> Self {
         Self::new()

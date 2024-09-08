@@ -166,3 +166,48 @@ fn test_unit_struct_module_trainable_parameters() {
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 0);
 }
+
+#[derive(ModuleParameters)]
+struct StructModuleWithNested {
+    #[param]
+    a: Param<Array>,
+
+    #[param]
+    nested: Param<StructModule>,
+}
+
+#[test]
+fn test_nested_module_parameters() {
+    let m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: Param::new(StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        }),
+    };
+
+    let flattened = m.parameters().flatten();
+    assert_eq!(flattened.len(), 3);
+    assert_eq!(flattened["a"], &array!(1.0));
+    assert_eq!(flattened["nested.a"], &array!(2.0));
+    assert_eq!(flattened["nested.b"], &array!(3.0));
+}
+
+#[test]
+fn test_nested_module_parameters_mut() {
+    let mut m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: Param::new(StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        }),
+    };
+
+    let flattened = m.parameters_mut().flatten();
+    assert_eq!(flattened.len(), 3);
+    assert_eq!(flattened["a"], &mut array!(1.0));
+    assert_eq!(flattened["nested.a"], &mut array!(2.0));
+    assert_eq!(flattened["nested.b"], &mut array!(3.0));
+}

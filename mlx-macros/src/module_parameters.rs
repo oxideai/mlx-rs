@@ -66,8 +66,8 @@ fn impl_module_parameters_for_struct(
             fn trainable_parameters(&self) -> _mlx_nn_module::ModuleParamRef<'_> {
                 let mut parameters = ::mlx_rs::nested::NestedHashMap::new();
                 #(
-                    if !_mlx_nn_module::Parameter::is_frozen(&self.#field_names) {
-                        parameters.insert(stringify!(#field_names), _mlx_nn_module::Parameter::as_nested_value(&self.#field_names));
+                    if let Some(field) = _mlx_nn_module::Parameter::as_trainable_nested_value(&self.#field_names) {
+                        parameters.insert(stringify!(#field_names), field);
                     }
                 )*
                 parameters

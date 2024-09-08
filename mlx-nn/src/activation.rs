@@ -26,7 +26,7 @@ pub fn sigmoid(x: impl AsRef<Array>) -> Array {
 /// maximum(x, 0)
 /// ```
 pub fn relu(x: impl AsRef<Array>) -> Result<Array, Exception> {
-    mlx_rs::ops::maximum(x.as_ref(), 0)
+    mlx_rs::ops::maximum(x.as_ref(), &array!(0))
 }
 
 /// Applies the Leaky Rectified Linear Unit.
@@ -994,4 +994,16 @@ fn compiled_hard_swish(x: &Array) -> Result<Array, Exception> {
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_relu() {
+        let x = array!([-1.0, 0.0, 1.0]);
+        let y = relu(&x).unwrap();
+        assert_eq!(y, array!([0.0, 0.0, 1.0]));
+    }
 }

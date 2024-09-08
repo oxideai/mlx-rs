@@ -1,0 +1,33 @@
+use mlx_macros::ModuleParameters;
+use mlx_nn::{Linear, WithBias};
+use mlx_nn_module::{Module, Param};
+use mlx_rs::Array;
+
+
+#[derive(Debug, Clone, ModuleParameters)]
+struct M {
+    #[param]
+    linear: Param<Linear>
+}
+
+impl M {
+    pub fn new() -> Self {
+        Self {
+            linear: Param::new(Linear::new(5, 5, WithBias::default()).unwrap())
+        }
+    }
+}
+
+impl Module for M {
+    fn forward(&self, x: &Array) -> Result<Array, mlx_rs::error::Exception> {
+        Ok(self.linear.forward(x)?)
+    }
+}
+
+#[test]
+fn test_nested_module() {
+    let m = M::new();
+    let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[1, 5], None).unwrap();
+    let y = m.forward(&x).unwrap();
+    assert_ne!(y.sum(None, None).unwrap(), mlx_rs::array!(0.0));
+}

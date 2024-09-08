@@ -213,14 +213,15 @@ where
 
 pub type HashMapGrad = HashMap<Rc<str>, Array>;
 
-pub fn value_and_grad_with_hashmap<'a, F, T>(
+pub fn value_and_grad_with_hashmap<'a, F, T, Arr>(
     mut f: F,
-) -> impl FnMut((HashMap<Rc<str>, &'a Array>, T)) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+) -> impl FnMut(HashMap<Rc<str>, Arr>, T) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
 where
-    F: FnMut((HashMap<Rc<str>, &Array>, T)) -> Vec<Array> + 'a,
+    F: FnMut(HashMap<Rc<str>, &Array>, T) -> Vec<Array> + 'a,
+    Arr: AsRef<Array>,
     T: Clone,
 {
-    move |(parameters, arrays): (HashMap<Rc<str>, &Array>, T)| -> Result<(Vec<Array>, HashMapGrad), Exception> {
+    move |parameters: HashMap<Rc<str>, Arr>, arrays: T| -> Result<(Vec<Array>, HashMapGrad), Exception> {
         let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
 
         let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
@@ -229,7 +230,7 @@ where
                 .cloned()
                 .zip(flattened_arrays)
                 .collect();
-            f((parameters, arrays.clone()))
+            f(parameters, arrays.clone())
         };
 
         let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
@@ -420,7 +421,7 @@ mod tests {
 
     #[test]
     fn test_value_and_grad_hash_map() {
-        let f = |(parameters, _): (HashMap<Rc<str>, &Array>, i32)| -> Vec<Array> {
+        let f = |parameters: HashMap<Rc<str>, &Array>, _: i32| -> Vec<Array> {
             vec![parameters["x"] * parameters["y"]]
         };
 
@@ -433,7 +434,7 @@ mod tests {
 
         let mut vg = value_and_grad_with_hashmap(f);
 
-        let (value, grad) = vg((parameters, 0)).unwrap();
+        let (value, grad) = vg(parameters, 0).unwrap();
 
         assert_eq!(value[0].item::<f32>(), 1.5 * 2.0);
         assert_eq!(grad["x"].item::<f32>(), 2.0);

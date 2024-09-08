@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 const DELIMITER: char = '.';
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum NestedValue<K, T> {
     Value(T),
     Map(HashMap<K, NestedValue<K, T>>),
@@ -27,7 +27,7 @@ impl<K, V> NestedValue<K, V> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NestedHashMap<K, V> {
     pub entries: HashMap<K, NestedValue<K, V>>,
 }

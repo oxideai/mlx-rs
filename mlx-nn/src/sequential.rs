@@ -1,31 +1,20 @@
 use std::borrow::Cow;
 
-use mlx_nn_module::{Module, ModuleParameters};
+use mlx_macros::ModuleParameters;
+use mlx_nn_module::{Module, Param};
 use mlx_rs::{error::Exception, Array};
 
+#[derive(ModuleParameters)]
 pub struct Sequential {
-    layers: Vec<Box<dyn Module>>,
-}
-
-impl ModuleParameters for Sequential {
-    fn parameters(&self) -> mlx_nn_module::ModuleParamRef<'_> {
-        todo!()
-    }
-
-    fn parameters_mut(&mut self) -> mlx_nn_module::ModuleParamMut<'_> {
-        todo!()
-    }
-
-    fn trainable_parameters(&self) -> mlx_nn_module::ModuleParamRef<'_> {
-        todo!()
-    }
+    #[param]
+    layers: Param<Vec<Box<dyn Module>>>,
 }
 
 impl Module for Sequential {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         let mut x = Cow::Borrowed(x);
 
-        for layer in &self.layers {
+        for layer in &self.layers.value {
             x = Cow::Owned(layer.forward(x.as_ref())?);
         }
 
@@ -44,7 +33,9 @@ impl Default for Sequential {
 
 impl Sequential {
     pub fn new() -> Self {
-        Self { layers: Vec::new() }
+        Self {
+            layers: Param::new(Vec::new()),
+        }
     }
 
     pub fn append(mut self, layer: impl Module + 'static) -> Self {

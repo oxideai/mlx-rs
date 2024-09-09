@@ -43,3 +43,52 @@ where
         }
     }
 }
+
+impl<T> ModuleParameters for Box<T>
+where
+    T: ModuleParameters + ?Sized,
+{
+    fn parameters(&self) -> ModuleParamRef<'_> {
+        self.as_ref().parameters()
+    }
+
+    fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
+        self.as_mut().parameters_mut()
+    }
+
+    fn trainable_parameters(&self) -> ModuleParamRef<'_> {
+        self.as_ref().trainable_parameters()
+    }
+}
+
+impl<T> ModuleParameters for Vec<T>
+where
+    T: ModuleParameters,
+{
+    fn parameters(&self) -> ModuleParamRef<'_> {
+        let mut parameters = NestedHashMap::new();
+        self.iter().for_each(|module| {
+            let module_parameters = module.parameters();
+            parameters.entries.extend(module_parameters.entries);
+        });
+        parameters
+    }
+
+    fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
+        let mut parameters = NestedHashMap::new();
+        self.iter_mut().for_each(|module| {
+            let module_parameters = module.parameters_mut();
+            parameters.entries.extend(module_parameters.entries);
+        });
+        parameters
+    }
+
+    fn trainable_parameters(&self) -> ModuleParamRef<'_> {
+        let mut parameters = NestedHashMap::new();
+        self.iter().for_each(|module| {
+            let module_parameters = module.trainable_parameters();
+            parameters.entries.extend(module_parameters.entries);
+        });
+        parameters
+    }
+}

@@ -169,9 +169,6 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///     nested: Param<Inner>,
 /// 
 ///     #[param]
-///     vec: Param<Vec<Array>>,
-/// 
-///     #[param]
 ///     vec_nested: Param<Vec<Inner>>,
 /// 
 ///     #[param]

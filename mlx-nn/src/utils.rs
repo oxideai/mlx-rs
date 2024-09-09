@@ -37,3 +37,61 @@ impl WithBias {
         }
     }
 }
+
+// pub struct IntOrPair {
+//     pair: (i32, i32)
+// }
+
+// impl From<i32> for IntOrPair {
+//     fn from(value: i32) -> Self {
+//         Self {
+//             pair: (value, value)
+//         }
+//     }
+// }
+
+// impl From<(i32, i32)> for IntOrPair {
+//     fn from(value: (i32, i32)) -> Self {
+//         Self {
+//             pair: value
+//         }
+//     }
+// }
+
+// impl From<IntOrPair> for (i32, i32) {
+//     fn from(value: IntOrPair) -> Self {
+//         value.pair
+//     }
+// }
+
+pub trait IntOrPair {
+    fn into_pair(self) -> (i32, i32);
+}
+
+impl IntOrPair for i32 {
+    fn into_pair(self) -> (i32, i32) {
+        (self, self)
+    }
+}
+
+impl IntOrPair for (i32, i32) {
+    fn into_pair(self) -> (i32, i32) {
+        self
+    }
+}
+
+pub trait IntOrTriple {
+    fn into_triple(self) -> (i32, i32, i32);
+}
+
+impl IntOrTriple for i32 {
+    fn into_triple(self) -> (i32, i32, i32) {
+        (self, self, self)
+    }
+}
+
+impl IntOrTriple for (i32, i32, i32) {
+    fn into_triple(self) -> (i32, i32, i32) {
+        self
+    }
+}

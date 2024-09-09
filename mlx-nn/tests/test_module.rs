@@ -1,26 +1,25 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn::{Linear, WithBias};
+use mlx_nn::Linear;
 use mlx_nn_module::{Module, Param};
 use mlx_rs::Array;
-
 
 #[derive(Debug, Clone, ModuleParameters)]
 struct M {
     #[param]
-    linear: Param<Linear>
+    linear: Param<Linear>,
 }
 
 impl M {
     pub fn new() -> Self {
         Self {
-            linear: Param::new(Linear::new(5, 5, WithBias::default()).unwrap())
+            linear: Param::new(Linear::new(5, 5).unwrap()),
         }
     }
 }
 
 impl Module for M {
     fn forward(&self, x: &Array) -> Result<Array, mlx_rs::error::Exception> {
-        Ok(self.linear.forward(x)?)
+        self.linear.forward(x)
     }
 }
 

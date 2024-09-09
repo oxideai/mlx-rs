@@ -221,7 +221,9 @@ where
     Arr: AsRef<Array>,
     T: Clone,
 {
-    move |parameters: HashMap<Rc<str>, Arr>, arrays: T| -> Result<(Vec<Array>, HashMapGrad), Exception> {
+    move |parameters: HashMap<Rc<str>, Arr>,
+          arrays: T|
+          -> Result<(Vec<Array>, HashMapGrad), Exception> {
         let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
 
         let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
@@ -248,11 +250,7 @@ where
 
         let (value, grads) = value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
 
-        let grads_map = flattened_keys
-            .iter()
-            .cloned()
-            .zip(grads)
-            .collect();
+        let grads_map = flattened_keys.iter().cloned().zip(grads).collect();
 
         Ok((value, grads_map))
     }

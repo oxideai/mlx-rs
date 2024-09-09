@@ -126,16 +126,13 @@ impl Parameter for Param<Option<Array>> {
     fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
         match self.is_frozen {
             true => None,
-            false => match &self.value {
-                Some(array) => Some(NestedValue::Value(array)),
-                None => None,
-            },
+            false => self.value.as_ref().map(NestedValue::Value),
         }
     }
 }
 
-impl<T> Parameter for Param<T> 
-where 
+impl<T> Parameter for Param<T>
+where
     T: ModuleParameters,
 {
     fn freeze(&mut self) {

@@ -1,4 +1,5 @@
 pub mod macros;
+pub mod utils;
 pub mod value_and_grad;
 
 mod activation;

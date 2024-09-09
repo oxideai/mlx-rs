@@ -282,7 +282,7 @@ impl Glu {
     }
 
     /// Sets the value of the `axis` field.
-    pub fn axis(mut self, axis: impl Into<Option<i32>>) -> Self {
+    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
         self.axis = axis.into();
         self
     }
@@ -411,7 +411,7 @@ impl LeakyReLU {
     }
 
     /// Sets the value of the `neg_slope`
-    pub fn neg_slope(mut self, neg_slope: impl Into<Option<f32>>) -> Self {
+    pub fn with_neg_slope(mut self, neg_slope: impl Into<Option<f32>>) -> Self {
         self.neg_slope = neg_slope.into();
         self
     }
@@ -474,7 +474,7 @@ impl Softmax {
         Self { axis: None }
     }
 
-    pub fn axis(mut self, axis: impl Into<Option<i32>>) -> Self {
+    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
         self.axis = axis.into();
         self
     }
@@ -569,7 +569,7 @@ impl Celu {
         Self { alpha: None }
     }
 
-    pub fn alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
+    pub fn with_alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
         self.alpha = alpha.into();
         self
     }
@@ -632,7 +632,7 @@ impl LogSoftmax {
         Self { axis: None }
     }
 
-    pub fn axis(mut self, axis: impl Into<Option<i32>>) -> Self {
+    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
         self.axis = axis.into();
         self
     }
@@ -830,7 +830,7 @@ impl Step {
         Self { threshold: None }
     }
 
-    pub fn threshold(mut self, threshold: impl Into<Option<f32>>) -> Self {
+    pub fn with_threshold(mut self, threshold: impl Into<Option<f32>>) -> Self {
         self.threshold = threshold.into();
         self
     }

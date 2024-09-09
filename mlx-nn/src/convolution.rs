@@ -7,11 +7,11 @@ use mlx_rs::{
     Array,
 };
 
+use crate::utils::WithBias;
+
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
 #[derive(ModuleParameters)]
 pub struct Conv1d {
-    output_channels: i32,
-
     #[param]
     pub weight: Param<Array>,
     #[param]
@@ -40,20 +40,23 @@ impl Conv1d {
             &[output_channels, kernel_size, input_channels],
             None,
         )?;
+        let bias = WithBias::default()
+            .map_into_option(|| zeros::<f32>(&[output_channels]))
+            .transpose()?;
 
-        Ok(Self {
-            output_channels,
+        let conv1d = Self {
             weight: Param::new(weight),
-            bias: Param::new(None),
+            bias: Param::new(bias),
             padding: None,
             stride: None,
-        })
+        };
+        conv1d.with_bias(WithBias::default())
     }
 
     /// Sets the stride when applying the filter
     ///
     /// Default to 1 if not specified (see [`conv1d`]).
-    pub fn stride(mut self, stride: impl Into<Option<i32>>) -> Self {
+    pub fn with_stride(mut self, stride: impl Into<Option<i32>>) -> Self {
         self.stride = stride.into();
         self
     }
@@ -61,18 +64,18 @@ impl Conv1d {
     /// Sets the padding when applying the filter
     ///
     /// Default to 0 if not specified (see [`conv1d`]).
-    pub fn padding(mut self, padding: impl Into<Option<i32>>) -> Self {
+    pub fn with_padding(mut self, padding: impl Into<Option<i32>>) -> Self {
         self.padding = padding.into();
         self
     }
 
-    /// If `true`, add  a learnable bias to the output
-    pub fn bias(mut self, bias: bool) -> Result<Self, Exception> {
-        if bias {
-            self.bias.value = Some(zeros::<f32>(&[self.output_channels])?);
-        } else {
-            self.bias.value = None;
-        }
+    /// If `true`, add a learnable bias to the output
+    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
+        let bias = with_bias
+            .into()
+            .map_into_option(|| zeros::<f32>(&[self.weight.shape()[0]]))
+            .transpose()?;
+        self.bias.value = bias;
         Ok(self)
     }
 }

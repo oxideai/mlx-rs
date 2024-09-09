@@ -148,36 +148,36 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 /// Derive the `ModuleParameters` trait for a struct. Mark a field with `#[param]` attribute to
 /// include it in the parameters. The field type must implement the `Parameter` trait defined in
 /// `mlx-nn-module` crate.
-/// 
+///
 /// Make sure to include `mlx-nn-module` as a dependency in your `Cargo.toml`.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust, ignore
 /// use mlx_macros::ModuleParameters;
 /// use mlx_nn_module::{ModuleParameters, Param};
-/// 
+///
 /// #[derive(ModuleParameters)]
 /// struct Example {
 ///     #[param]
 ///     regular: Param<Array>,
-/// 
+///
 ///     #[param]
 ///     optional: Param<Option<Array>>,
-/// 
+///
 ///     #[param]
 ///     nested: Param<Inner>,
-/// 
+///
 ///     #[param]
 ///     vec_nested: Param<Vec<Inner>>,
-/// 
+///
 ///     #[param]
 ///     trait_object: Param<Box<dyn Module>>,
-/// 
+///
 ///     #[param]
 ///     trait_object_vec: Param<Vec<Box<dyn Module>>>,
 /// }
-/// 
+///
 /// #[derive(ModuleParameters)]
 /// struct Inner {
 ///     #[param]

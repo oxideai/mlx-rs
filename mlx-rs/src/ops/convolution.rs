@@ -275,7 +275,14 @@ mod tests {
         .unwrap();
 
         // Expected result is the convolution of a 2x2x2 filter over a 2x2x2 input with valid padding, resulting in a single output value
-        let expected_output = 1.0 * 1.0 + 2.0 * 0.0 + 3.0 * 0.0 + 4.0 * 1.0 + 5.0 * 0.0 + 6.0 * 1.0 + 7.0 * 1.0 + 8.0 * 0.0; // = 1*1 + 4*1 + 6*1 + 7*1 = 18
+        let expected_output = 1.0 * 1.0
+            + 2.0 * 0.0
+            + 3.0 * 0.0
+            + 4.0 * 1.0
+            + 5.0 * 0.0
+            + 6.0 * 1.0
+            + 7.0 * 1.0
+            + 8.0 * 0.0; // = 1*1 + 4*1 + 6*1 + 7*1 = 18
         assert_eq!(result.as_slice::<f32>(), &[expected_output]);
     }
 

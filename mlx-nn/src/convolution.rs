@@ -91,7 +91,7 @@ impl Module for Conv1d {
             None,
         )?;
         if let Some(bias) = &self.bias.value {
-            y = y + bias;
+            y += bias;
         }
         Ok(y)
     }
@@ -117,14 +117,17 @@ impl Conv2d {
         kernel_size: impl IntOrPair,
     ) -> Result<Self, Exception> {
         let kernel_size = kernel_size.into_pair();
-        let scale = f32::sqrt(
-            1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32,
-        );
+        let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
 
         let weight = uniform::<_, f32>(
             -scale,
             scale,
-            &[output_channels, kernel_size.0, kernel_size.1, input_channels],
+            &[
+                output_channels,
+                kernel_size.0,
+                kernel_size.1,
+                input_channels,
+            ],
             None,
         )?;
         let default_bias = WithBias::default()
@@ -175,7 +178,7 @@ impl Module for Conv2d {
             None,
         )?;
         if let Some(bias) = &self.bias.value {
-            y = y + bias;
+            y += bias;
         }
         Ok(y)
     }
@@ -208,7 +211,13 @@ impl Conv3d {
         let weight = uniform::<_, f32>(
             -scale,
             scale,
-            &[output_channels, kernel_size.0, kernel_size.1, kernel_size.2, input_channels],
+            &[
+                output_channels,
+                kernel_size.0,
+                kernel_size.1,
+                kernel_size.2,
+                input_channels,
+            ],
             None,
         )?;
         let default_bias = WithBias::default()
@@ -259,7 +268,7 @@ impl Module for Conv3d {
             None,
         )?;
         if let Some(bias) = &self.bias.value {
-            y = y + bias;
+            y += bias;
         }
         Ok(y)
     }

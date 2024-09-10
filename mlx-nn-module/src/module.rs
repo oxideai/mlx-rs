@@ -1,35 +1,64 @@
+//! Types and traits for neural network modules.
+
 use std::{collections::HashMap, rc::Rc};
 
 use mlx_rs::{error::Exception, nested::NestedHashMap, Array};
 
-/// Type placeholder for module parameters.
+/// Type alias for owned module parameters.
 pub type ModuleParam = NestedHashMap<&'static str, Array>;
+
+/// Type alias for borrowed module parameters.
 pub type ModuleParamRef<'a> = NestedHashMap<&'static str, &'a Array>;
+
+/// Type alias for mutably borrowed module parameters.
 pub type ModuleParamMut<'a> = NestedHashMap<&'static str, &'a mut Array>;
 
+/// Type alias for flattened module parameters.
 pub type FlattenedModuleParam = HashMap<Rc<str>, Array>;
+
+/// Type alias for borrowed flattened module parameters.
 pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
+
+/// Type alias for mutably borrowed flattened module parameters.
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
+/// Trait for a neural network module.
 pub trait Module: ModuleParameters {
+    /// Forward pass of the module.
     fn forward(&self, x: &Array) -> Result<Array, Exception>;
+
+    /// Set whether the module is in training mode.
+    ///
+    /// Training mode only applies to certain layers. For example, dropout layers applies a random
+    /// mask in training mode, but is the identity in evaluation mode. Implementations of nested
+    /// modules should propagate the training mode to all child modules.
+    fn train(&mut self, mode: bool);
 }
 
+/// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {
+    /// Get references to the module parameters.
     fn parameters(&self) -> ModuleParamRef<'_>;
+
+    /// Get mutable references to the module parameters.
     fn parameters_mut(&mut self) -> ModuleParamMut<'_>;
+
+    /// Get references to the trainable parameters. A parameter is trainable if it is NOT frozen.
     fn trainable_parameters(&self) -> ModuleParamRef<'_>;
 
+    /// Update the module parameters.
     fn update(&mut self, parameters: ModuleParam) {
         let flattened_parameters = parameters.flatten();
         update_flattened_parameters(self, flattened_parameters)
     }
 
+    /// Update the module parameters from a flattened representation.
     fn update_flattened(&mut self, flattened_parameters: FlattenedModuleParam) {
         update_flattened_parameters(self, flattened_parameters)
     }
 }
 
+/// Update the module parameters from an iterator of flattened parameters.
 pub fn update_flattened_parameters<M, I>(module: &mut M, flattened_parameters: I)
 where
     M: ModuleParameters + ?Sized,

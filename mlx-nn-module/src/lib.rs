@@ -1,6 +1,10 @@
-//! Trait definitions for mlx-nn
+#![deny(missing_docs, missing_debug_implementations)]
+
+//! This crate defines the traits for neural network modules and parameters.
 //!
-//! This is a separate crate from `mlx-nn` to ease the iplementation of the `ModuleParameters` macro
+//! This is to separate the trait definitions from the implementations, which are in the `mlx-nn`
+//! crate. This also allows using the `mlx_macros::ModuleParameters` derive macro in crates other
+//! than `mlx-nn`.
 
 mod module;
 mod param;

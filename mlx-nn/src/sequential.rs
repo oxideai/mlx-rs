@@ -23,6 +23,10 @@ impl Module for Sequential {
             Cow::Borrowed(array) => Ok(array.deep_clone()),
         }
     }
+
+    fn train(&mut self, mode: bool) {
+        self.layers.iter_mut().for_each(|layer| layer.train(mode));
+    }
 }
 
 impl Default for Sequential {

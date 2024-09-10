@@ -21,6 +21,8 @@ impl Module for M {
     fn forward(&self, x: &Array) -> Result<Array, mlx_rs::error::Exception> {
         self.linear.forward(x)
     }
+
+    fn train(&mut self, _mode: bool) {}
 }
 
 #[test]

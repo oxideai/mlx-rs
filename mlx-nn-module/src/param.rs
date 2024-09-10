@@ -7,24 +7,39 @@ use mlx_rs::{nested::NestedValue, Array};
 
 use crate::ModuleParameters;
 
+/// Trait for a module parameter.
 pub trait Parameter {
+    /// Freeze the parameter.
     fn freeze(&mut self);
+
+    /// Unfreeze the parameter.
     fn unfreeze(&mut self);
 
+    /// Check if the parameter is frozen.
     fn is_frozen(&self) -> bool;
 
+    /// Get the parameter as a nested value.
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array>;
+
+    /// Get the parameter as a mutable nested value.
     fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array>;
+
+    /// Get the parameter as a nested value if it is trainable.
     fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>>;
 }
 
+/// A simple wrapper for a module parameter.
 #[derive(Debug, Clone)]
 pub struct Param<T> {
+    /// The value of the parameter.
     pub value: T,
+
+    /// Whether the parameter is frozen.
     pub is_frozen: bool,
 }
 
 impl<T> Param<T> {
+    /// Create a new `Param`
     pub fn new(value: T) -> Self {
         Self {
             value,

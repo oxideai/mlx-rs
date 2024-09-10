@@ -292,6 +292,8 @@ impl Module for Glu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         glu(x, self.axis)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the element-wise logistic sigmoid.
@@ -324,6 +326,8 @@ impl Module for Sigmoid {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         Ok(sigmoid(x))
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Mish function, element-wise.
@@ -356,6 +360,8 @@ impl Module for Mish {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         mish(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Rectified Linear Unit.
@@ -384,6 +390,8 @@ impl Module for Relu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         relu(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Leaky Rectified Linear Unit.
@@ -421,6 +429,8 @@ impl Module for LeakyReLU {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         leaky_relu(x, self.neg_slope)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Rectified Linear Unit 6.
@@ -449,6 +459,8 @@ impl Module for Relu6 {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         relu6(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Softmax function.
@@ -487,6 +499,8 @@ impl Module for Softmax {
             None => Ok(mlx_rs::ops::softmax(x, None, None)),
         }
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Softplus function.
@@ -515,6 +529,8 @@ impl Module for Softplus {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         softplus(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Softsign function.
@@ -543,6 +559,8 @@ impl Module for Softsign {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         softsign(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Continuously Differentiable Exponential Linear Unit.
@@ -579,6 +597,8 @@ impl Module for Celu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         celu(x, self.alpha)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Sigmoid Linear Unit. Also known as Swish.
@@ -607,6 +627,8 @@ impl Module for Silu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         silu(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Log Softmax function.
@@ -642,6 +664,8 @@ impl Module for LogSoftmax {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         log_softmax(x, self.axis)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Log Sigmoid function.
@@ -670,6 +694,8 @@ impl Module for LogSigmoid {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         log_sigmoid(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the element-wise parametric ReLU.
@@ -697,6 +723,8 @@ impl Module for Prelu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         prelu(x, &self.alpha)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Variants of Gaussian Error Linear Units function.
@@ -752,6 +780,8 @@ impl Module for Gelu {
             GeluApprox::Fast => gelu_fast_approximate(x),
         }
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the hyperbolic tangent function
@@ -774,6 +804,8 @@ impl Module for Tanh {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         Ok(mlx_rs::ops::tanh(x))
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the hardswish function, element-wise
@@ -802,6 +834,8 @@ impl Module for HardSwish {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         hard_swish(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Step Activation Function.
@@ -840,6 +874,8 @@ impl Module for Step {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         step(x, self.threshold)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /// Applies the Scaled Exponential Linear Unit.
@@ -868,6 +904,8 @@ impl Module for Selu {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
         selu(x)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 /* -------------------------------------------------------------------------- */

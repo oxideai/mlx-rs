@@ -69,6 +69,8 @@ impl Module for Linear {
             None => mlx_rs::ops::matmul(x, &self.weight.value),
         }
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 #[derive(Debug, Clone, ModuleParameters)]
@@ -142,4 +144,6 @@ impl Module for Bilinear {
 
         Ok(y)
     }
+
+    fn train(&mut self, _: bool) {}
 }

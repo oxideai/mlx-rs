@@ -95,6 +95,8 @@ impl Module for Conv1d {
         }
         Ok(y)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 #[derive(Debug, Clone, ModuleParameters)]
@@ -182,6 +184,8 @@ impl Module for Conv2d {
         }
         Ok(y)
     }
+
+    fn train(&mut self, _: bool) {}
 }
 
 #[derive(Debug, Clone, ModuleParameters)]
@@ -272,4 +276,6 @@ impl Module for Conv3d {
         }
         Ok(y)
     }
+
+    fn train(&mut self, _: bool) {}
 }

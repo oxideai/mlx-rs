@@ -5,9 +5,6 @@ use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef, Module};
 
 /// Transform the passed function `f(model, args)` to a function that computes the gradients of `f`
 /// with regard to the model's trainable parameters and also its value.
-///
-/// TODO: a better name? swift binding uses just `value_and_grad` but the base crate `mlx-rs` also
-/// has one
 pub fn value_and_grad<'a, M, F, Args>(
     mut f: F,
 ) -> impl FnMut(&'a mut M, Args) -> Result<(Vec<Array>, FlattenedModuleParam), Exception> + 'a

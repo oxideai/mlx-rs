@@ -2,7 +2,7 @@ use mlx_macros::ModuleParameters;
 use mlx_nn_module::{Module, Param};
 use mlx_rs::{
     error::Exception,
-    ops::{conv1d, zeros},
+    ops::{conv1d, conv2d, zeros},
     random::uniform,
     Array,
 };
@@ -10,20 +10,33 @@ use mlx_rs::{
 use crate::utils::{IntOrPair, IntOrTriple, WithBias};
 
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
+/// 
+/// The channels are expected to be last i.e. the input shape should be `NLC` where:
+/// 
+/// - `N` is the batch dimension
+/// - `L` is the sequence length
+/// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Conv1d {
+    /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
+
+    /// The bias of the convolution layer.
     #[param]
     pub bias: Param<Option<Array>>,
-    pub padding: Option<i32>,
-    pub stride: Option<i32>,
+
+    /// Padding. Default to 0 if not specified.
+    pub padding: i32,
+
+    /// Stride. Default to 1 if not specified.
+    pub stride: i32,
 }
 
 impl Conv1d {
     /// Creates a new 1-dimensional convolution layer.
     ///
-    /// # Arguments
+    /// # Params
     ///
     /// - `input_channels`: number of input channels
     /// - `output_channels`: number of output channels
@@ -43,30 +56,16 @@ impl Conv1d {
         let default_bias = WithBias::default()
             .map_into_option(|| zeros::<f32>(&[output_channels]))
             .transpose()?;
+        let default_padding = 0;
+        let default_stride = 1;
 
         let conv1d = Self {
             weight: Param::new(weight),
             bias: Param::new(default_bias),
-            padding: None,
-            stride: None,
+            padding: default_padding,
+            stride: default_stride,
         };
         conv1d.with_bias(WithBias::default())
-    }
-
-    /// Sets the stride when applying the filter
-    ///
-    /// Default to 1 if not specified (see [`conv1d`]).
-    pub fn with_stride(mut self, stride: impl Into<Option<i32>>) -> Self {
-        self.stride = stride.into();
-        self
-    }
-
-    /// Sets the padding when applying the filter
-    ///
-    /// Default to 0 if not specified (see [`conv1d`]).
-    pub fn with_padding(mut self, padding: impl Into<Option<i32>>) -> Self {
-        self.padding = padding.into();
-        self
     }
 
     /// If `true`, add a learnable bias to the output
@@ -77,6 +76,18 @@ impl Conv1d {
             .transpose()?;
         self.bias.value = bias;
         Ok(self)
+    }
+
+    /// Sets the stride when applying the filter
+    pub fn with_stride(mut self, stride: i32) -> Self {
+        self.stride = stride;
+        self
+    }
+
+    /// Sets the padding when applying the filter
+    pub fn with_padding(mut self, padding: i32) -> Self {
+        self.padding = padding;
+        self
     }
 }
 
@@ -99,20 +110,39 @@ impl Module for Conv1d {
     fn train(&mut self, _: bool) {}
 }
 
+/// Applies a 2-dimensional convolution over the multi-channel input image.
+/// 
+/// The channels are expected to be last i.e. the input shape should be `NHWC` where:
+///
+/// - `N` is the batch dimension
+/// - `H` is the input image height
+/// - `W` is the input image width
+/// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Conv2d {
+    /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
 
+    /// The bias of the convolution layer.
     #[param]
     pub bias: Param<Option<Array>>,
 
+    /// Padding. Default to `(0, 0)` if not specified.
     pub padding: (i32, i32),
 
+    /// Stride. Default to `(1, 1)` if not specified.
     pub stride: (i32, i32),
 }
 
 impl Conv2d {
+    /// Creates a new 2-dimensional convolution layer.
+    /// 
+    /// # Params
+    /// 
+    /// - `input_channels`: number of input channels
+    /// - `output_channels`: number of output channels
+    /// - `kernel_size`: size of the convolution filters
     pub fn new(
         input_channels: i32,
         output_channels: i32,
@@ -135,8 +165,8 @@ impl Conv2d {
         let default_bias = WithBias::default()
             .map_into_option(|| zeros::<f32>(&[output_channels]))
             .transpose()?;
-        let default_stride = (1, 1);
         let default_padding = (0, 0);
+        let default_stride = (1, 1);
 
         Ok(Self {
             weight: Param::new(weight),
@@ -146,6 +176,7 @@ impl Conv2d {
         })
     }
 
+    /// If `true`, add a learnable bias to the output
     pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
         let bias = with_bias
             .into()
@@ -158,11 +189,13 @@ impl Conv2d {
         Ok(self)
     }
 
+    /// Sets the stride when applying the filter
     pub fn with_stride(mut self, stride: impl IntOrPair) -> Self {
         self.stride = stride.into_pair();
         self
     }
 
+    /// Sets the padding when applying the filter
     pub fn with_padding(mut self, padding: impl IntOrPair) -> Self {
         self.padding = padding.into_pair();
         self
@@ -171,7 +204,7 @@ impl Conv2d {
 
 impl Module for Conv2d {
     fn forward(&self, x: &Array) -> Result<Array, Exception> {
-        let mut y = mlx_rs::ops::conv2d(
+        let mut y = conv2d(
             x,
             self.weight.as_ref(),
             self.stride,
@@ -188,20 +221,39 @@ impl Module for Conv2d {
     fn train(&mut self, _: bool) {}
 }
 
+/// Applies a 3-dimensional convolution over the multi-channel input image.
+/// 
+/// The channels are expected to be last i.e. the input shape should be `NHWC` where:
+///
+/// - `N` is the batch dimension
+/// - `H` is the input image height
+/// - `W` is the input image width
+/// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Conv3d {
+    /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
 
+    /// The bias of the convolution layer.
     #[param]
     pub bias: Param<Option<Array>>,
 
+    /// Padding. Default to `(0, 0, 0)` if not specified.
     pub padding: (i32, i32, i32),
 
+    /// Stride. Default to `(1, 1, 1)` if not specified.
     pub stride: (i32, i32, i32),
 }
 
 impl Conv3d {
+    /// Creates a new 3-dimensional convolution layer.
+    /// 
+    /// # Params
+    /// 
+    /// - `input_channels`: number of input channels
+    /// - `output_channels`: number of output channels
+    /// - `kernel_size`: size of the convolution filters
     pub fn new(
         input_channels: i32,
         output_channels: i32,
@@ -227,8 +279,8 @@ impl Conv3d {
         let default_bias = WithBias::default()
             .map_into_option(|| zeros::<f32>(&[output_channels]))
             .transpose()?;
-        let default_stride = (1, 1, 1);
         let default_padding = (0, 0, 0);
+        let default_stride = (1, 1, 1);
 
         Ok(Self {
             weight: Param::new(weight),
@@ -238,6 +290,7 @@ impl Conv3d {
         })
     }
 
+    /// If `true`, add a learnable bias to the output
     pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
         let bias = with_bias
             .into()
@@ -250,11 +303,13 @@ impl Conv3d {
         Ok(self)
     }
 
+    /// Sets the stride when applying the filter
     pub fn with_stride(mut self, stride: impl IntOrTriple) -> Self {
         self.stride = stride.into_triple();
         self
     }
 
+    /// Sets the padding when applying the filter
     pub fn with_padding(mut self, padding: impl IntOrTriple) -> Self {
         self.padding = padding.into_triple();
         self

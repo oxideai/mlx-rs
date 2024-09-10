@@ -8,16 +8,20 @@ use crate::{
     utils::WithBias,
 };
 
+/// Applies an affine transformation to the input.
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Linear {
+    /// The weight of the linear layer.
     #[param]
     pub weight: Param<Array>,
 
+    /// The bias of the linear layer.
     #[param]
     pub bias: Param<Option<Array>>,
 }
 
 impl Linear {
+    /// Creates a new [`Linear`] layer.
     pub fn new(input_dims: i32, output_dims: i32) -> Result<Self, Exception> {
         let scale = f32::sqrt(1.0 / (input_dims as f32));
         let weight =
@@ -35,6 +39,7 @@ impl Linear {
         })
     }
 
+    /// Creates a new [`Linear`] layer with the given weight and bias.
     pub fn new_with_weight_and_bias(weight: Array, bias: Option<Array>) -> Self {
         Self {
             weight: Param::new(weight),
@@ -42,6 +47,7 @@ impl Linear {
         }
     }
 
+    /// Sets the bias of the linear layer.
     pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
         self.bias.value = with_bias
             .into()
@@ -56,6 +62,7 @@ impl Linear {
         Ok(self)
     }
 
+    /// Returns the shape of the linear layer.
     pub fn shape(&self) -> (i32, i32) {
         let weight_shape = self.weight.as_ref().shape();
         (weight_shape[0], weight_shape[1])
@@ -73,16 +80,20 @@ impl Module for Linear {
     fn train(&mut self, _: bool) {}
 }
 
+/// Applies a bilinear transformation to the inputs.
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Bilinear {
+    /// The weight of the bilinear layer.
     #[param]
     pub weights: Param<Array>,
 
+    /// The bias of the bilinear layer.
     #[param]
     pub bias: Param<Option<Array>>,
 }
 
 impl Bilinear {
+    /// Creates a new [`Bilinear`] layer.
     pub fn new(input_dims_1: i32, input_dims_2: i32, output_dims: i32) -> Result<Self, Exception> {
         let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
         let weights = mlx_rs::random::uniform::<_, f32>(
@@ -104,6 +115,7 @@ impl Bilinear {
         })
     }
 
+    /// Sets the bias of the bilinear layer.
     pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
         self.bias.value = with_bias
             .into()

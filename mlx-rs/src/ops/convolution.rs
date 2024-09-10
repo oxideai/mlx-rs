@@ -115,10 +115,10 @@ pub fn conv1d_device(
 ///
 /// - array: input array of shape `[N, H, W, C_in]`
 /// - weight: weight array of shape `[C_out, H, W, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
+/// - stride: kernel stride. Default to (1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv2d_device(
     array: &Array,

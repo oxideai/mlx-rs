@@ -1,17 +1,26 @@
+#![deny(missing_docs, missing_debug_implementations)]
+
+//! Neural network support for MLX
+//! 
+//! All modules provide a `new()` function that take mandatory parameters and other methods
+//! to set optional parameters.
+
 pub mod macros;
 pub mod utils;
-pub mod value_and_grad;
 
 mod activation;
 mod convolution;
 mod linear;
 mod sequential;
+mod value_and_grad;
 
 pub use activation::*;
 pub use convolution::*;
 pub use linear::*;
 pub use sequential::*;
+pub use value_and_grad::*;
 
+/// Re-export of the `mlx-nn-module` crate.
 pub mod module {
     pub use mlx_nn_module::*;
 }

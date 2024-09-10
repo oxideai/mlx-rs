@@ -4,10 +4,21 @@ use mlx_macros::ModuleParameters;
 use mlx_nn_module::{Module, Param};
 use mlx_rs::{error::Exception, Array};
 
-#[derive(ModuleParameters)]
+/// Marker trait for items that can be used in a `Sequential` module.
+/// 
+/// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
+pub trait SequentialModuleItem: Module + std::fmt::Debug {}
+
+impl<T> SequentialModuleItem for T where T: Module + std::fmt::Debug {} 
+
+/// A sequential layer.
+/// 
+/// It calls each layer in sequence.
+#[derive(Debug, ModuleParameters)]
 pub struct Sequential {
+    /// The layers to be called in sequence.
     #[param]
-    layers: Param<Vec<Box<dyn Module>>>,
+    pub layers: Param<Vec<Box<dyn SequentialModuleItem>>>,
 }
 
 impl Module for Sequential {
@@ -36,13 +47,15 @@ impl Default for Sequential {
 }
 
 impl Sequential {
+    /// Creates a new [`Sequential`] module.
     pub fn new() -> Self {
         Self {
             layers: Param::new(Vec::new()),
         }
     }
 
-    pub fn append(mut self, layer: impl Module + 'static) -> Self {
+    /// Appends a layer to the sequential module.
+    pub fn append(mut self, layer: impl Module + std::fmt::Debug + 'static) -> Self {
         self.layers.push(Box::new(layer));
         self
     }

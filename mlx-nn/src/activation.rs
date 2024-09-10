@@ -69,7 +69,7 @@ pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result
 /// which(x.gt(0), x, alpha * (exp(x) - 1))
 /// ```
 ///
-/// # Arguments
+/// # Params
 ///
 /// - `x`: The input array
 /// - `alpha`: Default to 1.0 if not provided
@@ -259,7 +259,7 @@ pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Glu {
     /// The axis to split the input tensor. Default to -1 if not provided.
     pub axis: Option<i32>,
@@ -274,7 +274,7 @@ impl Default for Glu {
 impl Glu {
     /// Creates a [`Glu`] module.
     ///
-    /// # Arguments
+    /// # Params
     ///
     /// - `axis`: The axis to split the input tensor. Default to -1 if not provided.
     pub fn new() -> Self {
@@ -306,7 +306,7 @@ impl Module for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
 // We implement this just for the sake of consistency
@@ -317,6 +317,9 @@ impl Default for Sigmoid {
 }
 
 impl Sigmoid {
+    /// Creates a new [`Sigmoid`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -341,7 +344,7 @@ impl Module for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
 impl Default for Mish {
@@ -351,6 +354,9 @@ impl Default for Mish {
 }
 
 impl Mish {
+    /// Creates a new [`Mish`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -371,7 +377,7 @@ impl Module for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
 impl Default for Relu {
@@ -381,6 +387,9 @@ impl Default for Relu {
 }
 
 impl Relu {
+    /// Creates a new [`Relu`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -401,7 +410,7 @@ impl Module for Relu {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct LeakyReLU {
     /// The negative slope. Default to 0.01 if not provided.
     pub neg_slope: Option<f32>,
@@ -414,6 +423,7 @@ impl Default for LeakyReLU {
 }
 
 impl LeakyReLU {
+    /// Creates a new [`LeakyReLU`] module.
     pub fn new() -> Self {
         Self { neg_slope: None }
     }
@@ -440,7 +450,7 @@ impl Module for LeakyReLU {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
 impl Default for Relu6 {
@@ -450,6 +460,9 @@ impl Default for Relu6 {
 }
 
 impl Relu6 {
+    /// Creates a new [`Relu6`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -470,8 +483,9 @@ impl Module for Relu6 {
 /// ```rust, ignore
 /// softmax(&x, None, None)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softmax {
+    /// The axis to apply the softmax.
     pub axis: Option<i32>,
 }
 
@@ -482,10 +496,12 @@ impl Default for Softmax {
 }
 
 impl Softmax {
+    /// Creates a new [`Softmax`] module.
     pub fn new() -> Self {
         Self { axis: None }
     }
 
+    /// Sets the value of the `axis`
     pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
         self.axis = axis.into();
         self
@@ -510,7 +526,7 @@ impl Module for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
 impl Default for Softplus {
@@ -520,6 +536,9 @@ impl Default for Softplus {
 }
 
 impl Softplus {
+    /// Creates a new [`Softplus`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -540,7 +559,7 @@ impl Module for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
 impl Default for Softsign {
@@ -550,6 +569,9 @@ impl Default for Softsign {
 }
 
 impl Softsign {
+    /// Creates a new [`Softsign`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -571,8 +593,9 @@ impl Module for Softsign {
 /// maximum(x, 0.0).unwrap()
 ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Celu {
+    /// The alpha value. See [`celu`] for more details.
     pub alpha: Option<f32>,
 }
 
@@ -583,10 +606,12 @@ impl Default for Celu {
 }
 
 impl Celu {
+    /// Creates a new [`Celu`] module.
     pub fn new() -> Self {
         Self { alpha: None }
     }
 
+    /// Sets the value of the `alpha`
     pub fn with_alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
         self.alpha = alpha.into();
         self
@@ -608,7 +633,7 @@ impl Module for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
 impl Default for Silu {
@@ -618,6 +643,9 @@ impl Default for Silu {
 }
 
 impl Silu {
+    /// Creates a new [`Silu`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -638,8 +666,9 @@ impl Module for Silu {
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSoftmax {
+    /// The axis value. See [`log_softmax`] for more details.
     pub axis: Option<i32>,
 }
 
@@ -650,10 +679,12 @@ impl Default for LogSoftmax {
 }
 
 impl LogSoftmax {
+    /// Creates a new [`LogSoftmax`] module.
     pub fn new() -> Self {
         Self { axis: None }
     }
 
+    /// Sets the value of the `axis`
     pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
         self.axis = axis.into();
         self
@@ -675,7 +706,7 @@ impl Module for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
 impl Default for LogSigmoid {
@@ -685,6 +716,9 @@ impl Default for LogSigmoid {
 }
 
 impl LogSigmoid {
+    /// Creates a new [`LogSigmoid`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -705,13 +739,15 @@ impl Module for LogSigmoid {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Prelu {
+    /// The alpha value. See [`prelu`] for more details.
     #[param]
     pub alpha: Param<Array>, // TODO: double check if this is trainable
 }
 
 impl Prelu {
+    /// Creates a new [`Prelu`] module.
     pub fn new(alpha: Array) -> Self {
         Self {
             alpha: Param::new(alpha),
@@ -728,7 +764,7 @@ impl Module for Prelu {
 }
 
 /// Variants of Gaussian Error Linear Units function.
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum GeluApprox {
     /// Uses [`gelu`]
     #[default]
@@ -748,8 +784,9 @@ pub enum GeluApprox {
 /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
 /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
 /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Gelu {
+    /// The approximation to use. Default to `GeluApprox::None` if not provided.
     pub approximate: GeluApprox,
 }
 
@@ -760,12 +797,14 @@ impl Default for Gelu {
 }
 
 impl Gelu {
+    /// Creates a new [`Gelu`] module.
     pub fn new() -> Self {
         Self {
             approximate: GeluApprox::None,
         }
     }
 
+    /// Sets the value of the `approximate`
     pub fn approximate(mut self, approximate: GeluApprox) -> Self {
         self.approximate = approximate;
         self
@@ -785,7 +824,7 @@ impl Module for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
 impl Default for Tanh {
@@ -795,6 +834,9 @@ impl Default for Tanh {
 }
 
 impl Tanh {
+    /// Creates a new [`Tanh`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }
@@ -815,7 +857,7 @@ impl Module for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
 impl Default for HardSwish {
@@ -825,6 +867,7 @@ impl Default for HardSwish {
 }
 
 impl HardSwish {
+    /// Creates a new [`HardSwish`] module.
     pub fn new() -> Self {
         Self
     }
@@ -848,8 +891,9 @@ impl Module for HardSwish {
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Step {
+    /// The threshold value. See [`step`] for more details.
     pub threshold: Option<f32>,
 }
 
@@ -860,10 +904,12 @@ impl Default for Step {
 }
 
 impl Step {
+    /// Creates a new [`Step`] module.
     pub fn new() -> Self {
         Self { threshold: None }
     }
 
+    /// Sets the value of the `threshold`
     pub fn with_threshold(mut self, threshold: impl Into<Option<f32>>) -> Self {
         self.threshold = threshold.into();
         self
@@ -885,7 +931,7 @@ impl Module for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
 impl Default for Selu {
@@ -895,6 +941,9 @@ impl Default for Selu {
 }
 
 impl Selu {
+    /// Creates a new [`Selu`] module.
+    /// 
+    /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
     }

@@ -10,9 +10,9 @@ use mlx_rs::{
 use crate::utils::{IntOrPair, IntOrTriple, WithBias};
 
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
-/// 
+///
 /// The channels are expected to be last i.e. the input shape should be `NLC` where:
-/// 
+///
 /// - `N` is the batch dimension
 /// - `L` is the sequence length
 /// - `C` is the number of input channels
@@ -111,7 +111,7 @@ impl Module for Conv1d {
 }
 
 /// Applies a 2-dimensional convolution over the multi-channel input image.
-/// 
+///
 /// The channels are expected to be last i.e. the input shape should be `NHWC` where:
 ///
 /// - `N` is the batch dimension
@@ -137,9 +137,9 @@ pub struct Conv2d {
 
 impl Conv2d {
     /// Creates a new 2-dimensional convolution layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `input_channels`: number of input channels
     /// - `output_channels`: number of output channels
     /// - `kernel_size`: size of the convolution filters
@@ -222,7 +222,7 @@ impl Module for Conv2d {
 }
 
 /// Applies a 3-dimensional convolution over the multi-channel input image.
-/// 
+///
 /// The channels are expected to be last i.e. the input shape should be `NHWC` where:
 ///
 /// - `N` is the batch dimension
@@ -248,9 +248,9 @@ pub struct Conv3d {
 
 impl Conv3d {
     /// Creates a new 3-dimensional convolution layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `input_channels`: number of input channels
     /// - `output_channels`: number of output channels
     /// - `kernel_size`: size of the convolution filters

@@ -5,14 +5,14 @@ use mlx_nn_module::{Module, Param};
 use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
-/// 
+///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
 pub trait SequentialModuleItem: Module + std::fmt::Debug {}
 
-impl<T> SequentialModuleItem for T where T: Module + std::fmt::Debug {} 
+impl<T> SequentialModuleItem for T where T: Module + std::fmt::Debug {}
 
 /// A sequential layer.
-/// 
+///
 /// It calls each layer in sequence.
 #[derive(Debug, ModuleParameters)]
 pub struct Sequential {

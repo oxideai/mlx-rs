@@ -1,4 +1,8 @@
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations)]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations
+)]
 
 //! This crate defines the traits for neural network modules and parameters.
 //!

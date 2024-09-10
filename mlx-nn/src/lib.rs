@@ -1,7 +1,7 @@
 #![deny(missing_docs, missing_debug_implementations)]
 
 //! Neural network support for MLX
-//! 
+//!
 //! All modules provide a `new()` function that take mandatory parameters and other methods
 //! to set optional parameters.
 

@@ -318,7 +318,7 @@ impl Default for Sigmoid {
 
 impl Sigmoid {
     /// Creates a new [`Sigmoid`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -355,7 +355,7 @@ impl Default for Mish {
 
 impl Mish {
     /// Creates a new [`Mish`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -388,7 +388,7 @@ impl Default for Relu {
 
 impl Relu {
     /// Creates a new [`Relu`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -461,7 +461,7 @@ impl Default for Relu6 {
 
 impl Relu6 {
     /// Creates a new [`Relu6`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -537,7 +537,7 @@ impl Default for Softplus {
 
 impl Softplus {
     /// Creates a new [`Softplus`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -570,7 +570,7 @@ impl Default for Softsign {
 
 impl Softsign {
     /// Creates a new [`Softsign`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -644,7 +644,7 @@ impl Default for Silu {
 
 impl Silu {
     /// Creates a new [`Silu`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -717,7 +717,7 @@ impl Default for LogSigmoid {
 
 impl LogSigmoid {
     /// Creates a new [`LogSigmoid`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -835,7 +835,7 @@ impl Default for Tanh {
 
 impl Tanh {
     /// Creates a new [`Tanh`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self
@@ -942,7 +942,7 @@ impl Default for Selu {
 
 impl Selu {
     /// Creates a new [`Selu`] module.
-    /// 
+    ///
     /// This is just to be consistent with the other modules.
     pub fn new() -> Self {
         Self

@@ -6,6 +6,7 @@
 //! to set optional parameters.
 
 pub mod macros;
+pub mod optimizer;
 pub mod utils;
 
 mod activation;

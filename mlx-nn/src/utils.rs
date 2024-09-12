@@ -1,5 +1,10 @@
 //! Utility types and functions.
 
+use std::rc::Rc;
+
+use mlx_nn_module::FlattenedModuleParam;
+use mlx_rs::Array;
+
 /// A custom type to indicate whether a `Module` should include a bias or not.
 /// Default to `Yes`.
 #[derive(Debug, Clone, Copy, Default)]
@@ -79,4 +84,16 @@ impl IntOrTriple for (i32, i32, i32) {
     fn into_triple(self) -> (i32, i32, i32) {
         self
     }
+}
+
+pub(crate) fn get_mut_or_insert_with<'a>(
+    map: &'a mut FlattenedModuleParam,
+    key: &Rc<str>,
+    f: impl FnOnce() -> Array,
+) -> &'a mut Array {
+    if !map.contains_key(key) {
+        map.insert(key.clone(), f());
+    }
+
+    map.get_mut(key).unwrap()
 }

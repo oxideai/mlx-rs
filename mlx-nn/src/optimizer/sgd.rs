@@ -7,64 +7,22 @@ use crate::utils::get_mut_or_insert_with;
 
 use super::Optimizer;
 
-/// Optional configs for the SGD optimizer.
-#[derive(Debug, Clone, Default)]
-pub struct SgdOptions {
-    /// Momentum strength
-    pub momentum: Option<f32>,
-
-    /// Weight decay (L2 penalty)
-    pub weight_decay: Option<f32>,
-
-    /// Dampening for momentum
-    pub dampening: Option<f32>,
-
-    /// Enables nesterov momentum
-    pub nesterov: Option<bool>,
-}
-
-impl SgdOptions {
-    /// Sets the momentum
-    pub fn with_momentum(mut self, momentum: impl Into<Option<f32>>) -> Self {
-        self.momentum = momentum.into();
-        self
-    }
-
-    /// Sets the weight decay
-    pub fn with_weight_decay(mut self, weight_decay: impl Into<Option<f32>>) -> Self {
-        self.weight_decay = weight_decay.into();
-        self
-    }
-
-    /// Sets the dampening for momentum
-    pub fn with_dampening(mut self, dampening: impl Into<Option<f32>>) -> Self {
-        self.dampening = dampening.into();
-        self
-    }
-
-    /// Enables nesterov momentum
-    pub fn with_nesterov(mut self, nesterov: impl Into<Option<bool>>) -> Self {
-        self.nesterov = nesterov.into();
-        self
-    }
-}
-
 /// Stochastic gradient descent optimizer.
 #[derive(Debug, Clone)]
 pub struct Sgd {
     /// Learning rate
     pub lr: f32,
 
-    /// Momentum strength. Default to `0` if not specified.
+    /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
     pub momentum: f32,
 
-    /// Weight decay (L2 penalty). Default to `0` if not specified.
+    /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
     pub weight_decay: f32,
 
-    /// Dampening for momentum. Default to `0` if not specified.
+    /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
     pub dampening: f32,
 
-    /// Enables nesterov momentum. Default to `false` if not specified.
+    /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
     pub nesterov: bool,
 
     /// Inner state
@@ -72,16 +30,52 @@ pub struct Sgd {
 }
 
 impl Sgd {
+    /// Default momentum if not specified.
+    pub const DEFAULT_MOMENTUM: f32 = 0.0;
+
+    /// Default weight decay if not specified.
+    pub const DEFAULT_WEIGHT_DECAY: f32 = 0.0;
+
+    /// Default dampening if not specified.
+    pub const DEFAULT_DAMPENING: f32 = 0.0;
+
+    /// Default nesterov if not specified.
+    pub const DEFAULT_NESTEROV: bool = false;
+
     /// Creates a new `Sgd` optimizer.
-    pub fn new(lr: f32, options: SgdOptions) -> Self {
+    pub fn new(lr: f32) -> Self {
         Self {
             lr,
-            momentum: options.momentum.unwrap_or(0.0),
-            weight_decay: options.weight_decay.unwrap_or(0.0),
-            dampening: options.dampening.unwrap_or(0.0),
-            nesterov: options.nesterov.unwrap_or(false),
+            momentum: Self::DEFAULT_MOMENTUM,
+            weight_decay: Self::DEFAULT_WEIGHT_DECAY,
+            dampening: Self::DEFAULT_DAMPENING,
+            nesterov: Self::DEFAULT_NESTEROV,
             state: FlattenedModuleParam::new(),
         }
+    }
+
+    /// Sets the momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
+    pub fn with_momentum(mut self, momentum: impl Into<Option<f32>>) -> Self {
+        self.momentum = momentum.into().unwrap_or(Self::DEFAULT_MOMENTUM);
+        self
+    }
+
+    /// Sets the weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
+    pub fn with_weight_decay(mut self, weight_decay: impl Into<Option<f32>>) -> Self {
+        self.weight_decay = weight_decay.into().unwrap_or(Self::DEFAULT_WEIGHT_DECAY);
+        self
+    }
+
+    /// Sets the dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
+    pub fn with_dampening(mut self, dampening: impl Into<Option<f32>>) -> Self {
+        self.dampening = dampening.into().unwrap_or(Self::DEFAULT_DAMPENING);
+        self
+    }
+
+    /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
+    pub fn with_nesterov(mut self, nesterov: impl Into<Option<bool>>) -> Self {
+        self.nesterov = nesterov.into().unwrap_or(Self::DEFAULT_NESTEROV);
+        self
     }
 
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
@@ -188,7 +182,7 @@ mod tests {
             })
             .collect();
 
-        let mut optim = Sgd::new(1e-2, SgdOptions::default().with_momentum(0.9));
+        let mut optim = Sgd::new(1e-2).with_momentum(0.9);
         optim.update(&mut model, grads_map);
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * array!(-0.01);

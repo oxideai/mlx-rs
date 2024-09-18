@@ -32,7 +32,7 @@ pub trait Module: ModuleParameters {
     /// Training mode only applies to certain layers. For example, dropout layers applies a random
     /// mask in training mode, but is the identity in evaluation mode. Implementations of nested
     /// modules should propagate the training mode to all child modules.
-    fn train(&mut self, mode: bool);
+    fn training_mode(&mut self, mode: bool);
 }
 
 /// Trait for accessing and updating module parameters.

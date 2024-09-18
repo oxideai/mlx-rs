@@ -107,7 +107,7 @@ impl Module for Conv1d {
         Ok(y)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies a 2-dimensional convolution over the multi-channel input image.
@@ -218,7 +218,7 @@ impl Module for Conv2d {
         Ok(y)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies a 3-dimensional convolution over the multi-channel input image.
@@ -332,5 +332,5 @@ impl Module for Conv3d {
         Ok(y)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }

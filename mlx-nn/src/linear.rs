@@ -77,7 +77,7 @@ impl Module for Linear {
         }
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies a bilinear transformation to the inputs.
@@ -157,5 +157,5 @@ impl Module for Bilinear {
         Ok(y)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }

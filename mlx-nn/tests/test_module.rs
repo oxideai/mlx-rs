@@ -22,7 +22,7 @@ impl Module for M {
         self.linear.forward(x)
     }
 
-    fn train(&mut self, _mode: bool) {}
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 #[test]

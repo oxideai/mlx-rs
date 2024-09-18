@@ -293,7 +293,7 @@ impl Module for Glu {
         glu(x, self.axis)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the element-wise logistic sigmoid.
@@ -330,7 +330,7 @@ impl Module for Sigmoid {
         Ok(sigmoid(x))
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Mish function, element-wise.
@@ -367,7 +367,7 @@ impl Module for Mish {
         mish(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Rectified Linear Unit.
@@ -400,7 +400,7 @@ impl Module for Relu {
         relu(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Leaky Rectified Linear Unit.
@@ -440,7 +440,7 @@ impl Module for LeakyReLU {
         leaky_relu(x, self.neg_slope)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Rectified Linear Unit 6.
@@ -473,7 +473,7 @@ impl Module for Relu6 {
         relu6(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Softmax function.
@@ -516,7 +516,7 @@ impl Module for Softmax {
         }
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Softplus function.
@@ -549,7 +549,7 @@ impl Module for Softplus {
         softplus(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Softsign function.
@@ -582,7 +582,7 @@ impl Module for Softsign {
         softsign(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Continuously Differentiable Exponential Linear Unit.
@@ -623,7 +623,7 @@ impl Module for Celu {
         celu(x, self.alpha)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Sigmoid Linear Unit. Also known as Swish.
@@ -656,7 +656,7 @@ impl Module for Silu {
         silu(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Log Softmax function.
@@ -696,7 +696,7 @@ impl Module for LogSoftmax {
         log_softmax(x, self.axis)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Log Sigmoid function.
@@ -729,7 +729,7 @@ impl Module for LogSigmoid {
         log_sigmoid(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the element-wise parametric ReLU.
@@ -760,7 +760,7 @@ impl Module for Prelu {
         prelu(x, &self.alpha)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Variants of Gaussian Error Linear Units function.
@@ -820,7 +820,7 @@ impl Module for Gelu {
         }
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the hyperbolic tangent function
@@ -847,7 +847,7 @@ impl Module for Tanh {
         Ok(mlx_rs::ops::tanh(x))
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the hardswish function, element-wise
@@ -878,7 +878,7 @@ impl Module for HardSwish {
         hard_swish(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Step Activation Function.
@@ -921,7 +921,7 @@ impl Module for Step {
         step(x, self.threshold)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /// Applies the Scaled Exponential Linear Unit.
@@ -954,7 +954,7 @@ impl Module for Selu {
         selu(x)
     }
 
-    fn train(&mut self, _: bool) {}
+    fn training_mode(&mut self, _: bool) {}
 }
 
 /* -------------------------------------------------------------------------- */

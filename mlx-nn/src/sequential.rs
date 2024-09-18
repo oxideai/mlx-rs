@@ -35,8 +35,10 @@ impl Module for Sequential {
         }
     }
 
-    fn train(&mut self, mode: bool) {
-        self.layers.iter_mut().for_each(|layer| layer.train(mode));
+    fn training_mode(&mut self, mode: bool) {
+        self.layers
+            .iter_mut()
+            .for_each(|layer| layer.training_mode(mode));
     }
 }
 

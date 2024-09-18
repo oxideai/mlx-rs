@@ -1,11 +1,10 @@
 use std::rc::Rc;
 
-use mlx_nn_module::FlattenedModuleParam;
 use mlx_rs::{array, Array};
 
 use crate::utils::get_mut_or_insert_with;
 
-use super::Optimizer;
+use super::*;
 
 /// Stochastic gradient descent optimizer.
 #[derive(Debug, Clone)]
@@ -26,7 +25,7 @@ pub struct Sgd {
     pub nesterov: bool,
 
     /// Inner state
-    pub state: FlattenedModuleParam,
+    pub state: OptimizerState,
 }
 
 impl Sgd {
@@ -50,7 +49,7 @@ impl Sgd {
             weight_decay: Self::DEFAULT_WEIGHT_DECAY,
             dampening: Self::DEFAULT_DAMPENING,
             nesterov: Self::DEFAULT_NESTEROV,
-            state: FlattenedModuleParam::new(),
+            state: OptimizerState::new(),
         }
     }
 
@@ -77,7 +76,9 @@ impl Sgd {
         self.nesterov = nesterov.into().unwrap_or(Self::DEFAULT_NESTEROV);
         self
     }
+}
 
+impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
     fn update_single(&mut self, key: Rc<str>, mut gradient: Array, parameter: &mut Array) {
@@ -119,85 +120,45 @@ impl Sgd {
     }
 }
 
-impl Optimizer for Sgd {
-    fn update<M>(&mut self, model: &mut M, gradients: mlx_nn_module::FlattenedModuleParam)
-    where
-        M: mlx_nn_module::ModuleParameters,
-    {
-        let mut parameters = model.parameters_mut().flatten();
-
-        for (key, gradient) in gradients {
-            if let Some(parameter) = parameters.get_mut(&key) {
-                self.update_single(key, gradient, parameter);
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use mlx_rs::assert_array_eq;
+    use mlx_rs::ops::ones;
 
-    use mlx_macros::ModuleParameters;
-    use mlx_nn_module::{ModuleParameters, Param};
-    use mlx_rs::ops::{ones, zeros};
-
+    use super::optim_test_util::*;
     use super::*;
 
-    #[derive(Debug, ModuleParameters)]
-    struct First {
-        #[param]
-        a: Param<Array>,
-
-        #[param]
-        b: Param<Array>,
-    }
-
-    #[derive(Debug, ModuleParameters)]
-    struct Model {
-        #[param]
-        first: Param<First>,
-
-        #[param]
-        second: Param<Array>,
-    }
-
+    // This unit test is adapted from the python unit test `test_sgd` in
+    // `mlx/python/tests/test_optimizers.py`
     #[test]
     fn test_sgd() {
-        let first = First {
-            a: Param::new(zeros::<f32>(&[10]).unwrap()),
-            b: Param::new(zeros::<f32>(&[1]).unwrap()),
-        };
-        let mut model = Model {
-            first: Param::new(first),
-            second: Param::new(zeros::<f32>(&[1]).unwrap()),
-        };
-        // let param_map = param.parameters_mut().flatten();
-        let grads_map: FlattenedModuleParam = model
-            .parameters()
-            .flatten()
-            .iter()
-            .map(|(k, v)| {
-                let g = ones::<f32>(v.shape()).unwrap();
-                (k.clone(), g)
-            })
-            .collect();
+        let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = Sgd::new(1e-2).with_momentum(0.9);
-        optim.update(&mut model, grads_map);
+        optim.update(&mut model, gradients);
 
-        let expected_first_a = ones::<f32>(&[10]).unwrap() * array!(-0.01);
-        let expected_first_b = ones::<f32>(&[1]).unwrap() * array!(-0.01);
-        let expected_second = ones::<f32>(&[1]).unwrap() * array!(-0.01);
-        assert_eq!(model.first.a.as_ref(), &expected_first_a);
-        assert_eq!(model.first.b.as_ref(), &expected_first_b);
-        assert_eq!(model.second.as_ref(), &expected_second);
+        let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
+        let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;
+        let expected_second = ones::<f32>(&[1]).unwrap() * -0.01;
+
+        assert_array_eq!(model.first.a.as_ref(), expected_first_a, ATOL);
+        assert_array_eq!(model.first.b.as_ref(), expected_first_b, ATOL);
+        assert_array_eq!(model.second.as_ref(), expected_second, ATOL);
 
         let expected_state_first_a = ones::<f32>(&[10]).unwrap();
         let expected_state_first_b = ones::<f32>(&[1]).unwrap();
         let expected_state_second = ones::<f32>(&[1]).unwrap();
 
-        assert_eq!(optim.state.get("first.a"), Some(&expected_state_first_a));
-        assert_eq!(optim.state.get("first.b"), Some(&expected_state_first_b));
-        assert_eq!(optim.state.get("second"), Some(&expected_state_second));
+        assert_array_eq!(
+            optim.state["first.a"].as_ref(),
+            expected_state_first_a,
+            ATOL
+        );
+        assert_array_eq!(
+            optim.state["first.b"].as_ref(),
+            expected_state_first_b,
+            ATOL
+        );
+        assert_array_eq!(optim.state["second"].as_ref(), expected_state_second, ATOL);
     }
 }

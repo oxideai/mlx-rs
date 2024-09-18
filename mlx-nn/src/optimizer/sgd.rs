@@ -9,27 +9,27 @@ use super::Optimizer;
 
 /// Stochastic gradient descent optimizer.
 #[derive(Debug, Clone)]
-pub struct Sgd {
+pub struct SGD {
     /// Learning rate
     pub lr: f32,
 
-    /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
+    /// Momentum strength. Default to [`SGD::DEFAULT_MOMENTUM`] if not specified.
     pub momentum: f32,
 
-    /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
+    /// Weight decay (L2 penalty). Default to [`SGD::DEFAULT_WEIGHT_DECAY`] if not specified.
     pub weight_decay: f32,
 
-    /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
+    /// Dampening for momentum. Default to [`SGD::DEFAULT_DAMPENING`] if not specified.
     pub dampening: f32,
 
-    /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
+    /// Enables nesterov momentum. Default to [`SGD::DEFAULT_NESTEROV`] if not specified.
     pub nesterov: bool,
 
     /// Inner state
     pub state: FlattenedModuleParam,
 }
 
-impl Sgd {
+impl SGD {
     /// Default momentum if not specified.
     pub const DEFAULT_MOMENTUM: f32 = 0.0;
 
@@ -42,7 +42,7 @@ impl Sgd {
     /// Default nesterov if not specified.
     pub const DEFAULT_NESTEROV: bool = false;
 
-    /// Creates a new `Sgd` optimizer.
+    /// Creates a new `SGD` optimizer.
     pub fn new(lr: f32) -> Self {
         Self {
             lr,
@@ -54,25 +54,25 @@ impl Sgd {
         }
     }
 
-    /// Sets the momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
+    /// Sets the momentum strength. Default to [`SGD::DEFAULT_MOMENTUM`] if not specified.
     pub fn with_momentum(mut self, momentum: impl Into<Option<f32>>) -> Self {
         self.momentum = momentum.into().unwrap_or(Self::DEFAULT_MOMENTUM);
         self
     }
 
-    /// Sets the weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
+    /// Sets the weight decay (L2 penalty). Default to [`SGD::DEFAULT_WEIGHT_DECAY`] if not specified.
     pub fn with_weight_decay(mut self, weight_decay: impl Into<Option<f32>>) -> Self {
         self.weight_decay = weight_decay.into().unwrap_or(Self::DEFAULT_WEIGHT_DECAY);
         self
     }
 
-    /// Sets the dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
+    /// Sets the dampening for momentum. Default to [`SGD::DEFAULT_DAMPENING`] if not specified.
     pub fn with_dampening(mut self, dampening: impl Into<Option<f32>>) -> Self {
         self.dampening = dampening.into().unwrap_or(Self::DEFAULT_DAMPENING);
         self
     }
 
-    /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
+    /// Enables nesterov momentum. Default to [`SGD::DEFAULT_NESTEROV`] if not specified.
     pub fn with_nesterov(mut self, nesterov: impl Into<Option<bool>>) -> Self {
         self.nesterov = nesterov.into().unwrap_or(Self::DEFAULT_NESTEROV);
         self
@@ -119,7 +119,7 @@ impl Sgd {
     }
 }
 
-impl Optimizer for Sgd {
+impl Optimizer for SGD {
     fn update<M>(&mut self, model: &mut M, gradients: mlx_nn_module::FlattenedModuleParam)
     where
         M: mlx_nn_module::ModuleParameters,
@@ -182,7 +182,7 @@ mod tests {
             })
             .collect();
 
-        let mut optim = Sgd::new(1e-2).with_momentum(0.9);
+        let mut optim = SGD::new(1e-2).with_momentum(0.9);
         optim.update(&mut model, grads_map);
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * array!(-0.01);

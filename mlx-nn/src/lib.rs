@@ -10,15 +10,15 @@ pub mod optimizer;
 pub mod utils;
 
 mod activation;
+mod container;
 mod convolution;
 mod linear;
-mod sequential;
 mod value_and_grad;
 
 pub use activation::*;
+pub use container::*;
 pub use convolution::*;
 pub use linear::*;
-pub use sequential::*;
 pub use value_and_grad::*;
 
 /// Re-export of the `mlx-nn-module` crate.

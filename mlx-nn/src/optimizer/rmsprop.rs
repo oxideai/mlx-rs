@@ -48,9 +48,9 @@ impl RmsProp {
     }
 
     /// Sets the smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if `alpha` is negative.
     pub fn with_alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
         let alpha = alpha.into().unwrap_or(Self::DEFAULT_ALPHA);
@@ -61,9 +61,9 @@ impl RmsProp {
 
     /// Sets the epsilon added to the denominator to improve numerical stability. Default to
     /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if `epsilon` is negative.
     pub fn with_epsilon(mut self, epsilon: impl Into<Option<f32>>) -> Self {
         let epsilon = epsilon.into().unwrap_or(Self::DEFAULT_EPSILON);

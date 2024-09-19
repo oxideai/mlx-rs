@@ -11,13 +11,12 @@ use crate::error::Error;
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
 pub trait SequentialModuleItem<Err>: Module<Error = Err> + std::fmt::Debug {}
 
-impl<T, Err> SequentialModuleItem<Err> for T 
-where   
-    T: Module<Error = Err> + std::fmt::Debug ,
-    Err: std::error::Error + 'static
-    {
-
-    }
+impl<T, Err> SequentialModuleItem<Err> for T
+where
+    T: Module<Error = Err> + std::fmt::Debug,
+    Err: std::error::Error + 'static,
+{
+}
 
 /// A sequential layer.
 ///
@@ -67,10 +66,10 @@ impl<Err> Sequential<Err> {
     }
 
     /// Appends a layer to the sequential module.
-    pub fn append<M>(mut self, layer: M) -> Self 
-    where 
+    pub fn append<M>(mut self, layer: M) -> Self
+    where
         M: Module<Error = Err> + std::fmt::Debug + 'static,
-        Err: std::error::Error + 'static
+        Err: std::error::Error + 'static,
     {
         self.layers.push(Box::new(layer));
         self

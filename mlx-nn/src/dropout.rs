@@ -36,12 +36,12 @@ impl Dropout {
     }
 
     /// Sets the probability of zeroing an element.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if `p` is not in the range `[0, 1)`.
     pub fn with_p(mut self, p: f32) -> Self {
-        assert!(p >= 0.0 && p < 1.0, "p must be in the range [0, 1)");
+        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
 
         self.one_minus_p = 1.0 - p;
         self
@@ -116,12 +116,12 @@ impl Dropout2d {
     }
 
     /// Sets the probability of zeroing a channel.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if `p` is not in the range `[0, 1)`.
     pub fn with_p(mut self, p: f32) -> Self {
-        assert!(p >= 0.0 && p < 1.0, "p must be in the range [0, 1)");
+        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
 
         self.one_minus_p = 1.0 - p;
         self
@@ -154,8 +154,8 @@ impl Module for Dropout2d {
 
         let mut mask_shape = x.shape().to_vec();
         let len = mask_shape.len();
-        mask_shape[len-2] = 1;
-        mask_shape[len-3] = 1;
+        mask_shape[len - 2] = 1;
+        mask_shape[len - 3] = 1;
 
         let p1 = array!(self.one_minus_p);
         let mask = bernoulli(&p1, &mask_shape, None)?;
@@ -208,12 +208,12 @@ impl Dropout3d {
     }
 
     /// Sets the probability of zeroing a channel.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if `p` is not in the range `[0, 1)`.
     pub fn with_p(mut self, p: f32) -> Self {
-        assert!(p >= 0.0 && p < 1.0, "p must be in the range [0, 1)");
+        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
 
         self.one_minus_p = 1.0 - p;
         self
@@ -228,7 +228,7 @@ impl Default for Dropout3d {
 
 impl Module for Dropout3d {
     type Error = Error;
-    
+
     fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
         let ndim = x.ndim();
 
@@ -246,16 +246,16 @@ impl Module for Dropout3d {
 
         let mut mask_shape = x.shape().to_vec();
         let len = mask_shape.len();
-        mask_shape[len-2] = 1;
-        mask_shape[len-3] = 1;
-        mask_shape[len-4] = 1;
+        mask_shape[len - 2] = 1;
+        mask_shape[len - 3] = 1;
+        mask_shape[len - 4] = 1;
 
         let p1 = array!(self.one_minus_p);
         let mask = bernoulli(&p1, &mask_shape, None)?;
 
         multiply(multiply(1.0 / self.one_minus_p, mask)?, x).map_err(Into::into)
     }
-    
+
     fn training_mode(&mut self, mode: bool) {
         self.training = mode;
     }

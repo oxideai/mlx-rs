@@ -7,7 +7,10 @@ use mlx_rs::{
     Array,
 };
 
-use crate::{error::Error, utils::{IntOrPair, IntOrTriple, WithBias}};
+use crate::{
+    error::Error,
+    utils::{IntOrPair, IntOrTriple, WithBias},
+};
 
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
 ///

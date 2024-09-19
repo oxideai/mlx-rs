@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, rc::Rc};
 
-use mlx_rs::{error::Exception, nested::NestedHashMap, Array};
+use mlx_rs::{nested::NestedHashMap, Array};
 
 /// Type alias for owned module parameters.
 pub type ModuleParam = NestedHashMap<&'static str, Array>;
@@ -24,8 +24,11 @@ pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
 pub trait Module: ModuleParameters {
+    /// Error type for the module.
+    type Error: std::error::Error;
+
     /// Forward pass of the module.
-    fn forward(&self, x: &Array) -> Result<Array, Exception>;
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///

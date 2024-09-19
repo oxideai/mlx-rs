@@ -2,27 +2,37 @@ use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
 use mlx_nn_module::{Module, Param};
-use mlx_rs::{error::Exception, Array};
+use mlx_rs::Array;
+
+use crate::error::Error;
 
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
-pub trait SequentialModuleItem: Module + std::fmt::Debug {}
+pub trait SequentialModuleItem<Err>: Module<Error = Err> + std::fmt::Debug {}
 
-impl<T> SequentialModuleItem for T where T: Module + std::fmt::Debug {}
+impl<T, Err> SequentialModuleItem<Err> for T 
+where   
+    T: Module<Error = Err> + std::fmt::Debug ,
+    Err: std::error::Error + 'static
+    {
+
+    }
 
 /// A sequential layer.
 ///
 /// It calls each layer in sequence.
 #[derive(Debug, ModuleParameters)]
-pub struct Sequential {
+pub struct Sequential<Err = Error> {
     /// The layers to be called in sequence.
     #[param]
-    pub layers: Param<Vec<Box<dyn SequentialModuleItem>>>,
+    pub layers: Param<Vec<Box<dyn SequentialModuleItem<Err>>>>,
 }
 
 impl Module for Sequential {
-    fn forward(&self, x: &Array) -> Result<Array, Exception> {
+    type Error = Error;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);
 
         for layer in &self.layers.value {
@@ -48,7 +58,7 @@ impl Default for Sequential {
     }
 }
 
-impl Sequential {
+impl<Err> Sequential<Err> {
     /// Creates a new [`Sequential`] module.
     pub fn new() -> Self {
         Self {
@@ -57,7 +67,11 @@ impl Sequential {
     }
 
     /// Appends a layer to the sequential module.
-    pub fn append(mut self, layer: impl Module + std::fmt::Debug + 'static) -> Self {
+    pub fn append<M>(mut self, layer: M) -> Self 
+    where 
+        M: Module<Error = Err> + std::fmt::Debug + 'static,
+        Err: std::error::Error + 'static
+    {
         self.layers.push(Box::new(layer));
         self
     }

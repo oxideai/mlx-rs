@@ -3,6 +3,7 @@ use std::iter::once;
 use mlx_rs::{error::Exception, Array};
 
 use crate::{
+    error::Error,
     macros::ModuleParameters,
     module::{Module, Param},
     utils::WithBias,
@@ -70,10 +71,14 @@ impl Linear {
 }
 
 impl Module for Linear {
-    fn forward(&self, x: &Array) -> Result<Array, Exception> {
+    type Error = Error;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
-            Some(bias) => mlx_rs::ops::addmm(bias, x, &self.weight.value, None, None),
-            None => mlx_rs::ops::matmul(x, &self.weight.value),
+            Some(bias) => {
+                mlx_rs::ops::addmm(bias, x, &self.weight.value, None, None).map_err(Into::into)
+            }
+            None => mlx_rs::ops::matmul(x, &self.weight.value).map_err(Into::into),
         }
     }
 
@@ -132,7 +137,9 @@ impl Bilinear {
 }
 
 impl Module for Bilinear {
-    fn forward(&self, x: &Array) -> Result<Array, Exception> {
+    type Error = Error;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let shape = self.weights.shape();
         let (out, in2, in1) = (shape[0], shape[1], shape[2]);
         let x_shape = &x.shape()[..x.shape().len() - 1];

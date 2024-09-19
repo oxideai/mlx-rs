@@ -1,5 +1,5 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn::Linear;
+use mlx_nn::{error::Error, Linear};
 use mlx_nn_module::{Module, Param};
 use mlx_rs::Array;
 
@@ -18,7 +18,9 @@ impl M {
 }
 
 impl Module for M {
-    fn forward(&self, x: &Array) -> Result<Array, mlx_rs::error::Exception> {
+    type Error = Error;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         self.linear.forward(x)
     }
 

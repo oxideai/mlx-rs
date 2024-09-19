@@ -37,7 +37,7 @@ libc = "0.2"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
-float_eq = "1"
+float_eq = { workspace = true }
 
 [features]
 default = ["accelerate", "metal"]

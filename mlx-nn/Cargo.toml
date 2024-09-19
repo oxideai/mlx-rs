@@ -8,3 +8,6 @@ mlx-rs = { workspace = true }
 mlx-macros = { workspace = true }
 mlx-nn-module = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+float_eq = { workspace = true }

@@ -260,3 +260,104 @@ impl Module for Dropout3d {
         self.training = mode;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use float_eq::assert_float_eq;
+    use mlx_rs::random::uniform;
+
+    use super::*;
+
+    #[test]
+    fn test_dropout() {
+        mlx_rs::random::seed(959);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.511_429_2,
+            abs <= 0.010_228_584
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            130.925_87,
+            abs <= 2.618_517_4
+        );
+        let result = Dropout::new().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 16]);
+        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.477_913_62,
+            abs <= 0.009_558_273
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            122.345_89,
+            abs <= 2.446_917_8
+        );
+    }
+
+    #[test]
+    fn test_dropout2d() {
+        mlx_rs::random::seed(695);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.457_839_9,
+            abs <= 0.009_156_798
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            117.207_016,
+            abs <= 2.344_140_3
+        );
+        let result = Dropout2d::new().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 16]);
+        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.368_284_34,
+            abs <= 0.007_365_687
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            94.280_79,
+            abs <= 1.885_615_8
+        );
+    }
+
+    #[test]
+    fn test_dropout3d() {
+        mlx_rs::random::seed(23);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 8, 4]);
+        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.500_606_2,
+            abs <= 0.010_012_124
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            256.310_36,
+            abs <= 5.126_207_4
+        );
+        let result = Dropout3d::new().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 8, 4]);
+        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.237_284_15,
+            abs <= 0.004_745_683
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            121.489_49,
+            abs <= 2.429_789_8
+        );
+    }
+}

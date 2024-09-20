@@ -2,7 +2,7 @@ use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
 use mlx_sys::{mlx_closure, mlx_vector_array};
 
-use crate::{complex64, Array, FromNested};
+use crate::{complex64, error::Exception, Array, FromNested};
 
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
@@ -228,6 +228,10 @@ impl<'a> Closure<'a> {
         }
     }
 
+    pub(crate) fn as_ptr(&self) -> mlx_closure {
+        self.c_closure
+    }
+
     pub(crate) fn new<F>(closure: F) -> Self
     where
         F: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -239,9 +243,17 @@ impl<'a> Closure<'a> {
         }
     }
 
-    pub(crate) fn as_ptr(&self) -> mlx_closure {
-        self.c_closure
+    pub(crate) fn new_with_error<F>(closure: F) -> Self
+    where
+        F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    {
+        let c_closure = new_mlx_closure_with_error(closure);
+        Self {
+            c_closure,
+            lt_marker: PhantomData,
+        }
     }
+
 }
 
 impl<'a> Drop for Closure<'a> {
@@ -264,6 +276,19 @@ where
 
     unsafe {
         mlx_sys::mlx_closure_new_with_payload(Some(trampoline::<F>), payload, Some(noop_dtor))
+    }
+}
+
+fn new_mlx_closure_with_error<'a, F>(closure: F) -> mlx_sys::mlx_closure
+where
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    let boxed = Box::new(closure);
+    let raw = Box::into_raw(boxed);
+    let payload = raw as *mut std::ffi::c_void;
+
+    unsafe {
+        mlx_sys::mlx_closure_new_with_payload(Some(trampoline_with_exception::<F>), payload, Some(noop_dtor))
     }
 }
 
@@ -306,6 +331,28 @@ where
         // We should probably keep using new_mlx_vector_array here instead of VectorArray
         // since we probably don't want to drop the arrays in the closure
         new_mlx_vector_array(result)
+    }
+}
+
+extern "C" fn trampoline_with_exception<'a, F>(
+    vector_array: mlx_sys::mlx_vector_array,
+    payload: *mut std::ffi::c_void,
+) -> mlx_sys::mlx_vector_array 
+where 
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    unsafe {
+        let raw_closure: *mut F = payload as *mut _;
+        let mut closure = Box::from_raw(raw_closure);
+        let arrays = mlx_vector_array_values(vector_array);
+        let result = closure(&arrays);
+        match result {
+            Ok(result) => new_mlx_vector_array(result),
+            Err(exception) => {
+                crate::error::set_last_mlx_closure_error(exception);
+                std::ptr::null_mut()
+            }
+        }
     }
 }
 

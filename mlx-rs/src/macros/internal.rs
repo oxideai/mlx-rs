@@ -8,6 +8,7 @@ macro_rules! try_catch_c_ptr_expr {
         if c_ptr.is_null() {
             // SAFETY: there must be an error if the pointer is null
             return Err($crate::error::get_and_clear_last_mlx_error()
+                .or($crate::error::take_last_mlx_closure_error())
                 .expect("A null pointer was returned, but no error was set."));
         }
         c_ptr

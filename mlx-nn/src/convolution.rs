@@ -343,3 +343,79 @@ impl Module for Conv3d {
 
     fn training_mode(&mut self, _: bool) {}
 }
+
+// The following tests are ported from the swift bindings:
+// mlx-swift/Tests/IntegrationTests.swift
+#[cfg(test)]
+mod tests {
+    use float_eq::assert_float_eq;
+    use mlx_nn_module::Module;
+    use mlx_rs::{random::uniform, Dtype};
+
+    use crate::Conv1d;
+
+    #[test]
+    fn test_conv1d() {
+        mlx_rs::random::seed(819);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.512_987_5,
+            abs <= 0.010_259_75
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            131.324_8,
+            abs <= 2.626_496
+        );
+        let result = Conv1d::new(16, 2, 8).unwrap().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 1, 2]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.264_865_2,
+            abs <= 0.005_297_303_7
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            1.059_460_8,
+            abs <= 0.021_189_215
+        );
+    }
+
+    #[test]
+    fn test_conv2d() {
+        mlx_rs::random::seed(62);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 8, 4]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.522_504_27,
+            abs <= 0.010_450_086
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            267.522_2,
+            abs <= 5.350_444
+        );
+        let result = crate::Conv2d::new(4, 2, (8, 8))
+            .unwrap()
+            .forward(&a)
+            .unwrap();
+        assert_eq!(result.shape(), &[2, 1, 1, 2]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            -0.279_321_5,
+            abs <= 0.005_586_43
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            -1.117_286,
+            abs <= 0.022_345_72
+        );
+    }
+}

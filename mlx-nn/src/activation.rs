@@ -1089,7 +1089,7 @@ fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
 fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
     let f = |x_: &Array| {
         mlx_rs::ops::minimum(
-            mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
+            &mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
             &array!(6.0),
         )
         .unwrap()

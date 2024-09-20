@@ -76,9 +76,9 @@ impl Module for Linear {
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => {
-                mlx_rs::ops::addmm(bias, x, &self.weight.value, None, None).map_err(Into::into)
+                mlx_rs::ops::addmm(bias, x, self.weight.value.t(), None, None).map_err(Into::into)
             }
-            None => mlx_rs::ops::matmul(x, &self.weight.value).map_err(Into::into),
+            None => mlx_rs::ops::matmul(x, &self.weight.value.t()).map_err(Into::into),
         }
     }
 
@@ -165,4 +165,45 @@ impl Module for Bilinear {
     }
 
     fn training_mode(&mut self, _: bool) {}
+}
+
+// The following tests are ported from the swift binding:
+// mlx-swift/Tests/MLXTests/IntegrationTests.swift
+#[cfg(test)]
+mod tests {
+    use float_eq::assert_float_eq;
+    use mlx_rs::{random::uniform, Dtype};
+
+    use super::*;
+
+    #[test]
+    fn test_linear() {
+        mlx_rs::random::seed(744);
+        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.508_688_57,
+            abs <= 0.010_173_771_5
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            130.224_27,
+            abs <= 2.604_485_5
+        );
+        let result = Linear::new(16, 5).unwrap().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 5]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.104_193_09,
+            abs <= 0.002_083_861_7
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            8.335_447,
+            abs <= 0.166_708_95
+        );
+    }
 }

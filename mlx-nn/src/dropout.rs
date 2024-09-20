@@ -262,7 +262,7 @@ impl Module for Dropout3d {
 }
 
 // The following tests were ported from the swift binding:
-// mlx-swift/Tests/IntegrationTests.swift
+// mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;

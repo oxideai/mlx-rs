@@ -345,7 +345,7 @@ impl Module for Conv3d {
 }
 
 // The following tests are ported from the swift bindings:
-// mlx-swift/Tests/IntegrationTests.swift
+// mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;

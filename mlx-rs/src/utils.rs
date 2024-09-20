@@ -349,8 +349,11 @@ where
         match result {
             Ok(result) => new_mlx_vector_array(result),
             Err(exception) => {
+                println!("Setting last mlx closure error");
                 crate::error::set_last_mlx_closure_error(exception);
-                std::ptr::null_mut()
+                // We cannot return a null pointer here otherwise 
+                // it will panic if the c binding is trying to create a std::vector from it
+                mlx_sys::mlx_vector_array_new()
             }
         }
     }

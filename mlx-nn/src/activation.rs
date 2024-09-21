@@ -211,7 +211,7 @@ pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, 
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
 pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array, Exception> {
-    let threshold = threshold.into().unwrap_or(0.0);
+    let threshold = array!(threshold.into().unwrap_or(0.0));
     mlx_rs::ops::r#where(&x.as_ref().gt(threshold)?, &array!(1), &array!(0))
 }
 
@@ -1085,15 +1085,11 @@ fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
     compiled((x, alpha))
 }
 
-// We need to suppress this lint because it would lead to invalid memory reference issues if the
-// borrow is removed. See issue: #106
-// TODO: Remove the clippy lint suppression once the issue is fixed.
-#[allow(clippy::needless_borrows_for_generic_args)]
 #[inline]
 fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
     let f = |x_: &Array| {
         mlx_rs::ops::minimum(
-            &mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
+            mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
             &array!(6.0),
         )
         .unwrap()

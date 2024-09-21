@@ -28,7 +28,6 @@ pub mod prelude {
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
-        utils::ScalarOrArray,
     };
 
     pub use num_traits::Pow;

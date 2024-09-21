@@ -268,7 +268,7 @@ mod tests {
     #[test]
     fn test_view() {
         let array = Array::from_slice(&[1i16, 2, 3], &[3]);
-        let mut new_array = array.view::<i8>();
+        let new_array = array.view::<i8>();
 
         assert_eq!(new_array.dtype(), Dtype::Int8);
         assert_eq!(new_array.shape(), &[6]);

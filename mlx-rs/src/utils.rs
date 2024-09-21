@@ -353,7 +353,9 @@ where
             Ok(result) => new_mlx_vector_array(result),
             Err(exception) => {
                 crate::error::set_last_mlx_closure_error(exception);
-                std::ptr::null_mut()
+                // We cannot return a null ptr here, otherwise vjp will get an invalid memory
+                // reference error
+                mlx_sys::mlx_vector_array_new()
             }
         }
     }

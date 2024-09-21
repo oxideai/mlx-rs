@@ -15,6 +15,26 @@ macro_rules! try_catch_c_ptr_expr {
     }};
 }
 
+macro_rules! try_catch_mlx_closure_error {
+    ($expr:expr) => {{
+        if !$crate::error::is_mlx_error_handler_set() {
+            $crate::error::setup_mlx_error_handler();
+        }
+
+        let c_ptr = $expr;
+        // Always check for closure errors
+        if let Some(error) = $crate::error::get_and_clear_last_mlx_error()
+            .or($crate::error::take_last_mlx_closure_error())
+        {
+            return Err(error);
+        }
+        if c_ptr.is_null() {
+            panic!("A null pointer was returned, but no error was set.");
+        }
+        c_ptr
+    }};
+}
+
 /// See `assertEqual` in the swift binding tests
 #[allow(unused_macros)]
 macro_rules! assert_array_all_close {

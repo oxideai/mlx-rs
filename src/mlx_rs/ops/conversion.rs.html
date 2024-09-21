@@ -546,7 +546,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_view() {
         <span class="kw">let </span>array = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1i16</span>, <span class="number">2</span>, <span class="number">3</span>], <span class="kw-2">&amp;</span>[<span class="number">3</span>]);
-        <span class="kw">let </span><span class="kw-2">mut </span>new_array = array.view::&lt;i8&gt;();
+        <span class="kw">let </span>new_array = array.view::&lt;i8&gt;();
 
         <span class="macro">assert_eq!</span>(new_array.dtype(), Dtype::Int8);
         <span class="macro">assert_eq!</span>(new_array.shape(), <span class="kw-2">&amp;</span>[<span class="number">6</span>]);

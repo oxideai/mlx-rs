@@ -134,6 +134,28 @@
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Macros for creating arrays.
 
 /// A helper macro to create an array with up to 3 dimensions.
@@ -177,9 +199,19 @@
 ///         [10, 11, 12]
 ///     ]
 /// ]);
+///
+/// // Create a 2x2 array by specifying the shape
+/// let a = array!([1, 2, 3, 4], shape=[2, 2]);
 /// ```
 </span><span class="attr">#[macro_export]
 </span><span class="macro">macro_rules!</span> array {
+    ([$(<span class="macro-nonterminal">$x</span>:expr),<span class="kw-2">*</span>], shape=[$(<span class="macro-nonterminal">$s</span>:expr),<span class="kw-2">*</span>]) =&gt; {
+        {
+            <span class="kw">let </span>data = [$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>];
+            <span class="kw">let </span>shape = [$(<span class="macro-nonterminal">$s</span>,)<span class="kw-2">*</span>];
+            <span class="macro-nonterminal">$crate::Array::from_slice</span>(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>shape)
+        }
+    };
     ([$([$([$(<span class="macro-nonterminal">$x</span>:expr),<span class="kw-2">*</span>]),<span class="kw-2">*</span>]),<span class="kw-2">*</span>]) =&gt; {
         {
             <span class="kw">let </span>arr = [$([$([$(<span class="macro-nonterminal">$x</span>,)<span class="kw-2">*</span>],)<span class="kw-2">*</span>],)<span class="kw-2">*</span>];
@@ -268,6 +300,18 @@
         <span class="macro">assert_eq!</span>(a.index((<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>)).item::&lt;i32&gt;(), <span class="number">10</span>);
         <span class="macro">assert_eq!</span>(a.index((<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>)).item::&lt;i32&gt;(), <span class="number">11</span>);
         <span class="macro">assert_eq!</span>(a.index((<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>)).item::&lt;i32&gt;(), <span class="number">12</span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_array_with_shape() {
+        <span class="kw">let </span>a = <span class="macro">array!</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>], shape = [<span class="number">2</span>, <span class="number">2</span>]);
+
+        <span class="macro">assert!</span>(a.ndim() == <span class="number">2</span>);
+        <span class="macro">assert_eq!</span>(a.shape(), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>]);
+        <span class="macro">assert_eq!</span>(a.index((<span class="number">0</span>, <span class="number">0</span>)).item::&lt;i32&gt;(), <span class="number">1</span>);
+        <span class="macro">assert_eq!</span>(a.index((<span class="number">0</span>, <span class="number">1</span>)).item::&lt;i32&gt;(), <span class="number">2</span>);
+        <span class="macro">assert_eq!</span>(a.index((<span class="number">1</span>, <span class="number">0</span>)).item::&lt;i32&gt;(), <span class="number">3</span>);
+        <span class="macro">assert_eq!</span>(a.index((<span class="number">1</span>, <span class="number">1</span>)).item::&lt;i32&gt;(), <span class="number">4</span>);
     }
 }
 </code></pre></div></section></main></body></html>

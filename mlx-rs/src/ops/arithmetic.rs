@@ -1,10 +1,9 @@
 use crate::array::Array;
 use crate::error::Exception;
-use crate::prelude::ScalarOrArray;
 use crate::sealed::Sealed;
 use crate::stream::StreamOrDevice;
 
-use crate::utils::{IntoOption, VectorArray};
+use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
 use crate::Stream;
 use mlx_macros::default_device;
 use smallvec::SmallVec;
@@ -47,14 +46,14 @@ impl Array {
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
     #[default_device]
-    pub fn add_device<'a>(
+    pub fn add_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_add(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_add(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -80,14 +79,14 @@ impl Array {
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
     #[default_device]
-    pub fn subtract_device<'a>(
+    pub fn subtract_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_subtract(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_subtract(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -133,14 +132,14 @@ impl Array {
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
     #[default_device]
-    pub fn multiply_device<'a>(
+    pub fn multiply_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_multiply(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_multiply(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -166,14 +165,14 @@ impl Array {
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     #[default_device]
-    pub fn divide_device<'a>(
+    pub fn divide_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_divide(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_divide(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -199,14 +198,14 @@ impl Array {
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
     #[default_device]
-    pub fn power_device<'a>(
+    pub fn power_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_power(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_power(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -232,14 +231,14 @@ impl Array {
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
     #[default_device]
-    pub fn remainder_device<'a>(
+    pub fn remainder_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_remainder(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_remainder(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -344,14 +343,14 @@ impl Array {
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     #[default_device]
-    pub fn floor_divide_device<'a>(
+    pub fn floor_divide_device(
         &self,
-        other: impl ScalarOrArray<'a>,
+        other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_floor_divide(self.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_floor_divide(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -558,14 +557,12 @@ pub fn acosh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::add`].
 #[default_device]
-pub fn add_device<'a, 'b>(
-    lhs: impl ScalarOrArray<'a>,
-    rhs: impl ScalarOrArray<'b>,
+pub fn add_device(
+    lhs: impl AsRef<Array>,
+    rhs: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    lhs.into_owned_or_ref_array()
-        .as_ref()
-        .add_device(rhs, stream)
+    lhs.as_ref().add_device(rhs, stream)
 }
 
 /// Element-wise inverse sine.
@@ -731,14 +728,12 @@ pub fn degrees_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::divide`].
 #[default_device]
-pub fn divide_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn divide_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .divide_device(b, stream)
+    a.as_ref().divide_device(b, stream)
 }
 
 /// Element-wise quotient and remainder.
@@ -748,13 +743,13 @@ pub fn divide_device<'a, 'b>(
 ///
 /// Returns Ok((quotient, remainder)) if the operation was successful.
 #[default_device]
-pub fn divmod_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn divmod_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array), Exception> {
-    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
         let c_vec = try_catch_c_ptr_expr! {
@@ -802,9 +797,9 @@ pub fn floor_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exce
 
 /// See [`Array::floor_divide`].
 #[default_device]
-pub fn floor_divide_device<'a>(
+pub fn floor_divide_device(
     a: &Array,
-    other: impl ScalarOrArray<'a>,
+    other: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     a.floor_divide_device(other, stream)
@@ -841,13 +836,13 @@ pub fn log2_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 ///
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
 #[default_device]
-pub fn log_add_exp_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn log_add_exp_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -868,13 +863,13 @@ pub fn matmul_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 #[default_device]
-pub fn maximum_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn maximum_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -889,13 +884,13 @@ pub fn maximum_device<'a, 'b>(
 /// Take the element-wise min of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 #[default_device]
-pub fn minimum_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn minimum_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -907,14 +902,12 @@ pub fn minimum_device<'a, 'b>(
 
 /// See [`Array::multiply`].
 #[default_device]
-pub fn multiply_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn multiply_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .multiply_device(b, stream)
+    a.as_ref().multiply_device(b, stream)
 }
 
 /// See [`Array::negative`].
@@ -925,9 +918,9 @@ pub fn negative_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, E
 
 /// See [`Array::power`].
 #[default_device]
-pub fn power_device<'a>(
+pub fn power_device(
     a: &Array,
-    b: impl ScalarOrArray<'a>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     a.power_device(b, stream)
@@ -947,14 +940,12 @@ pub fn reciprocal_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::remainder`].
 #[default_device]
-pub fn remainder_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn remainder_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .remainder_device(b, stream)
+    a.as_ref().remainder_device(b, stream)
 }
 
 /// See [`Array::round`].
@@ -1040,14 +1031,12 @@ pub fn square_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::subtract`].
 #[default_device]
-pub fn subtract_device<'a, 'b>(
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn subtract_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .subtract_device(b, stream)
+    a.as_ref().subtract_device(b, stream)
 }
 
 /// See [`Array::tan`].
@@ -1121,17 +1110,17 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
 /// - `alpha`: Scaling factor for the matrix product of `a` and `b` (default: `1`)
 /// - `beta`: Scaling factor for `c` (default: `1`)
 #[default_device]
-pub fn addmm_device<'c, 'a, 'b>(
-    c: impl ScalarOrArray<'c>,
-    a: impl ScalarOrArray<'a>,
-    b: impl ScalarOrArray<'b>,
+pub fn addmm_device(
+    c: impl AsRef<Array>,
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     alpha: impl Into<Option<f32>>,
     beta: impl Into<Option<f32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let c_ptr = c.into_owned_or_ref_array().as_ref().as_ptr();
-    let a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    let b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    let c_ptr = c.as_ref().as_ptr();
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
     let alpha = alpha.into().unwrap_or(1.0);
     let beta = beta.into().unwrap_or(1.0);
 
@@ -1833,7 +1822,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
         let res = exp(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.exp()).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.exp())).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -1898,7 +1887,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
         let res = sin(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.sin()).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.sin())).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -1941,7 +1930,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
         let res = cos(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.cos()).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.cos())).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -1972,7 +1961,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(std::f32::consts::PI / 2.0), &[2, 2, 2]).unwrap();
         let res = degrees(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 90.0).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(90.0)).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -2003,7 +1992,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(90.0), &[2, 2, 2]).unwrap();
         let res = radians(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], std::f32::consts::PI / 2.0).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(std::f32::consts::PI / 2.0)).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -2032,7 +2021,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
         let res = log(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 0.0).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(0.0)).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -2097,7 +2086,7 @@ mod tests {
         // Input is irregularly strided
         let x = broadcast_to(&Array::from_float(1.0), &[2, 2, 2]).unwrap();
         let res = log1p(&x);
-        let expected = Array::full::<f32>(&[2, 2, 2], 1.0f32.ln_1p()).unwrap();
+        let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.ln_1p())).unwrap();
         assert!(all_close(&res, &expected, None, None, None)
             .unwrap()
             .item::<bool>());
@@ -2144,10 +2133,10 @@ mod tests {
         let x = array![2];
         assert_eq!(square(&x).item::<i32>(), 4);
 
-        let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
+        let x = Array::full::<f32>(&[3, 3], array!(2.0)).unwrap();
         assert!(all_close(
             square(&x),
-            Array::full::<f32>(&[3, 3], 4.0).unwrap(),
+            Array::full::<f32>(&[3, 3], array!(4.0)).unwrap(),
             None,
             None,
             None
@@ -2162,10 +2151,10 @@ mod tests {
         assert_eq!(sqrt(&x).item::<f32>(), 2.0);
         assert_eq!(rsqrt(&x).item::<f32>(), 0.5);
 
-        let x = Array::full::<f32>(&[3, 3], 9.0).unwrap();
+        let x = Array::full::<f32>(&[3, 3], array!(9.0)).unwrap();
         assert!(all_close(
             sqrt(&x),
-            Array::full::<f32>(&[3, 3], 3.0).unwrap(),
+            Array::full::<f32>(&[3, 3], array!(3.0)).unwrap(),
             None,
             None,
             None
@@ -2188,10 +2177,10 @@ mod tests {
         assert_eq!(out.dtype(), Dtype::Float32);
         assert_eq!(out.item::<f32>(), 0.5);
 
-        let x = Array::full::<f32>(&[3, 3], 2.0).unwrap();
+        let x = Array::full::<f32>(&[3, 3], array!(2.0)).unwrap();
         assert!(all_close(
             reciprocal(&x),
-            Array::full::<f32>(&[3, 3], 0.5).unwrap(),
+            Array::full::<f32>(&[3, 3], array!(0.5)).unwrap(),
             None,
             None,
             None
@@ -2249,7 +2238,7 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[10]).unwrap();
         let y = broadcast_to(&array!(2.0), &[10]).unwrap();
         let z = add(&x, &y).unwrap();
-        assert_eq!(z, full::<f32>(&[10], 3.0).unwrap());
+        assert_eq!(z, full::<f32>(&[10], array!(3.0)).unwrap());
 
         let x = Array::from_slice(&[1.0, 2.0], &[1, 2]);
         let y = Array::from_slice(&[1.0, 2.0], &[2, 1]);
@@ -2371,6 +2360,10 @@ mod tests {
     fn test_basic_clip() {
         let a = array!([1.0, 4.0, 3.0, 8.0, 5.0]);
         let expected = array!([2.0, 4.0, 3.0, 6.0, 5.0]);
+        let clipped = clip(&a, (array!(2.0), array!(6.0))).unwrap();
+        assert_eq!(clipped, expected);
+
+        // Test with scalar
         let clipped = clip(&a, (2.0, 6.0)).unwrap();
         assert_eq!(clipped, expected);
     }
@@ -2379,6 +2372,10 @@ mod tests {
     fn test_clip_with_only_min() {
         let a = array!([-1.0, 1.0, 0.0, 5.0]);
         let expected = array!([0.0, 1.0, 0.0, 5.0]);
+        let clipped = clip(&a, (array!(0.0), ())).unwrap();
+        assert_eq!(clipped, expected);
+
+        // Test with scalar
         let clipped = clip(&a, (0.0, ())).unwrap();
         assert_eq!(clipped, expected);
     }
@@ -2387,6 +2384,10 @@ mod tests {
     fn test_clip_with_only_max() {
         let a = array!([2.0, 3.0, 4.0, 5.0]);
         let expected = array!([2.0, 3.0, 4.0, 4.0]);
+        let clipped = clip(&a, ((), array!(4.0))).unwrap();
+        assert_eq!(clipped, expected);
+
+        // Test with scalar
         let clipped = clip(&a, ((), 4.0)).unwrap();
         assert_eq!(clipped, expected);
     }

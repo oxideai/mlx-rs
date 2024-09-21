@@ -173,10 +173,6 @@ impl<'a> ScalarOrArray<'a> for &'a Array {
     }
 }
 
-// We can't replace the following four impls with `FromScalar` trait bound
-// because compiler would complain about conflicting implementations with
-// `FromNested`.
-
 impl ScalarOrArray<'static> for bool {
     type Array = Array;
 

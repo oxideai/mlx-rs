@@ -1,6 +1,5 @@
 use crate::array::ArrayElement;
 use crate::error::Exception;
-use crate::prelude::ScalarOrArray;
 use crate::Stream;
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_macros::default_device;
@@ -117,14 +116,14 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice, array};
     /// //  create [5, 4] array filled with 7
-    /// let r = Array::full_device::<f32>(&[5, 4], 7.0f32, StreamOrDevice::default()).unwrap();
+    /// let r = Array::full_device::<f32>(&[5, 4], array!(7.0f32), StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn full_device<'a, T: ArrayElement>(
+    pub fn full_device<T: ArrayElement>(
         shape: &[i32],
-        values: impl ScalarOrArray<'a>,
+        values: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
@@ -132,7 +131,7 @@ impl Array {
                 mlx_sys::mlx_full(
                     shape.as_ptr(),
                     shape.len(),
-                    values.into_owned_or_ref_array().as_ref().as_ptr(),
+                    values.as_ref().as_ptr(),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
                 )
@@ -392,9 +391,9 @@ pub fn eye_device<T: ArrayElement>(
 
 /// See [`Array::full`]
 #[default_device]
-pub fn full_device<'a, T: ArrayElement>(
+pub fn full_device<T: ArrayElement>(
     shape: &[i32],
-    values: impl ScalarOrArray<'a>,
+    values: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     Array::full_device::<T>(shape, values, stream)
@@ -474,7 +473,7 @@ pub fn tri_device<T: ArrayElement>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dtype::Dtype;
+    use crate::{array, dtype::Dtype};
     use half::f16;
 
     #[test]
@@ -518,7 +517,7 @@ mod tests {
 
     #[test]
     fn test_full_scalar() {
-        let array = Array::full::<f32>(&[2, 3], 7f32).unwrap();
+        let array = Array::full::<f32>(&[2, 3], array!(7f32)).unwrap();
         assert_eq!(array.shape(), &[2, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 

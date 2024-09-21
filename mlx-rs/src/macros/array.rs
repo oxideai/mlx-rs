@@ -41,9 +41,19 @@
 ///         [10, 11, 12]
 ///     ]
 /// ]);
+///
+/// // Create a 2x2 array by specifying the shape
+/// let a = array!([1, 2, 3, 4], shape=[2, 2]);
 /// ```
 #[macro_export]
 macro_rules! array {
+    ([$($x:expr),*], shape=[$($s:expr),*]) => {
+        {
+            let data = [$($x,)*];
+            let shape = [$($s,)*];
+            $crate::Array::from_slice(&data, &shape)
+        }
+    };
     ([$([$([$($x:expr),*]),*]),*]) => {
         {
             let arr = [$([$([$($x,)*],)*],)*];
@@ -132,5 +142,17 @@ mod tests {
         assert_eq!(a.index((1, 1, 0)).item::<i32>(), 10);
         assert_eq!(a.index((1, 1, 1)).item::<i32>(), 11);
         assert_eq!(a.index((1, 1, 2)).item::<i32>(), 12);
+    }
+
+    #[test]
+    fn test_array_with_shape() {
+        let a = array!([1, 2, 3, 4], shape = [2, 2]);
+
+        assert!(a.ndim() == 2);
+        assert_eq!(a.shape(), &[2, 2]);
+        assert_eq!(a.index((0, 0)).item::<i32>(), 1);
+        assert_eq!(a.index((0, 1)).item::<i32>(), 2);
+        assert_eq!(a.index((1, 0)).item::<i32>(), 3);
+        assert_eq!(a.index((1, 1)).item::<i32>(), 4);
     }
 }

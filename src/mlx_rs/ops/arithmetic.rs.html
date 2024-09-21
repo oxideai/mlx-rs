@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/arithmetic.rs`."><title>arithmetic.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/arithmetic.rs`."><title>arithmetic.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2530,13 +2530,13 @@
 <a href="#2530" id="2530">2530</a>
 <a href="#2531" id="2531">2531</a>
 <a href="#2532" id="2532">2532</a>
+<a href="#2533" id="2533">2533</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::array::Array;
 <span class="kw">use </span><span class="kw">crate</span>::error::Exception;
-<span class="kw">use </span><span class="kw">crate</span>::prelude::ScalarOrArray;
 <span class="kw">use </span><span class="kw">crate</span>::sealed::Sealed;
 <span class="kw">use </span><span class="kw">crate</span>::stream::StreamOrDevice;
 
-<span class="kw">use </span><span class="kw">crate</span>::utils::{IntoOption, VectorArray};
+<span class="kw">use </span><span class="kw">crate</span>::utils::{IntoOption, ScalarOrArray, VectorArray};
 <span class="kw">use </span><span class="kw">crate</span>::Stream;
 <span class="kw">use </span>mlx_macros::default_device;
 <span class="kw">use </span>smallvec::SmallVec;
@@ -2579,14 +2579,14 @@
     /// // c_data == [5.0, 7.0, 9.0]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>add_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>add_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_add(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_add(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2612,14 +2612,14 @@
     /// // c_data == [-3.0, -3.0, -3.0]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>subtract_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>subtract_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_subtract(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_subtract(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2665,14 +2665,14 @@
     /// // c_data == [4.0, 10.0, 18.0]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>multiply_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>multiply_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_multiply(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_multiply(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2698,14 +2698,14 @@
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>divide_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>divide_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_divide(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_divide(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2731,14 +2731,14 @@
     /// // c_data == [1.0, 8.0, 81.0]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>power_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>power_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_power(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_power(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2764,14 +2764,14 @@
     /// // c_data == [1.0, 3.0, 2.0]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>remainder_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>remainder_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_remainder(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_remainder(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -2876,14 +2876,14 @@
     /// // c_data == [0.25, 0.4, 0.5]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>floor_divide_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>floor_divide_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
-                mlx_sys::mlx_floor_divide(<span class="self">self</span>.c_array, other.into_owned_or_ref_array().as_ref().as_ptr(), stream.as_ref().as_ptr())
+                mlx_sys::mlx_floor_divide(<span class="self">self</span>.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             <span class="prelude-val">Ok</span>(Array::from_ptr(c_array))
         }
@@ -3090,14 +3090,12 @@
 
 <span class="doccomment">/// See [`Array::add`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>add_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    lhs: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    rhs: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>add_device(
+    lhs: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    rhs: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    lhs.into_owned_or_ref_array()
-        .as_ref()
-        .add_device(rhs, stream)
+    lhs.as_ref().add_device(rhs, stream)
 }
 
 <span class="doccomment">/// Element-wise inverse sine.
@@ -3263,14 +3261,12 @@
 
 <span class="doccomment">/// See [`Array::divide`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>divide_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>divide_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .divide_device(b, stream)
+    a.as_ref().divide_device(b, stream)
 }
 
 <span class="doccomment">/// Element-wise quotient and remainder.
@@ -3280,13 +3276,13 @@
 ///
 /// Returns Ok((quotient, remainder)) if the operation was successful.
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>divmod_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>divmod_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(Array, Array), Exception&gt; {
-    <span class="kw">let </span>a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    <span class="kw">let </span>a_ptr = a.as_ref().as_ptr();
+    <span class="kw">let </span>b_ptr = b.as_ref().as_ptr();
 
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_vec = <span class="macro">try_catch_c_ptr_expr!</span> {
@@ -3334,9 +3330,9 @@
 
 <span class="doccomment">/// See [`Array::floor_divide`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>floor_divide_device&lt;<span class="lifetime">'a</span>&gt;(
+</span><span class="kw">pub fn </span>floor_divide_device(
     a: <span class="kw-2">&amp;</span>Array,
-    other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+    other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     a.floor_divide_device(other, stream)
@@ -3373,13 +3369,13 @@
 ///
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>log_add_exp_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>log_add_exp_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    <span class="kw">let </span>a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    <span class="kw">let </span>a_ptr = a.as_ref().as_ptr();
+    <span class="kw">let </span>b_ptr = b.as_ref().as_ptr();
 
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
@@ -3400,13 +3396,13 @@
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>maximum_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>maximum_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    <span class="kw">let </span>a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    <span class="kw">let </span>a_ptr = a.as_ref().as_ptr();
+    <span class="kw">let </span>b_ptr = b.as_ref().as_ptr();
 
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
@@ -3421,13 +3417,13 @@
 /// Take the element-wise min of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>minimum_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>minimum_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    <span class="kw">let </span>a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    <span class="kw">let </span>a_ptr = a.as_ref().as_ptr();
+    <span class="kw">let </span>b_ptr = b.as_ref().as_ptr();
 
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
@@ -3439,14 +3435,12 @@
 
 <span class="doccomment">/// See [`Array::multiply`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>multiply_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>multiply_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .multiply_device(b, stream)
+    a.as_ref().multiply_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::negative`].
@@ -3457,9 +3451,9 @@
 
 <span class="doccomment">/// See [`Array::power`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>power_device&lt;<span class="lifetime">'a</span>&gt;(
+</span><span class="kw">pub fn </span>power_device(
     a: <span class="kw-2">&amp;</span>Array,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     a.power_device(b, stream)
@@ -3479,14 +3473,12 @@
 
 <span class="doccomment">/// See [`Array::remainder`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>remainder_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>remainder_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .remainder_device(b, stream)
+    a.as_ref().remainder_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::round`].
@@ -3572,14 +3564,12 @@
 
 <span class="doccomment">/// See [`Array::subtract`].
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>subtract_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>subtract_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .subtract_device(b, stream)
+    a.as_ref().subtract_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::tan`].
@@ -3653,17 +3643,17 @@
 /// - `alpha`: Scaling factor for the matrix product of `a` and `b` (default: `1`)
 /// - `beta`: Scaling factor for `c` (default: `1`)
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>addmm_device&lt;<span class="lifetime">'c</span>, <span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
-    c: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'c</span>&gt;,
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+</span><span class="kw">pub fn </span>addmm_device(
+    c: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     alpha: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f32&gt;&gt;,
     beta: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f32&gt;&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    <span class="kw">let </span>c_ptr = c.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>a_ptr = a.into_owned_or_ref_array().as_ref().as_ptr();
-    <span class="kw">let </span>b_ptr = b.into_owned_or_ref_array().as_ref().as_ptr();
+    <span class="kw">let </span>c_ptr = c.as_ref().as_ptr();
+    <span class="kw">let </span>a_ptr = a.as_ref().as_ptr();
+    <span class="kw">let </span>b_ptr = b.as_ref().as_ptr();
     <span class="kw">let </span>alpha = alpha.into().unwrap_or(<span class="number">1.0</span>);
     <span class="kw">let </span>beta = beta.into().unwrap_or(<span class="number">1.0</span>);
 
@@ -4365,7 +4355,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = exp(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">1.0f32</span>.exp()).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">1.0f32</span>.exp())).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4430,7 +4420,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = sin(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">1.0f32</span>.sin()).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">1.0f32</span>.sin())).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4473,7 +4463,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = cos(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">1.0f32</span>.cos()).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">1.0f32</span>.cos())).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4504,7 +4494,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(std::f32::consts::PI / <span class="number">2.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = degrees(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">90.0</span>).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">90.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4535,7 +4525,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">90.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = radians(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], std::f32::consts::PI / <span class="number">2.0</span>).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(std::f32::consts::PI / <span class="number">2.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4564,7 +4554,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = log(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">0.0</span>).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">0.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4629,7 +4619,7 @@
         <span class="comment">// Input is irregularly strided
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span>Array::from_float(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>]).unwrap();
         <span class="kw">let </span>res = log1p(<span class="kw-2">&amp;</span>x);
-        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="number">1.0f32</span>.ln_1p()).unwrap();
+        <span class="kw">let </span>expected = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>], <span class="macro">array!</span>(<span class="number">1.0f32</span>.ln_1p())).unwrap();
         <span class="macro">assert!</span>(all_close(<span class="kw-2">&amp;</span>res, <span class="kw-2">&amp;</span>expected, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
             .unwrap()
             .item::&lt;bool&gt;());
@@ -4676,10 +4666,10 @@
         <span class="kw">let </span>x = <span class="macro">array!</span>[<span class="number">2</span>];
         <span class="macro">assert_eq!</span>(square(<span class="kw-2">&amp;</span>x).item::&lt;i32&gt;(), <span class="number">4</span>);
 
-        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">2.0</span>).unwrap();
+        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">2.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(
             square(<span class="kw-2">&amp;</span>x),
-            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">4.0</span>).unwrap(),
+            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">4.0</span>)).unwrap(),
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None
@@ -4694,10 +4684,10 @@
         <span class="macro">assert_eq!</span>(sqrt(<span class="kw-2">&amp;</span>x).item::&lt;f32&gt;(), <span class="number">2.0</span>);
         <span class="macro">assert_eq!</span>(rsqrt(<span class="kw-2">&amp;</span>x).item::&lt;f32&gt;(), <span class="number">0.5</span>);
 
-        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">9.0</span>).unwrap();
+        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">9.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(
             sqrt(<span class="kw-2">&amp;</span>x),
-            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">3.0</span>).unwrap(),
+            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">3.0</span>)).unwrap(),
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None
@@ -4720,10 +4710,10 @@
         <span class="macro">assert_eq!</span>(out.dtype(), Dtype::Float32);
         <span class="macro">assert_eq!</span>(out.item::&lt;f32&gt;(), <span class="number">0.5</span>);
 
-        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">2.0</span>).unwrap();
+        <span class="kw">let </span>x = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">2.0</span>)).unwrap();
         <span class="macro">assert!</span>(all_close(
             reciprocal(<span class="kw-2">&amp;</span>x),
-            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="number">0.5</span>).unwrap(),
+            Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">0.5</span>)).unwrap(),
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None</span>,
             <span class="prelude-val">None
@@ -4781,7 +4771,7 @@
         </span><span class="kw">let </span>x = broadcast_to(<span class="kw-2">&amp;</span><span class="macro">array!</span>(<span class="number">1.0</span>), <span class="kw-2">&amp;</span>[<span class="number">10</span>]).unwrap();
         <span class="kw">let </span>y = broadcast_to(<span class="kw-2">&amp;</span><span class="macro">array!</span>(<span class="number">2.0</span>), <span class="kw-2">&amp;</span>[<span class="number">10</span>]).unwrap();
         <span class="kw">let </span>z = add(<span class="kw-2">&amp;</span>x, <span class="kw-2">&amp;</span>y).unwrap();
-        <span class="macro">assert_eq!</span>(z, full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">10</span>], <span class="number">3.0</span>).unwrap());
+        <span class="macro">assert_eq!</span>(z, full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">10</span>], <span class="macro">array!</span>(<span class="number">3.0</span>)).unwrap());
 
         <span class="kw">let </span>x = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">2.0</span>], <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>]);
         <span class="kw">let </span>y = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">1.0</span>, <span class="number">2.0</span>], <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">1</span>]);
@@ -4903,7 +4893,11 @@
     </span><span class="kw">fn </span>test_basic_clip() {
         <span class="kw">let </span>a = <span class="macro">array!</span>([<span class="number">1.0</span>, <span class="number">4.0</span>, <span class="number">3.0</span>, <span class="number">8.0</span>, <span class="number">5.0</span>]);
         <span class="kw">let </span>expected = <span class="macro">array!</span>([<span class="number">2.0</span>, <span class="number">4.0</span>, <span class="number">3.0</span>, <span class="number">6.0</span>, <span class="number">5.0</span>]);
-        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="number">2.0</span>, <span class="number">6.0</span>)).unwrap();
+        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="macro">array!</span>(<span class="number">2.0</span>), <span class="macro">array!</span>(<span class="number">6.0</span>))).unwrap();
+        <span class="macro">assert_eq!</span>(clipped, expected);
+
+        <span class="comment">// Test with scalar
+        </span><span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="number">2.0</span>, <span class="number">6.0</span>)).unwrap();
         <span class="macro">assert_eq!</span>(clipped, expected);
     }
 
@@ -4911,7 +4905,11 @@
     </span><span class="kw">fn </span>test_clip_with_only_min() {
         <span class="kw">let </span>a = <span class="macro">array!</span>([-<span class="number">1.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">5.0</span>]);
         <span class="kw">let </span>expected = <span class="macro">array!</span>([<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>, <span class="number">5.0</span>]);
-        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="number">0.0</span>, ())).unwrap();
+        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="macro">array!</span>(<span class="number">0.0</span>), ())).unwrap();
+        <span class="macro">assert_eq!</span>(clipped, expected);
+
+        <span class="comment">// Test with scalar
+        </span><span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, (<span class="number">0.0</span>, ())).unwrap();
         <span class="macro">assert_eq!</span>(clipped, expected);
     }
 
@@ -4919,7 +4917,11 @@
     </span><span class="kw">fn </span>test_clip_with_only_max() {
         <span class="kw">let </span>a = <span class="macro">array!</span>([<span class="number">2.0</span>, <span class="number">3.0</span>, <span class="number">4.0</span>, <span class="number">5.0</span>]);
         <span class="kw">let </span>expected = <span class="macro">array!</span>([<span class="number">2.0</span>, <span class="number">3.0</span>, <span class="number">4.0</span>, <span class="number">4.0</span>]);
-        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, ((), <span class="number">4.0</span>)).unwrap();
+        <span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, ((), <span class="macro">array!</span>(<span class="number">4.0</span>))).unwrap();
+        <span class="macro">assert_eq!</span>(clipped, expected);
+
+        <span class="comment">// Test with scalar
+        </span><span class="kw">let </span>clipped = clip(<span class="kw-2">&amp;</span>a, ((), <span class="number">4.0</span>)).unwrap();
         <span class="macro">assert_eq!</span>(clipped, expected);
     }
 

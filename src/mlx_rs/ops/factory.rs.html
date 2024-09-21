@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/factory.rs`."><title>factory.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/factory.rs`."><title>factory.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -682,10 +682,8 @@
 <a href="#682" id="682">682</a>
 <a href="#683" id="683">683</a>
 <a href="#684" id="684">684</a>
-<a href="#685" id="685">685</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::array::ArrayElement;
 <span class="kw">use </span><span class="kw">crate</span>::error::Exception;
-<span class="kw">use </span><span class="kw">crate</span>::prelude::ScalarOrArray;
 <span class="kw">use </span><span class="kw">crate</span>::Stream;
 <span class="kw">use crate</span>::{array::Array, stream::StreamOrDevice};
 <span class="kw">use </span>mlx_macros::default_device;
@@ -802,14 +800,14 @@
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::{Array, StreamOrDevice};
+    /// use mlx_rs::{Array, StreamOrDevice, array};
     /// //  create [5, 4] array filled with 7
-    /// let r = Array::full_device::&lt;f32&gt;(&amp;[5, 4], 7.0f32, StreamOrDevice::default()).unwrap();
+    /// let r = Array::full_device::&lt;f32&gt;(&amp;[5, 4], array!(7.0f32), StreamOrDevice::default()).unwrap();
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>full_device&lt;<span class="lifetime">'a</span>, T: ArrayElement&gt;(
+    </span><span class="kw">pub fn </span>full_device&lt;T: ArrayElement&gt;(
         shape: <span class="kw-2">&amp;</span>[i32],
-        values: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        values: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
@@ -817,7 +815,7 @@
                 mlx_sys::mlx_full(
                     shape.as_ptr(),
                     shape.len(),
-                    values.into_owned_or_ref_array().as_ref().as_ptr(),
+                    values.as_ref().as_ptr(),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
                 )
@@ -1077,9 +1075,9 @@
 
 <span class="doccomment">/// See [`Array::full`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>full_device&lt;<span class="lifetime">'a</span>, T: ArrayElement&gt;(
+</span><span class="kw">pub fn </span>full_device&lt;T: ArrayElement&gt;(
     shape: <span class="kw-2">&amp;</span>[i32],
-    values: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+    values: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     Array::full_device::&lt;T&gt;(shape, values, stream)
@@ -1159,7 +1157,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::dtype::Dtype;
+    <span class="kw">use crate</span>::{array, dtype::Dtype};
     <span class="kw">use </span>half::f16;
 
     <span class="attr">#[test]
@@ -1203,7 +1201,7 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_full_scalar() {
-        <span class="kw">let </span>array = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>], <span class="number">7f32</span>).unwrap();
+        <span class="kw">let </span>array = Array::full::&lt;f32&gt;(<span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>], <span class="macro">array!</span>(<span class="number">7f32</span>)).unwrap();
         <span class="macro">assert_eq!</span>(array.shape(), <span class="kw-2">&amp;</span>[<span class="number">2</span>, <span class="number">3</span>]);
         <span class="macro">assert_eq!</span>(array.dtype(), Dtype::Float32);
 

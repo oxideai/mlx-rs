@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/logical.rs`."><title>logical.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mlx-rs/src/ops/logical.rs`."><title>logical.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mlx_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1088,23 +1088,8 @@
 <a href="#1088" id="1088">1088</a>
 <a href="#1089" id="1089">1089</a>
 <a href="#1090" id="1090">1090</a>
-<a href="#1091" id="1091">1091</a>
-<a href="#1092" id="1092">1092</a>
-<a href="#1093" id="1093">1093</a>
-<a href="#1094" id="1094">1094</a>
-<a href="#1095" id="1095">1095</a>
-<a href="#1096" id="1096">1096</a>
-<a href="#1097" id="1097">1097</a>
-<a href="#1098" id="1098">1098</a>
-<a href="#1099" id="1099">1099</a>
-<a href="#1100" id="1100">1100</a>
-<a href="#1101" id="1101">1101</a>
-<a href="#1102" id="1102">1102</a>
-<a href="#1103" id="1103">1103</a>
-<a href="#1104" id="1104">1104</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::array::Array;
 <span class="kw">use </span><span class="kw">crate</span>::error::Exception;
-<span class="kw">use </span><span class="kw">crate</span>::prelude::ScalarOrArray;
 <span class="kw">use </span><span class="kw">crate</span>::stream::StreamOrDevice;
 <span class="kw">use </span><span class="kw">crate</span>::utils::{axes_or_default_to_all, IntoOption};
 <span class="kw">use </span><span class="kw">crate</span>::Stream;
@@ -1132,16 +1117,16 @@
     /// // c_data == [true, true, true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>eq_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>eq_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_equal(
                     <span class="self">self</span>.as_ptr(),
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1170,16 +1155,16 @@
     /// // c_data == [true, true, true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>le_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>le_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_less_equal(
                     <span class="self">self</span>.as_ptr(),
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1208,16 +1193,16 @@
     /// // c_data == [true, true, true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>ge_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>ge_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_greater_equal(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1246,16 +1231,16 @@
     /// // c_data == [false, false, false]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>ne_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>ne_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_not_equal(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1283,16 +1268,16 @@
     /// // c_data == [false, false, false]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>lt_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>lt_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_less(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1320,16 +1305,16 @@
     /// // c_data == [false, false, false]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>gt_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>gt_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_greater(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1357,16 +1342,16 @@
     /// // c_data == [true, false, false]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>logical_and_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>logical_and_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_logical_and(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1394,16 +1379,16 @@
     /// // c_data == [true, true, true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>logical_or_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>logical_or_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_logical_or(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
                 )
             };
@@ -1452,18 +1437,18 @@
     ///
     /// ```rust
     /// use num_traits::Pow;
-    /// use mlx_rs::Array;
-    /// let a = Array::from_slice(&amp;[0., 1., 2., 3.], &amp;[4]).sqrt();
-    /// let b = Array::from_slice(&amp;[0., 1., 2., 3.], &amp;[4]).power(0.5).unwrap();
+    /// use mlx_rs::array;
+    /// let a = array!([0., 1., 2., 3.]).sqrt();
+    /// let b = array!([0., 1., 2., 3.]).power(array!(0.5)).unwrap();
     /// let mut c = a.all_close(&amp;b, None, None, None).unwrap();
     ///
     /// let c_data: &amp;[bool] = c.as_slice();
     /// // c_data == [true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>all_close_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>all_close_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         rtol: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f64&gt;&gt;,
         atol: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f64&gt;&gt;,
         equal_nan: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;,
@@ -1473,7 +1458,7 @@
             <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
                 mlx_sys::mlx_allclose(
                     <span class="self">self</span>.c_array,
-                    other.into_owned_or_ref_array().as_ref().as_ptr(),
+                    other.as_ref().as_ptr(),
                     rtol.into().unwrap_or(<span class="number">1e-5</span>),
                     atol.into().unwrap_or(<span class="number">1e-8</span>),
                     equal_nan.into().unwrap_or(<span class="bool-val">false</span>),
@@ -1542,16 +1527,16 @@
     /// // c == [true]
     /// ```
     </span><span class="attr">#[default_device]
-    </span><span class="kw">pub fn </span>array_eq_device&lt;<span class="lifetime">'a</span>&gt;(
+    </span><span class="kw">pub fn </span>array_eq_device(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        other: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+        other: <span class="kw">impl </span>AsRef&lt;Array&gt;,
         equal_nan: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;,
         stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
     ) -&gt; Array {
         <span class="kw">unsafe </span>{
             Array::from_ptr(mlx_sys::mlx_array_equal(
                 <span class="self">self</span>.c_array,
-                other.into_owned_or_ref_array().as_ref().as_ptr(),
+                other.as_ref().as_ptr(),
                 equal_nan.into().unwrap_or(<span class="bool-val">false</span>),
                 stream.as_ref().as_ptr(),
             ))
@@ -1615,24 +1600,14 @@
 
 <span class="doccomment">/// See [`Array::logical_and`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>logical_and_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .logical_and_device(b, StreamOrDevice::default())
+</span><span class="kw">pub fn </span>logical_and_device(a: <span class="kw">impl </span>AsRef&lt;Array&gt;, b: <span class="kw">impl </span>AsRef&lt;Array&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
+    a.as_ref().logical_and_device(b, StreamOrDevice::default())
 }
 
 <span class="doccomment">/// See [`Array::logical_or`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>logical_or_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .logical_or_device(b, StreamOrDevice::default())
+</span><span class="kw">pub fn </span>logical_or_device(a: <span class="kw">impl </span>AsRef&lt;Array&gt;, b: <span class="kw">impl </span>AsRef&lt;Array&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
+    a.as_ref().logical_or_device(b, StreamOrDevice::default())
 }
 
 <span class="doccomment">/// See [`Array::logical_not`]
@@ -1643,16 +1618,15 @@
 
 <span class="doccomment">/// See [`Array::all_close`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>all_close_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>all_close_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     rtol: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f64&gt;&gt;,
     atol: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;f64&gt;&gt;,
     equal_nan: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array()
-        .as_ref()
+    a.as_ref()
         .all_close_device(b, rtol, atol, equal_nan, stream)
 }
 
@@ -1671,75 +1645,73 @@
 
 <span class="doccomment">/// See [`Array::array_eq`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>array_eq_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>array_eq_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     equal_nan: <span class="kw">impl </span>Into&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; Array {
-    a.into_owned_or_ref_array()
-        .as_ref()
-        .array_eq_device(b, equal_nan, stream)
+    a.as_ref().array_eq_device(b, equal_nan, stream)
 }
 
 <span class="doccomment">/// See [`Array::eq`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>eq_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>eq_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().eq_device(b, stream)
+    a.as_ref().eq_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::le`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>le_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>le_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().le_device(b, stream)
+    a.as_ref().le_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::ge`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>ge_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>ge_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().ge_device(b, stream)
+    a.as_ref().ge_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::ne`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>ne_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>ne_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().ne_device(b, stream)
+    a.as_ref().ne_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::lt`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>lt_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>lt_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().lt_device(b, stream)
+    a.as_ref().lt_device(b, stream)
 }
 
 <span class="doccomment">/// See [`Array::gt`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>gt_device&lt;<span class="lifetime">'a</span>&gt;(
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
+</span><span class="kw">pub fn </span>gt_device(
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
-    a.into_owned_or_ref_array().as_ref().gt_device(b, stream)
+    a.as_ref().gt_device(b, stream)
 }
 
 <span class="comment">// TODO: check if the functions below could throw an exception.
@@ -1791,18 +1763,18 @@
 /// - a: input selected from where condition is non-zero or `true`
 /// - b: input selected from where condition is zero or `false`
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>r#where_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
+</span><span class="kw">pub fn </span>r#where_device(
     condition: <span class="kw-2">&amp;</span>Array,
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
             mlx_sys::mlx_where(
                 condition.c_array,
-                a.into_owned_or_ref_array().as_ref().as_ptr(),
-                b.into_owned_or_ref_array().as_ref().as_ptr(),
+                a.as_ref().as_ptr(),
+                b.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
         };
@@ -1812,18 +1784,18 @@
 
 <span class="doccomment">/// Alias for [`r#where`]
 </span><span class="attr">#[default_device]
-</span><span class="kw">pub fn </span>which_device&lt;<span class="lifetime">'a</span>, <span class="lifetime">'b</span>&gt;(
+</span><span class="kw">pub fn </span>which_device(
     condition: <span class="kw-2">&amp;</span>Array,
-    a: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'a</span>&gt;,
-    b: <span class="kw">impl </span>ScalarOrArray&lt;<span class="lifetime">'b</span>&gt;,
+    a: <span class="kw">impl </span>AsRef&lt;Array&gt;,
+    b: <span class="kw">impl </span>AsRef&lt;Array&gt;,
     stream: <span class="kw">impl </span>AsRef&lt;Stream&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Array, Exception&gt; {
     <span class="kw">unsafe </span>{
         <span class="kw">let </span>c_array = <span class="macro">try_catch_c_ptr_expr!</span> {
             mlx_sys::mlx_where(
                 condition.c_array,
-                a.into_owned_or_ref_array().as_ref().as_ptr(),
-                b.into_owned_or_ref_array().as_ref().as_ptr(),
+                a.as_ref().as_ptr(),
+                b.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
         };
@@ -2041,7 +2013,7 @@
     </span><span class="kw">fn </span>test_all_close() {
         <span class="kw">let </span>a = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0.</span>, <span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">4</span>]).sqrt();
         <span class="kw">let </span>b = Array::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0.</span>, <span class="number">1.</span>, <span class="number">2.</span>, <span class="number">3.</span>], <span class="kw-2">&amp;</span>[<span class="number">4</span>])
-            .power(<span class="number">0.5</span>)
+            .power(<span class="macro">array!</span>(<span class="number">0.5</span>))
             .unwrap();
         <span class="kw">let </span>c = a.all_close(<span class="kw-2">&amp;</span>b, <span class="number">1e-5</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
 

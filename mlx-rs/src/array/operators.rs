@@ -1,4 +1,4 @@
-use crate::{prelude::ScalarOrArray, Array, StreamOrDevice};
+use crate::{utils::ScalarOrArray, Array, StreamOrDevice};
 use num_traits::Pow;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
@@ -14,7 +14,7 @@ macro_rules! impl_binary_op {
 
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$c_method _device>](rhs, StreamOrDevice::default()).unwrap()
+                    self.[<$c_method _device>](rhs.into_owned_or_ref_array(), StreamOrDevice::default()).unwrap()
                 }
             }
         }
@@ -27,7 +27,7 @@ macro_rules! impl_binary_op {
 
             fn $method(self, rhs: T) -> Self::Output {
                 paste::paste! {
-                    self.[<$c_method _device>](rhs, StreamOrDevice::default()).unwrap()
+                    self.[<$c_method _device>](rhs.into_owned_or_ref_array(), StreamOrDevice::default()).unwrap()
                 }
             }
         }

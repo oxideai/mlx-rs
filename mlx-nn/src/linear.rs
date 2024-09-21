@@ -73,10 +73,14 @@ impl Linear {
 impl Module for Linear {
     type Error = Error;
 
+    // We need to suppress this lint because it would lead to invalid memory reference issues if the
+    // borrow is removed. See issue: #106
+    // TODO: Remove the clippy lint suppression once the issue is fixed.
+    #[allow(clippy::needless_borrows_for_generic_args)]
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => {
-                mlx_rs::ops::addmm(bias, x, self.weight.value.t(), None, None).map_err(Into::into)
+                mlx_rs::ops::addmm(bias, x, &self.weight.value.t(), None, None).map_err(Into::into)
             }
             None => mlx_rs::ops::matmul(x, &self.weight.value.t()).map_err(Into::into),
         }

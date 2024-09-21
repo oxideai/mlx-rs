@@ -1085,11 +1085,15 @@ fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
     compiled((x, alpha))
 }
 
+// We need to suppress this lint because it would lead to invalid memory reference issues if the
+// borrow is removed. See issue: #106
+// TODO: Remove the clippy lint suppression once the issue is fixed.
+#[allow(clippy::needless_borrows_for_generic_args)]
 #[inline]
 fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
     let f = |x_: &Array| {
         mlx_rs::ops::minimum(
-            mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
+            &mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
             &array!(6.0),
         )
         .unwrap()

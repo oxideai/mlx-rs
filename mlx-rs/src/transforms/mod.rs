@@ -53,7 +53,7 @@ fn jvp_inner<'a>(
     let c_tangents = VectorArray::from_iter(tangents.iter());
 
     let vector_pair = unsafe {
-        let c_vector_pair = try_catch_mlx_closure_error! {
+        let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_sys::mlx_jvp(
                 closure.as_ptr(),
                 c_primals.as_ptr(),
@@ -123,7 +123,7 @@ fn vjp_inner<'a>(
     let c_cotangents = VectorArray::from_iter(cotangents.iter());
 
     let vector_pair = unsafe {
-        let c_vector_pair = try_catch_mlx_closure_error! {
+        let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_sys::mlx_vjp(
                 closure.as_ptr(),
                 c_primals.as_ptr(),
@@ -189,7 +189,7 @@ fn value_and_gradient(
     let input_vector = VectorArray::from_iter(arrays);
 
     let vector_pair = unsafe {
-        let c_vector_pair = try_catch_mlx_closure_error! {
+        let c_vector_pair = try_catch_c_ptr_expr! {
             mlx_closure_value_and_grad_apply(value_and_grad, input_vector.as_ptr())
         };
         VectorVectorArray::from_ptr(c_vector_pair)
@@ -210,7 +210,7 @@ fn build_gradient_inner<'a>(
 ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
     move |arrays: &[Array]| -> Result<Vec<Array>, Exception> {
         unsafe {
-            let c_value_and_grad = try_catch_mlx_closure_error! {
+            let c_value_and_grad = try_catch_c_ptr_expr! {
                 mlx_sys::mlx_value_and_grad(
                     closure.as_ptr(),
                     argument_numbers.as_ptr(),
@@ -252,7 +252,7 @@ fn build_value_and_gradient_inner<'a>(
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
     move |arrays: &[Array]| {
         let c_value_and_grad = unsafe {
-            try_catch_mlx_closure_error! {
+            try_catch_c_ptr_expr! {
                 mlx_sys::mlx_value_and_grad(
                     closure.as_ptr(),
                     argument_numbers.as_ptr(),

@@ -83,10 +83,10 @@ fn automatic_differentiation() {
 
     let x = Array::from(1.5);
 
-    let mut dfdx = calculate_grad(f, &x);
+    let dfdx = calculate_grad(f, &x);
     assert_eq!(dfdx.item::<f32>(), 2.0 * 1.5);
 
-    let mut dfdx2 = calculate_grad(|args| calculate_grad(f, args), &x);
+    let dfdx2 = calculate_grad(|args| calculate_grad(f, args), &x);
     assert_eq!(dfdx2.item::<f32>(), 2.0);
 }
 

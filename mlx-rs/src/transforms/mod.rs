@@ -44,8 +44,8 @@ pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Resul
 }
 
 #[inline]
-fn jvp_inner<'a>(
-    closure: Closure<'a>,
+fn jvp_inner(
+    closure: Closure<'_>,
     primals: &[Array],
     tangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception> {
@@ -114,8 +114,8 @@ where
 }
 
 #[inline]
-fn vjp_inner<'a>(
-    closure: Closure<'a>,
+fn vjp_inner(
+    closure: Closure<'_>,
     primals: &[Array],
     cotangents: &[Array],
 ) -> Result<(Vec<Array>, Vec<Array>), Exception> {
@@ -449,9 +449,7 @@ where
         mut self,
         argument_numbers: &'a [i32],
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
-        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
-            self(&args[0])
-        };
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> { self(&args[0]) };
         let mut g = build_gradient_with_error(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>, Exception> {
             let args_clone = &[args.clone()];
@@ -474,9 +472,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        array, error::Exception, Array
-    };
+    use crate::{array, error::Exception, Array};
 
     use super::*;
 
@@ -578,7 +574,7 @@ mod tests {
         let y = array!(1.0f32);
         let result = value_and_grad_with_error(fun, argnums)(&[x, y]);
         assert!(result.is_ok());
-        
+
         // Error case
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);

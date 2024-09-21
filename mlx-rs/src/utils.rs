@@ -253,7 +253,6 @@ impl<'a> Closure<'a> {
             lt_marker: PhantomData,
         }
     }
-
 }
 
 impl<'a> Drop for Closure<'a> {
@@ -288,7 +287,11 @@ where
     let payload = raw as *mut std::ffi::c_void;
 
     unsafe {
-        mlx_sys::mlx_closure_new_with_payload(Some(trampoline_with_exception::<F>), payload, Some(noop_dtor))
+        mlx_sys::mlx_closure_new_with_payload(
+            Some(trampoline_with_exception::<F>),
+            payload,
+            Some(noop_dtor),
+        )
     }
 }
 
@@ -337,8 +340,8 @@ where
 extern "C" fn trampoline_with_exception<'a, F>(
     vector_array: mlx_sys::mlx_vector_array,
     payload: *mut std::ffi::c_void,
-) -> mlx_sys::mlx_vector_array 
-where 
+) -> mlx_sys::mlx_vector_array
+where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     unsafe {

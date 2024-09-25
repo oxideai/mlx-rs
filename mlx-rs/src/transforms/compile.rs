@@ -294,7 +294,7 @@ where
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
-        self.state.call_mut_with_error(args)
+        self.state.call_mut_fallible(args)
     }
 }
 
@@ -319,7 +319,7 @@ where
     fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
         let args = &[args.clone()];
-        let result = self.state.call_mut_with_error(args)?;
+        let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
@@ -346,7 +346,7 @@ where
     fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
         let args = &[args.0.clone(), args.1.clone()];
-        let result = self.state.call_mut_with_error(args)?;
+        let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
@@ -372,7 +372,7 @@ where
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
         let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
-        let result = self.state.call_mut_with_error(args)?;
+        let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
@@ -522,7 +522,7 @@ impl<'a, F> CompiledState<'a, F> {
         )
     }
 
-    fn call_mut_with_error(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
+    fn call_mut_fallible(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
     where
         F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     {

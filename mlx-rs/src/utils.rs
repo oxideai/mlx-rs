@@ -340,8 +340,8 @@ where
 extern "C" fn trampoline_fallible<'a, F>(
     vector_array: mlx_sys::mlx_vector_array,
     payload: *mut std::ffi::c_void,
-) -> mlx_sys::mlx_vector_array_result 
-where 
+) -> mlx_sys::mlx_vector_array_result
+where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     use std::ffi::CString;

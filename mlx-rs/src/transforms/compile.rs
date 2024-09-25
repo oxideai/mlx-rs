@@ -69,8 +69,8 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, Exception> for F 
-where 
+impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, Exception> for F
+where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'static,
 {
     fn compile(
@@ -124,7 +124,7 @@ where
 }
 
 impl<'a, F> Compile<'a, &'a Array, Array, Exception> for F
-where 
+where
     F: FnMut(&Array) -> Result<Array, Exception> + 'static,
 {
     fn compile(
@@ -324,7 +324,6 @@ where
     }
 }
 
-
 impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array)) -> Array + 'a,
@@ -364,7 +363,8 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception>
+    for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -398,65 +398,65 @@ fn call_mut_inner(
     state_outputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
     args: &[Array],
 ) -> Result<Vec<Array>, Exception> {
-        // note: this will use the cached compile (via the id)
-        // but will be able to re-evaluate with fresh state if needed
-        let compiled = unsafe {
-            let constants = &[];
-            let c_closure = try_catch_mlx_closure_error! {
-                mlx_detail_compile(
-                    inner_closure.as_ptr(),
-                    fun_id,
-                    shapeless,
-                    constants.as_ptr(),
-                    0,
-                )
-            };
-            Closure::from_ptr(c_closure)
+    // note: this will use the cached compile (via the id)
+    // but will be able to re-evaluate with fresh state if needed
+    let compiled = unsafe {
+        let constants = &[];
+        let c_closure = try_catch_mlx_closure_error! {
+            mlx_detail_compile(
+                inner_closure.as_ptr(),
+                fun_id,
+                shapeless,
+                constants.as_ptr(),
+                0,
+            )
         };
+        Closure::from_ptr(c_closure)
+    };
 
-        let inner_inputs_vector = match state_inputs.borrow().as_ref() {
-            Some(s) => VectorArray::from_iter(args.iter().chain(s.iter())),
-            None => VectorArray::from_iter(args.iter()),
+    let inner_inputs_vector = match state_inputs.borrow().as_ref() {
+        Some(s) => VectorArray::from_iter(args.iter().chain(s.iter())),
+        None => VectorArray::from_iter(args.iter()),
+    };
+
+    // will compile the function (if needed) and evaluate the
+    // compiled graph
+    let result_vector = unsafe {
+        let c_vector = try_catch_mlx_closure_error! {
+            mlx_closure_apply(compiled.as_ptr(), inner_inputs_vector.as_ptr())
         };
+        VectorArray::from_ptr(c_vector)
+    };
+    let result_plus_state_output: Vec<Array> = result_vector.into_values();
 
-        // will compile the function (if needed) and evaluate the
-        // compiled graph
-        let result_vector = unsafe {
-            let c_vector = try_catch_mlx_closure_error! {
-                mlx_closure_apply(compiled.as_ptr(), inner_inputs_vector.as_ptr())
-            };
-            VectorArray::from_ptr(c_vector)
-        };
-        let result_plus_state_output: Vec<Array> = result_vector.into_values();
-
-        // push the stateOutput into the state
-        if let Some(outputs) = state_outputs.borrow_mut().as_mut() {
-            let result_plus_state_output_len = result_plus_state_output.len();
-            let state_output_len = outputs.len();
-            let suffix_len = result_plus_state_output_len - state_output_len;
-            for (s, new_values) in outputs
-                .iter_mut()
-                .zip(result_plus_state_output[suffix_len..].iter())
-            {
-                update_by_replace_with_ref_to_new_array(s, new_values);
-            }
+    // push the stateOutput into the state
+    if let Some(outputs) = state_outputs.borrow_mut().as_mut() {
+        let result_plus_state_output_len = result_plus_state_output.len();
+        let state_output_len = outputs.len();
+        let suffix_len = result_plus_state_output_len - state_output_len;
+        for (s, new_values) in outputs
+            .iter_mut()
+            .zip(result_plus_state_output[suffix_len..].iter())
+        {
+            update_by_replace_with_ref_to_new_array(s, new_values);
         }
+    }
 
-        let result_len = result_plus_state_output.len()
-            - state_outputs
-                .borrow()
-                .as_ref()
-                .map(|x| x.len())
-                .unwrap_or(0);
-        Ok(result_plus_state_output
-            .into_iter()
-            .take(result_len)
-            .collect())
+    let result_len = result_plus_state_output.len()
+        - state_outputs
+            .borrow()
+            .as_ref()
+            .map(|x| x.len())
+            .unwrap_or(0);
+    Ok(result_plus_state_output
+        .into_iter()
+        .take(result_len)
+        .collect())
 }
 
 impl<'a, F> CompiledState<'a, F> {
-    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> 
-    where 
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
+    where
         F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
         let args_len = args.len();
@@ -655,7 +655,12 @@ pub fn clear_cache() {
 mod tests {
     use core::panic;
 
-    use crate::{array, error::Exception, ops::{multiply, ones}, Array};
+    use crate::{
+        array,
+        error::Exception,
+        ops::{multiply, ones},
+        Array,
+    };
 
     use super::compile;
 

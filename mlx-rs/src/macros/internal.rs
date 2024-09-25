@@ -24,7 +24,7 @@ macro_rules! try_catch_mlx_closure_error {
         let c_ptr = $expr;
         // Always check for closure errors
         if let Some(error) = $crate::error::get_and_clear_last_mlx_error()
-            // .or($crate::error::take_last_mlx_closure_error())
+        // .or($crate::error::take_last_mlx_closure_error())
         {
             return Err(error);
         }

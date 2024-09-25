@@ -565,7 +565,7 @@ mod tests {
     #[test]
     fn test_value_and_grad_with_error() {
         let fun = |argin: &[Array]| -> Result<Vec<Array>, Exception> {
-            argin[0].add(1.0).map(|res| vec![res])
+            argin[0].add(array!(1.0)).map(|res| vec![res])
         };
 
         // Success case

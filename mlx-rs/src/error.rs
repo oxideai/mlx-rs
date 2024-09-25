@@ -44,7 +44,6 @@ impl Exception {
 
 thread_local! {
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
-    static LAST_MLX_CLOSURE_ERROR: Cell<Option<Exception>> = const { Cell::new(None) };
     static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
 }
 
@@ -92,15 +91,6 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
         }
         Some(Exception { what: last_err })
     })
-}
-
-pub(crate) fn set_last_mlx_closure_error(error: Exception) {
-    // Another alternative is to use mlx_sys::_mlx_error, but it gives memory access errors
-    LAST_MLX_CLOSURE_ERROR.with(|last_error| last_error.set(Some(error)));
-}
-
-pub(crate) fn take_last_mlx_closure_error() -> Option<Exception> {
-    LAST_MLX_CLOSURE_ERROR.with(|last_error| last_error.replace(None))
 }
 
 #[cfg(test)]

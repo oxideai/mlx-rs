@@ -101,7 +101,7 @@ where
 }
 
 /// Similar to [`jvp`] but handles closures that can return an error.
-pub fn jvp_with_error<'a, F>(
+pub fn jvp_fallible<'a, F>(
     f: F,
     primals: &[Array],
     tangents: &[Array],
@@ -109,7 +109,7 @@ pub fn jvp_with_error<'a, F>(
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    let closure = Closure::new_with_error(f);
+    let closure = Closure::new_fallible(f);
     jvp_inner(closure, primals, tangents)
 }
 
@@ -170,7 +170,7 @@ where
 }
 
 /// Similar to [`vjp`] but handles closures that can return an error.
-pub fn vjp_with_error<'a, F>(
+pub fn vjp_fallible<'a, F>(
     f: F,
     primals: &[Array],
     cotangents: &[Array],
@@ -178,7 +178,7 @@ pub fn vjp_with_error<'a, F>(
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    let closure = Closure::new_with_error(f);
+    let closure = Closure::new_fallible(f);
     vjp_inner(closure, primals, cotangents)
 }
 
@@ -235,14 +235,14 @@ where
     build_gradient_inner(closure, argument_numbers)
 }
 
-fn build_gradient_with_error<'a, F>(
+fn build_gradient_fallible<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    let closure = Closure::new_with_error(f);
+    let closure = Closure::new_fallible(f);
     build_gradient_inner(closure, argument_numbers)
 }
 
@@ -276,14 +276,14 @@ where
     build_value_and_gradient_inner(closure, argument_numbers)
 }
 
-fn build_value_and_gradient_with_error<'a, F>(
+fn build_value_and_gradient_fallible<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    let closure = Closure::new_with_error(f);
+    let closure = Closure::new_fallible(f);
     build_value_and_gradient_inner(closure, argument_numbers)
 }
 
@@ -298,14 +298,14 @@ where
     build_value_and_gradient(f, argument_numbers)
 }
 
-pub fn value_and_grad_with_error<'a, F>(
+pub fn value_and_grad_fallible<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    build_value_and_gradient_with_error(f, argument_numbers)
+    build_value_and_gradient_fallible(f, argument_numbers)
 }
 
 pub trait Grad<'a, Args, Output, Err> {
@@ -339,7 +339,7 @@ where
         self,
         argument_numbers: &'a [i32],
     ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
-        build_gradient_with_error(self, argument_numbers)
+        build_gradient_fallible(self, argument_numbers)
     }
 }
 
@@ -374,7 +374,7 @@ where
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             self(&args[0]).map(|res| vec![res])
         };
-        let mut g = build_gradient_with_error(f, argument_numbers);
+        let mut g = build_gradient_fallible(f, argument_numbers);
         move |args: &Array| -> Result<Array, Exception> {
             let args_clone = &[args.clone()];
             let result = g(args_clone)?;
@@ -413,7 +413,7 @@ where
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             self(args).map(|res| vec![res])
         };
-        let mut g = build_gradient_with_error(f, argument_numbers);
+        let mut g = build_gradient_fallible(f, argument_numbers);
         move |args: &[Array]| -> Result<Array, Exception> {
             let result = g(args)?;
             Ok(result.into_iter().next().unwrap())
@@ -450,7 +450,7 @@ where
         argument_numbers: &'a [i32],
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> { self(&args[0]) };
-        let mut g = build_gradient_with_error(f, argument_numbers);
+        let mut g = build_gradient_fallible(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>, Exception> {
             let args_clone = &[args.clone()];
             let result = g(args_clone)?;
@@ -497,7 +497,7 @@ mod tests {
         // Success case
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let (out, dout) = jvp_with_error(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
+        let (out, dout) = jvp_fallible(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 4.0f32);
 
@@ -505,7 +505,7 @@ mod tests {
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = jvp_with_error(f, &[a, b], &[array!(1.0f32), array!(3.0f32)]);
+        let result = jvp_fallible(f, &[a, b], &[array!(1.0f32), array!(3.0f32)]);
         assert!(result.is_err());
     }
 
@@ -532,7 +532,7 @@ mod tests {
         let y = array!(1.0f32);
         let primals = vec![x, y];
         let cotangents = vec![array!(1.0f32)];
-        let (out, dout) = vjp_with_error(f, &primals, &cotangents).unwrap();
+        let (out, dout) = vjp_fallible(f, &primals, &cotangents).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 1.0f32);
 
@@ -540,7 +540,7 @@ mod tests {
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = vjp_with_error(f, &[a, b], &[array!(1.0f32)]);
+        let result = vjp_fallible(f, &[a, b], &[array!(1.0f32)]);
         assert!(result.is_err());
     }
 
@@ -572,14 +572,14 @@ mod tests {
         let argnums = &[0];
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let result = value_and_grad_with_error(fun, argnums)(&[x, y]);
+        let result = value_and_grad_fallible(fun, argnums)(&[x, y]);
         assert!(result.is_ok());
 
         // Error case
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = value_and_grad_with_error(fun, argnums)(&[a, b]);
+        let result = value_and_grad_fallible(fun, argnums)(&[a, b]);
         assert!(result.is_err());
     }
 }

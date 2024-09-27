@@ -4,7 +4,7 @@ use cmake::Config;
 use std::env;
 use std::path::PathBuf;
 
-fn main() {
+fn build_and_link_mlx_c() {
     let mut config = Config::new("src/mlx-c");
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
@@ -52,6 +52,27 @@ fn main() {
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
     }
+}
+
+fn build_shim() {
+    cc::Build::new()
+        .cpp(true)
+        .flag("-std=c++17")
+        .include("src/mlx-c")
+        .include("src/shim")
+        .file("src/shim/result.cpp")
+        .file("src/shim/closure.cpp")
+        .compile("libmlxc_shim.a");
+
+    // Rebuild if the shim changes
+    println!("cargo:rerun-if-changed=src/shim/shim.cpp");
+    
+    println!("cargo:rustc-link-lib=static=mlxc_shim");
+}
+
+fn main() {
+    build_and_link_mlx_c();
+    build_shim();
 
     // generate bindings
     let bindings = bindgen::Builder::default()
@@ -60,6 +81,8 @@ fn main() {
         .header("src/mlx-c/mlx/c/error.h")
         .header("src/mlx-c/mlx/c/transforms_impl.h")
         .clang_arg("-Isrc/mlx-c")
+        .header("src/shim/shim.h")
+        .clang_arg("-Isrc/shim")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");

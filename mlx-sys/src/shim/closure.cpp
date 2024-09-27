@@ -11,7 +11,7 @@ extern "C" mlx_closure mlx_fallible_closure_new_with_payload(
     mlx_vector_array_result (*fun)(const mlx_vector_array, void*),
     void* payload,
     void (*dtor)(void*)) {
-    auto cls = [fun, payload](const mlx_vector_array input) {
+    std::function<mlx_vector_array(const mlx_vector_array)> cls = [fun, payload](const mlx_vector_array input) {
         auto c_res = fun(input, payload);
         if (mlx_vector_array_result_is_err(&c_res)) {
             mlx_string err = mlx_vector_array_result_into_err(c_res);
@@ -20,5 +20,6 @@ extern "C" mlx_closure mlx_fallible_closure_new_with_payload(
         return mlx_vector_array_result_into_ok(c_res);
     };
 
+    // return mlx_closure_new_with_payload(trampoline, , nullptr);
     return mlx_closure_new_with_payload(trampoline, &cls, dtor);
 }

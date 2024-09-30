@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["IS_HANDLER_SET","LAST_MLX_ERROR"],"enum":["AsSliceError","ItemError"],"fn":["setup_mlx_error_handler"],"struct":["Exception"]};
+window.SIDEBAR_ITEMS = {"enum":["AsSliceError","ItemError"],"fn":["setup_mlx_error_handler"],"struct":["Exception"]};

@@ -337,11 +337,67 @@
 <a href="#337" id="337">337</a>
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
 <span class="kw">use </span>mlx_sys::{mlx_closure, mlx_vector_array};
 
-<span class="kw">use crate</span>::{complex64, Array, FromNested};
+<span class="kw">use crate</span>::{complex64, error::Exception, Array, FromNested};
 
 <span class="doccomment">/// Helper method to get a string representation of an mlx object.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>mlx_describe(ptr: <span class="kw-2">*mut </span>::std::os::raw::c_void) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
@@ -563,6 +619,10 @@
         }
     }
 
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; mlx_closure {
+        <span class="self">self</span>.c_closure
+    }
+
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new&lt;F&gt;(closure: F) -&gt; <span class="self">Self
     </span><span class="kw">where
         </span>F: FnMut(<span class="kw-2">&amp;</span>[Array]) -&gt; Vec&lt;Array&gt; + <span class="lifetime">'a</span>,
@@ -574,8 +634,15 @@
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; mlx_closure {
-        <span class="self">self</span>.c_closure
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_fallible&lt;F&gt;(closure: F) -&gt; <span class="self">Self
+    </span><span class="kw">where
+        </span>F: FnMut(<span class="kw-2">&amp;</span>[Array]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Array&gt;, Exception&gt; + <span class="lifetime">'a</span>,
+    {
+        <span class="kw">let </span>c_closure = new_mlx_fallible_closure(closure);
+        <span class="self">Self </span>{
+            c_closure,
+            lt_marker: PhantomData,
+        }
     }
 }
 
@@ -599,6 +666,23 @@
 
     <span class="kw">unsafe </span>{
         mlx_sys::mlx_closure_new_with_payload(<span class="prelude-val">Some</span>(trampoline::&lt;F&gt;), payload, <span class="prelude-val">Some</span>(noop_dtor))
+    }
+}
+
+<span class="kw">fn </span>new_mlx_fallible_closure&lt;<span class="lifetime">'a</span>, F&gt;(closure: F) -&gt; mlx_sys::mlx_closure
+<span class="kw">where
+    </span>F: FnMut(<span class="kw-2">&amp;</span>[Array]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Array&gt;, Exception&gt; + <span class="lifetime">'a</span>,
+{
+    <span class="kw">let </span>boxed = Box::new(closure);
+    <span class="kw">let </span>raw = Box::into_raw(boxed);
+    <span class="kw">let </span>payload = raw <span class="kw">as </span><span class="kw-2">*mut </span>std::ffi::c_void;
+
+    <span class="kw">unsafe </span>{
+        mlx_sys::mlx_fallible_closure_new_with_payload(
+            <span class="prelude-val">Some</span>(trampoline_fallible::&lt;F&gt;),
+            payload,
+            <span class="prelude-val">Some</span>(noop_dtor),
+        )
     }
 }
 
@@ -641,6 +725,34 @@
         <span class="comment">// We should probably keep using new_mlx_vector_array here instead of VectorArray
         // since we probably don't want to drop the arrays in the closure
         </span>new_mlx_vector_array(result)
+    }
+}
+
+<span class="kw">extern </span><span class="string">"C" </span><span class="kw">fn </span>trampoline_fallible&lt;<span class="lifetime">'a</span>, F&gt;(
+    vector_array: mlx_sys::mlx_vector_array,
+    payload: <span class="kw-2">*mut </span>std::ffi::c_void,
+) -&gt; mlx_sys::mlx_vector_array_result
+<span class="kw">where
+    </span>F: FnMut(<span class="kw-2">&amp;</span>[Array]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Array&gt;, Exception&gt; + <span class="lifetime">'a</span>,
+{
+    <span class="kw">use </span>std::ffi::CString;
+
+    <span class="kw">unsafe </span>{
+        <span class="kw">let </span>raw_closure: <span class="kw-2">*mut </span>F = payload <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>closure = Box::from_raw(raw_closure);
+        <span class="kw">let </span>arrays = mlx_vector_array_values(vector_array);
+        <span class="kw">let </span>result = closure(<span class="kw-2">&amp;</span>arrays);
+        <span class="kw">match </span>result {
+            <span class="prelude-val">Ok</span>(result) =&gt; {
+                <span class="kw">let </span>c_result = new_mlx_vector_array(result);
+                mlx_sys::mlx_vector_array_result_new_ok(c_result)
+            }
+            <span class="prelude-val">Err</span>(exception) =&gt; {
+                <span class="kw">let </span>what = CString::new(exception.what).unwrap();
+                <span class="kw">let </span>mlx_string = mlx_sys::mlx_string_new(what.as_ptr());
+                mlx_sys::mlx_vector_array_result_new_err(mlx_string)
+            }
+        }
     }
 }
 

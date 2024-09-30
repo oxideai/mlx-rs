@@ -157,8 +157,8 @@
 }
 
 <span class="macro">thread_local!</span> {
-    <span class="kw">pub static </span>LAST_MLX_ERROR: Cell&lt;<span class="kw-2">*const </span>c_char&gt; = <span class="kw">const </span>{ Cell::new(std::ptr::null()) };
-    <span class="kw">pub static </span>IS_HANDLER_SET: Cell&lt;bool&gt; = <span class="kw">const </span>{ Cell::new(<span class="bool-val">false</span>) };
+    <span class="kw">static </span>LAST_MLX_ERROR: Cell&lt;<span class="kw-2">*const </span>c_char&gt; = <span class="kw">const </span>{ Cell::new(std::ptr::null()) };
+    <span class="kw">static </span>IS_HANDLER_SET: Cell&lt;bool&gt; = <span class="kw">const </span>{ Cell::new(<span class="bool-val">false</span>) };
 }
 
 <span class="attr">#[no_mangle]

@@ -774,7 +774,6 @@ mod tests {
         assert!(result.is_err());
 
         let result = compiled(&another_args);
-        println!("{:?}", result);
         assert!(result.is_err());
     }
 

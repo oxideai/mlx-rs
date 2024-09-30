@@ -2,9 +2,9 @@ extern crate cmake;
 
 use cmake::Config;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-fn build_and_link_mlx_c() {
+fn build_and_link_mlx_c() -> PathBuf {
     let mut config = Config::new("src/mlx-c");
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
@@ -52,27 +52,32 @@ fn build_and_link_mlx_c() {
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
     }
+
+    dst
 }
 
-fn build_shim() {
+fn build_shim(mlx_c_dst: impl AsRef<Path>) {
     cc::Build::new()
         .cpp(true)
         .flag("-std=c++17")
+        .flag("-Wno-deprecated-copy")
+        .flag("-Wno-unused-parameter")
         .include("src/mlx-c")
         .include("src/shim")
+        .include(mlx_c_dst.as_ref().join("build/include"))
         .file("src/shim/result.cpp")
         .file("src/shim/closure.cpp")
         .compile("libmlxc_shim.a");
 
     // Rebuild if the shim changes
     println!("cargo:rerun-if-changed=src/shim/shim.cpp");
-    
+
     println!("cargo:rustc-link-lib=static=mlxc_shim");
 }
 
 fn main() {
-    build_and_link_mlx_c();
-    build_shim();
+    let mlx_c_dst = build_and_link_mlx_c();
+    build_shim(&mlx_c_dst);
 
     // generate bindings
     let bindings = bindgen::Builder::default()

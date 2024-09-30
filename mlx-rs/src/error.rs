@@ -43,8 +43,8 @@ impl Exception {
 }
 
 thread_local! {
-    pub static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
-    pub static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
+    static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
+    static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
 }
 
 #[no_mangle]

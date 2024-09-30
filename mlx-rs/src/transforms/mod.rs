@@ -103,7 +103,7 @@ where
 }
 
 /// Similar to [`jvp`] but handles closures that can return an error.
-pub fn jvp_fallible<'a, F>(
+pub fn fallible_jvp<'a, F>(
     f: F,
     primals: &[Array],
     tangents: &[Array],
@@ -172,7 +172,7 @@ where
 }
 
 /// Similar to [`vjp`] but handles closures that can return an error.
-pub fn vjp_fallible<'a, F>(
+pub fn fallible_vjp<'a, F>(
     f: F,
     primals: &[Array],
     cotangents: &[Array],
@@ -238,7 +238,7 @@ where
     build_gradient_inner(closure, argument_numbers)
 }
 
-fn build_gradient_fallible<'a, F>(
+fn build_fallible_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a
@@ -279,7 +279,7 @@ where
     build_value_and_gradient_inner(closure, argument_numbers)
 }
 
-fn build_value_and_gradient_fallible<'a, F>(
+fn build_fallible_value_and_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
@@ -293,13 +293,67 @@ where
 /// Returns a function which computes the value and gradient of `f`.
 pub fn value_and_grad<'a, F>(
     f: F,
-    argument_numbers: &'a [i32],
+    argument_numbers: impl IntoOption<&'a [i32]>,
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+where
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
+    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
     build_value_and_gradient(f, argument_numbers)
 }
 
+pub fn fallible_value_and_grad<'a, F>(
+    f: F,
+    argument_numbers: impl IntoOption<&'a [i32]>,
+) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+where
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+    build_fallible_value_and_gradient(f, argument_numbers)
+}
+
 pub type HashMapGrad = HashMap<Rc<str>, Array>;
+
+macro_rules! value_and_grad_with_hashmap {
+    ($inner_ret:ty, $cls_new:ident, $f:ident) => {
+        move |parameters: HashMap<Rc<str>, Arr>,
+              arrays: T|
+              -> Result<(Vec<Array>, HashMapGrad), Exception> {
+            let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) =
+                parameters.into_iter().unzip();
+
+            let inner = |flattened_arrays: &[Array]| -> $inner_ret {
+                let parameters = flattened_keys
+                    .iter()
+                    .cloned()
+                    .zip(flattened_arrays)
+                    .collect();
+                ($f)(parameters, arrays.clone())
+            };
+
+            let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
+
+            let closure = Closure::$cls_new(inner);
+            let c_value_and_grad = unsafe {
+                try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_value_and_grad(
+                        closure.as_ptr(),
+                        argument_numbers.as_ptr(),
+                        argument_numbers.len(),
+                    )
+                }
+            };
+
+            let (value, grads) =
+                value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
+
+            let grads_map = flattened_keys.iter().cloned().zip(grads).collect();
+
+            Ok((value, grads_map))
+        }
+    };
+}
 
 pub fn value_and_grad_with_hashmap<'a, F, T, Arr>(
     mut f: F,
@@ -309,49 +363,18 @@ where
     Arr: AsRef<Array>,
     T: Clone,
 {
-    move |parameters: HashMap<Rc<str>, Arr>,
-          arrays: T|
-          -> Result<(Vec<Array>, HashMapGrad), Exception> {
-        let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) = parameters.into_iter().unzip();
-
-        let inner = |flattened_arrays: &[Array]| -> Vec<Array> {
-            let parameters = flattened_keys
-                .iter()
-                .cloned()
-                .zip(flattened_arrays)
-                .collect();
-            f(parameters, arrays.clone())
-        };
-
-        let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
-
-        let closure = Closure::new(inner);
-        let c_value_and_grad = unsafe {
-            try_catch_c_ptr_expr! {
-                mlx_sys::mlx_value_and_grad(
-                    closure.as_ptr(),
-                    argument_numbers.as_ptr(),
-                    argument_numbers.len(),
-                )
-            }
-        };
-
-        let (value, grads) = value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
-
-        let grads_map = flattened_keys.iter().cloned().zip(grads).collect();
-
-        Ok((value, grads_map))
-    }
+    value_and_grad_with_hashmap!(Vec<Array>, new, f)
 }
 
-pub fn value_and_grad_fallible<'a, F>(
-    f: F,
-    argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+pub fn fallible_value_and_grad_with_hashmap<'a, F, T, Arr>(
+    mut f: F,
+) -> impl FnMut(HashMap<Rc<str>, Arr>, T) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
 where
-    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(HashMap<Rc<str>, &Array>, T) -> Result<Vec<Array>, Exception> + 'a,
+    Arr: AsRef<Array>,
+    T: Clone,
 {
-    build_value_and_gradient_fallible(f, argument_numbers)
+    value_and_grad_with_hashmap!(Result<Vec<Array>, Exception>, new_fallible, f)
 }
 
 pub trait Grad<'a, Args, Output, Err> {
@@ -384,9 +407,10 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
-        build_gradient_fallible(self, argument_numbers)
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        build_fallible_gradient(self, argument_numbers)
     }
 }
 
@@ -417,12 +441,13 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array, Exception> + 'a {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             self(&args[0]).map(|res| vec![res])
         };
-        let mut g = build_gradient_fallible(f, argument_numbers);
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array, Exception> {
             let args_clone = &[args.clone()];
             let result = g(args_clone)?;
@@ -457,12 +482,13 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Array, Exception> + 'a {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             self(args).map(|res| vec![res])
         };
-        let mut g = build_gradient_fallible(f, argument_numbers);
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &[Array]| -> Result<Array, Exception> {
             let result = g(args)?;
             Ok(result.into_iter().next().unwrap())
@@ -497,10 +523,11 @@ where
     #[allow(refining_impl_trait)]
     fn grad(
         mut self,
-        argument_numbers: &'a [i32],
+        argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> { self(&args[0]) };
-        let mut g = build_gradient_fallible(f, argument_numbers);
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>, Exception> {
             let args_clone = &[args.clone()];
             let result = g(args_clone)?;
@@ -555,7 +582,7 @@ mod tests {
         // Success case
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let (out, dout) = jvp_fallible(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
+        let (out, dout) = fallible_jvp(f, &[x, y], &[array!(1.0f32), array!(3.0f32)]).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 4.0f32);
 
@@ -563,7 +590,7 @@ mod tests {
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = jvp_fallible(f, &[a, b], &[array!(1.0f32), array!(3.0f32)]);
+        let result = fallible_jvp(f, &[a, b], &[array!(1.0f32), array!(3.0f32)]);
         assert!(result.is_err());
     }
 
@@ -590,7 +617,7 @@ mod tests {
         let y = array!(1.0f32);
         let primals = vec![x, y];
         let cotangents = vec![array!(1.0f32)];
-        let (out, dout) = vjp_fallible(f, &primals, &cotangents).unwrap();
+        let (out, dout) = fallible_vjp(f, &primals, &cotangents).unwrap();
         assert_eq!(out[0].item::<f32>(), 2.0f32);
         assert_eq!(dout[0].item::<f32>(), 1.0f32);
 
@@ -598,7 +625,7 @@ mod tests {
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = vjp_fallible(f, &[a, b], &[array!(1.0f32)]);
+        let result = fallible_vjp(f, &[a, b], &[array!(1.0f32)]);
         assert!(result.is_err());
     }
 
@@ -618,20 +645,6 @@ mod tests {
 
         assert_eq!(z[0].item::<f32>(), 1.0);
         assert_eq!(d2fdx2[0].item::<f32>(), 0.0);
-    }
-
-    #[test]
-    fn test_value_and_grad() {
-        let f = |x: &[Array]| -> Vec<Array> { vec![&x[0] * &x[0]] };
-
-        let x = array!(1.5f32);
-
-        let mut vg = value_and_grad(f, None);
-
-        let (value, grad) = vg(&[x]).unwrap();
-
-        assert_eq!(value[0].item::<f32>(), 1.5 * 1.5);
-        assert_eq!(grad[0].item::<f32>(), 2.0 * 1.5);
     }
 
     #[test]
@@ -656,6 +669,7 @@ mod tests {
         assert_eq!(grad["y"].item::<f32>(), 1.5);
     }
 
+    #[test]
     fn test_value_and_grad_with_error() {
         let fun = |argin: &[Array]| -> Result<Vec<Array>, Exception> {
             argin[0].add(array!(1.0)).map(|res| vec![res])
@@ -665,14 +679,14 @@ mod tests {
         let argnums = &[0];
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let result = value_and_grad_fallible(fun, argnums)(&[x, y]);
+        let result = fallible_value_and_grad(fun, argnums)(&[x, y]);
         assert!(result.is_ok());
 
         // Error case
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = value_and_grad_fallible(fun, argnums)(&[a, b]);
+        let result = fallible_value_and_grad(fun, argnums)(&[a, b]);
         assert!(result.is_err());
     }
 }

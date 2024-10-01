@@ -5,7 +5,7 @@ use mlx_nn_module::{Module, Param};
 use mlx_rs::{
     array,
     error::Exception,
-    ops::{log_sum_exp, multiply},
+    ops::{abs, exp, log_sum_exp, maximum, minimum, multiply, which},
     transforms::compile::compile,
     Array,
 };
@@ -1062,8 +1062,8 @@ impl Module for Selu {
 fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception> {
     let f = |(x_, neg_slope_): (&Array, &Array)| {
         // This will not panic because a scalar can always be broadcasted to any shape
-        let a = multiply(neg_slope_, x_).unwrap();
-        mlx_rs::ops::maximum(&a, x_).unwrap()
+        let a = multiply(neg_slope_, x_)?;
+        maximum(&a, x_)
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, neg_slope))
@@ -1072,12 +1072,7 @@ fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception>
 #[inline]
 fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
     let f = |(x_, alpha_): (&Array, &Array)| {
-        mlx_rs::ops::which(
-            &x_.gt(&array!(0.0)).unwrap(),
-            x_,
-            alpha_ * (mlx_rs::ops::exp(x_) - array!(1.0)),
-        )
-        .unwrap()
+        which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_) - array!(1.0)))
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
@@ -1085,20 +1080,14 @@ fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
 
 #[inline]
 fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| {
-        mlx_rs::ops::minimum(
-            mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap(),
-            &array!(6.0),
-        )
-        .unwrap()
-    };
+    let f = |x_: &Array| minimum(maximum(x_, &array!(0.0))?, &array!(6.0));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
 fn compiled_softsign(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ / (array!(1.0) + mlx_rs::ops::abs(x_));
+    let f = |x_: &Array| x_ / (array!(1.0) + abs(x_));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -1106,10 +1095,8 @@ fn compiled_softsign(x: &Array) -> Result<Array, Exception> {
 #[inline]
 fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
     let f = |(x_, alpha_): (&Array, &Array)| {
-        mlx_rs::ops::maximum(x_, &array!(0.0)).unwrap()
-            + alpha_
-                * (mlx_rs::ops::exp(&(mlx_rs::ops::minimum(x_, &array!(0.0)).unwrap() / alpha_))
-                    - array!(1.0))
+        maximum(x_, &array!(0.0))?
+            .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_)) - array!(1.0))?)
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
@@ -1124,7 +1111,7 @@ fn compiled_silu(x: &Array) -> Result<Array, Exception> {
 
 #[inline]
 fn compiled_log_sigmoid(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| -softplus(&(-x_)).unwrap();
+    let f = |x_: &Array| Ok(-softplus(&(-x_))?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -1143,13 +1130,12 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
 
     let f = move |x_: &Array| {
         // 0.5 * x * (1 + tanh(sqrt(2 / Float.pi) * (x + 0.044715 * x ** 3)))
-        array!(0.5)
-            * x_
-            * (array!(1.0)
-                + tanh(
-                    &(sqrt(&array!(2.0 / PI))
-                        * (x_ + array!(0.044715) * x_.power(&array!(3)).unwrap())),
-                ))
+        array!(0.5).multiply(x_)?.multiply(
+            array!(1.0).add(tanh(
+                &(sqrt(&array!(2.0 / PI))
+                    .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?),
+            ))?,
+        )
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
@@ -1164,7 +1150,7 @@ fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array, Exception> {
 
 #[inline]
 fn compiled_selu(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| elu(x_, 1.67326).unwrap() * array!(1.0507);
+    let f = |x_: &Array| elu(x_, 1.67326)?.multiply(array!(1.0507));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -1172,8 +1158,7 @@ fn compiled_selu(x: &Array) -> Result<Array, Exception> {
 #[inline]
 fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
     let f = |(x_, alpha_): (&Array, &Array)| {
-        mlx_rs::ops::maximum(&array!(0.0), x_).unwrap()
-            + alpha_ * mlx_rs::ops::minimum(&array!(0.0), x_).unwrap()
+        maximum(&array!(0.0), x_)?.add(alpha_ * minimum(&array!(0.0), x_)?)
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
@@ -1183,7 +1168,7 @@ fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
 fn compiled_mish(x: &Array) -> Result<Array, Exception> {
     use mlx_rs::ops::tanh;
 
-    let f = |x_: &Array| x_ * tanh(&softplus(x_).unwrap());
+    let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -1191,8 +1176,9 @@ fn compiled_mish(x: &Array) -> Result<Array, Exception> {
 #[inline]
 fn compiled_hard_swish(x: &Array) -> Result<Array, Exception> {
     let f = |x_: &Array| {
-        let max_x_plus_3 = mlx_rs::ops::maximum(&(x_ + array!(3.0)), &array!(0.0)).unwrap();
-        x_ * mlx_rs::ops::minimum(&max_x_plus_3, &array!(6.0)).unwrap() / &array!(6.0)
+        let max_x_plus_3 = maximum(&(x_ + array!(3.0)), &array!(0.0))?;
+        x_.multiply(minimum(&max_x_plus_3, &array!(6.0))?)?
+            .divide(&array!(6.0))
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)

@@ -2,9 +2,7 @@ use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
 use mlx_nn_module::{Module, Param};
-use mlx_rs::Array;
-
-use crate::error::Error;
+use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
@@ -22,14 +20,14 @@ where
 ///
 /// It calls each layer in sequence.
 #[derive(Debug, ModuleParameters)]
-pub struct Sequential<Err = Error> {
+pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
     pub layers: Param<Vec<Box<dyn SequentialModuleItem<Err>>>>,
 }
 
 impl Module for Sequential {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);

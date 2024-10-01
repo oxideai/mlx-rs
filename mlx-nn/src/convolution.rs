@@ -7,10 +7,7 @@ use mlx_rs::{
     Array,
 };
 
-use crate::{
-    error::Error,
-    utils::{IntOrPair, IntOrTriple, WithBias},
-};
+use crate::utils::{IntOrPair, IntOrTriple, WithBias};
 
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
 ///
@@ -95,7 +92,7 @@ impl Conv1d {
 }
 
 impl Module for Conv1d {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv1d(
@@ -208,7 +205,7 @@ impl Conv2d {
 }
 
 impl Module for Conv2d {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv2d(
@@ -324,7 +321,7 @@ impl Conv3d {
 }
 
 impl Module for Conv3d {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = mlx_rs::ops::conv3d(

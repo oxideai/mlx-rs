@@ -1,7 +1,7 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn::{error::Error, Linear};
+use mlx_nn::Linear;
 use mlx_nn_module::{Module, Param};
-use mlx_rs::Array;
+use mlx_rs::{error::Exception, Array};
 
 #[derive(Debug, Clone, ModuleParameters)]
 struct M {
@@ -18,7 +18,7 @@ impl M {
 }
 
 impl Module for M {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         self.linear.forward(x)

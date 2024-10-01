@@ -1,8 +1,6 @@
 use mlx_macros::ModuleParameters;
 use mlx_nn_module::Module;
-use mlx_rs::{array, ops::multiply, random::bernoulli};
-
-use crate::error::{Dropout2dError, Dropout3dError, Error};
+use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
 
 /// Randomly zero a portion of the elements during training.
 ///
@@ -55,7 +53,7 @@ impl Default for Dropout {
 }
 
 impl Module for Dropout {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
@@ -135,13 +133,13 @@ impl Default for Dropout2d {
 }
 
 impl Module for Dropout2d {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
-            return Err(Dropout2dError::NdimNotSupported.into());
+            return Err(Exception::from("Expecting 3D or 4D input"));
         }
 
         if self.one_minus_p == 1.0 || !self.training {
@@ -227,13 +225,13 @@ impl Default for Dropout3d {
 }
 
 impl Module for Dropout3d {
-    type Error = Error;
+    type Error = Exception;
 
     fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {
-            return Err(Dropout3dError::NdimNotSupported.into());
+            return Err(Exception::from("Expecting 4D or 5D input"));
         }
 
         if self.one_minus_p == 1.0 || !self.training {

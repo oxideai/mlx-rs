@@ -42,6 +42,20 @@ impl Exception {
     }
 }
 
+impl From<String> for Exception {
+    fn from(what: String) -> Self {
+        Self { what }
+    }
+}
+
+impl From<&str> for Exception {
+    fn from(what: &str) -> Self {
+        Self {
+            what: what.to_string(),
+        }
+    }
+}
+
 thread_local! {
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };

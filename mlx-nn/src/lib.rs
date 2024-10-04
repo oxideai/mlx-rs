@@ -14,6 +14,7 @@ mod container;
 mod convolution;
 mod dropout;
 mod linear;
+mod losses;
 mod value_and_grad;
 
 pub use activation::*;
@@ -21,6 +22,7 @@ pub use container::*;
 pub use convolution::*;
 pub use dropout::*;
 pub use linear::*;
+pub use losses::*;
 pub use value_and_grad::*;
 
 /// Re-export of the `mlx-nn-module` crate.

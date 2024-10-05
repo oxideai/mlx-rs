@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use mlx_macros::ModuleParameters;
+use mlx_macros::{option_builder, ModuleParameters};
 use mlx_nn_module::{Module, Param};
 use mlx_rs::{
     array,
@@ -265,45 +265,24 @@ pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Glu {
     /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
-    pub axis: i32,
-}
-
-impl Default for Glu {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub axis: Option<i32>,
 }
 
 impl Glu {
     /// The default axis value.
     pub const DEFAULT_AXIS: i32 = -1;
-
-    /// Creates a [`Glu`] module.
-    ///
-    /// # Params
-    ///
-    /// - `axis`: The axis to split the input tensor. Default to -1 if not provided.
-    pub fn new() -> Self {
-        Self {
-            axis: Self::DEFAULT_AXIS,
-        }
-    }
-
-    /// Sets the value of the `axis` field. Default to [`Glu::DEFAULT_AXIS`] if not provided.
-    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
-        self.axis = axis.into().unwrap_or(Self::DEFAULT_AXIS);
-        self
-    }
 }
 
 impl Module for Glu {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        glu(x, self.axis).map_err(Into::into)
+        let axis = self.axis.unwrap_or(Self::DEFAULT_AXIS);
+        glu(x, axis).map_err(Into::into)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -319,24 +298,9 @@ impl Module for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Sigmoid;
-
-// We implement this just for the sake of consistency
-impl Default for Sigmoid {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Sigmoid {
-    /// Creates a new [`Sigmoid`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Sigmoid {
     type Error = Exception;
@@ -359,23 +323,9 @@ impl Module for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Mish;
-
-impl Default for Mish {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Mish {
-    /// Creates a new [`Mish`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Mish {
     type Error = Exception;
@@ -394,23 +344,9 @@ impl Module for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Relu;
-
-impl Default for Relu {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Relu {
-    /// Creates a new [`Relu`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Relu {
     type Error = Exception;
@@ -429,41 +365,24 @@ impl Module for Relu {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct LeakyRelu {
     /// The negative slope. Default to [`LeakyReLU::`] if not provided.
-    pub neg_slope: f32,
-}
-
-impl Default for LeakyRelu {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub neg_slope: Option<f32>,
 }
 
 impl LeakyRelu {
     /// The default negative slope value.
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
-
-    /// Creates a new [`LeakyReLU`] module.
-    pub fn new() -> Self {
-        Self {
-            neg_slope: Self::DEFAULT_NEG_SLOPE,
-        }
-    }
-
-    /// Sets the value of the `neg_slope`
-    pub fn with_neg_slope(mut self, neg_slope: impl Into<Option<f32>>) -> Self {
-        self.neg_slope = neg_slope.into().unwrap_or(Self::DEFAULT_NEG_SLOPE);
-        self
-    }
 }
 
 impl Module for LeakyRelu {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        leaky_relu(x, self.neg_slope).map_err(Into::into)
+        let neg_slope = self.neg_slope.unwrap_or(Self::DEFAULT_NEG_SLOPE);
+        leaky_relu(x, neg_slope).map_err(Into::into)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -476,23 +395,9 @@ impl Module for LeakyRelu {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Relu6;
-
-impl Default for Relu6 {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Relu6 {
-    /// Creates a new [`Relu6`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Relu6 {
     type Error = Exception;
@@ -511,41 +416,23 @@ impl Module for Relu6 {
 /// ```rust, ignore
 /// softmax(&x, None, None)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
 pub struct Softmax {
     /// The axis to apply the softmax.
-    pub axis: i32,
-}
-
-impl Default for Softmax {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub axis: Option<i32>,
 }
 
 impl Softmax {
     /// The default axis value.
     pub const DEFAULT_AXIS: i32 = -1;
-
-    /// Creates a new [`Softmax`] module.
-    pub fn new() -> Self {
-        Self {
-            axis: Self::DEFAULT_AXIS,
-        }
-    }
-
-    /// Sets the value of the `axis`
-    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
-        self.axis = axis.into().unwrap_or(Self::DEFAULT_AXIS);
-        self
-    }
 }
 
 impl Module for Softmax {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(mlx_rs::ops::softmax(x, &[self.axis], None))
+        let axis = self.axis.unwrap_or(Self::DEFAULT_AXIS);
+        Ok(mlx_rs::ops::softmax(x, &[axis], None))
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -558,23 +445,9 @@ impl Module for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Softplus;
-
-impl Default for Softplus {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Softplus {
-    /// Creates a new [`Softplus`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Softplus {
     type Error = Exception;
@@ -593,23 +466,9 @@ impl Module for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Softsign;
-
-impl Default for Softsign {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Softsign {
-    /// Creates a new [`Softsign`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Softsign {
     type Error = Exception;
@@ -629,41 +488,23 @@ impl Module for Softsign {
 /// maximum(x, 0.0).unwrap()
 ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
 pub struct Celu {
     /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
-    pub alpha: f32,
-}
-
-impl Default for Celu {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub alpha: Option<f32>,
 }
 
 impl Celu {
     /// The default alpha value.
     pub const DEFAULT_ALPHA: f32 = 1.0;
-
-    /// Creates a new [`Celu`] module.
-    pub fn new() -> Self {
-        Self {
-            alpha: Self::DEFAULT_ALPHA,
-        }
-    }
-
-    /// Sets the value of the `alpha`. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
-    pub fn with_alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
-        self.alpha = alpha.into().unwrap_or(Self::DEFAULT_ALPHA);
-        self
-    }
 }
 
 impl Module for Celu {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        celu(x, self.alpha).map_err(Into::into)
+        let alpha = self.alpha.unwrap_or(Self::DEFAULT_ALPHA);
+        celu(x, alpha).map_err(Into::into)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -676,23 +517,9 @@ impl Module for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Silu;
-
-impl Default for Silu {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Silu {
-    /// Creates a new [`Silu`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Silu {
     type Error = Exception;
@@ -711,41 +538,23 @@ impl Module for Silu {
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
 pub struct LogSoftmax {
     /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
-    pub axis: i32,
-}
-
-impl Default for LogSoftmax {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub axis: Option<i32>,
 }
 
 impl LogSoftmax {
     /// The default axis value.
     pub const DEFAULT_AXIS: i32 = -1;
-
-    /// Creates a new [`LogSoftmax`] module.
-    pub fn new() -> Self {
-        Self {
-            axis: Self::DEFAULT_AXIS,
-        }
-    }
-
-    /// Sets the value of the `axis`. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
-    pub fn with_axis(mut self, axis: impl Into<Option<i32>>) -> Self {
-        self.axis = axis.into().unwrap_or(Self::DEFAULT_AXIS);
-        self
-    }
 }
 
 impl Module for LogSoftmax {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        log_softmax(x, self.axis).map_err(Into::into)
+        let axis = self.axis.unwrap_or(Self::DEFAULT_AXIS);
+        log_softmax(x, axis).map_err(Into::into)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -758,23 +567,9 @@ impl Module for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct LogSigmoid;
-
-impl Default for LogSigmoid {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl LogSigmoid {
-    /// Creates a new [`LogSigmoid`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for LogSigmoid {
     type Error = Exception;
@@ -794,10 +589,21 @@ impl Module for LogSigmoid {
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
 #[derive(Debug, Clone, ModuleParameters)]
+#[option_builder]
 pub struct Prelu {
     /// The alpha value. See [`prelu`] for more details.
     #[param]
     pub weight: Param<Array>, // TODO: double check if this is trainable
+}
+
+impl Default for Prelu {
+    fn default() -> Self {
+        let weight = mlx_rs::ops::full::<f32>(&[Self::DEFAULT_COUNT], &array!(Self::DEFAULT_VALUE))
+            .expect("Creating the default weight for Prelu should not fail");
+        Self {
+            weight: Param::new(weight),
+        }
+    }
 }
 
 impl Prelu {
@@ -807,17 +613,8 @@ impl Prelu {
     /// The default value.
     pub const DEFAULT_VALUE: f32 = 0.25;
 
-    /// Creates a new [`Prelu`] module.
-    pub fn new() -> Self {
-        let weight = mlx_rs::ops::full::<f32>(&[Self::DEFAULT_COUNT], &array!(Self::DEFAULT_VALUE))
-            .expect("Creating the default weight for Prelu should not fail");
-        Self {
-            weight: Param::new(weight),
-        }
-    }
-
     /// Sets the value of the `weight` with the given `count` and `value`.
-    pub fn with_count_and_value(
+    pub fn set_weight_with_count_and_value(
         mut self,
         count: impl Into<Option<i32>>,
         value: impl Into<Option<f32>>,
@@ -826,12 +623,6 @@ impl Prelu {
         let value = value.into().unwrap_or(Self::DEFAULT_VALUE);
         self.weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
         Ok(self)
-    }
-}
-
-impl Default for Prelu {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -866,31 +657,11 @@ pub enum GeluApprox {
 /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
 /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
 /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Gelu {
     /// The approximation to use. Default to `GeluApprox::None` if not provided.
     pub approximate: GeluApprox,
-}
-
-impl Default for Gelu {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Gelu {
-    /// Creates a new [`Gelu`] module.
-    pub fn new() -> Self {
-        Self {
-            approximate: GeluApprox::None,
-        }
-    }
-
-    /// Sets the value of the `approximate`
-    pub fn approximate(mut self, approximate: GeluApprox) -> Self {
-        self.approximate = approximate;
-        self
-    }
 }
 
 impl Module for Gelu {
@@ -908,23 +679,9 @@ impl Module for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Tanh;
-
-impl Default for Tanh {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Tanh {
-    /// Creates a new [`Tanh`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Tanh {
     type Error = Exception;
@@ -943,21 +700,9 @@ impl Module for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct HardSwish;
-
-impl Default for HardSwish {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl HardSwish {
-    /// Creates a new [`HardSwish`] module.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for HardSwish {
     type Error = Exception;
@@ -979,41 +724,23 @@ impl Module for HardSwish {
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
 pub struct Step {
     /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
-    pub threshold: f32,
-}
-
-impl Default for Step {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub threshold: Option<f32>,
 }
 
 impl Step {
     /// The default threshold value.
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
-
-    /// Creates a new [`Step`] module.
-    pub fn new() -> Self {
-        Self {
-            threshold: Self::DEFAULT_THRESHOLD,
-        }
-    }
-
-    /// Sets the value of the `threshold`
-    pub fn with_threshold(mut self, threshold: impl Into<Option<f32>>) -> Self {
-        self.threshold = threshold.into().unwrap_or(Self::DEFAULT_THRESHOLD);
-        self
-    }
 }
 
 impl Module for Step {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        step(x, self.threshold).map_err(Into::into)
+        let threshold = self.threshold.unwrap_or(Self::DEFAULT_THRESHOLD);
+        step(x, threshold).map_err(Into::into)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -1026,23 +753,9 @@ impl Module for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Selu;
-
-impl Default for Selu {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Selu {
-    /// Creates a new [`Selu`] module.
-    ///
-    /// This is just to be consistent with the other modules.
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Module for Selu {
     type Error = Exception;

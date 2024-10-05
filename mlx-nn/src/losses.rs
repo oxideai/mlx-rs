@@ -91,13 +91,14 @@ impl<'a> CrossEntropyOptions<'a> {
 /// # Panics
 ///
 /// - Panics if `options.label_smoothing` is not in the range [0, 1)
-pub fn cross_entropy(
+pub fn cross_entropy<'a>(
     logits: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: CrossEntropyOptions<'_>,
+    options: impl Into<CrossEntropyOptions<'a>>,
 ) -> Result<Array, Exception> {
     let logits = logits.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let weight = options.weights;
     let axis = options.axis.unwrap_or(CrossEntropyOptions::DEFAULT_AXIS);
     let label_smoothing = options
@@ -174,13 +175,14 @@ impl<'a> BinaryCrossEntropyOptions<'a> {
 /// - `logits`: unnormalized predicted logits
 /// - `targets`: binary target values in {0, 1}
 /// - `options`: optional parameters. See [`BinaryCrossEntropyOptions`] for more details
-pub fn binary_cross_entropy(
+pub fn binary_cross_entropy<'a>(
     logits: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: BinaryCrossEntropyOptions<'_>,
+    options: impl Into<BinaryCrossEntropyOptions<'a>>,
 ) -> Result<Array, Exception> {
     let logits = logits.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let weights = options.weights;
     let inputs_are_logits = options
         .inputs_are_logits
@@ -232,10 +234,11 @@ impl L1LossOptions {
 pub fn l1_loss(
     predictions: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: L1LossOptions,
+    options: impl Into<L1LossOptions>,
 ) -> Result<Array, Exception> {
     let predictions = predictions.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let reduction = options
         .reduction
         .unwrap_or(L1LossOptions::DEFAULT_REDUCTION);
@@ -268,10 +271,11 @@ impl MseLossOptions {
 pub fn mse_loss(
     predictions: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: MseLossOptions,
+    options: impl Into<MseLossOptions>,
 ) -> Result<Array, Exception> {
     let predictions = predictions.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let reduction = options
         .reduction
         .unwrap_or(MseLossOptions::DEFAULT_REDUCTION);
@@ -310,10 +314,11 @@ impl NllLossOptions {
 pub fn nll_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: NllLossOptions,
+    options: impl Into<NllLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let axis = options.axis.unwrap_or(NllLossOptions::DEFAULT_AXIS);
     let reduction = options
         .reduction
@@ -362,11 +367,12 @@ pub fn gaussian_nll_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
     vars: impl AsRef<Array>,
-    options: GaussianNllLossOptions,
+    options: impl Into<GaussianNllLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
     let vars = vars.as_ref();
+    let options = options.into();
     let full = options.full.unwrap_or(GaussianNllLossOptions::DEFAULT_FULL);
     let eps = options.eps.unwrap_or(GaussianNllLossOptions::DEFAULT_EPS);
     let reduction = options
@@ -418,10 +424,11 @@ impl KlDivLossOptions {
 pub fn kl_div_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: KlDivLossOptions,
+    options: impl Into<KlDivLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let axis = options.axis.unwrap_or(KlDivLossOptions::DEFAULT_AXIS);
     let reduction = options
         .reduction
@@ -469,10 +476,11 @@ impl SmoothL1LossOptions {
 pub fn smooth_l1_loss(
     predictions: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: SmoothL1LossOptions,
+    options: impl Into<SmoothL1LossOptions>,
 ) -> Result<Array, Exception> {
     let predictions = predictions.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let beta = options.beta.unwrap_or(SmoothL1LossOptions::DEFAULT_BETA);
     let reduction = options
         .reduction
@@ -537,11 +545,12 @@ pub fn triplet_loss(
     anchors: impl AsRef<Array>,
     positives: impl AsRef<Array>,
     negatives: impl AsRef<Array>,
-    options: TripletLossOptions,
+    options: impl Into<TripletLossOptions>,
 ) -> Result<Array, Exception> {
     let anchors = anchors.as_ref();
     let positives = positives.as_ref();
     let negatives = negatives.as_ref();
+    let options = options.into();
     let axis = options.axis.unwrap_or(TripletLossOptions::DEFAULT_AXIS);
     let p = options.p.unwrap_or(TripletLossOptions::DEFAULT_P);
     let margin = options.margin.unwrap_or(TripletLossOptions::DEFAULT_MARGIN);
@@ -591,10 +600,11 @@ impl HingeLossOptions {
 pub fn hinge_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: HingeLossOptions,
+    options: impl Into<HingeLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let reduction = options
         .reduction
         .unwrap_or(HingeLossOptions::DEFAULT_REDUCTION);
@@ -635,10 +645,11 @@ impl HuberLossOptions {
 pub fn huber_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: HuberLossOptions,
+    options: impl Into<HuberLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let delta = options.delta.unwrap_or(HuberLossOptions::DEFAULT_DELTA);
     let reduction = options
         .reduction
@@ -681,10 +692,11 @@ impl LogCoshLossOptions {
 pub fn log_cosh_loss(
     inputs: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: LogCoshLossOptions,
+    options: impl Into<LogCoshLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs = inputs.as_ref();
     let targets = targets.as_ref();
+    let options = options.into();
     let reduction = options
         .reduction
         .unwrap_or(LogCoshLossOptions::DEFAULT_REDUCTION);
@@ -731,10 +743,11 @@ impl CosineSimilarityLossOptions {
 pub fn cosine_similarity_loss(
     x1: impl AsRef<Array>,
     x2: impl AsRef<Array>,
-    options: CosineSimilarityLossOptions,
+    options: impl Into<CosineSimilarityLossOptions>,
 ) -> Result<Array, Exception> {
     let x1 = x1.as_ref();
     let x2 = x2.as_ref();
+    let options = options.into();
     let axis = options
         .axis
         .unwrap_or(CosineSimilarityLossOptions::DEFAULT_AXIS);
@@ -784,9 +797,9 @@ impl MarginRankingLossOptions {
 }
 
 /// Computes the margin ranking loss.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `inputs1`: Scores for the first input.
 /// - `inputs2`: Scores for the second input.
 /// - `targets`: Labels indicating whether samples in `inputs1` should be ranked higher than samples
@@ -796,12 +809,15 @@ pub fn margin_ranking_loss(
     inputs1: impl AsRef<Array>,
     inputs2: impl AsRef<Array>,
     targets: impl AsRef<Array>,
-    options: MarginRankingLossOptions,
+    options: impl Into<MarginRankingLossOptions>,
 ) -> Result<Array, Exception> {
     let inputs1 = inputs1.as_ref();
     let inputs2 = inputs2.as_ref();
     let targets = targets.as_ref();
-    let margin = options.margin.unwrap_or(MarginRankingLossOptions::DEFAULT_MARGIN);
+    let options = options.into();
+    let margin = options
+        .margin
+        .unwrap_or(MarginRankingLossOptions::DEFAULT_MARGIN);
     let reduction = options
         .reduction
         .unwrap_or(MarginRankingLossOptions::DEFAULT_REDUCTION);
@@ -811,14 +827,12 @@ pub fn margin_ranking_loss(
 
     let margin = array!(margin);
     let diff = inputs1.subtract(inputs2)?;
-    let loss = maximum(
-        array!(0.0), 
-        - targets * diff + margin
-    )?;
+    let loss = maximum(array!(0.0), -targets * diff + margin)?;
     reduction.reduce(loss)
 }
 
 #[cfg(test)]
+#[allow(clippy::approx_constant)]
 mod tests {
     use float_eq::assert_float_eq;
     use mlx_rs::{array, assert_array_eq, ops::is_nan};
@@ -838,8 +852,7 @@ mod tests {
         assert_array_eq!(loss, expected);
 
         let probs = array!([[1.0, 0.0], [0.0, 1.0]]);
-        let options = CrossEntropyOptions::new()
-            .reduction(LossReduction::None);
+        let options = CrossEntropyOptions::builder().reduction(LossReduction::None);
         let loss = cross_entropy(logits, probs, options).unwrap();
         assert!(is_nan(&loss).all(None, None).unwrap().item::<bool>());
 
@@ -848,14 +861,14 @@ mod tests {
         let indices = array!([0, 1]);
         let weights = array!([1.0, 2.0]);
         let expected = array!([0.04858735, 0.0971747]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .weights(&weights)
             .reduction(LossReduction::None);
         let loss = cross_entropy(&logits, indices, options).unwrap();
         assert_array_eq!(loss, expected);
 
         let probs = array!([[1.0, 0.0], [0.0, 1.0]]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .weights(&weights)
             .reduction(LossReduction::None);
         let loss = cross_entropy(logits, probs, options).unwrap();
@@ -865,14 +878,14 @@ mod tests {
         let logits = array!([[2.0, -1.0], [-1.0, 2.0]]);
         let indices = array!([0, 1]);
         let expected = array!([0.498587, 0.498587]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .label_smoothing(0.3)
             .reduction(LossReduction::None);
         let loss = cross_entropy(&logits, indices, options).unwrap();
         assert_array_eq!(loss, expected);
 
         let probs = array!([[1.0, 0.0], [0.0, 1.0]]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .label_smoothing(0.3)
             .reduction(LossReduction::None);
         let loss = cross_entropy(logits, probs, options).unwrap();
@@ -883,7 +896,7 @@ mod tests {
         let indices = array!([0, 1]);
         let weights = array!([1.0, 2.0]);
         let expected = array!([0.49858734, 0.9971747]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .weights(&weights)
             .label_smoothing(0.3)
             .reduction(LossReduction::None);
@@ -891,7 +904,7 @@ mod tests {
         assert_array_eq!(loss, expected);
 
         let probs = array!([[1.0, 0.0], [0.0, 1.0]]);
-        let options = CrossEntropyOptions::new()
+        let options = CrossEntropyOptions::builder()
             .weights(&weights)
             .label_smoothing(0.3)
             .reduction(LossReduction::None);
@@ -905,22 +918,19 @@ mod tests {
         let targets = array!([0.0, 0.0, 1.0, 1.0]);
 
         // Test with reduction 'none'
-        let options = BinaryCrossEntropyOptions::new()
-            .reduction(LossReduction::None);
+        let options = BinaryCrossEntropyOptions::builder().reduction(LossReduction::None);
         let loss_none = binary_cross_entropy(&logits, &targets, options).unwrap();
         let expected_none = array!([0.747215, 0.810930, 0.262365, 0.336472]);
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = BinaryCrossEntropyOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = BinaryCrossEntropyOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = binary_cross_entropy(&logits, &targets, options).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = BinaryCrossEntropyOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = BinaryCrossEntropyOptions::builder().reduction(LossReduction::Sum);
         let loss = binary_cross_entropy(&logits, &targets, options).unwrap();
         let expected = expected_none.sum(None, None).unwrap();
         assert_array_eq!(loss, expected);
@@ -928,7 +938,7 @@ mod tests {
         // With weights, no label smoothing
         let weights = array!([1.0, 2.0, 1.0, 2.0]);
         let expected = array!([0.747215, 1.62186, 0.262365, 0.672944]);
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .weights(&weights)
             .reduction(LossReduction::None);
         let loss = binary_cross_entropy(&logits, &targets, options).unwrap();
@@ -941,7 +951,7 @@ mod tests {
         let targets = array!([0.0, 0.0, 1.0, 1.0]);
 
         // Test with reduction 'none'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::None);
         let loss_none = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -949,7 +959,7 @@ mod tests {
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::Mean);
         let loss_mean = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -957,7 +967,7 @@ mod tests {
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::Sum);
         let loss = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -972,7 +982,7 @@ mod tests {
         let targets = array!([0.0, 0.0, 1.0, 1.0]);
 
         // Test with reduction 'none'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::None);
         let loss_none = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -980,7 +990,7 @@ mod tests {
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::Mean);
         let loss_mean = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -988,7 +998,7 @@ mod tests {
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = BinaryCrossEntropyOptions::new()
+        let options = BinaryCrossEntropyOptions::builder()
             .inputs_are_logits(false)
             .reduction(LossReduction::Sum);
         let loss = binary_cross_entropy(&probs, &targets, options).unwrap();
@@ -1005,18 +1015,15 @@ mod tests {
         let expected_sum = expected_none.sum(None, None).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
 
-        let options = L1LossOptions::new()
-            .reduction(LossReduction::None);
+        let options = L1LossOptions::builder().reduction(LossReduction::None);
         let loss_none = l1_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_none, expected_none);
 
-        let options = L1LossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = L1LossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = l1_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
 
-        let options = L1LossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = L1LossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = l1_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
     }
@@ -1030,18 +1037,15 @@ mod tests {
         let expected_mean = expected_none.mean(None, None).unwrap();
         let expected_sum = expected_none.sum(None, None).unwrap();
 
-        let options = MseLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = MseLossOptions::builder().reduction(LossReduction::None);
         let loss_none = mse_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_none, expected_none);
 
-        let options = MseLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = MseLossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = mse_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
-        let options = MseLossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = MseLossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = mse_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
     }
@@ -1056,19 +1060,19 @@ mod tests {
         let expected_sum = expected_none.sum(None, None).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
 
-        let options = SmoothL1LossOptions::new()
+        let options = SmoothL1LossOptions::builder()
             .beta(beta)
             .reduction(LossReduction::None);
         let loss_none = smooth_l1_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_none, expected_none);
 
-        let options = SmoothL1LossOptions::new()
+        let options = SmoothL1LossOptions::builder()
             .beta(beta)
             .reduction(LossReduction::Sum);
         let loss_sum = smooth_l1_loss(&predictions, &targets, options).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
 
-        let options = SmoothL1LossOptions::new()
+        let options = SmoothL1LossOptions::builder()
             .beta(beta)
             .reduction(LossReduction::Mean);
         let loss_mean = smooth_l1_loss(&predictions, &targets, options).unwrap();
@@ -1084,18 +1088,15 @@ mod tests {
         let expected_sum = expected_none.sum(None, None).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
 
-        let options = NllLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = NllLossOptions::builder().reduction(LossReduction::None);
         let loss_none = nll_loss(&logits, &targets, options).unwrap();
         assert_array_eq!(loss_none, expected_none);
 
-        let options = NllLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = NllLossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = nll_loss(&logits, &targets, options).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
-        let options = NllLossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = NllLossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = nll_loss(&logits, &targets, options).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
     }
@@ -1107,7 +1108,7 @@ mod tests {
         let vars = array!([[0.1, 0.2], [0.3, 0.4]]);
 
         // Test with reduction 'none', full=False
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(false)
             .reduction(LossReduction::None);
         let loss_none = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1115,7 +1116,7 @@ mod tests {
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean', full=False
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(false)
             .reduction(LossReduction::Mean);
         let loss_mean = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1123,7 +1124,7 @@ mod tests {
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum', full=False
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(false)
             .reduction(LossReduction::Sum);
         let loss_sum = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1131,7 +1132,7 @@ mod tests {
         assert_array_eq!(loss_sum, expected_sum);
 
         // Test with reduction='none', full=True
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(true)
             .reduction(LossReduction::None);
         let loss_none_full = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1139,7 +1140,7 @@ mod tests {
         assert_array_eq!(loss_none_full, expected_none_full);
 
         // Test with reduction='mean', full=True
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(true)
             .reduction(LossReduction::Mean);
         let loss_mean_full = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1147,7 +1148,7 @@ mod tests {
         assert_array_eq!(loss_mean_full, expected_mean_full);
 
         // Test with reduction='sum', full=True
-        let options = GaussianNllLossOptions::new()
+        let options = GaussianNllLossOptions::builder()
             .full(true)
             .reduction(LossReduction::Sum);
         let loss_sum_full = gaussian_nll_loss(&inputs, &targets, &vars, options).unwrap();
@@ -1161,22 +1162,19 @@ mod tests {
         let q_logits = array!([[0.5, 0.5], [0.2, 0.8]]).log();
 
         // Test with reduction 'none'
-        let options = KlDivLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = KlDivLossOptions::builder().reduction(LossReduction::None);
         let loss_none = kl_div_loss(&p_logits, &q_logits, options).unwrap();
         let expected_none = array!([0.0, 0.831777]);
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = KlDivLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = KlDivLossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = kl_div_loss(&p_logits, &q_logits, options).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = KlDivLossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = KlDivLossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = kl_div_loss(&p_logits, &q_logits, options).unwrap();
         let expected_sum = expected_none.sum(None, None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
@@ -1189,22 +1187,19 @@ mod tests {
         let negatives = array!([[7, 8, 9], [3, 2, 3]]);
 
         // Test with reduction 'none'
-        let options = TripletLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = TripletLossOptions::builder().reduction(LossReduction::None);
         let loss_none = triplet_loss(&anchors, &positives, &negatives, options).unwrap();
         let expected_none = array!([0.0, 2.31662]);
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = TripletLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = TripletLossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = triplet_loss(&anchors, &positives, &negatives, options).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = TripletLossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = TripletLossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = triplet_loss(&anchors, &positives, &negatives, options).unwrap();
         let expected_sum = expected_none.sum(None, None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
@@ -1214,8 +1209,7 @@ mod tests {
     fn test_hinge_loss() {
         let inputs = array!([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]);
         let targets = array!([[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]);
-        let options = HingeLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = HingeLossOptions::builder().reduction(LossReduction::Mean);
         let loss = hinge_loss(&inputs, &targets, options).unwrap();
         assert_eq!(loss.item::<f32>(), 1.0);
     }
@@ -1224,8 +1218,7 @@ mod tests {
     fn test_huber_loss() {
         let inputs = array!([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]);
         let targets = array!([[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]);
-        let options = HuberLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = HuberLossOptions::builder().reduction(LossReduction::Mean);
         let loss = huber_loss(&inputs, &targets, options).unwrap();
         assert_eq!(loss.item::<f32>(), 0.5);
     }
@@ -1234,10 +1227,9 @@ mod tests {
     fn test_log_cosh_loss() {
         let inputs = array!([[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]);
         let targets = array!([[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]);
-        let options = LogCoshLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = LogCoshLossOptions::builder().reduction(LossReduction::Mean);
         let loss = log_cosh_loss(&inputs, &targets, options).unwrap();
-        assert_float_eq!(loss.item::<f32>(), 0.433781, abs<=1e-6);
+        assert_float_eq!(loss.item::<f32>(), 0.433781, abs <= 1e-6);
     }
 
     #[test]
@@ -1246,22 +1238,19 @@ mod tests {
         let embeddings2 = array!([[0.6, 0.4, 0.3, 0.8], [0.2, 0.5, 0.6, 0.4]]);
 
         // Test with reduction 'none'
-        let options = CosineSimilarityLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = CosineSimilarityLossOptions::builder().reduction(LossReduction::None);
         let loss_none = cosine_similarity_loss(&embeddings1, &embeddings2, options).unwrap();
         let expected_none = array!([0.985344, 0.961074]);
         assert_array_eq!(loss_none, expected_none);
 
         // Test with reduction 'mean'
-        let options = CosineSimilarityLossOptions::new()
-            .reduction(LossReduction::Mean);
+        let options = CosineSimilarityLossOptions::builder().reduction(LossReduction::Mean);
         let loss_mean = cosine_similarity_loss(&embeddings1, &embeddings2, options).unwrap();
         let expected_mean = expected_none.mean(None, None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
-        let options = CosineSimilarityLossOptions::new()
-            .reduction(LossReduction::Sum);
+        let options = CosineSimilarityLossOptions::builder().reduction(LossReduction::Sum);
         let loss_sum = cosine_similarity_loss(&embeddings1, &embeddings2, options).unwrap();
         let expected_sum = expected_none.sum(None, None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
@@ -1274,14 +1263,13 @@ mod tests {
         let targets = array!([1, 1, -1]);
 
         // Test with no margin
-        let options = MarginRankingLossOptions::new()
-            .reduction(LossReduction::None);
+        let options = MarginRankingLossOptions::builder().reduction(LossReduction::None);
         let loss = margin_ranking_loss(&inputs1, &inputs2, &targets, options).unwrap();
         let expected = array!([1.329369, 0.990929, 0.0]);
         assert_array_eq!(loss, expected);
 
         // Test with margin
-        let options = MarginRankingLossOptions::new()
+        let options = MarginRankingLossOptions::builder()
             .margin(0.5)
             .reduction(LossReduction::None);
         let loss = margin_ranking_loss(&inputs1, &inputs2, &targets, options).unwrap();

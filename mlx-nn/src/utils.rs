@@ -97,3 +97,22 @@ pub(crate) fn get_mut_or_insert_with<'a>(
 
     map.get_mut(key).unwrap()
 }
+
+/// A generic builder type for optional fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Builder<T> {
+    /// The inner value
+    pub inner: T,
+}
+
+impl<T> Builder<T> {
+    /// Creates a new builder
+    pub fn new(inner: T) -> Self {
+        Self { inner }
+    }
+
+    /// Builds the inner value
+    pub fn build(self) -> T {
+        self.inner
+    }
+}

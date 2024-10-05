@@ -1,9 +1,31 @@
 use mlx_rs::{
     array,
     error::Exception,
-    ops::{clip, indexing::take_along_axis, log, log_add_exp, log_sum_exp, multiply, sum},
+    ops::{
+        abs, clip, exp, indexing::take_along_axis, log, log_add_exp, log_sum_exp, maximum, minimum,
+        multiply, power, r#where, sqrt, square, sum,
+    },
     Array,
 };
+
+#[inline]
+fn check_shape(
+    left: &Array,
+    right: &Array,
+    left_ident: &str,
+    right_ident: &str,
+) -> Result<(), Exception> {
+    if left.shape() != right.shape() {
+        return Err(Exception::from(format!(
+            "The shape of the {} ({:?}) does not match the shape of the {} ({:?})",
+            left_ident,
+            left.shape(),
+            right_ident,
+            right.shape()
+        )));
+    }
+    Ok(())
+}
 
 /// Different types of loss reductions
 #[derive(Debug, Clone, Copy)]
@@ -46,13 +68,13 @@ pub struct CrossEntropyOptions<'a> {
 }
 
 impl<'a> CrossEntropyOptions<'a> {
-    /// Default value for the axis parameter.
+    /// Default value for the `axis` parameter.
     pub const DEFAULT_AXIS: i32 = -1;
 
-    /// Default value for the label smoothing parameter.
+    /// Default value for the `label_smoothing` parameter.
     pub const DEFAULT_LABEL_SMOOTHING: f32 = 0.0;
 
-    /// Default value for the reduction parameter.
+    /// Default value for the `reduction` parameter.
     pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
 }
 
@@ -114,7 +136,7 @@ pub fn cross_entropy(
     };
 
     if let Some(weights) = weight {
-        // assert_eq!(weights.shape(), loss.shape()); // TODO: is this necessary?
+        check_shape(weights, &loss, "weights", "loss")?;
         loss = multiply(loss, weights)?;
     }
 
@@ -135,10 +157,10 @@ pub struct BinaryCrossEntropyOptions<'a> {
 }
 
 impl<'a> BinaryCrossEntropyOptions<'a> {
-    /// Default value for the with_logits parameter.
+    /// Default value for the `with_logits` parameter.
     pub const DEFAULT_WITH_LOGITS: bool = true;
 
-    /// Default value for the reduction parameter.
+    /// Default value for the `reduction` parameter.
     pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
 }
 
@@ -177,19 +199,563 @@ pub fn binary_cross_entropy(
     };
 
     if let Some(weights) = weights {
-        // assert_eq!(weights.shape(), loss.shape()); // TODO: is this necessary?
+        check_shape(weights, &loss, "weights", "loss")?;
         loss = multiply(loss, weights)?;
     }
 
     reduction.reduce(loss)
 }
 
-// The following unit tests are adapted from the python API at: mlx/python/tests/test_losses.py
+/// Optional parameters for the `l1_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct L1LossOptions {
+    /// Reduction type. Default to [`L1lossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl L1LossOptions {
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::Mean;
+}
+
+/// Computes the L1 loss.
+///
+/// # Params
+///
+/// - `predictions`: predicted values
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`L1LossOptions`] for more details
+pub fn l1_loss(
+    predictions: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: L1LossOptions,
+) -> Result<Array, Exception> {
+    let predictions = predictions.as_ref();
+    let targets = targets.as_ref();
+    let reduction = options
+        .reduction
+        .unwrap_or(L1LossOptions::DEFAULT_REDUCTION);
+
+    check_shape(predictions, targets, "predictions", "targets")?;
+    let loss = predictions.subtract(targets)?.abs();
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `mse_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct MseLossOptions {
+    /// Reduction type. Default to [`MseLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl MseLossOptions {
+    /// Default value for the reduction parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::Mean;
+}
+
+/// Computes the mean squared error loss.
+///
+/// # Params
+///
+/// - `predictions`: predicted values
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`MseLossOptions`] for more details
+pub fn mse_loss(
+    predictions: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: MseLossOptions,
+) -> Result<Array, Exception> {
+    let predictions = predictions.as_ref();
+    let targets = targets.as_ref();
+    let reduction = options
+        .reduction
+        .unwrap_or(MseLossOptions::DEFAULT_REDUCTION);
+
+    check_shape(predictions, targets, "predictions", "targets")?;
+    let loss = predictions.subtract(targets)?.square();
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `nll_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct NllLossOptions {
+    /// distribution axis. Default to [`NllLossOptions::DEFAULT_AXIS`] if `None`
+    pub axis: Option<i32>,
+
+    /// Reduction type. Default to [`NllLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl NllLossOptions {
+    /// Default value for the `axis` parameter.
+    pub const DEFAULT_AXIS: i32 = -1;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the negative log likelihood loss.
+///
+/// # Params
+///
+/// - `inputs`: predicted distribution in log space
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`NllLossOptions`] for more details
+pub fn nll_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: NllLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let axis = options.axis.unwrap_or(NllLossOptions::DEFAULT_AXIS);
+    let reduction = options
+        .reduction
+        .unwrap_or(NllLossOptions::DEFAULT_REDUCTION);
+
+    let loss = -take_along_axis(inputs, &targets.expand_dims(&[-1])?, axis)?.squeeze(&[-1])?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `gaussian_nll_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct GaussianNllLossOptions {
+    /// Whether to include the constant term in the loss calculation. Default to
+    /// [`GaussianNllLossOptions::DEFAULT_FULL`] if `None`
+    pub full: Option<bool>,
+
+    /// Small positive constant for numerical stability. Default to
+    /// [`GaussianNllLossOptions::DEFAULT_EPS`] if `None`
+    pub eps: Option<f32>,
+
+    /// Reduction type. Default to [`GaussianNllLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl GaussianNllLossOptions {
+    /// Default value for the `full` parameter.
+    pub const DEFAULT_FULL: bool = false;
+
+    /// Default value for the `eps` parameter.
+    pub const DEFAULT_EPS: f32 = 1e-6;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the negative log likelihood loss for a Gaussian distribution.
+///
+/// # Params
+///
+/// - `inputs`: The predicted expectation of the Gaussian distribution.
+/// - `targets`: The target values (samples from the Gaussian distribution).
+/// - `vars`: The predicted variance of the Gaussian distribution.
+/// - `options`: optional parameters. See [`GaussianNllLossOptions`] for more details
+pub fn gaussian_nll_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    vars: impl AsRef<Array>,
+    options: GaussianNllLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let vars = vars.as_ref();
+    let full = options.full.unwrap_or(GaussianNllLossOptions::DEFAULT_FULL);
+    let eps = options.eps.unwrap_or(GaussianNllLossOptions::DEFAULT_EPS);
+    let reduction = options
+        .reduction
+        .unwrap_or(GaussianNllLossOptions::DEFAULT_REDUCTION);
+
+    check_shape(inputs, targets, "inputs", "targets")?;
+    check_shape(inputs, vars, "inputs", "vars")?;
+
+    // For numerical stability
+    let vars = maximum(vars, array!(eps))?;
+    let mut loss =
+        array!(0.5) * (log(&vars).add(square(&targets.subtract(inputs)?).divide(&vars)?)?);
+
+    if full {
+        let pi = array!(std::f32::consts::PI);
+        loss = loss.add(array!(0.5).multiply(log(&array!(2.0).multiply(pi)?))?)?;
+    }
+
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `kl_div_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct KlDivLossOptions {
+    /// The distribution axis. Default to [`KlDivLossOptions::DEFAULT_AXIS`] if `None`
+    pub axis: Option<i32>,
+
+    /// Reduction type. Default to [`KlDivLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl KlDivLossOptions {
+    /// Default value for the `axis` parameter.
+    pub const DEFAULT_AXIS: i32 = -1;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the Kullback-Leibler divergence loss.
+///
+/// # Params
+///
+/// - `inputs`: Log probabilities for the predicted distribution.
+/// - `targets`: Log probabilities for the target distribution.
+/// - `options`: optional parameters. See [`KlDivLossOptions`] for more details
+pub fn kl_div_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: KlDivLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let axis = options.axis.unwrap_or(KlDivLossOptions::DEFAULT_AXIS);
+    let reduction = options
+        .reduction
+        .unwrap_or(KlDivLossOptions::DEFAULT_REDUCTION);
+
+    let loss = sum(
+        &exp(targets).multiply(targets.subtract(inputs)?)?,
+        &[axis],
+        None,
+    )?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `smooth_l1_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct SmoothL1LossOptions {
+    /// The threshold after which the loss changes from the squared to the absolute difference.
+    /// Default to [`SmoothL1LossOptions::DEFAULT_BETA`] if `None`
+    pub beta: Option<f32>,
+
+    /// Reduction type. Default to [`SmoothL1LossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl SmoothL1LossOptions {
+    /// Default value for the `beta` parameter.
+    pub const DEFAULT_BETA: f32 = 1.0;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::Mean;
+}
+
+/// Computes the smooth L1 loss.
+///
+/// The smooth L1 loss is a variant of the L1 loss which replaces the absolute
+/// difference with a squared difference when the absolute difference is less
+/// than `beta`.
+///
+/// # Params
+///
+/// - `predictions`: predicted values
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`SmoothL1LossOptions`] for more details
+pub fn smooth_l1_loss(
+    predictions: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: SmoothL1LossOptions,
+) -> Result<Array, Exception> {
+    let predictions = predictions.as_ref();
+    let targets = targets.as_ref();
+    let beta = options.beta.unwrap_or(SmoothL1LossOptions::DEFAULT_BETA);
+    let reduction = options
+        .reduction
+        .unwrap_or(SmoothL1LossOptions::DEFAULT_REDUCTION);
+
+    check_shape(predictions, targets, "predictions", "targets")?;
+    let diff = predictions.subtract(targets)?;
+    let loss = r#where(
+        &diff.lt(array!(beta))?,
+        array!(0.5).multiply(square(&diff))?.divide(&array!(beta))?,
+        abs(&diff).subtract(array!(0.5).multiply(array!(beta))?)?,
+    )?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `triplet_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct TripletLossOptions {
+    /// Distribution axis. Default to [`TripletLossOptions::DEFAULT_AXIS`] if `None`
+    pub axis: Option<i32>,
+
+    /// The norm degree for pairwise distance. Default to [`TripletLossOptions::DEFAULT_P`] if `None`
+    pub p: Option<f32>,
+
+    /// Margin for the triplet loss. Default to [`TripletLossOptions::DEFAULT_MARGIN`] if `None`
+    pub margin: Option<f32>,
+
+    /// Small positive constant for numerical stability. Default to [`TripletLossOptions::DEFAULT_EPS`] if `None`
+    pub eps: Option<f32>,
+
+    /// Reduction type. Default to [`TripletLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl TripletLossOptions {
+    /// Default value for the `axis` parameter.
+    pub const DEFAULT_AXIS: i32 = -1;
+
+    /// Default value for the `p` parameter.
+    pub const DEFAULT_P: f32 = 2.0;
+
+    /// Default value for the `margin` parameter.
+    pub const DEFAULT_MARGIN: f32 = 1.0;
+
+    /// Default value for the `eps` parameter.
+    pub const DEFAULT_EPS: f32 = 1e-6;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the triplet loss for a set of anchor, positive, and negative samples. Margin is represented with alpha in the math section.
+///
+/// # Params
+///
+/// - `anchors`: The anchor samples
+/// - `positives`: The positive samples
+/// - `neonatives`: The negative samples
+/// - `options`: optional parameters. See [`TripletLossOptions`] for more details
+pub fn triplet_loss(
+    anchors: impl AsRef<Array>,
+    positives: impl AsRef<Array>,
+    negatives: impl AsRef<Array>,
+    options: TripletLossOptions,
+) -> Result<Array, Exception> {
+    let anchors = anchors.as_ref();
+    let positives = positives.as_ref();
+    let negatives = negatives.as_ref();
+    let axis = options.axis.unwrap_or(TripletLossOptions::DEFAULT_AXIS);
+    let p = options.p.unwrap_or(TripletLossOptions::DEFAULT_P);
+    let margin = options.margin.unwrap_or(TripletLossOptions::DEFAULT_MARGIN);
+    let eps = options.eps.unwrap_or(TripletLossOptions::DEFAULT_EPS);
+    let reduction = options
+        .reduction
+        .unwrap_or(TripletLossOptions::DEFAULT_REDUCTION);
+
+    let eps = array!(eps);
+    let p = array!(p);
+    let margin = array!(margin);
+
+    let pos = sqrt(
+        &power(&anchors.subtract(positives)?, &p)?
+            .sum(&[axis], None)?
+            .add(&eps)?,
+    );
+    let neg = sqrt(
+        &power(&anchors.subtract(negatives)?, &p)?
+            .sum(&[axis], None)?
+            .add(&eps)?,
+    );
+    let loss = maximum(pos.subtract(neg)?.add(margin)?, array!(0.0))?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `hinge_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct HingeLossOptions {
+    /// Reduction type. Default to [`HingeLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl HingeLossOptions {
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the hinge loss.
+///
+/// # Params
+///
+/// - `inputs`: predicted values
+/// - `targets`: target values, -1 or 1
+/// - `options`: optional parameters. See [`HingeLossOptions`] for more details
+pub fn hinge_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: HingeLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let reduction = options
+        .reduction
+        .unwrap_or(HingeLossOptions::DEFAULT_REDUCTION);
+
+    let a = array!(1.0).subtract(inputs.multiply(targets)?)?;
+    let b = array!(0.0);
+    let loss = maximum(a, b)?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `huber_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct HuberLossOptions {
+    /// The threshold at which to change between L1 and L2 loss. Default to
+    /// [`HuberLossOptions::DEFAULT_DELTA`] if `None`
+    pub delta: Option<f32>,
+
+    /// Reduction type. Default to [`HuberLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl HuberLossOptions {
+    /// Default value for the `delta` parameter.
+    pub const DEFAULT_DELTA: f32 = 1.0;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the Huber loss.
+///
+/// # Params
+///
+/// - `inputs`: predicted values
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`HuberLossOptions`] for more details
+pub fn huber_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: HuberLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let delta = options.delta.unwrap_or(HuberLossOptions::DEFAULT_DELTA);
+    let reduction = options
+        .reduction
+        .unwrap_or(HuberLossOptions::DEFAULT_REDUCTION);
+
+    let errors = inputs.subtract(targets)?;
+    let abs_errors = errors.abs();
+    let quadratic = minimum(&abs_errors, array!(delta))?;
+    let linear = abs_errors.subtract(&quadratic)?;
+    let loss = array!(0.5)
+        .multiply(square(&quadratic))?
+        .add(array!(delta).multiply(linear)?)?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `log_cosh_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct LogCoshLossOptions {
+    /// Reduction type. Default to [`LogCoshLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl LogCoshLossOptions {
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the log cosh loss between inputs and targets.
+///
+/// Logcosh acts like L2 loss for small errors, ensuring stable gradients,
+/// and like the L1 loss for large errors, reducing sensitivity to outliers. This
+/// dual behavior offers a balanced, robust approach for regression tasks.
+///
+/// # Params
+///
+/// - `inputs`: predicted values
+/// - `targets`: target values
+/// - `options`: optional parameters. See [`LogCoshLossOptions`] for more details
+pub fn log_cosh_loss(
+    inputs: impl AsRef<Array>,
+    targets: impl AsRef<Array>,
+    options: LogCoshLossOptions,
+) -> Result<Array, Exception> {
+    let inputs = inputs.as_ref();
+    let targets = targets.as_ref();
+    let reduction = options
+        .reduction
+        .unwrap_or(LogCoshLossOptions::DEFAULT_REDUCTION);
+
+    let errors = inputs.subtract(targets)?;
+    let neg_errors = errors.negative()?;
+    let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0)))?;
+    reduction.reduce(loss)
+}
+
+/// Optional parameters for the `cosine_similarity_loss` function.
+#[derive(Debug, Clone, Default)]
+pub struct CosineSimilarityLossOptions {
+    /// Embedding axis. Default to [`CosineSimilarityLossOptions::DEFAULT_AXIS`] if `None`
+    pub axis: Option<i32>,
+
+    /// minimum value of the denominator used for numerical stability. Default to
+    /// [`CosineSimilarityLossOptions::DEFAULT_EPS`] if `None`
+    pub eps: Option<f32>,
+
+    /// Reduction type. Default to [`CosineSimilarityLossOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl CosineSimilarityLossOptions {
+    /// Default value for the `axis` parameter.
+    pub const DEFAULT_AXIS: i32 = -1;
+
+    /// Default value for the `eps` parameter.
+    pub const DEFAULT_EPS: f32 = 1e-8;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+}
+
+/// Computes the cosine similarity loss.
+///
+/// # Params
+///
+/// - `x1`: first array
+/// - `x2`: second array
+/// - `options`: optional parameters. See [`CosineSimilarityLossOptions`] for more details
+pub fn cosime_similarity_loss(
+    x1: impl AsRef<Array>,
+    x2: impl AsRef<Array>,
+    options: CosineSimilarityLossOptions,
+) -> Result<Array, Exception> {
+    let x1 = x1.as_ref();
+    let x2 = x2.as_ref();
+    let axis = options
+        .axis
+        .unwrap_or(CosineSimilarityLossOptions::DEFAULT_AXIS);
+    let eps = options
+        .eps
+        .unwrap_or(CosineSimilarityLossOptions::DEFAULT_EPS);
+    let reduction = options
+        .reduction
+        .unwrap_or(CosineSimilarityLossOptions::DEFAULT_REDUCTION);
+
+    fn l2_loss(a: &Array, axis: i32) -> Result<Array, Exception> {
+        if a.dtype().is_complex() {
+            Ok(sqrt(&sum(&abs(a).square(), &[axis], None)?))
+        } else {
+            Ok(sqrt(&sum(&a.square(), &[axis], None)?))
+        }
+    }
+
+    let x1_norm = l2_loss(x1, axis)?;
+    let x2_norm = l2_loss(x2, axis)?;
+
+    let num = sum(&x1.multiply(x2)?, &[axis], None)?;
+    let den = maximum(x1_norm.multiply(x2_norm)?, array!(eps))?;
+    let loss = num.divide(&den)?;
+
+    reduction.reduce(loss)
+}
+
 #[cfg(test)]
 mod tests {
     use mlx_rs::{array, assert_array_eq, ops::is_nan};
 
     use super::*;
+
+    // The following unit tests are adapted from the python API at: mlx/python/tests/test_losses.py
 
     #[test]
     fn test_cross_entropy() {

@@ -27,5 +27,5 @@ pub use value_and_grad::*;
 
 /// Re-export of the `mlx-nn-module` crate.
 pub mod module {
-    pub use mlx_nn_module::*;
+    pub use mlx_rs::module::*;
 }

@@ -3,9 +3,9 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use mlx_rs::{nested::NestedValue, Array};
+use crate::{nested::NestedValue, Array};
 
-use crate::ModuleParameters;
+use super::ModuleParameters;
 
 /// Trait for a module parameter.
 pub trait Parameter {

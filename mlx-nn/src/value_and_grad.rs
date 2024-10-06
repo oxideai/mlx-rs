@@ -1,4 +1,4 @@
-use mlx_nn_module::update_flattened_parameters;
+use mlx_rs::module::update_flattened_parameters;
 use mlx_rs::{error::Exception, Array};
 
 use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef, Module};
@@ -92,7 +92,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use mlx_nn_module::Module;
+    use mlx_rs::module::Module;
     use mlx_rs::{array, error::Exception, Array};
 
     use crate::Linear;

@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use mlx_nn_module::{FlattenedModuleParam, ModuleParameters};
+use mlx_rs::module::{FlattenedModuleParam, ModuleParameters};
 
 mod rmsprop;
 mod sgd;
@@ -37,7 +37,7 @@ pub trait Optimizer {
 #[cfg(test)]
 mod optim_test_util {
     use mlx_macros::ModuleParameters;
-    use mlx_nn_module::{FlattenedModuleParam, ModuleParameters, Param};
+    use mlx_rs::module::{FlattenedModuleParam, ModuleParameters, Param};
     use mlx_rs::{
         ops::{ones, zeros},
         Array,

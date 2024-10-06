@@ -1,8 +1,6 @@
-//! Types and traits for neural network modules.
-
 use std::{collections::HashMap, rc::Rc};
 
-use mlx_rs::{nested::NestedHashMap, Array};
+use crate::{nested::NestedHashMap, Array};
 
 /// Type alias for owned module parameters.
 pub type ModuleParam = NestedHashMap<&'static str, Array>;

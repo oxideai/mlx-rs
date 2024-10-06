@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-mlx-rs = { workspace = true }
-mlx-macros = { workspace = true }
-mlx-nn-module = { workspace = true }
-thiserror = { workspace = true }
+mlx-rs.workspace = true
+mlx-macros.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
-float_eq = { workspace = true }
+float_eq.workspace = true

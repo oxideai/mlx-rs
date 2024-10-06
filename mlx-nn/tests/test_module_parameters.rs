@@ -1,5 +1,5 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn_module::{ModuleParameters, Param, Parameter};
+use mlx_rs::module::{ModuleParameters, Param, Parameter};
 use mlx_rs::{array, Array};
 
 #[derive(ModuleParameters)]

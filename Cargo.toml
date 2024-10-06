@@ -1,6 +1,12 @@
 
 [workspace]
-members = ["mlx-macros", "mlx-sys", "mlx-rs", "mlx-nn", "mlx-nn-module"]
+members = [
+    "mlx-macros", 
+    "mlx-sys", 
+    "mlx-rs", 
+    "mlx-nn", 
+    "examples/*",
+]
 
 resolver = "2"
 
@@ -9,7 +15,7 @@ resolver = "2"
 mlx-sys = { version = "0.0.9", path = "mlx-sys" }
 mlx-macros = { version = "0.1.0", path = "mlx-macros" }
 mlx-rs = { version = "0.14.0", path = "mlx-rs" }
-mlx-nn-module = { version = "0.1.0", path = "mlx-nn-module" }
+mlx-nn = { version = "0.1.0", path = "mlx-nn" }
 
 # external dependencies
 thiserror = "1"

@@ -1,7 +1,0 @@
-[package]
-name = "mlx-nn-module"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-mlx-rs = { workspace = true }

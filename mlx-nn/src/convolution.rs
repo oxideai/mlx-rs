@@ -1,5 +1,5 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn_module::{Module, Param};
+use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     error::Exception,
     ops::{conv1d, conv2d, zeros},
@@ -346,7 +346,7 @@ impl Module for Conv3d {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_nn_module::Module;
+    use mlx_rs::module::Module;
     use mlx_rs::{random::uniform, Dtype};
 
     use crate::Conv1d;

@@ -50,23 +50,23 @@ fn impl_module_parameters_for_struct(
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let field_names: Vec<_> = fields.iter().map(|field| &field.ident).collect();
     quote::quote! {
-        impl #impl_generics _mlx_nn_module::ModuleParameters for #ident #ty_generics #where_clause {
-            fn parameters(&self) -> _mlx_nn_module::ModuleParamRef<'_> {
-                let mut parameters = ::mlx_rs::nested::NestedHashMap::new();
-                #(parameters.insert(stringify!(#field_names), _mlx_nn_module::Parameter::as_nested_value(&self.#field_names));)*
+        impl #impl_generics _mlx_rs::module::ModuleParameters for #ident #ty_generics #where_clause {
+            fn parameters(&self) -> _mlx_rs::module::ModuleParamRef<'_> {
+                let mut parameters = _mlx_rs::nested::NestedHashMap::new();
+                #(parameters.insert(stringify!(#field_names), _mlx_rs::module::Parameter::as_nested_value(&self.#field_names));)*
                 parameters
             }
 
-            fn parameters_mut(&mut self) -> _mlx_nn_module::ModuleParamMut<'_> {
-                let mut parameters = ::mlx_rs::nested::NestedHashMap::new();
-                #(parameters.insert(stringify!(#field_names), _mlx_nn_module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
+            fn parameters_mut(&mut self) -> _mlx_rs::module::ModuleParamMut<'_> {
+                let mut parameters = _mlx_rs::nested::NestedHashMap::new();
+                #(parameters.insert(stringify!(#field_names), _mlx_rs::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
                 parameters
             }
 
-            fn trainable_parameters(&self) -> _mlx_nn_module::ModuleParamRef<'_> {
-                let mut parameters = ::mlx_rs::nested::NestedHashMap::new();
+            fn trainable_parameters(&self) -> _mlx_rs::module::ModuleParamRef<'_> {
+                let mut parameters = _mlx_rs::nested::NestedHashMap::new();
                 #(
-                    if let Some(field) = _mlx_nn_module::Parameter::as_trainable_nested_value(&self.#field_names) {
+                    if let Some(field) = _mlx_rs::module::Parameter::as_trainable_nested_value(&self.#field_names) {
                         parameters.insert(stringify!(#field_names), field);
                     }
                 )*

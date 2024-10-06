@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use mlx_nn_module::FlattenedModuleParam;
+use mlx_rs::module::FlattenedModuleParam;
 use mlx_rs::Array;
 
 /// A custom type to indicate whether a `Module` should include a bias or not.

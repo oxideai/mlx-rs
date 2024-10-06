@@ -1,6 +1,6 @@
 use mlx_macros::ModuleParameters;
 use mlx_nn::Linear;
-use mlx_nn_module::{Module, Param};
+use mlx_rs::module::{Module, Param};
 use mlx_rs::{error::Exception, Array};
 
 #[derive(Debug, Clone, ModuleParameters)]

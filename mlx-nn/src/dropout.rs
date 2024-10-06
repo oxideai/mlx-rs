@@ -1,5 +1,5 @@
 use mlx_macros::ModuleParameters;
-use mlx_nn_module::Module;
+use mlx_rs::module::Module;
 use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
 
 /// Randomly zero a portion of the elements during training.

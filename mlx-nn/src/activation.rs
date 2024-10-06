@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use mlx_macros::{option_builder, ModuleParameters};
-use mlx_nn_module::{Module, Param};
+use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,
     error::Exception,

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
-use mlx_nn_module::{Module, Param};
+use mlx_rs::module::{Module, Param};
 use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.

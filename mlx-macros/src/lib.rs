@@ -156,7 +156,7 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///
 /// ```rust, ignore
 /// use mlx_macros::ModuleParameters;
-/// use mlx_nn_module::{ModuleParameters, Param};
+/// use mlx_rs::module::{ModuleParameters, Param};
 ///
 /// #[derive(ModuleParameters)]
 /// struct Example {
@@ -192,7 +192,7 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
 
     let output = quote! {
         const _: () = {
-            extern crate mlx_nn_module as _mlx_nn_module;
+            extern crate mlx_rs as _mlx_rs;
             #module_param_impl
         };
     };

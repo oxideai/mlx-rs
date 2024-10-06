@@ -14,7 +14,7 @@ use crate::{
 pub mod compile;
 
 /// Evaluate an iterator of [`Array`]s.
-pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), Exception> {
+pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<(), Exception> {
     if !is_mlx_error_handler_set() {
         setup_mlx_error_handler();
     }
@@ -31,7 +31,7 @@ pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), 
 /// Asynchronously evaluate an iterator of [`Array`]s.
 ///
 /// Please note that this is not a rust async function.
-pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a mut Array>) -> Result<(), Exception> {
+pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<(), Exception> {
     if !is_mlx_error_handler_set() {
         setup_mlx_error_handler();
     }

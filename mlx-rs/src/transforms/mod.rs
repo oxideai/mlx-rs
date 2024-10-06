@@ -7,6 +7,7 @@ use crate::{
     error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
     },
+    module::ModuleParamRef,
     utils::{Closure, IntoOption, VectorArray, VectorVectorArray},
     Array,
 };
@@ -28,6 +29,13 @@ pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<(), Exce
     get_and_clear_last_mlx_error().map_or(Ok(()), Err)
 }
 
+/// Evaluate a module's parameters.
+///
+/// This is a convenience function that flattens the parameters and evaluates them.
+pub fn eval_params(params: ModuleParamRef<'_>) -> Result<(), Exception> {
+    eval(params.flatten().values().copied())
+}
+
 /// Asynchronously evaluate an iterator of [`Array`]s.
 ///
 /// Please note that this is not a rust async function.
@@ -43,6 +51,13 @@ pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()
     }
 
     get_and_clear_last_mlx_error().map_or(Ok(()), Err)
+}
+
+/// Asynchronously evaluate a module's parameters.
+///
+/// This is a convenience function that flattens the parameters and evaluates them.
+pub fn async_eval_params(params: ModuleParamRef<'_>) -> Result<(), Exception> {
+    async_eval(params.flatten().values().copied())
 }
 
 #[inline]

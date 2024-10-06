@@ -7,7 +7,7 @@ use mlx_rs::{
     array,
     error::Exception,
     module::{Module, ModuleParameters},
-    transforms::eval,
+    transforms::eval_params,
     Array,
 };
 
@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (x, y) in loader.clone() {
             let (loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
             optimizer.update(&mut model, grad);
-            eval(model.parameters().flatten().values().copied())?;
+            eval_params(model.parameters())?;
 
             loss_sum += loss;
         }

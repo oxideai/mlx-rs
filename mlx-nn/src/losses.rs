@@ -1,3 +1,5 @@
+//! Loss functions
+
 use mlx_macros::option_builder;
 use mlx_rs::{
     array,

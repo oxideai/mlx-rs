@@ -63,7 +63,9 @@ where
     {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef, arrays: Args| -> Result<Vec<Array>, Exception> {
+            let inner = |parameters: FlattenedModuleParamRef,
+                         arrays: Args|
+             -> Result<Vec<Array>, Exception> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
                 update_flattened_parameters(model, flattened_parameters);
 
@@ -78,15 +80,14 @@ where
 }
 
 impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Array, ()> for F
-where 
+where
     M: Module + 'a,
     F: FnMut(&M, Args) -> Array + 'a,
     Args: Clone,
 {
     fn into_module_value_and_grad(
         mut self,
-    ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a
-    {
+    ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
             let inner = |parameters: FlattenedModuleParamRef, arrays: Args| -> Vec<Array> {
@@ -105,18 +106,19 @@ where
 }
 
 impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Array, Exception> for F
-where 
+where
     M: Module + 'a,
     F: FnMut(&M, Args) -> Result<Array, Exception> + 'a,
     Args: Clone,
 {
     fn into_module_value_and_grad(
         mut self,
-    ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a
-    {
+    ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef, arrays: Args| -> Result<Vec<Array>, Exception> {
+            let inner = |parameters: FlattenedModuleParamRef,
+                         arrays: Args|
+             -> Result<Vec<Array>, Exception> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
                 update_flattened_parameters(model, flattened_parameters);
 
@@ -196,7 +198,12 @@ mod tests {
         let y = mlx_rs::ops::ones::<f32>(x.shape()).unwrap();
 
         let loss = |model: &Linear, (x, y): (&Array, &Array)| -> Result<Vec<Array>, Exception> {
-            model.forward(x)?.subtract(y)?.square().sum(None, None).map(|v| vec![v])
+            model
+                .forward(x)?
+                .subtract(y)?
+                .square()
+                .sum(None, None)
+                .map(|v| vec![v])
         };
 
         let mut vg = module_value_and_grad(loss);

@@ -1,5 +1,15 @@
-use mlx_nn::{losses::{CrossEntropyOptions, LossReduction}, module_value_and_grad, optimizers::Optimizer};
-use mlx_rs::{array, error::Exception, module::{Module, ModuleParameters}, transforms::eval, Array};
+use mlx_nn::{
+    losses::{CrossEntropyOptions, LossReduction},
+    module_value_and_grad,
+    optimizers::Optimizer,
+};
+use mlx_rs::{
+    array,
+    error::Exception,
+    module::{Module, ModuleParameters},
+    transforms::eval,
+    Array,
+};
 
 /// MLP model
 mod mlp;
@@ -8,7 +18,7 @@ mod mlp;
 mod mnist;
 
 #[derive(Clone)]
-struct Loader { }
+struct Loader {}
 
 impl Iterator for Loader {
     type Item = (Array, Array);
@@ -43,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         mlx_nn::losses::cross_entropy(y_pred, y, options)
     };
     let mut loss_and_grad_fn = module_value_and_grad(loss_fn);
-    
+
     let mut optimizer = mlx_nn::optimizers::Sgd::new(lr);
 
     for _ in 0..num_epochs {
@@ -51,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (x, y) in loader.clone() {
             let (loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
             optimizer.update(&mut model, grad);
-            eval(model.parameters().flatten().values().map(|v| *v))?;
+            eval(model.parameters().flatten().values().copied())?;
 
             loss_sum += loss;
         }

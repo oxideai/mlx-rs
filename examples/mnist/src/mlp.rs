@@ -20,7 +20,12 @@ impl Module for Mlp {
 }
 
 impl Mlp {
-    pub fn new(num_layers: usize, input_dim: i32, hidden_dim: i32, output_dim: i32) -> Result<Self, Exception> {
+    pub fn new(
+        num_layers: usize,
+        input_dim: i32,
+        hidden_dim: i32,
+        output_dim: i32,
+    ) -> Result<Self, Exception> {
         let mut layers = Sequential::new();
 
         // Add the input layer
@@ -30,7 +35,8 @@ impl Mlp {
 
         // Add the hidden layers
         for _ in 1..num_layers {
-            layers = layers.append(Linear::new(hidden_dim, hidden_dim)?)
+            layers = layers
+                .append(Linear::new(hidden_dim, hidden_dim)?)
                 .append(Relu::new());
         }
 

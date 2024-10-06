@@ -4,6 +4,7 @@
 /// crate. This also allows using the `mlx_macros::ModuleParameters` derive macro in crates other
 /// than `mlx-nn`.
 
+#[allow(clippy::module_inception)]
 mod module;
 mod param;
 

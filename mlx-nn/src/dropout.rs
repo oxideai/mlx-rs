@@ -139,7 +139,7 @@ impl Module for Dropout2d {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
-            return Err(Exception::from("Expecting 3D or 4D input"));
+            return Err(Exception::custom("Expecting 3D or 4D input"));
         }
 
         if self.one_minus_p == 1.0 || !self.training {
@@ -231,7 +231,7 @@ impl Module for Dropout3d {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {
-            return Err(Exception::from("Expecting 4D or 5D input"));
+            return Err(Exception::custom("Expecting 4D or 5D input"));
         }
 
         if self.one_minus_p == 1.0 || !self.training {

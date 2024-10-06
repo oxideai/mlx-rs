@@ -17,7 +17,7 @@ fn check_shape(
     right_ident: &str,
 ) -> Result<(), Exception> {
     if left.shape() != right.shape() {
-        return Err(Exception::from(format!(
+        return Err(Exception::custom(format!(
             "The shape of the {} ({:?}) does not match the shape of the {} ({:?})",
             left_ident,
             left.shape(),

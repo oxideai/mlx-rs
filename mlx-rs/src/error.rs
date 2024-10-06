@@ -40,11 +40,10 @@ impl Exception {
     pub fn what(&self) -> &str {
         &self.what
     }
-}
 
-impl From<String> for Exception {
-    fn from(what: String) -> Self {
-        Self { what }
+    /// Creates a new exception with the given message.
+    pub fn custom(what: impl Into<String>) -> Self {
+        Self { what: what.into() }
     }
 }
 

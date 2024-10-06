@@ -290,35 +290,60 @@ where
     build_value_and_gradient_inner(closure, argument_numbers)
 }
 
-/// Returns a function which computes the value and gradient of `f`.
-pub fn value_and_grad<'a, F>(
-    f: F,
-    argument_numbers: impl IntoOption<&'a [i32]>,
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+pub trait IntoValueAndGrad<'a, Err> {
+    fn into_value_and_grad(
+        self,
+        argument_numbers: impl IntoOption<&'a [i32]>,
+    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a;
+}
+
+impl<'a, F> IntoValueAndGrad<'a, ()> for F
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
-    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
-    build_value_and_gradient(f, argument_numbers)
+    // refining_impl_trait is fine here because we have restricted the Args and Output types
+    // in the generics.
+    #[allow(refining_impl_trait)]
+    fn into_value_and_grad(
+        self,
+        argument_numbers: impl IntoOption<&'a [i32]>,
+    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        build_value_and_gradient(self, argument_numbers)
+    }
 }
 
-pub fn fallible_value_and_grad<'a, F>(
+impl<'a, F> IntoValueAndGrad<'a, Exception> for F
+where
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    #[allow(refining_impl_trait)]
+    fn into_value_and_grad(
+        self,
+        argument_numbers: impl IntoOption<&'a [i32]>,
+    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
+        let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
+        build_fallible_value_and_gradient(self, argument_numbers)
+    }
+}
+
+/// Returns a function which computes the value and gradient of `f`.
+pub fn value_and_grad<'a, F, Err>(
     f: F,
     argument_numbers: impl IntoOption<&'a [i32]>,
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
 where
-    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: IntoValueAndGrad<'a, Err> + 'a,
 {
-    let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
-    build_fallible_value_and_gradient(f, argument_numbers)
+    f.into_value_and_grad(argument_numbers)
 }
 
 pub type HashMapGrad = HashMap<Rc<str>, Array>;
 
 macro_rules! value_and_grad_with_hashmap {
-    ($inner_ret:ty, $cls_new:ident, $f:ident) => {
+    ($inner_ret:ty, $cls_new:ident, $f:ident, $args_ty:ty) => {
         move |parameters: HashMap<Rc<str>, Arr>,
-              arrays: T|
+              arrays: $args_ty|
               -> Result<(Vec<Array>, HashMapGrad), Exception> {
             let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) =
                 parameters.into_iter().unzip();
@@ -355,43 +380,70 @@ macro_rules! value_and_grad_with_hashmap {
     };
 }
 
-pub fn value_and_grad_with_hashmap<'a, F, T, Arr>(
-    mut f: F,
-) -> impl FnMut(HashMap<Rc<str>, Arr>, T) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+pub trait IntoValueAndGradWithHashMap<'a, Arr, Args, Err>
 where
-    F: FnMut(HashMap<Rc<str>, &Array>, T) -> Vec<Array> + 'a,
     Arr: AsRef<Array>,
-    T: Clone,
+    Args: Clone,
 {
-    value_and_grad_with_hashmap!(Vec<Array>, new, f)
+    fn into_value_and_grad_with_hashmap(
+        self,
+    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a;
 }
 
-pub fn fallible_value_and_grad_with_hashmap<'a, F, T, Arr>(
-    mut f: F,
-) -> impl FnMut(HashMap<Rc<str>, Arr>, T) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, ()> for F
 where
-    F: FnMut(HashMap<Rc<str>, &Array>, T) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(HashMap<Rc<str>, &Array>, Args) -> Vec<Array> + 'a,
     Arr: AsRef<Array>,
-    T: Clone,
+    Args: Clone,
 {
-    value_and_grad_with_hashmap!(Result<Vec<Array>, Exception>, new_fallible, f)
+    fn into_value_and_grad_with_hashmap(
+        mut self,
+    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+    {
+        value_and_grad_with_hashmap!(Vec<Array>, new, self, Args)
+    }
 }
 
-pub trait Grad<'a, Args, Output, Err> {
-    fn grad(
+impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, Exception> for F
+where
+    F: FnMut(HashMap<Rc<str>, &Array>, Args) -> Result<Vec<Array>, Exception> + 'a,
+    Arr: AsRef<Array>,
+    Args: Clone,
+{
+    fn into_value_and_grad_with_hashmap(
+        mut self,
+    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+    {
+        value_and_grad_with_hashmap!(Result<Vec<Array>, Exception>, new_fallible, self, Args)
+    }
+}
+
+pub fn value_and_grad_with_hashmap<'a, F, Arr, Args, Err>(
+    f: F,
+) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+where
+    F: IntoValueAndGradWithHashMap<'a, Arr, Args, Err> + 'a,
+    Arr: AsRef<Array>,
+    Args: Clone,
+{
+    f.into_value_and_grad_with_hashmap()
+}
+
+pub trait IntoGrad<'a, Args, Output, Err> {
+    fn into_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a;
 }
 
-impl<'a, F> Grad<'a, &[Array], Vec<Array>, ()> for F
+impl<'a, F> IntoGrad<'a, &[Array], Vec<Array>, ()> for F
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     // refining_impl_trait is fine here because we have restricted the Args and Output types
     // in the generics.
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
@@ -400,12 +452,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &[Array], Vec<Array>, Exception> for F
+impl<'a, F> IntoGrad<'a, &[Array], Vec<Array>, Exception> for F
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a {
@@ -414,12 +466,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &Array, Array, ()> for F
+impl<'a, F> IntoGrad<'a, &Array, Array, ()> for F
 where
     F: FnMut(&Array) -> Array + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array, Exception> + 'a {
@@ -434,12 +486,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &Array, Array, Exception> for F
+impl<'a, F> IntoGrad<'a, &Array, Array, Exception> for F
 where
     F: FnMut(&Array) -> Result<Array, Exception> + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array, Exception> + 'a {
@@ -456,12 +508,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &[Array], Array, ()> for F
+impl<'a, F> IntoGrad<'a, &[Array], Array, ()> for F
 where
     F: FnMut(&[Array]) -> Array + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Array, Exception> + 'a {
@@ -475,12 +527,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &[Array], Array, Exception> for F
+impl<'a, F> IntoGrad<'a, &[Array], Array, Exception> for F
 where
     F: FnMut(&[Array]) -> Result<Array, Exception> + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[Array]) -> Result<Array, Exception> + 'a {
@@ -496,12 +548,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &Array, Vec<Array>, ()> for F
+impl<'a, F> IntoGrad<'a, &Array, Vec<Array>, ()> for F
 where
     F: FnMut(&Array) -> Vec<Array> + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
@@ -516,12 +568,12 @@ where
     }
 }
 
-impl<'a, F> Grad<'a, &Array, Vec<Array>, Exception> for F
+impl<'a, F> IntoGrad<'a, &Array, Vec<Array>, Exception> for F
 where
     F: FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a,
 {
     #[allow(refining_impl_trait)]
-    fn grad(
+    fn into_grad(
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>, Exception> + 'a {
@@ -542,9 +594,9 @@ pub fn grad<'a, F, Args, Output, Err>(
     argument_numbers: impl IntoOption<&'a [i32]>,
 ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
 where
-    F: Grad<'a, Args, Output, Err>,
+    F: IntoGrad<'a, Args, Output, Err>,
 {
-    f.grad(argument_numbers)
+    f.into_grad(argument_numbers)
 }
 
 #[cfg(test)]
@@ -679,14 +731,14 @@ mod tests {
         let argnums = &[0];
         let x = array!(1.0f32);
         let y = array!(1.0f32);
-        let result = fallible_value_and_grad(fun, argnums)(&[x, y]);
+        let result = value_and_grad(fun, argnums)(&[x, y]);
         assert!(result.is_ok());
 
         // Error case
         // Use non-broadcastable shapes
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let result = fallible_value_and_grad(fun, argnums)(&[a, b]);
+        let result = value_and_grad(fun, argnums)(&[a, b]);
         assert!(result.is_err());
     }
 }

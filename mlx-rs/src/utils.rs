@@ -144,6 +144,12 @@ impl<'a, T, const N: usize> IntoOption<&'a [T]> for &'a [T; N] {
     }
 }
 
+impl<'a, T> IntoOption<&'a [T]> for &'a Vec<T> {
+    fn into_option(self) -> Option<&'a [T]> {
+        Some(self)
+    }
+}
+
 pub trait ScalarOrArray<'a> {
     type Array: AsRef<Array> + 'a;
 

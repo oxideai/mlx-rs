@@ -3,7 +3,10 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, Pat};
+use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, ItemStruct, Pat};
+
+mod module_parameters;
+mod option_builder;
 
 #[derive(Debug, FromMeta)]
 enum DeviceType {
@@ -141,4 +144,64 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(tests)
+}
+
+/// Derive the `ModuleParameters` trait for a struct. Mark a field with `#[param]` attribute to
+/// include it in the parameters. The field type must implement the `Parameter` trait defined in
+/// `mlx-nn-module` crate.
+///
+/// Make sure to include `mlx-nn-module` as a dependency in your `Cargo.toml`.
+///
+/// # Example
+///
+/// ```rust, ignore
+/// use mlx_macros::ModuleParameters;
+/// use mlx_rs::module::{ModuleParameters, Param};
+///
+/// #[derive(ModuleParameters)]
+/// struct Example {
+///     #[param]
+///     regular: Param<Array>,
+///
+///     #[param]
+///     optional: Param<Option<Array>>,
+///
+///     #[param]
+///     nested: Param<Inner>,
+///
+///     #[param]
+///     vec_nested: Param<Vec<Inner>>,
+///
+///     #[param]
+///     trait_object: Param<Box<dyn Module>>,
+///
+///     #[param]
+///     trait_object_vec: Param<Vec<Box<dyn Module>>>,
+/// }
+///
+/// #[derive(ModuleParameters)]
+/// struct Inner {
+///     #[param]
+///     a: Param<Array>,
+/// }
+/// ```
+#[proc_macro_derive(ModuleParameters, attributes(param))]
+pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let module_param_impl = module_parameters::expand_module_parameters(&input).unwrap();
+
+    let output = quote! {
+        const _: () = {
+            extern crate mlx_rs as _mlx_rs;
+            #module_param_impl
+        };
+    };
+    TokenStream::from(output)
+}
+
+#[proc_macro_attribute]
+pub fn option_builder(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as ItemStruct);
+    let builder = option_builder::expand_option_builder(&input).unwrap();
+    TokenStream::from(builder)
 }

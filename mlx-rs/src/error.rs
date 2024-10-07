@@ -40,6 +40,19 @@ impl Exception {
     pub fn what(&self) -> &str {
         &self.what
     }
+
+    /// Creates a new exception with the given message.
+    pub fn custom(what: impl Into<String>) -> Self {
+        Self { what: what.into() }
+    }
+}
+
+impl From<&str> for Exception {
+    fn from(what: &str) -> Self {
+        Self {
+            what: what.to_string(),
+        }
+    }
 }
 
 thread_local! {

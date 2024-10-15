@@ -1,0 +1,8 @@
+[package]
+name = "mnist"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mlx-rs.workspace = true
+mlx-nn.workspace = true

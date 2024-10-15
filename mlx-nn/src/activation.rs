@@ -417,6 +417,7 @@ impl Module for Relu6 {
 /// softmax(&x, None, None)
 /// ```
 #[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Softmax {
     /// The axis to apply the softmax.
     pub axis: Option<i32>,
@@ -489,6 +490,7 @@ impl Module for Softsign {
 ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
 /// ```
 #[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Celu {
     /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
     pub alpha: Option<f32>,
@@ -539,6 +541,7 @@ impl Module for Silu {
 /// x - log_sum_exp(x, axis, true)
 /// ```
 #[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct LogSoftmax {
     /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
     pub axis: Option<i32>,
@@ -725,6 +728,7 @@ impl Module for HardSwish {
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
 #[derive(Debug, Clone, Default, ModuleParameters)]
+#[option_builder]
 pub struct Step {
     /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
     pub threshold: Option<f32>,

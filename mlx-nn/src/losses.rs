@@ -11,6 +11,8 @@ use mlx_rs::{
     Array,
 };
 
+use crate::error::CrossEntropyBuildError;
+
 #[inline]
 fn check_shape(
     left: &Array,
@@ -67,6 +69,167 @@ impl LossReduction {
             LossReduction::Sum => Ok(loss.sum(None, None)?),
             LossReduction::Mean => Ok(loss.mean(None, None)?),
         }
+    }
+}
+
+/// Builder for [`CrossEntropy`]
+#[derive(Debug, Clone, Default)]
+pub struct CrossEntropyBuilder<'a> {
+    /// Weights for each target
+    pub weights: Option<&'a Array>,
+
+    /// The axis over which to compute softmax. Default to [`CrossEntropy::DEFAULT_AXIS`] if
+    /// `None`
+    pub axis: Option<i32>,
+
+    /// The label smoothing factor, range [0, 1). Default to
+    /// [`CrossEntropy::DEFAULT_LABEL_SMOOTHING`] if `None`
+    pub label_smoothing: Option<f32>,
+
+    /// Reduction type. Default to [`CrossEntropy::DEFAULT_REDUCTION`] if `None`
+    pub reduction: Option<LossReduction>,
+}
+
+impl<'a> CrossEntropyBuilder<'a> {
+    /// Create a new [`CrossEntropyBuilder`]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `weight` field.
+    pub fn weights(mut self, weights: impl Into<Option<&'a Array>>) -> Self {
+        self.weights = weights.into();
+        self
+    }
+
+    /// Sets the `axis` field.
+    pub fn axis(mut self, axis: impl Into<Option<i32>>) -> Self {
+        self.axis = axis.into();
+        self
+    }
+
+    /// Sets the `label_smoothing` field.
+    pub fn label_smoothing(mut self, label_smoothing: impl Into<Option<f32>>) -> Self {
+        self.label_smoothing = label_smoothing.into();
+        self
+    }
+
+    /// Sets the `reduction` field.
+    pub fn reduction(mut self, reduction: impl Into<Option<LossReduction>>) -> Self {
+        self.reduction = reduction.into();
+        self
+    }
+
+    /// Build a [`CrossEntropy`] loss function.
+    pub fn build(self) -> Result<CrossEntropy<'a>, CrossEntropyBuildError> {
+        let axis = self.axis.unwrap_or(CrossEntropy::DEFAULT_AXIS);
+        let label_smoothing = self
+            .label_smoothing
+            .unwrap_or(CrossEntropy::DEFAULT_LABEL_SMOOTHING);
+        let reduction = self.reduction.unwrap_or(CrossEntropy::DEFAULT_REDUCTION);
+
+        if !(0.0..1.0).contains(&label_smoothing) {
+            return Err(CrossEntropyBuildError::InvalidLabelSmoothingFactor);
+        }
+
+        Ok(CrossEntropy {
+            weights: self.weights,
+            axis,
+            label_smoothing,
+            reduction,
+        })
+    }
+}
+
+/// Cross entropy loss function.
+#[derive(Debug, Clone)]
+pub struct CrossEntropy<'a> {
+    /// Weights for each target
+    pub weights: Option<&'a Array>,
+
+    /// The axis over which to compute softmax. Default to [`CrossEntropyOptions::DEFAULT_AXIS`] if
+    /// `None`
+    pub axis: i32,
+
+    /// The label smoothing factor, range [0, 1). Default to
+    /// [`CrossEntropyOptions::DEFAULT_LABEL_SMOOTHING`] if `None`
+    pub label_smoothing: f32,
+
+    /// Reduction type. Default to [`CrossEntropyOptions::DEFAULT_REDUCTION`] if `None`
+    pub reduction: LossReduction,
+}
+
+impl<'a> Default for CrossEntropy<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> CrossEntropy<'a> {
+    /// Default value for the `axis` parameter.
+    pub const DEFAULT_AXIS: i32 = -1;
+
+    /// Default value for the `label_smoothing` parameter.
+    pub const DEFAULT_LABEL_SMOOTHING: f32 = 0.0;
+
+    /// Default value for the `reduction` parameter.
+    pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
+
+    /// Creates a new [`CrossEntropyBuilder`]
+    pub fn builder() -> CrossEntropyBuilder<'a> {
+        CrossEntropyBuilder::new()
+    }
+
+    /// Create a new [`CrossEntropy`] with all optional parameters set to their default values.
+    pub fn new() -> Self {
+        Self::builder().build().expect("Default values are valid")
+    }
+
+    /// Apply the cross entropy loss function on the given logits and targets.
+    ///
+    /// # Params
+    ///
+    /// - `logits`: unnormalized predicted logits
+    /// - `targets`: target values, as class indices
+    pub fn apply(
+        &self,
+        logits: impl AsRef<Array>,
+        targets: impl AsRef<Array>,
+    ) -> Result<Array, Exception> {
+        let logits = logits.as_ref();
+        let targets = targets.as_ref();
+
+        let target_as_probs = targets.ndim() == logits.ndim();
+
+        let score = if target_as_probs {
+            sum(&logits.multiply(targets)?, &[self.axis], None)?
+        } else {
+            take_along_axis(logits, &targets.expand_dims(&[-1])?, self.axis)?.squeeze(&[-1])?
+        };
+        let log_sum_exp_logits = log_sum_exp(logits, &[self.axis], None)?;
+
+        let mut loss = if self.label_smoothing > 0.0 {
+            // adjust the true class score with label smoothing
+            let adjusted_score = multiply(array!(1.0 - self.label_smoothing), score)?;
+
+            // calculate the mean logit across the classes for smoothed loss
+            let mean_logits = logits.mean(&[self.axis], None)?;
+            let smoothed_loss = -multiply(mean_logits, array!(self.label_smoothing))?;
+
+            // combine the adjusted score and smoothed loss with the logsumexp logits
+            log_sum_exp_logits
+                .subtract(adjusted_score)?
+                .add(smoothed_loss)?
+        } else {
+            log_sum_exp_logits.subtract(score)?
+        };
+
+        if let Some(weights) = self.weights {
+            check_shape(weights, &loss, "weights", "loss")?;
+            loss = multiply(loss, weights)?;
+        }
+
+        self.reduction.reduce(loss)
     }
 }
 

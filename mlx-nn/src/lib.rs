@@ -5,6 +5,7 @@
 //! All modules provide a `new()` function that take mandatory parameters and other methods
 //! to set optional parameters.
 
+pub mod error;
 pub mod losses;
 pub mod macros;
 pub mod optimizers;

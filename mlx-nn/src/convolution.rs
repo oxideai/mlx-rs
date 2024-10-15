@@ -12,27 +12,18 @@ use crate::utils::{IntOrPair, IntOrTriple, WithBias};
 /// Optional parameters for the `Conv1d` module.
 #[derive(Debug, Clone, Default)]
 pub struct Conv1dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Self::DEFAULT_WITH_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_WITH_BIAS`] if not
     /// specified.
     pub with_bias: Option<bool>,
 
-    /// Padding. Default to [`Self::DEFAULT_PADDING`] if not specified.
+    /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
     pub padding: Option<i32>,
 
-    /// Stride. Default to [`Self::DEFAULT_STRIDE`] if not specified.
+    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
     pub stride: Option<i32>,
 }
 
 impl Conv1dBuilder {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
-
-    /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: i32 = 0;
-
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: i32 = 1;
-
     /// Creates a new `Conv1dBuilder`.
     pub fn new() -> Self {
         Self::default()
@@ -63,9 +54,9 @@ impl Conv1dBuilder {
         output_channels: i32,
         kernel_size: i32,
     ) -> Result<Conv1d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Self::DEFAULT_WITH_BIAS);
-        let padding = self.padding.unwrap_or(Self::DEFAULT_PADDING);
-        let stride = self.stride.unwrap_or(Self::DEFAULT_STRIDE);
+        let with_bias = self.with_bias.unwrap_or(Conv1d::DEFAULT_WITH_BIAS);
+        let padding = self.padding.unwrap_or(Conv1d::DEFAULT_PADDING);
+        let stride = self.stride.unwrap_or(Conv1d::DEFAULT_STRIDE);
 
         let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
         let weight = uniform::<_, f32>(
@@ -114,6 +105,15 @@ pub struct Conv1d {
 }
 
 impl Conv1d {
+    /// Default value for `with_bias` if not specified.
+    pub const DEFAULT_WITH_BIAS: bool = true;
+
+    /// Default value for `padding` if not specified.
+    pub const DEFAULT_PADDING: i32 = 0;
+
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: i32 = 1;
+
     /// Creates a new `Conv1dBuilder`.
     pub fn builder() -> Conv1dBuilder {
         Conv1dBuilder::new()

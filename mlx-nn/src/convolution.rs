@@ -9,6 +9,86 @@ use mlx_rs::{
 
 use crate::utils::{IntOrPair, IntOrTriple, WithBias};
 
+/// Optional parameters for the `Conv1d` module.
+#[derive(Debug, Clone, Default)]
+pub struct Conv1dBuilder {
+    /// If `true`, add a learnable bias to the output. Default to [`Self::DEFAULT_WITH_BIAS`] if not
+    /// specified.
+    pub with_bias: Option<bool>,
+
+    /// Padding. Default to [`Self::DEFAULT_PADDING`] if not specified.
+    pub padding: Option<i32>,
+
+    /// Stride. Default to [`Self::DEFAULT_STRIDE`] if not specified.
+    pub stride: Option<i32>,
+}
+
+impl Conv1dBuilder {
+    /// Default value for `with_bias` if not specified.
+    pub const DEFAULT_WITH_BIAS: bool = true;
+
+    /// Default value for `padding` if not specified.
+    pub const DEFAULT_PADDING: i32 = 0;
+
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: i32 = 1;
+
+    /// Creates a new `Conv1dBuilder`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `with_bias` parameter.
+    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
+        self.with_bias = with_bias.into();
+        self
+    }
+
+    /// Sets the `padding` parameter.
+    pub fn padding(mut self, padding: impl Into<Option<i32>>) -> Self {
+        self.padding = padding.into();
+        self
+    }
+
+    /// Sets the `stride` parameter.
+    pub fn stride(mut self, stride: impl Into<Option<i32>>) -> Self {
+        self.stride = stride.into();
+        self
+    }
+
+    /// Builds a new `Conv1d` module.
+    pub fn build(
+        self,
+        input_channels: i32,
+        output_channels: i32,
+        kernel_size: i32,
+    ) -> Result<Conv1d, Exception> {
+        let with_bias = self.with_bias.unwrap_or(Self::DEFAULT_WITH_BIAS);
+        let padding = self.padding.unwrap_or(Self::DEFAULT_PADDING);
+        let stride = self.stride.unwrap_or(Self::DEFAULT_STRIDE);
+
+        let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
+        let weight = uniform::<_, f32>(
+            -scale,
+            scale,
+            &[output_channels, kernel_size, input_channels],
+            None,
+        )?;
+        let bias = if with_bias {
+            Some(zeros::<f32>(&[output_channels])?)
+        } else {
+            None
+        };
+
+        Ok(Conv1d {
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+            padding,
+            stride,
+        })
+    }
+}
+
 /// Applies a 1-dimensional convolution over the multi-channel input sequence.
 ///
 /// The channels are expected to be last i.e. the input shape should be `NLC` where:
@@ -34,60 +114,18 @@ pub struct Conv1d {
 }
 
 impl Conv1d {
-    /// Creates a new 1-dimensional convolution layer.
-    ///
-    /// # Params
-    ///
-    /// - `input_channels`: number of input channels
-    /// - `output_channels`: number of output channels
-    /// - `kernel_size`: size of the convolution filters
+    /// Creates a new `Conv1dBuilder`.
+    pub fn builder() -> Conv1dBuilder {
+        Conv1dBuilder::new()
+    }
+
+    /// Creates a new Conv1d module with all optional parameters set to their default values.
     pub fn new(
         input_channels: i32,
         output_channels: i32,
         kernel_size: i32,
     ) -> Result<Self, Exception> {
-        let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
-        let weight = uniform::<_, f32>(
-            -scale,
-            scale,
-            &[output_channels, kernel_size, input_channels],
-            None,
-        )?;
-        let default_bias = WithBias::default()
-            .map_into_option(|| zeros::<f32>(&[output_channels]))
-            .transpose()?;
-        let default_padding = 0;
-        let default_stride = 1;
-
-        let conv1d = Self {
-            weight: Param::new(weight),
-            bias: Param::new(default_bias),
-            padding: default_padding,
-            stride: default_stride,
-        };
-        conv1d.with_bias(WithBias::default())
-    }
-
-    /// If `true`, add a learnable bias to the output
-    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
-        let bias = with_bias
-            .into()
-            .map_into_option(|| zeros::<f32>(&[self.weight.shape()[0]]))
-            .transpose()?;
-        self.bias.value = bias;
-        Ok(self)
-    }
-
-    /// Sets the stride when applying the filter
-    pub fn with_stride(mut self, stride: i32) -> Self {
-        self.stride = stride;
-        self
-    }
-
-    /// Sets the padding when applying the filter
-    pub fn with_padding(mut self, padding: i32) -> Self {
-        self.padding = padding;
-        self
+        Conv1dBuilder::new().build(input_channels, output_channels, kernel_size)
     }
 }
 

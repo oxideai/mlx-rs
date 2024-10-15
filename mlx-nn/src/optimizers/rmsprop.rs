@@ -75,9 +75,6 @@ impl RmsProp {
 
 impl Optimizer for RmsProp {
     fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array) {
-        // let v = alpha * state + (1 - alpha) * square(gradient)
-        // return (parameter - learningRate * gradient / (sqrt(v) + eps), v)
-
         let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
 
         let lr = array!(self.lr);

@@ -16,3 +16,15 @@ impl From<CrossEntropyBuildError> for Exception {
         Exception::custom(format!("{}", value))
     }
 }
+
+/// Error with building a RmsProp optimizer
+#[derive(Debug, Clone, PartialEq, Error)]
+pub enum RmsPropBuildError {
+    /// Alpha must be non-negative
+    #[error("alpha must be non-negative")]
+    NegativeAlpha,
+
+    /// Epsilon must be non-negative
+    #[error("epsilon must be non-negative")]
+    NegativeEpsilon,
+}

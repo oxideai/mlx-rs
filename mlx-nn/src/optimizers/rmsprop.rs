@@ -6,9 +6,64 @@ use mlx_rs::{
     Array,
 };
 
-use crate::utils::get_mut_or_insert_with;
+use crate::{error::RmsPropBuildError, utils::get_mut_or_insert_with};
 
 use super::*;
+
+/// Builder for [`RmsProp`].
+#[derive(Debug, Clone, Default)]
+pub struct RmsPropBuilder {
+    /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
+    pub alpha: Option<f32>,
+
+    /// The epsilon added to the denominator to improve numerical stability. Default to
+    /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
+    pub epsilon: Option<f32>,
+}
+
+impl RmsPropBuilder {
+    /// Creates a new [`RmsPropBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `alpha` field.
+    pub fn alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
+        self.alpha = alpha.into();
+        self
+    }
+
+    /// Sets the `epsilon` field.
+    pub fn epsilon(mut self, epsilon: impl Into<Option<f32>>) -> Self {
+        self.epsilon = epsilon.into();
+        self
+    }
+
+    /// Builds a new [`RmsProp`].
+    ///
+    /// # Params
+    ///
+    /// - `lr`: The learning rate.
+    pub fn build(self, lr: f32) -> Result<RmsProp, RmsPropBuildError> {
+        let alpha = self.alpha.unwrap_or(RmsProp::DEFAULT_ALPHA);
+        let epsilon = self.epsilon.unwrap_or(RmsProp::DEFAULT_EPSILON);
+
+        if alpha < 0.0 {
+            return Err(RmsPropBuildError::NegativeAlpha);
+        }
+
+        if epsilon < 0.0 {
+            return Err(RmsPropBuildError::NegativeEpsilon);
+        }
+
+        Ok(RmsProp {
+            lr,
+            alpha,
+            epsilon,
+            state: OptimizerState::new(),
+        })
+    }
+}
 
 /// The RMSprop optimizer [1].
 ///
@@ -37,39 +92,18 @@ impl RmsProp {
     /// Default epsilon if not specified.
     pub const DEFAULT_EPSILON: f32 = 1e-8;
 
-    /// Creates a new `RmsProp` optimizer.
+    /// Creates a new [`RmsPropBuilder`].
+    pub fn builder() -> RmsPropBuilder {
+        RmsPropBuilder::new()
+    }
+
+    /// Creates a new `RmsProp` optimizer with all optional params set to their default values.
+    ///
+    /// # Params
+    ///
+    /// - `lr`: The learning rate.
     pub fn new(lr: f32) -> Self {
-        Self {
-            lr,
-            alpha: Self::DEFAULT_ALPHA,
-            epsilon: Self::DEFAULT_EPSILON,
-            state: OptimizerState::new(),
-        }
-    }
-
-    /// Sets the smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `alpha` is negative.
-    pub fn with_alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
-        let alpha = alpha.into().unwrap_or(Self::DEFAULT_ALPHA);
-        assert!(alpha >= 0.0);
-        self.alpha = alpha;
-        self
-    }
-
-    /// Sets the epsilon added to the denominator to improve numerical stability. Default to
-    /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `epsilon` is negative.
-    pub fn with_epsilon(mut self, epsilon: impl Into<Option<f32>>) -> Self {
-        let epsilon = epsilon.into().unwrap_or(Self::DEFAULT_EPSILON);
-        assert!(epsilon >= 0.0);
-        self.epsilon = epsilon;
-        self
+        Self::builder().build(lr).expect("Default values are valid")
     }
 }
 
@@ -102,9 +136,12 @@ mod tests {
     // `tests/test_optimizer.py`.
     #[test]
     fn test_rmsprop() {
+        const LR: f32 = 1e-2;
+        const ALPHA: f32 = 0.99;
+
         let (mut model, gradients) = create_default_test_model_and_grads();
 
-        let mut optim = RmsProp::new(1e-2).with_alpha(0.99);
+        let mut optim = RmsProp::builder().alpha(ALPHA).build(LR).unwrap();
         optim.update(&mut model, gradients);
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;

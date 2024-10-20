@@ -916,7 +916,10 @@ impl MarginRankingLoss {
 
         let margin = array!(margin);
         let diff = inputs1.subtract(inputs2)?;
-        let loss = maximum(array!(0.0), -targets.multiply(diff)?.add(margin)?)?;
+        let loss = maximum(
+            array!(0.0),
+            targets.multiply(diff)?.negative()?.add(margin)?,
+        )?;
         reduction.reduce(loss)
     }
 }

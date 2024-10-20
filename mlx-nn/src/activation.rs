@@ -287,7 +287,6 @@ impl Module for Glu {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        println!("axis: {}", self.axis);
         glu(x, self.axis).map_err(Into::into)
     }
 

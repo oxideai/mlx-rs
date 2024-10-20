@@ -33,7 +33,10 @@ macro_rules! impl_dropout_builder {
                     return Err(DropoutBuildError::InvalidProbability);
                 }
 
-                Ok($target_name { one_minus_p: 1.0 - p, training: $default_training })
+                Ok($target_name {
+                    one_minus_p: 1.0 - p,
+                    training: $default_training,
+                })
             }
         }
 
@@ -45,7 +48,9 @@ macro_rules! impl_dropout_builder {
 
             /// Creates a new dropout layer with the default parameters.
             pub fn new() -> Self {
-                $builder_name::new().build().expect("Default values are valid")
+                $builder_name::new()
+                    .build()
+                    .expect("Default values are valid")
             }
         }
 
@@ -57,7 +62,12 @@ macro_rules! impl_dropout_builder {
     };
 }
 
-impl_dropout_builder!(DropoutBuilder, Dropout, Dropout::DEFAULT_P, Dropout::DEFAULT_TRAINING);
+impl_dropout_builder!(
+    DropoutBuilder,
+    Dropout,
+    Dropout::DEFAULT_P,
+    Dropout::DEFAULT_TRAINING
+);
 
 /// Randomly zero a portion of the elements during training.
 ///
@@ -101,7 +111,12 @@ impl Module for Dropout {
     }
 }
 
-impl_dropout_builder!(Dropout2dBuilder, Dropout2d, Dropout2d::DEFAULT_P, Dropout2d::DEFAULT_TRAINING);
+impl_dropout_builder!(
+    Dropout2dBuilder,
+    Dropout2d,
+    Dropout2d::DEFAULT_P,
+    Dropout2d::DEFAULT_TRAINING
+);
 
 /// Apply 2D channel-wise dropout during training.
 ///
@@ -173,7 +188,12 @@ impl Module for Dropout2d {
     }
 }
 
-impl_dropout_builder!(Dropout3dBuilder, Dropout3d, Dropout3d::DEFAULT_P, Dropout3d::DEFAULT_TRAINING);
+impl_dropout_builder!(
+    Dropout3dBuilder,
+    Dropout3d,
+    Dropout3d::DEFAULT_P,
+    Dropout3d::DEFAULT_TRAINING
+);
 
 /// Apply 3D channel-wise dropout during training.
 ///

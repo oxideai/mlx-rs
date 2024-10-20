@@ -1,5 +1,5 @@
 use mlx_nn::{
-    losses::{CrossEntropyOptions, LossReduction},
+    losses::{CrossEntropy, LossReduction},
     module_value_and_grad,
     optimizers::Optimizer,
 };
@@ -43,14 +43,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let loader = load_training_data()?;
     let mut model = mlp::Mlp::new(num_layers, input_dim, hidden_dim, output_dim)?;
 
+    let cross_entropy = CrossEntropy::builder().reduction(LossReduction::Mean).build()?;
     let loss_fn = |model: &mlp::Mlp, (x, y): (&Array, &Array)| -> Result<Array, Exception> {
         let y_pred = model.forward(x)?;
-
-        // Config optional parameters for cross entropy loss
-        let options = CrossEntropyOptions::builder()
-            .reduction(LossReduction::Mean)
-            .build();
-        mlx_nn::losses::cross_entropy(y_pred, y, options)
+        cross_entropy.apply(y_pred, y)
     };
     let mut loss_and_grad_fn = module_value_and_grad(loss_fn);
 

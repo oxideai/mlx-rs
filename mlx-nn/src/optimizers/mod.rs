@@ -102,7 +102,7 @@ mod tests {
     };
 
     use crate::{
-        losses::{mse_loss, LossReduction, MseLossOptions},
+        losses::{LossReduction, MseLoss},
         module_value_and_grad,
     };
 
@@ -148,11 +148,11 @@ mod tests {
     {
         let mut optimizer = f();
 
-        let options = MseLossOptions::builder()
+        let mse_loss = MseLoss::builder()
             .reduction(LossReduction::Mean)
             .build();
         let loss = |model: &LinearFunctionModel, (x, y): (&Array, &Array)| {
-            mse_loss(model.forward(x)?, y, &options)
+            mse_loss.apply(model.forward(x)?, y)
         };
 
         // TODO: check compiled model once we have it

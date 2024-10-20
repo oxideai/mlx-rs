@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use mlx_macros::GenerateBuilder;
 use mlx_rs::{
     array,
     ops::{sqrt, square},
@@ -10,35 +11,30 @@ use crate::{error::RmsPropBuildError, utils::get_mut_or_insert_with};
 
 use super::*;
 
-/// Builder for [`RmsProp`].
-#[derive(Debug, Clone, Default)]
-pub struct RmsPropBuilder {
+/// The RMSprop optimizer [1].
+///
+/// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
+///     machine learning
+#[derive(Debug, Clone, GenerateBuilder)]
+#[generate_builder(generate_build_fn = false)]
+pub struct RmsProp {
+    /// Learning rate
+    pub lr: f32,
+
     /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-    pub alpha: Option<f32>,
+    #[optional]
+    pub alpha: f32,
 
     /// The epsilon added to the denominator to improve numerical stability. Default to
     /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-    pub epsilon: Option<f32>,
+    #[optional]
+    pub epsilon: f32,
+
+    /// Inner state
+    pub state: OptimizerState,
 }
 
 impl RmsPropBuilder {
-    /// Creates a new [`RmsPropBuilder`].
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Sets the `alpha` field.
-    pub fn alpha(mut self, alpha: impl Into<Option<f32>>) -> Self {
-        self.alpha = alpha.into();
-        self
-    }
-
-    /// Sets the `epsilon` field.
-    pub fn epsilon(mut self, epsilon: impl Into<Option<f32>>) -> Self {
-        self.epsilon = epsilon.into();
-        self
-    }
-
     /// Builds a new [`RmsProp`].
     ///
     /// # Params
@@ -65,37 +61,12 @@ impl RmsPropBuilder {
     }
 }
 
-/// The RMSprop optimizer [1].
-///
-/// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
-///     machine learning
-#[derive(Debug, Clone)]
-pub struct RmsProp {
-    /// Learning rate
-    pub lr: f32,
-
-    /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-    pub alpha: f32,
-
-    /// The epsilon added to the denominator to improve numerical stability. Default to
-    /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-    pub epsilon: f32,
-
-    /// Inner state
-    pub state: OptimizerState,
-}
-
 impl RmsProp {
     /// Default alpha if not specified.
     pub const DEFAULT_ALPHA: f32 = 0.99;
 
     /// Default epsilon if not specified.
     pub const DEFAULT_EPSILON: f32 = 1e-8;
-
-    /// Creates a new [`RmsPropBuilder`].
-    pub fn builder() -> RmsPropBuilder {
-        RmsPropBuilder::new()
-    }
 
     /// Creates a new `RmsProp` optimizer with all optional params set to their default values.
     ///

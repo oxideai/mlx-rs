@@ -7,7 +7,6 @@ use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, ItemStruct
 
 mod generate_builder;
 mod module_parameters;
-mod option_builder;
 
 #[derive(Debug, FromMeta)]
 enum DeviceType {
@@ -198,13 +197,6 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
         };
     };
     TokenStream::from(output)
-}
-
-#[proc_macro_attribute]
-pub fn option_builder(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ItemStruct);
-    let builder = option_builder::expand_option_builder(&input).unwrap();
-    TokenStream::from(builder)
 }
 
 #[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]

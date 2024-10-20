@@ -31,13 +31,13 @@ impl Mlp {
         // Add the input layer
         layers = layers
             .append(Linear::new(input_dim, hidden_dim)?)
-            .append(Relu::new());
+            .append(Relu);
 
         // Add the hidden layers
         for _ in 1..num_layers {
             layers = layers
                 .append(Linear::new(hidden_dim, hidden_dim)?)
-                .append(Relu::new());
+                .append(Relu);
         }
 
         // Add the output layer

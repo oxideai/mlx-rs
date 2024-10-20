@@ -201,9 +201,43 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-// This is for internal use only
-//
-// The struct that this macro is applied to should NOT derive the `Default` trait.
+/// This is for internal use only
+///
+/// The struct that this macro is applied to should NOT derive the `Default` trait.
+///
+/// This macro takes the following attributes:
+///
+/// - `generate_builder`: This attribute should be applied on the struct.
+///
+///   ## Arguments
+///
+///   - `generate_build_fn = <bool>`: It defaults to `true` if not specified. If `true`, it will:
+///     1. generate a `<Struct>Builder::build` function that takes the mandatory fields as arguments
+///        and returns the struct.
+///     2. genertae a `<Struct>::new` function that takes the mandatory fields as arguments and
+///        returns the struct. This is a convenience function that simply calls
+///        `<Struct>Builder::new().build(...)`. Additionally, if there is NO mandatory field, it
+///        will implement the `Default` trait for the struct.
+///
+/// - `optional`: This attribute should be applied on the field. It indicates that the field is
+///   optional. Behaviour of the generated builder struct depends on the argument of this attribute.
+///   
+///   ## Arguments
+///   
+///   - `skip = <bool>`: Default `false`. If `true`, the macro will NOT generate a setter for this
+///     field in the builder struct. It will also NOT wrap the field in an `Option` in the struct,
+///     and this field will remain as its original type in the builder struct. It is the user's
+///     responsibility to implement the setter for this field in the builder struct.
+///
+///     The `build` function cannot be generated if any field is marked as `skip = true`, and an
+///     error will be shown in that case.
+///
+///   - `default_value = <Path>`: This argument is required if no field is marked as `skip = true`.
+///     It specifies the default value for the field. The value should be a `Path` (something that
+///     is interpreted as a `syn::Path`) to a constant or an enum variant.
+///
+///     If either `generate_build_fn` is `false` or any field is marked as `skip = true`, this
+///     argument is not required.
 #[doc(hidden)]
 #[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]
 pub fn derive_generate_builder(input: TokenStream) -> TokenStream {

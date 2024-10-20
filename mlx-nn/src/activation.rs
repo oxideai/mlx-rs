@@ -265,11 +265,17 @@ pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct Glu {
     /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
     #[optional(default_value = Glu::DEFAULT_AXIS)]
     pub axis: i32,
+}
+
+impl Default for Glu {
+    fn default() -> Self {
+        Glu::new()
+    }
 }
 
 impl Glu {
@@ -281,6 +287,7 @@ impl Module for Glu {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        println!("axis: {}", self.axis);
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -297,7 +304,7 @@ impl Module for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
 impl Module for Sigmoid {
@@ -321,7 +328,7 @@ impl Module for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
 impl Module for Mish {
@@ -341,7 +348,7 @@ impl Module for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
 impl Module for Relu {
@@ -361,11 +368,17 @@ impl Module for Relu {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct LeakyRelu {
     /// The negative slope. Default to [`LeakyReLU::`] if not provided.
     #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
     pub neg_slope: f32,
+}
+
+impl Default for LeakyRelu {
+    fn default() -> Self {
+        LeakyRelu::new()
+    }
 }
 
 impl LeakyRelu {
@@ -390,7 +403,7 @@ impl Module for LeakyRelu {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
 impl Module for Relu6 {
@@ -410,11 +423,17 @@ impl Module for Relu6 {
 /// ```rust, ignore
 /// softmax(&x, None, None)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct Softmax {
     /// The axis to apply the softmax.
     #[optional(default_value = Softmax::DEFAULT_AXIS)]
     pub axis: i32,
+}
+
+impl Default for Softmax {
+    fn default() -> Self {
+        Softmax::new()
+    }
 }
 
 impl Softmax {
@@ -439,7 +458,7 @@ impl Module for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
 impl Module for Softplus {
@@ -459,7 +478,7 @@ impl Module for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
 impl Module for Softsign {
@@ -480,11 +499,17 @@ impl Module for Softsign {
 /// maximum(x, 0.0).unwrap()
 ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct Celu {
     /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
     #[optional(default_value = Celu::DEFAULT_ALPHA)]
     pub alpha: f32,
+}
+
+impl Default for Celu {
+    fn default() -> Self {
+        Celu::new()
+    }
 }
 
 impl Celu {
@@ -509,7 +534,7 @@ impl Module for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
 impl Module for Silu {
@@ -529,11 +554,17 @@ impl Module for Silu {
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct LogSoftmax {
     /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
     #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
     pub axis: i32,
+}
+
+impl Default for LogSoftmax {
+    fn default() -> Self {
+        LogSoftmax::new()
+    }
 }
 
 impl LogSoftmax {
@@ -558,7 +589,7 @@ impl Module for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
 impl Module for LogSigmoid {
@@ -674,11 +705,17 @@ pub enum GeluApprox {
 /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
 /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
 /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct Gelu {
     /// The approximation to use. Default to `GeluApprox::None` if not provided.
     #[optional(default_value = GeluApprox::None)]
     pub approximate: GeluApprox,
+}
+
+impl Default for Gelu {
+    fn default() -> Self {
+        Gelu::new()
+    }
 }
 
 impl Module for Gelu {
@@ -696,7 +733,7 @@ impl Module for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
 impl Module for Tanh {
@@ -716,7 +753,7 @@ impl Module for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
 impl Module for HardSwish {
@@ -739,11 +776,17 @@ impl Module for HardSwish {
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters, GenerateBuilder)]
+#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
 pub struct Step {
     /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
     #[optional(default_value = Step::DEFAULT_THRESHOLD)]
     pub threshold: f32,
+}
+
+impl Default for Step {
+    fn default() -> Self {
+        Step::new()
+    }
 }
 
 impl Step {
@@ -768,7 +811,7 @@ impl Module for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(Debug, Clone, Default, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
 impl Module for Selu {

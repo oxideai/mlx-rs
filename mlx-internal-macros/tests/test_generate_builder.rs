@@ -1,4 +1,4 @@
-use mlx_macros::GenerateBuilder;
+use mlx_internal_macros::GenerateBuilder;
 
 #[derive(Debug, Default, GenerateBuilder)]
 struct TestStruct {

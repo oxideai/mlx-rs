@@ -1,7 +1,7 @@
 use crate::error::Exception;
 use crate::utils::{IntoOption, MlxString, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 use std::f64;
 

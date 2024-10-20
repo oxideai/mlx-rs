@@ -1,7 +1,7 @@
 use crate::error::Exception;
 use crate::utils::IntoOption;
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 
 /// General convolution over an input with several channels returning an error if the inputs are invalid.
 ///

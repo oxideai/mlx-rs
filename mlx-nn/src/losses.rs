@@ -1,6 +1,6 @@
 //! Loss functions
 
-use mlx_macros::GenerateBuilder;
+use mlx_internal_macros::GenerateBuilder;
 use mlx_rs::{
     array,
     error::Exception,

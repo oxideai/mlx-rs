@@ -5,7 +5,7 @@ members = [
     "mlx-sys", 
     "mlx-rs", 
     "mlx-nn", 
-    "examples/*",
+    "examples/*", "mlx-internal-macros",
 ]
 
 resolver = "2"
@@ -14,6 +14,7 @@ resolver = "2"
 # workspace local dependencies
 mlx-sys = { version = "0.0.9", path = "mlx-sys" }
 mlx-macros = { version = "0.1.0", path = "mlx-macros" }
+mlx-internal-macros = { version = "0.1.0", path = "mlx-internal-macros" }
 mlx-rs = { version = "0.14.0", path = "mlx-rs" }
 mlx-nn = { version = "0.1.0", path = "mlx-nn" }
 

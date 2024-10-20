@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mlx_macros::GenerateBuilder;
+use mlx_internal_macros::GenerateBuilder;
 use mlx_rs::{
     array,
     ops::{sqrt, square},

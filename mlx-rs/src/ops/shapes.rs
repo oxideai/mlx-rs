@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{

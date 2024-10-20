@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
-use mlx_macros::{GenerateBuilder, ModuleParameters};
+use mlx_internal_macros::GenerateBuilder;
+use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,

@@ -5,7 +5,7 @@ use crate::stream::StreamOrDevice;
 
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
 use crate::Stream;
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 
 impl Array {

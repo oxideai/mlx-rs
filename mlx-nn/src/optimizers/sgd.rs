@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mlx_macros::GenerateBuilder;
+use mlx_internal_macros::GenerateBuilder;
 use mlx_rs::{array, Array};
 
 use crate::utils::get_mut_or_insert_with;

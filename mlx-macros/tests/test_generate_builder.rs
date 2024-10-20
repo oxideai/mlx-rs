@@ -1,6 +1,6 @@
 use mlx_macros::GenerateBuilder;
 
-#[derive(Debug, GenerateBuilder)]
+#[derive(Debug, Default, GenerateBuilder)]
 struct TestStruct {
     #[optional(default_value = TestStruct::DEFAULT_OPT_FIELD_1)]
     opt_field_1: i32,

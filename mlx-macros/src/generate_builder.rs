@@ -176,10 +176,24 @@ pub(crate) fn expand_generate_builder(
         quote! {}
     };
 
+    // Only implement Default trait if no mandatory fields are present
+    let default_impl = if mandatory_field_idents.is_empty() && generate_build_fn {
+        quote! {
+            impl #impl_generics Default for #struct_ident #ty_generics #where_clause {
+                fn default() -> Self {
+                    Self::new()
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+
     Ok(quote! {
         #builder_struct
         #builder_init
         #builder_setters
         #builder_build
+        #default_impl
     })
 }

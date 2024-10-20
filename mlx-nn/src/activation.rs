@@ -272,12 +272,6 @@ pub struct Glu {
     pub axis: i32,
 }
 
-impl Default for Glu {
-    fn default() -> Self {
-        Glu::new()
-    }
-}
-
 impl Glu {
     /// The default axis value.
     pub const DEFAULT_AXIS: i32 = -1;
@@ -374,12 +368,6 @@ pub struct LeakyRelu {
     pub neg_slope: f32,
 }
 
-impl Default for LeakyRelu {
-    fn default() -> Self {
-        LeakyRelu::new()
-    }
-}
-
 impl LeakyRelu {
     /// The default negative slope value.
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
@@ -427,12 +415,6 @@ pub struct Softmax {
     /// The axis to apply the softmax.
     #[optional(default_value = Softmax::DEFAULT_AXIS)]
     pub axis: i32,
-}
-
-impl Default for Softmax {
-    fn default() -> Self {
-        Softmax::new()
-    }
 }
 
 impl Softmax {
@@ -505,12 +487,6 @@ pub struct Celu {
     pub alpha: f32,
 }
 
-impl Default for Celu {
-    fn default() -> Self {
-        Celu::new()
-    }
-}
-
 impl Celu {
     /// The default alpha value.
     pub const DEFAULT_ALPHA: f32 = 1.0;
@@ -558,12 +534,6 @@ pub struct LogSoftmax {
     /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
     #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
     pub axis: i32,
-}
-
-impl Default for LogSoftmax {
-    fn default() -> Self {
-        LogSoftmax::new()
-    }
 }
 
 impl LogSoftmax {
@@ -711,12 +681,6 @@ pub struct Gelu {
     pub approximate: GeluApprox,
 }
 
-impl Default for Gelu {
-    fn default() -> Self {
-        Gelu::new()
-    }
-}
-
 impl Module for Gelu {
     type Error = Exception;
 
@@ -780,12 +744,6 @@ pub struct Step {
     /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
     #[optional(default_value = Step::DEFAULT_THRESHOLD)]
     pub threshold: f32,
-}
-
-impl Default for Step {
-    fn default() -> Self {
-        Step::new()
-    }
 }
 
 impl Step {

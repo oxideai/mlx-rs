@@ -314,12 +314,6 @@ pub struct MseLoss {
     pub reduction: LossReduction,
 }
 
-impl Default for MseLoss {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl MseLoss {
     /// Default value for the reduction parameter.
     pub const DEFAULT_REDUCTION: LossReduction = LossReduction::Mean;
@@ -355,12 +349,6 @@ pub struct NllLoss {
     /// Reduction type. Default to [`NllLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = NllLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for NllLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl NllLoss {
@@ -407,12 +395,6 @@ pub struct GaussianNllLoss {
     /// Reduction type. Default to [`GaussianNllLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = GaussianNllLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for GaussianNllLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl GaussianNllLoss {
@@ -479,12 +461,6 @@ pub struct KlDivLoss {
     pub reduction: LossReduction,
 }
 
-impl Default for KlDivLoss {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl KlDivLoss {
     /// Default value for the `axis` parameter.
     pub const DEFAULT_AXIS: i32 = -1;
@@ -532,12 +508,6 @@ pub struct SmoothL1Loss {
     /// Reduction type. Default to [`SmoothL1Loss::DEFAULT_REDUCTION`]
     #[optional(default_value = SmoothL1Loss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for SmoothL1Loss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl SmoothL1Loss {
@@ -597,12 +567,6 @@ pub struct TripletLoss {
     /// Reduction type. Default to [`TripletLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = TripletLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for TripletLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl TripletLoss {
@@ -671,12 +635,6 @@ pub struct HingeLoss {
     pub reduction: LossReduction,
 }
 
-impl Default for HingeLoss {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl HingeLoss {
     /// Default value for the `reduction` parameter.
     pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
@@ -714,12 +672,6 @@ pub struct HuberLoss {
     /// Reduction type. Default to [`HuberLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = HuberLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for HuberLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl HuberLoss {
@@ -768,12 +720,6 @@ pub struct LogCoshLoss {
     pub reduction: LossReduction,
 }
 
-impl Default for LogCoshLoss {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl LogCoshLoss {
     /// Default value for the `reduction` parameter.
     pub const DEFAULT_REDUCTION: LossReduction = LossReduction::None;
@@ -815,12 +761,6 @@ pub struct CosineSimilarityLoss {
     /// Reduction type. Default to [`CosineSimilarityLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = CosineSimilarityLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for CosineSimilarityLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl CosineSimilarityLoss {
@@ -876,12 +816,6 @@ pub struct MarginRankingLoss {
     /// Reduction type. Default to [`MarginRankingLoss::DEFAULT_REDUCTION`]
     #[optional(default_value = MarginRankingLoss::DEFAULT_REDUCTION)]
     pub reduction: LossReduction,
-}
-
-impl Default for MarginRankingLoss {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl MarginRankingLoss {

@@ -36,6 +36,7 @@ impl FromMeta for DefaultDeviceInput {
     }
 }
 
+#[doc(hidden)]
 #[proc_macro_attribute]
 pub fn default_device(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = if !attr.is_empty() {
@@ -99,6 +100,7 @@ pub fn default_device(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+#[doc(hidden)]
 #[proc_macro_derive(GenerateDtypeTestCases)]
 pub fn generate_test_cases(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -199,6 +201,10 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
+// This is for internal use only
+//
+// The struct that this macro is applied to should NOT derive the `Default` trait.
+#[doc(hidden)]
 #[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]
 pub fn derive_generate_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);

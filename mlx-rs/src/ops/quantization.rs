@@ -2,7 +2,7 @@
 // quantizedMatmul(_:_:scales:biases:transpose:groupSize:bits:stream:)
 // dequantized(_:scales:biases:groupSize:bits:stream:)
 
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 
 use crate::{error::Exception, utils::VectorArray, Array, Stream, StreamOrDevice};

@@ -1,6 +1,6 @@
 use crate::error::Exception;
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 
 impl Array {
     /// Return the cumulative maximum of the elements along the given axis returning an error if the inputs are invalid.

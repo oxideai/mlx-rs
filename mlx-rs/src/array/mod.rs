@@ -7,7 +7,7 @@ use crate::{
     sealed::Sealed,
     Stream, StreamOrDevice,
 };
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::ffi::c_void;

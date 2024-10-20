@@ -764,7 +764,7 @@ fn get_item(
     use ArrayIndexOp::*;
 
     match index.index_op() {
-        Ellipsis => Ok(src.clone()),
+        Ellipsis => Ok(src.deep_clone()),
         TakeIndex { index } => get_item_index(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),

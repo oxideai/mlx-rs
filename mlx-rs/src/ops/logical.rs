@@ -3,7 +3,7 @@ use crate::error::Exception;
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 
 impl Array {
     /// Element-wise equality returning an error if the arrays are not broadcastable.

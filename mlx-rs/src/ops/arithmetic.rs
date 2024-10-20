@@ -5,7 +5,7 @@ use crate::stream::StreamOrDevice;
 
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
 use crate::Stream;
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 
 impl Array {
@@ -2203,7 +2203,7 @@ mod tests {
         assert_eq!(z.item::<f32>(), 3.0);
 
         // Chain a few adds:
-        let mut out = x.clone();
+        let mut out = x.deep_clone();
         for _ in 0..10 {
             out = add(&out, &x).unwrap();
         }
@@ -2501,8 +2501,8 @@ mod tests {
         // Check that we can eval on both outputs
         let x = array![1.0];
         let y = array![2.0];
-        let (mut quo, mut rem) = divmod(&x, &y).unwrap();
-        eval([&mut quo, &mut rem]).unwrap();
+        let (quo, rem) = divmod(&x, &y).unwrap();
+        eval([&quo, &rem]).unwrap();
         assert_eq!(quo.item::<f32>(), 0.0);
         assert_eq!(rem.item::<f32>(), 1.0);
 
@@ -2518,16 +2518,16 @@ mod tests {
             let (quo, _) = divmod(&x, &y).unwrap();
             vec![quo]
         };
-        eval(out_holder.iter_mut()).unwrap();
+        eval(out_holder.iter()).unwrap();
         assert_eq!(out_holder[0].item::<f32>(), 0.0);
 
         // Check that we can still eval when the other output goes out of scope
         out_holder.clear();
-        let mut out_holder = {
+        let out_holder = {
             let (_, rem) = divmod(&x, &y).unwrap();
             vec![rem]
         };
-        eval(out_holder.iter_mut()).unwrap();
+        eval(out_holder.iter()).unwrap();
         assert_eq!(out_holder[0].item::<f32>(), 1.0);
     }
 }

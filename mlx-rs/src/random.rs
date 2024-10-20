@@ -2,7 +2,7 @@ use crate::prelude::IndexOp;
 use crate::utils::IntoOption;
 use crate::{error::Exception, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use std::borrow::Cow;
 use std::sync::{Mutex, OnceLock};
 

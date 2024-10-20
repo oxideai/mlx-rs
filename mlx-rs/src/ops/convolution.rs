@@ -1,7 +1,7 @@
 use crate::error::Exception;
 use crate::utils::IntoOption;
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 
 /// General convolution over an input with several channels returning an error if the inputs are invalid.
 ///
@@ -72,10 +72,10 @@ pub fn conv_general_device<'a>(
 ///
 /// - array: input array of shape `&[N, H, C_in]`
 /// - weight: weight array of shape `&[C_out, H, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
+/// - stride: kernel stride. Default to 1 if not specified.
+/// - padding: input padding. Default to 0 if not specified.
+/// - dilation: kernel dilation. Default to 1 if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv1d_device(
     array: &Array,
@@ -115,10 +115,10 @@ pub fn conv1d_device(
 ///
 /// - array: input array of shape `[N, H, W, C_in]`
 /// - weight: weight array of shape `[C_out, H, W, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
+/// - stride: kernel stride. Default to (1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv2d_device(
     array: &Array,
@@ -144,6 +144,45 @@ pub fn conv2d_device(
                 padding.1,
                 dilation.0,
                 dilation.1,
+                groups.into().unwrap_or(1),
+                stream.as_ref().as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// 3D convolution over an input with several channels.
+///
+/// Only the default `groups=1` is currently supported.
+#[default_device]
+pub fn conv3d_device(
+    array: &Array,
+    weight: &Array,
+    stride: impl Into<Option<(i32, i32, i32)>>,
+    padding: impl Into<Option<(i32, i32, i32)>>,
+    dilation: impl Into<Option<(i32, i32, i32)>>,
+    groups: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let stride = stride.into().unwrap_or((1, 1, 1));
+    let padding = padding.into().unwrap_or((0, 0, 0));
+    let dilation = dilation.into().unwrap_or((1, 1, 1));
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_conv3d(
+                array.as_ptr(),
+                weight.as_ptr(),
+                stride.0,
+                stride.1,
+                stride.2,
+                padding.0,
+                padding.1,
+                padding.2,
+                dilation.0,
+                dilation.1,
+                dilation.2,
                 groups.into().unwrap_or(1),
                 stream.as_ref().as_ptr(),
             )
@@ -209,6 +248,41 @@ mod tests {
 
         // Expected result is the convolution of a 2x2 filter over a 2x2 input with valid padding, resulting in a single output value
         let expected_output = 1.0 * 1.0 + 2.0 * 0.0 + 3.0 * 0.0 + 4.0 * 1.0; // = 1*1 + 4*1 = 5
+        assert_eq!(result.as_slice::<f32>(), &[expected_output]);
+    }
+
+    #[test]
+    fn test_conv3d() {
+        // Define a 2x2x2 input with one channel
+        let input_data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+        let input_shape = [1, 2, 2, 2, 1]; // [N, D, H, W, C]
+        let input_array = Array::from_slice(&input_data, &input_shape);
+
+        // Define a 2x2x2 kernel with one input channel and one output channel
+        let weight_data = [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0];
+        let weight_shape = [1, 2, 2, 2, 1]; // [C_out, D_k, H_k, W_k, C_in]
+        let weight_array = Array::from_slice(&weight_data, &weight_shape);
+
+        // Perform the convolution with no padding and stride of 1
+        let result = conv3d(
+            &input_array,
+            &weight_array,
+            Some((1, 1, 1)), // stride
+            Some((0, 0, 0)), // padding
+            Some((1, 1, 1)), // dilation
+            Some(1),         // groups
+        )
+        .unwrap();
+
+        // Expected result is the convolution of a 2x2x2 filter over a 2x2x2 input with valid padding, resulting in a single output value
+        let expected_output = 1.0 * 1.0
+            + 2.0 * 0.0
+            + 3.0 * 0.0
+            + 4.0 * 1.0
+            + 5.0 * 0.0
+            + 6.0 * 1.0
+            + 7.0 * 1.0
+            + 8.0 * 0.0; // = 1*1 + 4*1 + 6*1 + 7*1 = 18
         assert_eq!(result.as_slice::<f32>(), &[expected_output]);
     }
 

@@ -2,7 +2,7 @@ use crate::array::ArrayElement;
 use crate::error::Exception;
 use crate::Stream;
 use crate::{array::Array, stream::StreamOrDevice};
-use mlx_macros::default_device;
+use mlx_internal_macros::default_device;
 use num_traits::NumCast;
 
 impl Array {

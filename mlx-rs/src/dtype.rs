@@ -1,4 +1,4 @@
-use mlx_macros::GenerateDtypeTestCases;
+use mlx_internal_macros::GenerateDtypeTestCases;
 use strum::EnumIter;
 
 /// Array element type

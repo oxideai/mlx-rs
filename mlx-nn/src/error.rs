@@ -28,3 +28,11 @@ pub enum RmsPropBuildError {
     #[error("epsilon must be non-negative")]
     NegativeEpsilon,
 }
+
+/// Error with building a dropout layer
+#[derive(Debug, Clone, PartialEq, Error)]
+pub enum DropoutBuildError {
+    /// Dropout probability must be in the range [0, 1)
+    #[error("Dropout probability must be in the range [0, 1)")]
+    InvalidProbability,
+}

@@ -2,6 +2,63 @@ use mlx_macros::ModuleParameters;
 use mlx_rs::module::Module;
 use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
 
+use crate::error::DropoutBuildError;
+
+macro_rules! impl_dropout_builder {
+    ($builder_name:ident, $target_name:ident, $default_p:expr, $default_training:expr) => {
+        /// Builder for [`$target_name`].
+        #[derive(Debug, Clone, Default)]
+        pub struct $builder_name {
+            /// Probability of zeroing an element.
+            p: Option<f32>,
+        }
+
+        impl $builder_name {
+            /// Creates a new dropout builder.
+            pub fn new() -> Self {
+                Self::default()
+            }
+
+            /// Sets the probability of zeroing an element.
+            pub fn p(mut self, p: impl Into<f32>) -> Self {
+                self.p = Some(p.into());
+                self
+            }
+
+            /// Builds a dropout layer.
+            pub fn build(self) -> Result<$target_name, DropoutBuildError> {
+                let p = self.p.unwrap_or($default_p);
+
+                if !(0.0..1.0).contains(&p) {
+                    return Err(DropoutBuildError::InvalidProbability);
+                }
+
+                Ok($target_name { one_minus_p: 1.0 - p, training: $default_training })
+            }
+        }
+
+        impl $target_name {
+            /// Creates a builder for the dropout layer.
+            pub fn builder() -> $builder_name {
+                $builder_name::new()
+            }
+
+            /// Creates a new dropout layer with the default parameters.
+            pub fn new() -> Self {
+                $builder_name::new().build().expect("Default values are valid")
+            }
+        }
+
+        impl Default for $target_name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+    };
+}
+
+impl_dropout_builder!(DropoutBuilder, Dropout, Dropout::DEFAULT_P, Dropout::DEFAULT_TRAINING);
+
 /// Randomly zero a portion of the elements during training.
 ///
 /// The remaining elements are multiplied with `1 / (1-p)` where
@@ -24,32 +81,6 @@ impl Dropout {
 
     /// Default value for the training mode.
     pub const DEFAULT_TRAINING: bool = true;
-
-    /// Creates a new dropout layer with the default parameters.
-    pub fn new() -> Self {
-        Self {
-            one_minus_p: 1.0 - Self::DEFAULT_P,
-            training: Self::DEFAULT_TRAINING,
-        }
-    }
-
-    /// Sets the probability of zeroing an element.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `p` is not in the range `[0, 1)`.
-    pub fn with_p(mut self, p: f32) -> Self {
-        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
-
-        self.one_minus_p = 1.0 - p;
-        self
-    }
-}
-
-impl Default for Dropout {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Module for Dropout {
@@ -69,6 +100,8 @@ impl Module for Dropout {
         self.training = mode;
     }
 }
+
+impl_dropout_builder!(Dropout2dBuilder, Dropout2d, Dropout2d::DEFAULT_P, Dropout2d::DEFAULT_TRAINING);
 
 /// Apply 2D channel-wise dropout during training.
 ///
@@ -104,32 +137,6 @@ impl Dropout2d {
 
     /// Default value for the training mode.
     pub const DEFAULT_TRAINING: bool = true;
-
-    /// Creates a new dropout layer with the default parameters.
-    pub fn new() -> Self {
-        Self {
-            one_minus_p: 1.0 - Self::DEFAULT_P,
-            training: Self::DEFAULT_TRAINING,
-        }
-    }
-
-    /// Sets the probability of zeroing a channel.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `p` is not in the range `[0, 1)`.
-    pub fn with_p(mut self, p: f32) -> Self {
-        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
-
-        self.one_minus_p = 1.0 - p;
-        self
-    }
-}
-
-impl Default for Dropout2d {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Module for Dropout2d {
@@ -166,6 +173,8 @@ impl Module for Dropout2d {
     }
 }
 
+impl_dropout_builder!(Dropout3dBuilder, Dropout3d, Dropout3d::DEFAULT_P, Dropout3d::DEFAULT_TRAINING);
+
 /// Apply 3D channel-wise dropout during training.
 ///
 /// Randomly zero out entire channels independently with probability `p`.
@@ -196,32 +205,6 @@ impl Dropout3d {
 
     /// Default value for the training mode.
     pub const DEFAULT_TRAINING: bool = true;
-
-    /// Creates a new dropout layer with the default parameters.
-    pub fn new() -> Self {
-        Self {
-            one_minus_p: 1.0 - Self::DEFAULT_P,
-            training: Self::DEFAULT_TRAINING,
-        }
-    }
-
-    /// Sets the probability of zeroing a channel.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `p` is not in the range `[0, 1)`.
-    pub fn with_p(mut self, p: f32) -> Self {
-        assert!((0.0..1.0).contains(&p), "p must be in the range [0, 1)");
-
-        self.one_minus_p = 1.0 - p;
-        self
-    }
-}
-
-impl Default for Dropout3d {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Module for Dropout3d {

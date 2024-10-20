@@ -5,6 +5,7 @@ use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, ItemStruct, Pat};
 
+mod generate_builder;
 mod module_parameters;
 mod option_builder;
 
@@ -203,5 +204,12 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
 pub fn option_builder(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);
     let builder = option_builder::expand_option_builder(&input).unwrap();
+    TokenStream::from(builder)
+}
+
+#[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]
+pub fn derive_generate_builder(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as ItemStruct);
+    let builder = generate_builder::expand_generate_builder(&input).unwrap();
     TokenStream::from(builder)
 }

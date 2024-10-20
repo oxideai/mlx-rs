@@ -52,10 +52,7 @@ pub(crate) fn expand_generate_builder(
             );
             optional_field_types.push(&field.ty);
             if generate_build_fn {
-                optional_field_defaults.push(
-                    field_attr
-                        .default_value
-                );
+                optional_field_defaults.push(field_attr.default_value);
             }
         } else {
             mandatory_field_idents.push(&field.ident);
@@ -67,12 +64,14 @@ pub(crate) fn expand_generate_builder(
     let modified_optional_field_types = optional_field_types
         .iter()
         .zip(optional_field_skip.iter())
-        .map(|(field_type, skip)| if !skip {
-            quote! { Option<#field_type> }
-        } else {
-            quote! { #field_type }
+        .map(|(field_type, skip)| {
+            if !skip {
+                quote! { Option<#field_type> }
+            } else {
+                quote! { #field_type }
+            }
         });
-        
+
     let builder_struct_doc = format!("Builder for [`{}`]", struct_ident);
     let field_doc = format!("See [`{}`] for more details", struct_ident);
     let builder_struct = quote! {
@@ -111,27 +110,21 @@ pub(crate) fn expand_generate_builder(
     let builder_setter_docs = optional_field_idents
         .iter()
         .zip(optional_field_skip.iter())
-        .filter_map(|(field_ident, skip)| if !skip {
-            Some(format!("Set the value of `{:?}`", field_ident))
-        } else {
-            None
+        .filter_map(|(field_ident, skip)| {
+            if !skip {
+                Some(format!("Set the value of `{:?}`", field_ident))
+            } else {
+                None
+            }
         });
     let filtered_optional_field_idents = optional_field_idents
         .iter()
         .zip(optional_field_skip.iter())
-        .filter_map(|(field_ident, skip)| if !skip {
-            Some(field_ident)
-        } else {
-            None
-        });
+        .filter_map(|(field_ident, skip)| if !skip { Some(field_ident) } else { None });
     let filtered_optional_field_types = optional_field_types
         .iter()
         .zip(optional_field_skip.iter())
-        .filter_map(|(field_type, skip)| if !skip {
-            Some(field_type)
-        } else {
-            None
-        });
+        .filter_map(|(field_type, skip)| if !skip { Some(field_type) } else { None });
 
     let builder_setters = quote! {
         impl #impl_generics #builder_ident #ty_generics #where_clause {
@@ -148,9 +141,14 @@ pub(crate) fn expand_generate_builder(
     let builder_build = if generate_build_fn {
         let builder_build_doc = format!("Build a new [`{}`]", struct_ident);
         let struct_new_doc = format!("Create a new [`{}`] with default values", struct_ident);
-        let optional_field_defaults: Vec<_> = optional_field_defaults.iter().map(|default| {
-            default.clone().ok_or_else(|| "Default value must be supplied to generate build function")
-        }).collect::<Result<Vec<_>, _>>()?;
+        let optional_field_defaults: Vec<_> = optional_field_defaults
+            .iter()
+            .map(|default| {
+                default
+                    .clone()
+                    .ok_or("Default value must be supplied to generate build function")
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         quote! {
             impl #impl_generics #builder_ident #ty_generics #where_clause {

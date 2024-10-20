@@ -613,9 +613,7 @@ impl PreluBuilder {
         let count = self.count.unwrap_or(Prelu::DEFAULT_COUNT);
         let value = self.value.unwrap_or(Prelu::DEFAULT_VALUE);
         let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
-        Ok(Prelu {
-            weight,
-        })
+        Ok(Prelu { weight })
     }
 }
 
@@ -639,7 +637,9 @@ impl Prelu {
 
     /// Creates a new Prelu module with the default values.
     pub fn new() -> Prelu {
-        PreluBuilder::default().build().expect("Default value should be valid")
+        PreluBuilder::default()
+            .build()
+            .expect("Default value should be valid")
     }
 }
 

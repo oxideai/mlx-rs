@@ -203,7 +203,12 @@ impl Conv2dBuilder {
         let weight = uniform::<_, f32>(
             -scale,
             scale,
-            &[output_channels, kernel_size.0, kernel_size.1, input_channels],
+            &[
+                output_channels,
+                kernel_size.0,
+                kernel_size.1,
+                input_channels,
+            ],
             None,
         )?;
         let bias = if with_bias {
@@ -220,7 +225,6 @@ impl Conv2dBuilder {
         })
     }
 }
-
 
 /// Applies a 2-dimensional convolution over the multi-channel input image.
 ///
@@ -355,7 +359,13 @@ impl Conv3dBuilder {
         let weight = uniform::<_, f32>(
             -scale,
             scale,
-            &[output_channels, kernel_size.0, kernel_size.1, kernel_size.2, input_channels],
+            &[
+                output_channels,
+                kernel_size.0,
+                kernel_size.1,
+                kernel_size.2,
+                input_channels,
+            ],
             None,
         )?;
         let bias = if with_bias {

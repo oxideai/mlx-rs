@@ -35,9 +35,12 @@ impl LinearBuilder {
             mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
 
         let bias = if with_bias {
-            Some(
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)?
-            )
+            Some(mlx_rs::random::uniform::<_, f32>(
+                -scale,
+                scale,
+                &[output_dims],
+                None,
+            )?)
         } else {
             None
         };
@@ -115,7 +118,12 @@ impl BilinearBuilder {
     }
 
     /// Builds a new [`Bilinear`] layer.
-    pub fn build(self, input_dims_1: i32, input_dims_2: i32, output_dims: i32) -> Result<Bilinear, Exception> {
+    pub fn build(
+        self,
+        input_dims_1: i32,
+        input_dims_2: i32,
+        output_dims: i32,
+    ) -> Result<Bilinear, Exception> {
         let with_bias = self.with_bias.unwrap_or(Bilinear::DEFAULT_WITH_BIAS);
 
         let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
@@ -127,9 +135,12 @@ impl BilinearBuilder {
         )?;
 
         let bias = if with_bias {
-            Some(
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)?
-            )
+            Some(mlx_rs::random::uniform::<_, f32>(
+                -scale,
+                scale,
+                &[output_dims],
+                None,
+            )?)
         } else {
             None
         };

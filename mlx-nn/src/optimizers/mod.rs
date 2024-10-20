@@ -148,9 +148,7 @@ mod tests {
     {
         let mut optimizer = f();
 
-        let mse_loss = MseLoss::builder()
-            .reduction(LossReduction::Mean)
-            .build();
+        let mse_loss = MseLoss::builder().reduction(LossReduction::Mean).build();
         let loss = |model: &LinearFunctionModel, (x, y): (&Array, &Array)| {
             mse_loss.apply(model.forward(x)?, y)
         };

@@ -43,7 +43,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let loader = load_training_data()?;
     let mut model = mlp::Mlp::new(num_layers, input_dim, hidden_dim, output_dim)?;
 
-    let cross_entropy = CrossEntropy::builder().reduction(LossReduction::Mean).build()?;
+    let cross_entropy = CrossEntropy::builder()
+        .reduction(LossReduction::Mean)
+        .build()?;
     let loss_fn = |model: &mlp::Mlp, (x, y): (&Array, &Array)| -> Result<Array, Exception> {
         let y_pred = model.forward(x)?;
         cross_entropy.apply(y_pred, y)

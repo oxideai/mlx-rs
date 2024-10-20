@@ -5,8 +5,49 @@ use mlx_rs::{error::Exception, Array};
 use crate::{
     macros::ModuleParameters,
     module::{Module, Param},
-    utils::WithBias,
 };
+
+/// Builder for [`Linear`] module
+#[derive(Debug, Clone, Default)]
+pub struct LinearBuilder {
+    /// Whether to include bias in the linear layer. Default to [`Linear::DEFAULT_WITH_BIAS`].
+    pub with_bias: Option<bool>,
+}
+
+impl LinearBuilder {
+    /// Creates a new [`LinearBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `with_bias` field.
+    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
+        self.with_bias = with_bias.into();
+        self
+    }
+
+    /// Builds a new [`Linear`] layer.
+    pub fn build(self, input_dims: i32, output_dims: i32) -> Result<Linear, Exception> {
+        let with_bias = self.with_bias.unwrap_or(Linear::DEFAULT_WITH_BIAS);
+
+        let scale = f32::sqrt(1.0 / (input_dims as f32));
+        let weight =
+            mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
+
+        let bias = if with_bias {
+            Some(
+                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)?
+            )
+        } else {
+            None
+        };
+
+        Ok(Linear {
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+        })
+    }
+}
 
 /// Applies an affine transformation to the input.
 #[derive(Debug, Clone, ModuleParameters)]
@@ -21,45 +62,17 @@ pub struct Linear {
 }
 
 impl Linear {
+    /// Default value for `with_bias`
+    pub const DEFAULT_WITH_BIAS: bool = true;
+
+    /// Creates a new [`LinearBuilder`].
+    pub fn builder() -> LinearBuilder {
+        LinearBuilder::new()
+    }
+
     /// Creates a new [`Linear`] layer.
     pub fn new(input_dims: i32, output_dims: i32) -> Result<Self, Exception> {
-        let scale = f32::sqrt(1.0 / (input_dims as f32));
-        let weight =
-            mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
-
-        let bias = WithBias::default()
-            .map_into_option(|| {
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)
-            })
-            .transpose()?;
-
-        Ok(Self {
-            weight: Param::new(weight),
-            bias: Param::new(bias),
-        })
-    }
-
-    /// Creates a new [`Linear`] layer with the given weight and bias.
-    pub fn new_with_weight_and_bias(weight: Array, bias: Option<Array>) -> Self {
-        Self {
-            weight: Param::new(weight),
-            bias: Param::new(bias),
-        }
-    }
-
-    /// Sets the bias of the linear layer.
-    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
-        self.bias.value = with_bias
-            .into()
-            .map_into_option(|| {
-                let shape = self.weight.shape();
-                let output_dims = shape[0];
-                let input_dims = shape[1];
-                let scale = f32::sqrt(1.0 / (input_dims as f32));
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)
-            })
-            .transpose()?;
-        Ok(self)
+        LinearBuilder::new().build(input_dims, output_dims)
     }
 
     /// Returns the shape of the linear layer.
@@ -82,6 +95,52 @@ impl Module for Linear {
     fn training_mode(&mut self, _: bool) {}
 }
 
+/// Builder for [`Bilinear`] module
+#[derive(Debug, Clone, Default)]
+pub struct BilinearBuilder {
+    /// Whether to include bias in the bilinear layer. Default to [Bilinear::DEFAULT_WITH_BIAS].
+    with_bias: Option<bool>,
+}
+
+impl BilinearBuilder {
+    /// Creates a new [`BilinearBuilder`].
+    pub fn new() -> Self {
+        Self { with_bias: None }
+    }
+
+    /// Sets the `with_bias` field.
+    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
+        self.with_bias = with_bias.into();
+        self
+    }
+
+    /// Builds a new [`Bilinear`] layer.
+    pub fn build(self, input_dims_1: i32, input_dims_2: i32, output_dims: i32) -> Result<Bilinear, Exception> {
+        let with_bias = self.with_bias.unwrap_or(Bilinear::DEFAULT_WITH_BIAS);
+
+        let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
+        let weights = mlx_rs::random::uniform::<_, f32>(
+            -scale,
+            scale,
+            &[output_dims, input_dims_2, input_dims_1],
+            None,
+        )?;
+
+        let bias = if with_bias {
+            Some(
+                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)?
+            )
+        } else {
+            None
+        };
+
+        Ok(Bilinear {
+            weights: Param::new(weights),
+            bias: Param::new(bias),
+        })
+    }
+}
+
 /// Applies a bilinear transformation to the inputs.
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Bilinear {
@@ -95,41 +154,17 @@ pub struct Bilinear {
 }
 
 impl Bilinear {
-    /// Creates a new [`Bilinear`] layer.
-    pub fn new(input_dims_1: i32, input_dims_2: i32, output_dims: i32) -> Result<Self, Exception> {
-        let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
-        let weights = mlx_rs::random::uniform::<_, f32>(
-            -scale,
-            scale,
-            &[output_dims, input_dims_2, input_dims_1],
-            None,
-        )?;
+    /// Default value for `with_bias`
+    pub const DEFAULT_WITH_BIAS: bool = true;
 
-        let bias = WithBias::default()
-            .map_into_option(|| {
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)
-            })
-            .transpose()?;
-
-        Ok(Self {
-            weights: Param::new(weights),
-            bias: Param::new(bias),
-        })
+    /// Creates a new [`BilinearBuilder`].
+    pub fn builder() -> BilinearBuilder {
+        BilinearBuilder::new()
     }
 
-    /// Sets the bias of the bilinear layer.
-    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
-        self.bias.value = with_bias
-            .into()
-            .map_into_option(|| {
-                let shape = self.weights.shape();
-                let output_dims = shape[0];
-                let input_dims_1 = shape[2];
-                let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
-                mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims], None)
-            })
-            .transpose()?;
-        Ok(self)
+    /// Creates a new [`Bilinear`] layer.
+    pub fn new(input_dims_1: i32, input_dims_2: i32, output_dims: i32) -> Result<Self, Exception> {
+        BilinearBuilder::new().build(input_dims_1, input_dims_2, output_dims)
     }
 }
 

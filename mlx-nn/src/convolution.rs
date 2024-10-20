@@ -7,9 +7,9 @@ use mlx_rs::{
     Array,
 };
 
-use crate::utils::{IntOrPair, IntOrTriple, WithBias};
+use crate::utils::{IntOrPair, IntOrTriple};
 
-/// Optional parameters for the `Conv1d` module.
+/// Builder for the `Conv1d` module.
 #[derive(Debug, Clone, Default)]
 pub struct Conv1dBuilder {
     /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_WITH_BIAS`] if not
@@ -150,6 +150,78 @@ impl Module for Conv1d {
     fn training_mode(&mut self, _: bool) {}
 }
 
+/// Builder for the `Conv2d` module.
+#[derive(Debug, Clone, Default)]
+pub struct Conv2dBuilder {
+    /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_WITH_BIAS`] if not
+    /// specified.
+    with_bias: Option<bool>,
+
+    /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
+    padding: Option<(i32, i32)>,
+
+    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
+    stride: Option<(i32, i32)>,
+}
+
+impl Conv2dBuilder {
+    /// Creates a new `Conv2dBuilder`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `with_bias` parameter.
+    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
+        self.with_bias = with_bias.into();
+        self
+    }
+
+    /// Sets the `padding` parameter.
+    pub fn padding(mut self, padding: impl Into<Option<(i32, i32)>>) -> Self {
+        self.padding = padding.into();
+        self
+    }
+
+    /// Sets the `stride` parameter.
+    pub fn stride(mut self, stride: impl Into<Option<(i32, i32)>>) -> Self {
+        self.stride = stride.into();
+        self
+    }
+
+    /// Builds a new `Conv2d` module.
+    pub fn build(
+        self,
+        input_channels: i32,
+        output_channels: i32,
+        kernel_size: (i32, i32),
+    ) -> Result<Conv2d, Exception> {
+        let with_bias = self.with_bias.unwrap_or(Conv2d::DEFAULT_WITH_BIAS);
+        let padding = self.padding.unwrap_or(Conv2d::DEFAULT_PADDING);
+        let stride = self.stride.unwrap_or(Conv2d::DEFAULT_STRIDE);
+
+        let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
+        let weight = uniform::<_, f32>(
+            -scale,
+            scale,
+            &[output_channels, kernel_size.0, kernel_size.1, input_channels],
+            None,
+        )?;
+        let bias = if with_bias {
+            Some(zeros::<f32>(&[output_channels])?)
+        } else {
+            None
+        };
+
+        Ok(Conv2d {
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+            padding,
+            stride,
+        })
+    }
+}
+
+
 /// Applies a 2-dimensional convolution over the multi-channel input image.
 ///
 /// The channels are expected to be last i.e. the input shape should be `NHWC` where:
@@ -176,6 +248,20 @@ pub struct Conv2d {
 }
 
 impl Conv2d {
+    /// Default value for `with_bias` if not specified.
+    pub const DEFAULT_WITH_BIAS: bool = true;
+
+    /// Default value for `padding` if not specified.
+    pub const DEFAULT_PADDING: (i32, i32) = (0, 0);
+
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: (i32, i32) = (1, 1);
+
+    /// Creates a new `Conv2dBuilder`.
+    pub fn builder() -> Conv2dBuilder {
+        Conv2dBuilder::new()
+    }
+
     /// Creates a new 2-dimensional convolution layer.
     ///
     /// # Params
@@ -189,56 +275,7 @@ impl Conv2d {
         kernel_size: impl IntOrPair,
     ) -> Result<Self, Exception> {
         let kernel_size = kernel_size.into_pair();
-        let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
-
-        let weight = uniform::<_, f32>(
-            -scale,
-            scale,
-            &[
-                output_channels,
-                kernel_size.0,
-                kernel_size.1,
-                input_channels,
-            ],
-            None,
-        )?;
-        let default_bias = WithBias::default()
-            .map_into_option(|| zeros::<f32>(&[output_channels]))
-            .transpose()?;
-        let default_padding = (0, 0);
-        let default_stride = (1, 1);
-
-        Ok(Self {
-            weight: Param::new(weight),
-            bias: Param::new(default_bias),
-            padding: default_padding,
-            stride: default_stride,
-        })
-    }
-
-    /// If `true`, add a learnable bias to the output
-    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
-        let bias = with_bias
-            .into()
-            .map_into_option(|| {
-                let output_channels = self.weight.shape()[0];
-                zeros::<f32>(&[output_channels])
-            })
-            .transpose()?;
-        self.bias.value = bias;
-        Ok(self)
-    }
-
-    /// Sets the stride when applying the filter
-    pub fn with_stride(mut self, stride: impl IntOrPair) -> Self {
-        self.stride = stride.into_pair();
-        self
-    }
-
-    /// Sets the padding when applying the filter
-    pub fn with_padding(mut self, padding: impl IntOrPair) -> Self {
-        self.padding = padding.into_pair();
-        self
+        Conv2dBuilder::new().build(input_channels, output_channels, kernel_size)
     }
 }
 
@@ -261,6 +298,79 @@ impl Module for Conv2d {
     }
 
     fn training_mode(&mut self, _: bool) {}
+}
+
+/// Builder for the `Conv3d` module.
+#[derive(Debug, Clone, Default)]
+pub struct Conv3dBuilder {
+    /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_WITH_BIAS`] if not
+    /// specified.
+    with_bias: Option<bool>,
+
+    /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
+    padding: Option<(i32, i32, i32)>,
+
+    /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
+    stride: Option<(i32, i32, i32)>,
+}
+
+impl Conv3dBuilder {
+    /// Creates a new `Conv3dBuilder`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `with_bias` parameter.
+    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
+        self.with_bias = with_bias.into();
+        self
+    }
+
+    /// Sets the `padding` parameter.
+    pub fn padding(mut self, padding: impl Into<Option<(i32, i32, i32)>>) -> Self {
+        self.padding = padding.into();
+        self
+    }
+
+    /// Sets the `stride` parameter.
+    pub fn stride(mut self, stride: impl Into<Option<(i32, i32, i32)>>) -> Self {
+        self.stride = stride.into();
+        self
+    }
+
+    /// Builds a new `Conv3d` module.
+    pub fn build(
+        self,
+        input_channels: i32,
+        output_channels: i32,
+        kernel_size: (i32, i32, i32),
+    ) -> Result<Conv3d, Exception> {
+        let with_bias = self.with_bias.unwrap_or(Conv3d::DEFAULT_WITH_BIAS);
+        let padding = self.padding.unwrap_or(Conv3d::DEFAULT_PADDING);
+        let stride = self.stride.unwrap_or(Conv3d::DEFAULT_STRIDE);
+
+        let scale = f32::sqrt(
+            1.0 / (input_channels * kernel_size.0 * kernel_size.1 * kernel_size.2) as f32,
+        );
+        let weight = uniform::<_, f32>(
+            -scale,
+            scale,
+            &[output_channels, kernel_size.0, kernel_size.1, kernel_size.2, input_channels],
+            None,
+        )?;
+        let bias = if with_bias {
+            Some(zeros::<f32>(&[output_channels])?)
+        } else {
+            None
+        };
+
+        Ok(Conv3d {
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+            padding,
+            stride,
+        })
+    }
 }
 
 /// Applies a 3-dimensional convolution over the multi-channel input image.
@@ -289,6 +399,20 @@ pub struct Conv3d {
 }
 
 impl Conv3d {
+    /// Default value for `with_bias` if not specified.
+    pub const DEFAULT_WITH_BIAS: bool = true;
+
+    /// Default value for `padding` if not specified.
+    pub const DEFAULT_PADDING: (i32, i32, i32) = (0, 0, 0);
+
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: (i32, i32, i32) = (1, 1, 1);
+
+    /// Creates a new `Conv3dBuilder`.
+    pub fn builder() -> Conv3dBuilder {
+        Conv3dBuilder::new()
+    }
+
     /// Creates a new 3-dimensional convolution layer.
     ///
     /// # Params
@@ -302,59 +426,7 @@ impl Conv3d {
         kernel_size: impl IntOrTriple,
     ) -> Result<Self, Exception> {
         let kernel_size = kernel_size.into_triple();
-        let scale = f32::sqrt(
-            1.0 / (input_channels * kernel_size.0 * kernel_size.1 * kernel_size.2) as f32,
-        );
-
-        let weight = uniform::<_, f32>(
-            -scale,
-            scale,
-            &[
-                output_channels,
-                kernel_size.0,
-                kernel_size.1,
-                kernel_size.2,
-                input_channels,
-            ],
-            None,
-        )?;
-        let default_bias = WithBias::default()
-            .map_into_option(|| zeros::<f32>(&[output_channels]))
-            .transpose()?;
-        let default_padding = (0, 0, 0);
-        let default_stride = (1, 1, 1);
-
-        Ok(Self {
-            weight: Param::new(weight),
-            bias: Param::new(default_bias),
-            padding: default_padding,
-            stride: default_stride,
-        })
-    }
-
-    /// If `true`, add a learnable bias to the output
-    pub fn with_bias(mut self, with_bias: impl Into<WithBias>) -> Result<Self, Exception> {
-        let bias = with_bias
-            .into()
-            .map_into_option(|| {
-                let output_channels = self.weight.shape()[0];
-                zeros::<f32>(&[output_channels])
-            })
-            .transpose()?;
-        self.bias.value = bias;
-        Ok(self)
-    }
-
-    /// Sets the stride when applying the filter
-    pub fn with_stride(mut self, stride: impl IntOrTriple) -> Self {
-        self.stride = stride.into_triple();
-        self
-    }
-
-    /// Sets the padding when applying the filter
-    pub fn with_padding(mut self, padding: impl IntOrTriple) -> Self {
-        self.padding = padding.into_triple();
-        self
+        Conv3dBuilder::new().build(input_channels, output_channels, kernel_size)
     }
 }
 

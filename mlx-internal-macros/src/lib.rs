@@ -185,9 +185,9 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///     If either `generate_build_fn` is `false` or any field is marked as `skip = true`, this
 ///     argument is not required.
 #[doc(hidden)]
-#[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]
-pub fn derive_generate_builder(input: TokenStream) -> TokenStream {
+#[proc_macro]
+pub fn generate_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
-    let builder = generate_builder::expand_generate_builder(&input).unwrap();
+    let builder = generate_builder::expand_generate_builder(input).unwrap();
     TokenStream::from(builder)
 }

@@ -1,6 +1,6 @@
 //! Loss functions
 
-use mlx_internal_macros::GenerateBuilder;
+use mlx_internal_macros::generate_builder;
 use mlx_rs::{
     array,
     error::Exception,
@@ -54,26 +54,28 @@ impl LossReduction {
     }
 }
 
-/// Cross entropy loss function.
-#[derive(Debug, Clone, GenerateBuilder)]
-#[generate_builder(generate_build_fn = false)]
-pub struct CrossEntropy<'a> {
-    /// Weights for each target
-    #[optional(skip = true)]
-    pub weights: Option<&'a Array>,
+generate_builder! {
+    /// Cross entropy loss function.
+    #[derive(Debug, Clone)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct CrossEntropy<'a> {
+        /// Weights for each target
+        #[optional(skip = true)]
+        pub weights: Option<&'a Array>,
 
-    /// The axis over which to compute softmax. Default to [`CrossEntropy::DEFAULT_AXIS`]
-    #[optional(default_value = CrossEntropy::DEFAULT_AXIS)]
-    pub axis: i32,
+        /// The axis over which to compute softmax. Default to [`CrossEntropy::DEFAULT_AXIS`]
+        #[optional(default_value = CrossEntropy::DEFAULT_AXIS)]
+        pub axis: i32,
 
-    /// The label smoothing factor, range [0, 1). Default to
-    /// [`CrossEntropy::DEFAULT_LABEL_SMOOTHING`]
-    #[optional(default_value = CrossEntropy::DEFAULT_LABEL_SMOOTHING)]
-    pub label_smoothing: f32,
+        /// The label smoothing factor, range [0, 1). Default to
+        /// [`CrossEntropy::DEFAULT_LABEL_SMOOTHING`]
+        #[optional(default_value = CrossEntropy::DEFAULT_LABEL_SMOOTHING)]
+        pub label_smoothing: f32,
 
-    /// Reduction type. Default to [`CrossEntropy::DEFAULT_REDUCTION`]
-    #[optional(default_value = CrossEntropy::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`CrossEntropy::DEFAULT_REDUCTION`]
+        #[optional(default_value = CrossEntropy::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl<'a> CrossEntropyBuilder<'a> {
@@ -173,27 +175,29 @@ impl<'a> CrossEntropy<'a> {
     }
 }
 
-/// Binary cross entropy loss.
-///
-/// By default, this function takes the pre-sigmoid logits, which results in a faster
-/// and more precise loss. For improved numerical stability when `inputs_are_logits` is true,
-/// the loss calculation clips the input probabilities (in log-space) to a minimum value
-/// of `-100`.
-#[derive(Debug, Clone, GenerateBuilder)]
-#[generate_builder(generate_build_fn = false)]
-pub struct BinaryCrossEntropy<'a> {
-    /// Optional weights for each target
-    #[optional(skip = true)]
-    pub weights: Option<&'a Array>,
+generate_builder! {
+    /// Binary cross entropy loss.
+    ///
+    /// By default, this function takes the pre-sigmoid logits, which results in a faster
+    /// and more precise loss. For improved numerical stability when `inputs_are_logits` is true,
+    /// the loss calculation clips the input probabilities (in log-space) to a minimum value
+    /// of `-100`.
+    #[derive(Debug, Clone)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct BinaryCrossEntropy<'a> {
+        /// Optional weights for each target
+        #[optional(skip = true)]
+        pub weights: Option<&'a Array>,
 
-    /// Whether the inputs are logits. Default to
-    /// [`BinaryCrossEntropy::DEFAULT_INPUTS_ARE_LOGITS`]
-    #[optional]
-    pub inputs_are_logits: bool,
+        /// Whether the inputs are logits. Default to
+        /// [`BinaryCrossEntropy::DEFAULT_INPUTS_ARE_LOGITS`]
+        #[optional]
+        pub inputs_are_logits: bool,
 
-    /// Reduction type. Default to [`BinaryCrossEntropy::DEFAULT_REDUCTION`]
-    #[optional]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`BinaryCrossEntropy::DEFAULT_REDUCTION`]
+        #[optional]
+        pub reduction: LossReduction,
+    }
 }
 
 impl<'a> BinaryCrossEntropyBuilder<'a> {
@@ -273,12 +277,14 @@ impl<'a> BinaryCrossEntropy<'a> {
     }
 }
 
-/// Computes the L1 loss
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct L1Loss {
-    /// Reduction type. Default to [`L1loss::DEFAULT_REDUCTION`]
-    #[optional(default_value = L1Loss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+generate_builder! {
+    /// Computes the L1 loss
+    #[derive(Debug, Clone)]
+    pub struct L1Loss {
+        /// Reduction type. Default to [`L1loss::DEFAULT_REDUCTION`]
+        #[optional(default_value = L1Loss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl L1Loss {
@@ -306,12 +312,14 @@ impl L1Loss {
     }
 }
 
-/// Computes the mean squared error loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct MseLoss {
-    /// Reduction type. Default to [`MseLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = MseLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+generate_builder! {
+    /// Computes the mean squared error loss.
+    #[derive(Debug, Clone)]
+    pub struct MseLoss {
+        /// Reduction type. Default to [`MseLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = MseLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl MseLoss {
@@ -339,16 +347,18 @@ impl MseLoss {
     }
 }
 
-/// Computes the negative log likelihood loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct NllLoss {
-    /// distribution axis. Default to [`NllLoss::DEFAULT_AXIS`]
-    #[optional(default_value = NllLoss::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Computes the negative log likelihood loss.
+    #[derive(Debug, Clone)]
+    pub struct NllLoss {
+        /// distribution axis. Default to [`NllLoss::DEFAULT_AXIS`]
+        #[optional(default_value = NllLoss::DEFAULT_AXIS)]
+        pub axis: i32,
 
-    /// Reduction type. Default to [`NllLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = NllLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`NllLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = NllLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl NllLoss {
@@ -379,22 +389,24 @@ impl NllLoss {
     }
 }
 
-/// Compute the negative log likelihood loss for a Gaussian distribution.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct GaussianNllLoss {
-    /// Whether to include the constant term in the loss calculation. Default to
-    /// [`GaussianNllLoss::DEFAULT_FULL`]
-    #[optional(default_value = GaussianNllLoss::DEFAULT_FULL)]
-    pub full: bool,
+generate_builder! {
+    /// Compute the negative log likelihood loss for a Gaussian distribution.
+    #[derive(Debug, Clone)]
+    pub struct GaussianNllLoss {
+        /// Whether to include the constant term in the loss calculation. Default to
+        /// [`GaussianNllLoss::DEFAULT_FULL`]
+        #[optional(default_value = GaussianNllLoss::DEFAULT_FULL)]
+        pub full: bool,
 
-    /// Small positive constant for numerical stability. Default to
-    /// [`GaussianNllLoss::DEFAULT_EPS`]
-    #[optional(default_value = GaussianNllLoss::DEFAULT_EPS)]
-    pub eps: f32,
+        /// Small positive constant for numerical stability. Default to
+        /// [`GaussianNllLoss::DEFAULT_EPS`]
+        #[optional(default_value = GaussianNllLoss::DEFAULT_EPS)]
+        pub eps: f32,
 
-    /// Reduction type. Default to [`GaussianNllLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = GaussianNllLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`GaussianNllLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = GaussianNllLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl GaussianNllLoss {
@@ -443,22 +455,24 @@ impl GaussianNllLoss {
     }
 }
 
-/// Compute the Kullback-Leibler divergence loss.
-///
-/// Computes the following when the `reduction` is `LossReduction::None`:
-///
-/// ```rust, ignore
-/// sum(exp(targets) * (targets - inputs), axis, None)
-/// ```
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct KlDivLoss {
-    /// The distribution axis. Default to [`KlDivLoss::DEFAULT_AXIS`]
-    #[optional(default_value = KlDivLoss::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Compute the Kullback-Leibler divergence loss.
+    ///
+    /// Computes the following when the `reduction` is `LossReduction::None`:
+    ///
+    /// ```rust, ignore
+    /// sum(exp(targets) * (targets - inputs), axis, None)
+    /// ```
+    #[derive(Debug, Clone)]
+    pub struct KlDivLoss {
+        /// The distribution axis. Default to [`KlDivLoss::DEFAULT_AXIS`]
+        #[optional(default_value = KlDivLoss::DEFAULT_AXIS)]
+        pub axis: i32,
 
-    /// Reduction type. Default to [`KlDivLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = KlDivLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`KlDivLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = KlDivLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl KlDivLoss {
@@ -493,21 +507,23 @@ impl KlDivLoss {
     }
 }
 
-/// Computes the smooth L1 loss.
-///
-/// The smooth L1 loss is a variant of the L1 loss which replaces the absolute
-/// difference with a squared difference when the absolute difference is less
-/// than `beta`.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct SmoothL1Loss {
-    /// The threshold after which the loss changes from the squared to the absolute difference.
-    /// Default to [`SmoothL1Loss::DEFAULT_BETA`]
-    #[optional(default_value = SmoothL1Loss::DEFAULT_BETA)]
-    pub beta: f32,
+generate_builder! {
+    /// Computes the smooth L1 loss.
+    ///
+    /// The smooth L1 loss is a variant of the L1 loss which replaces the absolute
+    /// difference with a squared difference when the absolute difference is less
+    /// than `beta`.
+    #[derive(Debug, Clone)]
+    pub struct SmoothL1Loss {
+        /// The threshold after which the loss changes from the squared to the absolute difference.
+        /// Default to [`SmoothL1Loss::DEFAULT_BETA`]
+        #[optional(default_value = SmoothL1Loss::DEFAULT_BETA)]
+        pub beta: f32,
 
-    /// Reduction type. Default to [`SmoothL1Loss::DEFAULT_REDUCTION`]
-    #[optional(default_value = SmoothL1Loss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`SmoothL1Loss::DEFAULT_REDUCTION`]
+        #[optional(default_value = SmoothL1Loss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl SmoothL1Loss {
@@ -544,29 +560,31 @@ impl SmoothL1Loss {
     }
 }
 
-/// Computes the triplet loss for a set of anchor, positive, and negative samples. Margin is
-/// represented with alpha in the math section.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct TripletLoss {
-    /// Distribution axis. Default to [`TripletLoss::DEFAULT_AXIS`]
-    #[optional(default_value = TripletLoss::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Computes the triplet loss for a set of anchor, positive, and negative samples. Margin is
+    /// represented with alpha in the math section.
+    #[derive(Debug, Clone)]
+    pub struct TripletLoss {
+        /// Distribution axis. Default to [`TripletLoss::DEFAULT_AXIS`]
+        #[optional(default_value = TripletLoss::DEFAULT_AXIS)]
+        pub axis: i32,
 
-    /// The norm degree for pairwise distance. Default to [`TripletLoss::DEFAULT_P`]
-    #[optional(default_value = TripletLoss::DEFAULT_P)]
-    pub p: f32,
+        /// The norm degree for pairwise distance. Default to [`TripletLoss::DEFAULT_P`]
+        #[optional(default_value = TripletLoss::DEFAULT_P)]
+        pub p: f32,
 
-    /// Margin for the triplet loss. Default to [`TripletLoss::DEFAULT_MARGIN`]
-    #[optional(default_value = TripletLoss::DEFAULT_MARGIN)]
-    pub margin: f32,
+        /// Margin for the triplet loss. Default to [`TripletLoss::DEFAULT_MARGIN`]
+        #[optional(default_value = TripletLoss::DEFAULT_MARGIN)]
+        pub margin: f32,
 
-    /// Small positive constant for numerical stability. Default to [`TripletLoss::DEFAULT_EPS`]
-    #[optional(default_value = TripletLoss::DEFAULT_EPS)]
-    pub eps: f32,
+        /// Small positive constant for numerical stability. Default to [`TripletLoss::DEFAULT_EPS`]
+        #[optional(default_value = TripletLoss::DEFAULT_EPS)]
+        pub eps: f32,
 
-    /// Reduction type. Default to [`TripletLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = TripletLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`TripletLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = TripletLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl TripletLoss {
@@ -627,12 +645,14 @@ impl TripletLoss {
     }
 }
 
-/// Compute the hinge loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct HingeLoss {
-    /// Reduction type. Default to [`HingeLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = HingeLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+generate_builder! {
+    /// Compute the hinge loss.
+    #[derive(Debug, Clone)]
+    pub struct HingeLoss {
+        /// Reduction type. Default to [`HingeLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = HingeLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl HingeLoss {
@@ -661,17 +681,19 @@ impl HingeLoss {
     }
 }
 
-/// Compute the Huber loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct HuberLoss {
-    /// The threshold at which to change between L1 and L2 loss. Default to
-    /// [`HuberLoss::DEFAULT_DELTA`]
-    #[optional(default_value = HuberLoss::DEFAULT_DELTA)]
-    pub delta: f32,
+generate_builder! {
+    /// Compute the Huber loss.
+    #[derive(Debug, Clone)]
+    pub struct HuberLoss {
+        /// The threshold at which to change between L1 and L2 loss. Default to
+        /// [`HuberLoss::DEFAULT_DELTA`]
+        #[optional(default_value = HuberLoss::DEFAULT_DELTA)]
+        pub delta: f32,
 
-    /// Reduction type. Default to [`HuberLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = HuberLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`HuberLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = HuberLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl HuberLoss {
@@ -708,16 +730,18 @@ impl HuberLoss {
     }
 }
 
-/// Computes the log cosh loss between inputs and targets.
-///
-/// Logcosh acts like L2 loss for small errors, ensuring stable gradients,
-/// and like the L1 loss for large errors, reducing sensitivity to outliers. This
-/// dual behavior offers a balanced, robust approach for regression tasks.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct LogCoshLoss {
-    /// Reduction type. Default to [`LogCoshLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = LogCoshLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+generate_builder! {
+    /// Computes the log cosh loss between inputs and targets.
+    ///
+    /// Logcosh acts like L2 loss for small errors, ensuring stable gradients,
+    /// and like the L1 loss for large errors, reducing sensitivity to outliers. This
+    /// dual behavior offers a balanced, robust approach for regression tasks.
+    #[derive(Debug, Clone)]
+    pub struct LogCoshLoss {
+        /// Reduction type. Default to [`LogCoshLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = LogCoshLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl LogCoshLoss {
@@ -746,21 +770,23 @@ impl LogCoshLoss {
     }
 }
 
-/// Computes the cosine similarity loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct CosineSimilarityLoss {
-    /// Embedding axis. Default to [`CosineSimilarityLoss::DEFAULT_AXIS`]
-    #[optional(default_value = CosineSimilarityLoss::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Computes the cosine similarity loss.
+    #[derive(Debug, Clone)]
+    pub struct CosineSimilarityLoss {
+        /// Embedding axis. Default to [`CosineSimilarityLoss::DEFAULT_AXIS`]
+        #[optional(default_value = CosineSimilarityLoss::DEFAULT_AXIS)]
+        pub axis: i32,
 
-    /// minimum value of the denominator used for numerical stability. Default to
-    /// [`CosineSimilarityLoss::DEFAULT_EPS`]
-    #[optional(default_value = CosineSimilarityLoss::DEFAULT_EPS)]
-    pub eps: f32,
+        /// minimum value of the denominator used for numerical stability. Default to
+        /// [`CosineSimilarityLoss::DEFAULT_EPS`]
+        #[optional(default_value = CosineSimilarityLoss::DEFAULT_EPS)]
+        pub eps: f32,
 
-    /// Reduction type. Default to [`CosineSimilarityLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = CosineSimilarityLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`CosineSimilarityLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = CosineSimilarityLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl CosineSimilarityLoss {
@@ -805,17 +831,19 @@ impl CosineSimilarityLoss {
     }
 }
 
-/// Computes the margin ranking loss.
-#[derive(Debug, Clone, GenerateBuilder)]
-pub struct MarginRankingLoss {
-    /// The margin by which the scores should be separated. Default to
-    /// [`MarginRankingLoss::DEFAULT_MARGIN`]
-    #[optional(default_value = MarginRankingLoss::DEFAULT_MARGIN)]
-    pub margin: f32,
+generate_builder! {
+    /// Computes the margin ranking loss.
+    #[derive(Debug, Clone)]
+    pub struct MarginRankingLoss {
+        /// The margin by which the scores should be separated. Default to
+        /// [`MarginRankingLoss::DEFAULT_MARGIN`]
+        #[optional(default_value = MarginRankingLoss::DEFAULT_MARGIN)]
+        pub margin: f32,
 
-    /// Reduction type. Default to [`MarginRankingLoss::DEFAULT_REDUCTION`]
-    #[optional(default_value = MarginRankingLoss::DEFAULT_REDUCTION)]
-    pub reduction: LossReduction,
+        /// Reduction type. Default to [`MarginRankingLoss::DEFAULT_REDUCTION`]
+        #[optional(default_value = MarginRankingLoss::DEFAULT_REDUCTION)]
+        pub reduction: LossReduction,
+    }
 }
 
 impl MarginRankingLoss {

@@ -1,37 +1,39 @@
 use std::rc::Rc;
 
-use mlx_internal_macros::GenerateBuilder;
+use mlx_internal_macros::generate_builder;
 use mlx_rs::{array, Array};
 
 use crate::utils::get_mut_or_insert_with;
 
 use super::*;
 
-/// Stochastic gradient descent optimizer.
-#[derive(Debug, Clone, GenerateBuilder)]
-#[generate_builder(generate_build_fn = false)]
-pub struct Sgd {
-    /// Learning rate
-    pub lr: f32,
+generate_builder! {
+    /// Stochastic gradient descent optimizer.
+    #[derive(Debug, Clone)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct Sgd {
+        /// Learning rate
+        pub lr: f32,
 
-    /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
-    #[optional]
-    pub momentum: f32,
+        /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
+        #[optional]
+        pub momentum: f32,
 
-    /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
-    #[optional]
-    pub weight_decay: f32,
+        /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
+        #[optional]
+        pub weight_decay: f32,
 
-    /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
-    #[optional]
-    pub dampening: f32,
+        /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
+        #[optional]
+        pub dampening: f32,
 
-    /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
-    #[optional]
-    pub nesterov: bool,
+        /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
+        #[optional]
+        pub nesterov: bool,
 
-    /// Inner state
-    pub state: OptimizerState,
+        /// Inner state
+        pub state: OptimizerState,
+    }
 }
 
 impl SgdBuilder {

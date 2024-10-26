@@ -1,4 +1,4 @@
-use std::ops::Bound;
+use std::ops::{Bound, RangeBounds};
 
 use smallvec::{smallvec, SmallVec};
 
@@ -10,78 +10,96 @@ use crate::{
     Array, Stream,
 };
 
-use super::{
-    ArrayIndex, ArrayIndexOp, Ellipsis, IndexBounds, IndexOp, NewAxis, RangeIndex, StrideBy,
-};
+use super::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, RangeIndex, StrideBy};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
 /* -------------------------------------------------------------------------- */
 
-impl ArrayIndex for i32 {
-    fn index_op(self) -> ArrayIndexOp {
+impl<'a> ArrayIndex<'a> for i32 {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::TakeIndex { index: self }
     }
 }
 
-impl ArrayIndex for NewAxis {
-    fn index_op(self) -> ArrayIndexOp {
+impl<'a> ArrayIndex<'a> for NewAxis {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::ExpandDims
     }
 }
 
-impl ArrayIndex for Ellipsis {
-    fn index_op(self) -> ArrayIndexOp {
+impl<'a> ArrayIndex<'a> for Ellipsis {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::Ellipsis
     }
 }
 
-impl ArrayIndex for Array {
-    fn index_op(self) -> ArrayIndexOp {
+impl<'a> ArrayIndex<'a> for Array {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::TakeArray { indices: self }
     }
 }
 
-impl ArrayIndex for ArrayIndexOp {
-    fn index_op(self) -> ArrayIndexOp {
+impl<'a> ArrayIndex<'a> for &'a Array {
+    fn index_op(self) -> ArrayIndexOp<'a> {
+        ArrayIndexOp::TakeArrayRef { indices: self }
+    }
+}
+
+impl<'a> ArrayIndex<'a> for ArrayIndexOp<'a> {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         self
     }
 }
 
-impl<T> ArrayIndex for T
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.start_bound().cloned(),
-            self.end_bound().cloned(),
-            Some(1),
-        ))
-    }
+macro_rules! impl_array_index_for_bounded_range {
+    ($t:ty) => {
+        impl<'a> ArrayIndex<'a> for $t {
+            fn index_op(self) -> ArrayIndexOp<'a> {
+                ArrayIndexOp::Slice(RangeIndex::new(
+                    self.start_bound().cloned(),
+                    self.end_bound().cloned(),
+                    Some(1),
+                ))
+            }
+        }
+    };
 }
 
-impl ArrayIndex for std::ops::RangeFull {
-    fn index_op(self) -> ArrayIndexOp {
+impl_array_index_for_bounded_range!(std::ops::Range<i32>);
+impl_array_index_for_bounded_range!(std::ops::RangeFrom<i32>);
+impl_array_index_for_bounded_range!(std::ops::RangeInclusive<i32>);
+impl_array_index_for_bounded_range!(std::ops::RangeTo<i32>);
+impl_array_index_for_bounded_range!(std::ops::RangeToInclusive<i32>);
+
+impl<'a> ArrayIndex<'a> for std::ops::RangeFull {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::Slice(RangeIndex::new(Bound::Unbounded, Bound::Unbounded, Some(1)))
     }
 }
 
-impl<T> ArrayIndex for StrideBy<T>
-where
-    T: IndexBounds,
-{
-    fn index_op(self) -> ArrayIndexOp {
-        ArrayIndexOp::Slice(RangeIndex::new(
-            self.inner.start_bound().cloned(),
-            self.inner.end_bound().cloned(),
-            Some(self.stride),
-        ))
-    }
+macro_rules! impl_array_index_for_stride_by_bounded_range {
+    ($t:ty) => {
+        impl<'a> ArrayIndex<'a> for StrideBy<$t> {
+            fn index_op(self) -> ArrayIndexOp<'a> {
+                ArrayIndexOp::Slice(RangeIndex::new(
+                    self.inner.start_bound().cloned(),
+                    self.inner.end_bound().cloned(),
+                    Some(self.stride),
+                ))
+            }
+        }
+    };
 }
 
-impl ArrayIndex for StrideBy<std::ops::RangeFull> {
-    fn index_op(self) -> ArrayIndexOp {
+impl_array_index_for_stride_by_bounded_range!(std::ops::Range<i32>);
+impl_array_index_for_stride_by_bounded_range!(std::ops::RangeFrom<i32>);
+impl_array_index_for_stride_by_bounded_range!(std::ops::RangeInclusive<i32>);
+impl_array_index_for_stride_by_bounded_range!(std::ops::RangeTo<i32>);
+impl_array_index_for_stride_by_bounded_range!(std::ops::RangeToInclusive<i32>);
+
+impl<'a> ArrayIndex<'a> for StrideBy<std::ops::RangeFull> {
+    fn index_op(self) -> ArrayIndexOp<'a> {
         ArrayIndexOp::Slice(RangeIndex::new(
             Bound::Unbounded,
             Bound::Unbounded,
@@ -90,18 +108,18 @@ impl ArrayIndex for StrideBy<std::ops::RangeFull> {
     }
 }
 
-impl<T> IndexOp<T> for Array
+impl<'a, T> IndexOp<T> for Array
 where
-    T: ArrayIndex,
+    T: ArrayIndex<'a>,
 {
     fn index_device(&self, i: T, stream: impl AsRef<Stream>) -> Array {
         get_item(self, i, stream).unwrap()
     }
 }
 
-impl<A> IndexOp<(A,)> for Array
+impl<'a, A> IndexOp<(A,)> for Array
 where
-    A: ArrayIndex,
+    A: ArrayIndex<'a>,
 {
     fn index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op()];
@@ -109,10 +127,10 @@ where
     }
 }
 
-impl<A, B> IndexOp<(A, B)> for Array
+impl<'a, 'b, A, B> IndexOp<(A, B)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
 {
     fn index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op()];
@@ -120,11 +138,11 @@ where
     }
 }
 
-impl<A, B, C> IndexOp<(A, B, C)> for Array
+impl<'a, 'b, 'c, A, B, C> IndexOp<(A, B, C)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
 {
     fn index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Array {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
@@ -132,12 +150,12 @@ where
     }
 }
 
-impl<A, B, C, D> IndexOp<(A, B, C, D)> for Array
+impl<'a, 'b, 'c, 'd, A, B, C, D> IndexOp<(A, B, C, D)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
 {
     fn index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -150,13 +168,13 @@ where
     }
 }
 
-impl<A, B, C, D, E> IndexOp<(A, B, C, D, E)> for Array
+impl<'a, 'b, 'c, 'd, 'e, A, B, C, D, E> IndexOp<(A, B, C, D, E)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
 {
     fn index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -170,14 +188,14 @@ where
     }
 }
 
-impl<A, B, C, D, E, F> IndexOp<(A, B, C, D, E, F)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, A, B, C, D, E, F> IndexOp<(A, B, C, D, E, F)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
 {
     fn index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -192,15 +210,15 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G> IndexOp<(A, B, C, D, E, F, G)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, A, B, C, D, E, F, G> IndexOp<(A, B, C, D, E, F, G)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
 {
     fn index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -216,16 +234,17 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H> IndexOp<(A, B, C, D, E, F, G, H)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, A, B, C, D, E, F, G, H> IndexOp<(A, B, C, D, E, F, G, H)>
+    for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
 {
     fn index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -242,17 +261,18 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I> IndexOp<(A, B, C, D, E, F, G, H, I)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, A, B, C, D, E, F, G, H, I>
+    IndexOp<(A, B, C, D, E, F, G, H, I)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
 {
     fn index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -270,18 +290,19 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J> IndexOp<(A, B, C, D, E, F, G, H, I, J)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, A, B, C, D, E, F, G, H, I, J>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
 {
     fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Array {
         let i = [
@@ -300,19 +321,20 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K> IndexOp<(A, B, C, D, E, F, G, H, I, J, K)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, A, B, C, D, E, F, G, H, I, J, K>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J, K)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
 {
     fn index_device(
         &self,
@@ -336,20 +358,21 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, 'l, A, B, C, D, E, F, G, H, I, J, K, L>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
 {
     fn index_device(
         &self,
@@ -374,22 +397,22 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M)>
-    for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, 'l, 'm, A, B, C, D, E, F, G, H, I, J, K, L, M>
+    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
 {
     fn index_device(
         &self,
@@ -415,23 +438,51 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N)>
-    for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
 {
     fn index_device(
         &self,
@@ -458,24 +509,54 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        'o,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
-    O: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
+    O: ArrayIndex<'o>,
 {
     fn index_device(
         &self,
@@ -503,25 +584,57 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P)> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        'o,
+        'p,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+        P,
+    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P)> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
-    O: ArrayIndex,
-    P: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
+    O: ArrayIndex<'o>,
+    P: ArrayIndex<'p>,
 {
     fn index_device(
         &self,
@@ -601,7 +714,7 @@ fn absolute_indices(absolute_start: i32, absolute_end: i32, stride: i32) -> Vec<
 #[inline]
 fn gather_nd<'a>(
     src: &Array,
-    operations: impl Iterator<Item = &'a ArrayIndexOp>,
+    operations: impl Iterator<Item = &'a ArrayIndexOp<'a>>,
     gather_first: bool,
     last_array_or_index: usize,
     stream: impl AsRef<Stream>,
@@ -648,7 +761,14 @@ fn gather_nd<'a>(
             TakeArray { indices } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
+                // Cloning is just incrementing the reference count
                 gather_indices.push(indices.clone());
+            }
+            TakeArrayRef { indices } => {
+                is_slice.push(false);
+                max_dims = max_dims.max(indices.ndim());
+                // Cloning is just incrementing the reference count
+                gather_indices.push((*indices).clone());
             }
             Ellipsis | ExpandDims => {
                 unreachable!("Unexpected operation in gather_nd")
@@ -756,9 +876,9 @@ fn get_item_slice(
 
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item(
+fn get_item<'a>(
     src: &Array,
-    index: impl ArrayIndex,
+    index: impl ArrayIndex<'a>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     use ArrayIndexOp::*;
@@ -767,6 +887,7 @@ fn get_item(
         Ellipsis => Ok(src.deep_clone()),
         TakeIndex { index } => get_item_index(src, index, 0, stream),
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
+        TakeArrayRef { indices } => get_item_array(src, indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
         ExpandDims => src.expand_dims_device(&[0], stream),
     }
@@ -844,10 +965,14 @@ fn get_item_nd(
             // copy any newAxis in the gatherIndices through.  any slices get
             // copied in as full range (already applied)
             for item in &operations[..=last_array_or_index] {
+                // Using full match syntax to avoid forgetting to add new cases
                 match item {
                     ExpandDims => remaining_indices.push(item.clone()),
                     Slice { .. } => remaining_indices.push((..).index_op()),
-                    _ => {}
+                    Ellipsis
+                    | TakeIndex { index: _ }
+                    | TakeArray { indices: _ }
+                    | TakeArrayRef { indices: _ } => {}
                 }
             }
 
@@ -856,10 +981,11 @@ fn get_item_nd(
         } else {
             // !gather_first
             for item in operations.iter() {
+                // Using full match syntax to avoid forgetting to add new cases
                 match item {
-                    TakeIndex { .. } | TakeArray { .. } => break,
+                    TakeIndex { .. } | TakeArray { .. } | TakeArrayRef { .. } => break,
                     ExpandDims => remaining_indices.push(item.clone()),
-                    _ => remaining_indices.push((..).index_op()),
+                    Ellipsis | Slice(_) => remaining_indices.push((..).index_op()),
                 }
             }
 
@@ -904,9 +1030,10 @@ fn get_item_nd(
                 ends[axis] = range.end(size);
                 strides[axis] = range.stride();
             }
-            _ => unreachable!("Unexpected item in remaining_indices: {:?}", item),
+            Ellipsis | TakeArray { .. } | TakeArrayRef { .. } => {
+                unreachable!("Unexpected item in remaining_indices: {:?}", item)
+            }
         }
-
         axis += 1;
     }
 
@@ -917,12 +1044,15 @@ fn get_item_nd(
         let mut new_shape = SmallVec::<[i32; DEFAULT_STACK_VEC_LEN]>::new();
         let mut axis_ = 0;
         for item in remaining_indices {
+            // using full match syntax to avoid forgetting to add new cases
             match item {
                 ExpandDims => new_shape.push(1),
-                TakeIndex { .. } if squeeze_needed => {
-                    axis_ += 1;
+                TakeIndex { .. } => {
+                    if squeeze_needed {
+                        axis_ += 1;
+                    }
                 }
-                _ => {
+                Ellipsis | TakeArray { .. } | TakeArrayRef { .. } | Slice(_) => {
                     new_shape.push(src.dim(axis_));
                     axis_ += 1;
                 }
@@ -1124,6 +1254,22 @@ mod tests {
         let i2 = Array::from_slice(&[0, 1, 2], &[3]);
 
         let s1 = a.index((i1, i2));
+
+        assert_eq!(s1.ndim(), 1);
+        assert_eq!(s1.shape(), &[3]);
+
+        let expected = Array::from_slice(&[0i32, 15, 30], &[3]);
+        assert_array_eq!(s1, expected, 0.01);
+    }
+
+    #[test]
+    fn test_array_subscript_advanced_with_ref() {
+        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>();
+
+        let i1 = Array::from_slice(&[0, 2, 4], &[3]);
+        let i2 = Array::from_slice(&[0, 1, 2], &[3]);
+
+        let s1 = a.index((i1, &i2));
 
         assert_eq!(s1.ndim(), 1);
         assert_eq!(s1.shape(), &[3]);

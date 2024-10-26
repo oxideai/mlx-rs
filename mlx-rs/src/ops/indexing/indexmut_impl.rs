@@ -122,7 +122,9 @@ fn update_slice(
                 axis = axis.saturating_add(1);
             }
             ExpandDims => {}
-            Ellipsis | TakeArray { indices: _ } => panic!("unexpected item in operations"),
+            Ellipsis | TakeArray { indices: _ } | TakeArrayRef { indices: _ } => {
+                panic!("unexpected item in operations")
+            }
         }
     }
 
@@ -171,6 +173,7 @@ fn scatter_args(
         return match &operations[0] {
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
             TakeArray { indices } => scatter_args_array(src, indices, update, stream),
+            TakeArrayRef { indices } => scatter_args_array(src, indices, update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
             ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
@@ -325,6 +328,18 @@ fn scatter_args_nd(
     let mut have_array = false;
     let mut have_non_array = false;
 
+    macro_rules! analyze_indices_take_array {
+        ($indices:ident) => {
+            have_array = true;
+            if have_array && have_non_array {
+                arrays_first = true;
+            }
+            max_dims = $indices.ndim().max(max_dims);
+            count_arrays = count_arrays.saturating_add(1);
+            count_simple_slices_post = 0;
+        };
+    }
+
     for item in operations.iter() {
         match item {
             TakeIndex { index: _ } => {
@@ -341,13 +356,10 @@ fn scatter_args_nd(
                 }
             }
             TakeArray { indices } => {
-                have_array = true;
-                if have_array && have_non_array {
-                    arrays_first = true;
-                }
-                max_dims = indices.ndim().max(max_dims);
-                count_arrays = count_arrays.saturating_add(1);
-                count_simple_slices_post = 0;
+                analyze_indices_take_array!(indices);
+            }
+            TakeArrayRef { indices } => {
+                analyze_indices_take_array!(indices);
             }
             ExpandDims => {
                 have_non_array = true;
@@ -376,6 +388,34 @@ fn scatter_args_nd(
     // We collect the shapes of the slices and updates during this process
     let mut update_shape = vec![1; non_new_axis_operation_count];
     let mut slice_shapes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::new();
+
+    macro_rules! update_shapes_take_array {
+        ($indices:ident) => {
+            // Place the arrays in the correct dimension
+            let start = if arrays_first {
+                max_dims - $indices.ndim()
+            } else {
+                // SAFETY: slice_number is never decremented and should be non-negative
+                slice_number as usize + max_dims - $indices.ndim()
+            };
+            let mut new_shape = vec![1; index_dims];
+
+            for j in 0..$indices.ndim() {
+                new_shape[start + j] = $indices.dim(j as i32);
+            }
+
+            array_indices.push($indices.reshape_device(&new_shape, &stream)?);
+            array_number = array_number.saturating_add(1);
+
+            if !arrays_first && array_number == count_arrays {
+                slice_number = slice_number.saturating_add_unsigned(max_dims as u32);
+            }
+
+            // Add the shape to the update
+            update_shape[axis as usize] = 1;
+            axis = axis.saturating_add(1);
+        };
+    }
 
     for item in operations.iter() {
         match item {
@@ -425,29 +465,10 @@ fn scatter_args_nd(
                 axis = axis.saturating_add(1);
             }
             TakeArray { indices } => {
-                // Place the arrays in the correct dimension
-                let start = if arrays_first {
-                    max_dims - indices.ndim()
-                } else {
-                    // SAFETY: slice_number is never decremented and should be non-negative
-                    slice_number as usize + max_dims - indices.ndim()
-                };
-                let mut new_shape = vec![1; index_dims];
-
-                for j in 0..indices.ndim() {
-                    new_shape[start + j] = indices.dim(j as i32);
-                }
-
-                array_indices.push(indices.reshape_device(&new_shape, &stream)?);
-                array_number = array_number.saturating_add(1);
-
-                if !arrays_first && array_number == count_arrays {
-                    slice_number = slice_number.saturating_add_unsigned(max_dims as u32);
-                }
-
-                // Add the shape to the update
-                update_shape[axis as usize] = 1;
-                axis = axis.saturating_add(1);
+                update_shapes_take_array!(indices);
+            }
+            TakeArrayRef { indices } => {
+                update_shapes_take_array!(indices);
             }
             ExpandDims => slice_number = slice_number.saturating_add(1),
             Ellipsis => panic!("Unexpected item ellipsis in scatter_args_nd"),
@@ -558,7 +579,7 @@ impl Array {
 
 impl<A, Val> IndexMutOp<A, Val> for Array
 where
-    A: ArrayIndex,
+    for<'a> A: ArrayIndex<'a>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: A, val: Val, stream: impl AsRef<Stream>) {
@@ -568,9 +589,9 @@ where
     }
 }
 
-impl<A, Val> IndexMutOp<(A,), Val> for Array
+impl<'a, A, Val> IndexMutOp<(A,), Val> for Array
 where
-    A: ArrayIndex,
+    A: ArrayIndex<'a>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, (i,): (A,), val: Val, stream: impl AsRef<Stream>) {
@@ -580,10 +601,10 @@ where
     }
 }
 
-impl<A, B, Val> IndexMutOp<(A, B), Val> for Array
+impl<'a, 'b, A, B, Val> IndexMutOp<(A, B), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B), val: Val, stream: impl AsRef<Stream>) {
@@ -593,11 +614,11 @@ where
     }
 }
 
-impl<A, B, C, Val> IndexMutOp<(A, B, C), Val> for Array
+impl<'a, 'b, 'c, A, B, C, Val> IndexMutOp<(A, B, C), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B, C), val: Val, stream: impl AsRef<Stream>) {
@@ -607,12 +628,12 @@ where
     }
 }
 
-impl<A, B, C, D, Val> IndexMutOp<(A, B, C, D), Val> for Array
+impl<'a, 'b, 'c, 'd, A, B, C, D, Val> IndexMutOp<(A, B, C, D), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B, C, D), val: Val, stream: impl AsRef<Stream>) {
@@ -627,13 +648,13 @@ where
     }
 }
 
-impl<A, B, C, D, E, Val> IndexMutOp<(A, B, C, D, E), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, A, B, C, D, E, Val> IndexMutOp<(A, B, C, D, E), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B, C, D, E), val: Val, stream: impl AsRef<Stream>) {
@@ -649,14 +670,14 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, Val> IndexMutOp<(A, B, C, D, E, F), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, A, B, C, D, E, F, Val> IndexMutOp<(A, B, C, D, E, F), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B, C, D, E, F), val: Val, stream: impl AsRef<Stream>) {
@@ -673,15 +694,16 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, Val> IndexMutOp<(A, B, C, D, E, F, G), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, A, B, C, D, E, F, G, Val> IndexMutOp<(A, B, C, D, E, F, G), Val>
+    for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(&mut self, i: (A, B, C, D, E, F, G), val: Val, stream: impl AsRef<Stream>) {
@@ -699,16 +721,17 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, Val> IndexMutOp<(A, B, C, D, E, F, G, H), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, A, B, C, D, E, F, G, H, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -732,17 +755,18 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, A, B, C, D, E, F, G, H, I, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -767,18 +791,19 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J), Val> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, A, B, C, D, E, F, G, H, I, J, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -804,20 +829,20 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K), Val>
-    for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, A, B, C, D, E, F, G, H, I, J, K, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -844,21 +869,21 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, Val> IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L), Val>
-    for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, 'l, A, B, C, D, E, F, G, H, I, J, K, L, Val>
+    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -886,22 +911,49 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, Val>
-    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M), Val> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        Val,
+    > IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -930,23 +982,52 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, Val>
-    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N), Val> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        Val,
+    > IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -976,24 +1057,55 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Val>
-    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O), Val> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        'o,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+        Val,
+    > IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
-    O: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
+    O: ArrayIndex<'o>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -1024,25 +1136,58 @@ where
     }
 }
 
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Val>
-    IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P), Val> for Array
+impl<
+        'a,
+        'b,
+        'c,
+        'd,
+        'e,
+        'f,
+        'g,
+        'h,
+        'i,
+        'j,
+        'k,
+        'l,
+        'm,
+        'n,
+        'o,
+        'p,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+        N,
+        O,
+        P,
+        Val,
+    > IndexMutOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P), Val> for Array
 where
-    A: ArrayIndex,
-    B: ArrayIndex,
-    C: ArrayIndex,
-    D: ArrayIndex,
-    E: ArrayIndex,
-    F: ArrayIndex,
-    G: ArrayIndex,
-    H: ArrayIndex,
-    I: ArrayIndex,
-    J: ArrayIndex,
-    K: ArrayIndex,
-    L: ArrayIndex,
-    M: ArrayIndex,
-    N: ArrayIndex,
-    O: ArrayIndex,
-    P: ArrayIndex,
+    A: ArrayIndex<'a>,
+    B: ArrayIndex<'b>,
+    C: ArrayIndex<'c>,
+    D: ArrayIndex<'d>,
+    E: ArrayIndex<'e>,
+    F: ArrayIndex<'f>,
+    G: ArrayIndex<'g>,
+    H: ArrayIndex<'h>,
+    I: ArrayIndex<'i>,
+    J: ArrayIndex<'j>,
+    K: ArrayIndex<'k>,
+    L: ArrayIndex<'l>,
+    M: ArrayIndex<'m>,
+    N: ArrayIndex<'n>,
+    O: ArrayIndex<'o>,
+    P: ArrayIndex<'p>,
     Val: AsRef<Array>,
 {
     fn index_mut_device(
@@ -1146,7 +1291,10 @@ mod tests {
 
     #[test]
     fn test_full_index_write_single() {
-        fn check(index: impl ArrayIndex, expected_sum: i32) {
+        fn check<I>(index: I, expected_sum: i32)
+        where
+            for<'a> I: ArrayIndex<'a>,
+        {
             let mut a = Array::from_iter(0..60, &[3, 4, 5]);
 
             a.index_mut(index, Array::from_int(1));

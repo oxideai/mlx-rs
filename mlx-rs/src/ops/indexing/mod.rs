@@ -12,7 +12,7 @@
 //! |------|-------------|
 //! | `i32` | An integer index |
 //! | `Array` | Use an array to index another array |
-//! | `Rc<Array>` | Use an array to index another array |
+//! | `&Array` | Use a reference to an array to index another array |
 //! | `std::ops::Range<i32>` | A range index |
 //! | `std::ops::RangeFrom<i32>` | A range index |
 //! | `std::ops::RangeFull` | A range index |
@@ -96,10 +96,7 @@
 //! assert_eq!(a, expected);
 //! ```
 
-use std::{
-    borrow::Cow,
-    ops::{Bound, RangeBounds},
-};
+use std::{borrow::Cow, ops::Bound};
 
 use mlx_internal_macros::default_device;
 
@@ -224,7 +221,7 @@ impl RangeIndex {
 }
 
 #[derive(Debug, Clone)]
-pub enum ArrayIndexOp {
+pub enum ArrayIndexOp<'a> {
     /// An `Ellipsis` is used to consume all axes
     ///
     /// This is equivalent to `...` in python
@@ -238,6 +235,9 @@ pub enum ArrayIndexOp {
     /// Indexing with an array
     TakeArray { indices: Array },
 
+    /// Indexing with an array reference
+    TakeArrayRef { indices: &'a Array },
+
     /// Indexing with a range
     ///
     /// This is equivalent to `arr[1:3]` in python
@@ -249,16 +249,26 @@ pub enum ArrayIndexOp {
     ExpandDims,
 }
 
-impl ArrayIndexOp {
+impl<'a> ArrayIndexOp<'a> {
     fn is_array_or_index(&self) -> bool {
-        matches!(
-            self,
-            ArrayIndexOp::TakeIndex { .. } | ArrayIndexOp::TakeArray { .. }
-        )
+        // Using the full match syntax to avoid forgetting to add new variants
+        match self {
+            ArrayIndexOp::TakeIndex { .. }
+            | ArrayIndexOp::TakeArrayRef { .. }
+            | ArrayIndexOp::TakeArray { .. } => true,
+            ArrayIndexOp::Ellipsis | ArrayIndexOp::Slice(_) | ArrayIndexOp::ExpandDims => false,
+        }
     }
 
     fn is_array(&self) -> bool {
-        matches!(self, ArrayIndexOp::TakeArray { .. })
+        // Using the full match syntax to avoid forgetting to add new variants
+        match self {
+            ArrayIndexOp::TakeArray { .. } | ArrayIndexOp::TakeArrayRef { .. } => true,
+            ArrayIndexOp::TakeIndex { .. }
+            | ArrayIndexOp::Ellipsis
+            | ArrayIndexOp::Slice(_)
+            | ArrayIndexOp::ExpandDims => false,
+        }
     }
 }
 
@@ -283,25 +293,25 @@ pub trait IndexMutOp<Idx, Val> {
     }
 }
 
-/// A marker trait for range bounds that are `i32`.
-pub trait IndexBounds: RangeBounds<i32> {}
+// /// A marker trait for range bounds that are `i32`.
+// pub trait IndexBounds: RangeBounds<i32> {}
 
-impl IndexBounds for std::ops::Range<i32> {}
+// impl IndexBounds for std::ops::Range<i32> {}
 
-impl IndexBounds for std::ops::RangeFrom<i32> {}
+// impl IndexBounds for std::ops::RangeFrom<i32> {}
 
-// impl IndexBounds for std::ops::RangeFull {}
+// // impl IndexBounds for std::ops::RangeFull {}
 
-impl IndexBounds for std::ops::RangeInclusive<i32> {}
+// impl IndexBounds for std::ops::RangeInclusive<i32> {}
 
-impl IndexBounds for std::ops::RangeTo<i32> {}
+// impl IndexBounds for std::ops::RangeTo<i32> {}
 
-impl IndexBounds for std::ops::RangeToInclusive<i32> {}
+// impl IndexBounds for std::ops::RangeToInclusive<i32> {}
 
 /// Trait for custom indexing operations.
-pub trait ArrayIndex {
+pub trait ArrayIndex<'a> {
     /// `mlx` allows out of bounds indexing.
-    fn index_op(self) -> ArrayIndexOp;
+    fn index_op(self) -> ArrayIndexOp<'a>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -663,7 +673,10 @@ fn count_non_new_axis_operations(operations: &[ArrayIndexOp]) -> usize {
         .count()
 }
 
-fn expand_ellipsis_operations(ndim: usize, operations: &[ArrayIndexOp]) -> Cow<'_, [ArrayIndexOp]> {
+fn expand_ellipsis_operations<'a>(
+    ndim: usize,
+    operations: &'a [ArrayIndexOp<'a>],
+) -> Cow<'a, [ArrayIndexOp<'a>]> {
     let ellipsis_count = operations
         .iter()
         .filter(|op| matches!(op, ArrayIndexOp::Ellipsis))

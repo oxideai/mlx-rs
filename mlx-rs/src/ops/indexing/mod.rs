@@ -293,21 +293,6 @@ pub trait IndexMutOp<Idx, Val> {
     }
 }
 
-// /// A marker trait for range bounds that are `i32`.
-// pub trait IndexBounds: RangeBounds<i32> {}
-
-// impl IndexBounds for std::ops::Range<i32> {}
-
-// impl IndexBounds for std::ops::RangeFrom<i32> {}
-
-// // impl IndexBounds for std::ops::RangeFull {}
-
-// impl IndexBounds for std::ops::RangeInclusive<i32> {}
-
-// impl IndexBounds for std::ops::RangeTo<i32> {}
-
-// impl IndexBounds for std::ops::RangeToInclusive<i32> {}
-
 /// Trait for custom indexing operations.
 pub trait ArrayIndex<'a> {
     /// `mlx` allows out of bounds indexing.

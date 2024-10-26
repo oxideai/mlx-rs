@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use mlx_internal_macros::GenerateBuilder;
+use mlx_internal_macros::generate_builder;
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
@@ -262,15 +262,17 @@ pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
     compiled_hard_swish(x.as_ref())
 }
 
-/// Applies the gated linear unit function.
-///
-/// This splits the `axis` dimension of the input into two halves
-/// (`a` and `b`) and applies `a * sigmoid(b)`.
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct Glu {
-    /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
-    #[optional(default_value = Glu::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Applies the gated linear unit function.
+    ///
+    /// This splits the `axis` dimension of the input into two halves
+    /// (`a` and `b`) and applies `a * sigmoid(b)`.
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct Glu {
+        /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
+        #[optional(default_value = Glu::DEFAULT_AXIS)]
+        pub axis: i32,
+    }
 }
 
 impl Glu {
@@ -355,18 +357,20 @@ impl Module for Relu {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Applies the Leaky Rectified Linear Unit.
-///
-/// This is:
-///
-/// ```rust, ignore
-/// maximum(neg_slope * x, x)
-/// ```
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct LeakyRelu {
-    /// The negative slope. Default to [`LeakyReLU::`] if not provided.
-    #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
-    pub neg_slope: f32,
+generate_builder! {
+    /// Applies the Leaky Rectified Linear Unit.
+    ///
+    /// This is:
+    ///
+    /// ```rust, ignore
+    /// maximum(neg_slope * x, x)
+    /// ```
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct LeakyRelu {
+        /// The negative slope. Default to [`LeakyReLU::`] if not provided.
+        #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
+        pub neg_slope: f32,
+    }
 }
 
 impl LeakyRelu {
@@ -404,18 +408,20 @@ impl Module for Relu6 {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Applies the Softmax function.
-///
-/// This is:
-///
-/// ```rust, ignore
-/// softmax(&x, None, None)
-/// ```
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct Softmax {
-    /// The axis to apply the softmax.
-    #[optional(default_value = Softmax::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Applies the Softmax function.
+    ///
+    /// This is:
+    ///
+    /// ```rust, ignore
+    /// softmax(&x, None, None)
+    /// ```
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct Softmax {
+        /// The axis to apply the softmax.
+        #[optional(default_value = Softmax::DEFAULT_AXIS)]
+        pub axis: i32,
+    }
 }
 
 impl Softmax {
@@ -473,19 +479,21 @@ impl Module for Softsign {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Applies the Continuously Differentiable Exponential Linear Unit.
-///
-/// This is:
-///
-/// ```rust, ignore
-/// maximum(x, 0.0).unwrap()
-///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
-/// ```
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct Celu {
-    /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
-    #[optional(default_value = Celu::DEFAULT_ALPHA)]
-    pub alpha: f32,
+generate_builder! {
+    /// Applies the Continuously Differentiable Exponential Linear Unit.
+    ///
+    /// This is:
+    ///
+    /// ```rust, ignore
+    /// maximum(x, 0.0).unwrap()
+    ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
+    /// ```
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct Celu {
+        /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
+        #[optional(default_value = Celu::DEFAULT_ALPHA)]
+        pub alpha: f32,
+    }
 }
 
 impl Celu {
@@ -523,18 +531,20 @@ impl Module for Silu {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Applies the Log Softmax function.
-///
-/// This is:
-///
-/// ```rust, ignore
-/// x - log_sum_exp(x, axis, true)
-/// ```
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct LogSoftmax {
-    /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
-    #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
-    pub axis: i32,
+generate_builder! {
+    /// Applies the Log Softmax function.
+    ///
+    /// This is:
+    ///
+    /// ```rust, ignore
+    /// x - log_sum_exp(x, axis, true)
+    /// ```
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct LogSoftmax {
+        /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
+        #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
+        pub axis: i32,
+    }
 }
 
 impl LogSoftmax {
@@ -668,18 +678,20 @@ pub enum GeluApprox {
     Fast,
 }
 
-/// Applies the Gaussian Error Linear Units function.
-///
-/// There are three variants:
-///
-/// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
-/// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
-/// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct Gelu {
-    /// The approximation to use. Default to `GeluApprox::None` if not provided.
-    #[optional(default_value = GeluApprox::None)]
-    pub approximate: GeluApprox,
+generate_builder! {
+    /// Applies the Gaussian Error Linear Units function.
+    ///
+    /// There are three variants:
+    ///
+    /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
+    /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
+    /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct Gelu {
+        /// The approximation to use. Default to `GeluApprox::None` if not provided.
+        #[optional(default_value = GeluApprox::None)]
+        pub approximate: GeluApprox,
+    }
 }
 
 impl Module for Gelu {
@@ -730,21 +742,23 @@ impl Module for HardSwish {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Applies the Step Activation Function.
-///
-/// This function implements a binary step activation, where the output is set
-/// to 1 if the input is greater than a specified threshold, and 0 otherwise.
-///
-/// This is:
-///
-/// ```rust, ignore
-/// r#where(x.gt(threshold), 1, 0)
-/// ```
-#[derive(Debug, Clone, ModuleParameters, GenerateBuilder)]
-pub struct Step {
-    /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
-    #[optional(default_value = Step::DEFAULT_THRESHOLD)]
-    pub threshold: f32,
+generate_builder! {
+    /// Applies the Step Activation Function.
+    ///
+    /// This function implements a binary step activation, where the output is set
+    /// to 1 if the input is greater than a specified threshold, and 0 otherwise.
+    ///
+    /// This is:
+    ///
+    /// ```rust, ignore
+    /// r#where(x.gt(threshold), 1, 0)
+    /// ```
+    #[derive(Debug, Clone, ModuleParameters)]
+    pub struct Step {
+        /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
+        #[optional(default_value = Step::DEFAULT_THRESHOLD)]
+        pub threshold: f32,
+    }
 }
 
 impl Step {

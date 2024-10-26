@@ -1,4 +1,5 @@
 use darling::FromAttributes;
+use proc_macro2::TokenTree;
 use quote::quote;
 use syn::{Attribute, Ident, ItemStruct, Path};
 
@@ -15,13 +16,49 @@ struct FieldAttr {
     skip: Option<bool>,
 }
 
+fn struct_attr_derive_default(attrs: &[Attribute]) -> bool {
+    attrs
+        .iter()
+        .filter_map(|attr| {
+            if attr.path().is_ident("derive") {
+                attr.meta
+                    .require_list()
+                    .map(|list| list.tokens.clone())
+                    .ok()
+            } else {
+                None
+            }
+        })
+        .any(|tokens| {
+            tokens.into_iter().any(|tree| {
+                if let TokenTree::Ident(ident) = tree {
+                    ident == "Default"
+                } else {
+                    false
+                }
+            })
+        })
+}
+
 fn attrs_contains_optional(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| attr.path().is_ident("optional"))
 }
 
+fn remove_generate_builder_attr(attrs: &mut Vec<Attribute>) {
+    attrs.retain(|attr| !attr.path().is_ident("generate_builder"));
+}
+
+fn remove_optional_attr(attrs: &mut Vec<Attribute>) {
+    attrs.retain(|attr| !attr.path().is_ident("optional"));
+}
+
 pub(crate) fn expand_generate_builder(
-    input: &ItemStruct,
+    mut input: ItemStruct,
 ) -> Result<proc_macro2::TokenStream, Box<dyn std::error::Error>> {
+    if struct_attr_derive_default(&input.attrs) {
+        return Err("#[derive(Default)] is not allowed".into());
+    }
+
     let generate_build_fn = StructAttr::from_attributes(&input.attrs)?
         .generate_build_fn
         .unwrap_or(true);
@@ -189,7 +226,14 @@ pub(crate) fn expand_generate_builder(
         quote! {}
     };
 
+    // Clean up the attributes
+    remove_generate_builder_attr(&mut input.attrs);
+    for field in input.fields.iter_mut() {
+        remove_optional_attr(&mut field.attrs);
+    }
+
     Ok(quote! {
+        #input
         #builder_struct
         #builder_init
         #builder_setters

@@ -3,7 +3,7 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemFn, ItemStruct, Pat};
+use syn::{parse_macro_input, parse_quote, FnArg, ItemEnum, ItemFn, ItemStruct, Pat};
 
 mod generate_builder;
 
@@ -100,9 +100,9 @@ pub fn default_device(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 #[doc(hidden)]
-#[proc_macro_derive(GenerateDtypeTestCases)]
+#[proc_macro]
 pub fn generate_test_cases(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+    let input = parse_macro_input!(input as ItemEnum);
     let name = &input.ident;
 
     let tests = quote! {
@@ -144,7 +144,10 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
         }
     };
 
-    TokenStream::from(tests)
+    TokenStream::from(quote! {
+        #input
+        #tests
+    })
 }
 
 /// This is for internal use only
@@ -185,9 +188,9 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///     If either `generate_build_fn` is `false` or any field is marked as `skip = true`, this
 ///     argument is not required.
 #[doc(hidden)]
-#[proc_macro_derive(GenerateBuilder, attributes(generate_builder, optional))]
-pub fn derive_generate_builder(input: TokenStream) -> TokenStream {
+#[proc_macro]
+pub fn generate_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
-    let builder = generate_builder::expand_generate_builder(&input).unwrap();
+    let builder = generate_builder::expand_generate_builder(input).unwrap();
     TokenStream::from(builder)
 }

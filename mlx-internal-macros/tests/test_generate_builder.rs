@@ -1,13 +1,17 @@
-use mlx_internal_macros::GenerateBuilder;
+use mlx_internal_macros::generate_builder;
 
-#[derive(Debug, Default, GenerateBuilder)]
-struct TestStruct {
-    #[optional(default_value = TestStruct::DEFAULT_OPT_FIELD_1)]
-    opt_field_1: i32,
-    #[optional(default_value = TestStruct::DEFAULT_OPT_FIELD_2)]
-    opt_field_2: i32,
-    mandatory_field_1: i32,
-    mandatory_field_2: i32,
+generate_builder! {
+    /// Test struct for the builder generation.
+    #[derive(Debug)]
+    #[generate_builder(generate_build_fn = true)]
+    struct TestStruct {
+        #[optional(default_value = TestStruct::DEFAULT_OPT_FIELD_1)]
+        opt_field_1: i32,
+        #[optional(default_value = TestStruct::DEFAULT_OPT_FIELD_2)]
+        opt_field_2: i32,
+        mandatory_field_1: i32,
+        mandatory_field_2: i32,
+    }
 }
 
 impl TestStruct {

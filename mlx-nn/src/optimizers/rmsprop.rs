@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mlx_internal_macros::GenerateBuilder;
+use mlx_internal_macros::generate_builder;
 use mlx_rs::{
     array,
     ops::{sqrt, square},
@@ -11,27 +11,29 @@ use crate::{error::RmsPropBuildError, utils::get_mut_or_insert_with};
 
 use super::*;
 
-/// The RMSprop optimizer [1].
-///
-/// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
-///     machine learning
-#[derive(Debug, Clone, GenerateBuilder)]
-#[generate_builder(generate_build_fn = false)]
-pub struct RmsProp {
-    /// Learning rate
-    pub lr: f32,
+generate_builder! {
+    /// The RMSprop optimizer [1].
+    ///
+    /// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
+    ///     machine learning
+    #[derive(Debug, Clone)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct RmsProp {
+        /// Learning rate
+        pub lr: f32,
 
-    /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-    #[optional]
-    pub alpha: f32,
+        /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
+        #[optional]
+        pub alpha: f32,
 
-    /// The epsilon added to the denominator to improve numerical stability. Default to
-    /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-    #[optional]
-    pub epsilon: f32,
+        /// The epsilon added to the denominator to improve numerical stability. Default to
+        /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
+        #[optional]
+        pub epsilon: f32,
 
-    /// Inner state
-    pub state: OptimizerState,
+        /// Inner state
+        pub state: OptimizerState,
+    }
 }
 
 impl RmsPropBuilder {

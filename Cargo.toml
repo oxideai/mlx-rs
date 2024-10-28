@@ -21,3 +21,4 @@ mlx-nn = { version = "0.1.0", path = "mlx-nn" }
 # external dependencies
 thiserror = "1"
 float_eq = "1"
+pretty_assertions = "1.4.0"

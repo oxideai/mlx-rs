@@ -11,3 +11,4 @@ thiserror.workspace = true
 
 [dev-dependencies]
 float_eq.workspace = true
+pretty_assertions.workspace = true

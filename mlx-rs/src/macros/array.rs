@@ -14,7 +14,7 @@
 /// // Create a scalar array
 /// let s = array!(1);
 /// // Scalar array has 0 dimension
-/// assert!(s.ndim() == 0);
+/// assert_eq!(s.ndim(), 0);
 ///
 /// // Create a one-element array (singleton matrix)
 /// let s = array!([1]);
@@ -92,7 +92,7 @@ mod tests {
         let arr = array!(1);
 
         // Scalar array has 0 dimension
-        assert!(arr.ndim() == 0);
+        assert_eq!(arr.ndim(), 0);
         // Scalar array has empty shape
         assert!(arr.shape().is_empty());
         assert_eq!(arr.item::<i32>(), 1);
@@ -103,7 +103,7 @@ mod tests {
         let arr = array!([1, 2, 3]);
 
         // One element array has 1 dimension
-        assert!(arr.ndim() == 1);
+        assert_eq!(arr.ndim(), 1);
         assert_eq!(arr.shape(), &[3]);
         assert_eq!(arr.index(0).item::<i32>(), 1);
         assert_eq!(arr.index(1).item::<i32>(), 2);
@@ -114,7 +114,7 @@ mod tests {
     fn test_array_2d() {
         let a = array!([[1, 2, 3], [4, 5, 6]]);
 
-        assert!(a.ndim() == 2);
+        assert_eq!(a.ndim(), 2);
         assert_eq!(a.shape(), &[2, 3]);
         assert_eq!(a.index((0, 0)).item::<i32>(), 1);
         assert_eq!(a.index((0, 1)).item::<i32>(), 2);
@@ -148,7 +148,7 @@ mod tests {
     fn test_array_with_shape() {
         let a = array!([1, 2, 3, 4], shape = [2, 2]);
 
-        assert!(a.ndim() == 2);
+        assert_eq!(a.ndim(), 2);
         assert_eq!(a.shape(), &[2, 2]);
         assert_eq!(a.index((0, 0)).item::<i32>(), 1);
         assert_eq!(a.index((0, 1)).item::<i32>(), 2);

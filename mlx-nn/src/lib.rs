@@ -15,6 +15,7 @@ mod activation;
 mod container;
 mod convolution;
 mod dropout;
+mod embedding;
 mod linear;
 mod value_and_grad;
 
@@ -22,6 +23,7 @@ pub use activation::*;
 pub use container::*;
 pub use convolution::*;
 pub use dropout::*;
+pub use embedding::*;
 pub use linear::*;
 pub use value_and_grad::*;
 

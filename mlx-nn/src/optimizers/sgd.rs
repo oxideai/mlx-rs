@@ -13,19 +13,19 @@ generate_builder! {
     #[generate_builder(generate_build_fn = false)]
     pub struct Sgd {
         /// Learning rate
-        pub lr: f32,
+        pub lr: Array,
 
         /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
-        #[optional]
-        pub momentum: f32,
+        #[optional(ty = f32)]
+        pub momentum: Array,
 
         /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
-        #[optional]
-        pub weight_decay: f32,
+        #[optional(ty = f32)]
+        pub weight_decay: Array,
 
         /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
-        #[optional]
-        pub dampening: f32,
+        #[optional(ty = f32)]
+        pub dampening: Array,
 
         /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
         #[optional]
@@ -39,13 +39,13 @@ generate_builder! {
 impl SgdBuilder {
     /// Builds a new [`Sgd`].
     pub fn build(self, lr: f32) -> Sgd {
-        let momentum = self.momentum.unwrap_or(Sgd::DEFAULT_MOMENTUM);
-        let weight_decay = self.weight_decay.unwrap_or(Sgd::DEFAULT_WEIGHT_DECAY);
-        let dampening = self.dampening.unwrap_or(Sgd::DEFAULT_DAMPENING);
+        let momentum = array!(self.momentum.unwrap_or(Sgd::DEFAULT_MOMENTUM));
+        let weight_decay = array!(self.weight_decay.unwrap_or(Sgd::DEFAULT_WEIGHT_DECAY));
+        let dampening = array!(self.dampening.unwrap_or(Sgd::DEFAULT_DAMPENING));
         let nesterov = self.nesterov.unwrap_or(Sgd::DEFAULT_NESTEROV);
 
         Sgd {
-            lr,
+            lr: array!(lr),
             momentum,
             weight_decay,
             dampening,
@@ -80,24 +80,22 @@ impl Optimizer for Sgd {
     fn update_single(&mut self, key: Rc<str>, mut gradient: Array, parameter: &mut Array) -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
 
+        let zero = array!(0.0);
+
         // Apply weight decay
-        if self.weight_decay != 0.0 {
-            let weight_decay = array!(self.weight_decay);
-            gradient = weight_decay.multiply(&*parameter)?.add(&gradient)?;
+        if self.weight_decay.ne(&zero)?.item::<bool>() {
+            gradient = self.weight_decay.multiply(&*parameter)?.add(&gradient)?;
         }
 
-        let lr = array!(self.lr);
-
         // Apply momentum
-        if self.momentum <= 0.0 {
-            *parameter = parameter.subtract(lr.multiply(&gradient)?)?;
+        if self.momentum.le(&zero)?.item::<bool>() {
+            *parameter = parameter.subtract(self.lr.multiply(&gradient)?)?;
             return Ok(());
         }
 
-        let momentum = array!(self.momentum);
-        let mut v = state.multiply(&momentum)?;
-        if self.dampening > 0.0 {
-            let one_minus_dampening = array!(1.0 - self.dampening);
+        let mut v = state.multiply(&self.momentum)?;
+        if self.dampening.gt(&zero)?.item::<bool>() {
+            let one_minus_dampening = array!(1.0).subtract(&self.dampening)?;
             v = v.add(&one_minus_dampening.multiply(&gradient)?)?;
         } else {
             v = v.add(&gradient)?;
@@ -105,13 +103,13 @@ impl Optimizer for Sgd {
 
         match self.nesterov {
             true => {
-                let update = gradient.add(&momentum.multiply(&v)?)?;
-                *parameter = parameter.subtract(lr.multiply(&update)?)?;
+                let update = gradient.add(&self.momentum.multiply(&v)?)?;
+                *parameter = parameter.subtract(self.lr.multiply(&update)?)?;
                 *state = v;
             }
             false => {
                 let update = &v;
-                *parameter = parameter.subtract(lr.multiply(update)?)?;
+                *parameter = parameter.subtract(self.lr.multiply(update)?)?;
                 *state = v;
             }
         }

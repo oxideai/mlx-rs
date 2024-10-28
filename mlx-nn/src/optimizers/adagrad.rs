@@ -20,7 +20,8 @@ generate_builder! {
         /// Learning rate
         pub lr: Array,
 
-        /// The epsilon added to the denominator to improve numerical stability. 
+        /// The epsilon added to the denominator to improve numerical stability. Default to
+        /// [`AdaGrad::DEFAULT_EPS`].
         #[optional(ty = f32)]
         pub eps: Array,
 

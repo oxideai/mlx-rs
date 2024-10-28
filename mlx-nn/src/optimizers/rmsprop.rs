@@ -81,18 +81,26 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array) {
+    fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array)  -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
 
         let lr = array!(self.lr);
         let alpha = array!(self.alpha);
         let eps = array!(self.epsilon);
 
-        let v = &alpha * &*state + (array!(1.0) - &alpha) * square(&gradient);
-        let new_param = &*parameter - &lr * &gradient / (sqrt(&v) + &eps);
+        let one_minus_alpha = array!(1.0) - &alpha;
+        let first_term = alpha.multiply(&*state)?;
+        let second_term = one_minus_alpha.multiply(&square(&gradient))?;
+        let v = first_term.add(&second_term)?;
+
+        let num = lr.multiply(&gradient)?;
+        let den = sqrt(&v).add(&eps)?;
+        let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *parameter = new_param;
         *state = v;
+
+        Ok(())
     }
 }
 
@@ -115,7 +123,7 @@ mod tests {
         let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = RmsProp::builder().alpha(ALPHA).build(LR).unwrap();
-        optim.update(&mut model, gradients);
+        optim.update(&mut model, gradients).unwrap();
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;
         let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.1;

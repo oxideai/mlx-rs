@@ -154,11 +154,13 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///
 /// The struct that this macro is applied to should NOT derive the `Default` trait.
 ///
+/// # Struct Attribute(s)
+/// 
 /// This macro takes the following attributes:
 ///
 /// - `generate_builder`: This attribute should be applied on the struct.
 ///
-///   ## Arguments
+///   Arguments
 ///
 ///   - `generate_build_fn = <bool>`: It defaults to `true` if not specified. If `true`, it will:
 ///     1. generate a `<Struct>Builder::build` function that takes the mandatory fields as arguments
@@ -168,10 +170,12 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///        `<Struct>Builder::new().build(...)`. Additionally, if there is NO mandatory field, it
 ///        will implement the `Default` trait for the struct.
 ///
+/// # Field Attribute(s)
+/// 
 /// - `optional`: This attribute should be applied on the field. It indicates that the field is
 ///   optional. Behaviour of the generated builder struct depends on the argument of this attribute.
 ///   
-///   ## Arguments
+///   Arguments
 ///   
 ///   - `skip = <bool>`: Default `false`. If `true`, the macro will NOT generate a setter for this
 ///     field in the builder struct. It will also NOT wrap the field in an `Option` in the struct,
@@ -180,13 +184,26 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///
 ///     The `build` function cannot be generated if any field is marked as `skip = true`, and an
 ///     error will be shown in that case.
+/// 
+///   - `ty = <Path>`: If set, the optional field in the builder will be of the type specified by
+///     this argument. This is useful when the field is optional and the type is not the same as the
+///     original field type.
 ///
-///   - `default_value = <Path>`: This argument is required if no field is marked as `skip = true`.
-///     It specifies the default value for the field. The value should be a `Path` (something that
-///     is interpreted as a `syn::Path`) to a constant or an enum variant.
+///   - `default_value = <Path>`: This argument is required if a default build function were to be
+///     generated. It specifies the default value for the field. The value should be a `Path`
+///     (something that is interpreted as a `syn::Path`) to a constant or an enum variant.
 ///
-///     If either `generate_build_fn` is `false` or any field is marked as `skip = true`, this
-///     argument is not required.
+/// # Generate Build Function
+/// 
+/// The following conditions have to be met to generate the `<Type>Builder::build` function and
+/// `<Type>::new` function:
+/// 
+///   1. `generate_build_fn = true` in the `generate_builder` attribute.
+///   2. No optional field is marked as `skip = true`.
+///   3. No optional field is marked as `ty = <Path>`.
+/// 
+/// Otherwise, the user must implement the `<Type>Builder::build` function and `<Type>::new`
+/// manually.
 #[doc(hidden)]
 #[proc_macro]
 pub fn generate_builder(input: TokenStream) -> TokenStream {

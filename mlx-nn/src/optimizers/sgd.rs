@@ -77,42 +77,46 @@ impl Sgd {
 impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn update_single(&mut self, key: Rc<str>, mut gradient: Array, parameter: &mut Array) {
+    fn update_single(&mut self, key: Rc<str>, mut gradient: Array, parameter: &mut Array) -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
 
         // Apply weight decay
         if self.weight_decay != 0.0 {
-            gradient = &gradient + array!(self.weight_decay) * &*parameter;
+            let weight_decay = array!(self.weight_decay);
+            gradient = weight_decay.multiply(&*parameter)?.add(&gradient)?;
         }
 
         let lr = array!(self.lr);
 
         // Apply momentum
         if self.momentum <= 0.0 {
-            *parameter = &*parameter - &lr * &gradient;
-            return;
+            *parameter = parameter.subtract(lr.multiply(&gradient)?)?;
+            return Ok(());
         }
 
         let momentum = array!(self.momentum);
-        let mut v = &*state * &momentum;
+        let mut v = state.multiply(&momentum)?;
         if self.dampening > 0.0 {
-            v = &v + (&array!(1.0 - self.dampening) * &gradient);
+            let one_minus_dampening = array!(1.0 - self.dampening);
+            v = v.add(&one_minus_dampening.multiply(&gradient)?)?;
         } else {
-            v = &v + &gradient;
+            v = v.add(&gradient)?;
         }
 
         match self.nesterov {
             true => {
-                let update = gradient + (&momentum * &v);
-                *parameter = &*parameter - &lr * update;
+                let update = gradient.add(&momentum.multiply(&v)?)?;
+                *parameter = parameter.subtract(lr.multiply(&update)?)?;
                 *state = v;
             }
             false => {
                 let update = &v;
-                *parameter = &*parameter - &lr * update;
+                *parameter = parameter.subtract(lr.multiply(update)?)?;
                 *state = v;
             }
         }
+
+        Ok(())
     }
 }
 
@@ -131,7 +135,7 @@ mod tests {
         let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = Sgd::builder().momentum(0.9).build(1e-2);
-        optim.update(&mut model, gradients);
+        optim.update(&mut model, gradients).unwrap();
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
         let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;

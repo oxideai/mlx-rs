@@ -83,6 +83,10 @@ impl Optimizer for Sgd {
         gradient: &Array,
         parameter: &mut Array,
     ) -> Result<(), Exception> {
+        // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
+        // is implemented for Array.
+        use mlx_rs::ops::{gt, le, ne};
+
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let zero = array!(0.0);
@@ -90,18 +94,18 @@ impl Optimizer for Sgd {
         let mut gradient = Cow::Borrowed(gradient);
 
         // Apply weight decay
-        if self.weight_decay.ne(&zero)?.item::<bool>() {
+        if ne(&self.weight_decay, &zero)?.item::<bool>() {
             gradient = Cow::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
         }
 
         // Apply momentum
-        if self.momentum.le(&zero)?.item::<bool>() {
+        if le(&self.momentum, &zero)?.item::<bool>() {
             *parameter = parameter.subtract(self.lr.multiply(gradient)?)?;
             return Ok(());
         }
 
         let mut v = state.multiply(&self.momentum)?;
-        if self.dampening.gt(&zero)?.item::<bool>() {
+        if gt(&self.dampening, &zero)?.item::<bool>() {
             let one_minus_dampening = array!(1.0).subtract(&self.dampening)?;
             v = v.add(&one_minus_dampening.multiply(&gradient)?)?;
         } else {

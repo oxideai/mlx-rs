@@ -15,7 +15,7 @@ mod activation;
 mod container;
 mod convolution;
 mod dropout;
-pub mod embedding;
+mod embedding;
 mod linear;
 mod value_and_grad;
 

@@ -36,7 +36,7 @@ thiserror.workspace = true
 libc = "0.2"
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions.workspace = true
 float_eq.workspace = true
 
 [features]

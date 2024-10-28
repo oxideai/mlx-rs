@@ -23,6 +23,7 @@ pub use activation::*;
 pub use container::*;
 pub use convolution::*;
 pub use dropout::*;
+pub use embedding::*;
 pub use linear::*;
 pub use value_and_grad::*;
 

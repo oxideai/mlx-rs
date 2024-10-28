@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{borrow::Cow, rc::Rc};
 
 use mlx_internal_macros::generate_builder;
 use mlx_rs::{array, Array};
@@ -77,19 +77,21 @@ impl Sgd {
 impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn update_single(&mut self, key: Rc<str>, mut gradient: Array, parameter: &mut Array) -> Result<(), Exception> {
-        let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
+    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array) -> Result<(), Exception> {
+        let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let zero = array!(0.0);
 
+        let mut gradient = Cow::Borrowed(gradient);
+
         // Apply weight decay
         if self.weight_decay.ne(&zero)?.item::<bool>() {
-            gradient = self.weight_decay.multiply(&*parameter)?.add(&gradient)?;
+            gradient = Cow::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
         }
 
         // Apply momentum
         if self.momentum.le(&zero)?.item::<bool>() {
-            *parameter = parameter.subtract(self.lr.multiply(&gradient)?)?;
+            *parameter = parameter.subtract(self.lr.multiply(gradient)?)?;
             return Ok(());
         }
 
@@ -133,7 +135,7 @@ mod tests {
         let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = Sgd::builder().momentum(0.9).build(1e-2);
-        optim.update(&mut model, gradients).unwrap();
+        optim.apply(&mut model, gradients).unwrap();
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
         let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;

@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut loss_sum = array!(0.0);
         for (x, y) in loader.clone() {
             let (loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
-            optimizer.update(&mut model, grad);
+            optimizer.apply(&mut model, grad).unwrap();
             eval_params(model.parameters())?;
 
             loss_sum += loss;

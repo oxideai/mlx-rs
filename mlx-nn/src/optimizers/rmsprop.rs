@@ -81,7 +81,7 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array)  -> Result<(), Exception> {
+    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array)  -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
 
         let lr = &self.lr;
@@ -123,7 +123,7 @@ mod tests {
         let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = RmsProp::builder().alpha(ALPHA).build(LR).unwrap();
-        optim.update(&mut model, gradients).unwrap();
+        optim.apply(&mut model, gradients).unwrap();
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;
         let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.1;

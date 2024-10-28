@@ -9,9 +9,9 @@ use super::*;
 
 generate_builder! {
     /// The Adagrad optimizer.
-    /// 
+    ///
     /// Please refer to the original paper for more details:
-    /// 
+    ///
     /// [1]: Duchi, J., Hazan, E. and Singer, Y., 2011. Adaptive subgradient methods for online
     ///     learning and stochastic optimization. JMLR 2011.
     #[derive(Debug, Clone)]
@@ -54,7 +54,12 @@ impl AdaGrad {
 }
 
 impl Optimizer for AdaGrad {
-    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array) -> Result<(), Exception> {
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let v = state.add(square(gradient))?;
@@ -92,16 +97,18 @@ mod tests {
         let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
         assert_eq!(a.shape(), &[4, 3]);
         assert_eq!(a.dtype(), Dtype::Float32);
-        assert_array_eq!(a.mean(None, None).unwrap(), array!(-0.04584333300590515), ATOL);
-        assert_array_eq!(a.sum(None, None).unwrap(), array!(-0.5501199960708618), ATOL);
+        assert_array_eq!(a.mean(None, None).unwrap(), array!(-0.045_843_333), ATOL);
+        assert_array_eq!(a.sum(None, None).unwrap(), array!(-0.550_12), ATOL);
 
         let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
         assert_eq!(a_grad.shape(), &[4, 3]);
         assert_eq!(a_grad.dtype(), Dtype::Float32);
-        assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.23250393569469452), ATOL);
-        assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(2.7900471687316895), ATOL);
+        assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.232_503_94), ATOL);
+        assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(2.790_047_2), ATOL);
 
-        let mut a_model = Model { a: Param::new(a.clone()) };
+        let mut a_model = Model {
+            a: Param::new(a.clone()),
+        };
         let mut a_grad_params = FlattenedModuleParam::new();
         a_grad_params.insert("a".into(), a_grad.clone());
 
@@ -110,7 +117,15 @@ mod tests {
         optimizer.apply(&mut a_model, a_grad_params).unwrap();
         assert_eq!(a_model.a.shape(), &[4, 3]);
         assert_eq!(a_model.a.dtype(), Dtype::Float32);
-        assert_array_eq!(a_model.a.mean(None, None).unwrap(), array!(-0.06250998377799988), ATOL);
-        assert_array_eq!(a_model.a.sum(None, None).unwrap(), array!(-0.7501198053359985), ATOL);
+        assert_array_eq!(
+            a_model.a.mean(None, None).unwrap(),
+            array!(-0.062_509_984),
+            ATOL
+        );
+        assert_array_eq!(
+            a_model.a.sum(None, None).unwrap(),
+            array!(-0.750_119_8),
+            ATOL
+        );
     }
 }

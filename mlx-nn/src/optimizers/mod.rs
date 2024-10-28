@@ -2,15 +2,18 @@
 
 use std::{borrow::Borrow, rc::Rc};
 
-use mlx_rs::{error::Exception, module::{FlattenedModuleParam, ModuleParameters}};
+use mlx_rs::{
+    error::Exception,
+    module::{FlattenedModuleParam, ModuleParameters},
+};
 
+mod adagrad;
 mod rmsprop;
 mod sgd;
-mod adagrad;
 
+pub use adagrad::*;
 pub use rmsprop::*;
 pub use sgd::*;
-pub use adagrad::*;
 
 use mlx_rs::Array;
 
@@ -19,15 +22,24 @@ type OptimizerState = FlattenedModuleParam;
 /// Trait for optimizers.
 pub trait Optimizer {
     /// Update a single parameter with the given gradient.
-    /// 
+    ///
     /// The implementation should look up the state for the parameter using the key and update the
     /// state and the parameter accordingly. The key is provided instead of the state because it
     /// would otherwise create a mutable borrow conflict with the rest of the optimizer fields.
-    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array) -> Result<(), Exception>;
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception>;
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
-    fn apply<M>(&mut self, model: &mut M, gradients: impl Borrow<FlattenedModuleParam>) -> Result<(), Exception>
+    fn apply<M>(
+        &mut self,
+        model: &mut M,
+        gradients: impl Borrow<FlattenedModuleParam>,
+    ) -> Result<(), Exception>
     where
         M: ModuleParameters,
     {

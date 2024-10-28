@@ -371,7 +371,10 @@ pub fn zeros_device<T: ArrayElement>(
 
 /// An array of zeros like the input.
 #[default_device]
-pub fn zeros_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn zeros_like_device(
+    input: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -399,7 +402,10 @@ pub fn ones_device<T: ArrayElement>(
 
 /// An array of ones like the input.
 #[default_device]
-pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn ones_like_device(
+    input: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();

@@ -77,7 +77,12 @@ impl Sgd {
 impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array) -> Result<(), Exception> {
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let zero = array!(0.0);

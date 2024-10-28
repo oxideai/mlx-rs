@@ -94,12 +94,9 @@ pub(crate) fn expand_generate_builder(
                     if generate_build_fn {
                         return Err("Type is not allowed when build function is generated".into());
                     }
-                    let ty = Type::Path(TypePath {
-                        qself: None,
-                        path,
-                    });
+                    let ty = Type::Path(TypePath { qself: None, path });
                     optional_field_types.push(ty)
-                },
+                }
                 None => optional_field_types.push(field.ty.clone()),
             }
 

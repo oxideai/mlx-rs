@@ -81,8 +81,13 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn apply_single(&mut self, key: &Rc<str>, gradient: &Array, parameter: &mut Array)  -> Result<(), Exception> {
-        let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception> {
+        let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let lr = &self.lr;
         let alpha = &self.alpha;
@@ -90,11 +95,11 @@ impl Optimizer for RmsProp {
 
         let one_minus_alpha = array!(1.0).subtract(alpha)?;
         let first_term = alpha.multiply(&*state)?;
-        let second_term = one_minus_alpha.multiply(&square(&gradient))?;
+        let second_term = one_minus_alpha.multiply(square(gradient))?;
         let v = first_term.add(&second_term)?;
 
-        let num = lr.multiply(&gradient)?;
-        let den = sqrt(&v).add(&eps)?;
+        let num = lr.multiply(gradient)?;
+        let den = sqrt(&v).add(eps)?;
         let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *parameter = new_param;

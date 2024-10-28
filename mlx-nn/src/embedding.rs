@@ -56,9 +56,9 @@ impl Module for Embedding {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use float_eq::float_eq;
     use pretty_assertions::assert_eq;
-    use super::*;
 
     #[test]
     fn test_embedding() {
@@ -66,13 +66,29 @@ mod tests {
         let a = mlx_rs::random::randint::<_, i32>(0, 10, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Int32);
-        float_eq!(a.mean(None, None).unwrap().item::<f32>(), 4.60546875, abs <= 0.09210937500000001);
-        float_eq!(a.sum(None, None).unwrap().item::<f32>(), 2358.0, abs <= 47.160000000000004);
+        float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            4.60546875,
+            abs <= 0.09210937500000001
+        );
+        float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            2358.0,
+            abs <= 47.160000000000004
+        );
 
         let result = Embedding::new(10, 8).unwrap().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 8, 4, 8]);
         assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
-        float_eq!(result.mean(None, None).unwrap().item::<f32>(), -0.0011973462533205748, abs <= 2.3946925066411497e-05);
-        float_eq!(result.sum(None, None).unwrap().item::<f32>(), -4.904330253601074, abs <= 0.0980866050720215);
+        float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            -0.0011973462533205748,
+            abs <= 2.3946925066411497e-05
+        );
+        float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            -4.904330253601074,
+            abs <= 0.0980866050720215
+        );
     }
 }

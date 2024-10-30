@@ -41,7 +41,7 @@ pub fn quantize_device(
         let vec = TupleArrayArrayArray::from_ptr(c_vec);
         let vals = vec.into_values();
 
-        Ok((vals.0, vals.1, vals.2))
+        Ok(vals)
     }
 }
 

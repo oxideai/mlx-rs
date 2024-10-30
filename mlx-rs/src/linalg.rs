@@ -260,7 +260,7 @@ pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)
         let v = TupleArrayArray::from_ptr(c_vec);
         let vals = v.into_values();
 
-        Ok((vals.0, vals.1))
+        Ok(vals)
     }
 }
 

@@ -1,36 +1,57 @@
 //! Trait and implementations for optimizers.
 
-use std::rc::Rc;
+use std::{borrow::Borrow, rc::Rc};
 
-use mlx_rs::module::{FlattenedModuleParam, ModuleParameters};
+use mlx_rs::{
+    error::Exception,
+    module::{FlattenedModuleParam, ModuleParameters},
+};
 
+mod adagrad;
 mod rmsprop;
 mod sgd;
 
-use mlx_rs::Array;
+pub use adagrad::*;
 pub use rmsprop::*;
 pub use sgd::*;
+
+use mlx_rs::Array;
 
 type OptimizerState = FlattenedModuleParam;
 
 /// Trait for optimizers.
 pub trait Optimizer {
     /// Update a single parameter with the given gradient.
-    fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array);
+    ///
+    /// The implementation should look up the state for the parameter using the key and update the
+    /// state and the parameter accordingly. The key is provided instead of the state because it
+    /// would otherwise create a mutable borrow conflict with the rest of the optimizer fields.
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception>;
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
-    fn update<M>(&mut self, model: &mut M, gradients: FlattenedModuleParam)
+    fn apply<M>(
+        &mut self,
+        model: &mut M,
+        gradients: impl Borrow<FlattenedModuleParam>,
+    ) -> Result<(), Exception>
     where
         M: ModuleParameters,
     {
         let mut parameters = model.parameters_mut().flatten();
 
-        for (key, gradient) in gradients {
-            if let Some(parameter) = parameters.get_mut(&key) {
-                self.update_single(key, gradient, parameter);
+        for (key, gradient) in gradients.borrow().iter() {
+            if let Some(parameter) = parameters.get_mut(key) {
+                self.apply_single(key, gradient, parameter)?;
             }
         }
+
+        Ok(())
     }
 }
 
@@ -177,7 +198,7 @@ mod tests {
             // compute the loss and gradients.  use the optimizer
             // to adjust the parameters closer to the target
             let (loss, g) = lg(&mut model, (&x, &y))?;
-            optimizer.update(&mut model, g);
+            optimizer.apply(&mut model, g)?;
 
             eval_params(model.parameters())?;
 

@@ -369,6 +369,28 @@ pub fn zeros_device<T: ArrayElement>(
     Array::zeros_device::<T>(shape, stream)
 }
 
+/// An array of zeros like the input.
+#[default_device]
+pub fn zeros_like_device(
+    input: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a = input.as_ref();
+    let shape = a.shape();
+    let dtype = a.dtype();
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_zeros(
+                shape.as_ptr(),
+                shape.len(),
+                dtype.into(),
+                stream.as_ref().as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
 /// See [`Array::ones`]
 #[default_device]
 pub fn ones_device<T: ArrayElement>(
@@ -376,6 +398,28 @@ pub fn ones_device<T: ArrayElement>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     Array::ones_device::<T>(shape, stream)
+}
+
+/// An array of ones like the input.
+#[default_device]
+pub fn ones_like_device(
+    input: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let a = input.as_ref();
+    let shape = a.shape();
+    let dtype = a.dtype();
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_ones(
+                shape.as_ptr(),
+                shape.len(),
+                dtype.into(),
+                stream.as_ref().as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
 }
 
 /// See [`Array::eye`]

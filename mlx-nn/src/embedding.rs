@@ -68,13 +68,13 @@ mod tests {
         assert_eq!(a.dtype(), mlx_rs::Dtype::Int32);
         float_eq!(
             a.mean(None, None).unwrap().item::<f32>(),
-            4.60546875,
-            abs <= 0.09210937500000001
+            4.605_468_8,
+            abs <= 0.092_109_375
         );
         float_eq!(
             a.sum(None, None).unwrap().item::<f32>(),
             2358.0,
-            abs <= 47.160000000000004
+            abs <= 47.16
         );
 
         let result = Embedding::new(10, 8).unwrap().forward(&a).unwrap();
@@ -82,13 +82,13 @@ mod tests {
         assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
         float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
-            -0.0011973462533205748,
-            abs <= 2.3946925066411497e-05
+            -0.001_197_346_3,
+            abs <= 2.394_692_5e-5
         );
         float_eq!(
             result.sum(None, None).unwrap().item::<f32>(),
-            -4.904330253601074,
-            abs <= 0.0980866050720215
+            -4.904_330_3,
+            abs <= 0.098_086_6
         );
     }
 }

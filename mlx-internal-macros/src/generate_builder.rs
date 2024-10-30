@@ -1,7 +1,7 @@
 use darling::FromAttributes;
 use proc_macro2::TokenTree;
 use quote::quote;
-use syn::{Attribute, Ident, ItemStruct, Path};
+use syn::{Attribute, Ident, ItemStruct, Path, Type, TypePath};
 
 #[derive(Debug, FromAttributes)]
 #[darling(attributes(generate_builder))]
@@ -14,6 +14,7 @@ struct StructAttr {
 struct FieldAttr {
     default_value: Option<Path>,
     skip: Option<bool>,
+    ty: Option<Path>,
 }
 
 fn struct_attr_derive_default(attrs: &[Attribute]) -> bool {
@@ -87,7 +88,18 @@ pub(crate) fn expand_generate_builder(
                     .as_ref()
                     .ok_or("Only named fields are supported")?,
             );
-            optional_field_types.push(&field.ty);
+
+            match field_attr.ty {
+                Some(path) => {
+                    if generate_build_fn {
+                        return Err("Type is not allowed when build function is generated".into());
+                    }
+                    let ty = Type::Path(TypePath { qself: None, path });
+                    optional_field_types.push(ty)
+                }
+                None => optional_field_types.push(field.ty.clone()),
+            }
+
             if generate_build_fn {
                 optional_field_defaults.push(field_attr.default_value);
             }

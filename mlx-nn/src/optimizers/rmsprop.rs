@@ -20,16 +20,16 @@ generate_builder! {
     #[generate_builder(generate_build_fn = false)]
     pub struct RmsProp {
         /// Learning rate
-        pub lr: f32,
+        pub lr: Array,
 
         /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-        #[optional]
-        pub alpha: f32,
+        #[optional(ty = f32)]
+        pub alpha: Array,
 
         /// The epsilon added to the denominator to improve numerical stability. Default to
         /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-        #[optional]
-        pub epsilon: f32,
+        #[optional(ty = f32)]
+        pub epsilon: Array,
 
         /// Inner state
         pub state: OptimizerState,
@@ -55,9 +55,9 @@ impl RmsPropBuilder {
         }
 
         Ok(RmsProp {
-            lr,
-            alpha,
-            epsilon,
+            lr: array!(lr),
+            alpha: array!(alpha),
+            epsilon: array!(epsilon),
             state: OptimizerState::new(),
         })
     }
@@ -81,18 +81,31 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn update_single(&mut self, key: Rc<str>, gradient: Array, parameter: &mut Array) {
-        let state = get_mut_or_insert_with(&mut self.state, &key, || array!(0.0));
+    fn apply_single(
+        &mut self,
+        key: &Rc<str>,
+        gradient: &Array,
+        parameter: &mut Array,
+    ) -> Result<(), Exception> {
+        let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
-        let lr = array!(self.lr);
-        let alpha = array!(self.alpha);
-        let eps = array!(self.epsilon);
+        let lr = &self.lr;
+        let alpha = &self.alpha;
+        let eps = &self.epsilon;
 
-        let v = &alpha * &*state + (array!(1.0) - &alpha) * square(&gradient);
-        let new_param = &*parameter - &lr * &gradient / (sqrt(&v) + &eps);
+        let one_minus_alpha = array!(1.0).subtract(alpha)?;
+        let first_term = alpha.multiply(&*state)?;
+        let second_term = one_minus_alpha.multiply(square(gradient))?;
+        let v = first_term.add(&second_term)?;
+
+        let num = lr.multiply(gradient)?;
+        let den = sqrt(&v).add(eps)?;
+        let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *parameter = new_param;
         *state = v;
+
+        Ok(())
     }
 }
 
@@ -115,7 +128,7 @@ mod tests {
         let (mut model, gradients) = create_default_test_model_and_grads();
 
         let mut optim = RmsProp::builder().alpha(ALPHA).build(LR).unwrap();
-        optim.update(&mut model, gradients);
+        optim.apply(&mut model, gradients).unwrap();
 
         let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;
         let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.1;

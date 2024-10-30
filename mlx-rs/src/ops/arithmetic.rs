@@ -145,6 +145,47 @@ impl Array {
         }
     }
 
+    /// Replace NaN and Inf values with finite numbers.
+    ///
+    /// # Params
+    /// - nan: value to replace NaN with
+    /// - posInf: value to replace positive inifinites with.  If not specified will use
+    ///     the largest finite value for the given dtype.
+    /// - negInf: value to replace negative inifinites with.  If not specified will use
+    ///     the negative of the largest finite value for the given dtype.
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn nan_to_num_device(
+        &self,
+        nan: impl IntoOption<f32>,
+        pos_inf: impl IntoOption<f32>,
+        neg_inf: impl IntoOption<f32>,
+        stream: impl AsRef<Stream>,
+    ) -> Array {
+        let pos_inf = pos_inf.into_option();
+        let neg_inf = neg_inf.into_option();
+
+        let pos_inf = mlx_sys::mlx_optional_float {
+            value: pos_inf.unwrap_or(0.0),
+            has_value: pos_inf.is_some(),
+        };
+        let neg_inf = mlx_sys::mlx_optional_float {
+            value: neg_inf.unwrap_or(0.0),
+            has_value: neg_inf.is_some(),
+        };
+
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_nan_to_num(
+                self.c_array,
+                nan.into_option().unwrap_or(0.),
+                pos_inf,
+                neg_inf,
+                stream.as_ref().as_ptr(),
+            ))
+        }
+    }
+
+
     /// Element-wise division returning an error if arrays are not broadcastable.
     ///
     /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
@@ -354,6 +395,51 @@ impl Array {
             };
             Ok(Array::from_ptr(c_array))
         }
+    }
+
+    /// Return a boolean array indicating which elements are NaN.
+    ///
+    /// # Params
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn is_nan_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_isnan(self.c_array, stream.as_ref().as_ptr())) }
+    }
+
+    /// Return a boolean array indicating which elements are infinity.
+    ///
+    /// # Params
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn is_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_isinf(self.c_array, stream.as_ref().as_ptr())) }
+    }
+
+    /// Return a boolean array indicating which elements are finite.
+    ///
+    /// # Params
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn is_finite_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_isfinite(self.c_array, stream.as_ref().as_ptr())) }
+    }
+
+    /// Return a boolean array indicating which elements are negative infinity.
+    ///
+    /// # Params
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn is_neg_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_isneginf(self.c_array, stream.as_ref().as_ptr())) }
+    }
+
+    /// Return a boolean array indicating which elements are positive infinity.
+    ///
+    /// # Params
+    /// - stream: stream or device to evaluate on
+    #[default_device]
+    pub fn is_pos_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+        unsafe { Array::from_ptr(mlx_sys::mlx_isposinf(self.c_array, stream.as_ref().as_ptr())) }
     }
 
     /// Element-wise natural logarithm.
@@ -1360,6 +1446,15 @@ mod tests {
     }
 
     #[test]
+    fn test_nan_to_num() {
+        let a = array!([1.0, 2.0, f32::NAN, 4.0, 5.0]);
+        let b = a.nan_to_num(0.0, 1.0, 0.0);
+
+        let b_data: &[f32] = b.as_slice();
+        assert_eq!(b_data, &[1.0, 2.0, 0.0, 4.0, 5.0]);
+    }
+
+    #[test]
     fn test_div() {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
@@ -1530,6 +1625,51 @@ mod tests {
         let b = Array::from_slice(&[4.0, 5.0], &[2]);
         let c = a.floor_divide_device(&b, StreamOrDevice::default());
         assert!(c.is_err());
+    }
+
+    #[test]
+    fn test_is_nan() {
+        let a = Array::from_slice(&[1.0, f32::NAN, 3.0], &[3]);
+        let b = a.is_nan();
+
+        let b_data: &[bool] = b.as_slice();
+        assert_eq!(b_data, &[false, true, false]);
+    }
+
+    #[test]
+    fn test_is_inf() {
+        let a = Array::from_slice(&[1.0, f32::INFINITY, 3.0], &[3]);
+        let b = a.is_inf();
+
+        let b_data: &[bool] = b.as_slice();
+        assert_eq!(b_data, &[false, true, false]);
+    }
+
+    #[test]
+    fn test_is_finite() {
+        let a = Array::from_slice(&[1.0, f32::INFINITY, 3.0], &[3]);
+        let b = a.is_finite();
+
+        let b_data: &[bool] = b.as_slice();
+        assert_eq!(b_data, &[true, false, true]);
+    }
+
+    #[test]
+    fn test_is_neg_inf() {
+        let a = Array::from_slice(&[1.0, f32::NEG_INFINITY, 3.0], &[3]);
+        let b = a.is_neg_inf();
+
+        let b_data: &[bool] = b.as_slice();
+        assert_eq!(b_data, &[false, true, false]);
+    }
+
+    #[test]
+    fn test_is_pos_inf() {
+        let a = Array::from_slice(&[1.0, f32::INFINITY, 3.0], &[3]);
+        let b = a.is_pos_inf();
+
+        let b_data: &[bool] = b.as_slice();
+        assert_eq!(b_data, &[false, true, false]);
     }
 
     #[test]

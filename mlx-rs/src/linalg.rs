@@ -1,5 +1,5 @@
 use crate::error::Exception;
-use crate::utils::{IntoOption, MlxString, VectorArray};
+use crate::utils::{IntoOption, MlxString, TupleArrayArray, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
@@ -257,14 +257,10 @@ pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)
             mlx_sys::mlx_linalg_qr(a.as_ptr(), stream.as_ref().as_ptr())
         };
 
-        let v = VectorArray::from_ptr(c_vec);
+        let v = TupleArrayArray::from_ptr(c_vec);
+        let vals = v.into_values();
 
-        let vals: SmallVec<[Array; 2]> = v.into_values();
-        let mut iter = vals.into_iter();
-        let q = iter.next().unwrap();
-        let r = iter.next().unwrap();
-
-        Ok((q, r))
+        Ok((vals.0, vals.1))
     }
 }
 

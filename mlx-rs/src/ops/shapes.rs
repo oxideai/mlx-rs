@@ -660,6 +660,24 @@ impl<'a> PadWidth<'a> {
     }
 }
 
+#[derive(Debug)]
+pub enum PadMode {
+    Constant,
+    Edge,
+}
+
+impl PadMode {
+    fn as_mlx_string(&self) -> mlx_sys::mlx_string {
+        static CONSTANT: &[u8] = b"constant\0";
+        static EDGE: &[u8] = b"edge\0";
+
+        match self {
+            PadMode::Constant => unsafe { mlx_sys::mlx_string_new(CONSTANT.as_ptr() as *const _) },
+            PadMode::Edge => unsafe { mlx_sys::mlx_string_new(EDGE.as_ptr() as *const _) },
+        }
+    }
+}
+
 /// Pad an array with a constant value. Returns an error if the width is invalid.
 ///
 /// # Params
@@ -677,13 +695,14 @@ impl<'a> PadWidth<'a> {
 /// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
-/// let result = pad(&a, 1, Array::from_int(0));
+/// let result = pad(&a, 1, Array::from_int(0), PadMode::Constant);
 /// ```
 #[default_device]
 pub fn pad_device<'a>(
     a: &Array,
     width: impl Into<PadWidth<'a>>,
     value: impl Into<Option<Array>>,
+    mode: impl Into<Option<PadMode>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let width = width.into();
@@ -694,6 +713,8 @@ pub fn pad_device<'a>(
     let value = value
         .into()
         .unwrap_or_else(|| Array::from_int(0).as_dtype(a.dtype()));
+
+    let mode = mode.into().unwrap_or(PadMode::Constant);
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -706,6 +727,7 @@ pub fn pad_device<'a>(
                 high_pads.as_ptr(),
                 high_pads.len(),
                 value.c_array,
+                mode.as_mlx_string(),
                 stream.as_ref().as_ptr(),
             )
         };

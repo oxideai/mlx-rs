@@ -3,9 +3,8 @@
 // dequantized(_:scales:biases:groupSize:bits:stream:)
 
 use mlx_internal_macros::default_device;
-use smallvec::SmallVec;
 
-use crate::{error::Exception, utils::VectorArray, Array, Stream, StreamOrDevice};
+use crate::{error::Exception, utils::TupleArrayArrayArray, Array, Stream, StreamOrDevice};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -39,15 +38,10 @@ pub fn quantize_device(
             mlx_sys::mlx_quantize(w.as_ptr(), group_size, bits, stream.as_ref().as_ptr())
         };
 
-        let vec = VectorArray::from_ptr(c_vec);
+        let vec = TupleArrayArrayArray::from_ptr(c_vec);
+        let vals = vec.into_values();
 
-        let vals: SmallVec<[Array; 3]> = vec.into_values();
-        let mut iter = vals.into_iter();
-        let wq = iter.next().unwrap();
-        let scales = iter.next().unwrap();
-        let biases = iter.next().unwrap();
-
-        Ok((wq, scales, biases))
+        Ok((vals.0, vals.1, vals.2))
     }
 }
 

@@ -1,14 +1,14 @@
 use std::{collections::HashMap, rc::Rc};
 
 use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
-use smallvec::SmallVec;
 
+use crate::utils::TupleVectorArrayVectorArray;
 use crate::{
     error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
     },
     module::ModuleParamRef,
-    utils::{Closure, IntoOption, VectorArray, VectorVectorArray},
+    utils::{Closure, IntoOption, VectorArray},
     Array,
 };
 
@@ -77,15 +77,11 @@ fn jvp_inner(
                 c_tangents.as_ptr(),
             )
         };
-        VectorVectorArray::from_ptr(c_vector_pair)
+        TupleVectorArrayVectorArray::from_ptr(c_vector_pair)
     };
 
-    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
-    let mut iter = vector_pair_values.into_iter();
-    let v1 = iter.next().unwrap().into_values();
-    let v2 = iter.next().unwrap().into_values();
-
-    Ok((v1, v2))
+    let vector_pair_values = vector_pair.into_values();
+    Ok(vector_pair_values)
 }
 
 /// Compute the Jacobian-vector product.
@@ -147,15 +143,11 @@ fn vjp_inner(
                 c_cotangents.as_ptr(),
             )
         };
-        VectorVectorArray::from_ptr(c_vector_pair)
+        TupleVectorArrayVectorArray::from_ptr(c_vector_pair)
     };
 
-    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
-    let mut iter = vector_pair_values.into_iter();
-    let v1 = iter.next().unwrap().into_values();
-    let v2 = iter.next().unwrap().into_values();
-
-    Ok((v1, v2))
+    let vector_pair_values = vector_pair.into_values();
+    Ok(vector_pair_values)
 }
 
 /// Compute the vector-Jacobian product.
@@ -209,15 +201,11 @@ fn value_and_gradient(
         let c_vector_pair = try_catch_mlx_closure_error! {
             mlx_closure_value_and_grad_apply(value_and_grad, input_vector.as_ptr())
         };
-        VectorVectorArray::from_ptr(c_vector_pair)
+        TupleVectorArrayVectorArray::from_ptr(c_vector_pair)
     };
 
-    let vector_pair_values: SmallVec<[VectorArray; 2]> = vector_pair.into_values();
-    let mut iter = vector_pair_values.into_iter();
-    let values_vec = iter.next().unwrap().into_values();
-    let gradients_vec = iter.next().unwrap().into_values();
-
-    Ok((values_vec, gradients_vec))
+    let vector_pair_values = vector_pair.into_values();
+    Ok(vector_pair_values)
 }
 
 #[inline]

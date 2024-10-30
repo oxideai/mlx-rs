@@ -1,8 +1,6 @@
-use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
-
-use mlx_sys::{mlx_closure, mlx_vector_array};
-
 use crate::{complex64, error::Exception, Array, FromNested};
+use mlx_sys::mlx_tuple_array_array;
+use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
@@ -52,15 +50,15 @@ pub(crate) fn axes_or_default_to_all<'a>(axes: impl IntoOption<&'a [i32]>, ndim:
 }
 
 pub(crate) struct VectorArray {
-    c_vec: mlx_vector_array,
+    c_vec: mlx_sys::mlx_vector_array,
 }
 
 impl VectorArray {
-    pub(crate) fn as_ptr(&self) -> mlx_vector_array {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_vector_array {
         self.c_vec
     }
 
-    pub(crate) unsafe fn from_ptr(c_vec: mlx_vector_array) -> Self {
+    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_array) -> Self {
         Self { c_vec }
     }
 
@@ -68,7 +66,7 @@ impl VectorArray {
         unsafe {
             let c_vec = mlx_sys::mlx_vector_array_new();
             for arr in iter {
-                mlx_sys::mlx_vector_array_add(c_vec, arr.as_ref().as_ptr())
+                mlx_sys::mlx_vector_array_add_value(c_vec, arr.as_ref().as_ptr())
             }
             Self { c_vec }
         }
@@ -218,19 +216,19 @@ where
 
 #[derive(Debug)]
 pub(crate) struct Closure<'a> {
-    c_closure: mlx_closure,
+    c_closure: mlx_sys::mlx_closure,
     lt_marker: PhantomData<&'a ()>,
 }
 
 impl<'a> Closure<'a> {
-    pub(crate) fn from_ptr(c_closure: mlx_closure) -> Self {
+    pub(crate) fn from_ptr(c_closure: mlx_sys::mlx_closure) -> Self {
         Self {
             c_closure,
             lt_marker: PhantomData,
         }
     }
 
-    pub(crate) fn as_ptr(&self) -> mlx_closure {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_closure {
         self.c_closure
     }
 
@@ -302,7 +300,7 @@ fn new_mlx_vector_array(arrays: Vec<Array>) -> mlx_sys::mlx_vector_array {
     unsafe {
         let result = mlx_sys::mlx_vector_array_new();
         let ctx_ptrs: Vec<mlx_sys::mlx_array> = arrays.iter().map(|array| array.as_ptr()).collect();
-        mlx_sys::mlx_vector_array_add_arrays(result, ctx_ptrs.as_ptr(), arrays.len());
+        mlx_sys::mlx_vector_array_add_data(result, ctx_ptrs.as_ptr(), arrays.len());
         result
     }
 }
@@ -396,6 +394,86 @@ impl VectorVectorArray {
                     VectorArray::from_ptr(c_array)
                 })
                 .collect::<T>()
+        }
+    }
+}
+
+pub(crate) struct TupleArrayArray {
+    c_tuple: mlx_tuple_array_array,
+}
+
+impl Drop for TupleArrayArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
+    }
+}
+
+impl TupleArrayArray {
+    pub(crate) unsafe fn from_ptr(c_tuple: mlx_tuple_array_array) -> Self {
+        Self { c_tuple }
+    }
+
+    pub(crate) fn into_values(self) -> (Array, Array) {
+        unsafe {
+            let c_array1 = mlx_sys::mlx_tuple_array_array_get_0(self.c_tuple);
+            let c_array2 = mlx_sys::mlx_tuple_array_array_get_1(self.c_tuple);
+            (Array::from_ptr(c_array1), Array::from_ptr(c_array2))
+        }
+    }
+}
+
+pub(crate) struct TupleArrayArrayArray {
+    c_tuple: mlx_sys::mlx_tuple_array_array_array,
+}
+
+impl Drop for TupleArrayArrayArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
+    }
+}
+
+impl TupleArrayArrayArray {
+    pub(crate) unsafe fn from_ptr(c_tuple: mlx_sys::mlx_tuple_array_array_array) -> Self {
+        Self { c_tuple }
+    }
+
+    pub(crate) fn into_values(self) -> (Array, Array, Array) {
+        unsafe {
+            let c_array1 = mlx_sys::mlx_tuple_array_array_array_get_0(self.c_tuple);
+            let c_array2 = mlx_sys::mlx_tuple_array_array_array_get_1(self.c_tuple);
+            let c_array3 = mlx_sys::mlx_tuple_array_array_array_get_2(self.c_tuple);
+            (
+                Array::from_ptr(c_array1),
+                Array::from_ptr(c_array2),
+                Array::from_ptr(c_array3),
+            )
+        }
+    }
+}
+
+pub(crate) struct TupleVectorArrayVectorArray {
+    c_tuple: mlx_sys::mlx_tuple_vector_array_vector_array,
+}
+
+impl Drop for TupleVectorArrayVectorArray {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
+    }
+}
+
+impl TupleVectorArrayVectorArray {
+    pub(crate) unsafe fn from_ptr(c_tuple: mlx_sys::mlx_tuple_vector_array_vector_array) -> Self {
+        Self { c_tuple }
+    }
+
+    pub(crate) fn into_values(self) -> (Vec<Array>, Vec<Array>) {
+        unsafe {
+            let c_array1 = mlx_sys::mlx_tuple_vector_array_vector_array_get_0(self.c_tuple);
+            let c_array2 = mlx_sys::mlx_tuple_vector_array_vector_array_get_1(self.c_tuple);
+            let array1 = VectorArray::from_ptr(c_array1).into_values();
+            let array2 = VectorArray::from_ptr(c_array2).into_values();
+
+            (array1, array2)
         }
     }
 }

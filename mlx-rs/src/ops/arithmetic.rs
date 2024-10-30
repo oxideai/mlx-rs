@@ -185,7 +185,6 @@ impl Array {
         }
     }
 
-
     /// Element-wise division returning an error if arrays are not broadcastable.
     ///
     /// Divide two arrays with [broadcasting](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/broadcasting).
@@ -421,7 +420,12 @@ impl Array {
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn is_finite_device(&self, stream: impl AsRef<Stream>) -> Array {
-        unsafe { Array::from_ptr(mlx_sys::mlx_isfinite(self.c_array, stream.as_ref().as_ptr())) }
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_isfinite(
+                self.c_array,
+                stream.as_ref().as_ptr(),
+            ))
+        }
     }
 
     /// Return a boolean array indicating which elements are negative infinity.
@@ -430,7 +434,12 @@ impl Array {
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn is_neg_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
-        unsafe { Array::from_ptr(mlx_sys::mlx_isneginf(self.c_array, stream.as_ref().as_ptr())) }
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_isneginf(
+                self.c_array,
+                stream.as_ref().as_ptr(),
+            ))
+        }
     }
 
     /// Return a boolean array indicating which elements are positive infinity.
@@ -439,7 +448,12 @@ impl Array {
     /// - stream: stream or device to evaluate on
     #[default_device]
     pub fn is_pos_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
-        unsafe { Array::from_ptr(mlx_sys::mlx_isposinf(self.c_array, stream.as_ref().as_ptr())) }
+        unsafe {
+            Array::from_ptr(mlx_sys::mlx_isposinf(
+                self.c_array,
+                stream.as_ref().as_ptr(),
+            ))
+        }
     }
 
     /// Element-wise natural logarithm.

@@ -1,5 +1,5 @@
-use std::ffi::c_void;
 use mlx_internal_macros::default_device;
+use std::ffi::c_void;
 
 use crate::{error::Exception, Array, Stream, StreamOrDevice};
 
@@ -92,7 +92,6 @@ pub fn diagonal_device(
     a.diagonal_device(offset, axis1, axis2, stream)
 }
 
-
 /// Perform the Einstein summation convention on the operands.
 ///
 /// # Params
@@ -110,7 +109,9 @@ pub fn einsum_device(
 
     let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
     let c_arrays: Vec<_> = operands.iter().map(|a| a.c_array).collect();
-    unsafe { mlx_sys::mlx_vector_array_add_data(c_operands, c_arrays.as_ptr(), operands.len()); }
+    unsafe {
+        mlx_sys::mlx_vector_array_add_data(c_operands, c_arrays.as_ptr(), operands.len());
+    }
 
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
@@ -122,7 +123,7 @@ pub fn einsum_device(
         };
 
         mlx_sys::free(subscripts as *mut c_void);
-        mlx_sys::free(c_operands  as *mut c_void);
+        mlx_sys::free(c_operands as *mut c_void);
         Ok(Array::from_ptr(c_array))
     }
 }
@@ -131,7 +132,7 @@ pub fn einsum_device(
 mod tests {
     use crate::{
         array,
-        ops::{arange, diag, reshape, einsum},
+        ops::{arange, diag, einsum, reshape},
         Array,
     };
     use pretty_assertions::assert_eq;

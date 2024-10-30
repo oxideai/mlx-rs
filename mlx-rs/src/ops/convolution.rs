@@ -379,8 +379,9 @@ mod tests {
             Some(1), // stride
             Some(0), // padding
             Some(1), // dilation
-            Some(1)  // groups
-        ).unwrap();
+            Some(1), // groups
+        )
+        .unwrap();
 
         let expected = [1.0, 2.5, 4.0, 1.5];
         assert_eq!(result.shape(), &[1, 4, 1]);
@@ -428,14 +429,11 @@ mod tests {
             Some((1, 1)), // stride
             Some((0, 0)), // padding
             Some((1, 1)), // dilation
-            Some(1)       // groups
-        ).unwrap();
+            Some(1),      // groups
+        )
+        .unwrap();
 
-        let expected = [
-            1.0, 2.0, 0.0,
-            3.0, 5.0, 2.0,
-            0.0, 3.0, 4.0
-        ];
+        let expected = [1.0, 2.0, 0.0, 3.0, 5.0, 2.0, 0.0, 3.0, 4.0];
         assert_eq!(result.shape(), &[1, 3, 3, 1]);
         assert_eq!(result.as_slice::<f32>(), &expected);
     }
@@ -480,7 +478,8 @@ mod tests {
         // 2x2x2 single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[1, 2, 2, 2, 1]);
         // 2x2x2 single channel kernel
-        let weights = Array::from_slice(&[1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0], &[1, 2, 2, 2, 1]);
+        let weights =
+            Array::from_slice(&[1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0], &[1, 2, 2, 2, 1]);
 
         let result = conv_transposed3d(
             &input,
@@ -488,8 +487,9 @@ mod tests {
             Some((1, 1, 1)), // stride
             Some((0, 0, 0)), // padding
             Some((1, 1, 1)), // dilation
-            Some(1)          // groups
-        ).unwrap();
+            Some(1),         // groups
+        )
+        .unwrap();
 
         assert_eq!(result.shape(), &[1, 3, 3, 3, 1]);
     }

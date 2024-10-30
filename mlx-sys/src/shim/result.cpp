@@ -8,8 +8,7 @@ extern "C" mlx_vector_array_result mlx_vector_array_result_new_ok(
   return result;
 }
 
-extern "C" mlx_vector_array_result mlx_vector_array_result_new_err(
-    mlx_string err) {
+extern "C" mlx_vector_array_result mlx_vector_array_result_new_err(mlx_string err) {
   mlx_vector_array_result result;
   result.tag = mlx_result_tag_err;
   result.err = err;

@@ -1186,7 +1186,9 @@ mod tests {
         assert_eq!(pad(&x, 1, None, None).unwrap().shape(), &[3, 4, 5]);
         assert_eq!(pad(&x, (0, 1), None, None).unwrap().shape(), &[2, 3, 4]);
         assert_eq!(
-            pad(&x, &[(1, 1), (1, 2), (3, 1)], None, None).unwrap().shape(),
+            pad(&x, &[(1, 1), (1, 2), (3, 1)], None, None)
+                .unwrap()
+                .shape(),
             &[3, 5, 7]
         );
     }

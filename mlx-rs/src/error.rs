@@ -13,6 +13,27 @@ pub enum ItemError {
     Exception(#[from] Exception),
 }
 
+#[derive(Error, PartialEq, Debug)]
+pub enum IOError {
+    #[error("Path must point to a local file")]
+    NotFile,
+
+    #[error("Path contains invalid UTF-8")]
+    InvalidUtf8,
+
+    #[error("Path contains null bytes")]
+    NullBytes,
+
+    #[error("No file extension found")]
+    NoExtension,
+
+    #[error("Unsupported file format")]
+    UnsupportedFormat,
+
+    #[error(transparent)]
+    Exception(#[from] Exception),
+}
+
 /// Error associated with `Array::try_as_slice()`
 #[derive(Debug, PartialEq, Error)]
 pub enum AsSliceError {

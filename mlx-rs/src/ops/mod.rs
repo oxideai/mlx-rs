@@ -11,11 +11,13 @@ mod shapes;
 mod sort;
 
 pub mod indexing;
+mod io;
 
 pub use arithmetic::*;
 pub use convolution::*;
 pub use cumulative::*;
 pub use factory::*;
+pub use io::*;
 pub use logical::*;
 pub use other::*;
 pub use quantization::*;

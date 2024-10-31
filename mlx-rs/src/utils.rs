@@ -1,5 +1,7 @@
 use crate::{complex64, error::Exception, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;
+use std::collections::HashMap;
+use std::ffi::CStr;
 use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
 /// Helper method to get a string representation of an mlx object.
@@ -445,4 +447,64 @@ impl TupleVectorArrayVectorArray {
             (array1, array2)
         }
     }
+}
+
+pub(crate) fn mlx_map_array_values(
+    mlx_map: mlx_sys::mlx_map_string_to_array,
+) -> HashMap<String, Array> {
+    let mut result = HashMap::new();
+
+    unsafe {
+        let iterator = mlx_sys::mlx_map_string_to_array_iterate(mlx_map);
+
+        while !mlx_sys::mlx_map_string_to_array_iterator_end(iterator) {
+            let mlx_key = mlx_sys::mlx_map_string_to_array_iterator_key(iterator);
+            let key = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_key))
+                .to_string_lossy()
+                .into_owned();
+
+            let mlx_array_ctx = mlx_sys::mlx_map_string_to_array_iterator_value(iterator);
+            let array = Array::from_ptr(mlx_array_ctx);
+            result.insert(key, array);
+
+            mlx_sys::mlx_free(mlx_key as *mut c_void);
+            mlx_sys::mlx_map_string_to_array_iterator_next(iterator);
+        }
+
+        mlx_sys::free(iterator as *mut c_void);
+    }
+
+    result
+}
+
+pub(crate) fn mlx_map_string_values(
+    mlx_map: mlx_sys::mlx_map_string_to_string,
+) -> HashMap<String, String> {
+    let mut result = HashMap::new();
+
+    unsafe {
+        let iterator = mlx_sys::mlx_map_string_to_string_iterate(mlx_map);
+
+        while !mlx_sys::mlx_map_string_to_string_iterator_end(iterator) {
+            let mlx_key = mlx_sys::mlx_map_string_to_string_iterator_key(iterator);
+            let key = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_key))
+                .to_string_lossy()
+                .into_owned();
+
+            let mlx_value = mlx_sys::mlx_map_string_to_string_iterator_value(iterator);
+            let value = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_value))
+                .to_string_lossy()
+                .into_owned();
+
+            result.insert(key, value);
+
+            mlx_sys::mlx_free(mlx_key as *mut c_void);
+            mlx_sys::mlx_free(mlx_value as *mut c_void);
+            mlx_sys::mlx_map_string_to_string_iterator_next(iterator);
+        }
+
+        mlx_sys::mlx_free(iterator as *mut c_void);
+    }
+
+    result
 }

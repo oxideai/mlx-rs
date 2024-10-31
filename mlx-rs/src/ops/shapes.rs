@@ -688,6 +688,7 @@ impl PadMode {
 ///   `(before_i, after_i)` are all the same. If a single integer or tuple with a single integer is
 ///   passed then all axes are extended by the same number on each side.
 /// - `value`: The value to pad the array with. Default is `0` if not provided.
+/// - `mode`: The padding mode. Default is `PadMode::Constant` if not provided.
 ///
 /// # Example
 ///

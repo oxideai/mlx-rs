@@ -49,6 +49,12 @@ We try to be as welcoming as possible to everybody from any background. We're st
 
 mlx-rs is currently in active development, and is not yet complete.
 
+## MSRV
+
+The minimum supported Rust version is 1.75.0.
+
+The MSRV is the minimum Rust version that can be used to compile each crate.
+
 ## License
 
 mlx-rs is distributed under the terms of the MIT license. See [LICENSE](./LICENSE) for details.

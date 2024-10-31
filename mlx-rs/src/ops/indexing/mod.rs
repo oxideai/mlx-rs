@@ -352,10 +352,9 @@ impl Array {
         }
     }
 
-    // NOTE: take and take_long_axis are two separate functions in the c++ code. They don't call
-    // each other.
-
     /// Take values along an axis at the specified indices.
+    ///
+    /// If no axis is specified, the array is flattened to 1D prior to the indexing operation.
     ///
     /// # Params
     ///
@@ -365,20 +364,59 @@ impl Array {
     pub fn take_along_axis_device(
         &self,
         indices: &Array,
-        axis: i32,
+        axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
+        let (input, axis) = match axis.into() {
+            None => (self.reshape_device(&[-1], &stream)?, 0),
+            Some(ax) => (self.clone(), ax),
+        };
+
         unsafe {
             let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_take_along_axis(
-                    self.c_array,
-                    indices.c_array,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                )
+                mlx_sys::mlx_take_along_axis(input.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
             };
 
             Ok(Array::from_ptr(c_array))
+        }
+    }
+
+    /// Put values along an axis at the specified indices.
+    ///
+    /// If no axis is specified, the array is flattened to 1D prior to the indexing operation.
+    ///
+    /// # Params
+    /// - indices: Indices array. These should be broadcastable with the input array excluding the `axis` dimension.
+    /// - values: Values array. These should be broadcastable with the indices.
+    /// - axis: Axis in the destination to put the values to.
+    /// - stream: stream or device to evaluate on.
+    #[default_device]
+    pub fn put_along_axis_device(
+        &self,
+        indices: &Array,
+        values: &Array,
+        axis: impl Into<Option<i32>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
+        match axis.into() {
+            None => unsafe {
+                let input = self.reshape_device(&[-1], &stream)?;
+
+                let c_array = try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_put_along_axis(input.c_array, indices.c_array, values.c_array, 0, stream.as_ref().as_ptr())
+                };
+
+                let array = Array::from_ptr(c_array);
+                let array = array.reshape_device(self.shape(), &stream)?;
+                Ok(array)
+            },
+            Some(ax) => unsafe {
+                let c_array = try_catch_c_ptr_expr! {
+                    mlx_sys::mlx_put_along_axis(self.c_array, indices.c_array, values.c_array, ax, stream.as_ref().as_ptr())
+                };
+
+                Ok(Array::from_ptr(c_array))
+            },
         }
     }
 }
@@ -579,10 +617,22 @@ pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 pub fn take_along_axis_device(
     a: &Array,
     indices: &Array,
-    axis: i32,
+    axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     a.take_along_axis_device(indices, axis, stream)
+}
+
+/// See [`Array::put_along_axis`]
+#[default_device]
+pub fn put_along_axis_device(
+    a: &Array,
+    indices: &Array,
+    values: &Array,
+    axis: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.put_along_axis_device(indices, values, axis, stream)
 }
 
 /// See [`Array::take`]

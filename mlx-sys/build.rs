@@ -1,5 +1,6 @@
 extern crate cmake;
 
+use bindgen::RustTarget;
 use cmake::Config;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -81,6 +82,7 @@ fn main() {
 
     // generate bindings
     let bindings = bindgen::Builder::default()
+        .rust_target(RustTarget::Stable_1_73)
         .header("src/mlx-c/mlx/c/mlx.h")
         .header("src/mlx-c/mlx/c/linalg.h")
         .header("src/mlx-c/mlx/c/error.h")

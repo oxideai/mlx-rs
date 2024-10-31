@@ -367,7 +367,7 @@ generate_builder! {
     /// ```
     #[derive(Debug, Clone, ModuleParameters)]
     pub struct LeakyRelu {
-        /// The negative slope. Default to [`LeakyReLU::`] if not provided.
+        /// The negative slope. Default to [`LeakyReLU::DEFAULT_NEG_SLOPE`] if not provided.
         #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
         pub neg_slope: f32,
     }

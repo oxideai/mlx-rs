@@ -1,14 +1,14 @@
 [package]
-name = "mlx-nn"
+name = "mlx-fast"
 version.workspace = true
 authors.workspace = true
 edition = "2021"
 
 [dependencies]
-mlx-internal-macros.workspace = true
-mlx-macros.workspace = true
 mlx-rs.workspace = true
-thiserror.workspace = true
+mlx-sys.workspace = true
+mlx-internal-macros.workspace = true
+
 
 [dev-dependencies]
 float_eq.workspace = true

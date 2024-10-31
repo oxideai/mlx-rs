@@ -1,10 +1,17 @@
+[workspace.package]
+version = "0.14.0"
+authors = [
+    "Minghua Wu <michael.wu1107@gmail.com>",
+    "David Chavez <david@dcvz.io>",
+]
 
 [workspace]
 members = [
     "mlx-macros", 
     "mlx-sys", 
     "mlx-rs", 
-    "mlx-nn", 
+    "mlx-nn",
+    "mlx-fast",
     "examples/*", "mlx-internal-macros",
 ]
 
@@ -16,7 +23,8 @@ mlx-sys = { version = "0.0.10", path = "mlx-sys" }
 mlx-macros = { version = "0.1.0", path = "mlx-macros" }
 mlx-internal-macros = { version = "0.1.0", path = "mlx-internal-macros" }
 mlx-rs = { version = "0.14.0", path = "mlx-rs" }
-mlx-nn = { version = "0.1.0", path = "mlx-nn" }
+mlx-nn = { version = "0.14.0", path = "mlx-nn" }
+mlx-fast = { version = "0.14.0", path = "mlx-fast" }
 
 # external dependencies
 thiserror = "1"

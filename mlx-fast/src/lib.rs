@@ -6,6 +6,7 @@ use mlx_rs::{Array, Stream, StreamOrDevice};
 
 /// Optimized implementation of `NN.RoPE`.
 #[allow(non_snake_case)]
+#[allow(clippy::too_many_arguments)]
 #[default_device]
 pub fn RoPE_device<'a>(
     array: impl AsRef<Array>,
@@ -93,7 +94,7 @@ pub fn scaled_dot_product_attention_device<'a>(
 /// - eps: A small additive constant for numerical stability
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn rms_norm_device<'a>(
+pub fn rms_norm_device(
     x: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     eps: f32,

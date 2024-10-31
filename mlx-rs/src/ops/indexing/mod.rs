@@ -320,17 +320,32 @@ impl Array {
     pub fn take_device(
         &self,
         indices: &Array,
-        axis: impl Into<Option<i32>>,
+        axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
-            let c_array = match axis.into() {
-                Some(axis) => try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
-                },
-                None => try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_take_all(self.c_array, indices.c_array, stream.as_ref().as_ptr())
-                },
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
+    }
+
+    /// Take elements from flattened 1-D array.
+    ///
+    /// # Params
+    ///
+    /// - `indices`: The indices to take from the array.
+    #[default_device]
+    pub fn take_all_device(
+        &self,
+        indices: &Array,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_take_all(self.c_array, indices.c_array, stream.as_ref().as_ptr())
             };
 
             Ok(Array::from_ptr(c_array))
@@ -625,10 +640,20 @@ pub fn put_along_axis_device(
 pub fn take_device(
     a: &Array,
     indices: &Array,
-    axis: impl Into<Option<i32>>,
+    axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     a.take_device(indices, axis, stream)
+}
+
+/// See [`Array::take_all`]
+#[default_device]
+pub fn take_all_device(
+    a: &Array,
+    indices: &Array,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    a.take_all_device(indices, stream)
 }
 
 /// Returns the `k` largest elements from the input along a given axis.

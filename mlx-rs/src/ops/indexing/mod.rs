@@ -392,7 +392,7 @@ impl Array {
                 };
 
                 let array = Array::from_ptr(c_array);
-                let array = array.reshape_device(&self.shape(), &stream)?;
+                let array = array.reshape_device(self.shape(), &stream)?;
                 Ok(array)
             },
             Some(ax) => unsafe {

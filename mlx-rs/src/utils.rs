@@ -367,37 +367,6 @@ where
 
 extern "C" fn noop_dtor(_data: *mut std::ffi::c_void) {}
 
-pub(crate) struct VectorVectorArray {
-    c_vec: mlx_sys::mlx_vector_vector_array,
-}
-
-impl Drop for VectorVectorArray {
-    fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.c_vec as *mut c_void) }
-    }
-}
-
-impl VectorVectorArray {
-    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_vector_array) -> Self {
-        Self { c_vec }
-    }
-
-    pub(crate) fn into_values<T>(self) -> T
-    where
-        T: FromIterator<VectorArray>,
-    {
-        unsafe {
-            let size = mlx_sys::mlx_vector_vector_array_size(self.c_vec);
-            (0..size)
-                .map(|i| {
-                    let c_array = mlx_sys::mlx_vector_vector_array_get(self.c_vec, i);
-                    VectorArray::from_ptr(c_array)
-                })
-                .collect::<T>()
-        }
-    }
-}
-
 pub(crate) struct TupleArrayArray {
     c_tuple: mlx_tuple_array_array,
 }

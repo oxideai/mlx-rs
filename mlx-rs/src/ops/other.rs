@@ -68,6 +68,39 @@ impl Array {
             Ok(Array::from_ptr(c_array))
         }
     }
+
+    /// Perform the Walsh-Hadamard transform along the final axis.
+    ///
+    /// Supports sizes `n = m*2^k` for `m` in `(1, 12, 20, 28)` and `2^k <= 8192`
+    /// for ``DType/float32`` and `2^k <= 16384` for ``DType/float16`` and ``DType/bfloat16``.
+    ///
+    /// # Params
+    /// - scale: scale the output by this factor -- default is `1.0/sqrt(array.dim(-1))`
+    /// - stream: stream to evaluate on.
+    #[default_device]
+    pub fn hadamard_transform_device(
+        &self,
+        scale: impl Into<Option<f32>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, Exception> {
+        let scale = scale.into();
+        let scale = mlx_sys::mlx_optional_float {
+            value: scale.unwrap_or(0.0),
+            has_value: scale.is_some(),
+        };
+
+        unsafe {
+            let c_array = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_hadamard_transform(
+                    self.c_array,
+                    scale,
+                    stream.as_ref().as_ptr(),
+                )
+            };
+
+            Ok(Array::from_ptr(c_array))
+        }
+    }
 }
 
 /// See [`Array::diag`]
@@ -247,5 +280,24 @@ mod tests {
         let m = array!([[1, 2], [3, 4]]);
         let out = einsum("ii->", &[m]).unwrap();
         assert_eq!(out, array!(5.0));
+    }
+
+    #[test]
+    fn test_hadamard_transform() {
+        let input = Array::from_slice(&[1.0, -1.0, -1.0, 1.0], &[2, 2]);
+        let expected = Array::from_slice(
+            &[
+                0.0,
+                2.0_f32 / 2.0_f32.sqrt(),
+                0.0,
+                -2.0_f32 / 2.0_f32.sqrt(),
+            ],
+            &[2, 2],
+        );
+        let result = input.hadamard_transform(None).unwrap();
+
+        let c = result.all_close(&expected, 1e-5, 1e-5, None).unwrap();
+        let c_data: &[bool] = c.as_slice();
+        assert_eq!(c_data, [true]);
     }
 }

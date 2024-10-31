@@ -695,7 +695,7 @@ impl PadMode {
 /// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
-/// let result = pad(&a, 1, Array::from_int(0), PadMode::Constant);
+/// let result = pad(&a, 1, Array::from_int(0), None);
 /// ```
 #[default_device]
 pub fn pad_device<'a>(

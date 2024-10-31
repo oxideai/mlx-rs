@@ -78,8 +78,8 @@ pub fn conv_general_device<'a>(
 /// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv1d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<i32>>,
     padding: impl Into<Option<i32>>,
     dilation: impl Into<Option<i32>>,
@@ -94,8 +94,8 @@ pub fn conv1d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv1d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride,
                 padding,
                 dilation,
@@ -121,8 +121,8 @@ pub fn conv1d_device(
 /// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv2d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32)>>,
     padding: impl Into<Option<(i32, i32)>>,
     dilation: impl Into<Option<(i32, i32)>>,
@@ -136,8 +136,8 @@ pub fn conv2d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv2d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 padding.0,
@@ -157,8 +157,8 @@ pub fn conv2d_device(
 /// Only the default `groups=1` is currently supported.
 #[default_device]
 pub fn conv3d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32, i32)>>,
     padding: impl Into<Option<(i32, i32, i32)>>,
     dilation: impl Into<Option<(i32, i32, i32)>>,
@@ -172,8 +172,8 @@ pub fn conv3d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv3d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 stride.2,
@@ -193,21 +193,21 @@ pub fn conv3d_device(
 
 /// 1D transposed convolution over an input with several channels.
 ///
-/// > Only the default `groups=1` is currently supported.
+/// Only the default `groups=1` is currently supported.
 ///
 /// # Params
 ///
 /// - array: input array of shape `[N, H, C_in]`
 /// - weight: weight array of shape `[C_out, H, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
-/// - stream: stream or device to evaluate on
+/// - stride: kernel stride. Default to 1 if not specified.
+/// - padding: input padding. Default to 0 if not specified.
+/// - dilation: kernel dilation. Default to 1 if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
 #[default_device]
 pub fn conv_transposed1d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<i32>>,
     padding: impl Into<Option<i32>>,
     dilation: impl Into<Option<i32>>,
@@ -222,8 +222,8 @@ pub fn conv_transposed1d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv_transpose1d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride,
                 padding,
                 dilation,
@@ -237,22 +237,22 @@ pub fn conv_transposed1d_device(
 
 /// 2D transposed convolution over an input with several channels.
 ///
-/// > Only the default `groups=1` is currently supported.
+/// Only the default `groups=1` is currently supported.
 ///
 /// The numeric parameters may be given as single values:
 ///
 /// # Params
 /// - array: input array of shape `[N, H, W, C_in]`
 /// - weight: weight array of shape `[C_out, H, W, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
-/// - stream: stream or device to evaluate on
+/// - stride: kernel stride. Default to (1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
 #[default_device]
 pub fn conv_transposed2d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32)>>,
     padding: impl Into<Option<(i32, i32)>>,
     dilation: impl Into<Option<(i32, i32)>>,
@@ -266,8 +266,8 @@ pub fn conv_transposed2d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv_transpose2d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 padding.0,
@@ -285,22 +285,22 @@ pub fn conv_transposed2d_device(
 
 /// 3D transposed convolution over an input with several channels.
 ///
-/// > Only the default `groups=1` is currently supported.
+/// Only the default `groups=1` is currently supported.
 ///
 /// The numeric parameters may be given as single values:
 ///
 /// # Params
 /// - array: input array of shape `[N, D, H, W, C_in]`
 /// - weight: weight array of shape `[C_out, D, H, W, C_in]`
-/// - stride: kernel stride
-/// - padding: input padding
-/// - dilation: kernel dilation
-/// - groups: input feature groups
-/// - stream: stream or device to evaluate on
+/// - stride: kernel stride. Default to (1, 1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
 #[default_device]
 pub fn conv_transposed3d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32, i32)>>,
     padding: impl Into<Option<(i32, i32, i32)>>,
     dilation: impl Into<Option<(i32, i32, i32)>>,
@@ -314,8 +314,8 @@ pub fn conv_transposed3d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv_transpose3d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 stride.2,

@@ -100,17 +100,20 @@ pub fn diagonal_device(
 /// - operands: input arrays
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn einsum_device(
+pub fn einsum_device<'a>(
     subscripts: &str,
-    operands: &[&Array],
+    operands: impl IntoIterator<Item = &'a Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let subscripts = unsafe { mlx_sys::mlx_string_new(subscripts.as_ptr() as *const i8) };
+    let c_subscripts = std::ffi::CString::new(subscripts).map_err(|_| Exception {
+        what: String::from("Subscripts contain null bytes"),
+    })?;
+    let subscripts = unsafe { mlx_sys::mlx_string_new(c_subscripts.as_ptr()) };
 
     let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
-    let c_arrays: Vec<_> = operands.iter().map(|a| a.c_array).collect();
+    let c_arrays: Vec<_> = operands.into_iter().map(|a| a.c_array).collect();
     unsafe {
-        mlx_sys::mlx_vector_array_add_data(c_operands, c_arrays.as_ptr(), operands.len());
+        mlx_sys::mlx_vector_array_add_data(c_operands, c_arrays.as_ptr(), c_arrays.len());
     }
 
     unsafe {
@@ -237,12 +240,12 @@ mod tests {
         // Test dot product (vector-vector)
         let a = array!([0.0, 1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0, 6.0, 7.0]);
-        let out = einsum("i,i->", &[&a, &b]).unwrap();
+        let out = einsum("i,i->", &[a, b]).unwrap();
         assert_eq!(out, array!(38.0));
 
         // Test trace (diagonal sum)
         let m = array!([[1, 2], [3, 4]]);
-        let out = einsum("ii->", &[&m]).unwrap();
+        let out = einsum("ii->", &[m]).unwrap();
         assert_eq!(out, array!(5.0));
     }
 }

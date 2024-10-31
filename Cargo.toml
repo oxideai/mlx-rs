@@ -23,7 +23,6 @@ mlx-macros = { version = "0.1.0", path = "mlx-macros" }
 mlx-internal-macros = { version = "0.1.0", path = "mlx-internal-macros" }
 mlx-rs = { version = "0.14.0", path = "mlx-rs" }
 mlx-nn = { version = "0.14.0", path = "mlx-nn" }
-mlx-fast = { version = "0.14.0", path = "mlx-fast" }
 
 # external dependencies
 thiserror = "1"

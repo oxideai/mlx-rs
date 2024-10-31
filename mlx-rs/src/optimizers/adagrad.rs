@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use mlx_internal_macros::generate_builder;
 use crate::{array, error::Exception, ops::square, Array};
+use mlx_internal_macros::generate_builder;
 
 use crate::utils::get_mut_or_insert_with;
 

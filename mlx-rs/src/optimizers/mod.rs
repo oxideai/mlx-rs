@@ -3,9 +3,9 @@
 use std::{borrow::Borrow, rc::Rc};
 
 use crate::{
-    Array,
     error::Exception,
     module::{FlattenedModuleParam, ModuleParameters},
+    Array,
 };
 
 mod adadelta;

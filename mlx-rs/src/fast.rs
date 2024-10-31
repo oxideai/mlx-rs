@@ -220,13 +220,13 @@ mod tests {
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
-            0.4562537670135498,
-            abs <= 0.009125075340270997
+            0.456_253_77,
+            abs <= 0.009_125_075
         );
         assert_float_eq!(
             result.sum(None, None).unwrap().item::<f32>(),
-            116.80096435546875,
-            abs <= 2.3360192871093752
+            116.800_964,
+            abs <= 2.336_019_3
         );
     }
 
@@ -243,13 +243,13 @@ mod tests {
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
-            0.8729387521743774,
-            abs <= 0.01745877504348755
+            0.872_938_75,
+            abs <= 0.017_458_774
         );
         assert_float_eq!(
             result.sum(None, None).unwrap().item::<f32>(),
-            223.47232055664062,
-            abs <= 4.469446411132813
+            223.472_32,
+            abs <= 4.469_446
         );
     }
 
@@ -269,13 +269,13 @@ mod tests {
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
-            0.2909903824329376,
-            abs <= 0.005819807648658752
+            0.290_990_38,
+            abs <= 0.005_819_807_8
         );
         assert_float_eq!(
             result.sum(None, None).unwrap().item::<f32>(),
-            4.655846118927002,
-            abs <= 0.09311692237854004
+            4.655_846,
+            abs <= 0.093_116_924
         );
     }
 }

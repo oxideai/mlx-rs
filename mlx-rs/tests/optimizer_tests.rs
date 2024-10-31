@@ -3,8 +3,15 @@
 
 use mlx_macros::ModuleParameters;
 use mlx_rs::{
-    array, assert_array_eq, error::Exception, module::{FlattenedModuleParam, Module, ModuleParameters, Param}, ops::{ones, zeros}, optimizers::{AdaDelta, AdaGrad, Optimizer, RmsProp, Sgd}, random::uniform, transforms::{eval, eval_params}, Array, Dtype,
+    array, assert_array_eq,
+    error::Exception,
     losses::{LossReduction, MseLoss},
+    module::{FlattenedModuleParam, Module, ModuleParameters, Param},
+    ops::{ones, zeros},
+    optimizers::{AdaDelta, AdaGrad, Optimizer, RmsProp, Sgd},
+    random::uniform,
+    transforms::{eval, eval_params},
+    Array, Dtype,
 };
 
 use mlx_nn::module_value_and_grad;

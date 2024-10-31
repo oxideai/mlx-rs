@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
-use mlx_internal_macros::generate_builder;
 use crate::{array, ops::sqrt, Array};
+use mlx_internal_macros::generate_builder;
 
 use crate::error::AdaDeltaBuildError;
 

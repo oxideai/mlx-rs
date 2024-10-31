@@ -1,7 +1,12 @@
 use mlx_nn::module_value_and_grad;
 use mlx_rs::{
+    array,
+    error::Exception,
     losses::{CrossEntropy, LossReduction},
-    array, error::Exception, module::{Module, ModuleParameters}, optimizers::{Optimizer, Sgd}, transforms::eval_params, Array
+    module::{Module, ModuleParameters},
+    optimizers::{Optimizer, Sgd},
+    transforms::eval_params,
+    Array,
 };
 
 /// MLP model

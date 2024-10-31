@@ -1,9 +1,9 @@
 extern crate cmake;
 
+use bindgen::RustTarget;
 use cmake::Config;
 use std::env;
 use std::path::{Path, PathBuf};
-use bindgen::RustTarget;
 
 fn build_and_link_mlx_c() -> PathBuf {
     let mut config = Config::new("src/mlx-c");

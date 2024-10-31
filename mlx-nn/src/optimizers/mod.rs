@@ -7,10 +7,12 @@ use mlx_rs::{
     module::{FlattenedModuleParam, ModuleParameters},
 };
 
+mod adadelta;
 mod adagrad;
 mod rmsprop;
 mod sgd;
 
+pub use adadelta::*;
 pub use adagrad::*;
 pub use rmsprop::*;
 pub use sgd::*;

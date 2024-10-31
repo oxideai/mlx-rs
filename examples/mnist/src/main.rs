@@ -1,14 +1,7 @@
-use mlx_nn::{
-    losses::{CrossEntropy, LossReduction},
-    module_value_and_grad,
-    optimizers::Optimizer,
-};
+use mlx_nn::module_value_and_grad;
 use mlx_rs::{
-    array,
-    error::Exception,
-    module::{Module, ModuleParameters},
-    transforms::eval_params,
-    Array,
+    losses::{CrossEntropy, LossReduction},
+    array, error::Exception, module::{Module, ModuleParameters}, optimizers::{Optimizer, Sgd}, transforms::eval_params, Array
 };
 
 /// MLP model
@@ -52,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut loss_and_grad_fn = module_value_and_grad(loss_fn);
 
-    let mut optimizer = mlx_nn::optimizers::Sgd::new(lr);
+    let mut optimizer = Sgd::new(lr);
 
     for _ in 0..num_epochs {
         let mut loss_sum = array!(0.0);

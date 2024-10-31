@@ -11,7 +11,9 @@ members = [
     "mlx-sys", 
     "mlx-rs", 
     "mlx-nn",
-    "examples/*", "mlx-internal-macros",
+    "mlx-internal-macros",
+    "mlx-tests",
+    "examples/*", 
 ]
 
 resolver = "2"

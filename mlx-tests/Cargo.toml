@@ -1,0 +1,11 @@
+[package]
+name = "mlx-tests"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+mlx-rs.workspace = true
+mlx-nn.workspace = true

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
+use crate::{array, ops::sqrt, Array};
 use mlx_internal_macros::generate_builder;
-use mlx_rs::{array, ops::sqrt, Array};
 
 use crate::error::AdaDeltaBuildError;
 
@@ -79,7 +79,7 @@ impl Optimizer for AdaDelta {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), mlx_rs::error::Exception> {
+    ) -> Result<(), Exception> {
         let (v, u) = self
             .state
             .entry(key.clone())
@@ -105,76 +105,5 @@ impl Optimizer for AdaDelta {
         *u = u_new;
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use mlx_macros::ModuleParameters;
-    use mlx_rs::assert_array_eq;
-    use mlx_rs::module::Param;
-
-    use super::*;
-
-    #[derive(Debug, ModuleParameters)]
-    struct Model {
-        #[param]
-        a: Param<Array>,
-    }
-
-    // This unit test is adapted from the swift binding unit test `testAdaDelta` in
-    // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
-    #[test]
-    fn test_ada_delta() {
-        mlx_rs::random::seed(547);
-        let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-        assert_eq!(a.shape(), &[4, 3]);
-        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
-        assert_array_eq!(
-            a.mean(None, None).unwrap(),
-            array!(-0.348_337_02),
-            0.006966740489006043
-        );
-        assert_array_eq!(
-            a.sum(None, None).unwrap(),
-            array!(-4.180_044),
-            0.08360088348388672
-        );
-
-        let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
-        assert_eq!(a_grad.shape(), &[4, 3]);
-        assert_eq!(a_grad.dtype(), mlx_rs::Dtype::Float32);
-        assert_array_eq!(
-            a_grad.mean(None, None).unwrap(),
-            array!(0.522_678_4),
-            0.010453567504882813
-        );
-        assert_array_eq!(
-            a_grad.sum(None, None).unwrap(),
-            array!(6.272_14),
-            0.12544280052185058
-        );
-
-        let mut a_model = Model {
-            a: Param::new(a.clone()),
-        };
-        let mut a_grad_params = FlattenedModuleParam::new();
-        a_grad_params.insert("a".into(), a_grad.clone());
-
-        let mut optimizer = AdaDelta::new(0.1);
-
-        optimizer.apply(&mut a_model, a_grad_params).unwrap();
-        assert_eq!(a_model.a.shape(), &[4, 3]);
-        assert_eq!(a_model.a.dtype(), mlx_rs::Dtype::Float32);
-        assert_array_eq!(
-            a_model.a.mean(None, None).unwrap(),
-            array!(-0.348_442_4),
-            0.348442405462265
-        );
-        assert_array_eq!(
-            a_model.a.sum(None, None).unwrap(),
-            array!(-4.181_308_7),
-            0.08362617492675782
-        );
     }
 }

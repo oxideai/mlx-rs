@@ -1,12 +1,13 @@
 [package]
 name = "mlx-nn"
-version = "0.1.0"
+version.workspace = true
+authors.workspace = true
 edition = "2021"
 
 [dependencies]
-mlx-rs.workspace = true
-mlx-macros.workspace = true
 mlx-internal-macros.workspace = true
+mlx-macros.workspace = true
+mlx-rs.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

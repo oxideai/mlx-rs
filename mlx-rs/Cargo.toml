@@ -1,10 +1,7 @@
 [package]
 name = "mlx-rs"
-version = "0.14.0"
-authors = [
-  "Minghua Wu <michael.wu1107@gmail.com>",
-  "David Chavez <david@dcvz.io>",
-]
+version.workspace = true
+authors.workspace = true
 edition = "2021"
 
 description = "Unofficial rust wrapper for Apple's mlx machine learning library."

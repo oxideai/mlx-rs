@@ -8,6 +8,7 @@ mod array;
 mod device;
 mod dtype;
 pub mod error;
+pub mod fast;
 pub mod fft;
 pub mod linalg;
 pub mod module;

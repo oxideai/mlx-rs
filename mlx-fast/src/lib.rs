@@ -87,6 +87,7 @@ pub fn scaled_dot_product_attention_device<'a>(
 /// The normalization is with respect to the last axis of the input `x`.
 ///
 /// # Params
+///
 /// - x: input array
 /// - weight: A multiplicative weight to scale the result by. The `weight` should be one-dimensional with the same size as the last axis of `x`.
 /// - eps: A small additive constant for numerical stability
@@ -115,6 +116,7 @@ pub fn rms_norm_device<'a>(
 /// The normalization is with respect to the last axis of the input `x`.
 ///
 /// # Params
+///
 /// - x: input array
 /// - weight: A multiplicative weight to scale the result by. The `weight` should be one-dimensional
 ///   with the same size as the last axis of `x`.  If not given no scaling will occur.

@@ -35,8 +35,6 @@ libc = "0.2"
 [dev-dependencies]
 pretty_assertions.workspace = true
 float_eq.workspace = true
-mlx-nn.workspace = true
-mlx-macros.workspace = true
 
 [features]
 default = ["accelerate", "metal"]

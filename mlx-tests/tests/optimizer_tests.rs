@@ -1,7 +1,6 @@
 //! Tests for the optimizers. These tests are placed here because the models
 //! used for testing make use of `ModuleParameter` macro.
 
-use mlx_macros::ModuleParameters;
 use mlx_rs::{
     array, assert_array_eq,
     error::Exception,
@@ -14,7 +13,7 @@ use mlx_rs::{
     Array, Dtype,
 };
 
-use mlx_nn::module_value_and_grad;
+use mlx_nn::{macros::ModuleParameters, module_value_and_grad};
 
 /* -------------------------------------------------------------------------- */
 /*                              Convergence tests                             */

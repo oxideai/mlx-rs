@@ -21,11 +21,13 @@ generate_builder! {
         /// The learning rate
         pub lr: Array,
 
-        /// The coefficient used for computing a running average of squared gradients
+        /// The coefficient used for computing a running average of squared gradients. Default to
+        /// [`AdaDelta::DEFAULT_RHO`].
         #[optional(ty = f32)]
         pub rho: Array,
 
-        /// The epsilon added to the denominator to improve numerical stability
+        /// The epsilon added to the denominator to improve numerical stability. Default to
+        /// [`AdaDelta::DEFAULT_EPS`].
         #[optional(ty = f32)]
         pub eps: Array,
 

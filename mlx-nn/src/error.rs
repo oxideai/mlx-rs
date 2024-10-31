@@ -36,3 +36,15 @@ pub enum DropoutBuildError {
     #[error("Dropout probability must be in the range [0, 1)")]
     InvalidProbability,
 }
+
+/// Error with building an AdaDelta optimizer
+#[derive(Debug, Clone, PartialEq, Error)]
+pub enum AdaDeltaBuildError {
+    /// Rho must be non-negative
+    #[error("rho must be non-negative")]
+    NegativeRho,
+
+    /// Epsilon must be non-negative
+    #[error("epsilon must be non-negative")]
+    NegativeEps,
+}

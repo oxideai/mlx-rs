@@ -91,6 +91,7 @@ mod tests {
     }
 
     // This unit test is adapted from the swift binding unit test `testAdaGrad` in
+    // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
     #[test]
     fn test_adagrad() {
         mlx_rs::random::seed(958);

@@ -3,6 +3,7 @@ extern crate cmake;
 use cmake::Config;
 use std::env;
 use std::path::{Path, PathBuf};
+use bindgen::RustTarget;
 
 fn build_and_link_mlx_c() -> PathBuf {
     let mut config = Config::new("src/mlx-c");
@@ -81,6 +82,7 @@ fn main() {
 
     // generate bindings
     let bindings = bindgen::Builder::default()
+        .rust_target(RustTarget::Stable_1_73)
         .header("src/mlx-c/mlx/c/mlx.h")
         .header("src/mlx-c/mlx/c/linalg.h")
         .header("src/mlx-c/mlx/c/error.h")

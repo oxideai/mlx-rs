@@ -3,6 +3,7 @@
 
 #include "mlx/c/array.h"
 #include "mlx/c/closure.h"
+#include "mlx/c/vector.h"
 
 #include "result.h"
 

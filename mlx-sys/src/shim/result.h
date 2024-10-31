@@ -1,8 +1,8 @@
 #ifndef MLC_X_SHIM_RESULT_H
 #define MLC_X_SHIM_RESULT_H
 
-#include "mlx/c/array.h"
 #include "mlx/c/string.h"
+#include "mlx/c/vector.h"
 
 #ifdef __cplusplus
 #include <stdexcept>

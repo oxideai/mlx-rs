@@ -78,8 +78,8 @@ pub fn conv_general_device<'a>(
 /// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv1d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<i32>>,
     padding: impl Into<Option<i32>>,
     dilation: impl Into<Option<i32>>,
@@ -94,8 +94,8 @@ pub fn conv1d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv1d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride,
                 padding,
                 dilation,
@@ -121,8 +121,8 @@ pub fn conv1d_device(
 /// - groups: input feature groups. Default to 1 if not specified.
 #[default_device]
 pub fn conv2d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32)>>,
     padding: impl Into<Option<(i32, i32)>>,
     dilation: impl Into<Option<(i32, i32)>>,
@@ -136,8 +136,8 @@ pub fn conv2d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv2d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 padding.0,
@@ -157,8 +157,8 @@ pub fn conv2d_device(
 /// Only the default `groups=1` is currently supported.
 #[default_device]
 pub fn conv3d_device(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32, i32)>>,
     padding: impl Into<Option<(i32, i32, i32)>>,
     dilation: impl Into<Option<(i32, i32, i32)>>,
@@ -172,8 +172,8 @@ pub fn conv3d_device(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_conv3d(
-                array.as_ptr(),
-                weight.as_ptr(),
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
                 stride.0,
                 stride.1,
                 stride.2,
@@ -187,6 +187,149 @@ pub fn conv3d_device(
                 stream.as_ref().as_ptr(),
             )
         };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// 1D transposed convolution over an input with several channels.
+///
+/// Only the default `groups=1` is currently supported.
+///
+/// # Params
+///
+/// - array: input array of shape `[N, H, C_in]`
+/// - weight: weight array of shape `[C_out, H, C_in]`
+/// - stride: kernel stride. Default to 1 if not specified.
+/// - padding: input padding. Default to 0 if not specified.
+/// - dilation: kernel dilation. Default to 1 if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
+#[default_device]
+pub fn conv_transposed1d_device(
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
+    stride: impl Into<Option<i32>>,
+    padding: impl Into<Option<i32>>,
+    dilation: impl Into<Option<i32>>,
+    groups: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let stride = stride.into().unwrap_or(1);
+    let padding = padding.into().unwrap_or(0);
+    let dilation = dilation.into().unwrap_or(1);
+    let groups = groups.into().unwrap_or(1);
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_conv_transpose1d(
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
+                stride,
+                padding,
+                dilation,
+                groups,
+                stream.as_ref().as_ptr(),
+            )
+        };
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// 2D transposed convolution over an input with several channels.
+///
+/// Only the default `groups=1` is currently supported.
+///
+/// The numeric parameters may be given as single values:
+///
+/// # Params
+/// - array: input array of shape `[N, H, W, C_in]`
+/// - weight: weight array of shape `[C_out, H, W, C_in]`
+/// - stride: kernel stride. Default to (1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
+#[default_device]
+pub fn conv_transposed2d_device(
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
+    stride: impl Into<Option<(i32, i32)>>,
+    padding: impl Into<Option<(i32, i32)>>,
+    dilation: impl Into<Option<(i32, i32)>>,
+    groups: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let stride = stride.into().unwrap_or((1, 1));
+    let padding = padding.into().unwrap_or((0, 0));
+    let dilation = dilation.into().unwrap_or((1, 1));
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_conv_transpose2d(
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
+                stride.0,
+                stride.1,
+                padding.0,
+                padding.1,
+                dilation.0,
+                dilation.1,
+                groups.into().unwrap_or(1),
+                stream.as_ref().as_ptr(),
+            )
+        };
+
+        Ok(Array::from_ptr(c_array))
+    }
+}
+
+/// 3D transposed convolution over an input with several channels.
+///
+/// Only the default `groups=1` is currently supported.
+///
+/// The numeric parameters may be given as single values:
+///
+/// # Params
+/// - array: input array of shape `[N, D, H, W, C_in]`
+/// - weight: weight array of shape `[C_out, D, H, W, C_in]`
+/// - stride: kernel stride. Default to (1, 1, 1) if not specified.
+/// - padding: input padding. Default to (0, 0, 0) if not specified.
+/// - dilation: kernel dilation. Default to (1, 1, 1) if not specified.
+/// - groups: input feature groups. Default to 1 if not specified.
+/// - stream: stream or device to evaluate on.
+#[default_device]
+pub fn conv_transposed3d_device(
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
+    stride: impl Into<Option<(i32, i32, i32)>>,
+    padding: impl Into<Option<(i32, i32, i32)>>,
+    dilation: impl Into<Option<(i32, i32, i32)>>,
+    groups: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
+    let stride = stride.into().unwrap_or((1, 1, 1));
+    let padding = padding.into().unwrap_or((0, 0, 0));
+    let dilation = dilation.into().unwrap_or((1, 1, 1));
+
+    unsafe {
+        let c_array = try_catch_c_ptr_expr! {
+            mlx_sys::mlx_conv_transpose3d(
+                array.as_ref().as_ptr(),
+                weight.as_ref().as_ptr(),
+                stride.0,
+                stride.1,
+                stride.2,
+                padding.0,
+                padding.1,
+                padding.2,
+                dilation.0,
+                dilation.1,
+                dilation.2,
+                groups.into().unwrap_or(1),
+                stream.as_ref().as_ptr(),
+            )
+        };
+
         Ok(Array::from_ptr(c_array))
     }
 }
@@ -224,6 +367,28 @@ mod tests {
     }
 
     #[test]
+    fn test_conv_transposed1d() {
+        // Single channel input
+        let input = Array::from_slice(&[1.0, 2.0, 3.0], &[1, 3, 1]);
+        // Single input/output channel kernel
+        let weights = Array::from_slice(&[1.0, 0.5], &[1, 2, 1]);
+
+        let result = conv_transposed1d(
+            &input,
+            &weights,
+            Some(1), // stride
+            Some(0), // padding
+            Some(1), // dilation
+            Some(1), // groups
+        )
+        .unwrap();
+
+        let expected = [1.0, 2.5, 4.0, 1.5];
+        assert_eq!(result.shape(), &[1, 4, 1]);
+        assert_eq!(result.as_slice::<f32>(), &expected);
+    }
+
+    #[test]
     fn test_conv2d() {
         // Define a 2x2 input with one channel (grayscale image or similar)
         let input_data = [1.0, 2.0, 3.0, 4.0];
@@ -249,6 +414,28 @@ mod tests {
         // Expected result is the convolution of a 2x2 filter over a 2x2 input with valid padding, resulting in a single output value
         let expected_output = 1.0 * 1.0 + 2.0 * 0.0 + 3.0 * 0.0 + 4.0 * 1.0; // = 1*1 + 4*1 = 5
         assert_eq!(result.as_slice::<f32>(), &[expected_output]);
+    }
+
+    #[test]
+    fn test_conv_transposed2d() {
+        // 2x2 single channel input
+        let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[1, 2, 2, 1]);
+        // 2x2 single channel kernel (identity-like)
+        let weights = Array::from_slice(&[1.0, 0.0, 0.0, 1.0], &[1, 2, 2, 1]);
+
+        let result = conv_transposed2d(
+            &input,
+            &weights,
+            Some((1, 1)), // stride
+            Some((0, 0)), // padding
+            Some((1, 1)), // dilation
+            Some(1),      // groups
+        )
+        .unwrap();
+
+        let expected = [1.0, 2.0, 0.0, 3.0, 5.0, 2.0, 0.0, 3.0, 4.0];
+        assert_eq!(result.shape(), &[1, 3, 3, 1]);
+        assert_eq!(result.as_slice::<f32>(), &expected);
     }
 
     #[test]
@@ -284,6 +471,27 @@ mod tests {
             + 7.0 * 1.0
             + 8.0 * 0.0; // = 1*1 + 4*1 + 6*1 + 7*1 = 18
         assert_eq!(result.as_slice::<f32>(), &[expected_output]);
+    }
+
+    #[test]
+    fn test_conv_transposed3d() {
+        // 2x2x2 single channel input
+        let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[1, 2, 2, 2, 1]);
+        // 2x2x2 single channel kernel
+        let weights =
+            Array::from_slice(&[1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0], &[1, 2, 2, 2, 1]);
+
+        let result = conv_transposed3d(
+            &input,
+            &weights,
+            Some((1, 1, 1)), // stride
+            Some((0, 0, 0)), // padding
+            Some((1, 1, 1)), // dilation
+            Some(1),         // groups
+        )
+        .unwrap();
+
+        assert_eq!(result.shape(), &[1, 3, 3, 3, 1]);
     }
 
     #[test]

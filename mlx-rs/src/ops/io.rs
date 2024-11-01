@@ -90,9 +90,9 @@ pub fn load_arrays_with_metadata_device(
 ///
 /// # Params
 ///
-/// - a: array to save
+/// - array: array to save
 /// - url: URL of file to load
-pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
+pub fn save_array(array: &Array, path: &Path) -> Result<(), IOError> {
     check_file_extension(path, "npy")?;
     let file_ptr = FilePtr::open(path, "w")?;
 
@@ -105,9 +105,9 @@ pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
 ///
 /// # Params
 ///
-/// - a: array to save
+/// - arrays: arrays to save
 /// - metadata: metadata to save
-/// - url: URL of file to load
+/// - path: path of file to save
 /// - stream: stream or device to evaluate on
 pub fn save_arrays<'a>(
     arrays: &HashMap<String, Array>,

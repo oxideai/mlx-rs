@@ -24,7 +24,7 @@ impl FilePtr {
     }
 
     pub(crate) fn open(path: &Path, mode: &str) -> Result<Self, IOError> {
-        let path = CString::new(path.to_str().ok_or_else(|| IOError::InvalidUtf8)?)
+        let path = CString::new(path.to_str().ok_or(IOError::InvalidUtf8)?)
             .map_err(|_| IOError::NullBytes)?;
         let mode = CString::new(mode).map_err(|_| IOError::NullBytes)?;
 

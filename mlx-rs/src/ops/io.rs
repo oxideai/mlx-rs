@@ -13,7 +13,7 @@ fn prepare_file_path(path: &Path) -> Result<MlxString, IOError> {
         return Err(IOError::NotFile);
     }
 
-    let path_str = path.to_str().ok_or_else(|| IOError::InvalidUtf8)?;
+    let path_str = path.to_str().ok_or(IOError::InvalidUtf8)?;
     let path = MlxString::try_from(path_str).map_err(|_| IOError::NullBytes)?;
 
     Ok(path)
@@ -86,6 +86,7 @@ pub fn load_arrays_device(
 /// # Params
 /// - path: path of file to load
 /// - stream: stream or device to evaluate on
+#[allow(clippy::type_complexity)]
 #[default_device]
 pub fn load_arrays_with_metadata_device(
     path: &Path,
@@ -123,7 +124,7 @@ pub fn load_arrays_with_metadata_device(
 /// - url: URL of file to load
 pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
     check_file_extension(path, "npy")?;
-    let file_ptr = FilePtr::open(&path, "w")?;
+    let file_ptr = FilePtr::open(path, "w")?;
 
     unsafe {
         mlx_sys::mlx_save_file(file_ptr.as_ptr(), a.as_ptr());
@@ -152,7 +153,7 @@ pub fn save_arrays<'a>(
     let metadata_ref = metadata.into().unwrap_or(&default_metadata);
     let metadata = StringToStringMap::try_from(metadata_ref)?;
 
-    let file_ptr = FilePtr::open(&path, "w")?;
+    let file_ptr = FilePtr::open(path, "w")?;
 
     unsafe {
         mlx_sys::mlx_save_safetensors_file(file_ptr.as_ptr(), arrays.as_ptr(), metadata.as_ptr());

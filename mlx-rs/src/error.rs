@@ -14,7 +14,7 @@ pub enum ItemError {
 }
 
 #[derive(Error, PartialEq, Debug)]
-pub enum IOError {
+pub enum IoError {
     #[error("Path must point to a local file")]
     NotFile,
 

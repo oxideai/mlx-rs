@@ -1,4 +1,4 @@
-use crate::error::{Exception, IOError};
+use crate::error::{Exception, IoError};
 use crate::utils::MlxString;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
@@ -24,15 +24,15 @@ impl FilePtr {
         self.0.as_ptr()
     }
 
-    pub(crate) fn open(path: &Path, mode: &str) -> Result<Self, IOError> {
-        let path = CString::new(path.to_str().ok_or(IOError::InvalidUtf8)?)
-            .map_err(|_| IOError::NullBytes)?;
-        let mode = CString::new(mode).map_err(|_| IOError::NullBytes)?;
+    pub(crate) fn open(path: &Path, mode: &str) -> Result<Self, IoError> {
+        let path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)
+            .map_err(|_| IoError::NullBytes)?;
+        let mode = CString::new(mode).map_err(|_| IoError::NullBytes)?;
 
         unsafe {
             NonNull::new(mlx_sys::fopen(path.as_ptr(), mode.as_ptr()))
                 .map(Self)
-                .ok_or(IOError::UnableToOpenFile)
+                .ok_or(IoError::UnableToOpenFile)
         }
     }
 }
@@ -49,22 +49,22 @@ impl Drop for SafeTensors {
 
 impl SafeTensors {
     #[default_device]
-    pub(crate) fn load_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Self, IOError> {
+    pub(crate) fn load_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Self, IoError> {
         if !path.is_file() {
-            return Err(IOError::NotFile);
+            return Err(IoError::NotFile);
         }
 
         let extension = path
             .extension()
             .and_then(|ext| ext.to_str())
-            .ok_or(IOError::UnsupportedFormat)?;
+            .ok_or(IoError::UnsupportedFormat)?;
 
         if extension != "safetensors" {
-            return Err(IOError::UnsupportedFormat);
+            return Err(IoError::UnsupportedFormat);
         }
 
-        let path_str = path.to_str().ok_or(IOError::InvalidUtf8)?;
-        let mlx_path = MlxString::try_from(path_str).map_err(|_| IOError::NullBytes)?;
+        let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
+        let mlx_path = MlxString::try_from(path_str).map_err(|_| IoError::NullBytes)?;
 
         let load_result = (|| unsafe {
             let c_safetensors = try_catch_c_ptr_expr! {
@@ -76,7 +76,7 @@ impl SafeTensors {
 
         match load_result {
             Ok(map) => Ok(map),
-            Err(e) => Err(IOError::from(e)),
+            Err(e) => Err(IoError::from(e)),
         }
     }
 
@@ -272,7 +272,7 @@ impl<T: MlxMapValue> TryFrom<&HashMap<String, T>> for StringToMap<T>
 where
     T::MapType: Copy,
 {
-    type Error = IOError;
+    type Error = IoError;
 
     fn try_from(hashmap: &HashMap<String, T>) -> Result<Self, Self::Error> {
         let mlx_map = T::mlx_map_new();
@@ -286,7 +286,7 @@ where
                     mlx_sys::mlx_free(ptr);
                 }
 
-                return Err(IOError::AllocationError);
+                return Err(IoError::AllocationError);
             }
         }
 

@@ -1,4 +1,4 @@
-use crate::error::IOError;
+use crate::error::IoError;
 use crate::utils::{
     io::{FilePtr, SafeTensors, StringToArrayMap, StringToStringMap},
     MlxString,
@@ -8,21 +8,21 @@ use mlx_internal_macros::default_device;
 use std::collections::HashMap;
 use std::path::Path;
 
-fn prepare_file_path(path: &Path) -> Result<MlxString, IOError> {
+fn prepare_file_path(path: &Path) -> Result<MlxString, IoError> {
     if !path.is_file() {
-        return Err(IOError::NotFile);
+        return Err(IoError::NotFile);
     }
 
-    let path_str = path.to_str().ok_or(IOError::InvalidUtf8)?;
-    let path = MlxString::try_from(path_str).map_err(|_| IOError::NullBytes)?;
+    let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
+    let path = MlxString::try_from(path_str).map_err(|_| IoError::NullBytes)?;
 
     Ok(path)
 }
 
-fn check_file_extension(path: &Path, expected: &str) -> Result<(), IOError> {
+fn check_file_extension(path: &Path, expected: &str) -> Result<(), IoError> {
     match path.extension().and_then(|ext| ext.to_str()) {
         Some(ext) if ext == expected => Ok(()),
-        _ => Err(IOError::UnsupportedFormat),
+        _ => Err(IoError::UnsupportedFormat),
     }
 }
 
@@ -33,7 +33,7 @@ fn check_file_extension(path: &Path, expected: &str) -> Result<(), IOError> {
 /// - path: path of file to load
 /// - stream: stream or device to evaluate on
 #[default_device]
-pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Array, IOError> {
+pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Array, IoError> {
     let mlx_path = prepare_file_path(path)?;
     check_file_extension(path, "npy")?;
 
@@ -46,7 +46,7 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
 
     match load_result {
         Ok(array) => Ok(array),
-        Err(e) => Err(IOError::from(e)),
+        Err(e) => Err(IoError::from(e)),
     }
 }
 
@@ -61,7 +61,7 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
 pub fn load_arrays_device(
     path: &Path,
     stream: impl AsRef<Stream>,
-) -> Result<HashMap<String, Array>, IOError> {
+) -> Result<HashMap<String, Array>, IoError> {
     let safetensors = SafeTensors::load_device(path, stream)?;
     let data = safetensors.data()?;
     Ok(data)
@@ -78,7 +78,7 @@ pub fn load_arrays_device(
 pub fn load_arrays_with_metadata_device(
     path: &Path,
     stream: impl AsRef<Stream>,
-) -> Result<(HashMap<String, Array>, HashMap<String, String>), IOError> {
+) -> Result<(HashMap<String, Array>, HashMap<String, String>), IoError> {
     let safetensors = SafeTensors::load_device(path, stream)?;
     let data = safetensors.data()?;
     let metadata = safetensors.metadata()?;
@@ -92,7 +92,7 @@ pub fn load_arrays_with_metadata_device(
 ///
 /// - array: array to save
 /// - url: URL of file to load
-pub fn save_array(array: &Array, path: &Path) -> Result<(), IOError> {
+pub fn save_array(array: &Array, path: &Path) -> Result<(), IoError> {
     check_file_extension(path, "npy")?;
     let file_ptr = FilePtr::open(path, "w")?;
 
@@ -113,7 +113,7 @@ pub fn save_arrays<'a>(
     arrays: &HashMap<String, Array>,
     metadata: impl Into<Option<&'a HashMap<String, String>>>,
     path: &Path,
-) -> Result<(), IOError> {
+) -> Result<(), IoError> {
     check_file_extension(path, "safetensors")?;
 
     let arrays = StringToArrayMap::try_from(arrays)?;

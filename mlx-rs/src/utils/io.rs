@@ -1,6 +1,7 @@
-use crate::error::IOError;
+use crate::error::{Exception, IOError};
 use crate::utils::MlxString;
-use crate::Array;
+use crate::{Array, Stream, StreamOrDevice};
+use mlx_internal_macros::default_device;
 use mlx_sys::FILE;
 use std::collections::HashMap;
 use std::ffi::{c_void, CStr, CString};
@@ -47,12 +48,56 @@ impl Drop for SafeTensors {
 }
 
 impl SafeTensors {
-    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_safetensors {
-        self.c_safetensors
+    #[default_device]
+    pub(crate) fn load_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Self, IOError> {
+        if !path.is_file() {
+            return Err(IOError::NotFile);
+        }
+
+        let extension = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .ok_or(IOError::UnsupportedFormat)?;
+
+        if extension != "safetensors" {
+            return Err(IOError::UnsupportedFormat);
+        }
+
+        let path_str = path.to_str().ok_or(IOError::InvalidUtf8)?;
+        let mlx_path = MlxString::try_from(path_str).map_err(|_| IOError::NullBytes)?;
+
+        let load_result = (|| unsafe {
+            let c_safetensors = try_catch_c_ptr_expr! {
+                mlx_sys::mlx_load_safetensors(mlx_path.as_ptr(), stream.as_ref().as_ptr())
+            };
+
+            Ok(Self { c_safetensors })
+        })();
+
+        match load_result {
+            Ok(map) => Ok(map),
+            Err(e) => Err(IOError::from(e)),
+        }
     }
 
-    pub(crate) unsafe fn from_ptr(c_safetensors: mlx_sys::mlx_safetensors) -> Self {
-        Self { c_safetensors }
+    pub(crate) fn data(&self) -> Result<HashMap<String, Array>, Exception> {
+        let arrays = unsafe {
+            StringToArrayMap::from_ptr(try_catch_c_ptr_expr! {
+                mlx_sys::mlx_safetensors_data(self.c_safetensors)
+            })
+        };
+
+        Ok(arrays.as_hash_map())
+    }
+
+    pub(crate) fn metadata(&self) -> Result<HashMap<String, String>, Exception> {
+        let metadata = unsafe {
+            StringToStringMap::from_ptr(try_catch_c_ptr_expr! {
+                mlx_sys::mlx_safetensors_metadata(self.c_safetensors)
+            })
+        };
+
+        Ok(metadata.as_hash_map())
     }
 }
 
@@ -232,15 +277,16 @@ where
     fn try_from(hashmap: &HashMap<String, T>) -> Result<Self, Self::Error> {
         let mlx_map = T::mlx_map_new();
 
-        unsafe {
-            for (key, value) in hashmap {
-                let mlx_key = MlxString::try_from(key.as_str()).unwrap();
-                let success = T::mlx_map_insert(mlx_map, mlx_key.as_ptr(), value.as_mlx_ptr());
-                if !success {
-                    let ptr = &mlx_map as *const T::MapType as *mut c_void;
+        for (key, value) in hashmap {
+            let mlx_key = MlxString::try_from(key.as_str()).unwrap();
+            let success = T::mlx_map_insert(mlx_map, mlx_key.as_ptr(), value.as_mlx_ptr());
+            if !success {
+                let ptr = &mlx_map as *const T::MapType as *mut c_void;
+                unsafe {
                     mlx_sys::mlx_free(ptr);
-                    return Err(IOError::AllocationError);
                 }
+
+                return Err(IOError::AllocationError);
             }
         }
 
@@ -248,6 +294,5 @@ where
     }
 }
 
-// Type aliases for backwards compatibility
 pub(crate) type StringToArrayMap = StringToMap<Array>;
 pub(crate) type StringToStringMap = StringToMap<String>;

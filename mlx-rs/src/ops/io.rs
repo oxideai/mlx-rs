@@ -60,25 +60,9 @@ pub fn load_arrays_device(
     path: &Path,
     stream: impl AsRef<Stream>,
 ) -> Result<HashMap<String, Array>, IOError> {
-    let mlx_path = prepare_file_path(path)?;
-    check_file_extension(path, "safetensors")?;
-
-    let load_result = (|| unsafe {
-        let safetensors = SafeTensors::from_ptr(try_catch_c_ptr_expr! {
-            mlx_sys::mlx_load_safetensors(mlx_path.as_ptr(), stream.as_ref().as_ptr())
-        });
-
-        let arrays = StringToArrayMap::from_ptr(try_catch_c_ptr_expr! {
-            mlx_sys::mlx_safetensors_data(safetensors.as_ptr())
-        });
-
-        Ok(arrays.as_hash_map())
-    })();
-
-    match load_result {
-        Ok(map) => Ok(map),
-        Err(e) => Err(IOError::from(e)),
-    }
+    let safetensors = SafeTensors::load_device(path, stream)?;
+    let data = safetensors.data()?;
+    Ok(data)
 }
 
 /// Load dictionary of ``MLXArray`` and metadata `[String:String]` from a `safetensors` file.
@@ -92,29 +76,11 @@ pub fn load_arrays_with_metadata_device(
     path: &Path,
     stream: impl AsRef<Stream>,
 ) -> Result<(HashMap<String, Array>, HashMap<String, String>), IOError> {
-    let mlx_path = prepare_file_path(path)?;
-    check_file_extension(path, "safetensors")?;
+    let safetensors = SafeTensors::load_device(path, stream)?;
+    let data = safetensors.data()?;
+    let metadata = safetensors.metadata()?;
 
-    let load_result = (|| unsafe {
-        let safetensors = SafeTensors::from_ptr(try_catch_c_ptr_expr! {
-            mlx_sys::mlx_load_safetensors(mlx_path.as_ptr(), stream.as_ref().as_ptr())
-        });
-
-        let arrays = StringToArrayMap::from_ptr(try_catch_c_ptr_expr! {
-            mlx_sys::mlx_safetensors_data(safetensors.as_ptr())
-        });
-
-        let metadata = StringToStringMap::from_ptr(try_catch_c_ptr_expr! {
-            mlx_sys::mlx_safetensors_metadata(safetensors.as_ptr())
-        });
-
-        Ok((arrays.as_hash_map(), metadata.as_hash_map()))
-    })();
-
-    match load_result {
-        Ok(map) => Ok(map),
-        Err(e) => Err(IOError::from(e)),
-    }
+    Ok((data, metadata))
 }
 
 /// Save array to a binary file in `.npy`format.
@@ -126,9 +92,7 @@ pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
     check_file_extension(path, "npy")?;
     let file_ptr = FilePtr::open(path, "w")?;
 
-    unsafe {
-        mlx_sys::mlx_save_file(file_ptr.as_ptr(), a.as_ptr());
-    }
+    unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), a.as_ptr()) };
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-mod io;
+pub(crate) mod io;
 
 use crate::{complex64, error::Exception, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;

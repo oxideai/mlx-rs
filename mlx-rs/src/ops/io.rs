@@ -1,5 +1,8 @@
 use crate::error::IOError;
-use crate::utils::{FilePtr, MlxString, SafeTensors, StringToArrayMap, StringToStringMap};
+use crate::utils::{
+    io::{FilePtr, SafeTensors, StringToArrayMap, StringToStringMap},
+    MlxString,
+};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;

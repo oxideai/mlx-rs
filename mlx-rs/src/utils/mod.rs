@@ -1,3 +1,4 @@
+#[cfg(feature = "io")]
 pub(crate) mod io;
 
 use crate::{complex64, error::Exception, module::FlattenedModuleParam, Array, FromNested};

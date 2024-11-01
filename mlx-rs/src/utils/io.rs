@@ -47,7 +47,6 @@ impl Drop for SafeTensors {
 }
 
 impl SafeTensors {
-    #[default_device]
     pub(crate) fn load_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Self, IoError> {
         if !path.is_file() {
             return Err(IoError::NotFile);

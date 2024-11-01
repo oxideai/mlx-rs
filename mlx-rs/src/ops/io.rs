@@ -14,7 +14,7 @@ fn prepare_file_path(path: &Path) -> Result<MlxString, IoError> {
     }
 
     let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
-    let path = MlxString::try_from(path_str).map_err(|_| IoError::NullBytes)?;
+    let path = MlxString::try_from(path_str)?;
 
     Ok(path)
 }
@@ -96,7 +96,7 @@ pub fn save_array(array: &Array, path: &Path) -> Result<(), IoError> {
     check_file_extension(path, "npy")?;
     let file_ptr = FilePtr::open(path, "w")?;
 
-    unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), a.as_ptr()) };
+    unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), array.as_ptr()) };
 
     Ok(())
 }

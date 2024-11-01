@@ -25,9 +25,8 @@ impl FilePtr {
     }
 
     pub(crate) fn open(path: &Path, mode: &str) -> Result<Self, IoError> {
-        let path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)
-            .map_err(|_| IoError::NullBytes)?;
-        let mode = CString::new(mode).map_err(|_| IoError::NullBytes)?;
+        let path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)?;
+        let mode = CString::new(mode)?;
 
         unsafe {
             NonNull::new(mlx_sys::fopen(path.as_ptr(), mode.as_ptr()))
@@ -64,7 +63,7 @@ impl SafeTensors {
         }
 
         let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
-        let mlx_path = MlxString::try_from(path_str).map_err(|_| IoError::NullBytes)?;
+        let mlx_path = MlxString::try_from(path_str)?;
 
         let load_result = (|| unsafe {
             let c_safetensors = try_catch_c_ptr_expr! {
@@ -282,9 +281,7 @@ where
             let success = T::mlx_map_insert(mlx_map, mlx_key.as_ptr(), value.as_mlx_ptr());
             if !success {
                 let ptr = &mlx_map as *const T::MapType as *mut c_void;
-                unsafe {
-                    mlx_sys::mlx_free(ptr);
-                }
+                unsafe { mlx_sys::mlx_free(ptr) };
 
                 return Err(IoError::AllocationError);
             }

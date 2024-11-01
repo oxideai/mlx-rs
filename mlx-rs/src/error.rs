@@ -1,7 +1,7 @@
-use std::{cell::Cell, ffi::c_char};
-
 use crate::Dtype;
 use libc::strdup;
+use std::ffi::NulError;
+use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
@@ -35,6 +35,9 @@ pub enum IoError {
 
     #[error("Unable to allocate memory")]
     AllocationError,
+
+    #[error(transparent)]
+    NulError(#[from] NulError),
 
     #[error(transparent)]
     Exception(#[from] Exception),

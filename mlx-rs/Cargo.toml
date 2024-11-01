@@ -35,9 +35,11 @@ libc = "0.2"
 [dev-dependencies]
 pretty_assertions.workspace = true
 float_eq.workspace = true
+tempfile = "3.13.0"
 
 [features]
-default = ["accelerate", "metal"]
+default = ["accelerate", "metal", "io"]
 
 accelerate = ["mlx-sys/accelerate"]
 metal = ["mlx-sys/metal"]
+io = []

@@ -12,10 +12,15 @@ mod sort;
 
 pub mod indexing;
 
+#[cfg(feature = "io")]
+mod io;
+
 pub use arithmetic::*;
 pub use convolution::*;
 pub use cumulative::*;
 pub use factory::*;
+#[cfg(feature = "io")]
+pub use io::*;
 pub use logical::*;
 pub use other::*;
 pub use quantization::*;

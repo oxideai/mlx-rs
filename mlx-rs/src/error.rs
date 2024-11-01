@@ -1,13 +1,43 @@
-use std::{cell::Cell, ffi::c_char};
-
 use crate::Dtype;
 use libc::strdup;
+use std::ffi::NulError;
+use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
 
 #[derive(Error, PartialEq, Debug)]
 pub enum ItemError {
     #[error("not a scalar array")]
     NotScalar,
+
+    #[error(transparent)]
+    Exception(#[from] Exception),
+}
+
+#[derive(Error, PartialEq, Debug)]
+pub enum IoError {
+    #[error("Path must point to a local file")]
+    NotFile,
+
+    #[error("Path contains invalid UTF-8")]
+    InvalidUtf8,
+
+    #[error("Path contains null bytes")]
+    NullBytes,
+
+    #[error("No file extension found")]
+    NoExtension,
+
+    #[error("Unsupported file format")]
+    UnsupportedFormat,
+
+    #[error("Unable to open file")]
+    UnableToOpenFile,
+
+    #[error("Unable to allocate memory")]
+    AllocationError,
+
+    #[error(transparent)]
+    NulError(#[from] NulError),
 
     #[error(transparent)]
     Exception(#[from] Exception),

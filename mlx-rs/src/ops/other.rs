@@ -1,6 +1,7 @@
 use mlx_internal_macros::default_device;
 use std::ffi::c_void;
 
+use crate::utils::MlxString;
 use crate::{error::Exception, Array, Stream, StreamOrDevice};
 
 impl Array {
@@ -138,11 +139,8 @@ pub fn einsum_device<'a>(
     operands: impl IntoIterator<Item = &'a Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    let c_subscripts = std::ffi::CString::new(subscripts).map_err(|_| Exception {
-        what: String::from("Subscripts contain null bytes"),
-    })?;
-    let subscripts = unsafe { mlx_sys::mlx_string_new(c_subscripts.as_ptr()) };
-
+    let subscripts =
+        MlxString::try_from(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
     let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
     let c_arrays: Vec<_> = operands.into_iter().map(|a| a.c_array).collect();
     unsafe {
@@ -152,13 +150,12 @@ pub fn einsum_device<'a>(
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_einsum(
-                subscripts,
+                subscripts.as_ptr(),
                 c_operands,
                 stream.as_ref().as_ptr(),
             )
         };
 
-        mlx_sys::free(subscripts as *mut c_void);
         mlx_sys::free(c_operands as *mut c_void);
         Ok(Array::from_ptr(c_array))
     }

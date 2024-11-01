@@ -1,20 +1,20 @@
+#[cfg(feature = "io")]
+pub(crate) mod io;
+
 use crate::{complex64, error::Exception, module::FlattenedModuleParam, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;
+use std::ffi::{CStr, CString};
 use std::{ffi::NulError, marker::PhantomData, os::raw::c_void, rc::Rc};
 
 /// Helper method to get a string representation of an mlx object.
-pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
+pub(crate) fn mlx_describe(ptr: *mut c_void) -> Option<String> {
     let mlx_description = unsafe { mlx_sys::mlx_tostring(ptr) };
     let c_str = unsafe { mlx_sys::mlx_string_data(mlx_description) };
 
     let description = if c_str.is_null() {
         None
     } else {
-        Some(unsafe {
-            std::ffi::CStr::from_ptr(c_str)
-                .to_string_lossy()
-                .into_owned()
-        })
+        Some(unsafe { CStr::from_ptr(c_str).to_string_lossy().into_owned() })
     };
 
     unsafe { mlx_sys::mlx_free(mlx_description as *mut std::ffi::c_void) };
@@ -94,11 +94,17 @@ impl Drop for VectorArray {
     }
 }
 
-pub(crate) struct MlxString(mlx_sys::mlx_string);
+pub(crate) struct MlxString {
+    c_str: mlx_sys::mlx_string,
+}
 
 impl MlxString {
+    pub(crate) fn from_ptr(c_str: mlx_sys::mlx_string) -> Self {
+        Self { c_str }
+    }
+
     pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
-        self.0
+        self.c_str
     }
 }
 
@@ -106,15 +112,15 @@ impl<'a> TryFrom<&'a str> for MlxString {
     type Error = NulError;
 
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        let c_str = std::ffi::CString::new(s)?;
+        let c_str = CString::new(s)?;
         let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
-        Ok(Self(ptr))
+        Ok(Self::from_ptr(ptr))
     }
 }
 
 impl Drop for MlxString {
     fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.0 as *mut c_void) }
+        unsafe { mlx_sys::mlx_free(self.c_str as *mut c_void) }
     }
 }
 

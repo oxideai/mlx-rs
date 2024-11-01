@@ -1,7 +1,6 @@
 use crate::error::{Exception, IoError};
 use crate::utils::MlxString;
-use crate::{Array, Stream, StreamOrDevice};
-use mlx_internal_macros::default_device;
+use crate::{Array, Stream};
 use mlx_sys::FILE;
 use std::collections::HashMap;
 use std::ffi::{c_void, CStr, CString};

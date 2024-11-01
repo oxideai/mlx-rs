@@ -8,18 +8,14 @@ use std::ptr::NonNull;
 use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
 
 /// Helper method to get a string representation of an mlx object.
-pub(crate) fn mlx_describe(ptr: *mut ::std::os::raw::c_void) -> Option<String> {
+pub(crate) fn mlx_describe(ptr: *mut c_void) -> Option<String> {
     let mlx_description = unsafe { mlx_sys::mlx_tostring(ptr) };
     let c_str = unsafe { mlx_sys::mlx_string_data(mlx_description) };
 
     let description = if c_str.is_null() {
         None
     } else {
-        Some(unsafe {
-            std::ffi::CStr::from_ptr(c_str)
-                .to_string_lossy()
-                .into_owned()
-        })
+        Some(unsafe { CStr::from_ptr(c_str).to_string_lossy().into_owned() })
     };
 
     unsafe { mlx_sys::mlx_free(mlx_description as *mut std::ffi::c_void) };
@@ -102,6 +98,10 @@ impl Drop for VectorArray {
 pub(crate) struct MlxString(mlx_sys::mlx_string);
 
 impl MlxString {
+    pub(crate) fn from_ptr(ptr: mlx_sys::mlx_string) -> Self {
+        Self(ptr)
+    }
+
     pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
         self.0
     }
@@ -111,7 +111,7 @@ impl<'a> TryFrom<&'a str> for MlxString {
     type Error = NulError;
 
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        let c_str = std::ffi::CString::new(s)?;
+        let c_str = CString::new(s)?;
         let ptr = unsafe { mlx_sys::mlx_string_new(c_str.as_ptr()) };
         Ok(Self(ptr))
     }
@@ -478,8 +478,9 @@ impl StringToArrayMap {
             let iterator = mlx_sys::mlx_map_string_to_array_iterate(self.as_ptr());
 
             while !mlx_sys::mlx_map_string_to_array_iterator_end(iterator) {
-                let mlx_key = mlx_sys::mlx_map_string_to_array_iterator_key(iterator);
-                let key = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_key))
+                let key =
+                    MlxString::from_ptr(mlx_sys::mlx_map_string_to_array_iterator_key(iterator));
+                let key = CStr::from_ptr(mlx_sys::mlx_string_data(key.as_ptr()))
                     .to_string_lossy()
                     .into_owned();
 
@@ -487,7 +488,6 @@ impl StringToArrayMap {
                 let array = Array::from_ptr(mlx_array_ctx);
                 result.insert(key, array);
 
-                mlx_sys::mlx_free(mlx_key as *mut c_void);
                 mlx_sys::mlx_map_string_to_array_iterator_next(iterator);
             }
 
@@ -547,20 +547,20 @@ impl StringToStringMap {
             let iterator = mlx_sys::mlx_map_string_to_string_iterate(self.as_ptr());
 
             while !mlx_sys::mlx_map_string_to_string_iterator_end(iterator) {
-                let mlx_key = mlx_sys::mlx_map_string_to_string_iterator_key(iterator);
-                let key = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_key))
+                let key =
+                    MlxString::from_ptr(mlx_sys::mlx_map_string_to_string_iterator_key(iterator));
+                let key = CStr::from_ptr(mlx_sys::mlx_string_data(key.as_ptr()))
                     .to_string_lossy()
                     .into_owned();
 
-                let mlx_value = mlx_sys::mlx_map_string_to_string_iterator_value(iterator);
-                let value = CStr::from_ptr(mlx_sys::mlx_string_data(mlx_value))
+                let value =
+                    MlxString::from_ptr(mlx_sys::mlx_map_string_to_string_iterator_value(iterator));
+                let value = CStr::from_ptr(mlx_sys::mlx_string_data(value.as_ptr()))
                     .to_string_lossy()
                     .into_owned();
 
                 result.insert(key, value);
 
-                mlx_sys::mlx_free(mlx_key as *mut c_void);
-                mlx_sys::mlx_free(mlx_value as *mut c_void);
                 mlx_sys::mlx_map_string_to_string_iterator_next(iterator);
             }
 

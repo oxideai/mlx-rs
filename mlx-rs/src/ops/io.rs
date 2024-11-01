@@ -29,6 +29,7 @@ fn check_file_extension(path: &Path, expected: &str) -> Result<(), IOError> {
 /// Load array from a binary file in `.npy` format.
 ///
 /// # Params
+///
 /// - path: path of file to load
 /// - stream: stream or device to evaluate on
 #[default_device]
@@ -52,6 +53,7 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
 /// Load dictionary of ``MLXArray`` from a `safetensors` file.
 ///
 /// # Params
+///
 /// - path: path of file to load
 /// - stream: stream or device to evaluate on
 ///
@@ -68,6 +70,7 @@ pub fn load_arrays_device(
 /// Load dictionary of ``MLXArray`` and metadata `[String:String]` from a `safetensors` file.
 ///
 /// # Params
+///
 /// - path: path of file to load
 /// - stream: stream or device to evaluate on
 #[allow(clippy::type_complexity)]
@@ -86,6 +89,7 @@ pub fn load_arrays_with_metadata_device(
 /// Save array to a binary file in `.npy`format.
 ///
 /// # Params
+///
 /// - a: array to save
 /// - url: URL of file to load
 pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
@@ -100,6 +104,7 @@ pub fn save_array(a: &Array, path: &Path) -> Result<(), IOError> {
 /// Save dictionary of arrays in `safetensors` format.
 ///
 /// # Params
+///
 /// - a: array to save
 /// - metadata: metadata to save
 /// - url: URL of file to load

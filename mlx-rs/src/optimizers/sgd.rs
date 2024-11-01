@@ -1,9 +1,7 @@
 use std::{borrow::Cow, rc::Rc};
 
+use crate::{array, utils::get_mut_or_insert_with, Array};
 use mlx_internal_macros::generate_builder;
-use mlx_rs::{array, Array};
-
-use crate::utils::get_mut_or_insert_with;
 
 use super::*;
 
@@ -85,7 +83,7 @@ impl Optimizer for Sgd {
     ) -> Result<(), Exception> {
         // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
         // is implemented for Array.
-        use mlx_rs::ops::{gt, le, ne};
+        use crate::ops::{gt, le, ne};
 
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
@@ -126,48 +124,5 @@ impl Optimizer for Sgd {
         }
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use mlx_rs::assert_array_eq;
-    use mlx_rs::ops::ones;
-
-    use super::optim_test_util::*;
-    use super::*;
-
-    // This unit test is adapted from the python unit test `test_sgd` in
-    // `mlx/python/tests/test_optimizers.py`
-    #[test]
-    fn test_sgd() {
-        let (mut model, gradients) = create_default_test_model_and_grads();
-
-        let mut optim = Sgd::builder().momentum(0.9).build(1e-2);
-        optim.apply(&mut model, gradients).unwrap();
-
-        let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
-        let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;
-        let expected_second = ones::<f32>(&[1]).unwrap() * -0.01;
-
-        assert_array_eq!(model.first.a.as_ref(), expected_first_a, ATOL);
-        assert_array_eq!(model.first.b.as_ref(), expected_first_b, ATOL);
-        assert_array_eq!(model.second.as_ref(), expected_second, ATOL);
-
-        let expected_state_first_a = ones::<f32>(&[10]).unwrap();
-        let expected_state_first_b = ones::<f32>(&[1]).unwrap();
-        let expected_state_second = ones::<f32>(&[1]).unwrap();
-
-        assert_array_eq!(
-            optim.state["first.a"].as_ref(),
-            expected_state_first_a,
-            ATOL
-        );
-        assert_array_eq!(
-            optim.state["first.b"].as_ref(),
-            expected_state_first_b,
-            ATOL
-        );
-        assert_array_eq!(optim.state["second"].as_ref(), expected_state_second, ATOL);
     }
 }

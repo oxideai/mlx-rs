@@ -1,9 +1,9 @@
 pub(crate) mod io;
 
-use crate::{complex64, error::Exception, Array, FromNested};
+use crate::{complex64, error::Exception, module::FlattenedModuleParam, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;
 use std::ffi::{CStr, CString};
-use std::{ffi::NulError, marker::PhantomData, os::raw::c_void};
+use std::{ffi::NulError, marker::PhantomData, os::raw::c_void, rc::Rc};
 
 /// Helper method to get a string representation of an mlx object.
 pub(crate) fn mlx_describe(ptr: *mut c_void) -> Option<String> {
@@ -450,4 +450,16 @@ impl TupleVectorArrayVectorArray {
             (array1, array2)
         }
     }
+}
+
+pub(crate) fn get_mut_or_insert_with<'a>(
+    map: &'a mut FlattenedModuleParam,
+    key: &Rc<str>,
+    f: impl FnOnce() -> Array,
+) -> &'a mut Array {
+    if !map.contains_key(key) {
+        map.insert(key.clone(), f());
+    }
+
+    map.get_mut(key).unwrap()
 }

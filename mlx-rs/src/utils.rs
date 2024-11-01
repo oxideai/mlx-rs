@@ -508,3 +508,34 @@ pub(crate) fn mlx_map_string_values(
 
     result
 }
+
+pub(crate) fn new_mlx_array_map(
+    hashmap: &HashMap<String, Array>,
+) -> mlx_sys::mlx_map_string_to_array {
+    let mlx_map = unsafe { mlx_sys::mlx_map_string_to_array_new() };
+
+    for (key, array) in hashmap {
+        let mlx_key = MlxString::try_from(key.as_str()).unwrap();
+        unsafe {
+            mlx_sys::mlx_map_string_to_array_insert(mlx_map, mlx_key.as_ptr(), array.as_ptr());
+        }
+    }
+
+    mlx_map
+}
+
+pub(crate) fn new_mlx_string_map(
+    hashmap: &HashMap<String, String>,
+) -> mlx_sys::mlx_map_string_to_string {
+    let mlx_map = unsafe { mlx_sys::mlx_map_string_to_string_new() };
+
+    for (key, value) in hashmap {
+        let mlx_key = MlxString::try_from(key.as_str()).unwrap();
+        let mlx_value = MlxString::try_from(value.as_str()).unwrap();
+        unsafe {
+            mlx_sys::mlx_map_string_to_string_insert(mlx_map, mlx_key.as_ptr(), mlx_value.as_ptr());
+        }
+    }
+
+    mlx_map
+}

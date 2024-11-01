@@ -30,6 +30,9 @@ pub enum IOError {
     #[error("Unsupported file format")]
     UnsupportedFormat,
 
+    #[error("Unable to open file")]
+    UnableToOpenFile,
+
     #[error(transparent)]
     Exception(#[from] Exception),
 }

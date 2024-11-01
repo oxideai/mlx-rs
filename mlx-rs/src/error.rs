@@ -33,6 +33,9 @@ pub enum IOError {
     #[error("Unable to open file")]
     UnableToOpenFile,
 
+    #[error("Unable to allocate memory")]
+    AllocationError,
+
     #[error(transparent)]
     Exception(#[from] Exception),
 }

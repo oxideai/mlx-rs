@@ -190,3 +190,48 @@ pub fn save_arrays<'a>(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Array;
+    use crate::ops::{load_array, load_arrays, save_array, save_arrays};
+
+    #[test]
+    fn test_save_arrays() {
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let path = tmp_dir.path().join("test.safetensors");
+
+        let mut arrays = std::collections::HashMap::new();
+        arrays.insert("foo".to_string(), Array::ones::<i32>(&[1, 2]).unwrap());
+        arrays.insert("bar".to_string(), Array::zeros::<i32>(&[2, 1]).unwrap());
+
+        save_arrays(&arrays, None, &path).unwrap();
+
+        let loaded_arrays = load_arrays(&path).unwrap();
+
+        // compare values
+        let mut loaded_keys: Vec<_> = loaded_arrays.keys().cloned().collect();
+        let mut original_keys: Vec<_> = arrays.keys().cloned().collect();
+        loaded_keys.sort();
+        original_keys.sort();
+        assert_eq!(loaded_keys, original_keys);
+
+        for key in loaded_keys {
+            let loaded_array = loaded_arrays.get(&key).unwrap();
+            let original_array = arrays.get(&key).unwrap();
+            assert!(loaded_array.all_close(original_array, None, None, None).unwrap().item::<bool>());
+        }
+    }
+
+    #[test]
+    fn test_save_array() {
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let path = tmp_dir.path().join("test.npy");
+
+        let a = Array::ones::<i32>(&[2, 4]).unwrap();
+        save_array(&a, &path).unwrap();
+
+        let b = load_array(&path).unwrap();
+        assert!(a.all_close(&b, None, None, None).unwrap().item::<bool>());
+    }
+}

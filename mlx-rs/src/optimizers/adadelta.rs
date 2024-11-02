@@ -1,13 +1,11 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
-use crate::{array, ops::sqrt, Array};
+use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
 use mlx_internal_macros::generate_builder;
 
 use crate::error::AdaDeltaBuildError;
 
 use super::*;
-
-type State = HashMap<Rc<str>, (Array, Array)>;
 
 generate_builder! {
     /// The AdaDelta optimizer with a learning rate
@@ -32,7 +30,7 @@ generate_builder! {
         pub eps: Array,
 
         /// Inner state
-        pub state: State,
+        pub state: OptimizerState<(Array, Array)>,
     }
 }
 
@@ -54,7 +52,7 @@ impl AdaDeltaBuilder {
             lr: array!(lr),
             rho: array!(rho),
             eps: array!(eps),
-            state: State::new(),
+            state: OptimizerState::new(),
         })
     }
 }
@@ -80,10 +78,7 @@ impl Optimizer for AdaDelta {
         gradient: &Array,
         parameter: &mut Array,
     ) -> Result<(), Exception> {
-        let (v, u) = self
-            .state
-            .entry(key.clone())
-            .or_insert_with(|| (array!(0.0), array!(0.0)));
+        let (v, u) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
         let one_minus_rho = array!(1.0).subtract(&self.rho)?;
         let first_term = self.rho.multiply(&v)?;

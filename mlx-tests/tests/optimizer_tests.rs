@@ -278,6 +278,60 @@ fn test_adagrad() {
     );
 }
 
+#[test]
+fn test_adam() {
+    mlx_rs::random::seed(616);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(0.112_293_06),
+        0.002245861142873764
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(1.347_516_7),
+        0.02695033311843872
+    );
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(0.305_597_72),
+        0.0061119544506073
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(3.667_172_7),
+        0.0733434534072876
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = AdaGrad::new(0.1);
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(0.112_292_78),
+        0.0022458556294441224
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(1.347_513_3),
+        0.026950266361236572
+    );
+}
+
 // This unit test is adapted from the python unit test `test_rmsprop` in
 // `tests/test_optimizer.py`.
 #[test]

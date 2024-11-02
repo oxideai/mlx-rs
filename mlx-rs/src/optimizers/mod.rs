@@ -1,5 +1,7 @@
 //! Trait and implementations for optimizers.
 
+#![deny(missing_docs)]
+
 use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
@@ -11,12 +13,16 @@ use crate::{
 mod adadelta;
 mod adagrad;
 mod adam;
+mod adamax;
+mod adamw;
 mod rmsprop;
 mod sgd;
 
 pub use adadelta::*;
 pub use adagrad::*;
 pub use adam::*;
+pub use adamax::*;
+pub use adamw::*;
 pub use rmsprop::*;
 pub use sgd::*;
 

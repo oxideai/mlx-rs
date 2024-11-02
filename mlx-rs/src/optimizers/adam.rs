@@ -4,7 +4,8 @@ use crate::{array, utils::get_mut_or_insert_with};
 
 use super::*;
 
-type AdamBetas = (f32, f32);
+/// Type alias for betas in the Adam/AdamW/Adamax optimizer builders.
+pub type Betas = (f32, f32); // The macro right now can't handle raw tuple types
 
 generate_builder! {
     /// The Adam optimizer.
@@ -15,14 +16,22 @@ generate_builder! {
     #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Adam {
+        /// The learning rate
         pub lr: Array,
 
-        #[optional(ty = AdamBetas)]
+        /// The coefficients used for computing running averages of the gradient and its square
+        ///
+        /// Default to [`Adam::DEFAULT_BETAS`]
+        #[optional(ty = Betas)]
         pub betas: (Array, Array),
 
+        /// The epsilon added to the denominator to improve numerical stability
+        ///
+        /// Default to [`Adam::DEFAULT_EPS`]
         #[optional(ty = f32)]
         pub eps: Array,
 
+        /// Inner state
         pub state: OptimizerState<(Array, Array)>,
     }
 }
@@ -62,20 +71,41 @@ impl Optimizer for Adam {
         gradient: &Array,
         parameter: &mut Array,
     ) -> Result<(), Exception> {
-        let (b1, b2) = &self.betas;
-        let (m, v) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
+        let betas = &self.betas;
+        let state = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
-        let one_minus_b1 = array!(1.0).subtract(b1)?;
-        let one_minus_b2 = array!(1.0).subtract(b2)?;
+        let (new_parameter, new_state) =
+            adam_apply_single(&self.lr, betas, &self.eps, gradient, parameter, state)?;
 
-        *m = b1.multiply(&*m)?.add(&one_minus_b1.multiply(gradient)?)?;
-        *v = b2
-            .multiply(&*v)?
-            .add(&one_minus_b2.multiply(gradient.square())?)?;
-
-        *parameter =
-            parameter.subtract(&self.lr.multiply(&m.divide(&v.sqrt().add(&self.eps)?)?)?)?;
+        *state = new_state;
+        *parameter = new_parameter;
 
         Ok(())
     }
+}
+
+// Returns (new_parameter, (new_m, new_v))
+pub(super) fn adam_apply_single(
+    lr: &Array,
+    betas: &(Array, Array),
+    eps: &Array,
+    gradient: &Array,
+    parameter: &Array,
+    state: &(Array, Array),
+) -> Result<(Array, (Array, Array)), Exception> {
+    let (b1, b2) = betas;
+    let (m, v) = state;
+
+    let one_minus_b1 = array!(1.0).subtract(b1)?;
+    let one_minus_b2 = array!(1.0).subtract(b2)?;
+
+    let new_m = b1.multiply(m)?.add(&one_minus_b1.multiply(gradient)?)?;
+    let new_v = b2
+        .multiply(v)?
+        .add(&one_minus_b2.multiply(gradient.square())?)?;
+
+    let new_parameter =
+        parameter.subtract(&lr.multiply(&new_m.divide(&new_v.sqrt().add(eps)?)?)?)?;
+
+    Ok((new_parameter, (new_m, new_v)))
 }

@@ -17,6 +17,7 @@ mod adamax;
 mod adamw;
 mod rmsprop;
 mod sgd;
+mod lion;
 
 pub use adadelta::*;
 pub use adagrad::*;
@@ -25,6 +26,7 @@ pub use adamax::*;
 pub use adamw::*;
 pub use rmsprop::*;
 pub use sgd::*;
+pub use lion::*;
 
 type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 

@@ -5,7 +5,10 @@
 use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
-    array, error::Exception, module::{FlattenedModuleParam, ModuleParameters}, Array
+    array,
+    error::Exception,
+    module::{FlattenedModuleParam, ModuleParameters},
+    Array,
 };
 
 mod adadelta;
@@ -14,9 +17,9 @@ mod adagrad;
 mod adam;
 mod adamax;
 mod adamw;
+mod lion;
 mod rmsprop;
 mod sgd;
-mod lion;
 
 pub use adadelta::*;
 pub use adafactor::*;
@@ -24,9 +27,9 @@ pub use adagrad::*;
 pub use adam::*;
 pub use adamax::*;
 pub use adamw::*;
+pub use lion::*;
 pub use rmsprop::*;
 pub use sgd::*;
-pub use lion::*;
 
 type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 
@@ -67,21 +70,28 @@ pub trait Optimizer {
 }
 
 /// Clips the global norm of the gradients
-/// 
+///
 /// This function ensures that the global norm of the gradients does not exceed
 /// `max_norm`. It scales down the gradients proportionally if their norm is
 /// greater than `max_norm`.
-pub fn clip_grad_norm(gradients: &FlattenedModuleParam, max_norm: f32) -> (FlattenedModuleParam, f32) {
-    let total_norm: f32 = gradients.values()
+pub fn clip_grad_norm(
+    gradients: &FlattenedModuleParam,
+    max_norm: f32,
+) -> (FlattenedModuleParam, f32) {
+    let total_norm: f32 = gradients
+        .values()
         .fold(array!(0.0), |acc, grad| {
-            acc + grad.square().sum(None, None)
+            acc + grad
+                .square()
+                .sum(None, None)
                 .expect("Sum with default axes should not fail")
         })
         .sqrt()
         .item();
     let normalizer = array!(max_norm / (total_norm + 1e-6));
 
-    let clipped_gradients = gradients.iter()
+    let clipped_gradients = gradients
+        .iter()
         .map(|(key, grad)| {
             let clipped_grad = if total_norm < max_norm {
                 grad.clone()

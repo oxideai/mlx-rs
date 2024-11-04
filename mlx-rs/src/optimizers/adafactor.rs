@@ -2,7 +2,12 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 
 use mlx_internal_macros::generate_builder;
 
-use crate::{array, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, Array};
+use crate::{
+    array,
+    error::{AdafactorBuildError, Exception},
+    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    Array,
+};
 
 use super::{Optimizer, OptimizerState};
 
@@ -14,7 +19,7 @@ fn approvate_exp_moving_avg(
     exp_avg_sq_row: &Array,
     exp_avg_sq_col: &Array,
 ) -> Result<Array, Exception> {
-    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1],true)?)?);
+    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?);
     let cfactor = rsqrt(exp_avg_sq_col);
     matmul(&rfactor.expand_dims(&[-1])?, &cfactor.expand_dims(&[0])?)
 }
@@ -204,11 +209,18 @@ impl AdafactorBuilder {
     /// Builds a new [`Adafactor`] optimizer.
     pub fn build(self) -> Result<Adafactor, AdafactorBuildError> {
         let eps = self.eps.unwrap_or(Adafactor::DEFAULT_EPS);
-        let clip_threshold = self.clip_threshold.unwrap_or(Adafactor::DEFAULT_CLIP_THRESHOLD);
+        let clip_threshold = self
+            .clip_threshold
+            .unwrap_or(Adafactor::DEFAULT_CLIP_THRESHOLD);
         let decay_rate = self.decay_rate.unwrap_or(Adafactor::DEFAULT_DECAY_RATE);
         let weight_decay = self.weight_decay.unwrap_or(Adafactor::DEFAULT_WEIGHT_DECAY);
-        let scale_parameter = self.scale_parameter.unwrap_or(Adafactor::DEFAULT_SCALE_PARAMETER);
-        let relative_step: AdafactorRelativeStep = self.relative_step.unwrap_or(Adafactor::DEFAULT_RELATIVE_STEP).into();
+        let scale_parameter = self
+            .scale_parameter
+            .unwrap_or(Adafactor::DEFAULT_SCALE_PARAMETER);
+        let relative_step: AdafactorRelativeStep = self
+            .relative_step
+            .unwrap_or(Adafactor::DEFAULT_RELATIVE_STEP)
+            .into();
         let warmup_init = self.warmup_init.unwrap_or(Adafactor::DEFAULT_WARMUP_INIT);
 
         if self.lr.is_none() && !relative_step.value() {
@@ -277,13 +289,13 @@ fn get_mut_or_insert_with<'a, T, E>(
 }
 
 fn compute_lr(
-    relative_step: bool, 
+    relative_step: bool,
     warmup_init: bool,
     lr: &Option<Array>,
     scale_parameter: bool,
     eps: &(Array, Array),
-    step: &Array, 
-    parameter_rms: &Array
+    step: &Array,
+    parameter_rms: &Array,
 ) -> Result<Array, Exception> {
     let relative_step_size = if relative_step {
         let min_step = if warmup_init {
@@ -296,9 +308,10 @@ fn compute_lr(
         Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
     } else {
         // SAFETY: This is already checked in the `build` stage.
-        Cow::Borrowed(lr.as_ref().expect(
-            "The learning rate should be set if the relative step is not enabled",
-        ))
+        Cow::Borrowed(
+            lr.as_ref()
+                .expect("The learning rate should be set if the relative step is not enabled"),
+        )
     };
 
     let mut parameter_scale = array!(1.0);
@@ -331,11 +344,11 @@ impl Optimizer for Adafactor {
         let lr = compute_lr(
             self.relative_step.value(),
             self.warmup_init,
-            &self.lr.value(),
+            self.lr.value(),
             self.scale_parameter,
             &self.eps,
             step,
-            &parameter_rms
+            &parameter_rms,
         )?;
         let beta2 = array!(1.0).subtract(&step.power(&self.decay_rate)?)?;
 
@@ -347,8 +360,12 @@ impl Optimizer for Adafactor {
             let exp_avg_sq_row = state.exp_avg_sq_row.as_mut().unwrap();
             let exp_avg_sq_col = state.exp_avg_sq_col.as_mut().unwrap();
 
-            *exp_avg_sq_row = beta2.multiply(&*exp_avg_sq_row)?.add(&one_minus_beta2.multiply(&update.mean(&[-1], None)?)?)?;
-            *exp_avg_sq_col = beta2.multiply(&*exp_avg_sq_col)?.add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
+            *exp_avg_sq_row = beta2
+                .multiply(&*exp_avg_sq_row)?
+                .add(&one_minus_beta2.multiply(&update.mean(&[-1], None)?)?)?;
+            *exp_avg_sq_col = beta2
+                .multiply(&*exp_avg_sq_col)?
+                .add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
 
             update = approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?;
             update = update.multiply(gradient)?;
@@ -356,23 +373,24 @@ impl Optimizer for Adafactor {
             // SAFETY: This field is created in the `new` when ndim < 2 and won't panic.
             let exp_avg_sq = state.exp_avg_sq.as_mut().unwrap();
 
-            *exp_avg_sq = beta2.multiply(&*exp_avg_sq)?.add(&one_minus_beta2.multiply(&update)?)?;
+            *exp_avg_sq = beta2
+                .multiply(&*exp_avg_sq)?
+                .add(&one_minus_beta2.multiply(&update)?)?;
             update = rsqrt(&*exp_avg_sq).multiply(gradient)?;
         }
 
         let update_rms = rms(&update)?;
-        let max = maximum(
-            array!(1.0), 
-            update_rms.divide(&self.clip_threshold)?
-        )?;
+        let max = maximum(array!(1.0), update_rms.divide(&self.clip_threshold)?)?;
         update = update.divide(max)?;
         update = lr.multiply(update)?;
 
         if let Some(beta1) = self.beta1.value() {
             // SAFETY: This field is created in the `new` when beta1 is set and won't panic.
             let exp_avg = state.exp_avg.as_mut().unwrap();
-            let one_minus_beta1 = array!(1.0).subtract(&beta1)?;
-            *exp_avg = beta1.multiply(&*exp_avg)?.add(&one_minus_beta1.multiply(&update)?)?;
+            let one_minus_beta1 = array!(1.0).subtract(beta1)?;
+            *exp_avg = beta1
+                .multiply(&*exp_avg)?
+                .add(&one_minus_beta1.multiply(&update)?)?;
             update = exp_avg.clone();
         }
 

@@ -1,7 +1,7 @@
 use crate::array::ArrayElement;
 use crate::error::Exception;
-use crate::{Dtype, Stream};
 use crate::{array::Array, stream::StreamOrDevice};
+use crate::{Dtype, Stream};
 use mlx_internal_macros::default_device;
 use num_traits::NumCast;
 
@@ -23,7 +23,7 @@ impl Array {
         shape: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
-        let dtype = T::DTYPE.into();
+        let dtype = T::DTYPE;
         zeros_dtype_device(shape, dtype, stream)
     }
 
@@ -44,7 +44,7 @@ impl Array {
         shape: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
-        let dtype = T::DTYPE.into();
+        let dtype = T::DTYPE;
         ones_dtype_device(shape, dtype, stream)
     }
 

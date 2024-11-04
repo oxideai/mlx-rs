@@ -19,7 +19,7 @@ generate_builder! {
     /// correction in the first and second moment estimates. In detail,
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Adamax {
         /// The learning rate.

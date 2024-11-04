@@ -174,6 +174,14 @@ pub enum AdaDeltaBuildError {
     NegativeEps,
 }
 
+/// Error with building an Adafactor optimizer.
+#[derive(Debug, Clone, PartialEq, Error)]
+pub enum AdafactorBuildError {
+    /// Either learning rate is provided or relative step is set to true.
+    #[error("Either learning rate is provided or relative step is set to true")]
+    LrIsNoneAndRelativeStepIsFalse,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::array;

@@ -4,16 +4,21 @@
 use mlx_rs::{
     array, assert_array_eq,
     error::Exception,
-    losses::{LossReduction, MseLoss},
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
-    optimizers::{AdaDelta, AdaGrad, Adam, AdamW, Adamax, Optimizer, RmsProp, Sgd},
+    optimizers::{
+        AdaDelta, AdaGrad, Adafactor, Adam, AdamW, Adamax, Lion, Optimizer, RmsProp, Sgd,
+    },
     random::uniform,
     transforms::{eval, eval_params},
     Array, Dtype,
 };
 
-use mlx_nn::{macros::ModuleParameters, module_value_and_grad};
+use mlx_nn::{
+    losses::{LossReduction, MseLoss},
+    macros::ModuleParameters,
+    module_value_and_grad,
+};
 
 /* -------------------------------------------------------------------------- */
 /*                              Convergence tests                             */
@@ -519,4 +524,282 @@ fn test_sgd() {
         ATOL
     );
     assert_array_eq!(optim.state["second"].as_ref(), expected_state_second, ATOL);
+}
+
+// This unit test is adapted from the swift binding unit test `testLion` in
+// `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
+#[test]
+fn test_lion() {
+    mlx_rs::random::seed(27);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(0.177_692_23),
+        0.003553844690322876
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(2.132_306_8),
+        0.042646136283874515
+    );
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(-0.021_187_237),
+        0.00042374473065137863
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(-0.254_246_83),
+        0.005084936618804932
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Lion::new(0.1);
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(0.211_025_57),
+        0.004220511317253113
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(2.532_306_7),
+        0.05064613342285156
+    );
+}
+
+// This unit test is adapted from the swift binding unit test `testLion1` in
+// `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
+#[test]
+fn test_lion1() {
+    mlx_rs::random::seed(127);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(-0.184_610_6),
+        0.0036922121047973633
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(-2.215_327_3),
+        0.04430654525756836
+    );
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(-0.036_004_007),
+        0.0007200801372528076
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(-0.432_048_08),
+        0.008640961647033691
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Lion::builder().weight_decay(0.1).build(0.1);
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(-0.182_764_5),
+        0.003655290007591248
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(-2.193_174),
+        0.04386347770690918
+    );
+}
+
+#[test]
+fn test_adafactor() {
+    mlx_rs::random::seed(650);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(-0.520_713_7),
+        0.010414273738861083
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(-6.248_564),
+        0.12497127532958985
+    );
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(0.433_303_65),
+        0.008666073083877564
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(5.199_643_6),
+        0.10399287223815919
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    println!(
+        "a_model.a.mean(None, None).unwrap(): {:?}",
+        a_model.a.mean(None, None).unwrap()
+    );
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(-0.526_828_47),
+        0.010536569356918336
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(-6.321_941_4),
+        0.12643882751464844
+    );
+}
+
+#[test]
+fn test_adafactor1() {
+    mlx_rs::random::seed(193);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(0.400_818_17),
+        0.008016363382339478
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(4.809_818),
+        0.09619635581970215
+    );
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(0.214_474_72),
+        0.004289494454860688
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(2.573_696_6),
+        0.05147393226623535
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).beta1(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(0.399_430_7),
+        0.007988613843917847
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(4.793_168),
+        0.09586336135864258
+    );
+}
+
+#[test]
+fn test_adafactor2() {
+    mlx_rs::random::seed(620);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[10], None).unwrap();
+    assert_eq!(a.shape(), &[10]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a.mean(None, None).unwrap(),
+        array!(0.489_024_55),
+        0.00978049099445343
+    );
+    assert_array_eq!(
+        a.sum(None, None).unwrap(),
+        array!(4.890_245_4),
+        0.09780490875244141
+    );
+
+    let a_grad = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[10], None).unwrap();
+    assert_eq!(a_grad.shape(), &[10]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_grad.mean(None, None).unwrap(),
+        array!(0.681_890_2),
+        0.013637803792953491
+    );
+    assert_array_eq!(
+        a_grad.sum(None, None).unwrap(),
+        array!(6.818_902),
+        0.1363780403137207
+    );
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[10]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(
+        a_model.a.mean(None, None).unwrap(),
+        array!(0.483_533_05),
+        0.009670661091804504
+    );
+    assert_array_eq!(
+        a_model.a.sum(None, None).unwrap(),
+        array!(4.835_330_5),
+        0.09670660972595214
+    );
 }

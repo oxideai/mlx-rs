@@ -13,7 +13,7 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Zeiler, M.D., 2012. ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     #[generate_builder(generate_build_fn = false)]
     pub struct AdaDelta {
         /// The learning rate

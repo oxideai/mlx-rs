@@ -12,7 +12,7 @@ generate_builder! {
     /// with a `weightDecay` lambda value:
     ///
     /// [1]: Loshchilov, I. and Hutter, F., 2019. Decoupled weight decay regularization. ICLR 2019.
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     #[generate_builder(generate_build_fn = false)]
     pub struct AdamW {
         /// The learning rate.

@@ -6,6 +6,7 @@
 //! to set optional parameters.
 
 pub mod error;
+pub mod losses;
 pub mod macros;
 pub mod utils;
 

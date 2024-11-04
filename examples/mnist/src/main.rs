@@ -1,8 +1,10 @@
-use mlx_nn::module_value_and_grad;
+use mlx_nn::{
+    losses::{CrossEntropy, LossReduction},
+    module_value_and_grad,
+};
 use mlx_rs::{
     array,
     error::Exception,
-    losses::{CrossEntropy, LossReduction},
     module::{Module, ModuleParameters},
     optimizers::{Optimizer, Sgd},
     transforms::eval_params,

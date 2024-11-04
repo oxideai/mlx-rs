@@ -4,7 +4,6 @@
 use mlx_rs::{
     array, assert_array_eq,
     error::Exception,
-    losses::{LossReduction, MseLoss},
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
     optimizers::{
@@ -15,7 +14,11 @@ use mlx_rs::{
     Array, Dtype,
 };
 
-use mlx_nn::{macros::ModuleParameters, module_value_and_grad};
+use mlx_nn::{
+    losses::{LossReduction, MseLoss},
+    macros::ModuleParameters,
+    module_value_and_grad,
+};
 
 /* -------------------------------------------------------------------------- */
 /*                              Convergence tests                             */

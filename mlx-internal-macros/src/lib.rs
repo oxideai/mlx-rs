@@ -165,7 +165,7 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 ///   - `generate_build_fn = <bool>`: It defaults to `true` if not specified. If `true`, it will:
 ///     1. generate a `<Struct>Builder::build` function that takes the mandatory fields as arguments
 ///        and returns the struct.
-///     2. genertae a `<Struct>::new` function that takes the mandatory fields as arguments and
+///     2. generate a `<Struct>::new` function that takes the mandatory fields as arguments and
 ///        returns the struct. This is a convenience function that simply calls
 ///        `<Struct>Builder::new().build(...)`. Additionally, if there is NO mandatory field, it
 ///        will implement the `Default` trait for the struct.

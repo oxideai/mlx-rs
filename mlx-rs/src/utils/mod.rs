@@ -1,8 +1,9 @@
 #[cfg(feature = "io")]
 pub(crate) mod io;
 
-use crate::{complex64, error::Exception, module::FlattenedModuleParam, Array, FromNested};
+use crate::{complex64, error::Exception, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;
+use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::{ffi::NulError, marker::PhantomData, os::raw::c_void, rc::Rc};
 
@@ -453,11 +454,11 @@ impl TupleVectorArrayVectorArray {
     }
 }
 
-pub(crate) fn get_mut_or_insert_with<'a>(
-    map: &'a mut FlattenedModuleParam,
+pub(crate) fn get_mut_or_insert_with<'a, T>(
+    map: &'a mut HashMap<Rc<str>, T>,
     key: &Rc<str>,
-    f: impl FnOnce() -> Array,
-) -> &'a mut Array {
+    f: impl FnOnce() -> T,
+) -> &'a mut T {
     if !map.contains_key(key) {
         map.insert(key.clone(), f());
     }

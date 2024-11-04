@@ -1,6 +1,8 @@
 //! Trait and implementations for optimizers.
 
-use std::{borrow::Borrow, rc::Rc};
+#![deny(missing_docs)]
+
+use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
     error::Exception,
@@ -10,15 +12,21 @@ use crate::{
 
 mod adadelta;
 mod adagrad;
+mod adam;
+mod adamax;
+mod adamw;
 mod rmsprop;
 mod sgd;
 
 pub use adadelta::*;
 pub use adagrad::*;
+pub use adam::*;
+pub use adamax::*;
+pub use adamw::*;
 pub use rmsprop::*;
 pub use sgd::*;
 
-type OptimizerState = FlattenedModuleParam;
+type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 
 /// Trait for optimizers.
 pub trait Optimizer {

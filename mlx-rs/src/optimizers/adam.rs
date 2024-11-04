@@ -4,7 +4,8 @@ use crate::{array, utils::get_mut_or_insert_with};
 
 use super::*;
 
-/// Type alias for betas in the Adam/AdamW/Adamax optimizer builders.
+/// `(f32, f32O)`. Type alias for betas in the Adam/AdamW/Adamax optimizer builders due to
+/// limitation in the `generate_builder` macro
 pub type Betas = (f32, f32); // The macro right now can't handle raw tuple types
 
 generate_builder! {

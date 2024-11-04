@@ -7,7 +7,7 @@ use mlx_rs::{
     losses::{LossReduction, MseLoss},
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
-    optimizers::{AdaDelta, AdaGrad, Adam, AdamW, Adamax, Lion, Optimizer, RmsProp, Sgd},
+    optimizers::{AdaDelta, AdaGrad, Adafactor, Adam, AdamW, Adamax, Lion, Optimizer, RmsProp, Sgd},
     random::uniform,
     transforms::{eval, eval_params},
     Array, Dtype,
@@ -583,4 +583,95 @@ fn test_lion1() {
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(a_model.a.mean(None, None).unwrap(), array!(-0.18276450037956238), 0.003655290007591248);
     assert_array_eq!(a_model.a.sum(None, None).unwrap(), array!(-2.193173885345459), 0.04386347770690918);
+}
+
+#[test]
+fn test_adafactor() {
+    mlx_rs::random::seed(650);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(a.mean(None, None).unwrap(), array!(-0.5207136869430542), 0.010414273738861083);
+    assert_array_eq!(a.sum(None, None).unwrap(), array!(-6.248563766479492), 0.12497127532958985);
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.4333036541938782), 0.008666073083877564);
+    assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(5.199643611907959), 0.10399287223815919);
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    println!("a_model.a.mean(None, None).unwrap(): {:?}", a_model.a.mean(None, None).unwrap());
+    assert_array_eq!(a_model.a.mean(None, None).unwrap(), array!(-0.5268284678459167), 0.010536569356918336);
+    assert_array_eq!(a_model.a.sum(None, None).unwrap(), array!(-6.321941375732422), 0.12643882751464844);
+}
+
+#[test]
+fn test_adafactor1() {
+    mlx_rs::random::seed(193);
+    let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a.shape(), &[4, 3]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(a.mean(None, None).unwrap(), array!(0.4008181691169739), 0.008016363382339478);
+    assert_array_eq!(a.sum(None, None).unwrap(), array!(4.809817790985107), 0.09619635581970215);
+
+    let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
+    assert_eq!(a_grad.shape(), &[4, 3]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.21447472274303436), 0.004289494454860688);
+    assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(2.5736966133117676), 0.05147393226623535);
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).beta1(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[4, 3]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(a_model.a.mean(None, None).unwrap(), array!(0.39943069219589233), 0.007988613843917847);
+    assert_array_eq!(a_model.a.sum(None, None).unwrap(), array!(4.793168067932129), 0.09586336135864258);
+}
+
+#[test]
+fn test_adafactor2() {
+    mlx_rs::random::seed(620);
+    let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[10], None).unwrap();
+    assert_eq!(a.shape(), &[10]);
+    assert_eq!(a.dtype(), Dtype::Float32);
+    assert_array_eq!(a.mean(None, None).unwrap(), array!(0.4890245497226715), 0.00978049099445343);
+    assert_array_eq!(a.sum(None, None).unwrap(), array!(4.89024543762207), 0.09780490875244141);
+
+    let a_grad = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[10], None).unwrap();
+    assert_eq!(a_grad.shape(), &[10]);
+    assert_eq!(a_grad.dtype(), Dtype::Float32);
+    assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.6818901896476746), 0.013637803792953491);
+    assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(6.818902015686035), 0.1363780403137207);
+
+    let mut a_model = SimpleModel {
+        a: Param::new(a.clone()),
+    };
+    let mut a_grad_params = FlattenedModuleParam::new();
+    a_grad_params.insert("a".into(), a_grad.clone());
+
+    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+
+    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    assert_eq!(a_model.a.shape(), &[10]);
+    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_array_eq!(a_model.a.mean(None, None).unwrap(), array!(0.4835330545902252), 0.009670661091804504);
+    assert_array_eq!(a_model.a.sum(None, None).unwrap(), array!(4.835330486297607), 0.09670660972595214);
 }

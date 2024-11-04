@@ -11,6 +11,7 @@ use crate::{
 };
 
 mod adadelta;
+mod adafactor;
 mod adagrad;
 mod adam;
 mod adamax;
@@ -20,6 +21,7 @@ mod sgd;
 mod lion;
 
 pub use adadelta::*;
+pub use adafactor::*;
 pub use adagrad::*;
 pub use adam::*;
 pub use adamax::*;

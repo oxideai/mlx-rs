@@ -1,6 +1,6 @@
 use crate::array::ArrayElement;
 use crate::error::Exception;
-use crate::Stream;
+use crate::{Dtype, Stream};
 use crate::{array::Array, stream::StreamOrDevice};
 use mlx_internal_macros::default_device;
 use num_traits::NumCast;
@@ -23,17 +23,8 @@ impl Array {
         shape: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_zeros(
-                    shape.as_ptr(),
-                    shape.len(),
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        let dtype = T::DTYPE.into();
+        zeros_dtype_device(shape, dtype, stream)
     }
 
     /// Construct an array of ones returning an error if shape is invalid.
@@ -53,17 +44,8 @@ impl Array {
         shape: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_ones(
-                    shape.as_ptr(),
-                    shape.len(),
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        let dtype = T::DTYPE.into();
+        ones_dtype_device(shape, dtype, stream)
     }
 
     /// Create an identity matrix or a general diagonal matrix returning an error if params are invalid.
@@ -378,6 +360,16 @@ pub fn zeros_like_device(
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
+    zeros_dtype_device(shape, dtype, stream)
+}
+
+/// Similar to [`Array::zeros`] but with a specified dtype.
+#[default_device]
+pub fn zeros_dtype_device(
+    shape: &[i32],
+    dtype: Dtype,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_zeros(
@@ -409,6 +401,15 @@ pub fn ones_like_device(
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
+    ones_dtype_device(shape, dtype, stream)
+}
+
+/// Similar to [`Array::ones`] but with a specified dtype.
+pub fn ones_dtype_device(
+    shape: &[i32],
+    dtype: Dtype,
+    stream: impl AsRef<Stream>,
+) -> Result<Array, Exception> {
     unsafe {
         let c_array = try_catch_c_ptr_expr! {
             mlx_sys::mlx_ones(

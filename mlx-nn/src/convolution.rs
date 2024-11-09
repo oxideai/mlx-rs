@@ -177,14 +177,14 @@ impl Conv2dBuilder {
     }
 
     /// Sets the `padding` parameter.
-    pub fn padding(mut self, padding: impl Into<Option<(i32, i32)>>) -> Self {
-        self.padding = padding.into();
+    pub fn padding(mut self, padding: Option<impl IntOrPair>) -> Self {
+        self.padding = padding.map(IntOrPair::into_pair);
         self
     }
 
     /// Sets the `stride` parameter.
-    pub fn stride(mut self, stride: impl Into<Option<(i32, i32)>>) -> Self {
-        self.stride = stride.into();
+    pub fn stride(mut self, stride: Option<impl IntOrPair>) -> Self {
+        self.stride = stride.map(IntOrPair::into_pair);
         self
     }
 
@@ -331,14 +331,14 @@ impl Conv3dBuilder {
     }
 
     /// Sets the `padding` parameter.
-    pub fn padding(mut self, padding: impl Into<Option<(i32, i32, i32)>>) -> Self {
-        self.padding = padding.into();
+    pub fn padding(mut self, padding: Option<impl IntOrTriple>) -> Self {
+        self.padding = padding.map(IntOrTriple::into_triple);
         self
     }
 
     /// Sets the `stride` parameter.
-    pub fn stride(mut self, stride: impl Into<Option<(i32, i32, i32)>>) -> Self {
-        self.stride = stride.into();
+    pub fn stride(mut self, stride: Option<impl IntOrTriple>) -> Self {
+        self.stride = stride.map(IntOrTriple::into_triple);
         self
     }
 

@@ -12,9 +12,9 @@ use crate::utils::{IntOrPair, IntOrTriple};
 /// Builder for the `Conv1d` module.
 #[derive(Debug, Clone, Default)]
 pub struct Conv1dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_WITH_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_BIAS`] if not
     /// specified.
-    pub with_bias: Option<bool>,
+    pub bias: Option<bool>,
 
     /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
     pub padding: Option<i32>,
@@ -29,9 +29,9 @@ impl Conv1dBuilder {
         Self::default()
     }
 
-    /// Sets the `with_bias` parameter.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
+    /// Sets the `bias` parameter.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
         self
     }
 
@@ -54,7 +54,7 @@ impl Conv1dBuilder {
         output_channels: i32,
         kernel_size: i32,
     ) -> Result<Conv1d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Conv1d::DEFAULT_WITH_BIAS);
+        let bias = self.bias.unwrap_or(Conv1d::DEFAULT_BIAS);
         let padding = self.padding.unwrap_or(Conv1d::DEFAULT_PADDING);
         let stride = self.stride.unwrap_or(Conv1d::DEFAULT_STRIDE);
 
@@ -65,7 +65,7 @@ impl Conv1dBuilder {
             &[output_channels, kernel_size, input_channels],
             None,
         )?;
-        let bias = if with_bias {
+        let bias = if bias {
             Some(zeros::<f32>(&[output_channels])?)
         } else {
             None
@@ -105,8 +105,8 @@ pub struct Conv1d {
 }
 
 impl Conv1d {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
+    /// Default value for `bias` if not specified.
+    pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: i32 = 0;
@@ -153,9 +153,9 @@ impl Module for Conv1d {
 /// Builder for the `Conv2d` module.
 #[derive(Debug, Clone, Default)]
 pub struct Conv2dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_WITH_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_BIAS`] if not
     /// specified.
-    with_bias: Option<bool>,
+    bias: Option<bool>,
 
     /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
     padding: Option<(i32, i32)>,
@@ -170,9 +170,9 @@ impl Conv2dBuilder {
         Self::default()
     }
 
-    /// Sets the `with_bias` parameter.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
+    /// Sets the `bias` parameter.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
         self
     }
 
@@ -195,7 +195,7 @@ impl Conv2dBuilder {
         output_channels: i32,
         kernel_size: (i32, i32),
     ) -> Result<Conv2d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Conv2d::DEFAULT_WITH_BIAS);
+        let bias = self.bias.unwrap_or(Conv2d::DEFAULT_BIAS);
         let padding = self.padding.unwrap_or(Conv2d::DEFAULT_PADDING);
         let stride = self.stride.unwrap_or(Conv2d::DEFAULT_STRIDE);
 
@@ -211,7 +211,7 @@ impl Conv2dBuilder {
             ],
             None,
         )?;
-        let bias = if with_bias {
+        let bias = if bias {
             Some(zeros::<f32>(&[output_channels])?)
         } else {
             None
@@ -252,8 +252,8 @@ pub struct Conv2d {
 }
 
 impl Conv2d {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
+    /// Default value for `bias` if not specified.
+    pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: (i32, i32) = (0, 0);
@@ -307,9 +307,9 @@ impl Module for Conv2d {
 /// Builder for the `Conv3d` module.
 #[derive(Debug, Clone, Default)]
 pub struct Conv3dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_WITH_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_BIAS`] if not
     /// specified.
-    with_bias: Option<bool>,
+    bias: Option<bool>,
 
     /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
     padding: Option<(i32, i32, i32)>,
@@ -324,9 +324,9 @@ impl Conv3dBuilder {
         Self::default()
     }
 
-    /// Sets the `with_bias` parameter.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
+    /// Sets the `bias` parameter.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
         self
     }
 
@@ -349,7 +349,7 @@ impl Conv3dBuilder {
         output_channels: i32,
         kernel_size: (i32, i32, i32),
     ) -> Result<Conv3d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Conv3d::DEFAULT_WITH_BIAS);
+        let bias = self.bias.unwrap_or(Conv3d::DEFAULT_BIAS);
         let padding = self.padding.unwrap_or(Conv3d::DEFAULT_PADDING);
         let stride = self.stride.unwrap_or(Conv3d::DEFAULT_STRIDE);
 
@@ -368,7 +368,7 @@ impl Conv3dBuilder {
             ],
             None,
         )?;
-        let bias = if with_bias {
+        let bias = if bias {
             Some(zeros::<f32>(&[output_channels])?)
         } else {
             None
@@ -409,8 +409,8 @@ pub struct Conv3d {
 }
 
 impl Conv3d {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
+    /// Default value for `bias` if not specified.
+    pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: (i32, i32, i32) = (0, 0, 0);

@@ -1,7 +1,13 @@
 use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
-use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{ones, rsqrt, zeros}, Array};
+use mlx_rs::{
+    array,
+    error::Exception,
+    module::{Module, Param},
+    ops::{ones, rsqrt, zeros},
+    Array,
+};
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
@@ -9,8 +15,8 @@ fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exceptio
     let variance = x.variance(axes, true, None)?;
 
     // Normalize
-    let x = x.subtract(&mean)?.multiply(&rsqrt(&variance.add(eps)?))?;
-    
+    let x = x.subtract(&mean)?.multiply(rsqrt(&variance.add(eps)?))?;
+
     Ok(x)
 }
 
@@ -70,21 +76,21 @@ impl InstanceNormBuilder {
 /// Applies instance normalization [1] on the inputs.
 ///
 /// ### References
-/// 
+///
 /// 1. [https://arxiv.org/abs/1607.08022](https://arxiv.org/abs/1607.08022)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct InstanceNorm {
     /// Number of features in the input
     pub dimensions: i32,
 
-    /// Value added to the denominator for numerical stability. 
+    /// Value added to the denominator for numerical stability.
     pub eps: Array,
 
     /// An optional trainable weight
     pub weight: Param<Option<Array>>,
 
     /// An optional trainable bias
-    pub bias:  Param<Option<Array>>,
+    pub bias: Param<Option<Array>>,
 }
 
 impl InstanceNorm {
@@ -120,7 +126,7 @@ impl Module for InstanceNorm {
         }
     }
 
-    fn training_mode(&mut self, _mode: bool) { }
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 /// Builder for [`LayerNorm`].
@@ -179,7 +185,7 @@ impl LayerNormBuilder {
 /// Applies layer normalization [1] on the inputs.
 ///
 /// ### References
-/// 
+///
 /// 1. [https://arxiv.org/abs/1607.06450](https://arxiv.org/abs/1607.06450)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct LayerNorm {
@@ -226,7 +232,7 @@ impl Module for LayerNorm {
         mlx_rs::fast::layer_norm(x, weight, bias, eps)
     }
 
-    fn training_mode(&mut self, _mode: bool) { }
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 /// Builder for [`RmsNorm`].
@@ -272,7 +278,7 @@ impl RmsNormBuilder {
 /// ensure the numerical stability of inverse square root.
 ///
 /// ### References
-/// 
+///
 /// 1. [https://arxiv.org/abs/1910.07467](https://arxiv.org/abs/1910.07467)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct RmsNorm {
@@ -308,7 +314,7 @@ impl Module for RmsNorm {
         mlx_rs::fast::rms_norm(x, weight, eps)
     }
 
-    fn training_mode(&mut self, _mode: bool) { }
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 /// Builder for [`GroupNorm`].
@@ -355,7 +361,9 @@ impl GroupNormBuilder {
     pub fn build(self, group_count: i32, dimensions: i32) -> Result<GroupNorm, Exception> {
         let eps = self.eps.unwrap_or(GroupNorm::DEFAULT_EPS);
         let affine = self.affine.unwrap_or(GroupNorm::DEFAULT_AFFINE);
-        let pytorch_compatible = self.pytorch_compatible.unwrap_or(GroupNorm::DEFAULT_PYTORCH_COMPATIBLE);
+        let pytorch_compatible = self
+            .pytorch_compatible
+            .unwrap_or(GroupNorm::DEFAULT_PYTORCH_COMPATIBLE);
 
         let (weight, bias) = if affine {
             (
@@ -380,7 +388,7 @@ impl GroupNormBuilder {
 /// Applies Group Normalization [1] on the inputs.
 ///
 /// ### References
-/// 
+///
 /// 1. [https://arxiv.org/abs/1803.08494](https://arxiv.org/abs/1803.08494)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct GroupNorm {
@@ -433,25 +441,21 @@ impl GroupNorm {
 
         // Split into groups
         let x = x.reshape(&[batch, -1, self.group_count, group_size])?;
-        let x = x.transpose(&[0, 2, 1, 3])?
+        let x = x
+            .transpose(&[0, 2, 1, 3])?
             .reshape(&[batch, self.group_count, -1])?;
-            
+
         // Normalize
-        let x = mlx_rs::fast::layer_norm(
-            x,
-            None,
-            None,
-            self.eps.item::<f32>(),
-        )?;
+        let x = mlx_rs::fast::layer_norm(x, None, None, self.eps.item::<f32>())?;
 
         let x = x.reshape(&[batch, self.group_count, -1, group_size])?;
 
-        let new_shape: Vec<_> = [batch].into_iter()
-            .chain(rest.into_iter().copied())
-            .chain([dims].into_iter())
+        let new_shape: Vec<_> = [batch]
+            .into_iter()
+            .chain(rest.iter().copied())
+            .chain([dims])
             .collect();
-        x.transpose(&[0, 2, 1, 3])?
-            .reshape(&new_shape[..])
+        x.transpose(&[0, 2, 1, 3])?.reshape(&new_shape[..])
     }
 
     fn group_norm(&self, x: &Array) -> Result<Array, Exception> {
@@ -465,9 +469,10 @@ impl GroupNorm {
         // Normalize
         let x = instance_norm(&x, &[1], &self.eps)?;
 
-        let new_shape: Vec<_> = [batch].into_iter()
-            .chain(rest.into_iter().copied())
-            .chain([dims].into_iter())
+        let new_shape: Vec<_> = [batch]
+            .into_iter()
+            .chain(rest.iter().copied())
+            .chain([dims])
             .collect();
         x.reshape(&new_shape[..])
     }
@@ -484,13 +489,13 @@ impl Module for GroupNorm {
         };
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            weight.multiply(&x)?.add(&bias)
+            weight.multiply(&x)?.add(bias)
         } else {
             Ok(x)
         }
     }
 
-    fn training_mode(&mut self, _mode: bool) { }
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 /// Builder for [`BatchNorm`].
@@ -548,7 +553,9 @@ impl BatchNormBuilder {
         let eps = self.eps.unwrap_or(BatchNorm::DEFAULT_EPS);
         let momentum = self.momentum.unwrap_or(BatchNorm::DEFAULT_MOMENTUM);
         let affine = self.affine.unwrap_or(BatchNorm::DEFAULT_AFFINE);
-        let track_running_stats = self.track_running_stats.unwrap_or(BatchNorm::DEFAULT_TRACK_RUNNING_STATS);
+        let track_running_stats = self
+            .track_running_stats
+            .unwrap_or(BatchNorm::DEFAULT_TRACK_RUNNING_STATS);
 
         let (weight, bias) = if affine {
             (
@@ -584,7 +591,7 @@ impl BatchNormBuilder {
 /// Applies batch normalization [1] on the inputs.
 ///
 /// ### References
-/// 
+///
 /// 1. [https://arxiv.org/abs/1502.03167](https://arxiv.org/abs/1502.03167)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct BatchNorm {
@@ -658,23 +665,29 @@ impl Module for BatchNorm {
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
-        if ndim < 2 || ndim > 4 {
-            return Err(Exception::custom("Input tensor must be at least 2 dimensions and at most 4 dimensions"));
+        if !(2..=4).contains(&ndim) {
+            return Err(Exception::custom(
+                "Input tensor must be at least 2 dimensions and at most 4 dimensions",
+            ));
         }
 
         let (mean, variance) = Self::stats(x)?;
         let mut mean = Cow::Owned(mean);
         let mut variance = Cow::Owned(variance);
 
-        if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
+        if let (Some(running_mean), Some(running_var)) =
+            (self.running_mean.as_mut(), self.running_var.as_mut())
+        {
             if self.training {
                 let mu = &self.momentum;
                 // SAFETY: momentum is a single element array
                 let one_minus_mu = array!(1.0) - mu;
 
-                *running_mean = one_minus_mu.multiply(&running_mean)?
+                *running_mean = one_minus_mu
+                    .multiply(&running_mean)?
                     .add(mu.multiply(&mean)?)?;
-                *running_var = one_minus_mu.multiply(&running_var)?
+                *running_var = one_minus_mu
+                    .multiply(&running_var)?
                     .add(mu.multiply(&variance)?)?;
             } else {
                 mean = Cow::Borrowed(&*running_mean);
@@ -682,16 +695,18 @@ impl Module for BatchNorm {
             }
         }
 
-        let x = x.subtract(&mean)?.multiply(&rsqrt(&variance.add(&self.eps)?))?;
+        let x = x
+            .subtract(&mean)?
+            .multiply(rsqrt(&variance.add(&self.eps)?))?;
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            weight.multiply(&x)?.add(&bias)
+            weight.multiply(&x)?.add(bias)
         } else {
             Ok(x)
         }
     }
 
-    fn training_mode(&mut self, mode: bool) { 
+    fn training_mode(&mut self, mode: bool) {
         self.training = mode;
     }
 }
@@ -699,8 +714,11 @@ impl Module for BatchNorm {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{prelude::{Ellipsis, IndexOp}, Dtype};
-    
+    use mlx_rs::{
+        prelude::{Ellipsis, IndexOp},
+        Dtype,
+    };
+
     use super::*;
 
     #[test]
@@ -710,29 +728,32 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(), 
-            0.5000646114349365,
-            abs <= 0.01000129222869873
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.500_064_6,
+            abs <= 0.010_001_292
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(), 
-            128.01654052734375,
-            abs <= 2.560330810546875
+            a.sum(None, None).unwrap().item::<f32>(),
+            128.016_54,
+            abs <= 2.560_330_9
         );
 
-        let result = InstanceNorm::new(8).unwrap().forward(&a).unwrap()
+        let result = InstanceNorm::new(8)
+            .unwrap()
+            .forward(&a)
+            .unwrap()
             .index((0, 0));
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(), 
-            0.10645411163568497,
-            abs <= 0.0021290822327136995
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.106_454_11,
+            abs <= 0.002_129_082_3
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(), 
-            1.7032657861709595,
-            abs <= 0.03406531572341919
+            result.sum(None, None).unwrap().item::<f32>(),
+            1.703_265_8,
+            abs <= 0.034_065_317
         );
     }
 
@@ -743,29 +764,32 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(), 
-            0.4926903247833252,
-            abs <= 0.009853806495666504
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.492_690_32,
+            abs <= 0.009_853_806
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(), 
-            126.12872314453125,
-            abs <= 2.522574462890625
+            a.sum(None, None).unwrap().item::<f32>(),
+            126.128_72,
+            abs <= 2.522_574_4
         );
 
-        let result = LayerNorm::new(16).unwrap().forward(&a).unwrap()
+        let result = LayerNorm::new(16)
+            .unwrap()
+            .forward(&a)
+            .unwrap()
             .index((Ellipsis, 0));
         assert_eq!(result.shape(), &[2, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(), 
-            0.2909903824329376,
-            abs <= 0.005819807648658752
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.290_990_38,
+            abs <= 0.005_819_807_8
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(), 
-            4.655846118927002,
-            abs <= 0.09311692237854004
+            result.sum(None, None).unwrap().item::<f32>(),
+            4.655_846,
+            abs <= 0.093_116_924
         );
     }
 
@@ -776,28 +800,28 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(), 
-            0.5054763555526733,
-            abs <= 0.010109527111053467
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.505_476_36,
+            abs <= 0.010_109_527
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(), 
-            129.40194702148438,
-            abs <= 2.5880389404296875
+            a.sum(None, None).unwrap().item::<f32>(),
+            129.401_95,
+            abs <= 2.588_039
         );
 
         let result = RmsNorm::new(16).unwrap().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(), 
-            0.8729387521743774,
-            abs <= 0.01745877504348755
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.872_938_75,
+            abs <= 0.017_458_774
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(), 
-            223.47232055664062,
-            abs <= 4.469446411132813
+            result.sum(None, None).unwrap().item::<f32>(),
+            223.472_32,
+            abs <= 4.469_446
         );
     }
 
@@ -808,29 +832,32 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(), 
-            0.48666587471961975,
-            abs <= 0.009733317494392395
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.486_665_87,
+            abs <= 0.009_733_317
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(), 
-            124.58646392822266,
-            abs <= 2.491729278564453
+            a.sum(None, None).unwrap().item::<f32>(),
+            124.586_464,
+            abs <= 2.491_729_3
         );
 
-        let result = GroupNorm::new(4, 16).unwrap().forward(&a).unwrap()
+        let result = GroupNorm::new(4, 16)
+            .unwrap()
+            .forward(&a)
+            .unwrap()
             .index((0, 0));
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(), 
-            -0.054606519639492035,
-            abs <= 0.0010921303927898408
+            result.mean(None, None).unwrap().item::<f32>(),
+            -0.054_606_52,
+            abs <= 0.001_092_130_4
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(), 
-            -0.8737043142318726,
-            abs <= 0.017474086284637452
+            result.sum(None, None).unwrap().item::<f32>(),
+            -0.873_704_3,
+            abs <= 0.017_474_087
         );
     }
 
@@ -841,29 +868,32 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(), 
-            0.5058146715164185,
-            abs <= 0.010116293430328369
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.505_814_7,
+            abs <= 0.010_116_293
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(), 
-            129.48855590820312,
-            abs <= 2.5897711181640624
+            a.sum(None, None).unwrap().item::<f32>(),
+            129.488_56,
+            abs <= 2.589_771
         );
 
-        let result = BatchNorm::new(16).unwrap().forward(&a).unwrap()
+        let result = BatchNorm::new(16)
+            .unwrap()
+            .forward(&a)
+            .unwrap()
             .index((0, 0));
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(), 
-            0.4397852420806885,
-            abs <= 0.00879570484161377
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.439_785_24,
+            abs <= 0.008_795_705
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(), 
-            7.036563873291016,
-            abs <= 0.14073127746582031
+            result.sum(None, None).unwrap().item::<f32>(),
+            7.036_564,
+            abs <= 0.140_731_28
         );
     }
 }

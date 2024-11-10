@@ -491,6 +491,200 @@ impl Module for GroupNorm {
     fn training_mode(&mut self, _mode: bool) { }
 }
 
+/// Builder for [`BatchNorm`].
+#[derive(Debug, Clone, Default)]
+pub struct BatchNormBuilder {
+    /// Value added to the denominator for numerical stability. Default to
+    /// [`BatchNorm::DEFAULT_EPS`].
+    pub eps: Option<f32>,
+
+    /// Momentum for updating the running mean and variance. Default to
+    /// [`BatchNorm::DEFAULT_MOMENTUM`].
+    pub momentum: Option<f32>,
+
+    /// If `true`, addes a trainable `weight` and `bias`. Default to
+    /// [`BatchNorm::DEFAULT_AFFINE`].
+    pub affine: Option<bool>,
+
+    /// If `true`, track the running mean and variance. Default to
+    /// [`BatchNorm::DEFAULT_TRACK_RUNNING_STATS`].
+    pub track_running_stats: Option<bool>,
+}
+
+impl BatchNormBuilder {
+    /// Creates a new [`BatchNormBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `eps`
+    pub fn eps(mut self, eps: impl Into<Option<f32>>) -> Self {
+        self.eps = eps.into();
+        self
+    }
+
+    /// Sets the `momentum`
+    pub fn momentum(mut self, momentum: impl Into<Option<f32>>) -> Self {
+        self.momentum = momentum.into();
+        self
+    }
+
+    /// Sets the `affine`
+    pub fn affine(mut self, affine: impl Into<Option<bool>>) -> Self {
+        self.affine = affine.into();
+        self
+    }
+
+    /// Sets the `track_running_stats`
+    pub fn track_running_stats(mut self, track_running_stats: impl Into<Option<bool>>) -> Self {
+        self.track_running_stats = track_running_stats.into();
+        self
+    }
+
+    /// Builds the [`BatchNorm`] layer.
+    pub fn build(self, feature_count: i32) -> Result<BatchNorm, Exception> {
+        let eps = self.eps.unwrap_or(BatchNorm::DEFAULT_EPS);
+        let momentum = self.momentum.unwrap_or(BatchNorm::DEFAULT_MOMENTUM);
+        let affine = self.affine.unwrap_or(BatchNorm::DEFAULT_AFFINE);
+        let track_running_stats = self.track_running_stats.unwrap_or(BatchNorm::DEFAULT_TRACK_RUNNING_STATS);
+
+        let (weight, bias) = if affine {
+            (
+                Some(ones::<f32>(&[feature_count])?),
+                Some(zeros::<f32>(&[feature_count])?),
+            )
+        } else {
+            (None, None)
+        };
+
+        let (running_mean, running_var) = if track_running_stats {
+            (
+                Some(zeros::<f32>(&[feature_count])?),
+                Some(ones::<f32>(&[feature_count])?),
+            )
+        } else {
+            (None, None)
+        };
+
+        Ok(BatchNorm {
+            feature_count,
+            eps,
+            momentum: array!(momentum),
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+            running_mean: Param::new(running_mean),
+            running_var: Param::new(running_var),
+            training: BatchNorm::DEFAULT_TRAINING,
+        })
+    }
+}
+
+/// Applies batch normalization [1] on the inputs.
+///
+/// ### References
+/// 
+/// 1. [https://arxiv.org/abs/1502.03167](https://arxiv.org/abs/1502.03167)
+#[derive(Debug, Clone, ModuleParameters)]
+pub struct BatchNorm {
+    /// Number of features in the input
+    pub feature_count: i32,
+
+    /// Value added to the denominator for numerical stability.
+    pub eps: f32,
+
+    /// Momentum for updating the running mean and variance.
+    pub momentum: Array,
+
+    /// An optional trainable weight
+    #[param]
+    pub weight: Param<Option<Array>>,
+
+    /// An optional trainable bias
+    #[param]
+    pub bias: Param<Option<Array>>,
+
+    /// Tracked running mean
+    #[param]
+    pub running_mean: Param<Option<Array>>,
+
+    /// Tracked running variance
+    #[param]
+    pub running_var: Param<Option<Array>>,
+
+    /// If `true`, the module is in training mode.
+    pub training: bool,
+}
+
+impl BatchNorm {
+    /// Default value for `eps`.
+    pub const DEFAULT_EPS: f32 = 1e-5;
+
+    /// Default value for `momentum`.
+    pub const DEFAULT_MOMENTUM: f32 = 0.1;
+
+    /// Enable trainable `weight` and `bias` by default.
+    pub const DEFAULT_AFFINE: bool = true;
+
+    /// Enable tracking of running mean and variance by default.
+    pub const DEFAULT_TRACK_RUNNING_STATS: bool = true;
+
+    /// Enable training mode by default.
+    pub const DEFAULT_TRAINING: bool = true;
+
+    /// Creates a new [`BatchNormBuilder`].
+    pub fn builder() -> BatchNormBuilder {
+        BatchNormBuilder::new()
+    }
+
+    /// Creates a new batch normalization layer with the default parameters.
+    pub fn new(feature_count: i32) -> Result<Self, Exception> {
+        BatchNormBuilder::new().build(feature_count)
+    }
+
+    fn stats(x: &Array) -> Result<(Array, Array), Exception> {
+        let reduction_axes = (0..x.ndim() as i32 - 1).collect::<Vec<_>>();
+
+        let mean = x.mean(&reduction_axes, None)?;
+        let variance = x.variance(&reduction_axes, None, None)?;
+
+        Ok((mean, variance))
+    }
+}
+
+impl Module for BatchNorm {
+    type Error = Exception;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let ndim = x.ndim();
+        if ndim < 2 || ndim > 4 {
+            return Err(Exception::custom("Input tensor must be at least 2 dimensions and at most 4 dimensions"));
+        }
+
+        let (mean, variance) = Self::stats(x)?;
+
+        if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
+            if self.training {
+                let mu = &self.momentum;
+                // SAFETY: momentum is a single element array
+                let one_minus_mu = array!(1.0) - mu;
+
+                *running_mean = one_minus_mu.multiply(&running_mean)?
+                    .add(mu.multiply(&mean)?)?;
+                *running_var = one_minus_mu.multiply(&running_var)?
+                    .add(mu.multiply(&variance)?)?;
+            } else {
+
+            }
+        }
+
+        todo!()
+    }
+
+    fn training_mode(&mut self, mode: bool) { 
+        self.training = mode;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;

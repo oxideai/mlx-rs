@@ -56,6 +56,8 @@ impl InstanceNormBuilder {
 
 /// Applies instance normalization [1] on the inputs.
 ///
+/// ### References
+/// 
 /// 1. [https://arxiv.org/abs/1607.08022](https://arxiv.org/abs/1607.08022)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct InstanceNorm {
@@ -169,6 +171,8 @@ impl LayerNormBuilder {
 
 /// Applies layer normalization [1] on the inputs.
 ///
+/// ### References
+/// 
 /// 1. [https://arxiv.org/abs/1607.06450](https://arxiv.org/abs/1607.06450)
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct LayerNorm {
@@ -213,6 +217,88 @@ impl Module for LayerNorm {
         let bias = self.bias.as_ref();
         let eps = self.eps;
         mlx_rs::fast::layer_norm(x, weight, bias, eps)
+    }
+
+    fn training_mode(&mut self, _mode: bool) { }
+}
+
+/// Builder for [`RmsNorm`].
+#[derive(Debug, Clone, Default)]
+pub struct RmsNormBuilder {
+    /// Value added to the denominator for numerical stability. Default to
+    /// [`RmsNorm::DEFAULT_EPS`].
+    pub eps: Option<f32>,
+}
+
+impl RmsNormBuilder {
+    /// Creates a new [`RmsNormBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `eps`
+    pub fn eps(mut self, eps: impl Into<Option<f32>>) -> Self {
+        self.eps = eps.into();
+        self
+    }
+
+    /// Builds the [`RmsNorm`] layer.
+    pub fn build(self, dimensions: i32) -> Result<RmsNorm, Exception> {
+        let weight = ones::<f32>(&[dimensions])?;
+        let eps = self.eps.unwrap_or(RmsNorm::DEFAULT_EPS);
+        Ok(RmsNorm {
+            weight: Param::new(weight),
+            eps,
+        })
+    }
+}
+
+/// Applies Root Mean Square normalization [1] to the inputs.
+///
+/// Concretely:
+///
+/// ```swift
+/// weight * x * MLX.rsqrt(x.square().mean() + eps)
+/// ```
+///
+/// where `weight` is initialized with ones and `eps` is a small float to
+/// ensure the numerical stability of inverse square root.
+///
+/// ### References
+/// 
+/// 1. [https://arxiv.org/abs/1910.07467](https://arxiv.org/abs/1910.07467)
+#[derive(Debug, Clone, ModuleParameters)]
+pub struct RmsNorm {
+    /// Weight
+    #[param]
+    pub weight: Param<Array>,
+
+    /// A small float to ensure the numerical stability
+    pub eps: f32,
+}
+
+impl RmsNorm {
+    /// Default value for `eps`.
+    pub const DEFAULT_EPS: f32 = 1e-5;
+
+    /// Creates a new [`RmsNormBuilder`].
+    pub fn builder() -> RmsNormBuilder {
+        RmsNormBuilder::new()
+    }
+
+    /// Creates a new RMS normalization layer with the default parameters.
+    pub fn new(dimensions: i32) -> Result<Self, Exception> {
+        RmsNormBuilder::new().build(dimensions)
+    }
+}
+
+impl Module for RmsNorm {
+    type Error = Exception;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let weight = self.weight.as_ref();
+        let eps = self.eps;
+        mlx_rs::fast::rms_norm(x, weight, eps)
     }
 
     fn training_mode(&mut self, _mode: bool) { }
@@ -288,6 +374,38 @@ mod tests {
             result.sum(None, None).unwrap().item::<f32>(), 
             4.655846118927002,
             abs <= 0.09311692237854004
+        );
+    }
+
+    #[test]
+    fn test_rms_norm() {
+        mlx_rs::random::seed(103);
+        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(), 
+            0.5054763555526733,
+            abs <= 0.010109527111053467
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(), 
+            129.40194702148438,
+            abs <= 2.5880389404296875
+        );
+
+        let result = RmsNorm::new(16).unwrap().forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 16]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(), 
+            0.8729387521743774,
+            abs <= 0.01745877504348755
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(), 
+            223.47232055664062,
+            abs <= 4.469446411132813
         );
     }
 }

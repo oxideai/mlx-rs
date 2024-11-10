@@ -1,6 +1,17 @@
 use mlx_macros::ModuleParameters;
 use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{ones, rsqrt, zeros}, Array};
 
+fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
+    // Compute stats
+    let mean = x.mean(axes, true)?;
+    let variance = x.variance(axes, true, None)?;
+
+    // Normalize
+    let x = x.subtract(&mean)?.multiply(&rsqrt(&variance.add(eps)?))?;
+    
+    Ok(x)
+}
+
 /// Builder for [`InstanceNorm`].
 #[derive(Debug, Clone, Default)]
 pub struct InstanceNormBuilder {
@@ -98,13 +109,7 @@ impl Module for InstanceNorm {
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
-        // Compute stats
-        let mean = x.mean(&reduction_axes, true)?;
-        let variance = x.variance(&reduction_axes, true, None)?;
-
-        // Normalize
-        let x = x.subtract(mean)?
-            .multiply(rsqrt(&variance.add(&self.eps)?))?;
+        let x = instance_norm(x, &reduction_axes, &self.eps)?;
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
             Ok(weight.multiply(x)?.add(bias)?)
@@ -304,6 +309,188 @@ impl Module for RmsNorm {
     fn training_mode(&mut self, _mode: bool) { }
 }
 
+/// Builder for [`GroupNorm`].
+#[derive(Debug, Clone, Default)]
+pub struct GroupNormBuilder {
+    /// Value added to the denominator for numerical stability. Default to
+    /// [`GroupNorm::DEFAULT_EPS`].
+    pub eps: Option<f32>,
+
+    /// If `true`, add a trainable `weight` and `bias`. Default to
+    /// [`GroupNorm::DEFAULT_AFFINE`].
+    pub affine: Option<bool>,
+
+    /// If `true`, perform the group normalization in the same order/grouping as PyTorch.
+    /// Default to [`GroupNorm::DEFAULT_PYTORCH_COMPATIBLE`].
+    pub pytorch_compatible: Option<bool>,
+}
+
+impl GroupNormBuilder {
+    /// Creates a new [`GroupNormBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the `eps`
+    pub fn eps(mut self, eps: impl Into<Option<f32>>) -> Self {
+        self.eps = eps.into();
+        self
+    }
+
+    /// Sets the `affine`
+    pub fn affine(mut self, affine: impl Into<Option<bool>>) -> Self {
+        self.affine = affine.into();
+        self
+    }
+
+    /// Sets the `pytorch_compatible`
+    pub fn pytorch_compatible(mut self, pytorch_compatible: impl Into<Option<bool>>) -> Self {
+        self.pytorch_compatible = pytorch_compatible.into();
+        self
+    }
+
+    /// Builds the [`GroupNorm`] layer.
+    pub fn build(self, group_count: i32, dimensions: i32) -> Result<GroupNorm, Exception> {
+        let eps = self.eps.unwrap_or(GroupNorm::DEFAULT_EPS);
+        let affine = self.affine.unwrap_or(GroupNorm::DEFAULT_AFFINE);
+        let pytorch_compatible = self.pytorch_compatible.unwrap_or(GroupNorm::DEFAULT_PYTORCH_COMPATIBLE);
+
+        let (weight, bias) = if affine {
+            (
+                Some(ones::<f32>(&[dimensions])?),
+                Some(zeros::<f32>(&[dimensions])?),
+            )
+        } else {
+            (None, None)
+        };
+
+        Ok(GroupNorm {
+            group_count,
+            dimensions,
+            eps: array!(eps),
+            pytorch_compatible,
+            weight: Param::new(weight),
+            bias: Param::new(bias),
+        })
+    }
+}
+
+/// Applies Group Normalization [1] on the inputs.
+///
+/// ### References
+/// 
+/// 1. [https://arxiv.org/abs/1803.08494](https://arxiv.org/abs/1803.08494)
+#[derive(Debug, Clone, ModuleParameters)]
+pub struct GroupNorm {
+    /// Number of groups to separate the features into
+    pub group_count: i32,
+
+    /// Number of features in the input
+    pub dimensions: i32,
+
+    /// Value added to the denominator for numerical stability.
+    pub eps: Array,
+
+    /// If `true`, perform the group normalization in the same order/grouping as PyTorch.
+    pub pytorch_compatible: bool,
+
+    /// An optional trainable weight
+    #[param]
+    pub weight: Param<Option<Array>>,
+
+    /// An optional trainable bias
+    #[param]
+    pub bias: Param<Option<Array>>,
+}
+
+impl GroupNorm {
+    /// Default value for `eps`.
+    pub const DEFAULT_EPS: f32 = 1e-5;
+
+    /// Enable trainable `weight` and `bias` by default.
+    pub const DEFAULT_AFFINE: bool = true;
+
+    /// Default value for `pytorch_compatible`.
+    pub const DEFAULT_PYTORCH_COMPATIBLE: bool = false;
+
+    /// Creates a new [`GroupNormBuilder`].
+    pub fn builder() -> GroupNormBuilder {
+        GroupNormBuilder::new()
+    }
+
+    /// Creates a new group normalization layer with the default parameters.
+    pub fn new(group_count: i32, dimensions: i32) -> Result<Self, Exception> {
+        GroupNormBuilder::new().build(group_count, dimensions)
+    }
+
+    fn pytorch_group_norm(&self, x: &Array) -> Result<Array, Exception> {
+        let batch = x.dim(0);
+        let dims = x.dim(-1);
+        let rest = &x.shape()[1..x.ndim() - 1];
+        let group_size = dims / self.group_count;
+
+        // Split into groups
+        let x = x.reshape(&[batch, -1, self.group_count, group_size])?;
+        let x = x.transpose(&[0, 2, 1, 3])?
+            .reshape(&[batch, self.group_count, -1])?;
+            
+        // Normalize
+        let x = mlx_rs::fast::layer_norm(
+            x,
+            None,
+            None,
+            self.eps.item::<f32>(),
+        )?;
+
+        let x = x.reshape(&[batch, self.group_count, -1, group_size])?;
+
+        let new_shape: Vec<_> = [batch].into_iter()
+            .chain(rest.into_iter().copied())
+            .chain([dims].into_iter())
+            .collect();
+        x.transpose(&[0, 2, 1, 3])?
+            .reshape(&new_shape[..])
+    }
+
+    fn group_norm(&self, x: &Array) -> Result<Array, Exception> {
+        let batch = x.dim(0);
+        let dims = x.dim(-1);
+        let rest = &x.shape()[1..x.ndim() - 1];
+
+        // Split into groups
+        let x = x.reshape(&[batch, -1, self.group_count])?;
+
+        // Normalize
+        let x = instance_norm(&x, &[1], &self.eps)?;
+
+        let new_shape: Vec<_> = [batch].into_iter()
+            .chain(rest.into_iter().copied())
+            .chain([dims].into_iter())
+            .collect();
+        x.reshape(&new_shape[..])
+    }
+}
+
+impl Module for GroupNorm {
+    type Error = Exception;
+
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let x = if self.pytorch_compatible {
+            self.pytorch_group_norm(x)?
+        } else {
+            self.group_norm(x)?
+        };
+
+        if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
+            Ok(weight.multiply(&x)?.add(&bias)?)
+        } else {
+            Ok(x)
+        }
+    }
+
+    fn training_mode(&mut self, _mode: bool) { }
+}
+
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
@@ -406,6 +593,39 @@ mod tests {
             result.sum(None, None).unwrap().item::<f32>(), 
             223.47232055664062,
             abs <= 4.469446411132813
+        );
+    }
+
+    #[test]
+    fn test_group_norm() {
+        mlx_rs::random::seed(855);
+        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(), 
+            0.48666587471961975,
+            abs <= 0.009733317494392395
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(), 
+            124.58646392822266,
+            abs <= 2.491729278564453
+        );
+
+        let result = GroupNorm::new(4, 16).unwrap().forward(&a).unwrap()
+            .index((0, 0));
+        assert_eq!(result.shape(), &[16]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(), 
+            -0.054606519639492035,
+            abs <= 0.0010921303927898408
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(), 
+            -0.8737043142318726,
+            abs <= 0.017474086284637452
         );
     }
 }

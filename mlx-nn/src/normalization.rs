@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use mlx_macros::ModuleParameters;
 use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{ones, rsqrt, zeros}, Array};
 
@@ -112,7 +114,7 @@ impl Module for InstanceNorm {
         let x = instance_norm(x, &reduction_axes, &self.eps)?;
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            Ok(weight.multiply(x)?.add(bias)?)
+            weight.multiply(x)?.add(bias)
         } else {
             Ok(x)
         }
@@ -482,7 +484,7 @@ impl Module for GroupNorm {
         };
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            Ok(weight.multiply(&x)?.add(&bias)?)
+            weight.multiply(&x)?.add(&bias)
         } else {
             Ok(x)
         }
@@ -568,7 +570,7 @@ impl BatchNormBuilder {
 
         Ok(BatchNorm {
             feature_count,
-            eps,
+            eps: array!(eps),
             momentum: array!(momentum),
             weight: Param::new(weight),
             bias: Param::new(bias),
@@ -590,7 +592,7 @@ pub struct BatchNorm {
     pub feature_count: i32,
 
     /// Value added to the denominator for numerical stability.
-    pub eps: f32,
+    pub eps: Array,
 
     /// Momentum for updating the running mean and variance.
     pub momentum: Array,
@@ -661,23 +663,32 @@ impl Module for BatchNorm {
         }
 
         let (mean, variance) = Self::stats(x)?;
+        let mut mean = Cow::Owned(mean);
+        let mut variance = Cow::Owned(variance);
 
-        // if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
-        //     if self.training {
-        //         let mu = &self.momentum;
-        //         // SAFETY: momentum is a single element array
-        //         let one_minus_mu = array!(1.0) - mu;
+        if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
+            if self.training {
+                let mu = &self.momentum;
+                // SAFETY: momentum is a single element array
+                let one_minus_mu = array!(1.0) - mu;
 
-        //         *running_mean = one_minus_mu.multiply(&running_mean)?
-        //             .add(mu.multiply(&mean)?)?;
-        //         *running_var = one_minus_mu.multiply(&running_var)?
-        //             .add(mu.multiply(&variance)?)?;
-        //     } else {
+                *running_mean = one_minus_mu.multiply(&running_mean)?
+                    .add(mu.multiply(&mean)?)?;
+                *running_var = one_minus_mu.multiply(&running_var)?
+                    .add(mu.multiply(&variance)?)?;
+            } else {
+                mean = Cow::Borrowed(&*running_mean);
+                variance = Cow::Borrowed(&*running_var);
+            }
+        }
 
-        //     }
-        // }
+        let x = x.subtract(&mean)?.multiply(&rsqrt(&variance.add(&self.eps)?))?;
 
-        todo!()
+        if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
+            weight.multiply(&x)?.add(&bias)
+        } else {
+            Ok(x)
+        }
     }
 
     fn training_mode(&mut self, mode: bool) { 
@@ -820,6 +831,39 @@ mod tests {
             result.sum(None, None).unwrap().item::<f32>(), 
             -0.8737043142318726,
             abs <= 0.017474086284637452
+        );
+    }
+
+    #[test]
+    fn test_batch_norm() {
+        mlx_rs::random::seed(266);
+        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(), 
+            0.5058146715164185,
+            abs <= 0.010116293430328369
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(), 
+            129.48855590820312,
+            abs <= 2.5897711181640624
+        );
+
+        let result = BatchNorm::new(16).unwrap().forward(&a).unwrap()
+            .index((0, 0));
+        assert_eq!(result.shape(), &[16]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(), 
+            0.4397852420806885,
+            abs <= 0.00879570484161377
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(), 
+            7.036563873291016,
+            abs <= 0.14073127746582031
         );
     }
 }

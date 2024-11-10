@@ -94,7 +94,7 @@ impl Module for InstanceNorm {
     type Error = Exception;
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
-        let reduction_axes = (0..x.ndim() as i32 - 1).collect::<Vec<_>>();
+        let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
         // Compute stats
         let mean = x.mean(&reduction_axes, true)?;

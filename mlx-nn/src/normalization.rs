@@ -106,7 +106,7 @@ impl InstanceNorm {
 impl Module for InstanceNorm {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
         let x = instance_norm(x, &reduction_axes, &self.eps)?;
@@ -217,7 +217,7 @@ impl LayerNorm {
 impl Module for LayerNorm {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
         let bias = self.bias.as_ref();
         let eps = self.eps;
@@ -300,7 +300,7 @@ impl RmsNorm {
 impl Module for RmsNorm {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
         let eps = self.eps;
         mlx_rs::fast::rms_norm(x, weight, eps)
@@ -474,7 +474,7 @@ impl GroupNorm {
 impl Module for GroupNorm {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let x = if self.pytorch_compatible {
             self.pytorch_group_norm(x)?
         } else {
@@ -654,7 +654,7 @@ impl BatchNorm {
 impl Module for BatchNorm {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
         if ndim < 2 || ndim > 4 {
             return Err(Exception::custom("Input tensor must be at least 2 dimensions and at most 4 dimensions"));
@@ -662,20 +662,20 @@ impl Module for BatchNorm {
 
         let (mean, variance) = Self::stats(x)?;
 
-        if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
-            if self.training {
-                let mu = &self.momentum;
-                // SAFETY: momentum is a single element array
-                let one_minus_mu = array!(1.0) - mu;
+        // if let (Some(running_mean), Some(running_var)) = (self.running_mean.as_mut(), self.running_var.as_mut()) {
+        //     if self.training {
+        //         let mu = &self.momentum;
+        //         // SAFETY: momentum is a single element array
+        //         let one_minus_mu = array!(1.0) - mu;
 
-                *running_mean = one_minus_mu.multiply(&running_mean)?
-                    .add(mu.multiply(&mean)?)?;
-                *running_var = one_minus_mu.multiply(&running_var)?
-                    .add(mu.multiply(&variance)?)?;
-            } else {
+        //         *running_mean = one_minus_mu.multiply(&running_mean)?
+        //             .add(mu.multiply(&mean)?)?;
+        //         *running_var = one_minus_mu.multiply(&running_var)?
+        //             .add(mu.multiply(&variance)?)?;
+        //     } else {
 
-            }
-        }
+        //     }
+        // }
 
         todo!()
     }

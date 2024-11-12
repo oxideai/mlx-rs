@@ -24,7 +24,7 @@ pub trait MaybeQuantizable: Sized {
     const DEFAULT_BITS: i32 = 4;
 
     /// The quantized version of the module.
-    type Quantized;
+    type Quantized: Module;
 
     /// Convert the module to its quantized version if possible. Default to not quantized unless
     /// manually implemented.

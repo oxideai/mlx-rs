@@ -1,6 +1,9 @@
 #[cfg(feature = "io")]
 pub(crate) mod io;
 
+mod module;
+pub use module::*;
+
 use crate::{complex64, error::Exception, Array, FromNested};
 use mlx_sys::mlx_tuple_array_array;
 use std::collections::HashMap;

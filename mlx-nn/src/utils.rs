@@ -6,9 +6,9 @@ pub trait SingleOrPair<Item> {
     fn into_pair(self) -> (Item, Item);
 }
 
-impl<T> SingleOrPair<T> for T 
-where 
-    T: Copy
+impl<T> SingleOrPair<T> for T
+where
+    T: Copy,
 {
     fn into_pair(self) -> (T, T) {
         (self, self)
@@ -27,9 +27,9 @@ pub trait SingleOrTriple<Item> {
     fn into_triple(self) -> (Item, Item, Item);
 }
 
-impl<T> SingleOrTriple<T> for T 
-where 
-    T: Copy
+impl<T> SingleOrTriple<T> for T
+where
+    T: Copy,
 {
     fn into_triple(self) -> (T, T, T) {
         (self, self, self)

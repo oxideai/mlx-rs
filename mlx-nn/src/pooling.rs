@@ -4,11 +4,12 @@ use std::{
 };
 
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
-    error::Exception, module::Module, ops::as_strided, Array
-};
+use mlx_rs::{error::Exception, module::Module, ops::as_strided, Array};
 
 use crate::utils::SingleOrPair;
+
+/// Type alias for a pooling operation.
+type PoolingOp = dyn Fn(&Array, &[i32]) -> Result<Array, Exception>;
 
 /// Abstract pooling layer.
 ///
@@ -32,7 +33,7 @@ pub struct Pool {
     /// Pooling operation
     ///
     /// TODO: We have Arc here just to make it `Clone` and `Send`. Is this necessary?
-    pooling_op: Arc<dyn Fn(&Array, &[i32]) -> Result<Array, Exception>>,
+    pooling_op: Arc<PoolingOp>,
 }
 
 impl std::fmt::Debug for Pool {
@@ -52,7 +53,7 @@ impl Pool {
         stride: Vec<usize>,
         op: impl Fn(&Array, &[i32]) -> Result<Array, Exception> + 'static,
     ) -> Self {
-        let start = -1 * kernel_size.len() as i32 - 1;
+        let start = -(kernel_size.len() as i32) - 1;
         let axes: Vec<_> = (start..-1).collect();
         Self {
             kernel_size,
@@ -80,7 +81,7 @@ impl Module for Pool {
             .collect::<Vec<_>>();
 
         let strides = shape
-            .into_iter()
+            .iter()
             .map(|s| *s as usize)
             .chain(once(1))
             .rev()
@@ -128,7 +129,7 @@ macro_rules! impl_module {
 }
 
 /// Applies 1-dimensional max pooling.
-/// 
+///
 /// The input is expected to be `NLC`. The output will have the same N/C dimensions with the new `L
 /// = floor((L - kernel)/stride) + 1`
 ///
@@ -142,15 +143,13 @@ pub struct MaxPool1d {
 
 impl MaxPool1d {
     /// Create a new 1-dimensional max pooling layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: i32, stride: usize) -> Self {
-        let op = |x: &Array, axes: &[i32]| {
-            x.max(axes, None)
-        };
+        let op = |x: &Array, axes: &[i32]| x.max(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
     }
@@ -159,7 +158,7 @@ impl MaxPool1d {
 impl_module!(MaxPool1d);
 
 /// Applies 2-dimensional max pooling.
-/// 
+///
 /// The input is expected to be `NHWC`. The output will have the same N/C dimensions with the new
 /// `H/W = floor((H/W - kernel)/stride) + 1`
 ///
@@ -173,9 +172,9 @@ pub struct MaxPool2d {
 
 impl MaxPool2d {
     /// Create a new 2-dimensional max pooling layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: impl SingleOrPair<i32>, stride: impl SingleOrPair<usize>) -> Self {
@@ -184,9 +183,7 @@ impl MaxPool2d {
         let stride = stride.into_pair();
         let stride = vec![stride.0, stride.1];
 
-        let op = |x: &Array, axes: &[i32]| {
-            x.max(axes, None)
-        };
+        let op = |x: &Array, axes: &[i32]| x.max(axes, None);
         let inner = Pool::new(kernel_size, stride, op);
         Self { inner }
     }
@@ -209,15 +206,13 @@ pub struct AvgPool1d {
 
 impl AvgPool1d {
     /// Create a new 1-dimensional average pooling layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: i32, stride: usize) -> Self {
-        let op = |x: &Array, axes: &[i32]| {
-            x.mean(axes, None)
-        };
+        let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
     }
@@ -226,7 +221,7 @@ impl AvgPool1d {
 impl_module!(AvgPool1d);
 
 /// Applies 2-dimensional average pooling.
-/// 
+///
 /// The input is expected to be `NHWC`. The output will have the same N/C dimensions with the new
 /// `H/W = floor((H/W - kernel)/stride) + 1`
 ///
@@ -240,9 +235,9 @@ pub struct AvgPool2d {
 
 impl AvgPool2d {
     /// Create a new 2-dimensional average pooling layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: impl SingleOrPair<i32>, stride: impl SingleOrPair<usize>) -> Self {
@@ -251,9 +246,7 @@ impl AvgPool2d {
         let stride = stride.into_pair();
         let stride = vec![stride.0, stride.1];
 
-        let op = |x: &Array, axes: &[i32]| {
-            x.mean(axes, None)
-        };
+        let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
         let inner = Pool::new(kernel_size, stride, op);
         Self { inner }
     }
@@ -272,7 +265,7 @@ mod tests {
         let input = Array::from_iter(0..4, &[1, 4, 1]);
         let pool = MaxPool1d::new(2, 1);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([1, 2, 3], shape=[1, 3, 1]));
+        assert_array_eq!(output, array!([1, 2, 3], shape = [1, 3, 1]));
     }
 
     #[test]
@@ -280,7 +273,7 @@ mod tests {
         let input = Array::from_iter(0..8, &[2, 4, 1]);
         let pool = MaxPool1d::new(2, 2);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([1, 3, 5, 7], shape=[2, 2, 1]));
+        assert_array_eq!(output, array!([1, 3, 5, 7], shape = [2, 2, 1]));
     }
 
     #[test]
@@ -288,7 +281,10 @@ mod tests {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
         let pool = MaxPool2d::new(2, 1);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([5, 6, 7, 9, 10, 11, 13, 14, 15], shape=[1, 3, 3, 1]));
+        assert_array_eq!(
+            output,
+            array!([5, 6, 7, 9, 10, 11, 13, 14, 15], shape = [1, 3, 3, 1])
+        );
     }
 
     #[test]
@@ -296,7 +292,10 @@ mod tests {
         let input = Array::from_iter(0..32, &[2, 4, 4, 1]);
         let pool = MaxPool2d::new(2, 2);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([5, 7, 13, 15, 21, 23, 29, 31], shape=[2, 2, 2, 1]));
+        assert_array_eq!(
+            output,
+            array!([5, 7, 13, 15, 21, 23, 29, 31], shape = [2, 2, 2, 1])
+        );
     }
 
     #[test]
@@ -304,7 +303,7 @@ mod tests {
         let input = Array::from_iter(0..4, &[1, 4, 1]);
         let pool = AvgPool1d::new(2, 1);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([0.5, 1.5, 2.5], shape=[1, 3, 1]));
+        assert_array_eq!(output, array!([0.5, 1.5, 2.5], shape = [1, 3, 1]));
     }
 
     #[test]
@@ -312,7 +311,7 @@ mod tests {
         let input = Array::from_iter(0..8, &[2, 4, 1]);
         let pool = AvgPool1d::new(2, 2);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([0.5, 2.5, 4.5, 6.5], shape=[2, 2, 1]));
+        assert_array_eq!(output, array!([0.5, 2.5, 4.5, 6.5], shape = [2, 2, 1]));
     }
 
     #[test]
@@ -320,7 +319,13 @@ mod tests {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
         let pool = AvgPool2d::new(2, 1);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([2.5, 3.5, 4.5, 6.5, 7.5, 8.5, 10.5, 11.5, 12.5], shape=[1, 3, 3, 1]));
+        assert_array_eq!(
+            output,
+            array!(
+                [2.5, 3.5, 4.5, 6.5, 7.5, 8.5, 10.5, 11.5, 12.5],
+                shape = [1, 3, 3, 1]
+            )
+        );
     }
 
     #[test]
@@ -328,6 +333,6 @@ mod tests {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
         let pool = AvgPool2d::new(2, 2);
         let output = pool.forward(&input).unwrap();
-        assert_array_eq!(output, array!([2.5, 4.5, 10.5, 12.5], shape=[1, 2, 2, 1]));
+        assert_array_eq!(output, array!([2.5, 4.5, 10.5, 12.5], shape = [1, 2, 2, 1]));
     }
 }

@@ -7,7 +7,7 @@ use mlx_rs::{
     Array,
 };
 
-use crate::utils::{IntOrPair, IntOrTriple};
+use crate::utils::{SingleOrPair, SingleOrTriple};
 
 /// Builder for the `Conv1d` module.
 #[derive(Debug, Clone, Default)]
@@ -276,7 +276,7 @@ impl Conv2d {
     pub fn new(
         input_channels: i32,
         output_channels: i32,
-        kernel_size: impl IntOrPair,
+        kernel_size: impl SingleOrPair<i32>,
     ) -> Result<Self, Exception> {
         let kernel_size = kernel_size.into_pair();
         Conv2dBuilder::new().build(input_channels, output_channels, kernel_size)
@@ -433,7 +433,7 @@ impl Conv3d {
     pub fn new(
         input_channels: i32,
         output_channels: i32,
-        kernel_size: impl IntOrTriple,
+        kernel_size: impl SingleOrTriple<i32>,
     ) -> Result<Self, Exception> {
         let kernel_size = kernel_size.into_triple();
         Conv3dBuilder::new().build(input_channels, output_channels, kernel_size)

@@ -57,3 +57,17 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
     };
     TokenStream::from(output)
 }
+
+/// Derive the `MaybeQuantizable` trait for a struct.
+/// 
+/// TODO: Two approaches:
+/// 
+/// 1. Trait object based. Using traits to eventually return something that `impl Module`.
+/// 2. Macro based. Using a macro to generate a new struct if any field is quantizable.
+/// 
+/// Which one is better?
+#[proc_macro_derive(MaybeQuantizable)]
+pub fn derive_maybe_quantizable(input: TokenStream) -> TokenStream {
+
+    todo!()
+}

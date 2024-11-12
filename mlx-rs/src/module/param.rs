@@ -9,6 +9,9 @@ use super::ModuleParameters;
 
 /// Trait for a module parameter.
 pub trait Parameter {
+    /// Whether the parameter is a module.
+    const IS_MODULE: bool = false;
+
     /// Freeze the parameter.
     fn freeze(&mut self);
 
@@ -150,6 +153,8 @@ impl<T> Parameter for Param<T>
 where
     T: ModuleParameters,
 {
+    const IS_MODULE: bool = true;
+
     fn freeze(&mut self) {
         self.is_frozen = true;
     }

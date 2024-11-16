@@ -5,7 +5,7 @@ use mlx_macros::ModuleParameters;
 use mlx_rs::{
     array,
     error::Exception,
-    module::{Module, Param, Parameter},
+    module::{Module, ModuleParameters, Param},
     ops::{dequantize, quantize, quantized_matmul, zeros},
     prelude::IndexOp,
     random::uniform,
@@ -37,7 +37,7 @@ generate_builder! {
 
         /// Inner embedding
         #[param]
-        pub inner: Param<Embedding>,
+        pub inner: Embedding,
     }
 }
 
@@ -79,7 +79,7 @@ impl QuantizedEmbeddingBuilder {
             bits,
             scales: Param::new(scales),
             biases: Param::new(biases),
-            inner: Param::new(inner),
+            inner,
         })
     }
 }
@@ -215,14 +215,11 @@ impl QuantizedLinearBuilder {
             bits,
             scales: Param::new(scales),
             biases: Param::new(biases),
-            inner: Param::new(inner),
+            inner,
         };
 
-        // Freeze the parameters
-        // TODO: we need a way to recursively freeze/unfreeze parameters
-        linear.scales.freeze();
-        linear.biases.freeze();
-        linear.inner.freeze();
+        // Freeze all parameters
+        linear.freeze_parameters(true);
 
         Ok(linear)
     }
@@ -254,7 +251,7 @@ pub struct QuantizedLinear {
 
     /// Inner linear layer
     #[param]
-    pub inner: Param<Linear>,
+    pub inner: Linear,
 }
 
 impl QuantizedLinear {

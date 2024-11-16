@@ -148,22 +148,20 @@ impl Parameter for Param<Option<Array>> {
     }
 }
 
-impl<T> Parameter for Param<T>
+impl<T> Parameter for T
 where
     T: ModuleParameters,
 {
     fn freeze(&mut self, recursive: bool) {
-        self.value.freeze_parameters(recursive);
-        self.is_frozen = true;
+        self.freeze_parameters(recursive);
     }
 
     fn unfreeze(&mut self, recursive: bool) {
-        self.value.unfreeze_parameters(recursive);
-        self.is_frozen = false;
+        self.unfreeze_parameters(recursive);
     }
 
     fn is_frozen(&self) -> bool {
-        self.is_frozen
+        self.all_frozen()
     }
 
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
@@ -175,9 +173,6 @@ where
     }
 
     fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
-        match self.is_frozen {
-            true => None,
-            false => Some(self.trainable_parameters().into()),
-        }
+        Some(self.trainable_parameters().into())
     }
 }

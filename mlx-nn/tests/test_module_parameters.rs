@@ -173,18 +173,18 @@ struct StructModuleWithNested {
     a: Param<Array>,
 
     #[param]
-    nested: Param<StructModule>,
+    nested: StructModule,
 }
 
 #[test]
 fn test_nested_module_parameters() {
     let m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
-        nested: Param::new(StructModule {
+        nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
-        }),
+        },
     };
 
     let flattened = m.parameters().flatten();
@@ -198,11 +198,11 @@ fn test_nested_module_parameters() {
 fn test_nested_module_parameters_mut() {
     let mut m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
-        nested: Param::new(StructModule {
+        nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
-        }),
+        },
     };
 
     let flattened = m.parameters_mut().flatten();

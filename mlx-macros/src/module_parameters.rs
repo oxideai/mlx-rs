@@ -82,6 +82,26 @@ fn impl_module_parameters_for_struct(
                 )*
                 parameters
             }
+
+            fn all_frozen(&self) -> bool {
+                use _mlx_rs::module::Parameter;
+                #(
+                    if !self.#field_names.is_frozen() {
+                        return false;
+                    }
+                )*
+                true
+            }
+
+            fn any_frozen(&self) -> bool {
+                use _mlx_rs::module::Parameter;
+                #(
+                    if self.#field_names.is_frozen() {
+                        return true;
+                    }
+                )*
+                false
+            }
         }
     }
 }

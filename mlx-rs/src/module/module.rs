@@ -63,6 +63,12 @@ pub trait ModuleParameters {
 
     /// Unfreeze all parameters in the module.
     fn unfreeze_parameters(&mut self, recursive: bool);
+
+    /// Check if all parameters in the module are frozen.
+    fn all_frozen(&self) -> bool;
+
+    /// Check if any parameter in the module is frozen.
+    fn any_frozen(&self) -> bool;
 }
 
 /// Update the module parameters from an iterator of flattened parameters.
@@ -102,6 +108,14 @@ where
 
     fn unfreeze_parameters(&mut self, recursive: bool) {
         self.as_mut().unfreeze_parameters(recursive);
+    }
+
+    fn all_frozen(&self) -> bool {
+        self.as_ref().all_frozen()
+    }
+
+    fn any_frozen(&self) -> bool {
+        self.as_ref().any_frozen()
     }
 }
 
@@ -146,5 +160,13 @@ where
         self.iter_mut().for_each(|module| {
             module.unfreeze_parameters(recursive);
         });
+    }
+
+    fn all_frozen(&self) -> bool {
+        self.iter().all(|module| module.all_frozen())
+    }
+
+    fn any_frozen(&self) -> bool {
+        self.iter().any(|module| module.any_frozen())
     }
 }

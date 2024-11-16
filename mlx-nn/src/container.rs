@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, Param};
+use mlx_rs::module::Module;
 use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
@@ -23,7 +23,7 @@ where
 pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
-    pub layers: Param<Vec<Box<dyn SequentialModuleItem<Err>>>>,
+    pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
 }
 
 impl Module for Sequential {
@@ -32,7 +32,7 @@ impl Module for Sequential {
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);
 
-        for layer in &self.layers.value {
+        for layer in &self.layers {
             x = Cow::Owned(layer.forward(x.as_ref())?);
         }
 
@@ -58,9 +58,7 @@ impl Default for Sequential {
 impl<Err> Sequential<Err> {
     /// Creates a new [`Sequential`] module.
     pub fn new() -> Self {
-        Self {
-            layers: Param::new(Vec::new()),
-        }
+        Self { layers: Vec::new() }
     }
 
     /// Appends a layer to the sequential module.

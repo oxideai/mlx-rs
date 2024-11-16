@@ -1,10 +1,10 @@
-use mlx_nn::{macros::ModuleParameters, module::Param, Linear, Relu, Sequential};
+use mlx_nn::{macros::ModuleParameters, Linear, Relu, Sequential};
 use mlx_rs::{error::Exception, module::Module, Array};
 
 #[derive(Debug, ModuleParameters)]
 pub struct Mlp {
     #[param]
-    pub layers: Param<Sequential>,
+    pub layers: Sequential,
 }
 
 impl Module for Mlp {
@@ -43,8 +43,6 @@ impl Mlp {
         // Add the output layer
         layers = layers.append(Linear::new(hidden_dim, output_dim)?);
 
-        Ok(Self {
-            layers: Param::new(layers),
-        })
+        Ok(Self { layers })
     }
 }

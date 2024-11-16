@@ -231,7 +231,7 @@ fn test_nested_module_recursive_freeze() {
 }
 
 #[test]
-fn test_nested_module_freeze_submodule_recursive() {
+fn test_nested_module_freeze_submodule() {
     let mut m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
         nested: StructModule {
@@ -252,7 +252,7 @@ fn test_nested_module_freeze_submodule_recursive() {
 }
 
 #[test]
-fn test_nested_module_unfreeze_submodule_recursive() {
+fn test_nested_module_unfreeze_submodule() {
     let mut m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
         nested: StructModule {
@@ -262,9 +262,9 @@ fn test_nested_module_unfreeze_submodule_recursive() {
         },
     };
 
-    m.freeze_parameters(true);
+    m.nested.freeze_parameters(true);
     m.nested.unfreeze_parameters(true);
-    assert!(!m.all_frozen());
+    assert!(!m.any_frozen());
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 3);

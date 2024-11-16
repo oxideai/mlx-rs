@@ -10,10 +10,10 @@ use super::ModuleParameters;
 /// Trait for a module parameter.
 pub trait Parameter {
     /// Freeze the parameter.
-    fn freeze(&mut self);
+    fn freeze(&mut self, recursive: bool);
 
     /// Unfreeze the parameter.
-    fn unfreeze(&mut self);
+    fn unfreeze(&mut self, recursive: bool);
 
     /// Check if the parameter is frozen.
     fn is_frozen(&self) -> bool;
@@ -35,7 +35,9 @@ pub struct Param<T> {
     pub value: T,
 
     /// Whether the parameter is frozen.
-    pub is_frozen: bool,
+    ///
+    /// This is no longer public because it should be accessed through the `Parameter` trait.
+    is_frozen: bool,
 }
 
 impl<T> Param<T> {
@@ -81,11 +83,11 @@ impl<T> AsMut<T> for Param<T> {
 }
 
 impl Parameter for Param<Array> {
-    fn freeze(&mut self) {
+    fn freeze(&mut self, _recursive: bool) {
         self.is_frozen = true;
     }
 
-    fn unfreeze(&mut self) {
+    fn unfreeze(&mut self, _recursive: bool) {
         self.is_frozen = false;
     }
 
@@ -110,11 +112,11 @@ impl Parameter for Param<Array> {
 }
 
 impl Parameter for Param<Option<Array>> {
-    fn freeze(&mut self) {
+    fn freeze(&mut self, _recursive: bool) {
         self.is_frozen = true;
     }
 
-    fn unfreeze(&mut self) {
+    fn unfreeze(&mut self, _recursive: bool) {
         self.is_frozen = false;
     }
 
@@ -146,20 +148,20 @@ impl Parameter for Param<Option<Array>> {
     }
 }
 
-impl<T> Parameter for Param<T>
+impl<T> Parameter for T
 where
     T: ModuleParameters,
 {
-    fn freeze(&mut self) {
-        self.is_frozen = true;
+    fn freeze(&mut self, recursive: bool) {
+        self.freeze_parameters(recursive);
     }
 
-    fn unfreeze(&mut self) {
-        self.is_frozen = false;
+    fn unfreeze(&mut self, recursive: bool) {
+        self.unfreeze_parameters(recursive);
     }
 
     fn is_frozen(&self) -> bool {
-        self.is_frozen
+        self.all_frozen()
     }
 
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
@@ -171,9 +173,6 @@ where
     }
 
     fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
-        match self.is_frozen {
-            true => None,
-            false => Some(self.trainable_parameters().into()),
-        }
+        Some(self.trainable_parameters().into())
     }
 }

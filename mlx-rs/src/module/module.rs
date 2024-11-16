@@ -168,7 +168,7 @@ where
             match module.all_frozen() {
                 Some(true) => result = Some(true),
                 Some(false) => return Some(false),
-                None => {},
+                None => {}
             }
         }
         result
@@ -180,7 +180,7 @@ where
             match module.any_frozen() {
                 Some(true) => return Some(true),
                 Some(false) => result = Some(false),
-                None => {},
+                None => {}
             }
         }
         result

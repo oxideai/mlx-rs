@@ -15,8 +15,9 @@ pub trait Parameter {
     /// Unfreeze the parameter.
     fn unfreeze(&mut self, recursive: bool);
 
-    /// Check if the parameter is frozen.
-    fn is_frozen(&self) -> bool;
+    /// Check if the parameter is frozen. Returns `None` if the parameter is a module that has no
+    /// parameters.
+    fn is_frozen(&self) -> Option<bool>;
 
     /// Get the parameter as a nested value.
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array>;
@@ -91,8 +92,8 @@ impl Parameter for Param<Array> {
         self.is_frozen = false;
     }
 
-    fn is_frozen(&self) -> bool {
-        self.is_frozen
+    fn is_frozen(&self) -> Option<bool> {
+        Some(self.is_frozen)
     }
 
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
@@ -120,8 +121,8 @@ impl Parameter for Param<Option<Array>> {
         self.is_frozen = false;
     }
 
-    fn is_frozen(&self) -> bool {
-        self.is_frozen
+    fn is_frozen(&self) -> Option<bool> {
+        Some(self.is_frozen)
     }
 
     fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
@@ -160,7 +161,7 @@ where
         self.unfreeze_parameters(recursive);
     }
 
-    fn is_frozen(&self) -> bool {
+    fn is_frozen(&self) -> Option<bool> {
         self.all_frozen()
     }
 

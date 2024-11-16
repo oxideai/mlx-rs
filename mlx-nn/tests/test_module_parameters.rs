@@ -1,6 +1,7 @@
-use mlx_macros::ModuleParameters;
 use mlx_rs::module::{ModuleParameters, Param, Parameter};
 use mlx_rs::{array, Array};
+
+use mlx_nn::macros::ModuleParameters;
 
 #[derive(ModuleParameters)]
 pub struct StructModule {
@@ -16,6 +17,18 @@ pub struct StructModule {
 
 #[derive(ModuleParameters)]
 pub struct UnitStructModule;
+
+#[derive(ModuleParameters)]
+struct NestedStructModule {
+    #[param]
+    a: Param<Array>,
+
+    #[param]
+    nested: StructModule,
+
+    #[param]
+    neste_no_param: UnitStructModule,
+}
 
 #[test]
 fn test_module_parameters() {
@@ -167,24 +180,36 @@ fn test_unit_struct_module_trainable_parameters() {
     assert_eq!(flattened.len(), 0);
 }
 
-#[derive(ModuleParameters)]
-struct StructModuleWithNested {
-    #[param]
-    a: Param<Array>,
+#[test]
+fn test_unit_struct_module_freeze_parameters() {
+    let mut m = UnitStructModule;
 
-    #[param]
-    nested: StructModule,
+    m.freeze_parameters(true);
+    assert_eq!(m.all_frozen(), None);
+    assert_eq!(m.any_frozen(), None);
+    assert_eq!(m.is_frozen(), None);
+}
+
+#[test]
+fn test_unit_struct_module_unfreeze_parameters() {
+    let mut m = UnitStructModule;
+
+    m.unfreeze_parameters(true);
+    assert_eq!(m.all_frozen(), None);
+    assert_eq!(m.any_frozen(), None);
+    assert_eq!(m.is_frozen(), None);
 }
 
 #[test]
 fn test_nested_module_parameters() {
-    let m = StructModuleWithNested {
+    let m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     let flattened = m.parameters().flatten();
@@ -196,13 +221,14 @@ fn test_nested_module_parameters() {
 
 #[test]
 fn test_nested_module_parameters_mut() {
-    let mut m = StructModuleWithNested {
+    let mut m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     let flattened = m.parameters_mut().flatten();
@@ -214,17 +240,18 @@ fn test_nested_module_parameters_mut() {
 
 #[test]
 fn test_nested_module_recursive_freeze() {
-    let mut m = StructModuleWithNested {
+    let mut m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     m.freeze_parameters(true);
-    assert!(m.all_frozen());
+    assert_eq!(m.all_frozen(), Some(true));
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 0);
@@ -232,19 +259,20 @@ fn test_nested_module_recursive_freeze() {
 
 #[test]
 fn test_nested_module_freeze_submodule() {
-    let mut m = StructModuleWithNested {
+    let mut m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     m.nested.freeze_parameters(true);
-    assert!(m.nested.all_frozen());
-    assert!(m.any_frozen());
-    assert!(!m.all_frozen());
+    assert_eq!(m.nested.all_frozen(), Some(true));
+    assert_eq!(m.any_frozen(), Some(true));
+    assert_eq!(m.all_frozen(), Some(false));
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 1);
@@ -253,18 +281,20 @@ fn test_nested_module_freeze_submodule() {
 
 #[test]
 fn test_nested_module_unfreeze_submodule() {
-    let mut m = StructModuleWithNested {
+    let mut m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     m.nested.freeze_parameters(true);
     m.nested.unfreeze_parameters(true);
-    assert!(!m.any_frozen());
+
+    assert_eq!(m.any_frozen(), Some(false));
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 3);
@@ -275,18 +305,19 @@ fn test_nested_module_unfreeze_submodule() {
 
 #[test]
 fn test_nested_module_recursive_unfreeze() {
-    let mut m = StructModuleWithNested {
+    let mut m = NestedStructModule {
         a: Param::new(array!(1.0)),
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
+        neste_no_param: UnitStructModule,
     };
 
     m.freeze_parameters(true);
     m.unfreeze_parameters(true);
-    assert!(!m.all_frozen());
+    assert_eq!(m.all_frozen(), Some(false));
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 3);

@@ -154,7 +154,7 @@ struct First {
 #[derive(Debug, ModuleParameters)]
 struct NestedModel {
     #[param]
-    pub first: Param<First>,
+    pub first: First,
 
     #[param]
     pub second: Param<Array>,
@@ -168,7 +168,7 @@ fn create_default_test_model_and_grads() -> (NestedModel, GradsMap) {
         b: Param::new(zeros::<f32>(&[1]).unwrap()),
     };
     let model = NestedModel {
-        first: Param::new(first),
+        first,
         second: Param::new(zeros::<f32>(&[1]).unwrap()),
     };
 

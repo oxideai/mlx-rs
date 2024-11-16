@@ -10,8 +10,8 @@ use crate::{
 /// Builder for [`Linear`] module
 #[derive(Debug, Clone, Default)]
 pub struct LinearBuilder {
-    /// Whether to include bias in the linear layer. Default to [`Linear::DEFAULT_WITH_BIAS`].
-    pub with_bias: Option<bool>,
+    /// Whether to include bias in the linear layer. Default to [`Linear::DEFAULT_BIAS`].
+    pub bias: Option<bool>,
 }
 
 impl LinearBuilder {
@@ -20,21 +20,21 @@ impl LinearBuilder {
         Self::default()
     }
 
-    /// Sets the `with_bias` field.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
+    /// Sets the `bias` field.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
         self
     }
 
     /// Builds a new [`Linear`] layer.
     pub fn build(self, input_dims: i32, output_dims: i32) -> Result<Linear, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Linear::DEFAULT_WITH_BIAS);
+        let bias = self.bias.unwrap_or(Linear::DEFAULT_BIAS);
 
         let scale = f32::sqrt(1.0 / (input_dims as f32));
         let weight =
             mlx_rs::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
 
-        let bias = if with_bias {
+        let bias = if bias {
             Some(mlx_rs::random::uniform::<_, f32>(
                 -scale,
                 scale,
@@ -65,8 +65,8 @@ pub struct Linear {
 }
 
 impl Linear {
-    /// Default value for `with_bias`
-    pub const DEFAULT_WITH_BIAS: bool = true;
+    /// Default value for `bias`
+    pub const DEFAULT_BIAS: bool = true;
 
     /// Creates a new [`LinearBuilder`].
     pub fn builder() -> LinearBuilder {
@@ -101,19 +101,19 @@ impl Module for Linear {
 /// Builder for [`Bilinear`] module
 #[derive(Debug, Clone, Default)]
 pub struct BilinearBuilder {
-    /// Whether to include bias in the bilinear layer. Default to [Bilinear::DEFAULT_WITH_BIAS].
-    with_bias: Option<bool>,
+    /// Whether to include bias in the bilinear layer. Default to [Bilinear::DEFAULT_BIAS].
+    bias: Option<bool>,
 }
 
 impl BilinearBuilder {
     /// Creates a new [`BilinearBuilder`].
     pub fn new() -> Self {
-        Self { with_bias: None }
+        Self { bias: None }
     }
 
-    /// Sets the `with_bias` field.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
+    /// Sets the `bias` field.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
         self
     }
 
@@ -124,7 +124,7 @@ impl BilinearBuilder {
         input_dims_2: i32,
         output_dims: i32,
     ) -> Result<Bilinear, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Bilinear::DEFAULT_WITH_BIAS);
+        let bias = self.bias.unwrap_or(Bilinear::DEFAULT_BIAS);
 
         let scale = f32::sqrt(1.0 / (input_dims_1 as f32));
         let weights = mlx_rs::random::uniform::<_, f32>(
@@ -134,7 +134,7 @@ impl BilinearBuilder {
             None,
         )?;
 
-        let bias = if with_bias {
+        let bias = if bias {
             Some(mlx_rs::random::uniform::<_, f32>(
                 -scale,
                 scale,
@@ -165,8 +165,8 @@ pub struct Bilinear {
 }
 
 impl Bilinear {
-    /// Default value for `with_bias`
-    pub const DEFAULT_WITH_BIAS: bool = true;
+    /// Default value for `bias`
+    pub const DEFAULT_BIAS: bool = true;
 
     /// Creates a new [`BilinearBuilder`].
     pub fn builder() -> BilinearBuilder {

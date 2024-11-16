@@ -49,6 +49,19 @@ fn impl_module_parameters_for_struct(
 ) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let field_names: Vec<_> = fields.iter().map(|field| &field.ident).collect();
+
+    // Returns None if there are no fields
+    let default_all_frozen = match field_names.len() {
+        0 => quote::quote! { None },
+        _ => quote::quote! { Some(true) },
+    };
+
+    // Returns None if there are no fields
+    let default_any_frozen = match field_names.len() {
+        0 => quote::quote! { None },
+        _ => quote::quote! { Some(false) },
+    };
+
     quote::quote! {
         impl #impl_generics _mlx_rs::module::ModuleParameters for #ident #ty_generics #where_clause {
             fn freeze_parameters(&mut self, recursive: bool) {
@@ -83,24 +96,24 @@ fn impl_module_parameters_for_struct(
                 parameters
             }
 
-            fn all_frozen(&self) -> bool {
+            fn all_frozen(&self) -> Option<bool> {
                 use _mlx_rs::module::Parameter;
                 #(
-                    if !self.#field_names.is_frozen() {
-                        return false;
+                    if matches!(self.#field_names.is_frozen(), Some(false)) {
+                        return Some(false);
                     }
                 )*
-                true
+                #default_all_frozen
             }
 
-            fn any_frozen(&self) -> bool {
+            fn any_frozen(&self) -> Option<bool> {
                 use _mlx_rs::module::Parameter;
                 #(
-                    if self.#field_names.is_frozen() {
-                        return true;
+                    if matches!(self.#field_names.is_frozen(), Some(true)) {
+                        return Some(true);
                     }
                 )*
-                false
+                #default_any_frozen
             }
         }
     }

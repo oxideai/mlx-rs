@@ -51,6 +51,16 @@ fn impl_module_parameters_for_struct(
     let field_names: Vec<_> = fields.iter().map(|field| &field.ident).collect();
     quote::quote! {
         impl #impl_generics _mlx_rs::module::ModuleParameters for #ident #ty_generics #where_clause {
+            fn freeze_parameters(&mut self, recursive: bool) {
+                use _mlx_rs::module::Parameter;
+                #(self.#field_names.freeze(recursive);)*
+            }
+
+            fn unfreeze_parameters(&mut self, recursive: bool) {
+                use _mlx_rs::module::Parameter;
+                #(self.#field_names.unfreeze(recursive);)*
+            }
+
             fn parameters(&self) -> _mlx_rs::module::ModuleParamRef<'_> {
                 let mut parameters = _mlx_rs::nested::NestedHashMap::new();
                 #(parameters.insert(stringify!(#field_names), _mlx_rs::module::Parameter::as_nested_value(&self.#field_names));)*

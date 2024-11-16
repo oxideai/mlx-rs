@@ -57,6 +57,12 @@ pub trait ModuleParameters {
     fn update_flattened(&mut self, flattened_parameters: FlattenedModuleParam) {
         update_flattened_parameters(self, flattened_parameters)
     }
+
+    /// Freeze all parameters in the module.
+    fn freeze_parameters(&mut self, recursive: bool);
+
+    /// Unfreeze all parameters in the module.
+    fn unfreeze_parameters(&mut self, recursive: bool);
 }
 
 /// Update the module parameters from an iterator of flattened parameters.
@@ -89,6 +95,14 @@ where
     fn trainable_parameters(&self) -> ModuleParamRef<'_> {
         self.as_ref().trainable_parameters()
     }
+
+    fn freeze_parameters(&mut self, recursive: bool) {
+        self.as_mut().freeze_parameters(recursive);
+    }
+
+    fn unfreeze_parameters(&mut self, recursive: bool) {
+        self.as_mut().unfreeze_parameters(recursive);
+    }
 }
 
 impl<T> ModuleParameters for Vec<T>
@@ -120,5 +134,17 @@ where
             parameters.entries.extend(module_parameters.entries);
         });
         parameters
+    }
+
+    fn freeze_parameters(&mut self, recursive: bool) {
+        self.iter_mut().for_each(|module| {
+            module.freeze_parameters(recursive);
+        });
+    }
+
+    fn unfreeze_parameters(&mut self, recursive: bool) {
+        self.iter_mut().for_each(|module| {
+            module.unfreeze_parameters(recursive);
+        });
     }
 }

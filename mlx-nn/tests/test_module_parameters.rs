@@ -104,21 +104,21 @@ fn test_module_trainable_parameters_partial_freeze() {
     };
 
     // Freeze one parameter that is not optional
-    m.a.freeze();
+    m.a.freeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 1);
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Now freeze the optional parameter
-    m.c.freeze();
+    m.c.freeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 1);
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Unfreeze the non-optional parameter
-    m.a.unfreeze();
+    m.a.unfreeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 2);
@@ -134,7 +134,7 @@ fn test_module_trainable_parameters_partial_freeze() {
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Unfreeze the optional parameter
-    m.c.unfreeze();
+    m.c.unfreeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 3);

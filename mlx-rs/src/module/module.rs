@@ -64,11 +64,11 @@ pub trait ModuleParameters {
     /// Unfreeze all parameters in the module.
     fn unfreeze_parameters(&mut self, recursive: bool);
 
-    /// Check if all parameters in the module are frozen.
-    fn all_frozen(&self) -> bool;
+    /// Check if all parameters in the module are frozen. Returns `None` if there are no parameters.
+    fn all_frozen(&self) -> Option<bool>;
 
-    /// Check if any parameter in the module is frozen.
-    fn any_frozen(&self) -> bool;
+    /// Check if any parameter in the module is frozen. Returns `None` if there are no parameters.
+    fn any_frozen(&self) -> Option<bool>;
 }
 
 /// Update the module parameters from an iterator of flattened parameters.
@@ -110,11 +110,11 @@ where
         self.as_mut().unfreeze_parameters(recursive);
     }
 
-    fn all_frozen(&self) -> bool {
+    fn all_frozen(&self) -> Option<bool> {
         self.as_ref().all_frozen()
     }
 
-    fn any_frozen(&self) -> bool {
+    fn any_frozen(&self) -> Option<bool> {
         self.as_ref().any_frozen()
     }
 }
@@ -162,11 +162,27 @@ where
         });
     }
 
-    fn all_frozen(&self) -> bool {
-        self.iter().all(|module| module.all_frozen())
+    fn all_frozen(&self) -> Option<bool> {
+        let mut result = None;
+        for module in self.iter() {
+            match module.all_frozen() {
+                Some(true) => result = Some(true),
+                Some(false) => return Some(false),
+                None => {},
+            }
+        }
+        result
     }
 
-    fn any_frozen(&self) -> bool {
-        self.iter().any(|module| module.any_frozen())
+    fn any_frozen(&self) -> Option<bool> {
+        let mut result = None;
+        for module in self.iter() {
+            match module.any_frozen() {
+                Some(true) => return Some(true),
+                Some(false) => result = Some(false),
+                None => {},
+            }
+        }
+        result
     }
 }

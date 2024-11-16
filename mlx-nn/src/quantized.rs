@@ -124,7 +124,7 @@ impl Module for QuantizedEmbedding {
 
         let out = dequantize(&w, &scales, &self.biases, self.group_size, self.bits)?;
 
-        let ret_shape = s.into_iter().copied().chain(once(-1)).collect::<Vec<_>>();
+        let ret_shape = s.iter().copied().chain(once(-1)).collect::<Vec<_>>();
         out.reshape(&ret_shape)
     }
 

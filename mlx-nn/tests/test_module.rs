@@ -1,18 +1,18 @@
 use mlx_macros::ModuleParameters;
 use mlx_nn::Linear;
-use mlx_rs::module::{Module, Param};
+use mlx_rs::module::Module;
 use mlx_rs::{error::Exception, Array};
 
 #[derive(Debug, Clone, ModuleParameters)]
 struct M {
     #[param]
-    linear: Param<Linear>,
+    linear: Linear,
 }
 
 impl M {
     pub fn new() -> Self {
         Self {
-            linear: Param::new(Linear::new(5, 5).unwrap()),
+            linear: Linear::new(5, 5).unwrap(),
         }
     }
 }

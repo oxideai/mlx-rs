@@ -104,21 +104,21 @@ fn test_module_trainable_parameters_partial_freeze() {
     };
 
     // Freeze one parameter that is not optional
-    m.a.freeze();
+    m.a.freeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 1);
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Now freeze the optional parameter
-    m.c.freeze();
+    m.c.freeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 1);
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Unfreeze the non-optional parameter
-    m.a.unfreeze();
+    m.a.unfreeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 2);
@@ -134,7 +134,7 @@ fn test_module_trainable_parameters_partial_freeze() {
     assert_eq!(flattened["b"], &array!(2.0));
 
     // Unfreeze the optional parameter
-    m.c.unfreeze();
+    m.c.unfreeze(true);
 
     let flattened = m.trainable_parameters().flatten();
     assert_eq!(flattened.len(), 3);
@@ -173,18 +173,18 @@ struct StructModuleWithNested {
     a: Param<Array>,
 
     #[param]
-    nested: Param<StructModule>,
+    nested: StructModule,
 }
 
 #[test]
 fn test_nested_module_parameters() {
     let m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
-        nested: Param::new(StructModule {
+        nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
-        }),
+        },
     };
 
     let flattened = m.parameters().flatten();
@@ -198,11 +198,11 @@ fn test_nested_module_parameters() {
 fn test_nested_module_parameters_mut() {
     let mut m = StructModuleWithNested {
         a: Param::new(array!(1.0)),
-        nested: Param::new(StructModule {
+        nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
             c: Param::new(None),
-        }),
+        },
     };
 
     let flattened = m.parameters_mut().flatten();
@@ -210,4 +210,87 @@ fn test_nested_module_parameters_mut() {
     assert_eq!(flattened["a"], &mut array!(1.0));
     assert_eq!(flattened["nested.a"], &mut array!(2.0));
     assert_eq!(flattened["nested.b"], &mut array!(3.0));
+}
+
+#[test]
+fn test_nested_module_recursive_freeze() {
+    let mut m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        },
+    };
+
+    m.freeze_parameters(true);
+    assert!(m.all_frozen());
+
+    let flattened = m.trainable_parameters().flatten();
+    assert_eq!(flattened.len(), 0);
+}
+
+#[test]
+fn test_nested_module_freeze_submodule() {
+    let mut m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        },
+    };
+
+    m.nested.freeze_parameters(true);
+    assert!(m.nested.all_frozen());
+    assert!(m.any_frozen());
+    assert!(!m.all_frozen());
+
+    let flattened = m.trainable_parameters().flatten();
+    assert_eq!(flattened.len(), 1);
+    assert_eq!(flattened["a"], &array!(1.0));
+}
+
+#[test]
+fn test_nested_module_unfreeze_submodule() {
+    let mut m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        },
+    };
+
+    m.nested.freeze_parameters(true);
+    m.nested.unfreeze_parameters(true);
+    assert!(!m.any_frozen());
+
+    let flattened = m.trainable_parameters().flatten();
+    assert_eq!(flattened.len(), 3);
+    assert_eq!(flattened["a"], &array!(1.0));
+    assert_eq!(flattened["nested.a"], &array!(2.0));
+    assert_eq!(flattened["nested.b"], &array!(3.0));
+}
+
+#[test]
+fn test_nested_module_recursive_unfreeze() {
+    let mut m = StructModuleWithNested {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        },
+    };
+
+    m.freeze_parameters(true);
+    m.unfreeze_parameters(true);
+    assert!(!m.all_frozen());
+
+    let flattened = m.trainable_parameters().flatten();
+    assert_eq!(flattened.len(), 3);
+    assert_eq!(flattened["a"], &array!(1.0));
+    assert_eq!(flattened["nested.a"], &array!(2.0));
+    assert_eq!(flattened["nested.b"], &array!(3.0));
 }

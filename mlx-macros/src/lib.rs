@@ -26,16 +26,16 @@ mod module_parameters;
 ///     optional: Param<Option<Array>>,
 ///
 ///     #[param]
-///     nested: Param<Inner>,
+///     nested: Inner,
 ///
 ///     #[param]
-///     vec_nested: Param<Vec<Inner>>,
+///     vec_nested: Vec<Inner>,
 ///
 ///     #[param]
-///     trait_object: Param<Box<dyn Module>>,
+///     trait_object: Box<dyn Module>,
 ///
 ///     #[param]
-///     trait_object_vec: Param<Vec<Box<dyn Module>>>,
+///     trait_object_vec: Vec<Box<dyn Module>>,
 /// }
 ///
 /// #[derive(ModuleParameters)]

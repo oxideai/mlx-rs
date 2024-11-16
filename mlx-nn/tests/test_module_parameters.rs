@@ -181,6 +181,26 @@ fn test_unit_struct_module_trainable_parameters() {
 }
 
 #[test]
+fn test_unit_struct_module_freeze_parameters() {
+    let mut m = UnitStructModule;
+
+    m.freeze_parameters(true);
+    assert_eq!(m.all_frozen(), None);
+    assert_eq!(m.any_frozen(), None);
+    assert_eq!(m.is_frozen(), None);
+}
+
+#[test]
+fn test_unit_struct_module_unfreeze_parameters() {
+    let mut m = UnitStructModule;
+
+    m.unfreeze_parameters(true);
+    assert_eq!(m.all_frozen(), None);
+    assert_eq!(m.any_frozen(), None);
+    assert_eq!(m.is_frozen(), None);
+}
+
+#[test]
 fn test_nested_module_parameters() {
     let m = NestedStructModule {
         a: Param::new(array!(1.0)),

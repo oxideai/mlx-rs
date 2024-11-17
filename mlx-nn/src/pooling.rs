@@ -67,7 +67,7 @@ impl Pool {
 impl Module for Pool {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let shape = x.shape();
         let rest = &shape[1..shape.len() - 1];
 
@@ -117,7 +117,7 @@ macro_rules! impl_module {
         impl Module for $name {
             type Error = Exception;
 
-            fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+            fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
                 self.inner.forward(x)
             }
 
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test_max_pooling_1d_stride_1() {
         let input = Array::from_iter(0..4, &[1, 4, 1]);
-        let pool = MaxPool1d::new(2, 1);
+        let mut pool = MaxPool1d::new(2, 1);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(output, array!([1, 2, 3], shape = [1, 3, 1]));
     }
@@ -271,7 +271,7 @@ mod tests {
     #[test]
     fn test_max_pooling_1d_stride_2() {
         let input = Array::from_iter(0..8, &[2, 4, 1]);
-        let pool = MaxPool1d::new(2, 2);
+        let mut pool = MaxPool1d::new(2, 2);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(output, array!([1, 3, 5, 7], shape = [2, 2, 1]));
     }
@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn test_max_pooling_2d_stride_1() {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
-        let pool = MaxPool2d::new(2, 1);
+        let mut pool = MaxPool2d::new(2, 1);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(
             output,
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn test_max_pooling_2d_stride_2() {
         let input = Array::from_iter(0..32, &[2, 4, 4, 1]);
-        let pool = MaxPool2d::new(2, 2);
+        let mut pool = MaxPool2d::new(2, 2);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(
             output,
@@ -301,7 +301,7 @@ mod tests {
     #[test]
     fn test_avg_pooling_1d_stride_1() {
         let input = Array::from_iter(0..4, &[1, 4, 1]);
-        let pool = AvgPool1d::new(2, 1);
+        let mut pool = AvgPool1d::new(2, 1);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(output, array!([0.5, 1.5, 2.5], shape = [1, 3, 1]));
     }
@@ -309,7 +309,7 @@ mod tests {
     #[test]
     fn test_avg_pooling_1d_stride_2() {
         let input = Array::from_iter(0..8, &[2, 4, 1]);
-        let pool = AvgPool1d::new(2, 2);
+        let mut pool = AvgPool1d::new(2, 2);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(output, array!([0.5, 2.5, 4.5, 6.5], shape = [2, 2, 1]));
     }
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn test_avg_pooling_2d_stride_1() {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
-        let pool = AvgPool2d::new(2, 1);
+        let mut pool = AvgPool2d::new(2, 1);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(
             output,
@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn test_avg_pooling_2d_stride_2() {
         let input = Array::from_iter(0..16, &[1, 4, 4, 1]);
-        let pool = AvgPool2d::new(2, 2);
+        let mut pool = AvgPool2d::new(2, 2);
         let output = pool.forward(&input).unwrap();
         assert_array_eq!(output, array!([2.5, 4.5, 10.5, 12.5], shape = [1, 2, 2, 1]));
     }

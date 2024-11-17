@@ -3,7 +3,7 @@ use mlx_rs::{error::Exception, Array};
 
 use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef, Module};
 
-fn trainable_params<'a>(model: &impl Module<&'a Array>) -> FlattenedModuleParam {
+fn trainable_params<MA>(model: &impl Module<MA>) -> FlattenedModuleParam {
     model
         .trainable_parameters()
         .flatten()
@@ -13,9 +13,9 @@ fn trainable_params<'a>(model: &impl Module<&'a Array>) -> FlattenedModuleParam 
 }
 
 /// Helper trait for [`value_and_grad`]
-pub trait IntoModuleValueAndGrad<'a, M, Args, Val, Err>
+pub trait IntoModuleValueAndGrad<'a, M, MA, Args, Val, Err>
 where
-    M: Module<&'a Array> + 'a,
+    M: Module<MA> + 'a,
     Args: Clone,
 {
     /// Computes the valud and gradient of the passed function `f(model, args)` with regard to the
@@ -25,9 +25,9 @@ where
     ) -> impl FnMut(&mut M, Args) -> Result<(Val, FlattenedModuleParam), Exception> + 'a;
 }
 
-impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Vec<Array>, ()> for F
+impl<'a, F, M, MA, Args> IntoModuleValueAndGrad<'a, M, MA, Args, Vec<Array>, ()> for F
 where
-    M: Module<&'a Array> + 'a,
+    M: Module<MA> + 'a,
     F: FnMut(&mut M, Args) -> Vec<Array> + 'a,
     Args: Clone,
 {
@@ -51,9 +51,9 @@ where
     }
 }
 
-impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Vec<Array>, Exception> for F
+impl<'a, F, M, MA, Args> IntoModuleValueAndGrad<'a, M, MA, Args, Vec<Array>, Exception> for F
 where
-    M: Module<&'a Array> + 'a,
+    M: Module<MA> + 'a,
     F: FnMut(&mut M, Args) -> Result<Vec<Array>, Exception> + 'a,
     Args: Clone,
 {
@@ -79,9 +79,9 @@ where
     }
 }
 
-impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Array, ()> for F
+impl<'a, F, M, MA, Args> IntoModuleValueAndGrad<'a, M, MA, Args, Array, ()> for F
 where
-    M: Module<&'a Array> + 'a,
+    M: Module<MA> + 'a,
     F: FnMut(&mut M, Args) -> Array + 'a,
     Args: Clone,
 {
@@ -105,9 +105,9 @@ where
     }
 }
 
-impl<'a, F, M, Args> IntoModuleValueAndGrad<'a, M, Args, Array, Exception> for F
+impl<'a, F, M, MA, Args> IntoModuleValueAndGrad<'a, M, MA, Args, Array, Exception> for F
 where
-    M: Module<&'a Array> + 'a,
+    M: Module<MA> + 'a,
     F: FnMut(&mut M, Args) -> Result<Array, Exception> + 'a,
     Args: Clone,
 {
@@ -135,12 +135,12 @@ where
 
 /// Transform the passed function `f(model, args)` to a function that computes the gradients of `f`
 /// with regard to the model's trainable parameters and also its value.
-pub fn module_value_and_grad<'a, F, M, Args, Val, Err>(
+pub fn module_value_and_grad<'a, F, M, MA, Args, Val, Err>(
     f: F,
 ) -> impl FnMut(&mut M, Args) -> Result<(Val, FlattenedModuleParam), Exception> + 'a
 where
-    M: Module<&'a Array> + 'a,
-    F: IntoModuleValueAndGrad<'a, M, Args, Val, Err>,
+    M: Module<MA> + 'a,
+    F: IntoModuleValueAndGrad<'a, M, MA, Args, Val, Err>,
     Args: Clone,
 {
     f.into_module_value_and_grad()

@@ -283,7 +283,7 @@ impl Glu {
 impl Module for Glu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -306,7 +306,7 @@ pub struct Sigmoid;
 impl Module for Sigmoid {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(sigmoid(x))
     }
 
@@ -330,7 +330,7 @@ pub struct Mish;
 impl Module for Mish {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         mish(x).map_err(Into::into)
     }
 
@@ -350,7 +350,7 @@ pub struct Relu;
 impl Module for Relu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         relu(x).map_err(Into::into)
     }
 
@@ -381,7 +381,7 @@ impl LeakyRelu {
 impl Module for LeakyRelu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -401,7 +401,7 @@ pub struct Relu6;
 impl Module for Relu6 {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         relu6(x).map_err(Into::into)
     }
 
@@ -432,7 +432,7 @@ impl Softmax {
 impl Module for Softmax {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(mlx_rs::ops::softmax(x, &[self.axis], None))
     }
 
@@ -452,7 +452,7 @@ pub struct Softplus;
 impl Module for Softplus {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         softplus(x).map_err(Into::into)
     }
 
@@ -472,7 +472,7 @@ pub struct Softsign;
 impl Module for Softsign {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         softsign(x).map_err(Into::into)
     }
 
@@ -504,7 +504,7 @@ impl Celu {
 impl Module for Celu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -524,7 +524,7 @@ pub struct Silu;
 impl Module for Silu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         silu(x).map_err(Into::into)
     }
 
@@ -555,7 +555,7 @@ impl LogSoftmax {
 impl Module for LogSoftmax {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -575,7 +575,7 @@ pub struct LogSigmoid;
 impl Module for LogSigmoid {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -657,7 +657,7 @@ impl Prelu {
 impl Module for Prelu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -697,7 +697,7 @@ generate_builder! {
 impl Module for Gelu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -715,7 +715,7 @@ pub struct Tanh;
 impl Module for Tanh {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(mlx_rs::ops::tanh(x))
     }
 
@@ -735,7 +735,7 @@ pub struct HardSwish;
 impl Module for HardSwish {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         hard_swish(x).map_err(Into::into)
     }
 
@@ -769,7 +769,7 @@ impl Step {
 impl Module for Step {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -789,7 +789,7 @@ pub struct Selu;
 impl Module for Selu {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         selu(x).map_err(Into::into)
     }
 

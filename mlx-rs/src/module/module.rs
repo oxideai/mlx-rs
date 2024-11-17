@@ -26,7 +26,7 @@ pub trait Module: ModuleParameters {
     type Error: std::error::Error;
 
     /// Forward pass of the module.
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error>;
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///

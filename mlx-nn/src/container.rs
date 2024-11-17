@@ -29,10 +29,10 @@ pub struct Sequential<Err = Exception> {
 impl Module for Sequential {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);
 
-        for layer in &self.layers {
+        for layer in &mut self.layers {
             x = Cow::Owned(layer.forward(x.as_ref())?);
         }
 

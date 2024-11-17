@@ -36,7 +36,10 @@ pub trait Module<Args>: ModuleParameters {
     fn training_mode(&mut self, mode: bool);
 }
 
-/// Trait for a unary neural network module.
+/// Marker trait for a unary neural network module.
+/// 
+/// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
+/// reference to the input.
 pub trait UnaryModule 
 where 
     for<'a> Self: Module<&'a Array>
@@ -47,6 +50,24 @@ where
 impl<M> UnaryModule for M
 where
     for<'a> M: Module<&'a Array> 
+{
+
+}
+
+/// Marker trait for a binary neural network module.
+/// 
+/// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
+/// tuple of references to the inputs.
+pub trait BinaryModule 
+where 
+    for<'a> Self: Module<(&'a Array, &'a Array)>
+{
+
+}
+
+impl<M> BinaryModule for M
+where
+    for<'a> M: Module<(&'a Array, &'a Array)> 
 {
 
 }

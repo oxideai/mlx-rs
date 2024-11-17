@@ -85,7 +85,7 @@ impl Linear {
     }
 }
 
-impl Module for Linear {
+impl<'a> Module<&'a Array> for Linear {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -179,7 +179,7 @@ impl Bilinear {
     }
 }
 
-impl Module for Bilinear {
+impl<'a> Module<&'a Array> for Bilinear {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

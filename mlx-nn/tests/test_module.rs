@@ -17,7 +17,7 @@ impl M {
     }
 }
 
-impl Module for M {
+impl<'a> Module<&'a Array> for M {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

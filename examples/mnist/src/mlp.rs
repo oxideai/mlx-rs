@@ -7,7 +7,7 @@ pub struct Mlp {
     pub layers: Sequential,
 }
 
-impl Module for Mlp {
+impl<'a> Module<&'a Array> for Mlp {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

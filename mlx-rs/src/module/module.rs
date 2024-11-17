@@ -21,12 +21,12 @@ pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
-pub trait Module: ModuleParameters {
+pub trait Module<Args>: ModuleParameters {
     /// Error type for the module.
     type Error: std::error::Error;
 
     /// Forward pass of the module.
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error>;
+    fn forward(&mut self, x: Args) -> Result<Array, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -34,6 +34,21 @@ pub trait Module: ModuleParameters {
     /// mask in training mode, but is the identity in evaluation mode. Implementations of nested
     /// modules should propagate the training mode to all child modules.
     fn training_mode(&mut self, mode: bool);
+}
+
+/// Trait for a unary neural network module.
+pub trait UnaryModule 
+where 
+    for<'a> Self: Module<&'a Array>
+{
+
+}
+
+impl<M> UnaryModule for M
+where
+    for<'a> M: Module<&'a Array> 
+{
+
 }
 
 /// Trait for accessing and updating module parameters.

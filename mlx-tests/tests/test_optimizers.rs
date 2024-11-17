@@ -36,7 +36,7 @@ struct LinearFunctionModel {
     pub b: Param<Array>,
 }
 
-impl Module for LinearFunctionModel {
+impl<'a> Module<&'a Array> for LinearFunctionModel {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

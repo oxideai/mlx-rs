@@ -129,7 +129,7 @@ impl Conv1d {
     }
 }
 
-impl Module for Conv1d {
+impl<'a> Module<&'a Array> for Conv1d {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -283,7 +283,7 @@ impl Conv2d {
     }
 }
 
-impl Module for Conv2d {
+impl<'a> Module<&'a Array> for Conv2d {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -440,7 +440,7 @@ impl Conv3d {
     }
 }
 
-impl Module for Conv3d {
+impl<'a> Module<&'a Array> for Conv3d {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

@@ -280,7 +280,7 @@ impl Glu {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for Glu {
+impl<'a> Module<&'a Array> for Glu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -303,7 +303,7 @@ impl Module for Glu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
-impl Module for Sigmoid {
+impl<'a> Module<&'a Array> for Sigmoid {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -327,7 +327,7 @@ impl Module for Sigmoid {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
-impl Module for Mish {
+impl<'a> Module<&'a Array> for Mish {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -347,7 +347,7 @@ impl Module for Mish {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
-impl Module for Relu {
+impl<'a> Module<&'a Array> for Relu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -378,7 +378,7 @@ impl LeakyRelu {
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
 }
 
-impl Module for LeakyRelu {
+impl<'a> Module<&'a Array> for LeakyRelu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -398,7 +398,7 @@ impl Module for LeakyRelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
-impl Module for Relu6 {
+impl<'a> Module<&'a Array> for Relu6 {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -429,7 +429,7 @@ impl Softmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for Softmax {
+impl<'a> Module<&'a Array> for Softmax {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -449,7 +449,7 @@ impl Module for Softmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
-impl Module for Softplus {
+impl<'a> Module<&'a Array> for Softplus {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -469,7 +469,7 @@ impl Module for Softplus {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
-impl Module for Softsign {
+impl<'a> Module<&'a Array> for Softsign {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -501,7 +501,7 @@ impl Celu {
     pub const DEFAULT_ALPHA: f32 = 1.0;
 }
 
-impl Module for Celu {
+impl<'a> Module<&'a Array> for Celu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -521,7 +521,7 @@ impl Module for Celu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
-impl Module for Silu {
+impl<'a> Module<&'a Array> for Silu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -552,7 +552,7 @@ impl LogSoftmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for LogSoftmax {
+impl<'a> Module<&'a Array> for LogSoftmax {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -572,7 +572,7 @@ impl Module for LogSoftmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
-impl Module for LogSigmoid {
+impl<'a> Module<&'a Array> for LogSigmoid {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -654,7 +654,7 @@ impl Prelu {
     }
 }
 
-impl Module for Prelu {
+impl<'a> Module<&'a Array> for Prelu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -694,7 +694,7 @@ generate_builder! {
     }
 }
 
-impl Module for Gelu {
+impl<'a> Module<&'a Array> for Gelu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -712,7 +712,7 @@ impl Module for Gelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
-impl Module for Tanh {
+impl<'a> Module<&'a Array> for Tanh {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -732,7 +732,7 @@ impl Module for Tanh {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
-impl Module for HardSwish {
+impl<'a> Module<&'a Array> for HardSwish {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -766,7 +766,7 @@ impl Step {
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
 }
 
-impl Module for Step {
+impl<'a> Module<&'a Array> for Step {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -786,7 +786,7 @@ impl Module for Step {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
-impl Module for Selu {
+impl<'a> Module<&'a Array> for Selu {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {

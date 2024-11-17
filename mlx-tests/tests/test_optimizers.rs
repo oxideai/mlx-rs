@@ -39,7 +39,7 @@ struct LinearFunctionModel {
 impl Module for LinearFunctionModel {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         self.m.multiply(x)?.add(&self.b)
     }
 
@@ -65,7 +65,7 @@ where
     let mut optimizer = f();
 
     let mse_loss = MseLoss::builder().reduction(LossReduction::Mean).build();
-    let loss = |model: &LinearFunctionModel, (x, y): (&Array, &Array)| {
+    let loss = |model: &mut LinearFunctionModel, (x, y): (&Array, &Array)| {
         mse_loss.apply(model.forward(x)?, y)
     };
 

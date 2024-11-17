@@ -197,14 +197,15 @@ mod tests {
         let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
         let y = mlx_rs::ops::ones::<f32>(x.shape()).unwrap();
 
-        let loss = |model: &mut Linear, (x, y): (&Array, &Array)| -> Result<Vec<Array>, Exception> {
-            model
-                .forward(x)?
-                .subtract(y)?
-                .square()
-                .sum(None, None)
-                .map(|v| vec![v])
-        };
+        let loss =
+            |model: &mut Linear, (x, y): (&Array, &Array)| -> Result<Vec<Array>, Exception> {
+                model
+                    .forward(x)?
+                    .subtract(y)?
+                    .square()
+                    .sum(None, None)
+                    .map(|v| vec![v])
+            };
 
         let mut vg = module_value_and_grad(loss);
         let (v, g) = vg(&mut model, (&x, &y)).unwrap();

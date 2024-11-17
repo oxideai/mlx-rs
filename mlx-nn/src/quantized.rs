@@ -116,7 +116,7 @@ impl QuantizedEmbedding {
 impl Module for QuantizedEmbedding {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let s = x.shape();
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
@@ -275,7 +275,7 @@ impl QuantizedLinear {
 impl Module for QuantizedLinear {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = quantized_matmul(
             x,
             &self.inner.weight,

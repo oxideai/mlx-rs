@@ -88,7 +88,7 @@ impl Linear {
 impl Module for Linear {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => mlx_rs::ops::addmm(bias, x, self.weight.value.t(), None, None),
             None => mlx_rs::ops::matmul(x, &self.weight.value.t()),
@@ -182,7 +182,7 @@ impl Bilinear {
 impl Module for Bilinear {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let shape = self.weights.shape();
         let (out, in2, in1) = (shape[0], shape[1], shape[2]);
         let x_shape = &x.shape()[..x.shape().len() - 1];

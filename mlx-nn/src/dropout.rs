@@ -1,5 +1,6 @@
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::Module;
+use mlx_rs::Array;
 use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
 
 use crate::error::DropoutBuildError;
@@ -96,7 +97,7 @@ impl Dropout {
 impl Module for Dropout {
     type Error = Exception;
 
-    fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
             return Ok(x.clone());
         }
@@ -157,7 +158,7 @@ impl Dropout2d {
 impl Module for Dropout2d {
     type Error = Exception;
 
-    fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
@@ -230,7 +231,7 @@ impl Dropout3d {
 impl Module for Dropout3d {
     type Error = Exception;
 
-    fn forward(&self, x: &mlx_rs::Array) -> Result<mlx_rs::Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {

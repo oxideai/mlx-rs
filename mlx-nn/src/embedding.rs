@@ -47,7 +47,7 @@ impl Embedding {
 impl Module for Embedding {
     type Error = Exception;
 
-    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(self.weight.index(x))
     }
 

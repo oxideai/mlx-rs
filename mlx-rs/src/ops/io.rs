@@ -1,11 +1,13 @@
 use crate::error::IoError;
+use crate::utils::SUCCESS;
 use crate::utils::{
-    io::{FilePtr, SafeTensors, StringToArrayMap, StringToStringMap},
+    io::{FilePtr, SafeTensors},
     MlxString,
 };
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;
+use std::ffi::CString;
 use std::path::Path;
 
 fn prepare_file_path(path: &Path) -> Result<MlxString, IoError> {
@@ -116,18 +118,65 @@ pub fn save_arrays<'a>(
     metadata: impl Into<Option<&'a HashMap<String, String>>>,
     path: &Path,
 ) -> Result<(), IoError> {
+    if !crate::error::is_mlx_error_handler_set() {
+        crate::error::setup_mlx_error_handler();
+    }
+
     check_file_extension(path, "safetensors")?;
 
-    let arrays = StringToArrayMap::try_from(arrays)?;
+    let arrays = unsafe {
+        let data = mlx_sys::mlx_map_string_to_array_new();
+        for (key, array) in arrays.iter() {
+            let key = CString::new(key.as_str())?;
+
+            let status = mlx_sys::mlx_map_string_to_array_insert(data, key.as_ptr(), array.as_ptr());
+
+            if status != SUCCESS {
+                mlx_sys::mlx_map_string_to_array_free(data);
+                return Err(crate::error::get_and_clear_last_mlx_error()
+                    .expect("A non-success status was returned, but no error was set.").into())
+            }
+        }
+        data
+    };
 
     let default_metadata = HashMap::new();
     let metadata_ref = metadata.into().unwrap_or(&default_metadata);
-    let metadata = StringToStringMap::try_from(metadata_ref)?;
+
+    let metadata = unsafe {
+        let data = mlx_sys::mlx_map_string_to_string_new();
+        for (key, value) in metadata_ref.iter() {
+            let key = CString::new(key.as_str())?;
+            let value = CString::new(value.as_str())?;
+
+            let status = mlx_sys::mlx_map_string_to_string_insert(data, key.as_ptr(), value.as_ptr());
+
+            if status != SUCCESS {
+                mlx_sys::mlx_map_string_to_string_free(data);
+                return Err(crate::error::get_and_clear_last_mlx_error()
+                    .expect("A non-success status was returned, but no error was set.").into())
+            }
+        }
+        data
+    };
 
     let file_ptr = FilePtr::open(path, "w")?;
 
     unsafe {
-        mlx_sys::mlx_save_safetensors_file(file_ptr.as_ptr(), arrays.as_ptr(), metadata.as_ptr());
+        let status = mlx_sys::mlx_save_safetensors_file(file_ptr.as_ptr(), arrays, metadata);
+
+        let last_error = match status {
+            SUCCESS => None,
+            _ => Some(crate::error::get_and_clear_last_mlx_error()
+                .expect("A non-success status was returned, but no error was set."))
+        };
+
+        mlx_sys::mlx_map_string_to_array_free(arrays);
+        mlx_sys::mlx_map_string_to_string_free(metadata);
+
+        if let Some(error) = last_error {
+            return Err(error.into());
+        }
     };
 
     Ok(())

@@ -3,12 +3,11 @@ use mlx_rs::{error::Exception, Array};
 
 use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef, Module};
 
-fn trainable_params(model: &impl Module) -> FlattenedModuleParam {
+fn trainable_params(model: &impl Module) -> FlattenedModuleParamRef {
     model
         .trainable_parameters()
         .flatten()
         .into_iter()
-        .map(|(k, v)| (k, v.clone()))
         .collect()
 }
 
@@ -37,8 +36,8 @@ where
     {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef, arrays: Args| -> Vec<Array> {
-                let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
+            let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
+                let flattened_parameters = parameters.into_iter();
                 update_flattened_parameters(model, flattened_parameters);
 
                 self(model, arrays)

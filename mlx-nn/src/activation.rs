@@ -589,7 +589,7 @@ impl Module for LogSigmoid {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Prelu {
     /// The alpha value. See [`prelu`] for more details.
     #[param]

@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::Module;
+use mlx_rs::utils::OwnedOrRef;
 use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
@@ -30,15 +31,15 @@ impl Module for Sequential {
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut x = Cow::Borrowed(x);
+        let mut x = OwnedOrRef::Ref(x);
 
         for layer in &mut self.layers {
-            x = Cow::Owned(layer.forward(x.as_ref())?);
+            x = OwnedOrRef::Owned(layer.forward(x.as_ref())?);
         }
 
         match x {
-            Cow::Owned(array) => Ok(array),
-            Cow::Borrowed(array) => Ok(array.deep_clone()),
+            OwnedOrRef::Owned(array) => Ok(array),
+            OwnedOrRef::Ref(array) => Ok(array.deep_clone()), // TODO: will this break the tracer?
         }
     }
 

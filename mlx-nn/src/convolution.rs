@@ -10,7 +10,7 @@ use mlx_rs::{
 use crate::utils::{IntOrPair, IntOrTriple};
 
 /// Builder for the `Conv1d` module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Conv1dBuilder {
     /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_WITH_BIAS`] if not
     /// specified.
@@ -87,7 +87,7 @@ impl Conv1dBuilder {
 /// - `N` is the batch dimension
 /// - `L` is the sequence length
 /// - `C` is the number of input channels
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Conv1d {
     /// The weight of the convolution layer.
     #[param]
@@ -151,7 +151,7 @@ impl Module for Conv1d {
 }
 
 /// Builder for the `Conv2d` module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Conv2dBuilder {
     /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_WITH_BIAS`] if not
     /// specified.
@@ -234,7 +234,7 @@ impl Conv2dBuilder {
 /// - `H` is the input image height
 /// - `W` is the input image width
 /// - `C` is the number of input channels
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Conv2d {
     /// The weight of the convolution layer.
     #[param]
@@ -305,7 +305,7 @@ impl Module for Conv2d {
 }
 
 /// Builder for the `Conv3d` module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct Conv3dBuilder {
     /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_WITH_BIAS`] if not
     /// specified.
@@ -391,7 +391,7 @@ impl Conv3dBuilder {
 /// - `H` is the input image height
 /// - `W` is the input image width
 /// - `C` is the number of input channels
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Conv3d {
     /// The weight of the convolution layer.
     #[param]

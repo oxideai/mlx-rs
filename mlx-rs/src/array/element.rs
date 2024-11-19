@@ -1,12 +1,14 @@
+use crate::error::Exception;
 use crate::sealed::Sealed;
 use crate::{complex64, Array, Dtype};
 use half::{bf16, f16};
+use mlx_sys::{__BindgenComplex, bfloat16_t, float16_t};
 
 /// A marker trait for array elements.
-pub trait ArrayElement: Sealed {
+pub trait ArrayElement: Sized + Sealed {
     const DTYPE: Dtype;
 
-    fn array_item(array: &Array) -> Self;
+    fn array_item(array: &Array) -> Result<Self, Exception>;
 
     fn array_data(array: &Array) -> *const Self;
 }
@@ -18,8 +20,13 @@ macro_rules! impl_array_element {
             impl ArrayElement for $type {
                 const DTYPE: Dtype = $dtype;
 
-                fn array_item(array: &Array) -> Self {
-                    unsafe { mlx_sys::[<mlx_array_item_ $ctype >](array.c_array) }
+                fn array_item(array: &Array) -> Result<Self, Exception> {
+                    let mut val = <$type as Default>::default();
+                    check_status!{
+                        unsafe { mlx_sys::[<mlx_array_item_ $ctype >](&mut val as *mut _, array.c_array) },
+                        {}
+                    }
+                    Ok(val)
                 }
 
                 fn array_data(array: &Array) -> *const Self {
@@ -46,9 +53,13 @@ impl Sealed for f16 {}
 impl ArrayElement for f16 {
     const DTYPE: Dtype = Dtype::Float16;
 
-    fn array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_float16(array.c_array) };
-        f16::from_bits(val.0)
+    fn array_item(array: &Array) -> Result<Self, Exception> {
+        let mut val = float16_t::default();
+        check_status!{
+            unsafe { mlx_sys::mlx_array_item_float16(&mut val as *mut _, array.c_array) },
+            {}
+        }
+        Ok(f16::from_bits(val.0))
     }
 
     fn array_data(array: &Array) -> *const Self {
@@ -60,9 +71,13 @@ impl Sealed for bf16 {}
 impl ArrayElement for bf16 {
     const DTYPE: Dtype = Dtype::Bfloat16;
 
-    fn array_item(array: &Array) -> Self {
-        let val = unsafe { mlx_sys::mlx_array_item_bfloat16(array.c_array) };
-        bf16::from_bits(val)
+    fn array_item(array: &Array) -> Result<Self, Exception> {
+        let mut bits = bfloat16_t::default();
+        check_status!{
+            unsafe { mlx_sys::mlx_array_item_bfloat16(&mut bits as *mut _, array.c_array) },
+            {}
+        }
+        Ok(bf16::from_bits(bits))
     }
 
     fn array_data(array: &Array) -> *const Self {
@@ -74,13 +89,16 @@ impl Sealed for complex64 {}
 impl ArrayElement for complex64 {
     const DTYPE: Dtype = Dtype::Complex64;
 
-    fn array_item(array: &Array) -> Self {
-        let bindgen_complex64 = unsafe { mlx_sys::mlx_array_item_complex64(array.c_array) };
-
-        Self {
+    fn array_item(array: &Array) -> Result<Self, Exception> {
+        let mut bindgen_complex64 = __BindgenComplex::<f32>::default();
+        check_status!{
+            unsafe { mlx_sys::mlx_array_item_complex64(&mut bindgen_complex64 as *mut _, array.c_array) },
+            {}
+        }
+        Ok(Self {
             re: bindgen_complex64.re,
             im: bindgen_complex64.im,
-        }
+        })
     }
 
     fn array_data(array: &Array) -> *const Self {

@@ -1,16 +1,13 @@
 use crate::{
-    dtype::Dtype,
-    error::{
+    dtype::Dtype, error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler,
-        AsSliceError, Exception, ItemError,
-    },
-    sealed::Sealed,
-    Stream, StreamOrDevice,
+        AsSliceError, Exception,
+    }, sealed::Sealed, utils::SUCCESS, Stream, StreamOrDevice
 };
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 
 mod element;
 mod operators;
@@ -38,20 +35,17 @@ impl std::fmt::Debug for Array {
 
 impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let description = crate::utils::mlx_describe(self.c_array as *mut c_void)
-            .unwrap_or_else(|| "Array".to_string());
-        write!(f, "{:?}", description)
-    }
-}
-
-// TODO: Clone should probably NOT be implemented because the underlying pointer is atomically
-// reference counted but not guarded by a mutex.
-
-impl Clone for Array {
-    fn clone(&self) -> Self {
-        unsafe { mlx_sys::mlx_retain(self.c_array as *mut c_void) };
-        Self {
-            c_array: self.c_array,
+        unsafe {
+            let mut mlx_str = mlx_sys::mlx_string_new();
+            let status = mlx_sys::mlx_array_tostring(&mut mlx_str as *mut _, self.c_array);
+            if status != SUCCESS {
+                return Err(std::fmt::Error::default())
+            }
+            let ptr = mlx_sys::mlx_string_data(mlx_str);
+            let c_str = CStr::from_ptr(ptr);
+            write!(f, "{:?}", c_str)?;
+            mlx_sys::mlx_string_free(mlx_str);
+            Ok(())
         }
     }
 }
@@ -61,7 +55,7 @@ impl Drop for Array {
         // TODO: check memory leak with some tool?
 
         // Decrease the reference count
-        unsafe { mlx_sys::mlx_free(self.c_array as *mut c_void) };
+        unsafe { mlx_sys::mlx_array_free(self.c_array) };
     }
 }
 
@@ -87,36 +81,36 @@ impl Array {
     ///
     /// The caller must ensure the reference count of the array is properly incremented with
     /// `mlx_sys::mlx_retain`.
-    pub unsafe fn from_ptr(c_array: mlx_array) -> Array {
+    pub unsafe fn from_raw(c_array: mlx_array) -> Array {
         Self { c_array }
     }
 
     // TODO: should this be unsafe?
-    pub fn as_ptr(&self) -> mlx_array {
+    pub fn as_raw(&self) -> mlx_array {
         self.c_array
     }
 
     /// New array from a bool scalar.
     pub fn from_bool(val: bool) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_from_bool(val) };
+        let c_array = unsafe { mlx_sys::mlx_array_new_bool(val) };
         Array { c_array }
     }
 
     /// New array from an int scalar.
     pub fn from_int(val: i32) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_from_int(val) };
+        let c_array = unsafe { mlx_sys::mlx_array_new_int(val) };
         Array { c_array }
     }
 
     /// New array from a float scalar.
     pub fn from_float(val: f32) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_from_float(val) };
+        let c_array = unsafe { mlx_sys::mlx_array_new_float(val) };
         Array { c_array }
     }
 
     /// New array from a complex scalar.
     pub fn from_complex(val: complex64) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_from_complex(val.re, val.im) };
+        let c_array = unsafe { mlx_sys::mlx_array_new_complex(val.re, val.im) };
         Array { c_array }
     }
 
@@ -142,7 +136,7 @@ impl Array {
         assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
 
         let c_array = unsafe {
-            mlx_sys::mlx_array_from_data(
+            mlx_sys::mlx_array_new_data(
                 data.as_ptr() as *const c_void,
                 shape.as_ptr(),
                 dim,
@@ -246,7 +240,7 @@ impl Array {
 
     /// The array element type.
     pub fn dtype(&self) -> Dtype {
-        let dtype = unsafe { mlx_sys::mlx_array_get_dtype(self.c_array) };
+        let dtype = unsafe { mlx_sys::mlx_array_dtype(self.c_array) };
         Dtype::try_from(dtype).unwrap()
     }
 
@@ -270,62 +264,12 @@ impl Array {
         self.try_item().unwrap()
     }
 
-    /// Access the value of a scalar array without validating the shape.
-    /// If `T` does not match the array's `dtype` this will convert the type first.
-    ///
-    /// _Note: This will evaluate the array._
-    ///
-    /// # Safety
-    ///
-    /// This is unsafe because the array is not checked for being a scalar.
-    pub fn item_unchecked<T: ArrayElement>(&self) -> T {
-        // Evaluate the array, so we have content to work with in the conversion
-        self.eval().unwrap();
-
-        if self.dtype() != T::DTYPE {
-            let new_array_ctx = unsafe {
-                mlx_sys::mlx_astype(
-                    self.c_array,
-                    T::DTYPE.into(),
-                    StreamOrDevice::default().as_ptr(),
-                )
-            };
-            let new_array = unsafe { Array::from_ptr(new_array_ctx) };
-            new_array.eval().unwrap();
-
-            return T::array_item(&new_array);
-        }
-
-        T::array_item(self)
-    }
-
     /// Access the value of a scalar array returning an error if the array is not a scalar.
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    pub fn try_item<T: ArrayElement>(&self) -> Result<T, ItemError> {
-        if self.size() != 1 {
-            return Err(ItemError::NotScalar);
-        }
-
-        // Evaluate the array, so we have content to work with in the conversion
-        self.eval()?;
-
-        if self.dtype() != T::DTYPE {
-            let new_array_ctx = unsafe {
-                mlx_sys::mlx_astype(
-                    self.c_array,
-                    T::DTYPE.into(),
-                    StreamOrDevice::default().as_ptr(),
-                )
-            };
-            let new_array = unsafe { Array::from_ptr(new_array_ctx) };
-            new_array.eval()?;
-
-            return Ok(T::array_item(&new_array));
-        }
-
-        Ok(T::array_item(self))
+    pub fn try_item<T: ArrayElement>(&self) -> Result<T, Exception> {
+        T::array_item(self)
     }
 
     /// Returns a slice of the array data without validating the dtype.
@@ -439,14 +383,14 @@ impl Array {
                 }
             };
 
-            let new_c_array = mlx_sys::mlx_array_from_data(
+            let new_c_array = mlx_sys::mlx_array_new_data(
                 data,
                 shape.as_ptr(),
                 shape.len() as i32,
                 dtype.into(),
             );
 
-            Array::from_ptr(new_c_array)
+            Array::from_raw(new_c_array)
         }
     }
 }
@@ -456,12 +400,18 @@ impl Array {
 /// The operation is the identity but it prevents gradients from flowing
 /// through the array.
 #[default_device]
-pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
-        Array::from_ptr(mlx_sys::mlx_stop_gradient(
-            a.as_ptr(),
-            stream.as_ref().as_ptr(),
-        ))
+        let mut res = mlx_sys::mlx_array_new();
+        check_status!{ 
+            mlx_sys::mlx_stop_gradient(
+                &mut res as *mut _,
+                a.as_raw(),
+                stream.as_ref().as_raw(),
+            ),
+            mlx_sys::mlx_array_free(res)
+        };
+        Ok(Array::from_raw(res))
     }
 }
 
@@ -982,7 +932,7 @@ mod tests {
         assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
 
         // Addr of `mlx_array` should be different
-        assert_ne!(orig.as_ptr(), clone.as_ptr());
+        assert_ne!(orig.as_raw().ctx, clone.as_raw().ctx);
 
         // Addr of data should be different
         assert_ne!(

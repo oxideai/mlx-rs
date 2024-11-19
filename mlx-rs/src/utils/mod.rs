@@ -486,6 +486,7 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 }
 
 /// A helper enum that can be either an owned value or a reference.
+#[derive(Debug)]
 pub enum OwnedOrRef<'a, T> {
     Owned(T),
     Ref(&'a T),

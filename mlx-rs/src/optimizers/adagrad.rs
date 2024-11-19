@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{array, error::Exception, ops::square, Array};
+use crate::{array, error::{Exception, Result}, ops::square, Array};
 use mlx_internal_macros::generate_builder;
 
 use crate::utils::get_mut_or_insert_with;
@@ -59,7 +59,7 @@ impl Optimizer for AdaGrad {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let v = state.add(square(gradient))?;

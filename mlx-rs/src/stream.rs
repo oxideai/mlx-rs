@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::{device::Device, error::Exception, utils::SUCCESS};
+use crate::{device::Device, error::{Exception, Result}, utils::SUCCESS};
 
 /// Parameter type for all MLX operations.
 ///
@@ -81,6 +81,12 @@ pub struct Stream {
     pub(crate) c_stream: mlx_sys::mlx_stream,
 }
 
+impl AsRef<Stream> for Stream {
+    fn as_ref(&self) -> &Stream {
+        self
+    }
+}
+
 impl Stream {
     fn new_with_mlx_mlx_stream(stream: mlx_sys::mlx_stream) -> Stream {
         Stream { c_stream: stream }
@@ -93,7 +99,7 @@ impl Stream {
     }
 
     /// Try to create a new stream on the default device
-    pub fn try_new() -> Result<Stream, Exception> {
+    pub fn try_new() -> Result<Stream> {
         unsafe {
             let mut dev = mlx_sys::mlx_device_new();
             check_status!{
@@ -116,7 +122,7 @@ impl Stream {
         }
     }
 
-    pub fn try_default_on_device(device: &Device) -> Result<Stream, Exception> {
+    pub fn try_default_on_device(device: &Device) -> Result<Stream> {
         unsafe {
             let mut c_stream = mlx_sys::mlx_stream_new();
             check_status!{

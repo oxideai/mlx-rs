@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
@@ -31,9 +31,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_equal(
                     self.as_ptr(),
                     other.as_ref().as_ptr(),
@@ -69,9 +70,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_less_equal(
                     self.as_ptr(),
                     other.as_ref().as_ptr(),
@@ -107,9 +109,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_greater_equal(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -145,9 +148,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_not_equal(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -182,9 +186,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_less(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -219,9 +224,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_greater(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -256,9 +262,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_logical_and(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -293,9 +300,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_logical_or(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -363,9 +371,10 @@ impl Array {
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_allclose(
                     self.c_array,
                     other.as_ref().as_ptr(),
@@ -399,9 +408,10 @@ impl Array {
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_isclose(
                     self.c_array,
                     other.c_array,
@@ -479,11 +489,12 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_any(
                     self.c_array,
                     axes.as_ptr(),
@@ -504,19 +515,19 @@ pub fn any_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.any_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::logical_and`]
 #[default_device]
-pub fn logical_and_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn logical_and_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array> {
     a.as_ref().logical_and_device(b, StreamOrDevice::default())
 }
 
 /// See [`Array::logical_or`]
 #[default_device]
-pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array> {
     a.as_ref().logical_or_device(b, StreamOrDevice::default())
 }
 
@@ -535,7 +546,7 @@ pub fn all_close_device(
     atol: impl Into<Option<f64>>,
     equal_nan: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref()
         .all_close_device(b, rtol, atol, equal_nan, stream)
 }
@@ -549,7 +560,7 @@ pub fn is_close_device(
     atol: impl Into<Option<f64>>,
     equal_nan: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.is_close_device(b, rtol, atol, equal_nan, stream)
 }
 
@@ -570,7 +581,7 @@ pub fn eq_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().eq_device(b, stream)
 }
 
@@ -580,7 +591,7 @@ pub fn le_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().le_device(b, stream)
 }
 
@@ -590,7 +601,7 @@ pub fn ge_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().ge_device(b, stream)
 }
 
@@ -600,7 +611,7 @@ pub fn ne_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().ne_device(b, stream)
 }
 
@@ -610,7 +621,7 @@ pub fn lt_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().lt_device(b, stream)
 }
 
@@ -620,7 +631,7 @@ pub fn gt_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().gt_device(b, stream)
 }
 
@@ -678,9 +689,10 @@ pub fn r#where_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_where(
                 condition.c_array,
                 a.as_ref().as_ptr(),
@@ -699,9 +711,10 @@ pub fn which_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_where(
                 condition.c_array,
                 a.as_ref().as_ptr(),

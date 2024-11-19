@@ -4,7 +4,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::Exception, utils::TupleArrayArrayArray, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, utils::TupleArrayArrayArray, Array, Stream, StreamOrDevice};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -29,7 +29,7 @@ pub fn quantize_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<(Array, Array, Array), Exception> {
+) -> Result<(Array, Array, Array)> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
@@ -59,7 +59,7 @@ pub fn quantized_matmul_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let transpose = transpose.into().unwrap_or(false);
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
@@ -95,7 +95,7 @@ pub fn dequantize_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 

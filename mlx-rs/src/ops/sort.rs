@@ -2,7 +2,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::Exception, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
 
 /// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
 ///
@@ -21,9 +21,10 @@ use crate::{error::Exception, Array, Stream, StreamOrDevice};
 /// let result = sort(&a, axis);
 /// ```
 #[default_device]
-pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_sort(a.as_ptr(), axis, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -45,9 +46,10 @@ pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<A
 /// let result = sort_all(&a);
 /// ```
 #[default_device]
-pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_sort_all(a.as_ptr(), stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -75,9 +77,10 @@ pub fn argsort_device(
     a: &Array,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -100,9 +103,10 @@ pub fn argsort_device(
 /// let result = argsort_all(&a);
 /// ```
 #[default_device]
-pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -138,9 +142,10 @@ pub fn partition_device(
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_partition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -173,9 +178,10 @@ pub fn partition_all_device(
     a: &Array,
     kth: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_partition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -211,9 +217,10 @@ pub fn argpartition_device(
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -247,9 +254,10 @@ pub fn argpartition_all_device(
     a: &Array,
     kth: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))

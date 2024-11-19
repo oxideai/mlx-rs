@@ -6,7 +6,7 @@ use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
     array,
-    error::Exception,
+    error::{Exception, Result},
     module::{FlattenedModuleParam, ModuleParameters},
     Array,
 };
@@ -45,7 +45,7 @@ pub trait Optimizer {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception>;
+    ) -> Result<()>;
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
@@ -53,7 +53,7 @@ pub trait Optimizer {
         &mut self,
         model: &mut M,
         gradients: impl Borrow<FlattenedModuleParam>,
-    ) -> Result<(), Exception>
+    ) -> Result<()>
     where
         M: ModuleParameters,
     {

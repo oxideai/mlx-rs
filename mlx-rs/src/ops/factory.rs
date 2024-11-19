@@ -1,5 +1,5 @@
 use crate::array::ArrayElement;
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
 use mlx_internal_macros::default_device;
@@ -22,7 +22,7 @@ impl Array {
     pub fn zeros_device<T: ArrayElement>(
         shape: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let dtype = T::DTYPE;
         zeros_dtype_device(shape, dtype, stream)
     }
@@ -43,7 +43,7 @@ impl Array {
     pub fn ones_device<T: ArrayElement>(
         shape: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let dtype = T::DTYPE;
         ones_dtype_device(shape, dtype, stream)
     }
@@ -69,9 +69,10 @@ impl Array {
         m: Option<i32>,
         k: Option<i32>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_eye(
                     n,
                     m.unwrap_or(n),
@@ -107,9 +108,10 @@ impl Array {
         shape: &[i32],
         values: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_full(
                     shape.as_ptr(),
                     shape.len(),
@@ -139,9 +141,10 @@ impl Array {
     pub fn identity_device<T: ArrayElement>(
         n: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_identity(n, T::DTYPE.into(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -172,7 +175,7 @@ impl Array {
         stop: U,
         step: impl Into<Option<U>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception>
+    ) -> Result<Array>
     where
         T: ArrayElement,
         U: NumCast,
@@ -182,7 +185,8 @@ impl Array {
         let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
 
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_arange(
                     start,
                     stop,
@@ -216,7 +220,7 @@ impl Array {
         stop: U,
         count: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception>
+    ) -> Result<Array>
     where
         T: ArrayElement,
         U: NumCast,
@@ -226,7 +230,8 @@ impl Array {
         let stop_f32 = NumCast::from(stop).unwrap();
 
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_linspace(
                     start_f32,
                     stop_f32,
@@ -261,9 +266,10 @@ impl Array {
         count: i32,
         axis: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_repeat(
                     array.c_array,
                     count,
@@ -295,9 +301,10 @@ impl Array {
         array: Array,
         count: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_repeat_all(
                     array.c_array,
                     count,
@@ -347,7 +354,7 @@ impl Array {
 pub fn zeros_device<T: ArrayElement>(
     shape: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::zeros_device::<T>(shape, stream)
 }
 
@@ -356,7 +363,7 @@ pub fn zeros_device<T: ArrayElement>(
 pub fn zeros_like_device(
     input: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -369,9 +376,10 @@ pub fn zeros_dtype_device(
     shape: &[i32],
     dtype: Dtype,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_zeros(
                 shape.as_ptr(),
                 shape.len(),
@@ -388,7 +396,7 @@ pub fn zeros_dtype_device(
 pub fn ones_device<T: ArrayElement>(
     shape: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::ones_device::<T>(shape, stream)
 }
 
@@ -397,7 +405,7 @@ pub fn ones_device<T: ArrayElement>(
 pub fn ones_like_device(
     input: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -409,9 +417,10 @@ pub fn ones_dtype_device(
     shape: &[i32],
     dtype: Dtype,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_ones(
                 shape.as_ptr(),
                 shape.len(),
@@ -430,7 +439,7 @@ pub fn eye_device<T: ArrayElement>(
     m: Option<i32>,
     k: Option<i32>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::eye_device::<T>(n, m, k, stream)
 }
 
@@ -440,7 +449,7 @@ pub fn full_device<T: ArrayElement>(
     shape: &[i32],
     values: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::full_device::<T>(shape, values, stream)
 }
 
@@ -449,7 +458,7 @@ pub fn full_device<T: ArrayElement>(
 pub fn identity_device<T: ArrayElement>(
     n: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::identity_device::<T>(n, stream)
 }
 
@@ -460,7 +469,7 @@ pub fn arange_device<T, U>(
     stop: U,
     step: impl Into<Option<U>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception>
+) -> Result<Array>
 where
     T: ArrayElement,
     U: NumCast,
@@ -475,7 +484,7 @@ pub fn linspace_device<T, U>(
     stop: U,
     count: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception>
+) -> Result<Array>
 where
     T: ArrayElement,
     U: NumCast,
@@ -490,7 +499,7 @@ pub fn repeat_device<T: ArrayElement>(
     count: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::repeat_device::<T>(array, count, axis, stream)
 }
 
@@ -500,7 +509,7 @@ pub fn repeat_all_device<T: ArrayElement>(
     array: Array,
     count: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     Array::repeat_all_device::<T>(array, count, stream)
 }
 

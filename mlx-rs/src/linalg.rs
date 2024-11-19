@@ -1,4 +1,4 @@
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::utils::{IntoOption, MlxString, TupleArrayArray, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
@@ -57,11 +57,12 @@ pub fn norm_p_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             match axes.into_option() {
                 Some(axes) => {
                     mlx_sys::mlx_linalg_norm_p(
@@ -98,13 +99,14 @@ pub fn norm_ord_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
         let ord = MlxString::try_from(ord).map_err(|_e| Exception {
             what: String::from("NulError"),
         })?;
 
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             match axes.into_option() {
                 Some(axes) => {
                     mlx_sys::mlx_linalg_norm_ord(
@@ -178,7 +180,7 @@ pub fn norm_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let ord = ord.into_option();
     let axes = axes.into_option();
     let keep_dims = keep_dims.into().unwrap_or(false);
@@ -187,7 +189,8 @@ pub fn norm_device<'a>(
         // If axis and ord are both unspecified, computes the 2-norm of flatten(x).
         (None, None) => unsafe {
             let axes_ptr = std::ptr::null(); // mlx-c already handles the case where axes is null
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_linalg_norm(
                     array.as_ptr(),
                     axes_ptr,
@@ -206,7 +209,8 @@ pub fn norm_device<'a>(
         // If axis is provided, but ord is not, then the 2-norm (or Frobenius norm for matrices) is
         // computed along the given axes. At most 2 axes can be specified.
         (None, Some(axes)) => unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_linalg_norm(
                     array.as_ptr(),
                     axes.as_ptr(),
@@ -251,7 +255,7 @@ pub fn norm_device<'a>(
 /// assert!(r.all_close(&r_expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
-pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array), Exception> {
+pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
     unsafe {
         let c_vec = try_catch_c_ptr_expr! {
             mlx_sys::mlx_linalg_qr(a.as_ptr(), stream.as_ref().as_ptr())
@@ -295,7 +299,7 @@ pub fn qr_device(a: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)
 pub fn svd_device(
     array: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<(Array, Array, Array), Exception> {
+) -> Result<(Array, Array, Array)> {
     unsafe {
         let c_vec = try_catch_c_ptr_expr! {
             mlx_sys::mlx_linalg_svd(array.as_ptr(), stream.as_ref().as_ptr())
@@ -335,9 +339,10 @@ pub fn svd_device(
 /// assert!(a_inv.all_close(&expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
-pub fn inv_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn inv_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_linalg_inv(a.as_ptr(), stream.as_ref().as_ptr())
         };
 
@@ -362,10 +367,11 @@ pub fn cholesky(
     a: &Array,
     upper: Option<bool>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let upper = upper.unwrap_or(false);
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_linalg_cholesky(a.as_ptr(), upper, stream.as_ref().as_ptr())
         };
 

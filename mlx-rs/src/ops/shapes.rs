@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use mlx_internal_macros::default_device;
+use mlx_sys::mlx_vector_array_new;
 use smallvec::SmallVec;
 
 use crate::{
@@ -13,11 +14,7 @@ use crate::{
 impl Array {
     /// See [`expand_dims`].
     #[default_device]
-    pub fn expand_dims_device(
-        &self,
-        axes: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn expand_dims_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
         expand_dims_device(self, axes, stream)
     }
 
@@ -34,11 +31,7 @@ impl Array {
 
     /// See [`reshape`].
     #[default_device]
-    pub fn reshape_device(
-        &self,
-        shape: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn reshape_device(&self, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
         reshape_device(self, shape, stream)
     }
 
@@ -190,13 +183,14 @@ pub fn broadcast_arrays_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {{
-            let c_vec = VectorArray::from_iter(arrays.iter());
-            mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ref().as_ptr())
-        }};
-        let c_vec = VectorArray::from_ptr(c_array);
-        Ok(c_vec.into_values())
+        let mut ptr = mlx_sys::mlx_vector_array_new();
+        let c_vec = VectorArray::try_from_iter(arrays.iter())?;
+        check_status! {
+            mlx_sys::mlx_broadcast_arrays(&mut ptr as *mut _, c_vec.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_vector_array_free(ptr)
+        };
+        let res = VectorArray::from_ptr(ptr);
+        res.try_into_values()
     }
 }
 
@@ -223,7 +217,10 @@ pub fn as_strided_device<'a>(
     let offset = offset.into().unwrap_or(0);
 
     unsafe {
-        let c_array = mlx_sys::mlx_as_strided(
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_as_strided should not throw an exception if `a` is a valid array.
+        mlx_sys::mlx_as_strided(
+            &mut c_array as *mut _,
             a.c_array,
             shape.as_ptr(),
             shape.len(),
@@ -253,20 +250,17 @@ pub fn as_strided_device<'a>(
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
-pub fn broadcast_to_device(
-    a: &Array,
-    shape: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn broadcast_to_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_broadcast_to(
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_broadcast_to(&mut c_array as *mut _,
                 a.c_array,
                 shape.as_ptr(),
                 shape.len(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -298,12 +292,11 @@ pub fn concatenate_device(
     let axis = axis.into().unwrap_or(0);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            {
-                let c_arrays = VectorArray::from_iter(arrays.iter());
-                mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ref().as_ptr())
-            }
+        let mut c_array = mlx_sys::mlx_array_new();
+        let c_arrays = VectorArray::try_from_iter(arrays.iter())?;
+        check_status! {
+            mlx_sys::mlx_concatenate(&mut c_array as *mut _, c_arrays.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -326,20 +319,17 @@ check_status! {
 /// let result = expand_dims(&x, &[0]);
 /// ```
 #[default_device]
-pub fn expand_dims_device(
-    a: &Array,
-    axes: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn expand_dims_device(a: &Array, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_expand_dims(
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_expand_dims(&mut c_array as *mut _,
                 a.c_array,
                 axes.as_ptr(),
                 axes.len(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -377,9 +367,10 @@ pub fn flatten_device(
     let end_axis = end_axis.into().unwrap_or(-1);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_flatten(a.c_array, start_axis, end_axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_flatten(&mut c_array as *mut _,a.c_array, start_axis, end_axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -402,20 +393,17 @@ check_status! {
 /// let result = reshape(&x, &[4]);
 /// ```
 #[default_device]
-pub fn reshape_device(
-    a: &Array,
-    shape: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn reshape_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_reshape(
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_reshape(&mut c_array as *mut _,
                 a.c_array,
                 shape.as_ptr(),
                 shape.len(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -445,14 +433,15 @@ pub fn squeeze_device<'a>(
 ) -> Result<Array> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_squeeze(
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_squeeze(&mut c_array as *mut _,
                 a.c_array,
                 axes.as_ptr(),
                 axes.len(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -475,7 +464,12 @@ check_status! {
 /// ```
 #[default_device]
 pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_1d(a.c_array, stream.as_ref().as_ptr())) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_atleast_1d should not throw an exception if `a` is a valid array.
+        mlx_sys::mlx_atleast_1d(&mut c_array as *mut _, a.c_array, stream.as_ref().as_ptr());
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Convert array to have at least two dimensions.
@@ -494,7 +488,12 @@ pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// ```
 #[default_device]
 pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_2d(a.c_array, stream.as_ref().as_ptr())) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_atleast_2d should not throw an exception if `a` is a valid array.
+        mlx_sys::mlx_atleast_2d(&mut c_array as *mut _, a.c_array, stream.as_ref().as_ptr());
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Convert array to have at least three dimensions.
@@ -513,7 +512,12 @@ pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// ```
 #[default_device]
 pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_atleast_3d(a.c_array, stream.as_ref().as_ptr())) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_atleast_3d should not throw an exception if `a` is a valid array.
+        mlx_sys::mlx_atleast_3d(&mut c_array as *mut _, a.c_array, stream.as_ref().as_ptr());
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Move an axis to a new position. Returns an error if the axes are invalid.
@@ -540,9 +544,10 @@ pub fn move_axis_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_moveaxis(a.c_array, src, dst, stream.as_ref().as_ptr())
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_moveaxis(&mut c_array as *mut _,a.c_array, src, dst, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -574,17 +579,20 @@ pub fn split_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
+        let mut c_vec = mlx_vector_array_new();
+        check_status! {
             mlx_sys::mlx_split(
+                &mut c_vec as *mut _,
                 a.c_array,
                 indices.as_ptr(),
                 indices.len(),
                 axis,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_vector_array_free(c_vec)
         };
-        let c_vec = VectorArray::from_ptr(c_vec);
-        Ok(c_vec.into_values())
+        let res_vec = VectorArray::from_ptr(c_vec);
+        res_vec.try_into_values()
     }
 }
 
@@ -614,11 +622,13 @@ pub fn split_equal_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_split_equal_parts(a.c_array, num_parts, axis, stream.as_ref().as_ptr())
+        let mut c_vec = mlx_vector_array_new();
+        check_status! {
+            mlx_sys::mlx_split_equal_parts(&mut c_vec as *mut _, a.c_array, num_parts, axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_vector_array_free(c_vec)
         };
-        let c_vec = VectorArray::from_ptr(c_vec);
-        Ok(c_vec.into_values())
+        let res_vec = VectorArray::from_ptr(c_vec);
+        res_vec.try_into_values()
     }
 }
 
@@ -675,13 +685,13 @@ pub enum PadMode {
 }
 
 impl PadMode {
-    fn as_mlx_string(&self) -> mlx_sys::mlx_string {
+    unsafe fn as_c_str(&self) -> *const i8 {
         static CONSTANT: &[u8] = b"constant\0";
         static EDGE: &[u8] = b"edge\0";
 
         match self {
-            PadMode::Constant => unsafe { mlx_sys::mlx_string_new(CONSTANT.as_ptr() as *const _) },
-            PadMode::Edge => unsafe { mlx_sys::mlx_string_new(EDGE.as_ptr() as *const _) },
+            PadMode::Constant => CONSTANT.as_ptr() as *const _,
+            PadMode::Edge => EDGE.as_ptr() as *const _,
         }
     }
 }
@@ -726,9 +736,10 @@ pub fn pad_device<'a>(
     let mode = mode.into().unwrap_or(PadMode::Constant);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_pad(
+                &mut c_array as *mut _,
                 a.c_array,
                 axes.as_ptr(),
                 axes.len(),
@@ -737,9 +748,10 @@ check_status! {
                 high_pads.as_ptr(),
                 high_pads.len(),
                 value.c_array,
-                mode.as_mlx_string(),
+                mode.as_c_str(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -769,12 +781,11 @@ pub fn stack_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            {
-                let c_vec = VectorArray::from_iter(arrays.iter());
-                mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ref().as_ptr())
-            }
+        let mut c_array = mlx_sys::mlx_array_new();
+        let c_vec = VectorArray::try_from_iter(arrays.iter())?;
+        check_status! {
+            mlx_sys::mlx_stack(&mut c_array as *mut _, c_vec.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -797,15 +808,13 @@ check_status! {
 /// let result = stack_all(&[&a, &b]);
 /// ```
 #[default_device]
-pub fn stack_all_device(
-    arrays: &[impl AsRef<Array>],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_vec = VectorArray::from_iter(arrays.iter());
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ref().as_ptr())
+        let c_vec = VectorArray::try_from_iter(arrays.iter())?;
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_stack_all(&mut c_array as *mut _, c_vec.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -836,9 +845,10 @@ pub fn swap_axes_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_swapaxes(a.c_array, axis1, axis2, stream.as_ref().as_ptr())
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_swapaxes(&mut c_array as *mut _,a.c_array, axis1, axis2, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -861,20 +871,18 @@ check_status! {
 /// let y = tile(&x, &[2]);
 /// ```
 #[default_device]
-pub fn tile_device(
-    a: &Array,
-    reps: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_tile(
+                &mut c_array as *mut _,
                 a.c_array,
                 reps.as_ptr(),
                 reps.len(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -904,17 +912,19 @@ pub fn transpose_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             match axes.into_option() {
                 Some(axes) => mlx_sys::mlx_transpose(
+                    &mut c_array as *mut _,
                     a.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     stream.as_ref().as_ptr(),
                 ),
-                None => mlx_sys::mlx_transpose_all(a.c_array, stream.as_ref().as_ptr()),
-            }
+                None => mlx_sys::mlx_transpose_all(&mut c_array as *mut _, a.c_array, stream.as_ref().as_ptr()),
+            },
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))

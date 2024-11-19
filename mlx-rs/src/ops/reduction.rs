@@ -36,12 +36,14 @@ impl Array {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_all_axes(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -76,12 +78,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_prod(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -116,12 +120,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_max(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -156,12 +162,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_sum(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -196,12 +204,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_mean(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -236,12 +246,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_min(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -268,13 +280,15 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_var(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     ddof.into().unwrap_or(0),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -301,12 +315,14 @@ check_status! {
             let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
                 mlx_sys::mlx_logsumexp(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -371,13 +387,15 @@ pub fn std_device<'a>(
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
             mlx_sys::mlx_std(
+                &mut c_array as *mut _,
                 a.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims,
                 ddof,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }

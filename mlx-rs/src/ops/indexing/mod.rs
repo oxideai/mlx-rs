@@ -101,10 +101,10 @@ use std::{borrow::Cow, ops::Bound, rc::Rc};
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::Exception, utils::OwnedOrRef, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, utils::OwnedOrRef, Array, Stream, StreamOrDevice};
 
-mod index_impl;
-mod indexmut_impl;
+pub(crate) mod index_impl;
+pub(crate) mod indexmut_impl;
 
 /* -------------------------------------------------------------------------- */
 /*                                Custom types                                */
@@ -278,9 +278,9 @@ impl<'a> ArrayIndexOp<'a> {
 /* -------------------------------------------------------------------------- */
 
 pub trait TryIndexOp<Idx> {
-    fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception>;
+    fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>>;
 
-    fn try_index(&self, i: Idx) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index(&self, i: Idx) -> Result<OwnedOrRef<'_, Array>> {
         self.try_index_device(i, StreamOrDevice::default())
     }
 }
@@ -335,7 +335,7 @@ impl Array {
         indices: impl AsRef<Array>,
         axis: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
@@ -357,7 +357,7 @@ impl Array {
         &self,
         indices: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
@@ -383,7 +383,7 @@ impl Array {
         indices: impl AsRef<Array>,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let (input, axis) = match axis.into() {
             None => (OwnedOrRef::Owned(self.reshape_device(&[-1], &stream)?), 0),
             Some(ax) => (OwnedOrRef::Ref(self), ax),
@@ -416,7 +416,7 @@ impl Array {
         values: impl AsRef<Array>,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         match axis.into() {
             None => unsafe {
                 let input = self.reshape_device(&[-1], &stream)?;
@@ -459,7 +459,7 @@ pub fn argmax_device(
     axis: i32,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
@@ -484,7 +484,7 @@ pub fn argmax_all_device(
     a: impl AsRef<Array>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
@@ -513,7 +513,7 @@ pub fn argmin_device(
     axis: i32,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
@@ -538,7 +538,7 @@ pub fn argmin_all_device(
     a: impl AsRef<Array>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
@@ -572,7 +572,7 @@ pub fn argpartition_device(
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -600,7 +600,7 @@ pub fn argpartition_all_device(
     a: impl AsRef<Array>,
     kth: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -625,7 +625,7 @@ pub fn argsort_device(
     a: impl AsRef<Array>,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -639,7 +639,7 @@ pub fn argsort_device(
 
 /// Returns the indices that sort the flattened array.
 #[default_device]
-pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -658,7 +658,7 @@ pub fn take_along_axis_device(
     indices: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().take_along_axis_device(indices, axis, stream)
 }
 
@@ -670,7 +670,7 @@ pub fn put_along_axis_device(
     values: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().put_along_axis_device(indices, values, axis, stream)
 }
 
@@ -681,7 +681,7 @@ pub fn take_device(
     indices: impl AsRef<Array>,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().take_device(indices, axis, stream)
 }
 
@@ -691,7 +691,7 @@ pub fn take_all_device(
     a: impl AsRef<Array>,
     indices: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().take_all_device(indices, stream)
 }
 
@@ -712,7 +712,7 @@ pub fn topk_device(
     k: i32,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
 
     unsafe {
@@ -728,7 +728,7 @@ pub fn topk_device(
 
 /// Returns the `k` largest elements from the flattened input array.
 #[default_device]
-pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {

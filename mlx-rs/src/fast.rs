@@ -1,4 +1,4 @@
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -14,7 +14,7 @@ pub fn rope_device<'a>(
     offset: i32,
     freqs: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let base = base.into();
     let base = mlx_sys::mlx_optional_float {
         value: base.unwrap_or(0.0),
@@ -22,8 +22,10 @@ pub fn rope_device<'a>(
     };
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fast_rope(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 dimensions,
                 traditional,
@@ -33,9 +35,10 @@ pub fn rope_device<'a>(
                 freqs
                     .into()
                     .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
+                    .unwrap_or(mlx_sys::mlx_array_new()),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -60,7 +63,7 @@ pub fn scaled_dot_product_attention_device<'a>(
     mask: impl Into<Option<&'a Array>>,
     memory_efficient_threshold: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let memory_efficient_threshold = memory_efficient_threshold.into();
     let memory_efficient_threshold = mlx_sys::mlx_optional_int {
         value: memory_efficient_threshold.unwrap_or(0),
@@ -68,18 +71,21 @@ pub fn scaled_dot_product_attention_device<'a>(
     };
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fast_scaled_dot_product_attention(
+                &mut c_array as *mut _,
                 queries.as_ref().as_ptr(),
                 keys.as_ref().as_ptr(),
                 values.as_ref().as_ptr(),
                 scale,
                 mask.into()
                     .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
+                    .unwrap_or(mlx_sys::mlx_array_new()),
                 memory_efficient_threshold,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -102,15 +108,18 @@ pub fn rms_norm_device(
     weight: impl AsRef<Array>,
     eps: f32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fast_rms_norm(
+                &mut c_array as *mut _,
                 x.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 eps,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -137,21 +146,24 @@ pub fn layer_norm_device<'a>(
     bias: impl Into<Option<&'a Array>>,
     eps: f32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fast_layer_norm(
+                &mut c_array as *mut _,
                 x.as_ref().as_ptr(),
                 weight
                     .into()
                     .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
+                    .unwrap_or(mlx_sys::mlx_array_new()),
                 bias.into()
                     .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
+                    .unwrap_or(mlx_sys::mlx_array_new()),
                 eps,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -180,20 +192,23 @@ pub fn affine_quantized(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fast_affine_quantize(
+                &mut c_array as *mut _,
                 w.as_ref().as_ptr(),
                 scales.as_ref().as_ptr(),
                 biases.as_ref().as_ptr(),
                 group_size,
                 bits,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -263,8 +278,8 @@ mod tests {
         let weight = Array::ones::<f32>(&[16]).unwrap();
         let bias = Array::zeros::<f32>(&[16]).unwrap();
         let result = layer_norm(a, &weight, &bias, 1e-5)
-            .unwrap()
-            .index((ArrayIndexOp::Ellipsis, 0));
+            .unwrap();
+        let result = result.index((ArrayIndexOp::Ellipsis, 0));
         assert_eq!(result.shape(), [2, 8]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(

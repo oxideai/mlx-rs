@@ -3,7 +3,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::Exception,
+    error::{Exception, Result},
     ops::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
@@ -22,7 +22,7 @@ impl Array {
         ends: &[i32],
         strides: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
@@ -51,7 +51,7 @@ fn update_slice(
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<Option<Array>, Exception> {
+) -> Result<Option<Array>> {
     let ndim = src.ndim();
     if ndim == 0 || operations.is_empty() {
         return Ok(None);
@@ -143,7 +143,7 @@ fn update_slice(
 fn remove_leading_singleton_dimensions(
     a: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<OwnedOrRef<'_, Array>, Exception> {
+) -> Result<OwnedOrRef<'_, Array>> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
@@ -168,7 +168,7 @@ fn scatter_args<'a>(
     operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs<'a>> {
     use ArrayIndexOp::*;
 
     if operations.len() == 1 {
@@ -194,7 +194,7 @@ fn scatter_args_index<'a>(
     index: i32,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
@@ -219,7 +219,7 @@ fn scatter_args_array<'a>(
     a: OwnedOrRef<'a, Array>,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_array
 
     // trim leading singleton dimensions
@@ -249,7 +249,7 @@ fn scatter_args_slice<'a>(
     range_index: &'a RangeIndex,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
@@ -298,7 +298,7 @@ fn scatter_args_nd<'a>(
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs<'a>, Exception> {
+) -> Result<ScatterArgs<'a>> {
     use ArrayIndexOp::*;
 
     // mlx_scatter_args_nd
@@ -537,7 +537,7 @@ unsafe fn scatter_device(
     updates: &Array,
     axes: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let indices_vector = VectorArray::try_from_iter(indices.iter())?;
 
     unsafe {

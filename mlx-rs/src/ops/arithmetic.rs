@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::sealed::Sealed;
 use crate::stream::StreamOrDevice;
 
@@ -50,9 +50,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_add(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -83,9 +84,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_subtract(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -107,9 +109,10 @@ impl Array {
     /// // b_data == [-1.0, -2.0, -3.0]
     /// ```
     #[default_device]
-    pub fn negative_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn negative_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_negative(self.c_array, stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -136,9 +139,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_multiply(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -209,9 +213,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_divide(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -242,9 +247,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_power(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -275,9 +281,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_remainder(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -350,9 +357,10 @@ impl Array {
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
     #[default_device]
-    pub fn floor_device(&self, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+    pub fn floor_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_floor(self.c_array, stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -387,9 +395,10 @@ impl Array {
         &self,
         other: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_floor_divide(self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -558,9 +567,10 @@ impl Array {
         &self,
         other: &Array,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_matmul(self.c_array, other.c_array, stream.as_ref().as_ptr())
             };
             Ok(Array::from_ptr(c_array))
@@ -661,7 +671,7 @@ pub fn add_device(
     lhs: impl AsRef<Array>,
     rhs: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     lhs.as_ref().add_device(rhs, stream)
 }
 
@@ -691,9 +701,10 @@ pub fn atanh_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise ceiling.
 #[default_device]
-pub fn ceil_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn ceil_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_ceil(a.c_array, stream.as_ref().as_ptr())
         };
 
@@ -783,7 +794,7 @@ pub fn clip_device<'min, 'max>(
     a: &Array,
     bound: impl ClipBound<'min, 'max>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let (a_min, a_max) = bound.into_min_max();
 
     // This is needed to keep the lifetime of the min/max arrays in scope.
@@ -800,7 +811,8 @@ pub fn clip_device<'min, 'max>(
     };
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_clip(a.as_ptr(), min_ptr, max_ptr, stream.as_ref().as_ptr())
         };
 
@@ -832,7 +844,7 @@ pub fn divide_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().divide_device(b, stream)
 }
 
@@ -847,7 +859,7 @@ pub fn divmod_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<(Array, Array), Exception> {
+) -> Result<(Array, Array)> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
 
@@ -891,7 +903,7 @@ pub fn expm1_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::floor`].
 #[default_device]
-pub fn floor_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn floor_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     a.floor_device(stream)
 }
 
@@ -901,7 +913,7 @@ pub fn floor_divide_device(
     a: &Array,
     other: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.floor_divide_device(other, stream)
 }
 
@@ -940,12 +952,13 @@ pub fn log_add_exp_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_logaddexp(a_ptr, b_ptr, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -954,7 +967,7 @@ pub fn log_add_exp_device(
 
 /// See [`Array::matmul`].
 #[default_device]
-pub fn matmul_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn matmul_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     a.matmul_device(b, stream)
 }
 
@@ -967,12 +980,13 @@ pub fn maximum_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_maximum(a_ptr, b_ptr, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -988,12 +1002,13 @@ pub fn minimum_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_minimum(a_ptr, b_ptr, stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -1006,13 +1021,13 @@ pub fn multiply_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().multiply_device(b, stream)
 }
 
 /// See [`Array::negative`].
 #[default_device]
-pub fn negative_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn negative_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     a.negative_device(stream)
 }
 
@@ -1022,7 +1037,7 @@ pub fn power_device(
     a: &Array,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.power_device(b, stream)
 }
 
@@ -1044,7 +1059,7 @@ pub fn remainder_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().remainder_device(b, stream)
 }
 
@@ -1135,7 +1150,7 @@ pub fn subtract_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.as_ref().subtract_device(b, stream)
 }
 
@@ -1165,7 +1180,7 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
     mask_lhs: impl Into<Option<&'lhs Array>>,
     mask_rhs: impl Into<Option<&'rhs Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a_ptr = a.as_ptr();
     let b_ptr = b.as_ptr();
     let mask_out_ptr = mask_out
@@ -1182,7 +1197,8 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
         .unwrap_or(std::ptr::null_mut());
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_block_masked_mm(
                 a_ptr,
                 b_ptr,
@@ -1217,7 +1233,7 @@ pub fn addmm_device(
     alpha: impl Into<Option<f32>>,
     beta: impl Into<Option<f32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let c_ptr = c.as_ref().as_ptr();
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -1225,7 +1241,8 @@ pub fn addmm_device(
     let beta = beta.into().unwrap_or(1.0);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_addmm(
                 c_ptr,
                 a_ptr,
@@ -1242,9 +1259,10 @@ pub fn addmm_device(
 /// Ordinary inner product of vectors for 1-D arrays, in higher dimensions a sum product over the
 /// last axes.
 #[default_device]
-pub fn inner_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn inner_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_inner(a.as_ptr(), b.as_ptr(), stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -1254,9 +1272,10 @@ pub fn inner_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<
 /// Compute the outer product of two 1-D arrays, if the array’s passed are not 1-D a flatten op will
 /// be run beforehand.
 #[default_device]
-pub fn outer_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn outer_device(a: &Array, b: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_outer(a.as_ptr(), b.as_ptr(), stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))
@@ -1302,9 +1321,10 @@ pub fn tensordot_device<'a>(
     b: &Array,
     axes: impl Into<TensorDotDims<'a>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             match axes.into() {
                 TensorDotDims::Int(dim) => mlx_sys::mlx_tensordot_along_axis(a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr()),
                 TensorDotDims::List((lhs, rhs)) => mlx_sys::mlx_tensordot(

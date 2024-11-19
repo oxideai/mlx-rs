@@ -1,7 +1,7 @@
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::Exception, utils::IntoOption, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, utils::IntoOption, Array, Stream, StreamOrDevice};
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
 
@@ -22,7 +22,7 @@ pub fn rfft_device(
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
@@ -53,7 +53,7 @@ pub fn rfft2_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
@@ -101,7 +101,7 @@ pub fn rfftn_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
 
@@ -145,7 +145,7 @@ pub fn irfft_device(
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let n = n.into();
     let axis = axis.into();
@@ -183,7 +183,7 @@ pub fn irfft2_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let s = s.into_option();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
@@ -239,7 +239,7 @@ pub fn irfftn_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let s = s.into_option();
     let axes = axes.into_option();

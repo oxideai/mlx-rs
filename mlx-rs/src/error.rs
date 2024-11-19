@@ -4,6 +4,9 @@ use std::ffi::NulError;
 use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
 
+/// Type alias for a `Result` with an `Exception` error type.
+pub type Result<T> = std::result::Result<T, Exception>;
+
 #[derive(Error, PartialEq, Debug)]
 pub enum ItemError {
     #[error("not a scalar array")]

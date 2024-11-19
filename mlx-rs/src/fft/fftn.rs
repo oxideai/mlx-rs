@@ -1,7 +1,7 @@
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{array::Array, error::Exception, stream::StreamOrDevice, utils::IntoOption, Stream};
+use crate::{array::Array, error::{Exception, Result}, stream::StreamOrDevice, utils::IntoOption, Stream};
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
 
@@ -19,7 +19,7 @@ pub fn fft_device(
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
@@ -46,7 +46,7 @@ pub fn fft2_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
@@ -91,7 +91,7 @@ pub fn fftn_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
     let num_s = s.len();
@@ -133,7 +133,7 @@ pub fn ifft_device(
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
@@ -163,7 +163,7 @@ pub fn ifft2_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
@@ -209,7 +209,7 @@ pub fn ifftn_device<'a>(
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let a = a.as_ref();
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
     let num_s = s.len();

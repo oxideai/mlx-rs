@@ -38,7 +38,8 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
     check_file_extension(path, "npy")?;
 
     let load_result = (|| unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_load(mlx_path.as_ptr(), stream.as_ref().as_ptr())
         };
         Ok(Array::from_ptr(c_array))

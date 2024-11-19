@@ -246,7 +246,7 @@ impl Array {
 
     // TODO: document that mlx is lazy
     /// Evaluate the array.
-    pub fn eval(&self) -> Result<(), Exception> {
+    pub fn eval(&self) -> Result<()> {
         if !is_mlx_error_handler_set() {
             setup_mlx_error_handler();
         }
@@ -268,7 +268,7 @@ impl Array {
     /// If `T` does not match the array's `dtype` this will convert the type first.
     ///
     /// _Note: This will evaluate the array._
-    pub fn try_item<T: ArrayElement>(&self) -> Result<T, Exception> {
+    pub fn try_item<T: ArrayElement>(&self) -> Result<T> {
         T::array_item(self)
     }
 
@@ -400,7 +400,7 @@ impl Array {
 /// The operation is the identity but it prevents gradients from flowing
 /// through the array.
 #[default_device]
-pub fn stop_gradient_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn stop_gradient_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut res = mlx_sys::mlx_array_new();
         check_status!{ 

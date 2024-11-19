@@ -11,14 +11,14 @@ use crate::{
 
 use super::{Optimizer, OptimizerState};
 
-fn rms(inputs: &Array) -> Result<Array, Exception> {
+fn rms(inputs: &Array) -> Result<Array> {
     Ok(sqrt(&mean(&square(inputs), None, None)?))
 }
 
 fn approvate_exp_moving_avg(
     exp_avg_sq_row: &Array,
     exp_avg_sq_col: &Array,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?);
     let cfactor = rsqrt(exp_avg_sq_col);
     matmul(&rfactor.expand_dims(&[-1])?, &cfactor.expand_dims(&[0])?)
@@ -41,7 +41,7 @@ impl AdafactorState {
     /// Default value for `step`
     pub const DEFAULT_STEP: i32 = 0;
 
-    fn new(parameter: &Array, beta1_is_some: bool) -> Result<Self, Exception> {
+    fn new(parameter: &Array, beta1_is_some: bool) -> Result<Self> {
         let step = array!(Self::DEFAULT_STEP);
         let mut exp_avg_sq_row = None;
         let mut exp_avg_sq_col = None;
@@ -258,7 +258,7 @@ fn compute_lr(
     eps: &(Array, Array),
     step: &Array,
     parameter_rms: &Array,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let relative_step_size = if relative_step {
         let min_step = if warmup_init {
             // SAFETY: `step` is a single-element array and won't panic.
@@ -290,7 +290,7 @@ impl Optimizer for Adafactor {
         key: &std::rc::Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> Result<()> {
         let beta1_is_some = self.beta1.value().is_some();
         let state = get_mut_or_insert_with(&mut self.state, key, || {
             AdafactorState::new(parameter, beta1_is_some)

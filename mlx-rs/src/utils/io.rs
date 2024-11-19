@@ -77,7 +77,7 @@ impl SafeTensors {
         }
     }
 
-    pub(crate) fn data(&self) -> Result<HashMap<String, Array>, Exception> {
+    pub(crate) fn data(&self) -> Result<HashMap<String, Array>> {
         let arrays = unsafe {
             StringToArrayMap::from_ptr(try_catch_c_ptr_expr! {
                 mlx_sys::mlx_safetensors_data(self.c_safetensors)
@@ -87,7 +87,7 @@ impl SafeTensors {
         Ok(arrays.as_hash_map())
     }
 
-    pub(crate) fn metadata(&self) -> Result<HashMap<String, String>, Exception> {
+    pub(crate) fn metadata(&self) -> Result<HashMap<String, String>> {
         let metadata = unsafe {
             StringToStringMap::from_ptr(try_catch_c_ptr_expr! {
                 mlx_sys::mlx_safetensors_metadata(self.c_safetensors)

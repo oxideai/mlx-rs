@@ -5,7 +5,7 @@ use smallvec::SmallVec;
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::Exception,
+    error::{Exception, Result},
     utils::{IntoOption, VectorArray},
     Array, Stream, StreamOrDevice,
 };
@@ -17,7 +17,7 @@ impl Array {
         &self,
         axes: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         expand_dims_device(self, axes, stream)
     }
 
@@ -28,7 +28,7 @@ impl Array {
         start_axis: impl Into<Option<i32>>,
         end_axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         flatten_device(self, start_axis, end_axis, stream)
     }
 
@@ -38,7 +38,7 @@ impl Array {
         &self,
         shape: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         reshape_device(self, shape, stream)
     }
 
@@ -48,7 +48,7 @@ impl Array {
         &'a self,
         axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         squeeze_device(self, axes, stream)
     }
 
@@ -89,7 +89,7 @@ impl Array {
         src: i32,
         dst: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         move_axis_device(self, src, dst, stream)
     }
 
@@ -100,7 +100,7 @@ impl Array {
         indices: &[i32],
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Vec<Array>, Exception> {
+    ) -> Result<Vec<Array>> {
         split_device(self, indices, axis, stream)
     }
 
@@ -111,7 +111,7 @@ impl Array {
         num_parts: i32,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Vec<Array>, Exception> {
+    ) -> Result<Vec<Array>> {
         split_equal_device(self, num_parts, axis, stream)
     }
 
@@ -122,7 +122,7 @@ impl Array {
         axis1: i32,
         axis2: i32,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         swap_axes_device(self, axis1, axis2, stream)
     }
 
@@ -132,7 +132,7 @@ impl Array {
         &self,
         axes: impl IntoOption<&'a [i32]>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         transpose_device(self, axes, stream)
     }
 
@@ -188,9 +188,10 @@ fn resolve_strides(
 pub fn broadcast_arrays_device(
     arrays: &[impl AsRef<Array>],
     stream: impl AsRef<Stream>,
-) -> Result<Vec<Array>, Exception> {
+) -> Result<Vec<Array>> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {{
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {{
             let c_vec = VectorArray::from_iter(arrays.iter());
             mlx_sys::mlx_broadcast_arrays(c_vec.as_ptr(), stream.as_ref().as_ptr())
         }};
@@ -256,9 +257,10 @@ pub fn broadcast_to_device(
     a: &Array,
     shape: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_broadcast_to(
                 a.c_array,
                 shape.as_ptr(),
@@ -292,11 +294,12 @@ pub fn concatenate_device(
     arrays: &[impl AsRef<Array>],
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let axis = axis.into().unwrap_or(0);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             {
                 let c_arrays = VectorArray::from_iter(arrays.iter());
                 mlx_sys::mlx_concatenate(c_arrays.as_ptr(), axis, stream.as_ref().as_ptr())
@@ -327,9 +330,10 @@ pub fn expand_dims_device(
     a: &Array,
     axes: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_expand_dims(
                 a.c_array,
                 axes.as_ptr(),
@@ -368,12 +372,13 @@ pub fn flatten_device(
     start_axis: impl Into<Option<i32>>,
     end_axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let start_axis = start_axis.into().unwrap_or(0);
     let end_axis = end_axis.into().unwrap_or(-1);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_flatten(a.c_array, start_axis, end_axis, stream.as_ref().as_ptr())
         };
 
@@ -401,9 +406,10 @@ pub fn reshape_device(
     a: &Array,
     shape: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_reshape(
                 a.c_array,
                 shape.as_ptr(),
@@ -436,10 +442,11 @@ pub fn squeeze_device<'a>(
     a: &Array,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_squeeze(
                 a.c_array,
                 axes.as_ptr(),
@@ -531,9 +538,10 @@ pub fn move_axis_device(
     src: i32,
     dst: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_moveaxis(a.c_array, src, dst, stream.as_ref().as_ptr())
         };
 
@@ -563,7 +571,7 @@ pub fn split_device(
     indices: &[i32],
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Vec<Array>, Exception> {
+) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
         let c_vec = try_catch_c_ptr_expr! {
@@ -603,7 +611,7 @@ pub fn split_equal_device(
     num_parts: i32,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Vec<Array>, Exception> {
+) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     unsafe {
         let c_vec = try_catch_c_ptr_expr! {
@@ -705,7 +713,7 @@ pub fn pad_device<'a>(
     value: impl Into<Option<Array>>,
     mode: impl Into<Option<PadMode>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let width = width.into();
     let ndim = a.ndim();
     let axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (0..ndim).map(|i| i as i32).collect();
@@ -718,7 +726,8 @@ pub fn pad_device<'a>(
     let mode = mode.into().unwrap_or(PadMode::Constant);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_pad(
                 a.c_array,
                 axes.as_ptr(),
@@ -758,9 +767,10 @@ pub fn stack_device(
     arrays: &[impl AsRef<Array>],
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             {
                 let c_vec = VectorArray::from_iter(arrays.iter());
                 mlx_sys::mlx_stack(c_vec.as_ptr(), axis, stream.as_ref().as_ptr())
@@ -790,10 +800,11 @@ pub fn stack_device(
 pub fn stack_all_device(
     arrays: &[impl AsRef<Array>],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
         let c_vec = VectorArray::from_iter(arrays.iter());
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_stack_all(c_vec.as_ptr(), stream.as_ref().as_ptr())
         };
 
@@ -823,9 +834,10 @@ pub fn swap_axes_device(
     axis1: i32,
     axis2: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_swapaxes(a.c_array, axis1, axis2, stream.as_ref().as_ptr())
         };
 
@@ -853,9 +865,10 @@ pub fn tile_device(
     a: &Array,
     reps: &[i32],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_tile(
                 a.c_array,
                 reps.as_ptr(),
@@ -889,9 +902,10 @@ pub fn transpose_device<'a>(
     a: &Array,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             match axes.into_option() {
                 Some(axes) => mlx_sys::mlx_transpose(
                     a.c_array,

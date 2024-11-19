@@ -1,4 +1,4 @@
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::utils::IntoOption;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
@@ -32,7 +32,7 @@ pub fn conv_general_device<'a>(
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let strides = strides.into_option().unwrap_or(&[1]);
     let padding = padding.into_option().unwrap_or(&[0]);
     let kernel_dilation = kernel_dilation.into_option().unwrap_or(&[1]);
@@ -41,7 +41,8 @@ pub fn conv_general_device<'a>(
     let flip = flip.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv_general(
                 array.as_ptr(),
                 weight.as_ptr(),
@@ -85,14 +86,15 @@ pub fn conv1d_device(
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
     let dilation = dilation.into().unwrap_or(1);
     let groups = groups.into().unwrap_or(1);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv1d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
@@ -128,13 +130,14 @@ pub fn conv2d_device(
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));
     let dilation = dilation.into().unwrap_or((1, 1));
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv2d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
@@ -164,13 +167,14 @@ pub fn conv3d_device(
     dilation: impl Into<Option<(i32, i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1, 1));
     let padding = padding.into().unwrap_or((0, 0, 0));
     let dilation = dilation.into().unwrap_or((1, 1, 1));
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv3d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
@@ -213,14 +217,15 @@ pub fn conv_transposed1d_device(
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
     let dilation = dilation.into().unwrap_or(1);
     let groups = groups.into().unwrap_or(1);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv_transpose1d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
@@ -258,13 +263,14 @@ pub fn conv_transposed2d_device(
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));
     let dilation = dilation.into().unwrap_or((1, 1));
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv_transpose2d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
@@ -306,13 +312,14 @@ pub fn conv_transposed3d_device(
     dilation: impl Into<Option<(i32, i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1, 1));
     let padding = padding.into().unwrap_or((0, 0, 0));
     let dilation = dilation.into().unwrap_or((1, 1, 1));
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_conv_transpose3d(
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),

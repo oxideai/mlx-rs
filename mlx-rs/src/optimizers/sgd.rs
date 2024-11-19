@@ -78,7 +78,7 @@ impl Optimizer for Sgd {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> Result<()> {
         // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
         // is implemented for Array.
         use crate::ops::{gt, le, ne};

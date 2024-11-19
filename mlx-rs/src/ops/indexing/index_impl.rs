@@ -4,7 +4,7 @@ use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    array, constants::DEFAULT_STACK_VEC_LEN, error::Exception, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, OwnedOrRef, VectorArray}, Array, Stream
+    array, constants::DEFAULT_STACK_VEC_LEN, error::{Exception, Result}, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, OwnedOrRef, VectorArray}, Array, Stream
 };
 
 use super::{ArrayIndex, ArrayIndexOp, Ellipsis, TryIndexOp, NewAxis, RangeIndex, StrideBy};
@@ -109,7 +109,7 @@ impl<'a, T> TryIndexOp<T> for Array
 where
     T: ArrayIndex<'a>,
 {
-    fn try_index_device(&self, i: T, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: T, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         get_item(self, i, stream).map(OwnedOrRef::Owned)
     }
 }
@@ -118,7 +118,7 @@ impl<'a, A> TryIndexOp<(A,)> for Array
 where
     A: ArrayIndex<'a>,
 {
-    fn try_index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [i.0.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -129,7 +129,7 @@ where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
 {
-    fn try_index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [i.0.index_op(), i.1.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -141,7 +141,7 @@ where
     B: ArrayIndex<'b>,
     C: ArrayIndex<'c>,
 {
-    fn try_index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -154,7 +154,7 @@ where
     C: ArrayIndex<'c>,
     D: ArrayIndex<'d>,
 {
-    fn try_index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -173,7 +173,7 @@ where
     D: ArrayIndex<'d>,
     E: ArrayIndex<'e>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -194,7 +194,7 @@ where
     E: ArrayIndex<'e>,
     F: ArrayIndex<'f>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -217,7 +217,7 @@ where
     F: ArrayIndex<'f>,
     G: ArrayIndex<'g>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -243,7 +243,7 @@ where
     G: ArrayIndex<'g>,
     H: ArrayIndex<'h>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -271,7 +271,7 @@ where
     H: ArrayIndex<'h>,
     I: ArrayIndex<'i>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -301,7 +301,7 @@ where
     I: ArrayIndex<'i>,
     J: ArrayIndex<'j>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -337,7 +337,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -375,7 +375,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -415,7 +415,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -485,7 +485,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -559,7 +559,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -637,7 +637,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
+    ) -> Result<OwnedOrRef<'_, Array>> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -671,7 +671,7 @@ impl Array {
         stop: &[i32],
         strides: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
@@ -746,7 +746,7 @@ fn gather_nd<'a>(
     gather_first: bool,
     last_array_or_index: usize,
     stream: impl AsRef<Stream>,
-) -> Result<(usize, Array), Exception> {
+) -> Result<(usize, Array)> {
     use ArrayIndexOp::*;
 
     let mut max_dims = 0;
@@ -873,7 +873,7 @@ fn get_item_index(
     index: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
     src.take_device(array!(index), axis, stream)
 }
@@ -884,7 +884,7 @@ fn get_item_array(
     indices: &Array,
     axis: i32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     src.take_device(indices, axis, stream)
 }
 
@@ -893,7 +893,7 @@ fn get_item_slice(
     src: &Array,
     range: RangeIndex,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let ndim = src.ndim();
     let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
     let mut ends: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
@@ -909,11 +909,11 @@ fn get_item_slice(
 
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item<'a>(
+pub(crate) fn get_item<'a>(
     src: &Array,
     index: impl ArrayIndex<'a>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     use ArrayIndexOp::*;
 
     match index.index_op() {
@@ -932,7 +932,7 @@ fn get_item_nd<'a>(
     src: &'a Array,
     operations: &[ArrayIndexOp],
     stream: impl AsRef<Stream>,
-) -> Result<OwnedOrRef<'a, Array>, Exception> {
+) -> Result<OwnedOrRef<'a, Array>> {
     use ArrayIndexOp::*;
 
     let mut src = OwnedOrRef::Ref(src);

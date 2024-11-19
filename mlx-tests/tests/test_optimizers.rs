@@ -50,7 +50,7 @@ impl<'a> Module<&'a Array> for LinearFunctionModel {
 }
 
 impl LinearFunctionModel {
-    pub fn new() -> Result<Self, Exception> {
+    pub fn new() -> Result<Self> {
         let m = uniform::<_, f32>(-5.0, 5.0, None, None)?;
         let b = uniform::<_, f32>(-5.0, 5.0, None, None)?;
         Ok(Self {

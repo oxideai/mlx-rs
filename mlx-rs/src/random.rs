@@ -1,6 +1,6 @@
 use crate::prelude::IndexOp;
-use crate::utils::IntoOption;
-use crate::{error::Exception, Array, ArrayElement, Stream, StreamOrDevice};
+use crate::utils::{IntoOption, OwnedOrRef};
+use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_internal_macros::default_device;
 use std::borrow::Cow;
@@ -33,13 +33,13 @@ fn state() -> &'static Mutex<RandomState> {
 }
 
 /// Use given key or generate a new one if `None`.
-fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Cow<'a, Array> {
+fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> OwnedOrRef<'a, Array> {
     key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            Cow::Owned(state.next())
+            OwnedOrRef::Owned(state.next())
         },
-        Cow::Borrowed,
+        OwnedOrRef::Ref,
     )
 }
 
@@ -55,21 +55,34 @@ pub fn seed(seed: u64) {
 /// functions take an optional key -- this will let you control the
 /// random number generation.
 pub fn key(seed: u64) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_random_key(seed)) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_random_key never throws internally
+        let _ = mlx_sys::mlx_random_key(&mut c_array as *mut _, seed);
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
 pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
+    use crate::ops::indexing::index_impl::get_item;
+
     let keys = unsafe {
-        Array::from_ptr(mlx_sys::mlx_random_split_equal_parts(
+        let mut res = mlx_sys::mlx_array_new();
+        // SAFETY: key is a valid Array
+        let _ = mlx_sys::mlx_random_split_equal_parts(
+            &mut res as *mut _,
             key.as_ptr(),
             2,
             stream.as_ref().as_ptr(),
-        ))
+        );
+        Array::from_ptr(res)
     };
 
-    (keys.index(0), keys.index(1))
+    let stream = stream.as_ref();
+    // SAFETY: keys is a valid Array
+    (get_item(&keys, 0, stream).unwrap(), get_item(&keys, 1, stream).unwrap())
 }
 
 /// Generate uniformly distributed random numbers.
@@ -99,15 +112,17 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_uniform(
+                &mut c_array as *mut _,
                 lb.as_ptr(),
                 ub.as_ptr(),
                 shape.as_ptr(),
@@ -115,7 +130,8 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
                 T::DTYPE.into(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -151,13 +167,15 @@ pub fn normal_device<'a, T: ArrayElement>(
     scale: impl Into<Option<f32>>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_normal(
+                &mut c_array as *mut _,
                 shape.as_ptr(),
                 shape.len(),
                 T::DTYPE.into(),
@@ -165,7 +183,8 @@ pub fn normal_device<'a, T: ArrayElement>(
                 scale.into().unwrap_or(1.0),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -188,13 +207,15 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_multivariate_normal(
+                &mut c_array as *mut _,
                 mean.as_ptr(),
                 covariance.as_ptr(),
                 shape.as_ptr(),
@@ -202,7 +223,8 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
                 T::DTYPE.into(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -229,15 +251,17 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_randint(
+                &mut c_array as *mut _,
                 lb.as_ptr(),
                 ub.as_ptr(),
                 shape.as_ptr(),
@@ -245,7 +269,8 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
                 T::DTYPE.into(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -278,7 +303,7 @@ pub fn bernoulli_device<'a>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let default_array = Array::from_float(0.5);
     let p = p.into().unwrap_or(&default_array);
 
@@ -286,14 +311,17 @@ pub fn bernoulli_device<'a>(
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_bernoulli(
+                &mut c_array as *mut _,
                 p.as_ptr(),
                 shape.as_ptr(),
                 shape.len(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -321,15 +349,17 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_truncated_normal(
+                &mut c_array as *mut _,
                 lb.as_ptr(),
                 ub.as_ptr(),
                 shape.as_ptr(),
@@ -337,7 +367,8 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
                 T::DTYPE.into(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -362,19 +393,22 @@ pub fn gumbel_device<'a, T: ArrayElement>(
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_random_gumbel(
+                &mut c_array as *mut _,
                 shape.as_ptr(),
                 shape.len(),
                 T::DTYPE.into(),
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -421,44 +455,53 @@ pub fn categorical_device<'a>(
     shape_or_count: impl Into<Option<ShapeOrCount<'a>>>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
     let key = key_or_next(key);
 
     match shape_or_count.into() {
         Some(ShapeOrCount::Shape(shape)) => unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_random_categorical_shape(
+                    &mut c_array as *mut _,
                     logits.as_ptr(),
                     axis,
                     shape.as_ptr(),
                     shape.len(),
                     key.as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         },
         Some(ShapeOrCount::Count(num_samples)) => unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_random_categorical_num_samples(
+                    &mut c_array as *mut _,
                     logits.as_ptr(),
                     axis,
                     num_samples,
                     key.as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         },
         None => unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_random_categorical(
+                    &mut c_array as *mut _,
                     logits.as_ptr(),
                     axis,
                     key.as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         },

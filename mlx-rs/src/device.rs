@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::{error::Exception, utils::SUCCESS};
+use crate::{error::{Exception, Result}, utils::SUCCESS};
 
 ///Type of device.
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]
@@ -23,7 +23,7 @@ impl Device {
         Device { c_device }
     }
 
-    pub fn try_default() -> Result<Self, Exception> {
+    pub fn try_default() -> Result<Self> {
         unsafe {
             let mut c_device = mlx_sys::mlx_device_new();
             check_status!{

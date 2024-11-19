@@ -78,7 +78,7 @@ impl Optimizer for RmsProp {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let lr = &self.lr;

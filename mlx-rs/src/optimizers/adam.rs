@@ -73,7 +73,7 @@ impl Optimizer for Adam {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> Result<()> {
         let betas = &self.betas;
         let state = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
@@ -95,7 +95,7 @@ pub(super) fn adam_apply_single(
     gradient: &Array,
     parameter: &Array,
     state: &(Array, Array),
-) -> Result<(Array, (Array, Array)), Exception> {
+) -> Result<(Array, (Array, Array))> {
     let (b1, b2) = betas;
     let (m, v) = state;
 

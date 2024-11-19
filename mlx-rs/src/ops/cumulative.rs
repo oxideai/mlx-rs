@@ -1,4 +1,4 @@
-use crate::error::Exception;
+use crate::error::{Exception, Result};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -27,9 +27,10 @@ impl Array {
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cummax(
@@ -82,9 +83,10 @@ impl Array {
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cummin(
@@ -137,9 +139,10 @@ impl Array {
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cumprod(
@@ -192,9 +195,10 @@ impl Array {
         reverse: impl Into<Option<bool>>,
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cumsum(
@@ -232,7 +236,7 @@ pub fn cummax_device(
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.cummax_device(axis, reverse, inclusive, stream)
 }
 
@@ -244,7 +248,7 @@ pub fn cummin_device(
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.cummin_device(axis, reverse, inclusive, stream)
 }
 
@@ -256,7 +260,7 @@ pub fn cumprod_device(
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.cumprod_device(axis, reverse, inclusive, stream)
 }
 
@@ -268,7 +272,7 @@ pub fn cumsum_device(
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.cumsum_device(axis, reverse, inclusive, stream)
 }
 

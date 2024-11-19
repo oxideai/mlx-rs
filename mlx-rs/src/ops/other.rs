@@ -2,7 +2,7 @@ use mlx_internal_macros::default_device;
 use std::ffi::c_void;
 
 use crate::utils::MlxString;
-use crate::{error::Exception, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
 
 impl Array {
     /// Extract a diagonal or construct a diagonal matrix.
@@ -19,9 +19,10 @@ impl Array {
         &self,
         k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_diag(
                     self.c_array,
                     k.into().unwrap_or(0),
@@ -54,9 +55,10 @@ impl Array {
         axis1: impl Into<Option<i32>>,
         axis2: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_diagonal(
                     self.c_array,
                     offset.into().unwrap_or(0),
@@ -83,7 +85,7 @@ impl Array {
         &self,
         scale: impl Into<Option<f32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let scale = scale.into();
         let scale = mlx_sys::mlx_optional_float {
             value: scale.unwrap_or(0.0),
@@ -91,7 +93,8 @@ impl Array {
         };
 
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
                 mlx_sys::mlx_hadamard_transform(
                     self.c_array,
                     scale,
@@ -110,7 +113,7 @@ pub fn diag_device(
     a: &Array,
     k: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.diag_device(k, stream)
 }
 
@@ -122,7 +125,7 @@ pub fn diagonal_device(
     axis1: impl Into<Option<i32>>,
     axis2: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.diagonal_device(offset, axis1, axis2, stream)
 }
 
@@ -138,7 +141,7 @@ pub fn einsum_device<'a>(
     subscripts: &str,
     operands: impl IntoIterator<Item = &'a Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let subscripts =
         MlxString::try_from(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
     let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
@@ -148,7 +151,8 @@ pub fn einsum_device<'a>(
     }
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new(); 
+check_status! {
             mlx_sys::mlx_einsum(
                 subscripts.as_ptr(),
                 c_operands,

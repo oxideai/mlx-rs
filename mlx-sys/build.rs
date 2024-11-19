@@ -32,12 +32,6 @@ fn build_and_link_mlx_c() {
         config.define("MLX_BUILD_ACCELERATE", "ON");
     }
 
-    #[cfg(test)]
-    {
-        // CI somehow fails
-        config.define("CMAKE_OSX_DEPLOYMENT_TARGET", "14.5");
-    }
-
     // build the mlx-c project
     let dst = config.build();
 

@@ -283,7 +283,7 @@ impl Array {
         if self.dtype() != T::DTYPE {
             unsafe {
                 let mut res = mlx_sys::mlx_array_new();
-                check_status!{
+                check_status! {
                     mlx_sys::mlx_astype(
                         &mut res as *mut _,
                         self.c_array,
@@ -292,9 +292,9 @@ impl Array {
                     ),
                     mlx_sys::mlx_array_free(res)
                 };
-                let new_array = Array::from_ptr(res) ;
+                let new_array = Array::from_ptr(res);
                 new_array.eval()?;
-                return T::array_item(&new_array)
+                return T::array_item(&new_array);
             }
         }
 

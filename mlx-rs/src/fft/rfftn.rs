@@ -3,7 +3,10 @@ use mlx_sys::{mlx_array_free, mlx_array_new};
 
 use crate::{error::Result, utils::IntoOption, Array, Stream, StreamOrDevice};
 
-use super::{as_complex64, utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked}};
+use super::{
+    as_complex64,
+    utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked},
+};
 
 /// One dimensional discrete Fourier Transform on a real input.
 ///
@@ -24,7 +27,7 @@ pub fn rfft_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
-    let (n, axis) = resolve_size_and_axis_unchecked(&*a, n.into(), axis.into());
+    let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -56,7 +59,7 @@ pub fn rfft2_device<'a>(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), Some(axes));
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), Some(axes));
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -103,7 +106,7 @@ pub fn rfftn_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), axes.into_option());
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -150,7 +153,7 @@ pub fn irfft_device(
     let n = n.into();
     let axis = axis.into();
     let modify_n = n.is_none();
-    let (mut n, axis) = resolve_size_and_axis_unchecked(&*a, n, axis);
+    let (mut n, axis) = resolve_size_and_axis_unchecked(&a, n, axis);
     if modify_n {
         n = (n - 1) * 2;
     }
@@ -189,7 +192,7 @@ pub fn irfft2_device<'a>(
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let modify_last_axis = s.is_none();
 
-    let (mut s, axes) = resolve_sizes_and_axes_unchecked(&*a, s, Some(axes));
+    let (mut s, axes) = resolve_sizes_and_axes_unchecked(&a, s, Some(axes));
     if modify_last_axis {
         let end = s.len() - 1;
         s[end] = (s[end] - 1) * 2;
@@ -245,7 +248,7 @@ pub fn irfftn_device<'a>(
     let axes = axes.into_option();
     let modify_last_axis = s.is_none();
 
-    let (mut s, axes) = resolve_sizes_and_axes_unchecked(&*a, s, axes);
+    let (mut s, axes) = resolve_sizes_and_axes_unchecked(&a, s, axes);
     if modify_last_axis {
         let end = s.len() - 1;
         s[end] = (s[end] - 1) * 2;

@@ -87,11 +87,11 @@ impl Optimizer for Sgd {
 
         let zero = array!(0.0);
 
-        let mut gradient = OwnedOrRef::Ref(gradient);
+        let mut gradient = Cow::Borrowed(gradient);
 
         // Apply weight decay
         if ne(&self.weight_decay, &zero)?.item::<bool>() {
-            gradient = OwnedOrRef::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
+            gradient = Cow::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
         }
 
         // Apply momentum

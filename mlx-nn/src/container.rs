@@ -31,15 +31,15 @@ impl<'a> Module<&'a Array> for Sequential {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut x = OwnedOrRef::Ref(x);
+        let mut x = Cow::Borrowed(x);
 
         for layer in &mut self.layers {
-            x = OwnedOrRef::Owned(layer.forward(x.as_ref())?);
+            x = Cow::Owned(layer.forward(x.as_ref())?);
         }
 
         match x {
-            OwnedOrRef::Owned(array) => Ok(array),
-            OwnedOrRef::Ref(array) => Ok(array.deep_clone()), // TODO: will this break the tracer?
+            Cow::Owned(array) => Ok(array),
+            Cow::Borrowed(array) => Ok(array.clone())
         }
     }
 

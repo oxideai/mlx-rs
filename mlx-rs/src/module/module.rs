@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{nested::NestedHashMap, utils::OwnedOrRef, Array};
+use crate::{nested::NestedHashMap, Array};
 
 /// Type alias for owned module parameters.
 pub type ModuleParam = NestedHashMap<&'static str, Array>;

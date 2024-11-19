@@ -101,7 +101,7 @@ use std::{borrow::Cow, ops::Bound, rc::Rc};
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::{Exception, Result}, utils::OwnedOrRef, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
 
 pub(crate) mod index_impl;
 pub(crate) mod indexmut_impl;
@@ -278,19 +278,19 @@ impl<'a> ArrayIndexOp<'a> {
 /* -------------------------------------------------------------------------- */
 
 pub trait TryIndexOp<Idx> {
-    fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>>;
+    fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<Array>;
 
-    fn try_index(&self, i: Idx) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index(&self, i: Idx) -> Result<Array> {
         self.try_index_device(i, StreamOrDevice::default())
     }
 }
 
 pub trait IndexOp<Idx>: TryIndexOp<Idx> {
-    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> OwnedOrRef<'_, Array> {
+    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array {
         self.try_index_device(i, stream).unwrap()
     }
 
-    fn index(&self, i: Idx) -> OwnedOrRef<'_, Array> {
+    fn index(&self, i: Idx) -> Array {
         self.try_index(i).unwrap()
     }
 }
@@ -385,8 +385,8 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let (input, axis) = match axis.into() {
-            None => (OwnedOrRef::Owned(self.reshape_device(&[-1], &stream)?), 0),
-            Some(ax) => (OwnedOrRef::Ref(self), ax),
+            None => (Cow::Owned(self.reshape_device(&[-1], &stream)?), 0),
+            Some(ax) => (Cow::Borrowed(self), ax),
         };
 
         unsafe {

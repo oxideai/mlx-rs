@@ -1,10 +1,10 @@
-use std::{ops::{Bound, Deref, RangeBounds}, rc::Rc};
+use std::{borrow::Cow, ops::{Bound, Deref, RangeBounds}, rc::Rc};
 
 use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    array, constants::DEFAULT_STACK_VEC_LEN, error::{Exception, Result}, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, OwnedOrRef, VectorArray}, Array, Stream
+    array, constants::DEFAULT_STACK_VEC_LEN, error::{Exception, Result}, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, VectorArray}, Array, Stream
 };
 
 use super::{ArrayIndex, ArrayIndexOp, Ellipsis, TryIndexOp, NewAxis, RangeIndex, StrideBy};
@@ -109,8 +109,8 @@ impl<'a, T> TryIndexOp<T> for Array
 where
     T: ArrayIndex<'a>,
 {
-    fn try_index_device(&self, i: T, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
-        get_item(self, i, stream).map(OwnedOrRef::Owned)
+    fn try_index_device(&self, i: T, stream: impl AsRef<Stream>) -> Result<Array> {
+        get_item(self, i, stream)
     }
 }
 
@@ -118,7 +118,7 @@ impl<'a, A> TryIndexOp<(A,)> for Array
 where
     A: ArrayIndex<'a>,
 {
-    fn try_index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [i.0.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -129,7 +129,7 @@ where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
 {
-    fn try_index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [i.0.index_op(), i.1.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -141,7 +141,7 @@ where
     B: ArrayIndex<'b>,
     C: ArrayIndex<'c>,
 {
-    fn try_index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
         get_item_nd(self, &i, stream)
     }
@@ -154,7 +154,7 @@ where
     C: ArrayIndex<'c>,
     D: ArrayIndex<'d>,
 {
-    fn try_index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -173,7 +173,7 @@ where
     D: ArrayIndex<'d>,
     E: ArrayIndex<'e>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -194,7 +194,7 @@ where
     E: ArrayIndex<'e>,
     F: ArrayIndex<'f>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -217,7 +217,7 @@ where
     F: ArrayIndex<'f>,
     G: ArrayIndex<'g>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -243,7 +243,7 @@ where
     G: ArrayIndex<'g>,
     H: ArrayIndex<'h>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -271,7 +271,7 @@ where
     H: ArrayIndex<'h>,
     I: ArrayIndex<'i>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -301,7 +301,7 @@ where
     I: ArrayIndex<'i>,
     J: ArrayIndex<'j>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>> {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -337,7 +337,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -375,7 +375,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -415,7 +415,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -485,7 +485,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -559,7 +559,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -637,7 +637,7 @@ where
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
         stream: impl AsRef<Stream>,
-    ) -> Result<OwnedOrRef<'_, Array>> {
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -909,7 +909,7 @@ fn get_item_slice(
 
 // See `mlx_get_item` in python/src/indexing.cpp and `getItem` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-pub(crate) fn get_item<'a>(
+fn get_item<'a>(
     src: &Array,
     index: impl ArrayIndex<'a>,
     stream: impl AsRef<Stream>,
@@ -932,10 +932,10 @@ fn get_item_nd<'a>(
     src: &'a Array,
     operations: &[ArrayIndexOp],
     stream: impl AsRef<Stream>,
-) -> Result<OwnedOrRef<'a, Array>> {
+) -> Result<Array> {
     use ArrayIndexOp::*;
 
-    let mut src = OwnedOrRef::Ref(src);
+    let mut src = Cow::Borrowed(src);
 
     // The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -989,7 +989,7 @@ fn get_item_nd<'a>(
             &stream,
         )?;
 
-        src = OwnedOrRef::Owned(gathered);
+        src = Cow::Owned(gathered);
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -1031,7 +1031,7 @@ fn get_item_nd<'a>(
     }
 
     if have_array && remaining_indices.is_empty() {
-        return Ok(src);
+        return Ok(src.into_owned());
     }
 
     if remaining_indices.is_empty() {
@@ -1070,7 +1070,7 @@ fn get_item_nd<'a>(
         axis += 1;
     }
 
-    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
+    src = Cow::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -1093,10 +1093,10 @@ fn get_item_nd<'a>(
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = OwnedOrRef::Owned(src.reshape(&new_shape)?);
+        src = Cow::Owned(src.reshape(&new_shape)?);
     }
 
-    Ok(src)
+    Ok(src.into_owned())
 }
 
 /* -------------------------------------------------------------------------- */

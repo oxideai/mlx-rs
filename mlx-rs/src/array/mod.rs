@@ -395,6 +395,18 @@ impl Array {
     }
 }
 
+impl Clone for Array {
+    fn clone(&self) -> Self {
+        unsafe {
+            let mut c_array = mlx_sys::mlx_array_new();
+            // `mlx_array_set` should invoke the copy constructor of the array,
+            // which contains a shared_ptr to the data.
+            mlx_sys::mlx_array_set(&mut c_array as *mut _, self.c_array);
+            Array::from_ptr(c_array)
+        }
+    }
+}
+
 /// Stop gradients from being computed.
 ///
 /// The operation is the identity but it prevents gradients from flowing

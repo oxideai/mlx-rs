@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, utils::OwnedOrRef, Array
+    array, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, Array
 };
 
 use super::{Optimizer, OptimizerState};
@@ -264,10 +264,10 @@ fn compute_lr(
             array!(1e-2)
         };
         // SAFETY: `step` is a single-element array and won't panic.
-        OwnedOrRef::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
+        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
     } else {
         // SAFETY: This is already checked in the `build` stage.
-        OwnedOrRef::Ref(
+        Cow::Borrowed(
             lr.as_ref()
                 .expect("The learning rate should be set if the relative step is not enabled"),
         )
@@ -311,7 +311,7 @@ impl Optimizer for Adafactor {
         )?;
         let beta2 = array!(1.0).subtract(&step.power(&self.decay_rate)?)?;
 
-        let mut update = OwnedOrRef::Owned(gradient.square().add(&self.eps.0)?);
+        let mut update: Cow<Array> = Cow::Owned(gradient.square().add(&self.eps.0)?);
 
         let one_minus_beta2 = array!(1.0).subtract(&beta2)?;
         if factored {
@@ -326,8 +326,8 @@ impl Optimizer for Adafactor {
                 .multiply(&*exp_avg_sq_col)?
                 .add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
 
-            update = OwnedOrRef::Owned(approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?);
-            update = OwnedOrRef::Owned(update.multiply(gradient)?);
+            update = Cow::Owned(approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?);
+            update = Cow::Owned(update.multiply(gradient)?);
         } else {
             // SAFETY: This field is created in the `new` when ndim < 2 and won't panic.
             let exp_avg_sq = state.exp_avg_sq.as_mut().unwrap();
@@ -335,13 +335,13 @@ impl Optimizer for Adafactor {
             *exp_avg_sq = beta2
                 .multiply(&*exp_avg_sq)?
                 .add(&one_minus_beta2.multiply(&update)?)?;
-            update = OwnedOrRef::Owned(rsqrt(&*exp_avg_sq).multiply(gradient)?);
+            update = Cow::Owned(rsqrt(&*exp_avg_sq).multiply(gradient)?);
         }
 
         let update_rms = rms(&update)?;
         let max = maximum(array!(1.0), update_rms.divide(&self.clip_threshold)?)?;
-        update = OwnedOrRef::Owned(update.divide(max)?);
-        update = OwnedOrRef::Owned(lr.multiply(update)?);
+        update = Cow::Owned(update.divide(max)?);
+        update = Cow::Owned(lr.multiply(update)?);
 
         if let Some(beta1) = self.beta1.value() {
             // SAFETY: This field is created in the `new` when beta1 is set and won't panic.
@@ -350,7 +350,7 @@ impl Optimizer for Adafactor {
             *exp_avg = beta1
                 .multiply(&*exp_avg)?
                 .add(&one_minus_beta1.multiply(&update)?)?;
-            update = OwnedOrRef::Ref(&*exp_avg);
+            update = Cow::Borrowed(&*exp_avg);
         }
 
         if self.weight_decay.ne(&array!(0.0))?.item() {

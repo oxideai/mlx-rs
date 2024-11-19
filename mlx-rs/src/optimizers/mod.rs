@@ -2,10 +2,10 @@
 
 #![deny(missing_docs)]
 
-use std::{borrow::Borrow, collections::HashMap, rc::Rc};
+use std::{borrow::{Borrow, Cow}, collections::HashMap, rc::Rc};
 
 use crate::{
-    array, error::Exception, module::{FlattenedModuleParam, ModuleParameters}, utils::OwnedOrRef, Array
+    array, error::Exception, module::{FlattenedModuleParam, ModuleParameters}, Array
 };
 
 mod adadelta;
@@ -74,7 +74,7 @@ pub trait Optimizer {
 pub fn clip_grad_norm<'a>(
     gradients: &'a FlattenedModuleParam,
     max_norm: f32,
-) -> (HashMap<Rc<str>, OwnedOrRef<'a, Array>>, f32) {
+) -> (HashMap<Rc<str>, Cow<'a, Array>>, f32) {
     let total_norm: f32 = gradients
         .values()
         .fold(array!(0.0), |acc, grad| {
@@ -91,9 +91,9 @@ pub fn clip_grad_norm<'a>(
         .iter()
         .map(|(key, grad)| {
             let clipped_grad = if total_norm < max_norm {
-                OwnedOrRef::Ref(grad)
+                Cow::Borrowed(grad)
             } else {
-                OwnedOrRef::Owned(grad * &normalizer)
+                Cow::Owned(grad * &normalizer)
             };
             (key.clone(), clipped_grad)
         })

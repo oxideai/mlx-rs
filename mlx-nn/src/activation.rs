@@ -301,7 +301,7 @@ impl<'a> Module<&'a Array> for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Sigmoid;
 
 impl<'a> Module<&'a Array> for Sigmoid {
@@ -326,7 +326,7 @@ impl<'a> Module<&'a Array> for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Mish;
 
 impl<'a> Module<&'a Array> for Mish {
@@ -347,7 +347,7 @@ impl<'a> Module<&'a Array> for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Relu;
 
 impl<'a> Module<&'a Array> for Relu {
@@ -400,7 +400,7 @@ impl<'a> Module<&'a Array> for LeakyRelu {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Relu6;
 
 impl<'a> Module<&'a Array> for Relu6 {
@@ -453,7 +453,7 @@ impl<'a> Module<&'a Array> for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Softplus;
 
 impl<'a> Module<&'a Array> for Softplus {
@@ -474,7 +474,7 @@ impl<'a> Module<&'a Array> for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Softsign;
 
 impl<'a> Module<&'a Array> for Softsign {
@@ -528,7 +528,7 @@ impl<'a> Module<&'a Array> for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Silu;
 
 impl<'a> Module<&'a Array> for Silu {
@@ -581,7 +581,7 @@ impl<'a> Module<&'a Array> for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct LogSigmoid;
 
 impl<'a> Module<&'a Array> for LogSigmoid {
@@ -700,7 +700,7 @@ impl<'a> Module<&'a Array> for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Tanh;
 
 impl<'a> Module<&'a Array> for Tanh {
@@ -721,7 +721,7 @@ impl<'a> Module<&'a Array> for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct HardSwish;
 
 impl<'a> Module<&'a Array> for HardSwish {
@@ -777,7 +777,7 @@ impl<'a> Module<&'a Array> for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Selu;
 
 impl<'a> Module<&'a Array> for Selu {

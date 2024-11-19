@@ -9,8 +9,8 @@ macro_rules! check_status {
         if $status != crate::utils::SUCCESS {
             $dtor;
             return Err($crate::error::get_and_clear_last_mlx_error()
-                .expect("A non-success status was returned, but no error was set."))
-            .into();
+                .expect("A non-success status was returned, but no error was set.")
+                .into());
         }
     };
 }

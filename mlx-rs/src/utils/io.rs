@@ -66,7 +66,7 @@ impl SafeTensors {
         let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
         let filepath = CString::new(path_str)?;
 
-        let load_result = (|| unsafe {
+        unsafe {
             let mut c_metadata = mlx_sys::mlx_map_string_to_string_new();
             let mut c_data = mlx_sys::mlx_map_string_to_array_new();
             check_status! {
@@ -78,11 +78,6 @@ impl SafeTensors {
             };
 
             Ok(Self { c_metadata, c_data })
-        })();
-
-        match load_result {
-            Ok(map) => Ok(map),
-            Err(e) => Err(IoError::from(e)),
         }
     }
 
@@ -94,18 +89,18 @@ impl SafeTensors {
         unsafe {
             let iterator = mlx_sys::mlx_map_string_to_array_iterator_new(self.c_data);
 
-            let mut key: *const ::std::os::raw::c_char = null_mut();
-            let mut value = mlx_sys::mlx_array_new();
             loop {
+                let mut key_ptr: *const ::std::os::raw::c_char = null_mut();
+                let mut value = mlx_sys::mlx_array_new();
                 let status = mlx_sys::mlx_map_string_to_array_iterator_next(
-                    &mut key as *mut *const _,
+                    &mut key_ptr as *mut *const _,
                     &mut value,
                     iterator,
                 );
 
                 match status {
                     SUCCESS => {
-                        let key = CStr::from_ptr(key).to_string_lossy().into_owned();
+                        let key = CStr::from_ptr(key_ptr).to_string_lossy().into_owned();
                         let array = Array::from_ptr(value);
                         map.insert(key, array);
                     }
@@ -121,6 +116,8 @@ impl SafeTensors {
                     _ => unreachable!(),
                 }
             }
+
+            mlx_sys::mlx_map_string_to_array_iterator_free(iterator);
         }
 
         Ok(map)

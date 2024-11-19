@@ -3,7 +3,10 @@ use mlx_sys::{mlx_array_free, mlx_array_new};
 
 use crate::{array::Array, error::Result, stream::StreamOrDevice, utils::IntoOption, Stream};
 
-use super::{as_complex64, utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked}};
+use super::{
+    as_complex64,
+    utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked},
+};
 
 /// One dimensional discrete Fourier Transform.
 ///
@@ -22,7 +25,7 @@ pub fn fft_device(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
 
-    let (n, axis) = resolve_size_and_axis_unchecked(&*a, n.into(), axis.into());
+    let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -50,7 +53,7 @@ pub fn fft2_device<'a>(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), Some(axes));
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), Some(axes));
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -96,7 +99,7 @@ pub fn fftn_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), axes.into_option());
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());
     let num_s = s.len();
     let num_axes = axes.len();
 
@@ -138,7 +141,7 @@ pub fn ifft_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
-    let (n, axis) = resolve_size_and_axis_unchecked(&*a, n.into(), axis.into());
+    let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
@@ -169,7 +172,7 @@ pub fn ifft2_device<'a>(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), Some(axes));
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), Some(axes));
 
     let num_s = s.len();
     let num_axes = axes.len();
@@ -214,7 +217,7 @@ pub fn ifftn_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
-    let (s, axes) = resolve_sizes_and_axes_unchecked(&*a, s.into_option(), axes.into_option());
+    let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());
     let num_s = s.len();
     let num_axes = axes.len();
 

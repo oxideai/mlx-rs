@@ -348,7 +348,8 @@ where
                 return FAILURE;
             }
         };
-        // TODO: is there a way to avoid this double alloc?
+        // TODO: is there a way to avoid this double alloc? We would either have to create this
+        // Vec<&Array> here or clone the arrays at some point
         let ref_arrays: Vec<&Array> = arrays.iter().collect();
         let result = closure(&ref_arrays);
         // We should probably keep using new_mlx_vector_array here instead of VectorArray
@@ -376,7 +377,8 @@ where
                 return FAILURE;
             }
         };
-        // TODO: is there a way to avoid this double alloc?
+        // TODO: is there a way to avoid this double alloc? We would either have to create this
+        // Vec<&Array> here or clone the arrays at some point.
         let ref_arrays: Vec<&Array> = arrays.iter().collect();
         let result = closure(&ref_arrays);
         match result {
@@ -392,86 +394,6 @@ where
 }
 
 extern "C" fn noop_dtor(_data: *mut std::ffi::c_void) {}
-
-// pub(crate) struct TupleArrayArray {
-//     c_tuple: mlx_tuple_array_array,
-// }
-
-// impl Drop for TupleArrayArray {
-//     fn drop(&mut self) {
-//         unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
-//     }
-// }
-
-// impl TupleArrayArray {
-//     pub(crate) unsafe fn from_ptr(c_tuple: mlx_tuple_array_array) -> Self {
-//         Self { c_tuple }
-//     }
-
-//     pub(crate) fn into_values(self) -> (Array, Array) {
-//         unsafe {
-//             let c_array1 = mlx_sys::mlx_tuple_array_array_get_0(self.c_tuple);
-//             let c_array2 = mlx_sys::mlx_tuple_array_array_get_1(self.c_tuple);
-//             (Array::from_ptr(c_array1), Array::from_ptr(c_array2))
-//         }
-//     }
-// }
-
-// pub(crate) struct TupleArrayArrayArray {
-//     c_tuple: mlx_sys::mlx_tuple_array_array_array,
-// }
-
-// impl Drop for TupleArrayArrayArray {
-//     fn drop(&mut self) {
-//         unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
-//     }
-// }
-
-// impl TupleArrayArrayArray {
-//     pub(crate) unsafe fn from_ptr(c_tuple: mlx_sys::mlx_tuple_array_array_array) -> Self {
-//         Self { c_tuple }
-//     }
-
-//     pub(crate) fn into_values(self) -> (Array, Array, Array) {
-//         unsafe {
-//             let c_array1 = mlx_sys::mlx_tuple_array_array_array_get_0(self.c_tuple);
-//             let c_array2 = mlx_sys::mlx_tuple_array_array_array_get_1(self.c_tuple);
-//             let c_array3 = mlx_sys::mlx_tuple_array_array_array_get_2(self.c_tuple);
-//             (
-//                 Array::from_ptr(c_array1),
-//                 Array::from_ptr(c_array2),
-//                 Array::from_ptr(c_array3),
-//             )
-//         }
-//     }
-// }
-
-// pub(crate) struct TupleVectorArrayVectorArray {
-//     c_tuple: mlx_sys::mlx_tuple_vector_array_vector_array,
-// }
-
-// impl Drop for TupleVectorArrayVectorArray {
-//     fn drop(&mut self) {
-//         unsafe { mlx_sys::mlx_free(self.c_tuple as *mut c_void) }
-//     }
-// }
-
-// impl TupleVectorArrayVectorArray {
-//     pub(crate) unsafe fn from_ptr(c_tuple: mlx_sys::mlx_tuple_vector_array_vector_array) -> Self {
-//         Self { c_tuple }
-//     }
-
-//     pub(crate) fn into_values(self) -> (Vec<Array>, Vec<Array>) {
-//         unsafe {
-//             let c_array1 = mlx_sys::mlx_tuple_vector_array_vector_array_get_0(self.c_tuple);
-//             let c_array2 = mlx_sys::mlx_tuple_vector_array_vector_array_get_1(self.c_tuple);
-//             let array1 = VectorArray::from_ptr(c_array1).into_values();
-//             let array2 = VectorArray::from_ptr(c_array2).into_values();
-
-//             (array1, array2)
-//         }
-//     }
-// }
 
 pub(crate) fn get_mut_or_insert_with<'a, T>(
     map: &'a mut HashMap<Rc<str>, T>,

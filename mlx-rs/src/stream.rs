@@ -110,7 +110,7 @@ impl Stream {
             check_status!{
                 mlx_sys::mlx_get_default_stream(&mut c_stream as *mut _, dev),
                 {
-                    let _ = mlx_sys::mlx_stream_free(c_stream);
+                    mlx_sys::mlx_stream_free(c_stream);
                     mlx_sys::mlx_device_free(dev)
                 }
             };

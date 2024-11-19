@@ -58,7 +58,7 @@ pub fn key(seed: u64) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_random_key never throws internally
-        let _ = mlx_sys::mlx_random_key(&mut c_array as *mut _, seed);
+        mlx_sys::mlx_random_key(&mut c_array as *mut _, seed);
         Array::from_ptr(c_array)
     }
 }
@@ -71,7 +71,7 @@ pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
     let keys = unsafe {
         let mut res = mlx_sys::mlx_array_new();
         // SAFETY: key is a valid Array
-        let _ = mlx_sys::mlx_random_split_equal_parts(
+        mlx_sys::mlx_random_split_equal_parts(
             &mut res as *mut _,
             key.as_ptr(),
             2,

@@ -25,7 +25,8 @@ pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<A
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_sort(a.as_ptr(), axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_sort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -50,7 +51,8 @@ pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_sort_all(a.as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_sort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -81,7 +83,8 @@ pub fn argsort_device(
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -107,7 +110,8 @@ pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -146,7 +150,8 @@ pub fn partition_device(
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_partition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_partition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -182,7 +187,8 @@ pub fn partition_all_device(
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_partition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
+            mlx_sys::mlx_partition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -221,7 +227,8 @@ pub fn argpartition_device(
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -258,7 +265,8 @@ pub fn argpartition_all_device(
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
 check_status! {
-            mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
+            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }

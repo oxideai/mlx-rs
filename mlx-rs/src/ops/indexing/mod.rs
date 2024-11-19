@@ -96,11 +96,12 @@
 //! assert_eq!(a, expected);
 //! ```
 
-use std::{borrow::Cow, ops::Bound};
+use std::{borrow::Cow, ops::Bound, rc::Rc};
 
 use mlx_internal_macros::default_device;
+use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::Exception, Array, Stream, StreamOrDevice};
+use crate::{error::Exception, utils::OwnedOrRef, Array, Stream, StreamOrDevice};
 
 mod index_impl;
 mod indexmut_impl;
@@ -233,7 +234,7 @@ pub enum ArrayIndexOp<'a> {
     TakeIndex { index: i32 },
 
     /// Indexing with an array
-    TakeArray { indices: Array },
+    TakeArray { indices: Rc<Array> },
 
     /// Indexing with an array reference
     TakeArrayRef { indices: &'a Array },
@@ -276,13 +277,25 @@ impl<'a> ArrayIndexOp<'a> {
 /*                                Custom traits                               */
 /* -------------------------------------------------------------------------- */
 
-pub trait IndexOp<Idx> {
-    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array;
+pub trait TryIndexOp<Idx> {
+    fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception>;
 
-    fn index(&self, i: Idx) -> Array {
-        self.index_device(i, StreamOrDevice::default())
+    fn try_index(&self, i: Idx) -> Result<OwnedOrRef<'_, Array>, Exception> {
+        self.try_index_device(i, StreamOrDevice::default())
     }
 }
+
+pub trait IndexOp<Idx>: TryIndexOp<Idx> {
+    fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> OwnedOrRef<'_, Array> {
+        self.try_index_device(i, stream).unwrap()
+    }
+
+    fn index(&self, i: Idx) -> OwnedOrRef<'_, Array> {
+        self.try_index(i).unwrap()
+    }
+}
+
+impl<T, Idx> IndexOp<Idx> for T where T: TryIndexOp<Idx> {}
 
 // TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
 pub trait IndexMutOp<Idx, Val> {
@@ -324,8 +337,10 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_take(self.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
+            let mut c_array = mlx_array_new();
+            check_status! {
+                mlx_sys::mlx_take(&mut c_array as *mut _, self.c_array, indices.c_array, axis, stream.as_ref().as_ptr()),
+                mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -344,8 +359,10 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_take_all(self.c_array, indices.c_array, stream.as_ref().as_ptr())
+            let mut c_array = mlx_array_new();
+            check_status! {
+                mlx_sys::mlx_take_all(&mut c_array as *mut _, self.c_array, indices.c_array, stream.as_ref().as_ptr()),
+                mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -368,13 +385,15 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         let (input, axis) = match axis.into() {
-            None => (self.reshape_device(&[-1], &stream)?, 0),
-            Some(ax) => (self.clone(), ax),
+            None => (OwnedOrRef::Owned(self.reshape_device(&[-1], &stream)?), 0),
+            Some(ax) => (OwnedOrRef::Ref(self), ax),
         };
 
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_take_along_axis(input.c_array, indices.c_array, axis, stream.as_ref().as_ptr())
+            let mut c_array = mlx_array_new();
+            check_status! {
+                mlx_sys::mlx_take_along_axis(&mut c_array as *mut _, input.c_array, indices.c_array, axis, stream.as_ref().as_ptr()),
+                mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -402,8 +421,10 @@ impl Array {
             None => unsafe {
                 let input = self.reshape_device(&[-1], &stream)?;
 
-                let c_array = try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_put_along_axis(input.c_array, indices.c_array, values.c_array, 0, stream.as_ref().as_ptr())
+                let mut c_array = mlx_array_new();
+                check_status! {
+                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, input.c_array, indices.c_array, values.c_array, 0, stream.as_ref().as_ptr()),
+                    mlx_array_free(c_array)
                 };
 
                 let array = Array::from_ptr(c_array);
@@ -411,8 +432,10 @@ impl Array {
                 Ok(array)
             },
             Some(ax) => unsafe {
-                let c_array = try_catch_c_ptr_expr! {
-                    mlx_sys::mlx_put_along_axis(self.c_array, indices.c_array, values.c_array, ax, stream.as_ref().as_ptr())
+                let mut c_array = mlx_array_new();
+                check_status! {
+                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, self.c_array, indices.c_array, values.c_array, ax, stream.as_ref().as_ptr()),
+                    mlx_array_free(c_array)
                 };
 
                 Ok(Array::from_ptr(c_array))
@@ -440,8 +463,10 @@ pub fn argmax_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argmax(a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argmax(&mut c_array as *mut _, a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -463,8 +488,10 @@ pub fn argmax_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argmax_all(a.as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argmax_all(&mut c_array as *mut _, a.as_ptr(), keep_dims, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -490,8 +517,10 @@ pub fn argmin_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argmin(a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argmin(&mut c_array as *mut _, a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -513,8 +542,10 @@ pub fn argmin_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argmin_all(a.as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argmin_all(&mut c_array as *mut _, a.as_ptr(), keep_dims, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -543,8 +574,10 @@ pub fn argpartition_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argpartition(a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -569,8 +602,10 @@ pub fn argpartition_all_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argpartition_all(a.as_ptr(), kth, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -592,8 +627,10 @@ pub fn argsort_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argsort(a.as_ptr(), axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -604,8 +641,10 @@ pub fn argsort_device(
 #[default_device]
 pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_argsort_all(a.as_ptr(), stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -677,8 +716,10 @@ pub fn topk_device(
     let axis = axis.into().unwrap_or(-1);
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_topk(a.as_ptr(), k, axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_topk(&mut c_array as *mut _, a.as_ptr(), k, axis, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -689,8 +730,10 @@ pub fn topk_device(
 #[default_device]
 pub fn topk_all_device(a: &Array, k: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_topk_all(a.as_ptr(), k, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_topk_all(&mut c_array as *mut _, a.as_ptr(), k, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))

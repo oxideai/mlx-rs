@@ -1,16 +1,17 @@
-use std::ops::{Bound, RangeBounds};
+use std::{ops::{Bound, Deref, RangeBounds}, rc::Rc};
 
+use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Exception,
     ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, VectorArray},
+    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, RangeIndex, StrideBy};
+use super::{ArrayIndex, ArrayIndexOp, Ellipsis, TryIndexOp, NewAxis, RangeIndex, StrideBy};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
@@ -36,7 +37,7 @@ impl<'a> ArrayIndex<'a> for Ellipsis {
 
 impl<'a> ArrayIndex<'a> for Array {
     fn index_op(self) -> ArrayIndexOp<'a> {
-        ArrayIndexOp::TakeArray { indices: self }
+        ArrayIndexOp::TakeArray { indices: Rc::new(self) }
     }
 }
 
@@ -108,67 +109,67 @@ impl<'a> ArrayIndex<'a> for StrideBy<std::ops::RangeFull> {
     }
 }
 
-impl<'a, T> IndexOp<T> for Array
+impl<'a, T> TryIndexOp<T> for Array
 where
     T: ArrayIndex<'a>,
 {
-    fn index_device(&self, i: T, stream: impl AsRef<Stream>) -> Array {
-        get_item(self, i, stream).unwrap()
+    fn try_index_device(&self, i: T, stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
+        get_item(self, i, stream).map(OwnedOrRef::Owned)
     }
 }
 
-impl<'a, A> IndexOp<(A,)> for Array
+impl<'a, A> TryIndexOp<(A,)> for Array
 where
     A: ArrayIndex<'a>,
 {
-    fn index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A,), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [i.0.index_op()];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, A, B> IndexOp<(A, B)> for Array
+impl<'a, 'b, A, B> TryIndexOp<(A, B)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
 {
-    fn index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [i.0.index_op(), i.1.index_op()];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, A, B, C> IndexOp<(A, B, C)> for Array
+impl<'a, 'b, 'c, A, B, C> TryIndexOp<(A, B, C)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
     C: ArrayIndex<'c>,
 {
-    fn index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, 'd, A, B, C, D> IndexOp<(A, B, C, D)> for Array
+impl<'a, 'b, 'c, 'd, A, B, C, D> TryIndexOp<(A, B, C, D)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
     C: ArrayIndex<'c>,
     D: ArrayIndex<'d>,
 {
-    fn index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
             i.2.index_op(),
             i.3.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, 'd, 'e, A, B, C, D, E> IndexOp<(A, B, C, D, E)> for Array
+impl<'a, 'b, 'c, 'd, 'e, A, B, C, D, E> TryIndexOp<(A, B, C, D, E)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -176,7 +177,7 @@ where
     D: ArrayIndex<'d>,
     E: ArrayIndex<'e>,
 {
-    fn index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -184,11 +185,11 @@ where
             i.3.index_op(),
             i.4.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, 'd, 'e, 'f, A, B, C, D, E, F> IndexOp<(A, B, C, D, E, F)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, A, B, C, D, E, F> TryIndexOp<(A, B, C, D, E, F)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -197,7 +198,7 @@ where
     E: ArrayIndex<'e>,
     F: ArrayIndex<'f>,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E, F), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -206,11 +207,11 @@ where
             i.4.index_op(),
             i.5.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, A, B, C, D, E, F, G> IndexOp<(A, B, C, D, E, F, G)> for Array
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, A, B, C, D, E, F, G> TryIndexOp<(A, B, C, D, E, F, G)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -220,7 +221,7 @@ where
     F: ArrayIndex<'f>,
     G: ArrayIndex<'g>,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -230,11 +231,11 @@ where
             i.5.index_op(),
             i.6.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
-impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, A, B, C, D, E, F, G, H> IndexOp<(A, B, C, D, E, F, G, H)>
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, A, B, C, D, E, F, G, H> TryIndexOp<(A, B, C, D, E, F, G, H)>
     for Array
 where
     A: ArrayIndex<'a>,
@@ -246,7 +247,7 @@ where
     G: ArrayIndex<'g>,
     H: ArrayIndex<'h>,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -257,12 +258,12 @@ where
             i.6.index_op(),
             i.7.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, A, B, C, D, E, F, G, H, I>
-    IndexOp<(A, B, C, D, E, F, G, H, I)> for Array
+    TryIndexOp<(A, B, C, D, E, F, G, H, I)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -274,7 +275,7 @@ where
     H: ArrayIndex<'h>,
     I: ArrayIndex<'i>,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -286,12 +287,12 @@ where
             i.7.index_op(),
             i.8.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, A, B, C, D, E, F, G, H, I, J>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J)> for Array
+    TryIndexOp<(A, B, C, D, E, F, G, H, I, J)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -304,7 +305,7 @@ where
     I: ArrayIndex<'i>,
     J: ArrayIndex<'j>,
 {
-    fn index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Array {
+    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -317,12 +318,12 @@ where
             i.8.index_op(),
             i.9.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, A, B, C, D, E, F, G, H, I, J, K>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J, K)> for Array
+    TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -336,11 +337,11 @@ where
     J: ArrayIndex<'j>,
     K: ArrayIndex<'k>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -354,12 +355,12 @@ where
             i.9.index_op(),
             i.10.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, 'l, A, B, C, D, E, F, G, H, I, J, K, L>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L)> for Array
+    TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K, L)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -374,11 +375,11 @@ where
     K: ArrayIndex<'k>,
     L: ArrayIndex<'l>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -393,12 +394,12 @@ where
             i.10.index_op(),
             i.11.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k, 'l, 'm, A, B, C, D, E, F, G, H, I, J, K, L, M>
-    IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M)> for Array
+    TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -414,11 +415,11 @@ where
     L: ArrayIndex<'l>,
     M: ArrayIndex<'m>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -434,7 +435,7 @@ where
             i.11.index_op(),
             i.12.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
@@ -467,7 +468,7 @@ impl<
         L,
         M,
         N,
-    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N)> for Array
+    > TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -484,11 +485,11 @@ where
     M: ArrayIndex<'m>,
     N: ArrayIndex<'n>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -505,7 +506,7 @@ where
             i.12.index_op(),
             i.13.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
@@ -540,7 +541,7 @@ impl<
         M,
         N,
         O,
-    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)> for Array
+    > TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -558,11 +559,11 @@ where
     N: ArrayIndex<'n>,
     O: ArrayIndex<'o>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -580,7 +581,7 @@ where
             i.13.index_op(),
             i.14.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
@@ -617,7 +618,7 @@ impl<
         N,
         O,
         P,
-    > IndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P)> for Array
+    > TryIndexOp<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P)> for Array
 where
     A: ArrayIndex<'a>,
     B: ArrayIndex<'b>,
@@ -636,11 +637,11 @@ where
     O: ArrayIndex<'o>,
     P: ArrayIndex<'p>,
 {
-    fn index_device(
+    fn try_index_device(
         &self,
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<OwnedOrRef<'_, Array>, Exception> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -659,7 +660,7 @@ where
             i.14.index_op(),
             i.15.index_op(),
         ];
-        get_item_nd(self, &i, stream).unwrap()
+        get_item_nd(self, &i, stream)
     }
 }
 
@@ -676,8 +677,10 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
-            let c_array = try_catch_c_ptr_expr! {
+            let mut c_array = mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_slice(
+                    &mut c_array as *mut _,
                     self.c_array,
                     start.as_ptr(),
                     start.len(),
@@ -686,7 +689,8 @@ impl Array {
                     strides.as_ptr(),
                     strides.len(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -708,6 +712,34 @@ fn absolute_indices(absolute_start: i32, absolute_end: i32, stride: i32) -> Vec<
     indices
 }
 
+enum GatherIndexItem<'a> {
+    Owned(Array),
+    Borrowed(&'a Array),
+    Rc(Rc<Array>),
+}
+
+impl AsRef<Array> for GatherIndexItem<'_> {
+    fn as_ref(&self) -> &Array {
+        match self {
+            GatherIndexItem::Owned(array) => array,
+            GatherIndexItem::Borrowed(array) => array,
+            GatherIndexItem::Rc(array) => array,
+        }
+    }
+}
+
+impl Deref for GatherIndexItem<'_> {
+    type Target = Array;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            GatherIndexItem::Owned(array) => array,
+            GatherIndexItem::Borrowed(array) => array,
+            GatherIndexItem::Rc(array) => array,
+        }
+    }
+}
+
 // Implement additional public APIs
 //
 // TODO: rewrite this in a more rusty way
@@ -724,7 +756,7 @@ fn gather_nd<'a>(
     let mut max_dims = 0;
     let mut slice_count = 0;
     let mut is_slice: Vec<bool> = Vec::with_capacity(last_array_or_index);
-    let mut gather_indices: Vec<Array> = Vec::with_capacity(last_array_or_index);
+    let mut gather_indices: Vec<GatherIndexItem> = Vec::with_capacity(last_array_or_index);
 
     let shape = src.shape();
 
@@ -742,7 +774,7 @@ fn gather_nd<'a>(
                     *index,
                     src.dim(i as i32) as usize,
                 ) as i32);
-                gather_indices.push(item);
+                gather_indices.push(GatherIndexItem::Owned(item));
                 is_slice.push(false);
             }
             Slice(range) => {
@@ -756,19 +788,19 @@ fn gather_nd<'a>(
 
                 let item = Array::from_slice(&indices, &[indices.len() as i32]);
 
-                gather_indices.push(item);
+                gather_indices.push(GatherIndexItem::Owned(item));
             }
             TakeArray { indices } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
                 // Cloning is just incrementing the reference count
-                gather_indices.push(indices.clone());
+                gather_indices.push(GatherIndexItem::Rc(indices.clone()));
             }
             TakeArrayRef { indices } => {
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
                 // Cloning is just incrementing the reference count
-                gather_indices.push((*indices).clone());
+                gather_indices.push(GatherIndexItem::Borrowed(*indices));
             }
             Ellipsis | ExpandDims => {
                 unreachable!("Unexpected operation in gather_nd")
@@ -784,12 +816,12 @@ fn gather_nd<'a>(
                 if is_slice[i] {
                     let mut new_shape = vec![1; max_dims + slice_count];
                     new_shape[max_dims + slice_index] = item.dim(0);
-                    *item = item.reshape(&new_shape)?;
+                    *item = GatherIndexItem::Owned(item.reshape(&new_shape)?);
                     slice_index += 1;
                 } else {
                     let mut new_shape = item.shape().to_vec();
                     new_shape.extend((0..slice_count).map(|_| 1));
-                    *item = item.reshape(&new_shape)?;
+                    *item = GatherIndexItem::Owned(item.reshape(&new_shape)?);
                 }
             }
         }
@@ -798,7 +830,7 @@ fn gather_nd<'a>(
         for (i, item) in gather_indices[..slice_count].iter_mut().enumerate() {
             let mut new_shape = vec![1; max_dims + slice_count];
             new_shape[i] = item.dim(0);
-            *item = item.reshape(&new_shape)?;
+            *item = GatherIndexItem::Owned(item.reshape(&new_shape)?);
         }
     }
 
@@ -806,18 +838,23 @@ fn gather_nd<'a>(
     // let indices = new_mlx_vector_array(gather_indices);
     // SAFETY: indices will be freed at the end of this function. The lifetime of the items in
     // `gather_indices` is managed by the `gather_indices` vector.
-    let indices = VectorArray::from_iter(gather_indices.iter());
+    let indices = VectorArray::try_from_iter(gather_indices.iter())?;
 
     let gathered = unsafe {
-        let c_array = mlx_sys::mlx_gather(
-            src.c_array,
-            indices.as_ptr(),
-            axes.as_ptr(),
-            axes.len(),
-            slice_sizes.as_ptr(),
-            slice_sizes.len(),
-            stream.as_ref().as_ptr(),
-        );
+        let mut c_array = mlx_array_new();
+        check_status!{
+            mlx_sys::mlx_gather(
+                &mut c_array as *mut _,
+                src.c_array,
+                indices.as_ptr(),
+                axes.as_ptr(),
+                axes.len(),
+                slice_sizes.as_ptr(),
+                slice_sizes.len(),
+                stream.as_ref().as_ptr(),
+            ),
+            mlx_array_free(c_array)
+        };
 
         Array::from_ptr(c_array)
     };
@@ -895,14 +932,14 @@ fn get_item<'a>(
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd(
-    src: &Array,
+fn get_item_nd<'a>(
+    src: &'a Array,
     operations: &[ArrayIndexOp],
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<OwnedOrRef<'a, Array>, Exception> {
     use ArrayIndexOp::*;
 
-    let mut src = src.clone();
+    let mut src = OwnedOrRef::Ref(src);
 
     // The plan is as follows:
     // 1. Replace the ellipsis with a series of slice(None)
@@ -956,7 +993,7 @@ fn get_item_nd(
             &stream,
         )?;
 
-        src = gathered;
+        src = OwnedOrRef::Owned(gathered);
 
         // Reassemble the indices for the slicing or reshaping if there are any
         if gather_first {
@@ -1037,7 +1074,7 @@ fn get_item_nd(
         axis += 1;
     }
 
-    src = src.slice_device(&starts, &ends, &strides, stream)?;
+    src = OwnedOrRef::Owned(src.slice_device(&starts, &ends, &strides, stream)?);
 
     // Unsqueeze handling
     if remaining_indices.len() > ndim || squeeze_needed {
@@ -1060,7 +1097,7 @@ fn get_item_nd(
         }
         new_shape.extend(src.shape()[(axis_ as usize)..].iter().cloned());
 
-        src = src.reshape(&new_shape)?;
+        src = OwnedOrRef::Owned(src.reshape(&new_shape)?);
     }
 
     Ok(src)
@@ -1074,7 +1111,7 @@ fn get_item_nd(
 mod tests {
     use crate::{
         assert_array_eq,
-        ops::indexing::{index_impl::IndexOp, Ellipsis, IntoStrideBy, NewAxis},
+        ops::indexing::{IndexOp, Ellipsis, IntoStrideBy, NewAxis},
         Array,
     };
 
@@ -1327,7 +1364,8 @@ mod tests {
         assert_array_eq!(s, expected, 0.01);
     }
 
-    fn check(result: Array, shape: &[i32], expected_sum: i32) {
+    fn check(result: impl AsRef<Array>, shape: &[i32], expected_sum: i32) {
+        let result = result.as_ref();
         assert_eq!(result.shape(), shape);
 
         let sum = result.sum(None, None).unwrap();
@@ -1405,33 +1443,33 @@ mod tests {
         let i = Array::from_slice(&[2, 1], &[2]);
 
         // a[0, i]
-        check(a.index((0, i.clone())), &[2, 4, 5, 3], 14340);
+        check(a.index((0, &i)), &[2, 4, 5, 3], 14340);
 
         // a[..., i, 0]
-        check(a.index((Ellipsis, i.clone(), 0)), &[3, 3, 4, 2], 19224);
+        check(a.index((Ellipsis, &i, 0)), &[3, 3, 4, 2], 19224);
 
         // a[i, 0, ...]
-        check(a.index((i.clone(), 0, Ellipsis)), &[2, 4, 5, 3], 35940);
+        check(a.index((&i, 0, Ellipsis)), &[2, 4, 5, 3], 35940);
 
         // gatherFirst path
         // a[i, ..., i]
         check(
-            a.index((i.clone(), Ellipsis, i.clone())),
+            a.index((&i, Ellipsis, &i)),
             &[2, 3, 4, 5],
             43200,
         );
 
         // a[i, ..., ::2, :]
-        let result = a.index((i.clone(), Ellipsis, (..).stride_by(2), ..));
+        let result = a.index((&i, Ellipsis, (..).stride_by(2), ..));
         check(result, &[2, 3, 4, 3, 3], 77652);
 
         // gatherFirst path
         // a[..., i, None, ::2, -1]
-        let result = a.index((Ellipsis, i.clone(), NewAxis, (..).stride_by(2), -1));
+        let result = a.index((Ellipsis, &i, NewAxis, (..).stride_by(2), -1));
         check(result, &[2, 3, 3, 1, 3], 14607);
 
         // a[:, 2:, i]
-        check(a.index((.., 2.., i.clone())), &[3, 1, 2, 5, 3], 29655);
+        check(a.index((.., 2.., &i)), &[3, 1, 2, 5, 3], 29655);
 
         // a[::-1, :2, i, 2:, ..., None, ::2]
         let result = a.index((

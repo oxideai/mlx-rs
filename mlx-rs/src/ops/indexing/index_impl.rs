@@ -4,11 +4,7 @@ use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    constants::DEFAULT_STACK_VEC_LEN,
-    error::Exception,
-    ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, OwnedOrRef, VectorArray},
-    Array, Stream,
+    array, constants::DEFAULT_STACK_VEC_LEN, error::Exception, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, OwnedOrRef, VectorArray}, Array, Stream
 };
 
 use super::{ArrayIndex, ArrayIndexOp, Ellipsis, TryIndexOp, NewAxis, RangeIndex, StrideBy};
@@ -879,7 +875,7 @@ fn get_item_index(
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
-    src.take_device(&index.into(), axis, stream)
+    src.take_device(array!(index), axis, stream)
 }
 
 #[inline]

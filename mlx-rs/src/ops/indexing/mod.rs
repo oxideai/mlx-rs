@@ -332,14 +332,14 @@ impl Array {
     #[default_device]
     pub fn take_device(
         &self,
-        indices: &Array,
+        indices: impl AsRef<Array>,
         axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
-                mlx_sys::mlx_take(&mut c_array as *mut _, self.c_array, indices.c_array, axis, stream.as_ref().as_ptr()),
+                mlx_sys::mlx_take(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr()),
                 mlx_array_free(c_array)
             };
 
@@ -355,13 +355,13 @@ impl Array {
     #[default_device]
     pub fn take_all_device(
         &self,
-        indices: &Array,
+        indices: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
-                mlx_sys::mlx_take_all(&mut c_array as *mut _, self.c_array, indices.c_array, stream.as_ref().as_ptr()),
+                mlx_sys::mlx_take_all(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, stream.as_ref().as_ptr()),
                 mlx_array_free(c_array)
             };
 
@@ -380,7 +380,7 @@ impl Array {
     #[default_device]
     pub fn take_along_axis_device(
         &self,
-        indices: &Array,
+        indices: impl AsRef<Array>,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -392,7 +392,7 @@ impl Array {
         unsafe {
             let mut c_array = mlx_array_new();
             check_status! {
-                mlx_sys::mlx_take_along_axis(&mut c_array as *mut _, input.c_array, indices.c_array, axis, stream.as_ref().as_ptr()),
+                mlx_sys::mlx_take_along_axis(&mut c_array as *mut _, input.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr()),
                 mlx_array_free(c_array)
             };
 
@@ -412,8 +412,8 @@ impl Array {
     #[default_device]
     pub fn put_along_axis_device(
         &self,
-        indices: &Array,
-        values: &Array,
+        indices: impl AsRef<Array>,
+        values: impl AsRef<Array>,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array, Exception> {
@@ -423,7 +423,7 @@ impl Array {
 
                 let mut c_array = mlx_array_new();
                 check_status! {
-                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, input.c_array, indices.c_array, values.c_array, 0, stream.as_ref().as_ptr()),
+                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, input.c_array, indices.as_ref().c_array, values.as_ref().c_array, 0, stream.as_ref().as_ptr()),
                     mlx_array_free(c_array)
                 };
 
@@ -434,7 +434,7 @@ impl Array {
             Some(ax) => unsafe {
                 let mut c_array = mlx_array_new();
                 check_status! {
-                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, self.c_array, indices.c_array, values.c_array, ax, stream.as_ref().as_ptr()),
+                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, values.as_ref().c_array, ax, stream.as_ref().as_ptr()),
                     mlx_array_free(c_array)
                 };
 
@@ -455,7 +455,7 @@ impl Array {
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
 #[default_device]
 pub fn argmax_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: i32,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
@@ -465,7 +465,7 @@ pub fn argmax_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argmax(&mut c_array as *mut _, a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argmax(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -481,7 +481,7 @@ pub fn argmax_device(
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
 #[default_device]
 pub fn argmax_all_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
@@ -490,7 +490,7 @@ pub fn argmax_all_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argmax_all(&mut c_array as *mut _, a.as_ptr(), keep_dims, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argmax_all(&mut c_array as *mut _, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -509,7 +509,7 @@ pub fn argmax_all_device(
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
 #[default_device]
 pub fn argmin_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: i32,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
@@ -519,7 +519,7 @@ pub fn argmin_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argmin(&mut c_array as *mut _, a.as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argmin(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -535,7 +535,7 @@ pub fn argmin_device(
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
 #[default_device]
 pub fn argmin_all_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
@@ -544,7 +544,7 @@ pub fn argmin_all_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argmin_all(&mut c_array as *mut _, a.as_ptr(), keep_dims, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argmin_all(&mut c_array as *mut _, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -568,7 +568,7 @@ pub fn argmin_all_device(
 /// - `axis`: Axis to partition over
 #[default_device]
 pub fn argpartition_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
@@ -576,7 +576,7 @@ pub fn argpartition_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ref().as_ptr(), kth, axis, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -597,14 +597,14 @@ pub fn argpartition_device(
 ///   the `kth` position.
 #[default_device]
 pub fn argpartition_all_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     kth: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -622,14 +622,14 @@ pub fn argpartition_all_device(
 /// - `axis`: Axis to sort over.
 #[default_device]
 pub fn argsort_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -639,11 +639,11 @@ pub fn argsort_device(
 
 /// Returns the indices that sort the flattened array.
 #[default_device]
-pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ref().as_ptr(), stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -654,45 +654,45 @@ pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 /// See [`Array::take_along_axis`]
 #[default_device]
 pub fn take_along_axis_device(
-    a: &Array,
-    indices: &Array,
+    a: impl AsRef<Array>,
+    indices: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.take_along_axis_device(indices, axis, stream)
+    a.as_ref().take_along_axis_device(indices, axis, stream)
 }
 
 /// See [`Array::put_along_axis`]
 #[default_device]
 pub fn put_along_axis_device(
-    a: &Array,
-    indices: &Array,
-    values: &Array,
+    a: impl AsRef<Array>,
+    indices: impl AsRef<Array>,
+    values: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.put_along_axis_device(indices, values, axis, stream)
+    a.as_ref().put_along_axis_device(indices, values, axis, stream)
 }
 
 /// See [`Array::take`]
 #[default_device]
 pub fn take_device(
-    a: &Array,
-    indices: &Array,
+    a: impl AsRef<Array>,
+    indices: impl AsRef<Array>,
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.take_device(indices, axis, stream)
+    a.as_ref().take_device(indices, axis, stream)
 }
 
 /// See [`Array::take_all`]
 #[default_device]
 pub fn take_all_device(
-    a: &Array,
-    indices: &Array,
+    a: impl AsRef<Array>,
+    indices: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
-    a.take_all_device(indices, stream)
+    a.as_ref().take_all_device(indices, stream)
 }
 
 /// Returns the `k` largest elements from the input along a given axis.
@@ -708,7 +708,7 @@ pub fn take_all_device(
 /// - `axis`: Axis to sort over. Default to `-1` if not specified.
 #[default_device]
 pub fn topk_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     k: i32,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
@@ -718,7 +718,7 @@ pub fn topk_device(
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_topk(&mut c_array as *mut _, a.as_ptr(), k, axis, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_topk(&mut c_array as *mut _, a.as_ref().as_ptr(), k, axis, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 
@@ -728,11 +728,11 @@ pub fn topk_device(
 
 /// Returns the `k` largest elements from the flattened input array.
 #[default_device]
-pub fn topk_all_device(a: &Array, k: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
         let mut c_array = mlx_array_new();
         check_status! {
-            mlx_sys::mlx_topk_all(&mut c_array as *mut _, a.as_ptr(), k, stream.as_ref().as_ptr()),
+            mlx_sys::mlx_topk_all(&mut c_array as *mut _, a.as_ref().as_ptr(), k, stream.as_ref().as_ptr()),
             mlx_array_free(c_array)
         };
 

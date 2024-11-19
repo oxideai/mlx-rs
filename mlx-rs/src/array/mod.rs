@@ -400,13 +400,13 @@ impl Array {
 /// The operation is the identity but it prevents gradients from flowing
 /// through the array.
 #[default_device]
-pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
+pub fn stop_gradient_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array, Exception> {
     unsafe {
         let mut res = mlx_sys::mlx_array_new();
         check_status!{ 
             mlx_sys::mlx_stop_gradient(
                 &mut res as *mut _,
-                a.as_ptr(),
+                a.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             ),
             mlx_sys::mlx_array_free(res)

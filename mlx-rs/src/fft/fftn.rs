@@ -15,11 +15,12 @@ use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unche
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
 #[default_device]
 pub fn fft_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
         let mut c_array = mlx_array_new();
@@ -41,11 +42,12 @@ pub fn fft_device(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device]
 pub fn fft2_device<'a>(
-    a: &Array,
+    a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
 
@@ -85,11 +87,12 @@ pub fn fft2_device<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device]
 pub fn fftn_device<'a>(
-    a: &Array,
+    a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
     let num_s = s.len();
     let num_axes = axes.len();
@@ -126,11 +129,12 @@ pub fn fftn_device<'a>(
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
 #[default_device]
 pub fn ifft_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     n: impl Into<Option<i32>>,
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
         let mut c_array = mlx_array_new();
@@ -155,11 +159,12 @@ pub fn ifft_device(
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
 #[default_device]
 pub fn ifft2_device<'a>(
-    a: &Array,
+    a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), Some(axes));
 
@@ -200,11 +205,12 @@ pub fn ifft2_device<'a>(
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
 #[default_device]
 pub fn ifftn_device<'a>(
-    a: &Array,
+    a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
     axes: impl IntoOption<&'a [i32]>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array, Exception> {
+    let a = a.as_ref();
     let (s, axes) = resolve_sizes_and_axes_unchecked(a, s.into_option(), axes.into_option());
     let num_s = s.len();
     let num_axes = axes.len();

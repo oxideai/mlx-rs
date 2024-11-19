@@ -27,19 +27,17 @@ impl Array {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn eq_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn eq_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_equal(
+                    &mut c_array as *mut _,
                     self.as_ptr(),
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -66,19 +64,17 @@ check_status! {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn le_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn le_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_less_equal(
+                    &mut c_array as *mut _,
                     self.as_ptr(),
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -105,19 +101,17 @@ check_status! {
     /// // c_data == [true, true, true]
     /// ```
     #[default_device]
-    pub fn ge_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn ge_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_greater_equal(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -144,19 +138,17 @@ check_status! {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn ne_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn ne_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_not_equal(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -182,19 +174,17 @@ check_status! {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn lt_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn lt_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_less(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -220,19 +210,17 @@ check_status! {
     /// // c_data == [false, false, false]
     /// ```
     #[default_device]
-    pub fn gt_device(
-        &self,
-        other: impl AsRef<Array>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn gt_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_greater(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -264,13 +252,15 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_logical_and(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -302,13 +292,15 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_logical_or(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -329,10 +321,14 @@ check_status! {
     #[default_device]
     pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_logical_not(
+            let mut c_array = mlx_sys::mlx_array_new();
+            // SAFETY: mlx_logical_not should not throw if self is a valid array
+            mlx_sys::mlx_logical_not(
+                &mut c_array as *mut _,
                 self.c_array,
                 stream.as_ref().as_ptr(),
-            ))
+            );
+            Array::from_ptr(c_array)
         }
     }
 
@@ -373,16 +369,18 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_allclose(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.as_ref().as_ptr(),
                     rtol.into().unwrap_or(1e-5),
                     atol.into().unwrap_or(1e-8),
                     equal_nan.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -410,16 +408,18 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_isclose(
+                    &mut c_array as *mut _,
                     self.c_array,
                     other.c_array,
                     rtol.into().unwrap_or(1e-5),
                     atol.into().unwrap_or(1e-8),
                     equal_nan.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -454,12 +454,16 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Array {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_array_equal(
+            let mut c_array = mlx_sys::mlx_array_new();
+            // SAFETY: mlx_array_equal should not throw if inputs are valid arrays
+            mlx_sys::mlx_array_equal(
+                &mut c_array as *mut _,
                 self.c_array,
                 other.as_ref().as_ptr(),
                 equal_nan.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
-            ))
+            );
+            Array::from_ptr(c_array)
         }
     }
 
@@ -493,15 +497,17 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_any(
+                    &mut c_array as *mut _,
                     self.c_array,
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims.into().unwrap_or(false),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -640,23 +646,45 @@ pub fn gt_device(
 /// Return a boolean array indicating which elements are NaN.
 #[default_device]
 pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_isnan(array.c_array, stream.as_ref().as_ptr())) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_isnan should not throw if array is a valid array
+        mlx_sys::mlx_isnan(
+            &mut c_array as *mut _,
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        );
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Return a boolean array indicating which elements are +/- inifnity.
 #[default_device]
 pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
-    unsafe { Array::from_ptr(mlx_sys::mlx_isinf(array.c_array, stream.as_ref().as_ptr())) }
+    unsafe {
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_isinf should not throw if array is a valid array
+        mlx_sys::mlx_isinf(
+            &mut c_array as *mut _,
+            array.c_array,
+            stream.as_ref().as_ptr(),
+        );
+        Array::from_ptr(c_array)
+    }
 }
 
 /// Return a boolean array indicating which elements are positive infinity.
 #[default_device]
 pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        Array::from_ptr(mlx_sys::mlx_isposinf(
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_isposinf should not throw if array is a valid array
+        mlx_sys::mlx_isposinf(
+            &mut c_array as *mut _,
             array.c_array,
             stream.as_ref().as_ptr(),
-        ))
+        );
+        Array::from_ptr(c_array)
     }
 }
 
@@ -664,10 +692,14 @@ pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 #[default_device]
 pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
     unsafe {
-        Array::from_ptr(mlx_sys::mlx_isneginf(
+        let mut c_array = mlx_sys::mlx_array_new();
+        // SAFETY: mlx_isneginf should not throw if array is a valid array
+        mlx_sys::mlx_isneginf(
+            &mut c_array as *mut _,
             array.c_array,
             stream.as_ref().as_ptr(),
-        ))
+        );
+        Array::from_ptr(c_array)
     }
 }
 
@@ -691,14 +723,16 @@ pub fn r#where_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_where(
+                &mut c_array as *mut _,
                 condition.c_array,
                 a.as_ref().as_ptr(),
                 b.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -713,14 +747,16 @@ pub fn which_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_where(
+                &mut c_array as *mut _,
                 condition.c_array,
                 a.as_ref().as_ptr(),
                 b.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }

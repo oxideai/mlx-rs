@@ -13,7 +13,7 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Zeiler, M.D., 2012. ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct AdaDelta {
         /// The learning rate
@@ -77,7 +77,7 @@ impl Optimizer for AdaDelta {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         let (v, u) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
         let one_minus_rho = array!(1.0).subtract(&self.rho)?;

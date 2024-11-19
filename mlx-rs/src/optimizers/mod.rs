@@ -5,10 +5,7 @@
 use std::{borrow::Borrow, collections::HashMap, rc::Rc};
 
 use crate::{
-    array,
-    error::{Exception, Result},
-    module::{FlattenedModuleParam, ModuleParameters},
-    Array,
+    array, error::Exception, module::{FlattenedModuleParam, ModuleParameters}, utils::OwnedOrRef, Array
 };
 
 mod adadelta;
@@ -45,7 +42,7 @@ pub trait Optimizer {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()>;
+    ) -> crate::error::Result<()>;
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
@@ -53,7 +50,7 @@ pub trait Optimizer {
         &mut self,
         model: &mut M,
         gradients: impl Borrow<FlattenedModuleParam>,
-    ) -> Result<()>
+    ) -> crate::error::Result<()>
     where
         M: ModuleParameters,
     {
@@ -74,10 +71,10 @@ pub trait Optimizer {
 /// This function ensures that the global norm of the gradients does not exceed
 /// `max_norm`. It scales down the gradients proportionally if their norm is
 /// greater than `max_norm`.
-pub fn clip_grad_norm(
-    gradients: &FlattenedModuleParam,
+pub fn clip_grad_norm<'a>(
+    gradients: &'a FlattenedModuleParam,
     max_norm: f32,
-) -> (FlattenedModuleParam, f32) {
+) -> (HashMap<Rc<str>, OwnedOrRef<'a, Array>>, f32) {
     let total_norm: f32 = gradients
         .values()
         .fold(array!(0.0), |acc, grad| {
@@ -90,13 +87,13 @@ pub fn clip_grad_norm(
         .item();
     let normalizer = array!(max_norm / (total_norm + 1e-6));
 
-    let clipped_gradients = gradients
+    let clipped_gradients: HashMap<_, _> = gradients
         .iter()
         .map(|(key, grad)| {
             let clipped_grad = if total_norm < max_norm {
-                grad.clone()
+                OwnedOrRef::Ref(grad)
             } else {
-                grad * &normalizer
+                OwnedOrRef::Owned(grad * &normalizer)
             };
             (key.clone(), clipped_grad)
         })

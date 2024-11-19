@@ -14,7 +14,7 @@ generate_builder! {
     ///
     /// [1]: Duchi, J., Hazan, E. and Singer, Y., 2011. Adaptive subgradient methods for online
     ///     learning and stochastic optimization. JMLR 2011.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct AdaGrad {
         /// Learning rate
@@ -59,7 +59,7 @@ impl Optimizer for AdaGrad {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let v = state.add(square(gradient))?;

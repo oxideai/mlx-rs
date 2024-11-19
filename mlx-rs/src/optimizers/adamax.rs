@@ -19,7 +19,7 @@ generate_builder! {
     /// correction in the first and second moment estimates. In detail,
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Adamax {
         /// The learning rate.
@@ -72,7 +72,7 @@ impl Optimizer for Adamax {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         let (b1, b2) = &self.betas;
         let (m, v) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 

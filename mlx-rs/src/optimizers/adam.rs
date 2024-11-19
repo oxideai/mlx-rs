@@ -14,7 +14,7 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Adam {
         /// The learning rate
@@ -71,7 +71,7 @@ impl Optimizer for Adam {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         let betas = &self.betas;
         let state = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
@@ -93,7 +93,7 @@ pub(super) fn adam_apply_single(
     gradient: &Array,
     parameter: &Array,
     state: &(Array, Array),
-) -> Result<(Array, (Array, Array))> {
+) -> crate::error::Result<(Array, (Array, Array))> {
     let (b1, b2) = betas;
     let (m, v) = state;
 

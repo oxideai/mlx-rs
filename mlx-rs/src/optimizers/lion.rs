@@ -14,7 +14,7 @@ generate_builder! {
     ///
     /// [1]: Chen, X. Symbolic Discovery of Optimization Algorithms. arXiv preprint
     ///     arXiv:2302.06675.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Lion {
         /// The learning rate.

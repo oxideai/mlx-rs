@@ -378,6 +378,7 @@ macro_rules! value_and_grad_with_hashmap {
                     .iter()
                     .cloned()
                     .zip(flattened_arrays.iter().copied())
+                    .map(|(k, v)| (k, v.clone()))
                     .collect();
                 ($f)(parameters, arrays.clone())
             };
@@ -421,7 +422,7 @@ where
 
 impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, ()> for F
 where
-    F: FnMut(HashMap<Rc<str>, &Array>, Args) -> Vec<Array> + 'a,
+    F: FnMut(HashMap<Rc<str>, Array>, Args) -> Vec<Array> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
@@ -435,7 +436,7 @@ where
 
 impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, Exception> for F
 where
-    F: FnMut(HashMap<Rc<str>, &Array>, Args) -> Result<Vec<Array>> + 'a,
+    F: FnMut(HashMap<Rc<str>, Array>, Args) -> Result<Vec<Array>> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
@@ -508,7 +509,7 @@ where
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array> {
-            let args_clone = &[args.clone()];
+            let args_clone = &[args];
             let result = g(args_clone)?;
             Ok(result.into_iter().next().unwrap())
         }
@@ -530,7 +531,7 @@ where
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array> {
-            let args_clone = &[args.clone()];
+            let args_clone = &[args];
             let result = g(args_clone)?;
             Ok(result.into_iter().next().unwrap())
         }
@@ -590,7 +591,7 @@ where
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>> {
-            let args_clone = &[args.clone()];
+            let args_clone = &[args];
             let result = g(args_clone)?;
             Ok(result)
         }
@@ -610,7 +611,7 @@ where
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>> {
-            let args_clone = &[args.clone()];
+            let args_clone = &[args];
             let result = g(args_clone)?;
             Ok(result)
         }
@@ -730,13 +731,13 @@ mod tests {
 
     #[test]
     fn test_value_and_grad_hash_map() {
-        let f = |parameters: HashMap<Rc<str>, &Array>, _: i32| -> Vec<Array> {
-            vec![parameters["x"] * parameters["y"]]
+        let f = |parameters: HashMap<Rc<str>, Array>, _: i32| -> Vec<Array> {
+            vec![&parameters["x"] * &parameters["y"]]
         };
 
         let x = array!(1.5f32);
         let y = array!(2.0f32);
-        let parameters = vec![("x", &x), ("y", &y)]
+        let parameters = vec![("x", x), ("y", y)]
             .into_iter()
             .map(|(k, v)| (k.into(), v))
             .collect();

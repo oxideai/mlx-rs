@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
@@ -8,7 +10,7 @@ use crate::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
     },
-    utils::{resolve_index_signed_unchecked, OwnedOrRef, VectorArray},
+    utils::{resolve_index_signed_unchecked, VectorArray},
     Array, Stream,
 };
 
@@ -131,7 +133,7 @@ fn update_slice(
     }
 
     if !update_expand_dims.is_empty() {
-        update = OwnedOrRef::Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
+        update = Cow::Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
     }
 
     Ok(Some(src.slice_update_device(
@@ -143,21 +145,21 @@ fn update_slice(
 fn remove_leading_singleton_dimensions(
     a: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<OwnedOrRef<'_, Array>> {
+) -> Result<Cow<'_, Array>> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
         if new_shape.is_empty() {
             new_shape = vec![1];
         }
-        Ok(OwnedOrRef::Owned(a.reshape_device(&new_shape, stream)?))
+        Ok(Cow::Owned(a.reshape_device(&new_shape, stream)?))
     } else {
-        Ok(OwnedOrRef::Ref(a))
+        Ok(Cow::Borrowed(a))
     }
 }
 
 struct ScatterArgs<'a> {
-    indices: SmallVec<[OwnedOrRef<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
+    indices: SmallVec<[Cow<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     update: Array,
     axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 }
@@ -174,8 +176,8 @@ fn scatter_args<'a>(
     if operations.len() == 1 {
         return match &operations[0] {
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
-            TakeArray { indices } => scatter_args_array(src, OwnedOrRef::Ref(indices), update, stream),
-            TakeArrayRef { indices } => scatter_args_array(src, OwnedOrRef::Ref(indices), update, stream),
+            TakeArray { indices } => scatter_args_array(src, Cow::Borrowed(indices), update, stream),
+            TakeArrayRef { indices } => scatter_args_array(src, Cow::Borrowed(indices), update, stream),
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
             ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
@@ -205,7 +207,7 @@ fn scatter_args_index<'a>(
     shape[0] = 1;
 
     Ok(ScatterArgs {
-        indices: smallvec![OwnedOrRef::Owned(Array::from_int(resolve_index_signed_unchecked(
+        indices: smallvec![Cow::Owned(Array::from_int(resolve_index_signed_unchecked(
             index,
             src.dim(0)
         )))],
@@ -216,7 +218,7 @@ fn scatter_args_index<'a>(
 
 fn scatter_args_array<'a>(
     src: &'a Array,
-    a: OwnedOrRef<'a, Array>,
+    a: Cow<'a, Array>,
     update: &Array,
     stream: impl AsRef<Stream>,
 ) -> Result<ScatterArgs<'a>> {
@@ -280,7 +282,7 @@ fn scatter_args_slice<'a>(
 
         let indices = Array::from_slice(&[start], &[1]);
         Ok(ScatterArgs {
-            indices: smallvec![OwnedOrRef::Owned(indices)],
+            indices: smallvec![Cow::Owned(indices)],
             update,
             axes: smallvec![0],
         })
@@ -289,7 +291,7 @@ fn scatter_args_slice<'a>(
         let a_vals = strided_range_to_vec(start, end, stride);
         let a = Array::from_slice(&a_vals, &[a_vals.len() as i32]);
 
-        scatter_args_array(src, OwnedOrRef::Owned(a), update, stream)
+        scatter_args_array(src, Cow::Owned(a), update, stream)
     }
 }
 
@@ -501,7 +503,7 @@ fn scatter_args_nd<'a>(
 
     let array_indices_len = array_indices.len();
 
-    let indices = array_indices.into_iter().map(OwnedOrRef::Owned).collect();
+    let indices = array_indices.into_iter().map(Cow::Owned).collect();
     Ok(ScatterArgs {
         indices,
         update,

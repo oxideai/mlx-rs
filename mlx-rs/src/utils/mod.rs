@@ -484,27 +484,3 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 
     map.get_mut(key).unwrap()
 }
-
-/// A helper enum that can be either an owned value or a reference.
-#[derive(Debug)]
-pub enum OwnedOrRef<'a, T> {
-    Owned(T),
-    Ref(&'a T),
-}
-
-impl<T> AsRef<T> for OwnedOrRef<'_, T> {
-    fn as_ref(&self) -> &T {
-        match self {
-            OwnedOrRef::Owned(t) => t,
-            OwnedOrRef::Ref(t) => t,
-        }
-    }
-}
-
-impl<T> Deref for OwnedOrRef<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.as_ref()
-    }
-}

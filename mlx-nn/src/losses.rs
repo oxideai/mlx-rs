@@ -55,7 +55,7 @@ impl LossReduction {
 
 generate_builder! {
     /// Cross entropy loss function.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct CrossEntropy<'a> {
         /// Weights for each target
@@ -181,7 +181,7 @@ generate_builder! {
     /// and more precise loss. For improved numerical stability when `inputs_are_logits` is true,
     /// the loss calculation clips the input probabilities (in log-space) to a minimum value
     /// of `-100`.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct BinaryCrossEntropy<'a> {
         /// Optional weights for each target
@@ -278,7 +278,7 @@ impl<'a> BinaryCrossEntropy<'a> {
 
 generate_builder! {
     /// Computes the L1 loss
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct L1Loss {
         /// Reduction type. Default to [`L1loss::DEFAULT_REDUCTION`]
         #[optional(default_value = L1Loss::DEFAULT_REDUCTION)]
@@ -313,7 +313,7 @@ impl L1Loss {
 
 generate_builder! {
     /// Computes the mean squared error loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct MseLoss {
         /// Reduction type. Default to [`MseLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = MseLoss::DEFAULT_REDUCTION)]
@@ -348,7 +348,7 @@ impl MseLoss {
 
 generate_builder! {
     /// Computes the negative log likelihood loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct NllLoss {
         /// distribution axis. Default to [`NllLoss::DEFAULT_AXIS`]
         #[optional(default_value = NllLoss::DEFAULT_AXIS)]
@@ -390,7 +390,7 @@ impl NllLoss {
 
 generate_builder! {
     /// Compute the negative log likelihood loss for a Gaussian distribution.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct GaussianNllLoss {
         /// Whether to include the constant term in the loss calculation. Default to
         /// [`GaussianNllLoss::DEFAULT_FULL`]
@@ -462,7 +462,7 @@ generate_builder! {
     /// ```rust, ignore
     /// sum(exp(targets) * (targets - inputs), axis, None)
     /// ```
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct KlDivLoss {
         /// The distribution axis. Default to [`KlDivLoss::DEFAULT_AXIS`]
         #[optional(default_value = KlDivLoss::DEFAULT_AXIS)]
@@ -512,7 +512,7 @@ generate_builder! {
     /// The smooth L1 loss is a variant of the L1 loss which replaces the absolute
     /// difference with a squared difference when the absolute difference is less
     /// than `beta`.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct SmoothL1Loss {
         /// The threshold after which the loss changes from the squared to the absolute difference.
         /// Default to [`SmoothL1Loss::DEFAULT_BETA`]
@@ -562,7 +562,7 @@ impl SmoothL1Loss {
 generate_builder! {
     /// Computes the triplet loss for a set of anchor, positive, and negative samples. Margin is
     /// represented with alpha in the math section.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct TripletLoss {
         /// Distribution axis. Default to [`TripletLoss::DEFAULT_AXIS`]
         #[optional(default_value = TripletLoss::DEFAULT_AXIS)]
@@ -646,7 +646,7 @@ impl TripletLoss {
 
 generate_builder! {
     /// Compute the hinge loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct HingeLoss {
         /// Reduction type. Default to [`HingeLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = HingeLoss::DEFAULT_REDUCTION)]
@@ -682,7 +682,7 @@ impl HingeLoss {
 
 generate_builder! {
     /// Compute the Huber loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct HuberLoss {
         /// The threshold at which to change between L1 and L2 loss. Default to
         /// [`HuberLoss::DEFAULT_DELTA`]
@@ -735,7 +735,7 @@ generate_builder! {
     /// Logcosh acts like L2 loss for small errors, ensuring stable gradients,
     /// and like the L1 loss for large errors, reducing sensitivity to outliers. This
     /// dual behavior offers a balanced, robust approach for regression tasks.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct LogCoshLoss {
         /// Reduction type. Default to [`LogCoshLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = LogCoshLoss::DEFAULT_REDUCTION)]
@@ -771,7 +771,7 @@ impl LogCoshLoss {
 
 generate_builder! {
     /// Computes the cosine similarity loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct CosineSimilarityLoss {
         /// Embedding axis. Default to [`CosineSimilarityLoss::DEFAULT_AXIS`]
         #[optional(default_value = CosineSimilarityLoss::DEFAULT_AXIS)]
@@ -832,7 +832,7 @@ impl CosineSimilarityLoss {
 
 generate_builder! {
     /// Computes the margin ranking loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct MarginRankingLoss {
         /// The margin by which the scores should be separated. Default to
         /// [`MarginRankingLoss::DEFAULT_MARGIN`]

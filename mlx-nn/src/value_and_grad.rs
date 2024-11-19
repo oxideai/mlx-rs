@@ -3,11 +3,12 @@ use mlx_rs::{error::Exception, Array};
 
 use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef, Module};
 
-fn trainable_params(model: &impl Module) -> FlattenedModuleParamRef {
+fn trainable_params(model: &impl Module) -> FlattenedModuleParam {
     model
         .trainable_parameters()
         .flatten()
         .into_iter()
+        .map(|(k, v)| (k, v.clone()))
         .collect()
 }
 
@@ -62,7 +63,7 @@ where
     {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef,
+            let inner = |parameters: FlattenedModuleParam,
                          arrays: Args|
              -> Result<Vec<Array>, Exception> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
@@ -89,7 +90,7 @@ where
     ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef, arrays: Args| -> Vec<Array> {
+            let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
                 update_flattened_parameters(model, flattened_parameters);
 
@@ -115,7 +116,7 @@ where
     ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParamRef,
+            let inner = |parameters: FlattenedModuleParam,
                          arrays: Args|
              -> Result<Vec<Array>, Exception> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));

@@ -3,7 +3,7 @@
 
 use mlx_rs::{
     array, assert_array_eq,
-    error::{Exception, Result},
+    error::Exception,
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
     optimizers::{
@@ -47,7 +47,7 @@ impl Module for LinearFunctionModel {
 }
 
 impl LinearFunctionModel {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> mlx_rs::error::Result<Self> {
         let m = uniform::<_, f32>(-5.0, 5.0, None, None)?;
         let b = uniform::<_, f32>(-5.0, 5.0, None, None)?;
         Ok(Self {

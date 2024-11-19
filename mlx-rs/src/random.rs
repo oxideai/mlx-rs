@@ -1,5 +1,5 @@
 use crate::prelude::IndexOp;
-use crate::utils::{IntoOption, OwnedOrRef};
+use crate::utils::{IntoOption};
 use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_internal_macros::default_device;
@@ -33,13 +33,13 @@ fn state() -> &'static Mutex<RandomState> {
 }
 
 /// Use given key or generate a new one if `None`.
-fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> OwnedOrRef<'a, Array> {
+fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Cow<'a, Array> {
     key.into().map_or_else(
         || {
             let mut state = state().lock().unwrap();
-            OwnedOrRef::Owned(state.next())
+            Cow::Owned(state.next())
         },
-        OwnedOrRef::Ref,
+        Cow::Borrowed,
     )
 }
 
@@ -66,8 +66,6 @@ pub fn key(seed: u64) -> Array {
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
 pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
-    use crate::ops::indexing::index_impl::get_item;
-
     let keys = unsafe {
         let mut res = mlx_sys::mlx_array_new();
         // SAFETY: key is a valid Array
@@ -80,9 +78,8 @@ pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> (Array, Array) {
         Array::from_ptr(res)
     };
 
-    let stream = stream.as_ref();
     // SAFETY: keys is a valid Array
-    (get_item(&keys, 0, stream).unwrap(), get_item(&keys, 1, stream).unwrap())
+    (keys.index(0), keys.index(1))
 }
 
 /// Generate uniformly distributed random numbers.

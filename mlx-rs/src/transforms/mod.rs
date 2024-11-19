@@ -4,7 +4,8 @@ use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 
 use crate::{
     error::{
-        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception, Result
+        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
+        Result,
     },
     module::ModuleParamRef,
     utils::{Closure, IntoOption, VectorArray},
@@ -84,7 +85,10 @@ fn jvp_inner(
                 mlx_sys::mlx_vector_array_free(res_1);
             }
         };
-        Ok((VectorArray::from_ptr(res_0).try_into_values()?, VectorArray::from_ptr(res_1).try_into_values()?))
+        Ok((
+            VectorArray::from_ptr(res_0).try_into_values()?,
+            VectorArray::from_ptr(res_1).try_into_values()?,
+        ))
     }
 }
 
@@ -105,11 +109,7 @@ fn jvp_inner(
 ///
 /// Array of the Jacobian-vector products which is the same in number, shape and type of
 /// the outputs of `f`
-pub fn jvp<'a, F>(
-    f: F,
-    primals: &[&Array],
-    tangents: &[&Array],
-) -> Result<(Vec<Array>, Vec<Array>)>
+pub fn jvp<'a, F>(f: F, primals: &[&Array], tangents: &[&Array]) -> Result<(Vec<Array>, Vec<Array>)>
 where
     F: FnMut(&[&Array]) -> Vec<Array> + 'a,
 {
@@ -155,7 +155,10 @@ fn vjp_inner(
                 mlx_sys::mlx_vector_array_free(res_1);
             }
         };
-        Ok((VectorArray::from_ptr(res_0).try_into_values()?, VectorArray::from_ptr(res_1).try_into_values()?))
+        Ok((
+            VectorArray::from_ptr(res_0).try_into_values()?,
+            VectorArray::from_ptr(res_1).try_into_values()?,
+        ))
     }
 }
 
@@ -175,11 +178,7 @@ fn vjp_inner(
 ///
 /// array of the vector-Jacobian products which is the same in number, shape and type of the outputs
 /// of `f`
-pub fn vjp<'a, F>(
-    f: F,
-    primals: &[Array],
-    cotangents: &[Array],
-) -> Result<(Vec<Array>, Vec<Array>)>
+pub fn vjp<'a, F>(f: F, primals: &[Array], cotangents: &[Array]) -> Result<(Vec<Array>, Vec<Array>)>
 where
     F: FnMut(&[&Array]) -> Vec<Array> + 'a,
 {
@@ -222,7 +221,10 @@ fn value_and_gradient(
             }
         };
 
-        Ok((VectorArray::from_ptr(res_0).try_into_values()?, VectorArray::from_ptr(res_1).try_into_values()?))
+        Ok((
+            VectorArray::from_ptr(res_0).try_into_values()?,
+            VectorArray::from_ptr(res_1).try_into_values()?,
+        ))
     }
 }
 
@@ -277,20 +279,19 @@ fn build_value_and_gradient_inner<'a>(
     closure: Closure<'a>,
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[&Array]) -> Result<(Vec<Array>, Vec<Array>)> + 'a {
-    move |arrays: &[&Array]| 
-        unsafe {
-            let mut c_value_and_grad = mlx_sys::mlx_closure_value_and_grad_new();
-            check_status! {
-                mlx_sys::mlx_value_and_grad(
-                    &mut c_value_and_grad as *mut _,
-                    closure.as_ptr(),
-                    argument_numbers.as_ptr(),
-                    argument_numbers.len(),
-                ),
-                mlx_sys::mlx_closure_value_and_grad_free(c_value_and_grad)
-            }
-            value_and_gradient(c_value_and_grad, arrays.iter())
+    move |arrays: &[&Array]| unsafe {
+        let mut c_value_and_grad = mlx_sys::mlx_closure_value_and_grad_new();
+        check_status! {
+            mlx_sys::mlx_value_and_grad(
+                &mut c_value_and_grad as *mut _,
+                closure.as_ptr(),
+                argument_numbers.as_ptr(),
+                argument_numbers.len(),
+            ),
+            mlx_sys::mlx_closure_value_and_grad_free(c_value_and_grad)
         }
+        value_and_gradient(c_value_and_grad, arrays.iter())
+    }
 }
 
 fn build_value_and_gradient<'a, F>(
@@ -428,8 +429,7 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         mut self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a
-    {
+    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a {
         value_and_grad_with_hashmap!(Vec<Array>, new, self, Args)
     }
 }
@@ -442,8 +442,7 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         mut self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a
-    {
+    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a {
         value_and_grad_with_hashmap!(Result<Vec<Array>>, new_fallible, self, Args)
     }
 }
@@ -505,7 +504,7 @@ where
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array> + 'a {
-        let f = move |args: &[&Array]| -> Vec<Array> { vec![self(&args[0])] };
+        let f = move |args: &[&Array]| -> Vec<Array> { vec![self(args[0])] };
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array> {
@@ -525,9 +524,7 @@ where
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Array> + 'a {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>> {
-            self(&args[0]).map(|res| vec![res])
-        };
+        let f = move |args: &[&Array]| -> Result<Vec<Array>> { self(args[0]).map(|res| vec![res]) };
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Array> {
@@ -566,9 +563,7 @@ where
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&[&Array]) -> Result<Array> + 'a {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>> {
-            self(args).map(|res| vec![res])
-        };
+        let f = move |args: &[&Array]| -> Result<Vec<Array>> { self(args).map(|res| vec![res]) };
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &[&Array]| -> Result<Array> {
@@ -587,7 +582,7 @@ where
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>> + 'a {
-        let f = move |args: &[&Array]| -> Vec<Array> { self(&args[0]) };
+        let f = move |args: &[&Array]| -> Vec<Array> { self(args[0]) };
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>> {
@@ -607,7 +602,7 @@ where
         mut self,
         argument_numbers: impl IntoOption<&'a [i32]>,
     ) -> impl FnMut(&Array) -> Result<Vec<Array>> + 'a {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>> { self(&args[0]) };
+        let f = move |args: &[&Array]| -> Result<Vec<Array>> { self(args[0]) };
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argument_numbers);
         move |args: &Array| -> Result<Vec<Array>> {
@@ -658,7 +653,7 @@ mod tests {
     #[test]
     fn test_jvp_with_error() {
         let f = |inputs: &[&Array]| -> Result<Vec<Array>> {
-            inputs[0].add(&inputs[1]).map(|res| vec![res])
+            inputs[0].add(inputs[1]).map(|res| vec![res])
         };
 
         // Success case
@@ -691,7 +686,7 @@ mod tests {
     #[test]
     fn test_vjp_with_error() {
         let f = |inputs: &[&Array]| -> Result<Vec<Array>> {
-            inputs[0].add(&inputs[1]).map(|res| vec![res])
+            inputs[0].add(inputs[1]).map(|res| vec![res])
         };
 
         // Success case

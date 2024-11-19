@@ -83,7 +83,7 @@ impl<'a> Module<&'a Array> for Linear {
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => mlx_rs::ops::addmm(bias, x, self.weight.value.t(), None, None),
-            None => mlx_rs::ops::matmul(x, &self.weight.value.t()),
+            None => mlx_rs::ops::matmul(x, self.weight.value.t()),
         }
     }
 
@@ -172,7 +172,7 @@ impl<'a> Module<&'a Array> for Bilinear {
 
         // perform the bilinear transform
         let w = self.weights.reshape(&[out * in2, in1])?;
-        let mut y = mlx_rs::ops::matmul(&x1, &w.t())?;
+        let mut y = mlx_rs::ops::matmul(&x1, w.t())?;
         y = y.reshape(&[-1, out, in2])?.swap_axes(-2, -1)?;
         y = mlx_rs::ops::matmul(&x2, &y)?;
         y = y.squeeze(&[1])?;

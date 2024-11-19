@@ -216,8 +216,8 @@ impl<'a> BinaryCrossEntropy<'a> {
         let mut loss = if inputs_are_logits {
             log_add_exp(array!(0.0), logits)?.subtract(targets.multiply(logits)?)?
         } else {
-            let log_inputs_clip = clip(&log(logits), (-100.0, ()))?;
-            let log_inputs_inverse_clip = clip(&log(&array!(1.0).subtract(logits)?), (-100.0, ()))?;
+            let log_inputs_clip = clip(log(logits), (-100.0, ()))?;
+            let log_inputs_inverse_clip = clip(log(&array!(1.0).subtract(logits)?), (-100.0, ()))?;
             -(targets.multiply(log_inputs_clip)?.add(
                 array!(1.0)
                     .subtract(targets)?

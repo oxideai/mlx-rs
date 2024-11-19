@@ -4,7 +4,6 @@ use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
     array,
-    error::{Exception, Result},
     ops::{abs, maximum},
     utils::get_mut_or_insert_with,
     Array,

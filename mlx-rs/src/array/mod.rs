@@ -1,8 +1,12 @@
 use crate::{
-    dtype::Dtype, error::{
+    dtype::Dtype,
+    error::{
         get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler,
-        AsSliceError, Exception,
-    }, sealed::Sealed, utils::SUCCESS, Stream, StreamOrDevice
+        AsSliceError,
+    },
+    sealed::Sealed,
+    utils::SUCCESS,
+    Stream, StreamOrDevice,
 };
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
@@ -39,7 +43,7 @@ impl std::fmt::Display for Array {
             let mut mlx_str = mlx_sys::mlx_string_new();
             let status = mlx_sys::mlx_array_tostring(&mut mlx_str as *mut _, self.c_array);
             if status != SUCCESS {
-                return Err(std::fmt::Error::default())
+                return Err(std::fmt::Error);
             }
             let ptr = mlx_sys::mlx_string_data(mlx_str);
             let c_str = CStr::from_ptr(ptr);
@@ -383,12 +387,8 @@ impl Array {
                 }
             };
 
-            let new_c_array = mlx_sys::mlx_array_new_data(
-                data,
-                shape.as_ptr(),
-                shape.len() as i32,
-                dtype.into(),
-            );
+            let new_c_array =
+                mlx_sys::mlx_array_new_data(data, shape.as_ptr(), shape.len() as i32, dtype.into());
 
             Array::from_ptr(new_c_array)
         }
@@ -412,10 +412,13 @@ impl Clone for Array {
 /// The operation is the identity but it prevents gradients from flowing
 /// through the array.
 #[default_device]
-pub fn stop_gradient_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> crate::error::Result<Array> {
+pub fn stop_gradient_device(
+    a: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> crate::error::Result<Array> {
     unsafe {
         let mut res = mlx_sys::mlx_array_new();
-        check_status!{ 
+        check_status! {
             mlx_sys::mlx_stop_gradient(
                 &mut res as *mut _,
                 a.as_ref().as_ptr(),

@@ -1,5 +1,5 @@
 use crate::array::ArrayElement;
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
 use mlx_internal_macros::default_device;
@@ -351,7 +351,7 @@ impl Array {
     ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
-            check_status!{
+            check_status! {
                 mlx_sys::mlx_tri(
                     &mut c_array as *mut _,
                     n,

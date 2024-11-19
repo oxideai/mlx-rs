@@ -63,14 +63,13 @@ where
     {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParam,
-                         arrays: Args|
-             -> Result<Vec<Array>, Exception> {
-                let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                update_flattened_parameters(model, flattened_parameters);
+            let inner =
+                |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
+                    let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
+                    update_flattened_parameters(model, flattened_parameters);
 
-                self(model, arrays)
-            };
+                    self(model, arrays)
+                };
             let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;
@@ -116,14 +115,13 @@ where
     ) -> impl FnMut(&mut M, Args) -> Result<(Array, FlattenedModuleParam), Exception> + 'a {
         move |model, arrays| {
             let trainable_parameters = trainable_params(model);
-            let inner = |parameters: FlattenedModuleParam,
-                         arrays: Args|
-             -> Result<Vec<Array>, Exception> {
-                let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                update_flattened_parameters(model, flattened_parameters);
+            let inner =
+                |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
+                    let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
+                    update_flattened_parameters(model, flattened_parameters);
 
-                self(model, arrays).map(|v| vec![v])
-            };
+                    self(model, arrays).map(|v| vec![v])
+                };
             let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;

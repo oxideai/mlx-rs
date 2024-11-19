@@ -3,7 +3,10 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, Array
+    array,
+    error::AdafactorBuildError,
+    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    Array,
 };
 
 use super::{Optimizer, OptimizerState};
@@ -326,7 +329,10 @@ impl Optimizer for Adafactor {
                 .multiply(&*exp_avg_sq_col)?
                 .add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
 
-            update = Cow::Owned(approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?);
+            update = Cow::Owned(approvate_exp_moving_avg(
+                &*exp_avg_sq_row,
+                &*exp_avg_sq_col,
+            )?);
             update = Cow::Owned(update.multiply(gradient)?);
         } else {
             // SAFETY: This field is created in the `new` when ndim < 2 and won't panic.

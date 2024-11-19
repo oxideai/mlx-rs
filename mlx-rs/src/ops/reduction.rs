@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
@@ -33,8 +33,8 @@ impl Array {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_all_axes(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -75,8 +75,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_prod(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -117,8 +117,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_max(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -159,8 +159,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_sum(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -201,8 +201,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_mean(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -243,8 +243,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_min(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -277,8 +277,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_var(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -312,8 +312,8 @@ check_status! {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_logsumexp(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -384,8 +384,8 @@ pub fn std_device<'a>(
     let ddof = ddof.into().unwrap_or(0);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_std(
                 &mut c_array as *mut _,
                 a.as_ptr(),

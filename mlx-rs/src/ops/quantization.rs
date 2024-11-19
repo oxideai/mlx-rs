@@ -4,7 +4,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
+use crate::{error::Result, Array, Stream, StreamOrDevice};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -50,7 +50,11 @@ pub fn quantize_device(
             }
         };
 
-        Ok((Array::from_ptr(res_0), Array::from_ptr(res_1), Array::from_ptr(res_2)))
+        Ok((
+            Array::from_ptr(res_0),
+            Array::from_ptr(res_1),
+            Array::from_ptr(res_2),
+        ))
     }
 }
 

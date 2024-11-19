@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::{device::Device, error::{Exception, Result}, utils::SUCCESS};
+use crate::{device::Device, error::Result, utils::SUCCESS};
 
 /// Parameter type for all MLX operations.
 ///
@@ -36,11 +36,6 @@ impl StreamOrDevice {
         StreamOrDevice {
             stream: Stream::gpu(),
         }
-    }
-
-    /// The underlying stream's pointer.
-    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_stream {
-        self.stream.c_stream
     }
 }
 
@@ -88,44 +83,26 @@ impl AsRef<Stream> for Stream {
 }
 
 impl Stream {
-    fn new_with_mlx_mlx_stream(stream: mlx_sys::mlx_stream) -> Stream {
-        Stream { c_stream: stream }
-    }
-
     /// Create a new stream on the default device. Panics if fails.
     pub fn new() -> Stream {
-        // TODO: is there a better way to handle this so that we don't panic?
-        Self::try_new().unwrap()
-    }
-
-    /// Try to create a new stream on the default device
-    pub fn try_new() -> Result<Stream> {
         unsafe {
             let mut dev = mlx_sys::mlx_device_new();
-            check_status!{
-                mlx_sys::mlx_get_default_device(&mut dev as *mut _),
-                mlx_sys::mlx_device_free(dev)
-            };
+            // SAFETY: mlx_get_default_device internally never throws an error
+            mlx_sys::mlx_get_default_device(&mut dev as *mut _);
+
             let mut c_stream = mlx_sys::mlx_stream_new();
-            check_status!{
-                mlx_sys::mlx_get_default_stream(&mut c_stream as *mut _, dev),
-                {
-                    mlx_sys::mlx_stream_free(c_stream);
-                    mlx_sys::mlx_device_free(dev)
-                }
-            };
-            check_status!{
-                mlx_sys::mlx_device_free(dev),
-                mlx_sys::mlx_stream_free(c_stream)
-            };
-            Ok(Stream { c_stream })
+            // SAFETY: mlx_get_default_stream internally never throws if dev is valid
+            mlx_sys::mlx_get_default_stream(&mut c_stream as *mut _, dev);
+
+            mlx_sys::mlx_device_free(dev);
+            Stream { c_stream }
         }
     }
 
     pub fn try_default_on_device(device: &Device) -> Result<Stream> {
         unsafe {
             let mut c_stream = mlx_sys::mlx_stream_new();
-            check_status!{
+            check_status! {
                 mlx_sys::mlx_get_default_stream(&mut c_stream as *mut _, device.c_device),
                 mlx_sys::mlx_stream_free(c_stream)
             };
@@ -168,8 +145,8 @@ impl Stream {
                     let ptr = mlx_sys::mlx_string_data(mlx_str);
                     let c_str = CStr::from_ptr(ptr);
                     write!(f, "{}", c_str.to_string_lossy())
-                },
-                _ => Err(std::fmt::Error::default())
+                }
+                _ => Err(std::fmt::Error),
             };
             mlx_sys::mlx_string_free(mlx_str);
             result

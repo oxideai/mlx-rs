@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::stream::StreamOrDevice;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;

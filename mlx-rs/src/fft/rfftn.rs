@@ -1,4 +1,5 @@
 use mlx_internal_macros::default_device;
+use mlx_sys::{mlx_array_free, mlx_array_new};
 
 use crate::{error::Exception, utils::IntoOption, Array, Stream, StreamOrDevice};
 
@@ -24,8 +25,10 @@ pub fn rfft_device(
 ) -> Result<Array, Exception> {
     let (n, axis) = resolve_size_and_axis_unchecked(a, n.into(), axis.into());
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fft_rfft(a.c_array, n, axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_fft_rfft(&mut c_array as *mut _, a.c_array, n, axis, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -60,15 +63,18 @@ pub fn rfft2_device<'a>(
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fft_rfft2(
+                &mut c_array as *mut _,
                 a.c_array,
                 s_ptr,
                 num_s,
                 axes_ptr,
                 num_axes,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -103,15 +109,18 @@ pub fn rfftn_device<'a>(
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fft_rfftn(
+                &mut c_array as *mut _,
                 a.c_array,
                 s_ptr,
                 num_s,
                 axes_ptr,
                 num_axes,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -142,8 +151,10 @@ pub fn irfft_device(
         n = (n - 1) * 2;
     }
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fft_irfft(a.c_array, n, axis, stream.as_ref().as_ptr())
+        let mut c_array = mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_fft_irfft(&mut c_array as *mut _, a.c_array, n, axis, stream.as_ref().as_ptr()),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -186,15 +197,18 @@ pub fn irfft2_device<'a>(
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fft_irfft2(
+                &mut c_array as *mut _,
                 a.c_array,
                 s_ptr,
                 num_s,
                 axes_ptr,
                 num_axes,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -238,15 +252,18 @@ pub fn irfftn_device<'a>(
     let axes_ptr = axes.as_ptr();
 
     unsafe {
-        let c_array = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_array_new();
+        check_status! {
             mlx_sys::mlx_fft_irfftn(
+                &mut c_array as *mut _,
                 a.c_array,
                 s_ptr,
                 num_s,
                 axes_ptr,
                 num_axes,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }

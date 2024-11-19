@@ -134,7 +134,7 @@ impl Stream {
         }
     }
 
-    pub fn as_raw(&self) -> mlx_sys::mlx_stream {
+    pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
         self.c_stream
     }
 

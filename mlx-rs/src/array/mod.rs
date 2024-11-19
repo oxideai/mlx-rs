@@ -81,12 +81,12 @@ impl Array {
     ///
     /// The caller must ensure the reference count of the array is properly incremented with
     /// `mlx_sys::mlx_retain`.
-    pub unsafe fn from_raw(c_array: mlx_array) -> Array {
+    pub unsafe fn from_ptr(c_array: mlx_array) -> Array {
         Self { c_array }
     }
 
     // TODO: should this be unsafe?
-    pub fn as_raw(&self) -> mlx_array {
+    pub fn as_ptr(&self) -> mlx_array {
         self.c_array
     }
 
@@ -390,7 +390,7 @@ impl Array {
                 dtype.into(),
             );
 
-            Array::from_raw(new_c_array)
+            Array::from_ptr(new_c_array)
         }
     }
 }
@@ -406,12 +406,12 @@ pub fn stop_gradient_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Arr
         check_status!{ 
             mlx_sys::mlx_stop_gradient(
                 &mut res as *mut _,
-                a.as_raw(),
-                stream.as_ref().as_raw(),
+                a.as_ptr(),
+                stream.as_ref().as_ptr(),
             ),
             mlx_sys::mlx_array_free(res)
         };
-        Ok(Array::from_raw(res))
+        Ok(Array::from_ptr(res))
     }
 }
 
@@ -932,7 +932,7 @@ mod tests {
         assert_eq!(orig.as_slice::<i32>(), clone.as_slice::<i32>());
 
         // Addr of `mlx_array` should be different
-        assert_ne!(orig.as_raw().ctx, clone.as_raw().ctx);
+        assert_ne!(orig.as_ptr().ctx, clone.as_ptr().ctx);
 
         // Addr of data should be different
         assert_ne!(

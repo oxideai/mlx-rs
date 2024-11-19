@@ -3,7 +3,7 @@ pub(crate) mod io;
 
 use mlx_sys::mlx_vector_array;
 
-use crate::{complex64, error::{Exception, Result}, Array, FromNested};
+use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::ops::Deref;
@@ -53,7 +53,7 @@ impl VectorArray {
         Self { c_vec }
     }
 
-    pub(crate) fn try_from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Result<Self> {
+    pub(crate) fn try_from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Result<Self, Exception> {
         unsafe {
             let c_vec = mlx_sys::mlx_vector_array_new();
             for arr in iter {
@@ -67,7 +67,7 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn try_into_values<T>(self) -> Result<T>
+    pub(crate) fn try_into_values<T>(self) -> Result<T, Exception>
     where
         T: FromIterator<Array>,
     {
@@ -82,7 +82,7 @@ impl VectorArray {
                     };
                     Ok(Array::from_ptr(c_array))
                 })
-                .collect::<Result<T>>()
+                .collect::<Result<T, Exception>>()
         }
     }
 }
@@ -252,7 +252,7 @@ impl<'a> Closure<'a> {
 
     pub(crate) fn new_fallible<F>(closure: F) -> Self
     where
-        F: FnMut(&[Array]) -> Result<Vec<Array>> + 'a,
+        F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     {
         let c_closure = new_mlx_fallible_closure(closure);
         Self {
@@ -288,7 +288,7 @@ where
 
 fn new_mlx_fallible_closure<'a, F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: FnMut(&[Array]) -> Result<Vec<Array>> + 'a,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     let boxed = Box::new(closure);
     let raw = Box::into_raw(boxed);
@@ -313,7 +313,7 @@ fn new_mlx_vector_array(arrays: Vec<Array>) -> mlx_sys::mlx_vector_array {
     }
 }
 
-fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Result<Vec<Array>> {
+fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Result<Vec<Array>, Exception> {
     unsafe {
         let size = mlx_sys::mlx_vector_array_size(vector_array);
         (0..size)
@@ -363,7 +363,7 @@ extern "C" fn trampoline_fallible<'a, F>(
     payload: *mut std::ffi::c_void,
 ) -> i32
 where
-    F: FnMut(&[Array]) -> Result<Vec<Array>> + 'a,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     unsafe {
         let raw_closure: *mut F = payload as *mut _;

@@ -6,6 +6,7 @@ use mlx_sys::mlx_vector_array;
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
+use std::ops::Deref;
 use std::{ffi::NulError, marker::PhantomData, os::raw::c_void, rc::Rc};
 
 /// Success status code from the c binding
@@ -58,7 +59,7 @@ impl VectorArray {
             for arr in iter {
                 // mlx_sys::mlx_vector_array_add_value(c_vec, arr.as_ref().as_ptr())
                 check_status!{
-                    mlx_sys::mlx_vector_array_append_value(c_vec, arr.as_ref().as_raw()),
+                    mlx_sys::mlx_vector_array_append_value(c_vec, arr.as_ref().as_ptr()),
                     mlx_sys::mlx_vector_array_free(c_vec)
                 };
             }
@@ -79,7 +80,7 @@ impl VectorArray {
                         mlx_sys::mlx_vector_array_get(&mut c_array as *mut _, self.c_vec, i),
                         mlx_sys::mlx_array_free(c_array)
                     };
-                    Ok(Array::from_raw(c_array))
+                    Ok(Array::from_ptr(c_array))
                 })
                 .collect::<Result<T, Exception>>()
         }
@@ -306,7 +307,7 @@ where
 fn new_mlx_vector_array(arrays: Vec<Array>) -> mlx_sys::mlx_vector_array {
     unsafe {
         let result = mlx_sys::mlx_vector_array_new();
-        let ctx_ptrs: Vec<mlx_sys::mlx_array> = arrays.iter().map(|array| array.as_raw()).collect();
+        let ctx_ptrs: Vec<mlx_sys::mlx_array> = arrays.iter().map(|array| array.as_ptr()).collect();
         mlx_sys::mlx_vector_array_append_data(result, ctx_ptrs.as_ptr(), arrays.len());
         result
     }
@@ -323,7 +324,7 @@ fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Result<Ve
                     mlx_sys::mlx_vector_array_get(&mut c_array as *mut _, vector_array, index),
                     mlx_sys::mlx_array_free(c_array)
                 };
-                Ok(Array::from_raw(c_array))
+                Ok(Array::from_ptr(c_array))
             })
             .collect()
     }
@@ -478,4 +479,27 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
     }
 
     map.get_mut(key).unwrap()
+}
+
+/// A helper enum that can be either an owned value or a reference.
+pub enum OwnedOrRef<'a, T> {
+    Owned(T),
+    Ref(&'a T),
+}
+
+impl<T> AsRef<T> for OwnedOrRef<'_, T> {
+    fn as_ref(&self) -> &T {
+        match self {
+            OwnedOrRef::Owned(t) => t,
+            OwnedOrRef::Ref(t) => t,
+        }
+    }
+}
+
+impl<T> Deref for OwnedOrRef<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
 }

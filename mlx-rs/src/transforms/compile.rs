@@ -44,16 +44,16 @@ pub trait Compile<'a, Args, Output, Err>: Sized {
     ) -> impl CallMut<'a, Args, Output, Err>;
 }
 
-impl<'a, F> Compile<'a, &'a [&'a Array], Vec<Array>, ()> for F
+impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, ()> for F
 where
-    F: FnMut(&[&Array]) -> Vec<Array> + 'static,
+    F: FnMut(&[Array]) -> Vec<Array> + 'static,
 {
     fn compile(
         self,
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a [&'a Array], Vec<Array>, ()> {
+    ) -> impl CallMut<'a, &'a [Array], Vec<Array>, ()> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -69,16 +69,16 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, &'a [&'a Array], Vec<Array>, Exception> for F
+impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, Exception> for F
 where
-    F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'static,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'static,
 {
     fn compile(
         self,
         inputs: Option<&'a mut [Array]>,
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a [&'a Array], Vec<Array>, Exception> {
+    ) -> impl CallMut<'a, &'a [Array], Vec<Array>, Exception> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -104,8 +104,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, ()> {
-        let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)(args[0]);
+        let f = move |args: &[Array]| -> Vec<Array> {
+            let result = (self)(&args[0]);
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -133,8 +133,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, Exception> {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)(args[0])?;
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
+            let result = (self)(&args[0])?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -162,8 +162,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, ()> {
-        let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)((args[0], args[1]));
+        let f = move |args: &[Array]| -> Vec<Array> {
+            let result = (self)((&args[0], &args[1]));
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -191,8 +191,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, Exception> {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)((args[0], args[1]))?;
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
+            let result = (self)((&args[0], &args[1]))?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -220,8 +220,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> {
-        let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)((args[0], args[1], args[2]));
+        let f = move |args: &[Array]| -> Vec<Array> {
+            let result = (self)((&args[0], &args[1], &args[2]));
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -249,8 +249,8 @@ where
         outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> {
-        let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)((args[0], args[1], args[2]))?;
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
+            let result = (self)((&args[0], &args[1], &args[2]))?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -278,22 +278,22 @@ pub struct Compiled<'a, F, G> {
     state: CompiledState<'a, G>,
 }
 
-impl<'a, F, G> CallMut<'a, &'a [&Array], Vec<Array>, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<'a, &'a [Array], Vec<Array>, ()> for Compiled<'a, F, G>
 where
-    F: FnMut(&[&Array]) -> Vec<Array> + 'a,
-    G: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
-    fn call_mut(&mut self, args: &[&Array]) -> Result<Vec<Array>, Exception> {
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
         self.state.call_mut(args)
     }
 }
 
-impl<'a, F, G> CallMut<'a, &'a [&Array], Vec<Array>, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<'a, &'a [Array], Vec<Array>, Exception> for Compiled<'a, F, G>
 where
-    F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
-    G: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
-    fn call_mut(&mut self, args: &[&Array]) -> Result<Vec<Array>, Exception> {
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
         self.state.call_mut_fallible(args)
     }
 }
@@ -301,11 +301,11 @@ where
 impl<'a, F, G> CallMut<'a, &'a Array, Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut(&Array) -> Array + 'a,
-    G: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args];
+        let args = &[args.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -314,11 +314,11 @@ where
 impl<'a, F, G> CallMut<'a, &'a Array, Array, Exception> for Compiled<'a, F, G>
 where
     F: FnMut(&Array) -> Result<Array, Exception> + 'a,
-    G: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args];
+        let args = &[args.clone()];
         let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -327,11 +327,11 @@ where
 impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array)) -> Array + 'a,
-    G: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args.0, args.1];
+        let args = &[args.0.clone(), args.1.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -340,11 +340,11 @@ where
 impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array, Exception> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'a,
-    G: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args.0, args.1];
+        let args = &[args.0.clone(), args.1.clone()];
         let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -353,11 +353,11 @@ where
 impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Array + 'a,
-    G: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args.0, args.1, args.2];
+        let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -367,11 +367,11 @@ impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception>
     for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'a,
-    G: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args.0, args.1, args.2];
+        let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
         let result = self.state.call_mut_fallible(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -396,7 +396,7 @@ fn call_mut_inner(
     shapeless: bool,
     state_inputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
     state_outputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
-    args: &[&Array],
+    args: &[Array],
 ) -> crate::error::Result<Vec<Array>> {
     // note: this will use the cached compile (via the id)
     // but will be able to re-evaluate with fresh state if needed
@@ -418,7 +418,7 @@ fn call_mut_inner(
     };
 
     let inner_inputs_vector = match state_inputs.borrow().as_ref() {
-        Some(s) => VectorArray::try_from_iter(args.iter().copied().chain(s.iter()))?,
+        Some(s) => VectorArray::try_from_iter(args.iter().chain(s.iter()))?,
         None => VectorArray::try_from_iter(args.iter())?,
     };
 
@@ -460,9 +460,9 @@ fn call_mut_inner(
 }
 
 impl<'a, F> CompiledState<'a, F> {
-    fn call_mut(&mut self, args: &[&Array]) -> Result<Vec<Array>, Exception>
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&[&Array]) -> Vec<Array> + 'a,
+        F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
         let args_len = args.len();
         let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
@@ -471,7 +471,7 @@ impl<'a, F> CompiledState<'a, F> {
 
         let state_inputs_clone = Rc::clone(&state_inputs);
         let state_outputs_clone = Rc::clone(&state_outputs);
-        let inner = move |tracers: &[&Array]| -> Vec<Array> {
+        let inner = move |tracers: &[Array]| -> Vec<Array> {
             // put the tracers in their appropriate places:
             // - arguments to the function
             // - inner state
@@ -479,10 +479,10 @@ impl<'a, F> CompiledState<'a, F> {
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            let state_inputs_clone_borrow = state_inputs_clone.borrow();
-            let saved_state_inputs: Option<Vec<&Array>> = state_inputs_clone_borrow
+            let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
+                .borrow()
                 .as_ref()
-                .map(|inputs| inputs.iter().collect());
+                .map(|inputs| inputs.iter().map(Clone::clone).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -495,26 +495,21 @@ impl<'a, F> CompiledState<'a, F> {
             let mut result = (f)(tracer_args);
 
             // recapture the state as it may have changed
-            let state_outputs_clone_borrow = state_outputs_clone.borrow();
-            let state_output_tracers: Option<Vec<&Array>> = state_outputs_clone_borrow
+            let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
+                .borrow()
                 .as_ref()
-                .map(|outputs| outputs.iter().collect());
+                .map(|outputs| outputs.iter().map(Clone::clone).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
                 for (s, saved) in inputs.iter_mut().zip(saved_state_inputs.unwrap()) {
-                    update_by_replace_with_ref_to_new_array(s, saved);
+                    update_by_replace_with_ref_to_new_array(s, &saved);
                 }
             }
 
             // return the result of the function and the state
             if let Some(mut state_output_tracers) = state_output_tracers {
-                // result.append(&mut state_output_tracers);
-                result.extend(state_output_tracers.drain(..).map(|x| unsafe {
-                    let mut new_array = Array::from_ptr(mlx_sys::mlx_array_new());
-                    update_by_replace_with_ref_to_new_array(&mut new_array, x);
-                    new_array
-                }));
+                result.append(&mut state_output_tracers);
             }
 
             result
@@ -532,9 +527,9 @@ impl<'a, F> CompiledState<'a, F> {
         )
     }
 
-    fn call_mut_fallible(&mut self, args: &[&Array]) -> Result<Vec<Array>, Exception>
+    fn call_mut_fallible(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+        F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     {
         let args_len = args.len();
         let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
@@ -543,7 +538,7 @@ impl<'a, F> CompiledState<'a, F> {
 
         let state_inputs_clone = Rc::clone(&state_inputs);
         let state_outputs_clone = Rc::clone(&state_outputs);
-        let inner = move |tracers: &[&Array]| -> Result<Vec<Array>, Exception> {
+        let inner = move |tracers: &[Array]| -> Result<Vec<Array>, Exception> {
             // put the tracers in their appropriate places:
             // - arguments to the function
             // - inner state
@@ -551,10 +546,10 @@ impl<'a, F> CompiledState<'a, F> {
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            let state_inputs_clone_borrow = state_inputs_clone.borrow();
-            let saved_state_inputs: Option<Vec<&Array>> = state_inputs_clone_borrow
+            let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
+                .borrow()
                 .as_ref()
-                .map(|inputs| inputs.iter().collect());
+                .map(|inputs| inputs.iter().map(Clone::clone).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -567,26 +562,22 @@ impl<'a, F> CompiledState<'a, F> {
             let mut result = (f)(tracer_args);
 
             // recapture the state as it may have changed
-            let state_outputs_clone_borrow = state_outputs_clone.borrow();
-            let state_output_tracers: Option<Vec<&Array>> = state_outputs_clone_borrow
+            let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
+                .borrow()
                 .as_ref()
-                .map(|outputs| outputs.iter().collect());
+                .map(|outputs| outputs.iter().map(Clone::clone).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
                 for (s, saved) in inputs.iter_mut().zip(saved_state_inputs.unwrap()) {
-                    update_by_replace_with_ref_to_new_array(s, saved);
+                    update_by_replace_with_ref_to_new_array(s, &saved);
                 }
             }
 
             // return the result of the function and the state
             if let Some(mut state_output_tracers) = state_output_tracers {
                 result = result.map(|mut r| {
-                    r.extend(state_output_tracers.drain(..).map(|x| unsafe {
-                        let mut new_array = Array::from_ptr(mlx_sys::mlx_array_new());
-                        update_by_replace_with_ref_to_new_array(&mut new_array, x);
-                        new_array
-                    }));
+                    r.append(&mut state_output_tracers);
                     r
                 });
             }
@@ -719,11 +710,11 @@ mod tests {
     fn test_compile() {
         // This unit test is modified from the mlx-swift codebase
 
-        let f = |inputs: &[&Array]| -> Vec<Array> { vec![inputs[0] * inputs[1]] };
+        let f = |inputs: &[Array]| -> Vec<Array> { vec![&inputs[0] * &inputs[1]] };
 
         let i1 = ones::<f32>(&[20, 20]).unwrap();
         let i2 = ones::<f32>(&[20, 20]).unwrap();
-        let args = [&i1, &i2];
+        let args = [i1, i2];
 
         // evaluate directly
         let r1 = f(&args).drain(0..1).next().unwrap();
@@ -740,14 +731,14 @@ mod tests {
 
     #[test]
     fn test_compile_with_error() {
-        let f = |inputs: &[&Array]| -> Result<Vec<Array>, Exception> {
-            multiply(inputs[0], inputs[1]).map(|x| vec![x])
+        let f = |inputs: &[Array]| -> Result<Vec<Array>, Exception> {
+            multiply(&inputs[0], &inputs[1]).map(|x| vec![x])
         };
 
         // Success case
         let i1 = ones::<f32>(&[20, 20]).unwrap();
         let i2 = ones::<f32>(&[20, 20]).unwrap();
-        let args = [&i1, &i2];
+        let args = [i1, i2];
 
         // evaluate directly
         let r1 = f(&args).unwrap().drain(0..1).next().unwrap();
@@ -764,12 +755,12 @@ mod tests {
         // Error case
         let a = array!([1.0, 2.0, 3.0]);
         let b = array!([4.0, 5.0]);
-        let args = [&a, &b];
+        let args = [a, b];
 
         // The cache is keyed by function pointer and argument shapes
         let c = array!([4.0, 5.0, 6.0]);
         let d = array!([7.0, 8.0]);
-        let another_args = [&c, &d];
+        let another_args = [c, d];
 
         // evaluate directly
         let result = f(&args);

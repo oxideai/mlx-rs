@@ -242,7 +242,7 @@ impl<'a> Closure<'a> {
 
     pub(crate) fn new<F>(closure: F) -> Self
     where
-        F: FnMut(&[&Array]) -> Vec<Array> + 'a,
+        F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
         let c_closure = new_mlx_closure(closure);
         Self {
@@ -253,7 +253,7 @@ impl<'a> Closure<'a> {
 
     pub(crate) fn new_fallible<F>(closure: F) -> Self
     where
-        F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+        F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     {
         let c_closure = new_mlx_fallible_closure(closure);
         Self {
@@ -273,7 +273,7 @@ impl<'a> Drop for Closure<'a> {
 /// Helper method to create a mlx_closure from a Rust closure.
 fn new_mlx_closure<'a, F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     // Box the closure to keep it on the heap
     let boxed = Box::new(closure);
@@ -289,7 +289,7 @@ where
 
 fn new_mlx_fallible_closure<'a, F>(closure: F) -> mlx_sys::mlx_closure
 where
-    F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     let boxed = Box::new(closure);
     let raw = Box::into_raw(boxed);
@@ -339,7 +339,7 @@ extern "C" fn trampoline<'a, F>(
     payload: *mut std::ffi::c_void,
 ) -> i32
 where
-    F: FnMut(&[&Array]) -> Vec<Array> + 'a,
+    F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     unsafe {
         let raw_closure: *mut F = payload as *mut _;
@@ -351,10 +351,7 @@ where
                 return FAILURE;
             }
         };
-        // TODO: is there a way to avoid this double alloc? We would either have to create this
-        // Vec<&Array> here or clone the arrays at some point
-        let ref_arrays: Vec<&Array> = arrays.iter().collect();
-        let result = closure(&ref_arrays);
+        let result = closure(&arrays);
         // We should probably keep using new_mlx_vector_array here instead of VectorArray
         // since we probably don't want to drop the arrays in the closure
         *ret = new_mlx_vector_array(result);
@@ -369,7 +366,7 @@ extern "C" fn trampoline_fallible<'a, F>(
     payload: *mut std::ffi::c_void,
 ) -> i32
 where
-    F: FnMut(&[&Array]) -> Result<Vec<Array>, Exception> + 'a,
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     unsafe {
         let raw_closure: *mut F = payload as *mut _;
@@ -380,10 +377,7 @@ where
                 return FAILURE;
             }
         };
-        // TODO: is there a way to avoid this double alloc? We would either have to create this
-        // Vec<&Array> here or clone the arrays at some point.
-        let ref_arrays: Vec<&Array> = arrays.iter().collect();
-        let result = closure(&ref_arrays);
+        let result = closure(&arrays);
         match result {
             Ok(result) => {
                 *ret = new_mlx_vector_array(result);

@@ -39,8 +39,9 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
 
     let load_result = (|| unsafe {
         let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-            mlx_sys::mlx_load(mlx_path.as_ptr(), stream.as_ref().as_ptr())
+        check_status! {
+            mlx_sys::mlx_load(&mut c_array as *mut _, mlx_sys::mlx_string_data(mlx_path.as_ptr()), stream.as_ref().as_ptr()),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     })();

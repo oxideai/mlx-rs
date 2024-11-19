@@ -41,9 +41,10 @@ pub fn conv_general_device<'a>(
     let flip = flip.into().unwrap_or(false);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv_general(
+                &mut c_array as *mut _,
                 array.as_ptr(),
                 weight.as_ptr(),
                 strides.as_ptr(),
@@ -59,7 +60,8 @@ check_status! {
                 groups,
                 flip,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -93,9 +95,10 @@ pub fn conv1d_device(
     let groups = groups.into().unwrap_or(1);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv1d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride,
@@ -103,7 +106,8 @@ check_status! {
                 dilation,
                 groups,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -136,9 +140,10 @@ pub fn conv2d_device(
     let dilation = dilation.into().unwrap_or((1, 1));
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv2d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride.0,
@@ -149,7 +154,8 @@ check_status! {
                 dilation.1,
                 groups.into().unwrap_or(1),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -173,9 +179,10 @@ pub fn conv3d_device(
     let dilation = dilation.into().unwrap_or((1, 1, 1));
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv3d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride.0,
@@ -189,7 +196,8 @@ check_status! {
                 dilation.2,
                 groups.into().unwrap_or(1),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -224,9 +232,10 @@ pub fn conv_transposed1d_device(
     let groups = groups.into().unwrap_or(1);
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv_transpose1d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride,
@@ -234,7 +243,8 @@ check_status! {
                 dilation,
                 groups,
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -269,9 +279,10 @@ pub fn conv_transposed2d_device(
     let dilation = dilation.into().unwrap_or((1, 1));
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv_transpose2d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride.0,
@@ -282,7 +293,8 @@ check_status! {
                 dilation.1,
                 groups.into().unwrap_or(1),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))
@@ -318,9 +330,10 @@ pub fn conv_transposed3d_device(
     let dilation = dilation.into().unwrap_or((1, 1, 1));
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_conv_transpose3d(
+                &mut c_array as *mut _,
                 array.as_ref().as_ptr(),
                 weight.as_ref().as_ptr(),
                 stride.0,
@@ -334,7 +347,8 @@ check_status! {
                 dilation.2,
                 groups.into().unwrap_or(1),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
         Ok(Array::from_ptr(c_array))

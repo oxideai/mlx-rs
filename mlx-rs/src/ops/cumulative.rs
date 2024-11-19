@@ -29,11 +29,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cummax(
+                            &mut c_array as *mut _,
                             self.c_array,
                             axis,
                             reverse.into().unwrap_or(false),
@@ -45,6 +46,7 @@ check_status! {
                         let shape = &[-1];
                         let flat = self.reshape_device(shape, &stream)?;
                         mlx_sys::mlx_cummax(
+                            &mut c_array as *mut _,
                             flat.c_array,
                             0,
                             reverse.into().unwrap_or(false),
@@ -52,7 +54,8 @@ check_status! {
                             stream.as_ref().as_ptr(),
                         )
                     }
-                }
+                },
+                mlx_sys::mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -85,11 +88,12 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cummin(
+                            &mut c_array as *mut _,
                             self.c_array,
                             axis,
                             reverse.into().unwrap_or(false),
@@ -101,6 +105,7 @@ check_status! {
                         let shape = &[-1];
                         let flat = self.reshape_device(shape, &stream)?;
                         mlx_sys::mlx_cummin(
+                            &mut c_array as *mut _,
                             flat.c_array,
                             0,
                             reverse.into().unwrap_or(false),
@@ -108,7 +113,8 @@ check_status! {
                             stream.as_ref().as_ptr(),
                         )
                     }
-                }
+                },
+                mlx_sys::mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -141,11 +147,12 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cumprod(
+                            &mut c_array as *mut _,
                             self.c_array,
                             axis,
                             reverse.into().unwrap_or(false),
@@ -157,6 +164,7 @@ check_status! {
                         let shape = &[-1];
                         let flat = self.reshape_device(shape, &stream)?;
                         mlx_sys::mlx_cumprod(
+                            &mut c_array as *mut _,
                             flat.c_array,
                             0,
                             reverse.into().unwrap_or(false),
@@ -164,7 +172,8 @@ check_status! {
                             stream.as_ref().as_ptr(),
                         )
                     }
-                }
+                },
+                mlx_sys::mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -197,11 +206,12 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 match axis.into() {
                     Some(axis) => {
                         mlx_sys::mlx_cumsum(
+                            &mut c_array as *mut _,
                             self.c_array,
                             axis,
                             reverse.into().unwrap_or(false),
@@ -213,6 +223,7 @@ check_status! {
                         let shape = &[-1];
                         let flat = self.reshape_device(shape, &stream)?;
                         mlx_sys::mlx_cumsum(
+                            &mut c_array as *mut _,
                             flat.c_array,
                             0,
                             reverse.into().unwrap_or(false),
@@ -220,7 +231,8 @@ check_status! {
                             stream.as_ref().as_ptr(),
                         )
                     }
-                }
+                },
+                mlx_sys::mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))

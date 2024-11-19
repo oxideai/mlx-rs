@@ -71,15 +71,17 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_eye(
+                    &mut c_array as *mut _,
                     n,
                     m.unwrap_or(n),
                     k.unwrap_or(0),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
 
             Ok(Array::from_ptr(c_array))
@@ -110,15 +112,17 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_full(
+                    &mut c_array as *mut _,
                     shape.as_ptr(),
                     shape.len(),
                     values.as_ref().as_ptr(),
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -138,14 +142,14 @@ check_status! {
     /// let r = Array::identity_device::<f32>(10, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn identity_device<T: ArrayElement>(
-        n: i32,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
-                mlx_sys::mlx_identity(n, T::DTYPE.into(), stream.as_ref().as_ptr())
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
+                mlx_sys::mlx_identity(
+                    &mut c_array as *mut _,
+                    n, T::DTYPE.into(), stream.as_ref().as_ptr()),
+                    mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -185,15 +189,17 @@ check_status! {
         let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_arange(
+                    &mut c_array as *mut _,
                     start,
                     stop,
                     step,
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -230,15 +236,17 @@ check_status! {
         let stop_f32 = NumCast::from(stop).unwrap();
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_linspace(
+                    &mut c_array as *mut _,
                     start_f32,
                     stop_f32,
                     count,
                     T::DTYPE.into(),
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -268,14 +276,16 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_repeat(
+                    &mut c_array as *mut _,
                     array.c_array,
                     count,
                     axis,
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -303,13 +313,15 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_repeat_all(
+                    &mut c_array as *mut _,
                     array.c_array,
                     count,
                     stream.as_ref().as_ptr(),
-                )
+                ),
+                mlx_sys::mlx_array_free(c_array)
             };
             Ok(Array::from_ptr(c_array))
         }
@@ -336,34 +348,34 @@ check_status! {
         m: Option<i32>,
         k: Option<i32>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<Array> {
         unsafe {
-            Array::from_ptr(mlx_sys::mlx_tri(
-                n,
-                m.unwrap_or(n),
-                k.unwrap_or(0),
-                T::DTYPE.into(),
-                stream.as_ref().as_ptr(),
-            ))
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status!{
+                mlx_sys::mlx_tri(
+                    &mut c_array as *mut _,
+                    n,
+                    m.unwrap_or(n),
+                    k.unwrap_or(0),
+                    T::DTYPE.into(),
+                    stream.as_ref().as_ptr(),
+                ),
+                mlx_sys::mlx_array_free(c_array)
+            };
+            Ok(Array::from_ptr(c_array))
         }
     }
 }
 
 /// See [`Array::zeros`]
 #[default_device]
-pub fn zeros_device<T: ArrayElement>(
-    shape: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::zeros_device::<T>(shape, stream)
 }
 
 /// An array of zeros like the input.
 #[default_device]
-pub fn zeros_like_device(
-    input: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn zeros_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -378,14 +390,16 @@ pub fn zeros_dtype_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_zeros(
+                &mut c_array as *mut _,
                 shape.as_ptr(),
                 shape.len(),
                 dtype.into(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -393,19 +407,13 @@ check_status! {
 
 /// See [`Array::ones`]
 #[default_device]
-pub fn ones_device<T: ArrayElement>(
-    shape: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::ones_device::<T>(shape, stream)
 }
 
 /// An array of ones like the input.
 #[default_device]
-pub fn ones_like_device(
-    input: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -413,20 +421,18 @@ pub fn ones_like_device(
 }
 
 /// Similar to [`Array::ones`] but with a specified dtype.
-pub fn ones_dtype_device(
-    shape: &[i32],
-    dtype: Dtype,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_ones(
+                &mut c_array as *mut _,
                 shape.as_ptr(),
                 shape.len(),
                 dtype.into(),
                 stream.as_ref().as_ptr(),
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
         Ok(Array::from_ptr(c_array))
     }
@@ -455,10 +461,7 @@ pub fn full_device<T: ArrayElement>(
 
 /// See [`Array::identity`]
 #[default_device]
-pub fn identity_device<T: ArrayElement>(
-    n: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::identity_device::<T>(n, stream)
 }
 
@@ -520,7 +523,7 @@ pub fn tri_device<T: ArrayElement>(
     m: Option<i32>,
     k: Option<i32>,
     stream: impl AsRef<Stream>,
-) -> Array {
+) -> Result<Array> {
     Array::tri_device::<T>(n, m, k, stream)
 }
 
@@ -728,7 +731,7 @@ mod tests {
 
     #[test]
     fn test_tri() {
-        let array = Array::tri::<f32>(3, None, None);
+        let array = Array::tri::<f32>(3, None, None).unwrap();
         assert_eq!(array.shape(), &[3, 3]);
         assert_eq!(array.dtype(), Dtype::Float32);
 

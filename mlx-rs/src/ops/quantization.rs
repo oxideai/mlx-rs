@@ -4,7 +4,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::{Exception, Result}, utils::TupleArrayArrayArray, Array, Stream, StreamOrDevice};
+use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -34,14 +34,23 @@ pub fn quantize_device(
     let bits = bits.into().unwrap_or(4);
 
     unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_quantize(w.as_ptr(), group_size, bits, stream.as_ref().as_ptr())
+        let mut res_0 = mlx_sys::mlx_array_new();
+        let mut res_1 = mlx_sys::mlx_array_new();
+        let mut res_2 = mlx_sys::mlx_array_new();
+        check_status! {
+            mlx_sys::mlx_quantize(
+                &mut res_0 as *mut _,
+                &mut res_1 as *mut _,
+                &mut res_2 as *mut _,
+                w.as_ptr(), group_size, bits, stream.as_ref().as_ptr()),
+            {
+                mlx_sys::mlx_array_free(res_0);
+                mlx_sys::mlx_array_free(res_1);
+                mlx_sys::mlx_array_free(res_2);
+            }
         };
 
-        let vec = TupleArrayArrayArray::from_ptr(c_vec);
-        let vals = vec.into_values();
-
-        Ok(vals)
+        Ok((Array::from_ptr(res_0), Array::from_ptr(res_1), Array::from_ptr(res_2)))
     }
 }
 
@@ -65,8 +74,10 @@ pub fn quantized_matmul_device(
     let bits = bits.into().unwrap_or(4);
 
     unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_quantized_matmul(
+                &mut c_array as *mut _,
                 x.as_ptr(),
                 w.as_ptr(),
                 scales.as_ptr(),
@@ -75,10 +86,11 @@ pub fn quantized_matmul_device(
                 group_size,
                 bits,
                 stream.as_ref().as_ptr()
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
-        Ok(Array::from_ptr(c_vec))
+        Ok(Array::from_ptr(c_array))
     }
 }
 
@@ -100,18 +112,21 @@ pub fn dequantize_device(
     let bits = bits.into().unwrap_or(4);
 
     unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
+        let mut c_array = mlx_sys::mlx_array_new();
+        check_status! {
             mlx_sys::mlx_dequantize(
+                &mut c_array as *mut _,
                 w.as_ptr(),
                 scales.as_ptr(),
                 biases.as_ptr(),
                 group_size,
                 bits,
                 stream.as_ref().as_ptr()
-            )
+            ),
+            mlx_sys::mlx_array_free(c_array)
         };
 
-        Ok(Array::from_ptr(c_vec))
+        Ok(Array::from_ptr(c_array))
     }
 }
 

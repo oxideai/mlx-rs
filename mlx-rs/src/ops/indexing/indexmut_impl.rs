@@ -5,7 +5,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::{Exception, Result},
+    error::Result,
     ops::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
@@ -176,8 +176,12 @@ fn scatter_args<'a>(
     if operations.len() == 1 {
         return match &operations[0] {
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
-            TakeArray { indices } => scatter_args_array(src, Cow::Borrowed(indices), update, stream),
-            TakeArrayRef { indices } => scatter_args_array(src, Cow::Borrowed(indices), update, stream),
+            TakeArray { indices } => {
+                scatter_args_array(src, Cow::Borrowed(indices), update, stream)
+            }
+            TakeArrayRef { indices } => {
+                scatter_args_array(src, Cow::Borrowed(indices), update, stream)
+            }
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
             ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
@@ -578,11 +582,10 @@ impl Array {
             axes,
         } = scatter_args(self, operations, update, &stream).unwrap();
         if !indices.is_empty() {
-            let result =
-                unsafe { 
-                    scatter_device(self, &indices, &update, &axes, stream)
-                        .expect("scatter_device failed") 
-                };
+            let result = unsafe {
+                scatter_device(self, &indices, &update, &axes, stream)
+                    .expect("scatter_device failed")
+            };
             drop(indices);
             *self = result;
         } else {
@@ -1417,10 +1420,7 @@ mod tests {
         check!((&i, Ellipsis, (..).stride_by(2), ..), 68094);
 
         // a[..., i, None, ::2, -1] = 1
-        check!(
-            (Ellipsis, &i, NewAxis, (..).stride_by(2), -1),
-            130977
-        );
+        check!((Ellipsis, &i, NewAxis, (..).stride_by(2), -1), 130977);
 
         // a[:, 2:, i] = 1
         check!((.., 2.., &i), 115965);

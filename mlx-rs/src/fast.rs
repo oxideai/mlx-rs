@@ -1,4 +1,4 @@
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -277,8 +277,7 @@ mod tests {
 
         let weight = Array::ones::<f32>(&[16]).unwrap();
         let bias = Array::zeros::<f32>(&[16]).unwrap();
-        let result = layer_norm(a, &weight, &bias, 1e-5)
-            .unwrap();
+        let result = layer_norm(a, &weight, &bias, 1e-5).unwrap();
         let result = result.index((ArrayIndexOp::Ellipsis, 0));
         assert_eq!(result.shape(), [2, 8]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);

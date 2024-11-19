@@ -1,13 +1,22 @@
-use std::{borrow::Cow, ops::{Bound, Deref, RangeBounds}, rc::Rc};
+use std::{
+    borrow::Cow,
+    ops::{Bound, Deref, RangeBounds},
+    rc::Rc,
+};
 
 use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
-    array, constants::DEFAULT_STACK_VEC_LEN, error::{Exception, Result}, ops::indexing::expand_ellipsis_operations, utils::{resolve_index_unchecked, VectorArray}, Array, Stream
+    array,
+    constants::DEFAULT_STACK_VEC_LEN,
+    error::Result,
+    ops::indexing::expand_ellipsis_operations,
+    utils::{resolve_index_unchecked, VectorArray},
+    Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, Ellipsis, TryIndexOp, NewAxis, RangeIndex, StrideBy};
+use super::{ArrayIndex, ArrayIndexOp, Ellipsis, NewAxis, RangeIndex, StrideBy, TryIndexOp};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
@@ -33,7 +42,9 @@ impl<'a> ArrayIndex<'a> for Ellipsis {
 
 impl<'a> ArrayIndex<'a> for Array {
     fn index_op(self) -> ArrayIndexOp<'a> {
-        ArrayIndexOp::TakeArray { indices: Rc::new(self) }
+        ArrayIndexOp::TakeArray {
+            indices: Rc::new(self),
+        }
     }
 }
 
@@ -217,7 +228,11 @@ where
     F: ArrayIndex<'f>,
     G: ArrayIndex<'g>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G), stream: impl AsRef<Stream>) -> Result<Array> {
+    fn try_index_device(
+        &self,
+        i: (A, B, C, D, E, F, G),
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -243,7 +258,11 @@ where
     G: ArrayIndex<'g>,
     H: ArrayIndex<'h>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H), stream: impl AsRef<Stream>) -> Result<Array> {
+    fn try_index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H),
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -271,7 +290,11 @@ where
     H: ArrayIndex<'h>,
     I: ArrayIndex<'i>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I), stream: impl AsRef<Stream>) -> Result<Array> {
+    fn try_index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I),
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -301,7 +324,11 @@ where
     I: ArrayIndex<'i>,
     J: ArrayIndex<'j>,
 {
-    fn try_index_device(&self, i: (A, B, C, D, E, F, G, H, I, J), stream: impl AsRef<Stream>) -> Result<Array> {
+    fn try_index_device(
+        &self,
+        i: (A, B, C, D, E, F, G, H, I, J),
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
         let i = [
             i.0.index_op(),
             i.1.index_op(),
@@ -796,7 +823,7 @@ fn gather_nd<'a>(
                 is_slice.push(false);
                 max_dims = max_dims.max(indices.ndim());
                 // Cloning is just incrementing the reference count
-                gather_indices.push(GatherIndexItem::Borrowed(*indices));
+                gather_indices.push(GatherIndexItem::Borrowed(indices));
             }
             Ellipsis | ExpandDims => {
                 unreachable!("Unexpected operation in gather_nd")
@@ -838,7 +865,7 @@ fn gather_nd<'a>(
 
     let gathered = unsafe {
         let mut c_array = mlx_array_new();
-        check_status!{
+        check_status! {
             mlx_sys::mlx_gather(
                 &mut c_array as *mut _,
                 src.c_array,
@@ -868,12 +895,7 @@ fn gather_nd<'a>(
 }
 
 #[inline]
-fn get_item_index(
-    src: &Array,
-    index: i32,
-    axis: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+fn get_item_index(src: &Array, index: i32, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
     src.take_device(array!(index), axis, stream)
 }
@@ -889,11 +911,7 @@ fn get_item_array(
 }
 
 #[inline]
-fn get_item_slice(
-    src: &Array,
-    range: RangeIndex,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+fn get_item_slice(src: &Array, range: RangeIndex, stream: impl AsRef<Stream>) -> Result<Array> {
     let ndim = src.ndim();
     let mut starts: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
     let mut ends: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::from_slice(src.shape());
@@ -928,8 +946,8 @@ fn get_item<'a>(
 
 // See `mlx_get_item_nd` in python/src/indexing.cpp and `getItemNd` in
 // mlx-swift/Sources/MLX/MLXArray+Indexing.swift
-fn get_item_nd<'a>(
-    src: &'a Array,
+fn get_item_nd(
+    src: &Array,
     operations: &[ArrayIndexOp],
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -1107,7 +1125,7 @@ fn get_item_nd<'a>(
 mod tests {
     use crate::{
         assert_array_eq,
-        ops::indexing::{IndexOp, Ellipsis, IntoStrideBy, NewAxis},
+        ops::indexing::{Ellipsis, IndexOp, IntoStrideBy, NewAxis},
         Array,
     };
 
@@ -1449,11 +1467,7 @@ mod tests {
 
         // gatherFirst path
         // a[i, ..., i]
-        check(
-            a.index((&i, Ellipsis, &i)),
-            &[2, 3, 4, 5],
-            43200,
-        );
+        check(a.index((&i, Ellipsis, &i)), &[2, 3, 4, 5], 43200);
 
         // a[i, ..., ::2, :]
         let result = a.index((&i, Ellipsis, (..).stride_by(2), ..));

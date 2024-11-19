@@ -1,8 +1,10 @@
 use mlx_internal_macros::default_device;
-use std::ffi::c_void;
 
 use crate::utils::MlxString;
-use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
+use crate::{
+    error::{Exception, Result},
+    Array, Stream, StreamOrDevice,
+};
 
 impl Array {
     /// Extract a diagonal or construct a diagonal matrix.
@@ -21,8 +23,8 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_diag(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -59,8 +61,8 @@ check_status! {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_diagonal(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -97,8 +99,8 @@ check_status! {
         };
 
         unsafe {
-            let mut c_array = mlx_sys::mlx_array_new(); 
-check_status! {
+            let mut c_array = mlx_sys::mlx_array_new();
+            check_status! {
                 mlx_sys::mlx_hadamard_transform(
                     &mut c_array as *mut _,
                     self.c_array,
@@ -153,14 +155,14 @@ pub fn einsum_device<'a>(
     let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
     let c_arrays: Vec<_> = operands.into_iter().map(|a| a.c_array).collect();
     unsafe {
-        check_status!{
+        check_status! {
             mlx_sys::mlx_vector_array_append_data(c_operands, c_arrays.as_ptr(), c_arrays.len()),
             mlx_sys::mlx_vector_array_free(c_operands)
         };
     }
 
     unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
+        let mut c_array = mlx_sys::mlx_array_new();
         check_status! {
             mlx_sys::mlx_einsum(
                 &mut c_array as *mut _,

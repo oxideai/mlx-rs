@@ -1,7 +1,7 @@
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::{Exception, Result}, utils::IntoOption, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::IntoOption, Array, Stream, StreamOrDevice};
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
 

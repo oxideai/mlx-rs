@@ -1,4 +1,4 @@
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::sealed::Sealed;
 use crate::{complex64, Array, Dtype};
 use half::{bf16, f16};
@@ -55,7 +55,7 @@ impl ArrayElement for f16 {
 
     fn array_item(array: &Array) -> Result<Self> {
         let mut val = float16_t::default();
-        check_status!{
+        check_status! {
             unsafe { mlx_sys::mlx_array_item_float16(&mut val as *mut _, array.c_array) },
             {}
         }
@@ -73,7 +73,7 @@ impl ArrayElement for bf16 {
 
     fn array_item(array: &Array) -> Result<Self> {
         let mut bits = bfloat16_t::default();
-        check_status!{
+        check_status! {
             unsafe { mlx_sys::mlx_array_item_bfloat16(&mut bits as *mut _, array.c_array) },
             {}
         }
@@ -91,7 +91,7 @@ impl ArrayElement for complex64 {
 
     fn array_item(array: &Array) -> Result<Self> {
         let mut bindgen_complex64 = __BindgenComplex::<f32>::default();
-        check_status!{
+        check_status! {
             unsafe { mlx_sys::mlx_array_item_complex64(&mut bindgen_complex64 as *mut _, array.c_array) },
             {}
         }

@@ -5,9 +5,8 @@ use mlx_sys::mlx_vector_array;
 
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
-use std::ops::Deref;
-use std::{ffi::NulError, marker::PhantomData, os::raw::c_void, rc::Rc};
+use std::ffi::CString;
+use std::{ffi::NulError, marker::PhantomData, rc::Rc};
 
 /// Success status code from the c binding
 pub(crate) const SUCCESS: i32 = 0;
@@ -53,12 +52,14 @@ impl VectorArray {
         Self { c_vec }
     }
 
-    pub(crate) fn try_from_iter(iter: impl Iterator<Item = impl AsRef<Array>>) -> Result<Self, Exception> {
+    pub(crate) fn try_from_iter(
+        iter: impl Iterator<Item = impl AsRef<Array>>,
+    ) -> Result<Self, Exception> {
         unsafe {
             let c_vec = mlx_sys::mlx_vector_array_new();
             for arr in iter {
                 // mlx_sys::mlx_vector_array_add_value(c_vec, arr.as_ref().as_ptr())
-                check_status!{
+                check_status! {
                     mlx_sys::mlx_vector_array_append_value(c_vec, arr.as_ref().as_ptr()),
                     mlx_sys::mlx_vector_array_free(c_vec)
                 };
@@ -76,7 +77,7 @@ impl VectorArray {
             (0..size)
                 .map(|i| {
                     let mut c_array = mlx_sys::mlx_array_new();
-                    check_status!{
+                    check_status! {
                         mlx_sys::mlx_vector_array_get(&mut c_array as *mut _, self.c_vec, i),
                         mlx_sys::mlx_array_free(c_array)
                     };
@@ -313,14 +314,16 @@ fn new_mlx_vector_array(arrays: Vec<Array>) -> mlx_sys::mlx_vector_array {
     }
 }
 
-fn mlx_vector_array_values(vector_array: mlx_sys::mlx_vector_array) -> Result<Vec<Array>, Exception> {
+fn mlx_vector_array_values(
+    vector_array: mlx_sys::mlx_vector_array,
+) -> Result<Vec<Array>, Exception> {
     unsafe {
         let size = mlx_sys::mlx_vector_array_size(vector_array);
         (0..size)
             .map(|index| {
                 // ctx is a +1 reference, the array takes ownership
                 let mut c_array = mlx_sys::mlx_array_new();
-                check_status!{
+                check_status! {
                     mlx_sys::mlx_vector_array_get(&mut c_array as *mut _, vector_array, index),
                     mlx_sys::mlx_array_free(c_array)
                 };
@@ -386,9 +389,7 @@ where
                 *ret = new_mlx_vector_array(result);
                 SUCCESS
             }
-            Err(_) => {
-                FAILURE
-            }
+            Err(_) => FAILURE,
         }
     }
 }

@@ -2,10 +2,16 @@
 
 #![deny(missing_docs)]
 
-use std::{borrow::{Borrow, Cow}, collections::HashMap, rc::Rc};
+use std::{
+    borrow::{Borrow, Cow},
+    collections::HashMap,
+    rc::Rc,
+};
 
 use crate::{
-    array, error::Exception, module::{FlattenedModuleParam, ModuleParameters}, Array
+    array,
+    module::{FlattenedModuleParam, ModuleParameters},
+    Array,
 };
 
 mod adadelta;
@@ -71,10 +77,10 @@ pub trait Optimizer {
 /// This function ensures that the global norm of the gradients does not exceed
 /// `max_norm`. It scales down the gradients proportionally if their norm is
 /// greater than `max_norm`.
-pub fn clip_grad_norm<'a>(
-    gradients: &'a FlattenedModuleParam,
+pub fn clip_grad_norm(
+    gradients: &FlattenedModuleParam,
     max_norm: f32,
-) -> (HashMap<Rc<str>, Cow<'a, Array>>, f32) {
+) -> (HashMap<Rc<str>, Cow<'_, Array>>, f32) {
     let total_norm: f32 = gradients
         .values()
         .fold(array!(0.0), |acc, grad| {

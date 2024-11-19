@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::{error::{Exception, Result}, utils::SUCCESS};
+use crate::{error::Result, utils::SUCCESS};
 
 ///Type of device.
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]
@@ -17,16 +17,14 @@ pub struct Device {
 
 impl Device {
     pub fn new(device_type: DeviceType, index: i32) -> Device {
-        let c_device = unsafe {
-            mlx_sys::mlx_device_new_type(device_type.into(), index)
-        };
+        let c_device = unsafe { mlx_sys::mlx_device_new_type(device_type.into(), index) };
         Device { c_device }
     }
 
     pub fn try_default() -> Result<Self> {
         unsafe {
             let mut c_device = mlx_sys::mlx_device_new();
-            check_status!{
+            check_status! {
                 mlx_sys::mlx_get_default_device(&mut c_device as *mut _),
                 mlx_sys::mlx_device_free(c_device)
             };
@@ -64,8 +62,8 @@ impl Device {
                     let ptr = mlx_sys::mlx_string_data(mlx_str);
                     let c_str = CStr::from_ptr(ptr);
                     write!(f, "{}", c_str.to_string_lossy())
-                },
-                _ => Err(std::fmt::Error::default())
+                }
+                _ => Err(std::fmt::Error),
             };
             mlx_sys::mlx_string_free(mlx_str);
             result

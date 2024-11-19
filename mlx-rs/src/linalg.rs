@@ -1,5 +1,5 @@
 use crate::error::{Exception, Result};
-use crate::utils::{IntoOption, MlxString, VectorArray};
+use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
@@ -311,7 +311,10 @@ pub fn qr_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Ar
 /// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
 /// ```
 #[default_device]
-pub fn svd_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Array, Array, Array)> {
+pub fn svd_device(
+    array: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array, Array)> {
     unsafe {
         let mut c_vec = mlx_sys::mlx_vector_array_new();
         check_status! {
@@ -381,7 +384,11 @@ pub fn inv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 /// - `upper`: If `true`, return the upper triangular Cholesky factor. If `false`, return the lower
 ///   triangular Cholesky factor. Default: `false`.
 #[default_device]
-pub fn cholesky_device(a: impl AsRef<Array>, upper: Option<bool>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn cholesky_device(
+    a: impl AsRef<Array>,
+    upper: Option<bool>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let upper = upper.unwrap_or(false);
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
@@ -395,7 +402,7 @@ pub fn cholesky_device(a: impl AsRef<Array>, upper: Option<bool>, stream: impl A
 }
 
 /// Compute the inverse of a real symmetric positive semi-definite matrix using it’s Cholesky decomposition.
-/// 
+///
 /// Please see the python documentation for more details.
 #[default_device]
 pub fn cholesky_inv_device(
@@ -416,7 +423,7 @@ pub fn cholesky_inv_device(
 }
 
 /// Compute the cross product of two arrays along a specified axis.
-/// 
+///
 /// The cross product is defined for arrays with size 2 or 3 in the specified axis. If the size is 2
 /// then the third value is assumed to be zero.
 #[default_device]
@@ -438,7 +445,7 @@ pub fn cross_device(
 }
 
 /// Compute the eigenvalues and eigenvectors of a complex Hermitian or real symmetric matrix.
-/// 
+///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues and eigenvectors are computed for each matrix in the last two
 /// dimensions.
@@ -449,7 +456,8 @@ pub fn eigh_device(
     stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array)> {
     let a = a.as_ref();
-    let uplo = uplo.unwrap_or("L");
+    let uplo =
+        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
     unsafe {
         let mut res_0 = mlx_sys::mlx_array_new();
         let mut res_1 = mlx_sys::mlx_array_new();
@@ -458,7 +466,7 @@ pub fn eigh_device(
                 &mut res_0 as *mut _,
                 &mut res_1 as *mut _,
                 a.as_ref().as_ptr(),
-                CString::new(uplo).unwrap().as_ptr(),
+                uplo.as_ptr(),
                 stream.as_ref().as_ptr(),
             ),
             {
@@ -472,7 +480,7 @@ pub fn eigh_device(
 }
 
 /// Compute the eigenvalues of a complex Hermitian or real symmetric matrix.
-/// 
+///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues are computed for each matrix in the last two dimensions.
 #[default_device]
@@ -482,14 +490,15 @@ pub fn eigvalsh_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
-    let uplo = uplo.unwrap_or("L");
+    let uplo =
+        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
     unsafe {
         let mut res = mlx_sys::mlx_array_new();
         check_status! {
             mlx_sys::mlx_linalg_eigvalsh(
                 &mut res as *mut _,
                 a.as_ref().as_ptr(),
-                CString::new(uplo).unwrap().as_ptr(),
+                uplo.as_ptr(),
                 stream.as_ref().as_ptr(),
             ),
             mlx_sys::mlx_array_free(res)
@@ -500,10 +509,7 @@ pub fn eigvalsh_device(
 }
 
 #[default_device]
-pub fn pinv_device(
-    a: impl AsRef<Array>,
-    stream: impl AsRef<Stream>
-) -> Result<Array> {
+pub fn pinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         check_status! {

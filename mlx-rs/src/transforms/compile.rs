@@ -105,7 +105,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, ()> {
         let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)(&args[0]);
+            let result = (self)(args[0]);
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -134,7 +134,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, Exception> {
         let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)(&args[0])?;
+            let result = (self)(args[0])?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -163,7 +163,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, ()> {
         let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)((&args[0], &args[1]));
+            let result = (self)((args[0], args[1]));
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -192,7 +192,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)((&args[0], &args[1]))?;
+            let result = (self)((args[0], args[1]))?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -221,7 +221,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> {
         let f = move |args: &[&Array]| -> Vec<Array> {
-            let result = (self)((&args[0], &args[1], &args[2]));
+            let result = (self)((args[0], args[1], args[2]));
             vec![result]
         };
         let id = type_id_to_usize(&f);
@@ -250,7 +250,7 @@ where
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[&Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)((&args[0], &args[1], &args[2]))?;
+            let result = (self)((args[0], args[1], args[2]))?;
             Ok(vec![result])
         };
         let id = type_id_to_usize(&f);
@@ -503,7 +503,7 @@ impl<'a, F> CompiledState<'a, F> {
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
                 for (s, saved) in inputs.iter_mut().zip(saved_state_inputs.unwrap()) {
-                    update_by_replace_with_ref_to_new_array(s, &saved);
+                    update_by_replace_with_ref_to_new_array(s, saved);
                 }
             }
 
@@ -575,7 +575,7 @@ impl<'a, F> CompiledState<'a, F> {
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
                 for (s, saved) in inputs.iter_mut().zip(saved_state_inputs.unwrap()) {
-                    update_by_replace_with_ref_to_new_array(s, &saved);
+                    update_by_replace_with_ref_to_new_array(s, saved);
                 }
             }
 
@@ -741,7 +741,7 @@ mod tests {
     #[test]
     fn test_compile_with_error() {
         let f = |inputs: &[&Array]| -> Result<Vec<Array>, Exception> {
-            multiply(&inputs[0], &inputs[1]).map(|x| vec![x])
+            multiply(inputs[0], inputs[1]).map(|x| vec![x])
         };
 
         // Success case

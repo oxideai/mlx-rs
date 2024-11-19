@@ -1,4 +1,4 @@
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 

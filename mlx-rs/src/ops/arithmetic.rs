@@ -1,5 +1,5 @@
 use crate::array::Array;
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::sealed::Sealed;
 use crate::stream::StreamOrDevice;
 
@@ -678,7 +678,11 @@ impl Array {
     /// let mut c = a.matmul(&b);
     /// ```
     #[default_device]
-    pub fn matmul_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+    pub fn matmul_device(
+        &self,
+        other: impl AsRef<Array>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             check_status! {
@@ -806,7 +810,11 @@ pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arccos` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arccos(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arccos(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -817,7 +825,11 @@ pub fn acosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arccosh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arccosh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arccosh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -838,7 +850,11 @@ pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arcsin` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arcsin(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arcsin(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -849,7 +865,11 @@ pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arcsinh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arcsinh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arcsinh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -860,7 +880,11 @@ pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arctan` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arctan(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arctan(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -871,7 +895,11 @@ pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arctanh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_arctanh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_arctanh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1012,7 +1040,11 @@ pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_cosh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_cosh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_cosh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1023,7 +1055,11 @@ pub fn degrees_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_degrees` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_degrees(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_degrees(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1075,7 +1111,11 @@ pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_erf` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_erf(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_erf(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1086,7 +1126,11 @@ pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array 
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_erfinv` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_erfinv(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_erfinv(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1103,7 +1147,11 @@ pub fn expm1_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_expm1` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_expm1(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_expm1(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1175,7 +1223,11 @@ pub fn log_add_exp_device(
 
 /// See [`Array::matmul`].
 #[default_device]
-pub fn matmul_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn matmul_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().matmul_device(b, stream)
 }
 
@@ -1243,7 +1295,11 @@ pub fn negative_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Resu
 
 /// See [`Array::power`].
 #[default_device]
-pub fn power_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn power_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().power_device(b, stream)
 }
 
@@ -1253,7 +1309,11 @@ pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_radians` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_radians(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_radians(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1300,7 +1360,11 @@ pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sigmoid` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_sigmoid(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_sigmoid(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1311,7 +1375,11 @@ pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sign` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_sign(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_sign(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1328,7 +1396,11 @@ pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sinh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_sinh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_sinh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1352,8 +1424,17 @@ pub fn softmax_device<'a>(
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_softmax` internally shouldn't throw if `a` is a valid array.
         match axes.into_option() {
-            Some(axes) => mlx_sys::mlx_softmax(&mut c_array as *mut _, a.as_ref().as_ptr(), axes.as_ptr(), axes.len(), precise, s),
-            None => mlx_sys::mlx_softmax_all(&mut c_array as *mut _, a.as_ref().as_ptr(), precise, s),
+            Some(axes) => mlx_sys::mlx_softmax(
+                &mut c_array as *mut _,
+                a.as_ref().as_ptr(),
+                axes.as_ptr(),
+                axes.len(),
+                precise,
+                s,
+            ),
+            None => {
+                mlx_sys::mlx_softmax_all(&mut c_array as *mut _, a.as_ref().as_ptr(), precise, s)
+            }
         };
 
         Array::from_ptr(c_array)
@@ -1388,7 +1469,11 @@ pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_tan` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_tan(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_tan(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1399,7 +1484,11 @@ pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_tanh` internally shouldn't throw if a is a valid array.
-        mlx_sys::mlx_tanh(&mut c_array as *mut _, a.as_ref().c_array, stream.as_ref().as_ptr());
+        mlx_sys::mlx_tanh(
+            &mut c_array as *mut _,
+            a.as_ref().c_array,
+            stream.as_ref().as_ptr(),
+        );
         Array::from_ptr(c_array)
     }
 }
@@ -1422,23 +1511,23 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
     unsafe {
-    let mask_out_ptr = mask_out
-        .into()
-        .map(|m| m.as_ptr())
-        .unwrap_or(mlx_sys::mlx_array_new());
-    let mask_lhs_ptr = mask_lhs
-        .into()
-        .map(|m| m.as_ptr())
-        .unwrap_or(mlx_sys::mlx_array_new());
-    let mask_rhs_ptr = mask_rhs
-        .into()
-        .map(|m| m.as_ptr())
-        .unwrap_or(mlx_sys::mlx_array_new());
+        let mask_out_ptr = mask_out
+            .into()
+            .map(|m| m.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let mask_lhs_ptr = mask_lhs
+            .into()
+            .map(|m| m.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let mask_rhs_ptr = mask_rhs
+            .into()
+            .map(|m| m.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
 
         let mut c_array = mlx_sys::mlx_array_new();
         check_status! {
             mlx_sys::mlx_block_masked_mm(
-                &mut c_array as *mut _, 
+                &mut c_array as *mut _,
                 a_ptr,
                 b_ptr,
                 block_size.into().unwrap_or(32),
@@ -1484,7 +1573,7 @@ pub fn addmm_device(
         let mut c_array = mlx_sys::mlx_array_new();
         check_status! {
             mlx_sys::mlx_addmm(
-                &mut c_array as *mut _, 
+                &mut c_array as *mut _,
                 c_ptr,
                 a_ptr,
                 b_ptr,
@@ -1501,7 +1590,11 @@ pub fn addmm_device(
 /// Ordinary inner product of vectors for 1-D arrays, in higher dimensions a sum product over the
 /// last axes.
 #[default_device]
-pub fn inner_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn inner_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
     unsafe {
@@ -1518,7 +1611,11 @@ pub fn inner_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsR
 /// Compute the outer product of two 1-D arrays, if the array’s passed are not 1-D a flatten op will
 /// be run beforehand.
 #[default_device]
-pub fn outer_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn outer_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
     unsafe {
@@ -1580,7 +1677,7 @@ pub fn tensordot_device<'a>(
             match axes.into() {
                 TensorDotDims::Int(dim) => mlx_sys::mlx_tensordot_along_axis(&mut c_array as *mut _, a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr()),
                 TensorDotDims::List((lhs, rhs)) => mlx_sys::mlx_tensordot(
-                    &mut c_array as *mut _, 
+                    &mut c_array as *mut _,
                     a.as_ptr(),
                     b.as_ptr(),
                     lhs.as_ptr(),
@@ -2151,7 +2248,7 @@ mod tests {
         assert_eq!(abs(&x), array!([1.0, 0.0, 1.0]));
 
         // works on empty array
-        assert_eq!(abs(&array!()), array!());
+        assert_eq!(abs(array!()), array!());
 
         // int32
         let x = array!([-1, 0, 1]);
@@ -2172,7 +2269,7 @@ mod tests {
         assert_eq!(sign(&x), x);
 
         // works on empty array
-        assert_eq!(sign(&array!()), array!());
+        assert_eq!(sign(array!()), array!());
 
         // int32
         let x = array!([-1, 0, 1]);
@@ -2233,7 +2330,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(exp(&array!()), array!());
+        assert_eq!(exp(array!()), array!());
 
         let x = array![NEG_INF];
         assert_eq!(exp(&x).item::<f32>(), 0.0);
@@ -2301,7 +2398,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(sin(&array!()), array!());
+        assert_eq!(sin(array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -2344,7 +2441,7 @@ mod tests {
             abs <= 1e-5
         };
 
-        assert_eq!(cos(&array!()), array!());
+        assert_eq!(cos(array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -2379,7 +2476,7 @@ mod tests {
         let x = array![std::f32::consts::PI / 2.0];
         assert_eq!(degrees(&x).item::<f32>(), 90.0);
 
-        assert_eq!(degrees(&array!()), array!());
+        assert_eq!(degrees(array!()), array!());
 
         // Integer input type
         let x = array![0];
@@ -2410,7 +2507,7 @@ mod tests {
         let x = array![90.0];
         assert_eq!(radians(&x).item::<f32>(), std::f32::consts::PI / 2.0);
 
-        assert_eq!(radians(&array!()), array!());
+        assert_eq!(radians(array!()), array!());
 
         // Integer input type
         let x = array![90];

@@ -40,7 +40,7 @@ pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Arra
     check_file_extension(path, "npy")?;
 
     let load_result = (|| unsafe {
-        let mut c_array = mlx_sys::mlx_array_new(); 
+        let mut c_array = mlx_sys::mlx_array_new();
         check_status! {
             mlx_sys::mlx_load(&mut c_array as *mut _, mlx_sys::mlx_string_data(mlx_path.as_ptr()), stream.as_ref().as_ptr()),
             mlx_sys::mlx_array_free(c_array)
@@ -129,12 +129,14 @@ pub fn save_arrays<'a>(
         for (key, array) in arrays.iter() {
             let key = CString::new(key.as_str())?;
 
-            let status = mlx_sys::mlx_map_string_to_array_insert(data, key.as_ptr(), array.as_ptr());
+            let status =
+                mlx_sys::mlx_map_string_to_array_insert(data, key.as_ptr(), array.as_ptr());
 
             if status != SUCCESS {
                 mlx_sys::mlx_map_string_to_array_free(data);
                 return Err(crate::error::get_and_clear_last_mlx_error()
-                    .expect("A non-success status was returned, but no error was set.").into())
+                    .expect("A non-success status was returned, but no error was set.")
+                    .into());
             }
         }
         data
@@ -149,12 +151,14 @@ pub fn save_arrays<'a>(
             let key = CString::new(key.as_str())?;
             let value = CString::new(value.as_str())?;
 
-            let status = mlx_sys::mlx_map_string_to_string_insert(data, key.as_ptr(), value.as_ptr());
+            let status =
+                mlx_sys::mlx_map_string_to_string_insert(data, key.as_ptr(), value.as_ptr());
 
             if status != SUCCESS {
                 mlx_sys::mlx_map_string_to_string_free(data);
                 return Err(crate::error::get_and_clear_last_mlx_error()
-                    .expect("A non-success status was returned, but no error was set.").into())
+                    .expect("A non-success status was returned, but no error was set.")
+                    .into());
             }
         }
         data
@@ -167,8 +171,10 @@ pub fn save_arrays<'a>(
 
         let last_error = match status {
             SUCCESS => None,
-            _ => Some(crate::error::get_and_clear_last_mlx_error()
-                .expect("A non-success status was returned, but no error was set."))
+            _ => Some(
+                crate::error::get_and_clear_last_mlx_error()
+                    .expect("A non-success status was returned, but no error was set."),
+            ),
         };
 
         mlx_sys::mlx_map_string_to_array_free(arrays);

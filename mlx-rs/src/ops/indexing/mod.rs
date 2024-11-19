@@ -101,7 +101,7 @@ use std::{borrow::Cow, ops::Bound, rc::Rc};
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::{Exception, Result}, Array, Stream, StreamOrDevice};
+use crate::{error::Result, Array, Stream, StreamOrDevice};
 
 pub(crate) mod index_impl;
 pub(crate) mod indexmut_impl;
@@ -671,7 +671,8 @@ pub fn put_along_axis_device(
     axis: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.as_ref().put_along_axis_device(indices, values, axis, stream)
+    a.as_ref()
+        .put_along_axis_device(indices, values, axis, stream)
 }
 
 /// See [`Array::take`]

@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::{Exception, Result},
+    error::Result,
     utils::{IntoOption, VectorArray},
     Array, Stream, StreamOrDevice,
 };

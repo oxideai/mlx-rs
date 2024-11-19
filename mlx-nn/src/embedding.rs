@@ -40,7 +40,7 @@ impl Embedding {
     /// Use this for example when input embedding and output projection
     /// weights are tied.
     pub fn as_linear(&self, x: &Array) -> Result<Array, Exception> {
-        mlx_rs::ops::matmul(x, &self.weight.value.t())
+        mlx_rs::ops::matmul(x, self.weight.value.t())
     }
 }
 

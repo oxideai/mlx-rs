@@ -28,7 +28,12 @@ impl Array {
         unsafe {
             let mut new_array = mlx_sys::mlx_array_new();
             // SAFETY: self is a valid array
-            mlx_sys::mlx_astype(&mut new_array as *mut _, self.c_array, dtype.into(), stream.as_ref().as_ptr());
+            mlx_sys::mlx_astype(
+                &mut new_array as *mut _,
+                self.c_array,
+                dtype.into(),
+                stream.as_ref().as_ptr(),
+            );
             Array::from_ptr(new_array)
         }
     }
@@ -52,7 +57,12 @@ impl Array {
         unsafe {
             let mut new_array = mlx_sys::mlx_array_new();
             // SAFETY: self is a valid array
-            mlx_sys::mlx_view(&mut new_array as *mut _, self.c_array, dtype.into(), stream.as_ref().as_ptr());
+            mlx_sys::mlx_view(
+                &mut new_array as *mut _,
+                self.c_array,
+                dtype.into(),
+                stream.as_ref().as_ptr(),
+            );
             Array::from_ptr(new_array)
         }
     }

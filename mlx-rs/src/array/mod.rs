@@ -273,6 +273,31 @@ impl Array {
     ///
     /// _Note: This will evaluate the array._
     pub fn try_item<T: ArrayElement>(&self) -> crate::error::Result<T> {
+        self.eval()?;
+
+        // Evaluate the array, so we have content to work with in the conversion
+        self.eval()?;
+
+        // Though `mlx_array_item_<dtype>` returns a status code, it doesn't
+        // return any non-success status code even if the dtype doesn't match.
+        if self.dtype() != T::DTYPE {
+            unsafe {
+                let mut res = mlx_sys::mlx_array_new();
+                check_status!{
+                    mlx_sys::mlx_astype(
+                        &mut res as *mut _,
+                        self.c_array,
+                        T::DTYPE.into(),
+                        Stream::default().as_ptr(),
+                    ),
+                    mlx_sys::mlx_array_free(res)
+                };
+                let new_array = Array::from_ptr(res) ;
+                new_array.eval()?;
+                return T::array_item(&new_array)
+            }
+        }
+
         T::array_item(self)
     }
 

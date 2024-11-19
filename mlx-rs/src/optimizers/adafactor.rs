@@ -3,22 +3,19 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array,
-    error::{AdafactorBuildError, Exception},
-    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
-    Array,
+    array, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, utils::OwnedOrRef, Array
 };
 
 use super::{Optimizer, OptimizerState};
 
-fn rms(inputs: &Array) -> Result<Array> {
+fn rms(inputs: &Array) -> crate::error::Result<Array> {
     Ok(sqrt(&mean(&square(inputs), None, None)?))
 }
 
 fn approvate_exp_moving_avg(
     exp_avg_sq_row: &Array,
     exp_avg_sq_col: &Array,
-) -> Result<Array> {
+) -> crate::error::Result<Array> {
     let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?);
     let cfactor = rsqrt(exp_avg_sq_col);
     matmul(&rfactor.expand_dims(&[-1])?, &cfactor.expand_dims(&[0])?)
@@ -28,7 +25,7 @@ fn approvate_exp_moving_avg(
 pub type AdafactorEps = (f32, f32);
 
 /// State of the Adafactor optimizer.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AdafactorState {
     pub(crate) step: Array,
     pub(crate) exp_avg_sq_row: Option<Array>,
@@ -41,7 +38,7 @@ impl AdafactorState {
     /// Default value for `step`
     pub const DEFAULT_STEP: i32 = 0;
 
-    fn new(parameter: &Array, beta1_is_some: bool) -> Result<Self> {
+    fn new(parameter: &Array, beta1_is_some: bool) -> crate::error::Result<Self> {
         let step = array!(Self::DEFAULT_STEP);
         let mut exp_avg_sq_row = None;
         let mut exp_avg_sq_col = None;
@@ -82,7 +79,7 @@ pub type AdafactorBuilderLr = Option<f32>;
 
 /// A thin wrapper around `Option<Array>`. This wrapper is added to prevent accidental change of
 /// the learning rate after the optimizer is built while keeping all fields public.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AdafactorLr(Option<Array>);
 
 impl AdafactorLr {
@@ -104,7 +101,7 @@ pub type AdafactorBuilderBeta1 = Option<f32>;
 
 /// A thin wrapper around `Option<f32>`. This wrapper is added to prevent accidental change of
 /// the beta1 after the optimizer is built while keeping all fields public.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AdafactorBeta1(Option<Array>);
 
 impl AdafactorBeta1 {
@@ -258,7 +255,7 @@ fn compute_lr(
     eps: &(Array, Array),
     step: &Array,
     parameter_rms: &Array,
-) -> Result<Array> {
+) -> crate::error::Result<Array> {
     let relative_step_size = if relative_step {
         let min_step = if warmup_init {
             // SAFETY: `step` is a single-element array and won't panic.
@@ -267,10 +264,10 @@ fn compute_lr(
             array!(1e-2)
         };
         // SAFETY: `step` is a single-element array and won't panic.
-        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
+        OwnedOrRef::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
     } else {
         // SAFETY: This is already checked in the `build` stage.
-        Cow::Borrowed(
+        OwnedOrRef::Ref(
             lr.as_ref()
                 .expect("The learning rate should be set if the relative step is not enabled"),
         )
@@ -290,7 +287,7 @@ impl Optimizer for Adafactor {
         key: &std::rc::Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         let beta1_is_some = self.beta1.value().is_some();
         let state = get_mut_or_insert_with(&mut self.state, key, || {
             AdafactorState::new(parameter, beta1_is_some)
@@ -314,7 +311,7 @@ impl Optimizer for Adafactor {
         )?;
         let beta2 = array!(1.0).subtract(&step.power(&self.decay_rate)?)?;
 
-        let mut update = gradient.square().add(&self.eps.0)?;
+        let mut update = OwnedOrRef::Owned(gradient.square().add(&self.eps.0)?);
 
         let one_minus_beta2 = array!(1.0).subtract(&beta2)?;
         if factored {
@@ -329,8 +326,8 @@ impl Optimizer for Adafactor {
                 .multiply(&*exp_avg_sq_col)?
                 .add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
 
-            update = approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?;
-            update = update.multiply(gradient)?;
+            update = OwnedOrRef::Owned(approvate_exp_moving_avg(&*exp_avg_sq_row, &*exp_avg_sq_col)?);
+            update = OwnedOrRef::Owned(update.multiply(gradient)?);
         } else {
             // SAFETY: This field is created in the `new` when ndim < 2 and won't panic.
             let exp_avg_sq = state.exp_avg_sq.as_mut().unwrap();
@@ -338,13 +335,13 @@ impl Optimizer for Adafactor {
             *exp_avg_sq = beta2
                 .multiply(&*exp_avg_sq)?
                 .add(&one_minus_beta2.multiply(&update)?)?;
-            update = rsqrt(&*exp_avg_sq).multiply(gradient)?;
+            update = OwnedOrRef::Owned(rsqrt(&*exp_avg_sq).multiply(gradient)?);
         }
 
         let update_rms = rms(&update)?;
         let max = maximum(array!(1.0), update_rms.divide(&self.clip_threshold)?)?;
-        update = update.divide(max)?;
-        update = lr.multiply(update)?;
+        update = OwnedOrRef::Owned(update.divide(max)?);
+        update = OwnedOrRef::Owned(lr.multiply(update)?);
 
         if let Some(beta1) = self.beta1.value() {
             // SAFETY: This field is created in the `new` when beta1 is set and won't panic.
@@ -353,7 +350,7 @@ impl Optimizer for Adafactor {
             *exp_avg = beta1
                 .multiply(&*exp_avg)?
                 .add(&one_minus_beta1.multiply(&update)?)?;
-            update = exp_avg.clone();
+            update = OwnedOrRef::Ref(&*exp_avg);
         }
 
         if self.weight_decay.ne(&array!(0.0))?.item() {

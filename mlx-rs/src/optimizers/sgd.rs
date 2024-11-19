@@ -78,7 +78,7 @@ impl Optimizer for Sgd {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
         // is implemented for Array.
         use crate::ops::{gt, le, ne};
@@ -87,11 +87,11 @@ impl Optimizer for Sgd {
 
         let zero = array!(0.0);
 
-        let mut gradient = Cow::Borrowed(gradient);
+        let mut gradient = OwnedOrRef::Ref(gradient);
 
         // Apply weight decay
         if ne(&self.weight_decay, &zero)?.item::<bool>() {
-            gradient = Cow::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
+            gradient = OwnedOrRef::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
         }
 
         // Apply momentum

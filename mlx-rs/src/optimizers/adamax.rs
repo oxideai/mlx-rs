@@ -4,7 +4,6 @@ use mlx_internal_macros::generate_builder;
 
 use crate::{
     array,
-    error::Exception,
     ops::{abs, maximum},
     utils::get_mut_or_insert_with,
     Array,
@@ -19,7 +18,7 @@ generate_builder! {
     /// correction in the first and second moment estimates. In detail,
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Adamax {
         /// The learning rate.
@@ -72,13 +71,13 @@ impl Optimizer for Adamax {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> crate::error::Result<()> {
         let (b1, b2) = &self.betas;
         let (m, v) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
         let one_minus_b1 = array!(1.0).subtract(b1)?;
         let new_m = b1.multiply(&*m)?.add(&one_minus_b1.multiply(gradient)?)?;
-        let new_v = maximum(b2.multiply(&*v)?, abs(gradient))?;
+        let new_v = maximum(b2.multiply(&*v)?, abs(gradient)?)?;
 
         let new_parameter =
             parameter.subtract(self.lr.multiply(&new_m)?.divide(&new_v.add(&self.eps)?)?)?;

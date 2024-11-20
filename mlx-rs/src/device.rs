@@ -1,6 +1,9 @@
-use mlx_sys::mlx_retain;
+use std::ffi::CStr;
 
-use crate::utils::mlx_describe;
+use crate::{
+    error::Result,
+    utils::{guard::Guarded, SUCCESS},
+};
 
 ///Type of device.
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]
@@ -17,8 +20,12 @@ pub struct Device {
 
 impl Device {
     pub fn new(device_type: DeviceType, index: i32) -> Device {
-        let ctx = unsafe { mlx_sys::mlx_device_new(device_type.into(), index) };
-        Device { c_device: ctx }
+        let c_device = unsafe { mlx_sys::mlx_device_new_type(device_type.into(), index) };
+        Device { c_device }
+    }
+
+    pub fn try_default() -> Result<Self> {
+        Device::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_device(res) })
     }
 
     pub fn cpu() -> Device {
@@ -42,65 +49,46 @@ impl Device {
     pub fn set_default(device: &Device) {
         unsafe { mlx_sys::mlx_set_default_device(device.c_device) };
     }
-}
 
-/// The `Device` is a simple struct on the c++ side
-///
-/// ```cpp
-/// struct Device {
-///   enum class DeviceType {
-///     cpu,
-///     gpu,
-///   };
-///
-///   // ... other methods
-///
-///   DeviceType type;
-///   int index;
-/// };
-/// ```
-///
-/// There is no function that mutates the device, so we can implement `Clone` for it.
-impl Clone for Device {
-    fn clone(&self) -> Self {
+    fn describe(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         unsafe {
-            // Increment the reference count.
-            mlx_retain(self.c_device as *mut std::ffi::c_void);
-            Self {
-                c_device: self.c_device,
-            }
+            let mut mlx_str = mlx_sys::mlx_string_new();
+            let result = match mlx_sys::mlx_device_tostring(&mut mlx_str as *mut _, self.c_device) {
+                SUCCESS => {
+                    let ptr = mlx_sys::mlx_string_data(mlx_str);
+                    let c_str = CStr::from_ptr(ptr);
+                    write!(f, "{}", c_str.to_string_lossy())
+                }
+                _ => Err(std::fmt::Error),
+            };
+            mlx_sys::mlx_string_free(mlx_str);
+            result
         }
     }
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.c_device as *mut std::ffi::c_void) };
+        let status = unsafe { mlx_sys::mlx_device_free(self.c_device) };
+        debug_assert_eq!(status, SUCCESS);
     }
 }
 
 impl Default for Device {
     fn default() -> Self {
-        let ctx = unsafe { mlx_sys::mlx_default_device() };
-        Self { c_device: ctx }
+        Self::try_default().unwrap()
     }
 }
 
 impl std::fmt::Debug for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.c_device as *mut std::os::raw::c_void);
-        let description = description.unwrap_or_else(|| "Device".to_string());
-
-        write!(f, "{}", description)
+        self.describe(f)
     }
 }
 
 impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.c_device as *mut std::os::raw::c_void);
-        let description = description.unwrap_or_else(|| "Device".to_string());
-
-        write!(f, "{}", description)
+        self.describe(f)
     }
 }
 

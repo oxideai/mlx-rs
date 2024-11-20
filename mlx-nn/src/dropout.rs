@@ -8,7 +8,7 @@ use crate::error::DropoutBuildError;
 macro_rules! impl_dropout_builder {
     ($builder_name:ident, $target_name:ident, $default_p:expr, $default_training:expr) => {
         /// Builder for [`$target_name`].
-        #[derive(Debug, Clone, Default)]
+        #[derive(Debug, Default)]
         pub struct $builder_name {
             /// Probability of zeroing an element.
             p: Option<f32>,
@@ -75,7 +75,7 @@ impl_dropout_builder!(
 /// The remaining elements are multiplied with `1 / (1-p)` where
 /// `p` is the probability of zeroing an element. This is done so the
 /// expected value of a given element will remain the same.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Dropout {
     /// `1-p`, where `p` is the probability of zeroing an element. `p` is default to
     /// [`Dropout::DEFAULT_P`] if not specified.
@@ -136,7 +136,7 @@ impl_dropout_builder!(
 ///
 /// [1]: Thompson, J., Goroshin, R., Jain, A., LeCun, Y. and Bregler C., 2015.
 /// Efficient Object Localization Using Convolutional Networks. CVPR 2015.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Dropout2d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout2d::DEFAULT_P`] if not specified.
@@ -209,7 +209,7 @@ impl_dropout_builder!(
 /// which zeros individual entries, this layer zeros entire channels. This is
 /// often beneficial for convolutional layers processing 3D data, like in
 /// medical imaging or video processing.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Dropout3d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout3d::DEFAULT_P`] if not specified.
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_dropout() {
-        mlx_rs::random::seed(959);
+        mlx_rs::random::seed(959).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn test_dropout2d() {
-        mlx_rs::random::seed(695);
+        mlx_rs::random::seed(695).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_dropout3d() {
-        mlx_rs::random::seed(23);
+        mlx_rs::random::seed(23).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);

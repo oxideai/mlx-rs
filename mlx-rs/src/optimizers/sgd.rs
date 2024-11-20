@@ -7,7 +7,7 @@ use super::*;
 
 generate_builder! {
     /// Stochastic gradient descent optimizer.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Sgd {
         /// Learning rate
@@ -80,7 +80,7 @@ impl Optimizer for Sgd {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> crate::error::Result<()> {
         // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
         // is implemented for Array.
         use crate::ops::{gt, le, ne};

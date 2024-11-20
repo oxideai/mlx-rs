@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{array, error::Exception, ops::square, Array};
+use crate::{array, ops::square, Array};
 use mlx_internal_macros::generate_builder;
 
 use crate::utils::get_mut_or_insert_with;
@@ -14,7 +14,7 @@ generate_builder! {
     ///
     /// [1]: Duchi, J., Hazan, E. and Singer, Y., 2011. Adaptive subgradient methods for online
     ///     learning and stochastic optimization. JMLR 2011.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct AdaGrad {
         /// Learning rate
@@ -59,13 +59,13 @@ impl Optimizer for AdaGrad {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> crate::error::Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
-        let v = state.add(square(gradient))?;
+        let v = state.add(square(gradient)?)?;
 
         let num = self.lr.multiply(gradient)?;
-        let den = v.sqrt().add(&self.eps)?;
+        let den = v.sqrt()?.add(&self.eps)?;
         let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *state = v;

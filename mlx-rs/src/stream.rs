@@ -1,7 +1,10 @@
-use mlx_sys::mlx_retain;
+use std::ffi::CStr;
 
-use crate::device::Device;
-use crate::utils::mlx_describe;
+use crate::{
+    device::Device,
+    error::Result,
+    utils::{guard::Guarded, SUCCESS},
+};
 
 /// Parameter type for all MLX operations.
 ///
@@ -9,7 +12,7 @@ use crate::utils::mlx_describe;
 ///
 /// If omitted it will use the [Default::default()], which will be [Device::gpu()] unless
 /// set otherwise.
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
 pub struct StreamOrDevice {
     pub(crate) stream: Stream,
 }
@@ -21,7 +24,7 @@ impl StreamOrDevice {
 
     pub fn new_with_device(device: &Device) -> StreamOrDevice {
         StreamOrDevice {
-            stream: Stream::default_stream_on_device(device),
+            stream: Stream::new_with_device(device),
         }
     }
 
@@ -37,11 +40,6 @@ impl StreamOrDevice {
         StreamOrDevice {
             stream: Stream::gpu(),
         }
-    }
-
-    /// The underlying stream's pointer.
-    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_stream {
-        self.stream.c_stream
     }
 }
 
@@ -82,26 +80,38 @@ pub struct Stream {
     pub(crate) c_stream: mlx_sys::mlx_stream,
 }
 
+impl AsRef<Stream> for Stream {
+    fn as_ref(&self) -> &Stream {
+        self
+    }
+}
+
 impl Stream {
-    fn new_with_mlx_mlx_stream(stream: mlx_sys::mlx_stream) -> Stream {
-        Stream { c_stream: stream }
-    }
-
+    /// Create a new stream on the default device. Panics if fails.
     pub fn new() -> Stream {
-        let default_device = unsafe { mlx_sys::mlx_default_device() };
-        let c_stream = unsafe { mlx_sys::mlx_default_stream(default_device) };
-        unsafe { mlx_sys::mlx_free(default_device as *mut std::ffi::c_void) };
-        Stream { c_stream }
+        unsafe {
+            let mut dev = mlx_sys::mlx_device_new();
+            // SAFETY: mlx_get_default_device internally never throws an error
+            mlx_sys::mlx_get_default_device(&mut dev as *mut _);
+
+            let mut c_stream = mlx_sys::mlx_stream_new();
+            // SAFETY: mlx_get_default_stream internally never throws if dev is valid
+            mlx_sys::mlx_get_default_stream(&mut c_stream as *mut _, dev);
+
+            mlx_sys::mlx_device_free(dev);
+            Stream { c_stream }
+        }
     }
 
-    pub fn new_with_device(index: i32, device: &Device) -> Stream {
-        let c_stream = unsafe { mlx_sys::mlx_stream_new(index, device.c_device) };
-        Stream { c_stream }
+    pub fn try_default_on_device(device: &Device) -> Result<Stream> {
+        Stream::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_stream(res, device.c_device) })
     }
 
-    pub fn default_stream_on_device(device: &Device) -> Stream {
-        let default_stream = unsafe { mlx_sys::mlx_default_stream(device.c_device) };
-        Stream::new_with_mlx_mlx_stream(default_stream)
+    pub fn new_with_device(device: &Device) -> Stream {
+        unsafe {
+            let c_stream = mlx_sys::mlx_stream_new_device(device.c_device);
+            Stream { c_stream }
+        }
     }
 
     pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
@@ -111,8 +121,7 @@ impl Stream {
     /// Current default CPU stream.
     pub fn cpu() -> Self {
         unsafe {
-            let c_stream = mlx_sys::mlx_cpu_stream();
-            mlx_retain(c_stream as *mut std::ffi::c_void);
+            let c_stream = mlx_sys::mlx_default_cpu_stream_new();
             Stream { c_stream }
         }
     }
@@ -120,40 +129,31 @@ impl Stream {
     /// Current default GPU stream.
     pub fn gpu() -> Self {
         unsafe {
-            let c_stream = mlx_sys::mlx_cpu_stream();
-            mlx_retain(c_stream as *mut std::ffi::c_void);
+            let c_stream = mlx_sys::mlx_default_gpu_stream_new();
             Stream { c_stream }
         }
     }
-}
 
-/// The `Stream` is a simple struct on the c++ side
-///
-/// ```cpp
-/// struct Stream {
-///     int index;
-///     Device device;
-///
-///     // ... constructor
-/// };
-/// ```
-///
-/// There is no function that mutates the stream, so we can implement `Clone` for it.
-impl Clone for Stream {
-    fn clone(&self) -> Self {
+    fn describe(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         unsafe {
-            // Increment the reference count.
-            mlx_sys::mlx_retain(self.c_stream as *mut std::ffi::c_void);
-            Stream {
-                c_stream: self.c_stream,
-            }
+            let mut mlx_str = mlx_sys::mlx_string_new();
+            let result = match mlx_sys::mlx_stream_tostring(&mut mlx_str as *mut _, self.c_stream) {
+                SUCCESS => {
+                    let ptr = mlx_sys::mlx_string_data(mlx_str);
+                    let c_str = CStr::from_ptr(ptr);
+                    write!(f, "{}", c_str.to_string_lossy())
+                }
+                _ => Err(std::fmt::Error),
+            };
+            mlx_sys::mlx_string_free(mlx_str);
+            result
         }
     }
 }
 
 impl Drop for Stream {
     fn drop(&mut self) {
-        unsafe { mlx_sys::mlx_free(self.c_stream as *mut std::ffi::c_void) };
+        unsafe { mlx_sys::mlx_stream_free(self.c_stream) };
     }
 }
 
@@ -165,17 +165,13 @@ impl Default for Stream {
 
 impl std::fmt::Debug for Stream {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
-        let description = description.unwrap_or_else(|| "Stream".to_string());
-        write!(f, "{}", description)
+        self.describe(f)
     }
 }
 
 impl std::fmt::Display for Stream {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let description = mlx_describe(self.c_stream as *mut std::os::raw::c_void);
-        let description = description.unwrap_or_else(|| "Stream".to_string());
-        write!(f, "{}", description)
+        self.describe(f)
     }
 }
 

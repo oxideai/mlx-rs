@@ -4,7 +4,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::Exception, utils::TupleArrayArrayArray, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -29,20 +29,21 @@ pub fn quantize_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<(Array, Array, Array), Exception> {
+) -> Result<(Array, Array, Array)> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
-    unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_quantize(w.as_ptr(), group_size, bits, stream.as_ref().as_ptr())
-        };
-
-        let vec = TupleArrayArrayArray::from_ptr(c_vec);
-        let vals = vec.into_values();
-
-        Ok(vals)
-    }
+    <(Array, Array, Array) as Guarded>::try_from_op(|(res0, res1, res2)| unsafe {
+        mlx_sys::mlx_quantize(
+            res0,
+            res1,
+            res2,
+            w.as_ptr(),
+            group_size,
+            bits,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Perform the matrix multiplication with the quantized matrix `w`. The quantization uses one
@@ -59,27 +60,24 @@ pub fn quantized_matmul_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let transpose = transpose.into().unwrap_or(false);
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
-    unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_quantized_matmul(
-                x.as_ptr(),
-                w.as_ptr(),
-                scales.as_ptr(),
-                biases.as_ptr(),
-                transpose,
-                group_size,
-                bits,
-                stream.as_ref().as_ptr()
-            )
-        };
-
-        Ok(Array::from_ptr(c_vec))
-    }
+    <Array as Guarded>::try_from_op(|res| unsafe {
+        mlx_sys::mlx_quantized_matmul(
+            res,
+            x.as_ptr(),
+            w.as_ptr(),
+            scales.as_ptr(),
+            biases.as_ptr(),
+            transpose,
+            group_size,
+            bits,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Dequantize the matrix `w` using the provided `scales` and `biases` and the `group_size` and
@@ -95,24 +93,21 @@ pub fn dequantize_device(
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
-    unsafe {
-        let c_vec = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_dequantize(
-                w.as_ptr(),
-                scales.as_ptr(),
-                biases.as_ptr(),
-                group_size,
-                bits,
-                stream.as_ref().as_ptr()
-            )
-        };
-
-        Ok(Array::from_ptr(c_vec))
-    }
+    <Array as Guarded>::try_from_op(|res| unsafe {
+        mlx_sys::mlx_dequantize(
+            res,
+            w.as_ptr(),
+            scales.as_ptr(),
+            biases.as_ptr(),
+            group_size,
+            bits,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]
@@ -136,7 +131,7 @@ mod tests {
             assert_eq!(biases.shape(), [128, 4]);
 
             let x_hat = dequantize(&x_q, &scales, &biases, 128, *i).unwrap();
-            let max_diff = ((&x - &x_hat).abs().max(None, None).unwrap()).item::<f32>();
+            let max_diff = ((&x - &x_hat).abs().unwrap().max(None, None).unwrap()).item::<f32>();
             assert!(max_diff <= 127.0 / (1 << i) as f32);
         }
     }

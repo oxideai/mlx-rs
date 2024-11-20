@@ -1,6 +1,7 @@
 use crate::array::Array;
-use crate::error::Exception;
+use crate::error::Result;
 use crate::stream::StreamOrDevice;
+use crate::utils::guard::Guarded;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_internal_macros::default_device;
@@ -29,21 +30,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_all_axes(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_all_axes(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `product` reduction over the given axes returning an error if the axes are invalid.
@@ -68,21 +66,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_prod(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_prod(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `max` reduction over the given axes returning an error if the axes are invalid.
@@ -107,21 +102,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_max(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_max(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Sum reduce the array over the given axes returning an error if the axes are invalid.
@@ -146,21 +138,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_sum(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_sum(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `mean` reduction over the given axes returning an error if the axes are invalid.
@@ -185,21 +174,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_mean(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_mean(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `min` reduction over the given axes returning an error if the axes are invalid.
@@ -224,21 +210,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_min(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_min(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Compute the variance(s) over the given axes returning an error if the axes are invalid.
@@ -255,22 +238,19 @@ impl Array {
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_var(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    ddof.into().unwrap_or(0),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_var(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                ddof.into().unwrap_or(0),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `log-sum-exp` reduction over the given axes returning an error if the axes are invalid.
@@ -287,21 +267,18 @@ impl Array {
         axes: impl IntoOption<&'a [i32]>,
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_logsumexp(
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_logsumexp(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 }
 
@@ -312,7 +289,7 @@ pub fn all_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.all_device(axes, keep_dims, stream)
 }
 
@@ -323,7 +300,7 @@ pub fn prod_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.prod_device(axes, keep_dims, stream)
 }
 
@@ -334,7 +311,7 @@ pub fn max_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.max_device(axes, keep_dims, stream)
 }
 
@@ -354,24 +331,21 @@ pub fn std_device<'a>(
     keep_dims: impl Into<Option<bool>>,
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let axes = axes_or_default_to_all(axes, a.ndim() as i32);
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
-
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_std(
-                a.as_ptr(),
-                axes.as_ptr(),
-                axes.len(),
-                keep_dims,
-                ddof,
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_std(
+            res,
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            keep_dims,
+            ddof,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// See [`Array::sum`]
@@ -381,7 +355,7 @@ pub fn sum_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.sum_device(axes, keep_dims, stream)
 }
 
@@ -392,7 +366,7 @@ pub fn mean_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.mean_device(axes, keep_dims, stream)
 }
 
@@ -403,7 +377,7 @@ pub fn min_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.min_device(axes, keep_dims, stream)
 }
 
@@ -415,7 +389,7 @@ pub fn variance_device<'a>(
     keep_dims: impl Into<Option<bool>>,
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.variance_device(axes, keep_dims, ddof, stream)
 }
 
@@ -426,7 +400,7 @@ pub fn log_sum_exp_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     array.log_sum_exp_device(axes, keep_dims, stream)
 }
 

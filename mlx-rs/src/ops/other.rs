@@ -1,8 +1,13 @@
-use mlx_internal_macros::default_device;
-use std::ffi::c_void;
+use std::ffi::CString;
 
-use crate::utils::MlxString;
-use crate::{error::Exception, Array, Stream, StreamOrDevice};
+use mlx_internal_macros::default_device;
+
+use crate::utils::guard::Guarded;
+use crate::utils::VectorArray;
+use crate::{
+    error::{Exception, Result},
+    Array, Stream, StreamOrDevice,
+};
 
 impl Array {
     /// Extract a diagonal or construct a diagonal matrix.
@@ -19,18 +24,15 @@ impl Array {
         &self,
         k: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_diag(
-                    self.c_array,
-                    k.into().unwrap_or(0),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_diag(
+                res,
+                self.c_array,
+                k.into().unwrap_or(0),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Return specified diagonals.
@@ -54,20 +56,17 @@ impl Array {
         axis1: impl Into<Option<i32>>,
         axis2: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_diagonal(
-                    self.c_array,
-                    offset.into().unwrap_or(0),
-                    axis1.into().unwrap_or(0),
-                    axis2.into().unwrap_or(1),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_diagonal(
+                res,
+                self.c_array,
+                offset.into().unwrap_or(0),
+                axis1.into().unwrap_or(0),
+                axis2.into().unwrap_or(1),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Perform the Walsh-Hadamard transform along the final axis.
@@ -83,24 +82,16 @@ impl Array {
         &self,
         scale: impl Into<Option<f32>>,
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
+    ) -> Result<Array> {
         let scale = scale.into();
         let scale = mlx_sys::mlx_optional_float {
             value: scale.unwrap_or(0.0),
             has_value: scale.is_some(),
         };
 
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_hadamard_transform(
-                    self.c_array,
-                    scale,
-                    stream.as_ref().as_ptr(),
-                )
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_hadamard_transform(res, self.c_array, scale, stream.as_ref().as_ptr())
+        })
     }
 }
 
@@ -110,7 +101,7 @@ pub fn diag_device(
     a: &Array,
     k: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.diag_device(k, stream)
 }
 
@@ -122,7 +113,7 @@ pub fn diagonal_device(
     axis1: impl Into<Option<i32>>,
     axis2: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     a.diagonal_device(offset, axis1, axis2, stream)
 }
 
@@ -138,27 +129,19 @@ pub fn einsum_device<'a>(
     subscripts: &str,
     operands: impl IntoIterator<Item = &'a Array>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
-    let subscripts =
-        MlxString::try_from(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
-    let c_operands = unsafe { mlx_sys::mlx_vector_array_new() };
-    let c_arrays: Vec<_> = operands.into_iter().map(|a| a.c_array).collect();
-    unsafe {
-        mlx_sys::mlx_vector_array_add_data(c_operands, c_arrays.as_ptr(), c_arrays.len());
-    }
+) -> Result<Array> {
+    let c_subscripts =
+        CString::new(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
+    let c_operands = VectorArray::try_from_iter(operands.into_iter())?;
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_einsum(
-                subscripts.as_ptr(),
-                c_operands,
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        mlx_sys::free(c_operands as *mut c_void);
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_einsum(
+            res,
+            c_subscripts.as_ptr(),
+            c_operands.as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]

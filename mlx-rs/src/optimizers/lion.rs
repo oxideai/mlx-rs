@@ -14,7 +14,7 @@ generate_builder! {
     ///
     /// [1]: Chen, X. Symbolic Discovery of Optimization Algorithms. arXiv preprint
     ///     arXiv:2302.06675.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Lion {
         /// The learning rate.
@@ -85,7 +85,7 @@ impl Optimizer for Lion {
             *parameter = (array!(1.0) - &self.lr * &self.weight_decay) * &*parameter;
         }
 
-        *parameter = parameter.subtract(self.lr.multiply(sign(&c))?)?;
+        *parameter = parameter.subtract(self.lr.multiply(sign(&c)?)?)?;
 
         Ok(())
     }

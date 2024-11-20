@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Builder for [`Linear`] module
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct LinearBuilder {
     /// Whether to include bias in the linear layer. Default to [`Linear::DEFAULT_WITH_BIAS`].
     pub with_bias: Option<bool>,
@@ -53,7 +53,7 @@ impl LinearBuilder {
 }
 
 /// Applies an affine transformation to the input.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Linear {
     /// The weight of the linear layer.
     #[param]
@@ -91,7 +91,7 @@ impl Module for Linear {
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => mlx_rs::ops::addmm(bias, x, self.weight.value.t(), None, None),
-            None => mlx_rs::ops::matmul(x, &self.weight.value.t()),
+            None => mlx_rs::ops::matmul(x, self.weight.value.t()),
         }
     }
 
@@ -99,7 +99,7 @@ impl Module for Linear {
 }
 
 /// Builder for [`Bilinear`] module
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct BilinearBuilder {
     /// Whether to include bias in the bilinear layer. Default to [Bilinear::DEFAULT_WITH_BIAS].
     with_bias: Option<bool>,
@@ -153,7 +153,7 @@ impl BilinearBuilder {
 }
 
 /// Applies a bilinear transformation to the inputs.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Bilinear {
     /// The weight of the bilinear layer.
     #[param]
@@ -191,7 +191,7 @@ impl Module for Bilinear {
 
         // perform the bilinear transform
         let w = self.weights.reshape(&[out * in2, in1])?;
-        let mut y = mlx_rs::ops::matmul(&x1, &w.t())?;
+        let mut y = mlx_rs::ops::matmul(&x1, w.t())?;
         y = y.reshape(&[-1, out, in2])?.swap_axes(-2, -1)?;
         y = mlx_rs::ops::matmul(&x2, &y)?;
         y = y.squeeze(&[1])?;
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_linear() {
-        mlx_rs::random::seed(744);
+        mlx_rs::random::seed(744).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);

@@ -38,7 +38,7 @@ impl Module for Sequential {
 
         match x {
             Cow::Owned(array) => Ok(array),
-            Cow::Borrowed(array) => Ok(array.deep_clone()),
+            Cow::Borrowed(array) => Ok(array.clone()),
         }
     }
 

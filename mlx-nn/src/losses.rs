@@ -55,7 +55,7 @@ impl LossReduction {
 
 generate_builder! {
     /// Cross entropy loss function.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct CrossEntropy<'a> {
         /// Weights for each target
@@ -181,7 +181,7 @@ generate_builder! {
     /// and more precise loss. For improved numerical stability when `inputs_are_logits` is true,
     /// the loss calculation clips the input probabilities (in log-space) to a minimum value
     /// of `-100`.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct BinaryCrossEntropy<'a> {
         /// Optional weights for each target
@@ -258,8 +258,8 @@ impl<'a> BinaryCrossEntropy<'a> {
         let mut loss = if inputs_are_logits {
             log_add_exp(array!(0.0), logits)?.subtract(targets.multiply(logits)?)?
         } else {
-            let log_inputs_clip = clip(&log(logits), (-100.0, ()))?;
-            let log_inputs_inverse_clip = clip(&log(&array!(1.0).subtract(logits)?), (-100.0, ()))?;
+            let log_inputs_clip = clip(log(logits)?, (-100.0, ()))?;
+            let log_inputs_inverse_clip = clip(log(&array!(1.0).subtract(logits)?)?, (-100.0, ()))?;
             -(targets.multiply(log_inputs_clip)?.add(
                 array!(1.0)
                     .subtract(targets)?
@@ -278,7 +278,7 @@ impl<'a> BinaryCrossEntropy<'a> {
 
 generate_builder! {
     /// Computes the L1 loss
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct L1Loss {
         /// Reduction type. Default to [`L1loss::DEFAULT_REDUCTION`]
         #[optional(default_value = L1Loss::DEFAULT_REDUCTION)]
@@ -306,14 +306,14 @@ impl L1Loss {
         let reduction = self.reduction;
 
         check_shape(predictions, targets, "predictions", "targets")?;
-        let loss = predictions.subtract(targets)?.abs();
+        let loss = predictions.subtract(targets)?.abs()?;
         reduction.reduce(loss)
     }
 }
 
 generate_builder! {
     /// Computes the mean squared error loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct MseLoss {
         /// Reduction type. Default to [`MseLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = MseLoss::DEFAULT_REDUCTION)]
@@ -341,14 +341,14 @@ impl MseLoss {
         let reduction = self.reduction;
 
         check_shape(predictions, targets, "predictions", "targets")?;
-        let loss = predictions.subtract(targets)?.square();
+        let loss = predictions.subtract(targets)?.square()?;
         reduction.reduce(loss)
     }
 }
 
 generate_builder! {
     /// Computes the negative log likelihood loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct NllLoss {
         /// distribution axis. Default to [`NllLoss::DEFAULT_AXIS`]
         #[optional(default_value = NllLoss::DEFAULT_AXIS)]
@@ -390,7 +390,7 @@ impl NllLoss {
 
 generate_builder! {
     /// Compute the negative log likelihood loss for a Gaussian distribution.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct GaussianNllLoss {
         /// Whether to include the constant term in the loss calculation. Default to
         /// [`GaussianNllLoss::DEFAULT_FULL`]
@@ -443,11 +443,11 @@ impl GaussianNllLoss {
 
         let vars = maximum(vars, array!(eps))?;
         let mut loss =
-            array!(0.5) * (log(&vars).add(square(&targets.subtract(inputs)?).divide(&vars)?)?);
+            array!(0.5) * (log(&vars)?.add(square(&targets.subtract(inputs)?)?.divide(&vars)?)?);
 
         if full {
             let pi = array!(std::f32::consts::PI);
-            loss = loss.add(array!(0.5).multiply(log(&array!(2.0).multiply(pi)?))?)?;
+            loss = loss.add(array!(0.5).multiply(log(&array!(2.0).multiply(pi)?)?)?)?;
         }
 
         reduction.reduce(loss)
@@ -462,7 +462,7 @@ generate_builder! {
     /// ```rust, ignore
     /// sum(exp(targets) * (targets - inputs), axis, None)
     /// ```
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct KlDivLoss {
         /// The distribution axis. Default to [`KlDivLoss::DEFAULT_AXIS`]
         #[optional(default_value = KlDivLoss::DEFAULT_AXIS)]
@@ -498,7 +498,7 @@ impl KlDivLoss {
         let reduction = self.reduction;
 
         let loss = sum(
-            &exp(targets).multiply(targets.subtract(inputs)?)?,
+            &exp(targets)?.multiply(targets.subtract(inputs)?)?,
             &[axis],
             None,
         )?;
@@ -512,7 +512,7 @@ generate_builder! {
     /// The smooth L1 loss is a variant of the L1 loss which replaces the absolute
     /// difference with a squared difference when the absolute difference is less
     /// than `beta`.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct SmoothL1Loss {
         /// The threshold after which the loss changes from the squared to the absolute difference.
         /// Default to [`SmoothL1Loss::DEFAULT_BETA`]
@@ -552,8 +552,10 @@ impl SmoothL1Loss {
         let diff = predictions.subtract(targets)?;
         let loss = r#where(
             &diff.lt(array!(beta))?,
-            array!(0.5).multiply(square(&diff))?.divide(&array!(beta))?,
-            abs(&diff).subtract(array!(0.5).multiply(array!(beta))?)?,
+            array!(0.5)
+                .multiply(square(&diff)?)?
+                .divide(&array!(beta))?,
+            abs(&diff)?.subtract(array!(0.5).multiply(array!(beta))?)?,
         )?;
         reduction.reduce(loss)
     }
@@ -562,7 +564,7 @@ impl SmoothL1Loss {
 generate_builder! {
     /// Computes the triplet loss for a set of anchor, positive, and negative samples. Margin is
     /// represented with alpha in the math section.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct TripletLoss {
         /// Distribution axis. Default to [`TripletLoss::DEFAULT_AXIS`]
         #[optional(default_value = TripletLoss::DEFAULT_AXIS)]
@@ -633,12 +635,12 @@ impl TripletLoss {
             &power(&anchors.subtract(positives)?, &p)?
                 .sum(&[axis], None)?
                 .add(&eps)?,
-        );
+        )?;
         let neg = sqrt(
             &power(&anchors.subtract(negatives)?, &p)?
                 .sum(&[axis], None)?
                 .add(&eps)?,
-        );
+        )?;
         let loss = maximum(pos.subtract(neg)?.add(margin)?, array!(0.0))?;
         reduction.reduce(loss)
     }
@@ -646,7 +648,7 @@ impl TripletLoss {
 
 generate_builder! {
     /// Compute the hinge loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct HingeLoss {
         /// Reduction type. Default to [`HingeLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = HingeLoss::DEFAULT_REDUCTION)]
@@ -682,7 +684,7 @@ impl HingeLoss {
 
 generate_builder! {
     /// Compute the Huber loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct HuberLoss {
         /// The threshold at which to change between L1 and L2 loss. Default to
         /// [`HuberLoss::DEFAULT_DELTA`]
@@ -719,11 +721,11 @@ impl HuberLoss {
         let reduction = self.reduction;
 
         let errors = inputs.subtract(targets)?;
-        let abs_errors = errors.abs();
+        let abs_errors = errors.abs()?;
         let quadratic = minimum(&abs_errors, array!(delta))?;
         let linear = abs_errors.subtract(&quadratic)?;
         let loss = array!(0.5)
-            .multiply(square(&quadratic))?
+            .multiply(square(&quadratic)?)?
             .add(array!(delta).multiply(linear)?)?;
         reduction.reduce(loss)
     }
@@ -735,7 +737,7 @@ generate_builder! {
     /// Logcosh acts like L2 loss for small errors, ensuring stable gradients,
     /// and like the L1 loss for large errors, reducing sensitivity to outliers. This
     /// dual behavior offers a balanced, robust approach for regression tasks.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct LogCoshLoss {
         /// Reduction type. Default to [`LogCoshLoss::DEFAULT_REDUCTION`]
         #[optional(default_value = LogCoshLoss::DEFAULT_REDUCTION)]
@@ -764,14 +766,14 @@ impl LogCoshLoss {
 
         let errors = inputs.subtract(targets)?;
         let neg_errors = errors.negative()?;
-        let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0)))?;
+        let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0))?)?;
         reduction.reduce(loss)
     }
 }
 
 generate_builder! {
     /// Computes the cosine similarity loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct CosineSimilarityLoss {
         /// Embedding axis. Default to [`CosineSimilarityLoss::DEFAULT_AXIS`]
         #[optional(default_value = CosineSimilarityLoss::DEFAULT_AXIS)]
@@ -813,9 +815,9 @@ impl CosineSimilarityLoss {
 
         fn l2_loss(a: &Array, axis: i32) -> Result<Array, Exception> {
             if a.dtype().is_complex() {
-                Ok(sqrt(&sum(&abs(a).square(), &[axis], None)?))
+                Ok(sqrt(&sum(&abs(a)?.square()?, &[axis], None)?)?)
             } else {
-                Ok(sqrt(&sum(&a.square(), &[axis], None)?))
+                Ok(sqrt(&sum(&a.square()?, &[axis], None)?)?)
             }
         }
 
@@ -832,7 +834,7 @@ impl CosineSimilarityLoss {
 
 generate_builder! {
     /// Computes the margin ranking loss.
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct MarginRankingLoss {
         /// The margin by which the scores should be separated. Default to
         /// [`MarginRankingLoss::DEFAULT_MARGIN`]
@@ -910,7 +912,11 @@ mod tests {
             .build()
             .unwrap();
         let loss = cross_entropy.apply(logits, probs).unwrap();
-        assert!(is_nan(&loss).all(None, None).unwrap().item::<bool>());
+        assert!(is_nan(&loss)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
 
         // With weights, no label smoothing
         let logits = array!([[2.0, -1.0], [-1.0, 2.0]]);
@@ -1248,8 +1254,8 @@ mod tests {
 
     #[test]
     fn test_kl_div_loss() {
-        let p_logits = array!([[0.5, 0.5], [0.8, 0.2]]).log();
-        let q_logits = array!([[0.5, 0.5], [0.2, 0.8]]).log();
+        let p_logits = array!([[0.5, 0.5], [0.8, 0.2]]).log().unwrap();
+        let q_logits = array!([[0.5, 0.5], [0.2, 0.8]]).log().unwrap();
 
         // Test with reduction 'none'
         let kl_div_loss = KlDivLoss::builder().reduction(LossReduction::None).build();

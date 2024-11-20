@@ -16,7 +16,7 @@ generate_builder! {
     ///
     /// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
     ///     machine learning
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     #[generate_builder(generate_build_fn = false)]
     pub struct RmsProp {
         /// Learning rate
@@ -86,7 +86,7 @@ impl Optimizer for RmsProp {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> crate::error::Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
         let lr = &self.lr;
@@ -95,11 +95,11 @@ impl Optimizer for RmsProp {
 
         let one_minus_alpha = array!(1.0).subtract(alpha)?;
         let first_term = alpha.multiply(&*state)?;
-        let second_term = one_minus_alpha.multiply(square(gradient))?;
+        let second_term = one_minus_alpha.multiply(square(gradient)?)?;
         let v = first_term.add(&second_term)?;
 
         let num = lr.multiply(gradient)?;
-        let den = sqrt(&v).add(eps)?;
+        let den = sqrt(&v)?.add(eps)?;
         let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *parameter = new_param;

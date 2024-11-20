@@ -1,19 +1,19 @@
-macro_rules! check_status {
-    ($status:expr, $dtor:expr) => {
-        // TODO: should we just add some kind of init function and ask user to call it at the
-        // beginning of the program?
-        if !$crate::error::is_mlx_error_handler_set() {
-            $crate::error::setup_mlx_error_handler();
-        }
+// macro_rules! check_status {
+//     ($status:expr, $dtor:expr) => {
+//         // TODO: should we just add some kind of init function and ask user to call it at the
+//         // beginning of the program?
+//         if !$crate::error::is_mlx_error_handler_set() {
+//             $crate::error::setup_mlx_error_handler();
+//         }
 
-        if $status != crate::utils::SUCCESS {
-            $dtor;
-            return Err($crate::error::get_and_clear_last_mlx_error()
-                .expect("A non-success status was returned, but no error was set.")
-                .into());
-        }
-    };
-}
+//         if $status != crate::utils::SUCCESS {
+//             $dtor;
+//             return Err($crate::error::get_and_clear_last_mlx_error()
+//                 .expect("A non-success status was returned, but no error was set.")
+//                 .into());
+//         }
+//     };
+// }
 
 /// See `assertEqual` in the swift binding tests
 #[allow(unused_macros)]

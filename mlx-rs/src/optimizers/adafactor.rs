@@ -12,15 +12,15 @@ use crate::{
 use super::{Optimizer, OptimizerState};
 
 fn rms(inputs: &Array) -> crate::error::Result<Array> {
-    Ok(sqrt(&mean(&square(inputs), None, None)?))
+    sqrt(&mean(&square(inputs)?, None, None)?)
 }
 
 fn approvate_exp_moving_avg(
     exp_avg_sq_row: &Array,
     exp_avg_sq_col: &Array,
 ) -> crate::error::Result<Array> {
-    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?);
-    let cfactor = rsqrt(exp_avg_sq_col);
+    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?)?;
+    let cfactor = rsqrt(exp_avg_sq_col)?;
     matmul(&rfactor.expand_dims(&[-1])?, &cfactor.expand_dims(&[0])?)
 }
 
@@ -267,7 +267,7 @@ fn compute_lr(
             array!(1e-2)
         };
         // SAFETY: `step` is a single-element array and won't panic.
-        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step))?)
+        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step)?)?)
     } else {
         // SAFETY: This is already checked in the `build` stage.
         Cow::Borrowed(
@@ -314,7 +314,7 @@ impl Optimizer for Adafactor {
         )?;
         let beta2 = array!(1.0).subtract(&step.power(&self.decay_rate)?)?;
 
-        let mut update: Cow<Array> = Cow::Owned(gradient.square().add(&self.eps.0)?);
+        let mut update: Cow<Array> = Cow::Owned(gradient.square()?.add(&self.eps.0)?);
 
         let one_minus_beta2 = array!(1.0).subtract(&beta2)?;
         if factored {
@@ -341,7 +341,7 @@ impl Optimizer for Adafactor {
             *exp_avg_sq = beta2
                 .multiply(&*exp_avg_sq)?
                 .add(&one_minus_beta2.multiply(&update)?)?;
-            update = Cow::Owned(rsqrt(&*exp_avg_sq).multiply(gradient)?);
+            update = Cow::Owned(rsqrt(&*exp_avg_sq)?.multiply(gradient)?);
         }
 
         let update_rms = rms(&update)?;

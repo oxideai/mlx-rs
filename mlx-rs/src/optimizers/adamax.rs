@@ -76,7 +76,7 @@ impl Optimizer for Adamax {
 
         let one_minus_b1 = array!(1.0).subtract(b1)?;
         let new_m = b1.multiply(&*m)?.add(&one_minus_b1.multiply(gradient)?)?;
-        let new_v = maximum(b2.multiply(&*v)?, abs(gradient))?;
+        let new_v = maximum(b2.multiply(&*v)?, abs(gradient)?)?;
 
         let new_parameter =
             parameter.subtract(self.lr.multiply(&new_m)?.divide(&new_v.add(&self.eps)?)?)?;

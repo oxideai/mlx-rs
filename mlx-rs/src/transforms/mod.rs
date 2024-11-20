@@ -4,11 +4,11 @@ use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
 
 use crate::{
     error::{
-        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler, Exception,
+        get_and_clear_last_mlx_error, setup_mlx_error_handler, Exception,
         Result,
     },
     module::ModuleParamRef,
-    utils::{Closure, IntoOption, VectorArray},
+    utils::{guard::Guarded, Closure, IntoOption, VectorArray},
     Array,
 };
 
@@ -16,17 +16,10 @@ pub mod compile;
 
 /// Evaluate an iterator of [`Array`]s.
 pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()> {
-    if !is_mlx_error_handler_set() {
-        setup_mlx_error_handler();
-    }
-
     let vec = VectorArray::try_from_iter(outputs.into_iter())?;
-
-    unsafe {
-        mlx_sys::mlx_eval(vec.as_ptr());
-    }
-
-    get_and_clear_last_mlx_error().map_or(Ok(()), Err)
+    <() as Guarded>::try_from_op(|_| unsafe {
+        mlx_sys::mlx_eval(vec.as_ptr())
+    })
 }
 
 /// Evaluate a module's parameters.
@@ -40,17 +33,10 @@ pub fn eval_params(params: ModuleParamRef<'_>) -> Result<()> {
 ///
 /// Please note that this is not a rust async function.
 pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()> {
-    if !is_mlx_error_handler_set() {
-        setup_mlx_error_handler();
-    }
-
     let vec = VectorArray::try_from_iter(outputs.into_iter())?;
-
-    unsafe {
-        mlx_sys::mlx_async_eval(vec.as_ptr());
-    }
-
-    get_and_clear_last_mlx_error().map_or(Ok(()), Err)
+    <() as Guarded>::try_from_op(|_| unsafe {
+        mlx_sys::mlx_async_eval(vec.as_ptr())
+    })
 }
 
 /// Asynchronously evaluate a module's parameters.
@@ -69,27 +55,9 @@ fn jvp_inner(
     let c_primals = VectorArray::try_from_iter(primals.iter())?;
     let c_tangents = VectorArray::try_from_iter(tangents.iter())?;
 
-    unsafe {
-        let mut res_0 = mlx_sys::mlx_vector_array_new();
-        let mut res_1 = mlx_sys::mlx_vector_array_new();
-        check_status! {
-            mlx_sys::mlx_jvp(
-                &mut res_0 as *mut _,
-                &mut res_1 as *mut _,
-                closure.as_ptr(),
-                c_primals.as_ptr(),
-                c_tangents.as_ptr(),
-            ),
-            {
-                mlx_sys::mlx_vector_array_free(res_0);
-                mlx_sys::mlx_vector_array_free(res_1);
-            }
-        };
-        Ok((
-            VectorArray::from_ptr(res_0).try_into_values()?,
-            VectorArray::from_ptr(res_1).try_into_values()?,
-        ))
-    }
+    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_jvp(res_0, res_1, closure.as_ptr(), c_primals.as_ptr(), c_tangents.as_ptr())
+    })
 }
 
 /// Compute the Jacobian-vector product.
@@ -139,27 +107,15 @@ fn vjp_inner(
     let c_primals = VectorArray::try_from_iter(primals.iter())?;
     let c_cotangents = VectorArray::try_from_iter(cotangents.iter())?;
 
-    unsafe {
-        let mut res_0 = mlx_sys::mlx_vector_array_new();
-        let mut res_1 = mlx_sys::mlx_vector_array_new();
-        check_status! {
-            mlx_sys::mlx_vjp(
-                &mut res_0 as *mut _,
-                &mut res_1 as *mut _,
-                closure.as_ptr(),
-                c_primals.as_ptr(),
-                c_cotangents.as_ptr(),
-            ),
-            {
-                mlx_sys::mlx_vector_array_free(res_0);
-                mlx_sys::mlx_vector_array_free(res_1);
-            }
-        };
-        Ok((
-            VectorArray::from_ptr(res_0).try_into_values()?,
-            VectorArray::from_ptr(res_1).try_into_values()?,
-        ))
-    }
+    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_vjp(
+            res_0,
+            res_1,
+            closure.as_ptr(),
+            c_primals.as_ptr(),
+            c_cotangents.as_ptr(),
+        )
+    })
 }
 
 /// Compute the vector-Jacobian product.
@@ -205,26 +161,23 @@ fn value_and_gradient(
 ) -> Result<(Vec<Array>, Vec<Array>)> {
     let input_vector = VectorArray::try_from_iter(arrays)?;
 
-    unsafe {
-        let mut res_0 = mlx_sys::mlx_vector_array_new();
-        let mut res_1 = mlx_sys::mlx_vector_array_new();
-        check_status! {
-            mlx_closure_value_and_grad_apply(
-                &mut res_0 as *mut _,
-                &mut res_1 as *mut _,
-                value_and_grad,
-                input_vector.as_ptr(),
-            ),
-            {
-                mlx_sys::mlx_vector_array_free(res_0);
-                mlx_sys::mlx_vector_array_free(res_1);
-            }
-        };
+    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_closure_value_and_grad_apply(
+            res_0,
+            res_1,
+            value_and_grad,
+            input_vector.as_ptr(),
+        )
+    })
+}
 
-        Ok((
-            VectorArray::from_ptr(res_0).try_into_values()?,
-            VectorArray::from_ptr(res_1).try_into_values()?,
-        ))
+pub(crate) struct ClosureValueAndGrad {
+    pub(crate) c_closure_value_and_grad: mlx_closure_value_and_grad,
+}
+
+impl ClosureValueAndGrad {
+    pub fn as_ptr(&self) -> mlx_closure_value_and_grad {
+        self.c_closure_value_and_grad
     }
 }
 
@@ -234,21 +187,16 @@ fn build_gradient_inner<'a>(
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<Vec<Array>> + 'a {
     move |arrays: &[Array]| -> Result<Vec<Array>> {
-        unsafe {
-            let mut c_value_and_grad = mlx_sys::mlx_closure_value_and_grad_new();
-            check_status! {
-                mlx_sys::mlx_value_and_grad(
-                    &mut c_value_and_grad as *mut _,
-                    closure.as_ptr(),
-                    argument_numbers.as_ptr(),
-                    argument_numbers.len(),
-                ),
-                mlx_sys::mlx_closure_value_and_grad_free(c_value_and_grad)
-            };
-
-            let result = value_and_gradient(c_value_and_grad, arrays.iter())?;
-            Ok(result.1)
-        }
+        let cvg = ClosureValueAndGrad::try_from_op(|res| unsafe {
+            mlx_sys::mlx_value_and_grad(
+                res,
+                closure.as_ptr(),
+                argument_numbers.as_ptr(),
+                argument_numbers.len(),
+            )
+        })?;
+        let result = value_and_gradient(cvg.as_ptr(), arrays.iter())?;
+        Ok(result.1)
     }
 }
 
@@ -280,17 +228,15 @@ fn build_value_and_gradient_inner<'a>(
     argument_numbers: &'a [i32],
 ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>)> + 'a {
     move |arrays: &[Array]| unsafe {
-        let mut c_value_and_grad = mlx_sys::mlx_closure_value_and_grad_new();
-        check_status! {
+        let cvg = ClosureValueAndGrad::try_from_op(|res| {
             mlx_sys::mlx_value_and_grad(
-                &mut c_value_and_grad as *mut _,
+                res,
                 closure.as_ptr(),
                 argument_numbers.as_ptr(),
                 argument_numbers.len(),
-            ),
-            mlx_sys::mlx_closure_value_and_grad_free(c_value_and_grad)
-        }
-        value_and_gradient(c_value_and_grad, arrays.iter())
+            )
+        })?;
+        value_and_gradient(cvg.as_ptr(), arrays.iter())
     }
 }
 
@@ -386,22 +332,17 @@ macro_rules! value_and_grad_with_hashmap {
             let argument_numbers = (0..flattened_values.len() as i32).collect::<Vec<_>>();
 
             let closure = Closure::$cls_new(inner);
-            let c_value_and_grad = unsafe {
-                let mut c_value_and_grad = mlx_sys::mlx_closure_value_and_grad_new();
-                check_status! {
-                    mlx_sys::mlx_value_and_grad(
-                        &mut c_value_and_grad as *mut _,
-                        closure.as_ptr(),
-                        argument_numbers.as_ptr(),
-                        argument_numbers.len(),
-                    ),
-                    mlx_sys::mlx_closure_value_and_grad_free(c_value_and_grad)
-                };
-                c_value_and_grad
-            };
+            let cvg = ClosureValueAndGrad::try_from_op(|res| unsafe {
+                mlx_sys::mlx_value_and_grad(
+                    res,
+                    closure.as_ptr(),
+                    argument_numbers.as_ptr(),
+                    argument_numbers.len(),
+                )
+            })?;
 
             let (value, grads) =
-                value_and_gradient(c_value_and_grad, flattened_values.into_iter())?;
+                value_and_gradient(cvg.as_ptr(), flattened_values.into_iter())?;
 
             let grads_map = flattened_keys.iter().cloned().zip(grads).collect();
 

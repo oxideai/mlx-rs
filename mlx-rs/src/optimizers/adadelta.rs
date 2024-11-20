@@ -81,14 +81,14 @@ impl Optimizer for AdaDelta {
 
         let one_minus_rho = array!(1.0).subtract(&self.rho)?;
         let first_term = self.rho.multiply(&v)?;
-        let second_term = one_minus_rho.multiply(gradient.square())?;
+        let second_term = one_minus_rho.multiply(gradient.square()?)?;
         let v_new = first_term.add(&second_term)?;
 
-        let num = sqrt(&u.add(&self.eps)?);
-        let den = sqrt(&v_new.add(&self.eps)?);
+        let num = sqrt(&u.add(&self.eps)?)?;
+        let den = sqrt(&v_new.add(&self.eps)?)?;
         let d = num.divide(&den)?.multiply(gradient)?;
         let first_term = self.rho.multiply(&u)?;
-        let second_term = one_minus_rho.multiply(d.square())?;
+        let second_term = one_minus_rho.multiply(d.square()?)?;
         let u_new = first_term.add(&second_term)?;
 
         let param_new = parameter.subtract(self.lr.multiply(d)?)?;

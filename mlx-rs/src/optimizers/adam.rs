@@ -105,10 +105,10 @@ pub(super) fn adam_apply_single(
     let new_m = b1.multiply(m)?.add(&one_minus_b1.multiply(gradient)?)?;
     let new_v = b2
         .multiply(v)?
-        .add(&one_minus_b2.multiply(gradient.square())?)?;
+        .add(&one_minus_b2.multiply(gradient.square()?)?)?;
 
     let new_parameter =
-        parameter.subtract(&lr.multiply(&new_m.divide(&new_v.sqrt().add(eps)?)?)?)?;
+        parameter.subtract(&lr.multiply(&new_m.divide(&new_v.sqrt()?.add(eps)?)?)?)?;
 
     Ok((new_parameter, (new_m, new_v)))
 }

@@ -1287,7 +1287,7 @@ mod tests {
         // advanced subscript examples taken from
         // https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
 
-        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>();
+        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>().unwrap();
 
         let i1 = Array::from_slice(&[0, 2, 4], &[3]);
         let i2 = Array::from_slice(&[0, 1, 2], &[3]);
@@ -1303,7 +1303,7 @@ mod tests {
 
     #[test]
     fn test_array_subscript_advanced_with_ref() {
-        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>();
+        let a = Array::from_iter(0..35, &[5, 7]).as_type::<i32>().unwrap();
 
         let i1 = Array::from_slice(&[0, 2, 4], &[3]);
         let i2 = Array::from_slice(&[0, 1, 2], &[3]);
@@ -1319,7 +1319,7 @@ mod tests {
 
     #[test]
     fn test_array_subscript_advanced_2() {
-        let a = Array::from_iter(0..12, &[6, 2]).as_type::<i32>();
+        let a = Array::from_iter(0..12, &[6, 2]).as_type::<i32>().unwrap();
 
         let i1 = Array::from_slice(&[0, 2, 4], &[3]);
         let s2 = a.index(i1);
@@ -1342,7 +1342,7 @@ mod tests {
 
     #[test]
     fn test_array_subscript_advanced_2d() {
-        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>();
+        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>().unwrap();
 
         let rows = Array::from_slice(&[0, 0, 3, 3], &[2, 2]);
         let cols = Array::from_slice(&[0, 2, 0, 2], &[2, 2]);
@@ -1355,7 +1355,7 @@ mod tests {
 
     #[test]
     fn test_array_subscript_advanced_2d_2() {
-        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>();
+        let a = Array::from_iter(0..12, &[4, 3]).as_type::<i32>().unwrap();
 
         let rows = Array::from_slice(&[0, 3], &[2, 1]);
         let cols = Array::from_slice(&[0, 2], &[2]);

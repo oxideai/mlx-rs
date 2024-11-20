@@ -61,10 +61,10 @@ impl Optimizer for AdaGrad {
     ) -> crate::error::Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 
-        let v = state.add(square(gradient))?;
+        let v = state.add(square(gradient)?)?;
 
         let num = self.lr.multiply(gradient)?;
-        let den = v.sqrt().add(&self.eps)?;
+        let den = v.sqrt()?.add(&self.eps)?;
         let new_param = parameter.subtract(num.divide(&den)?)?;
 
         *state = v;

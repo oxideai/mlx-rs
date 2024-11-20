@@ -74,7 +74,7 @@ impl PartialEq for Array {
     ///
     /// If you're looking for element-wise equality, use the [Array::eq()] method.
     fn eq(&self, other: &Self) -> bool {
-        self.array_eq(other, None).item()
+        self.array_eq(other, None).unwrap().item()
     }
 }
 
@@ -413,17 +413,9 @@ impl Array {
 
 impl Clone for Array {
     fn clone(&self) -> Self {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            // `mlx_array_set` should invoke the copy constructor of the array,
-            // which contains a shared_ptr to the data.
-            let status = mlx_sys::mlx_array_set(&mut c_array as *mut _, self.c_array);
-            if status != SUCCESS {
-                mlx_sys::mlx_array_free(c_array);
-                debug_panic!("Failed to clone array");
-            }
-            Array::from_ptr(c_array)
-        }
+        Array::try_op(|res| unsafe { mlx_sys::mlx_array_set(res, self.c_array) })
+            // Exception may be thrown when calling `new` in cpp.
+            .expect("Failed to clone array")
     }
 }
 

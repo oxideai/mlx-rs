@@ -1,7 +1,7 @@
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{array::Array, error::Result, stream::StreamOrDevice, utils::IntoOption, Stream};
+use crate::{array::Array, error::Result, stream::StreamOrDevice, utils::{guard::Guarded, IntoOption}, Stream};
 
 use super::{
     as_complex64,
@@ -26,14 +26,9 @@ pub fn fft_device(
     let a = as_complex64(a.as_ref())?;
 
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_fft(&mut c_array as *mut _, a.as_ptr(), n, axis, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_fft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Two dimensional discrete Fourier Transform.
@@ -61,24 +56,17 @@ pub fn fft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    println!("a: {:?}", a);
-
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_fft2(
-                &mut c_array as *mut _,
-                a.c_array,
-                s_ptr,
-                num_s,
-                axes_ptr,
-                num_axes,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_fft2(
+            res,
+            a.c_array,
+            s_ptr,
+            num_s,
+            axes_ptr,
+            num_axes,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// n-dimensional discrete Fourier Transform.
@@ -106,23 +94,17 @@ pub fn fftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_fftn(
-                &mut c_array as *mut _,
-                a.c_array,
-                s_ptr,
-                num_s,
-                axes_ptr,
-                num_axes,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_fftn(
+            res,
+            a.c_array,
+            s_ptr,
+            num_s,
+            axes_ptr,
+            num_axes,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// One dimensional inverse discrete Fourier Transform.
@@ -142,17 +124,10 @@ pub fn ifft_device(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_ifft(
-                &mut c_array as *mut _,
-                a.c_array, n, axis, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
 
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_ifft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Two dimensional inverse discrete Fourier Transform.
@@ -180,23 +155,17 @@ pub fn ifft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_ifft2(
-                &mut c_array as *mut _,
-                a.c_array,
-                s_ptr,
-                num_s,
-                axes_ptr,
-                num_axes,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_ifft2(
+            res,
+            a.c_array,
+            s_ptr,
+            num_s,
+            axes_ptr,
+            num_axes,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// n-dimensional inverse discrete Fourier Transform.
@@ -224,23 +193,17 @@ pub fn ifftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fft_ifftn(
-                &mut c_array as *mut _,
-                a.c_array,
-                s_ptr,
-                num_s,
-                axes_ptr,
-                num_axes,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_fft_ifftn(
+            res,
+            a.c_array,
+            s_ptr,
+            num_s,
+            axes_ptr,
+            num_axes,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]

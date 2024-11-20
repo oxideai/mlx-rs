@@ -319,7 +319,7 @@ impl Array {
     /// // b_data == [true]
     /// ```
     #[default_device]
-    pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn logical_not_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: mlx_logical_not should not throw if self is a valid array
@@ -452,7 +452,7 @@ impl Array {
         other: impl AsRef<Array>,
         equal_nan: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: mlx_array_equal should not throw if inputs are valid arrays
@@ -539,7 +539,7 @@ pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<A
 
 /// See [`Array::logical_not`]
 #[default_device]
-pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     a.logical_not_device(stream)
 }
 
@@ -577,7 +577,7 @@ pub fn array_eq_device(
     b: impl AsRef<Array>,
     equal_nan: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Array {
+) -> Result<Array> {
     a.as_ref().array_eq_device(b, equal_nan, stream)
 }
 
@@ -645,7 +645,7 @@ pub fn gt_device(
 
 /// Return a boolean array indicating which elements are NaN.
 #[default_device]
-pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_isnan should not throw if array is a valid array
@@ -660,7 +660,7 @@ pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// Return a boolean array indicating which elements are +/- inifnity.
 #[default_device]
-pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_isinf should not throw if array is a valid array
@@ -675,7 +675,7 @@ pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// Return a boolean array indicating which elements are positive infinity.
 #[default_device]
-pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_isposinf should not throw if array is a valid array
@@ -690,7 +690,7 @@ pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
 
 /// Return a boolean array indicating which elements are negative infinity.
 #[default_device]
-pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_isneginf should not throw if array is a valid array

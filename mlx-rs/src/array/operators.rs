@@ -84,13 +84,13 @@ impl Neg for Array {
 impl<'a> Not for &'a Array {
     type Output = Array;
     fn not(self) -> Self::Output {
-        self.logical_not_device(StreamOrDevice::default())
+        self.logical_not_device(StreamOrDevice::default()).unwrap()
     }
 }
 impl Not for Array {
     type Output = Array;
     fn not(self) -> Self::Output {
-        self.logical_not_device(StreamOrDevice::default())
+        self.logical_not_device(StreamOrDevice::default()).unwrap()
     }
 }
 

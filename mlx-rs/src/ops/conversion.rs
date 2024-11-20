@@ -19,12 +19,12 @@ impl Array {
     /// assert_eq!(new_array.as_slice::<f32>(), &[1.0,2.0,3.0]);
     /// ```
     #[default_device]
-    pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         self.as_dtype_device(T::DTYPE, stream)
     }
 
     #[default_device]
-    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
+    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut new_array = mlx_sys::mlx_array_new();
             // SAFETY: self is a valid array
@@ -48,12 +48,12 @@ impl Array {
     /// representation of each element (or group of elements) is the same._
     ///
     #[default_device]
-    pub fn view_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn view_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         self.view_dtype_device(T::DTYPE, stream)
     }
 
     #[default_device]
-    pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
+    pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut new_array = mlx_sys::mlx_array_new();
             // SAFETY: self is a valid array

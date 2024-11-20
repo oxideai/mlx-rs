@@ -11,7 +11,7 @@ use crate::{
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
-use std::ffi::{c_void, CStr};
+use std::{ffi::{c_void, CStr}, iter::Sum};
 
 mod element;
 mod operators;
@@ -416,6 +416,12 @@ impl Clone for Array {
         Array::try_from_op(|res| unsafe { mlx_sys::mlx_array_set(res, self.c_array) })
             // Exception may be thrown when calling `new` in cpp.
             .expect("Failed to clone array")
+    }
+}
+
+impl Sum for Array {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Array::from_int(0), |acc, x| acc.add(&x).unwrap())
     }
 }
 

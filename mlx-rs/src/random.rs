@@ -6,7 +6,8 @@ use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_internal_macros::default_device;
 use std::borrow::Cow;
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
+use parking_lot::Mutex;
 
 struct RandomState {
     state: Array,
@@ -39,8 +40,7 @@ fn state() -> &'static Mutex<RandomState> {
 fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
     key.into().map_or_else(
         || {
-            let mut state = state().lock().unwrap();
-            // Cow::Owned(state.next()?)
+            let mut state = state().lock();
             state.next().map(Cow::Owned)
         },
         |k| Ok(Cow::Borrowed(k)),
@@ -48,9 +48,9 @@ fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> 
 }
 
 /// Seed the random number generator.
-pub fn seed(seed: u64) {
-    let mut state = state().lock().unwrap();
-    state.seed(seed);
+pub fn seed(seed: u64) -> Result<()> {
+    let mut state = state().lock();
+    state.seed(seed)
 }
 
 /// Get a PRNG key from a seed.

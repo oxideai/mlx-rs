@@ -190,7 +190,7 @@ pub fn norm_device<'a>(
                     stream.as_ref().as_ptr(),
                 )
             })
-        },
+        }
         // If axis is not provided but ord is, then x must be either 1D or 2D.
         //
         // Frobenius norm is only supported for matrices
@@ -198,18 +198,16 @@ pub fn norm_device<'a>(
         (Some(Ord::P(p)), None) => norm_p_device(array, p, axes, keep_dims, stream),
         // If axis is provided, but ord is not, then the 2-norm (or Frobenius norm for matrices) is
         // computed along the given axes. At most 2 axes can be specified.
-        (None, Some(axes)) => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_linalg_norm(
-                    res,
-                    array.as_ref().as_ptr(),
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims,
-                    stream.as_ref().as_ptr(),
-                )
-            })
-        },
+        (None, Some(axes)) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linalg_norm(
+                res,
+                array.as_ref().as_ptr(),
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
         // If both axis and ord are provided, then the corresponding matrix or vector
         // norm is computed. At most 2 axes can be specified.
         (Some(Ord::Str(ord)), Some(axes)) => norm_ord_device(array, ord, axes, keep_dims, stream),
@@ -376,7 +374,13 @@ pub fn cross_device(
 ) -> Result<Array> {
     let axis = axis.unwrap_or(-1);
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_linalg_cross(res, a.as_ref().as_ptr(), b.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_linalg_cross(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 

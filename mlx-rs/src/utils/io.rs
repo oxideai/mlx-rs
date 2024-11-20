@@ -70,13 +70,13 @@ impl SafeTensors {
 
         SafeTensors::try_from_op(|(res_0, res_1)| unsafe {
             mlx_sys::mlx_load_safetensors(res_0, res_1, filepath.as_ptr(), stream.as_ref().as_ptr())
-        }).map_err(Into::into)
+        })
+        .map_err(Into::into)
     }
 
     pub(crate) fn data(&self) -> Result<HashMap<String, Array>, Exception> {
-        crate::error::INIT_ERR_HANDLER.with(|init| {
-            init.call_once(crate::error::setup_mlx_error_handler)
-        });
+        crate::error::INIT_ERR_HANDLER
+            .with(|init| init.call_once(crate::error::setup_mlx_error_handler));
         let mut map = HashMap::new();
         unsafe {
             let iterator = mlx_sys::mlx_map_string_to_array_iterator_new(self.c_data);
@@ -116,9 +116,8 @@ impl SafeTensors {
     }
 
     pub(crate) fn metadata(&self) -> Result<HashMap<String, String>, Exception> {
-        crate::error::INIT_ERR_HANDLER.with(|init| {
-            init.call_once(crate::error::setup_mlx_error_handler)
-        });
+        crate::error::INIT_ERR_HANDLER
+            .with(|init| init.call_once(crate::error::setup_mlx_error_handler));
 
         let mut map = HashMap::new();
         unsafe {

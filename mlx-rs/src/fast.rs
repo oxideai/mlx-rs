@@ -31,7 +31,9 @@ pub fn rope_device<'a>(
             base,
             scale,
             offset,
-            freqs.map(|a| a.as_ptr()).unwrap_or(mlx_sys::mlx_array_new()),
+            freqs
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
             stream.as_ref().as_ptr(),
         )
     })
@@ -193,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_rope() {
-        crate::random::seed(71);
+        crate::random::seed(71).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);
@@ -215,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_rms_norm() {
-        crate::random::seed(103);
+        crate::random::seed(103).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);
@@ -238,7 +240,7 @@ mod tests {
 
     #[test]
     pub fn test_layer_norm_affine() {
-        crate::random::seed(635);
+        crate::random::seed(635).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);

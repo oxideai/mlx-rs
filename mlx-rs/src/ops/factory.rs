@@ -72,7 +72,14 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_eye(res, n, m.unwrap_or(n), k.unwrap_or(0), T::DTYPE.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_eye(
+                res,
+                n,
+                m.unwrap_or(n),
+                k.unwrap_or(0),
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -100,7 +107,14 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_full(res, shape.as_ptr(), shape.len(), values.as_ref().c_array, T::DTYPE.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_full(
+                res,
+                shape.as_ptr(),
+                shape.len(),
+                values.as_ref().c_array,
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -158,7 +172,14 @@ impl Array {
         let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
 
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_arange(res, start, stop, step, T::DTYPE.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_arange(
+                res,
+                start,
+                stop,
+                step,
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -193,7 +214,14 @@ impl Array {
         let stop_f32 = NumCast::from(stop).unwrap();
 
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_linspace(res, start_f32, stop_f32, count, T::DTYPE.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_linspace(
+                res,
+                start_f32,
+                stop_f32,
+                count,
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -221,13 +249,7 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat(
-                res,
-                array.c_array,
-                count,
-                axis,
-                stream.as_ref().as_ptr(),
-            )
+            mlx_sys::mlx_repeat(res, array.c_array, count, axis, stream.as_ref().as_ptr())
         })
     }
 
@@ -280,7 +302,14 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tri(res, n, m.unwrap_or(n), k.unwrap_or(0), T::DTYPE.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_tri(
+                res,
+                n,
+                m.unwrap_or(n),
+                k.unwrap_or(0),
+                T::DTYPE.into(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 }
@@ -308,7 +337,13 @@ pub fn zeros_dtype_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_zeros(res, shape.as_ptr(), shape.len(), dtype.into(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_zeros(
+            res,
+            shape.as_ptr(),
+            shape.len(),
+            dtype.into(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -330,7 +365,13 @@ pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) ->
 /// Similar to [`Array::ones`] but with a specified dtype.
 pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_ones(res, shape.as_ptr(), shape.len(), dtype.into(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_ones(
+            res,
+            shape.as_ptr(),
+            shape.len(),
+            dtype.into(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 

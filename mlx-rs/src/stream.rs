@@ -1,6 +1,10 @@
 use std::ffi::CStr;
 
-use crate::{device::Device, error::Result, utils::{guard::Guarded, SUCCESS}};
+use crate::{
+    device::Device,
+    error::Result,
+    utils::{guard::Guarded, SUCCESS},
+};
 
 /// Parameter type for all MLX operations.
 ///
@@ -100,9 +104,7 @@ impl Stream {
     }
 
     pub fn try_default_on_device(device: &Device) -> Result<Stream> {
-        Stream::try_from_op(|res| unsafe {
-            mlx_sys::mlx_get_default_stream(res, device.c_device)
-        })
+        Stream::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_stream(res, device.c_device) })
     }
 
     pub fn new_with_device(device: &Device) -> Stream {

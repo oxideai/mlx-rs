@@ -4,7 +4,6 @@ use std::{
     rc::Rc,
 };
 
-use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{
@@ -16,7 +15,9 @@ use crate::{
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, Ellipsis, Guarded, NewAxis, RangeIndex, StrideBy, TryIndexOp};
+use super::{
+    ArrayIndex, ArrayIndexOp, Ellipsis, Guarded, NewAxis, RangeIndex, StrideBy, TryIndexOp,
+};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */

@@ -1,7 +1,10 @@
 use mlx_internal_macros::default_device;
-use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::Result, utils::{guard::Guarded, IntoOption}, Array, Stream, StreamOrDevice};
+use crate::{
+    error::Result,
+    utils::{guard::Guarded, IntoOption},
+    Array, Stream, StreamOrDevice,
+};
 
 use super::{
     as_complex64,

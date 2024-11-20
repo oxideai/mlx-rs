@@ -3,8 +3,7 @@ use mlx_sys::mlx_vector_array;
 
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
-use std::ffi::CString;
-use std::{ffi::NulError, marker::PhantomData, rc::Rc};
+use std::{marker::PhantomData, rc::Rc};
 
 /// Success status code from the c binding
 pub(crate) const SUCCESS: i32 = 0;
@@ -42,7 +41,6 @@ pub(crate) fn axes_or_default_to_all<'a>(axes: impl IntoOption<&'a [i32]>, ndim:
     }
 }
 
-
 pub(crate) struct VectorArray {
     c_vec: mlx_sys::mlx_vector_array,
 }
@@ -50,10 +48,6 @@ pub(crate) struct VectorArray {
 impl VectorArray {
     pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_vector_array {
         self.c_vec
-    }
-
-    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_array) -> Self {
-        Self { c_vec }
     }
 
     pub(crate) fn try_from_iter(
@@ -79,9 +73,7 @@ impl VectorArray {
             let size = mlx_sys::mlx_vector_array_size(self.c_vec);
             (0..size)
                 .map(|i| {
-                    Array::try_from_op(|res| {
-                        mlx_sys::mlx_vector_array_get(res, self.c_vec, i)
-                    })
+                    Array::try_from_op(|res| mlx_sys::mlx_vector_array_get(res, self.c_vec, i))
                 })
                 .collect::<Result<T, Exception>>()
         }
@@ -91,37 +83,6 @@ impl VectorArray {
 impl Drop for VectorArray {
     fn drop(&mut self) {
         let status = unsafe { mlx_sys::mlx_vector_array_free(self.c_vec) };
-        debug_assert_eq!(status, SUCCESS);
-    }
-}
-
-pub(crate) struct MlxString {
-    c_str: mlx_sys::mlx_string,
-}
-
-impl MlxString {
-    pub(crate) fn from_ptr(c_str: mlx_sys::mlx_string) -> Self {
-        Self { c_str }
-    }
-
-    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_string {
-        self.c_str
-    }
-}
-
-impl<'a> TryFrom<&'a str> for MlxString {
-    type Error = NulError;
-
-    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        let c_str = CString::new(s)?;
-        let ptr = unsafe { mlx_sys::mlx_string_new_data(c_str.as_ptr()) };
-        Ok(Self::from_ptr(ptr))
-    }
-}
-
-impl Drop for MlxString {
-    fn drop(&mut self) {
-        let status = unsafe { mlx_sys::mlx_string_free(self.c_str) };
         debug_assert_eq!(status, SUCCESS);
     }
 }
@@ -229,13 +190,6 @@ pub(crate) struct Closure<'a> {
 }
 
 impl<'a> Closure<'a> {
-    pub(crate) fn from_ptr(c_closure: mlx_sys::mlx_closure) -> Self {
-        Self {
-            c_closure,
-            lt_marker: PhantomData,
-        }
-    }
-
     pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_closure {
         self.c_closure
     }
@@ -321,9 +275,7 @@ fn mlx_vector_array_values(
         let size = mlx_sys::mlx_vector_array_size(vector_array);
         (0..size)
             .map(|index| {
-                Array::try_from_op(|res| {
-                    mlx_sys::mlx_vector_array_get(res, vector_array, index)
-                })
+                Array::try_from_op(|res| mlx_sys::mlx_vector_array_get(res, vector_array, index))
             })
             .collect()
     }

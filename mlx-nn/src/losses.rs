@@ -552,7 +552,9 @@ impl SmoothL1Loss {
         let diff = predictions.subtract(targets)?;
         let loss = r#where(
             &diff.lt(array!(beta))?,
-            array!(0.5).multiply(square(&diff)?)?.divide(&array!(beta))?,
+            array!(0.5)
+                .multiply(square(&diff)?)?
+                .divide(&array!(beta))?,
             abs(&diff)?.subtract(array!(0.5).multiply(array!(beta))?)?,
         )?;
         reduction.reduce(loss)
@@ -910,7 +912,11 @@ mod tests {
             .build()
             .unwrap();
         let loss = cross_entropy.apply(logits, probs).unwrap();
-        assert!(is_nan(&loss).unwrap().all(None, None).unwrap().item::<bool>());
+        assert!(is_nan(&loss)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
 
         // With weights, no label smoothing
         let logits = array!([[2.0, -1.0], [-1.0, 2.0]]);

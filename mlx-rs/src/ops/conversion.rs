@@ -1,6 +1,8 @@
 use mlx_internal_macros::default_device;
 
-use crate::{utils::guard::Guarded, Array, ArrayElement, Dtype, Stream, StreamOrDevice, error::Result};
+use crate::{
+    error::Result, utils::guard::Guarded, Array, ArrayElement, Dtype, Stream, StreamOrDevice,
+};
 
 impl Array {
     /// Create a new array with the contents converted to the given [ArrayElement] type.
@@ -26,12 +28,7 @@ impl Array {
     #[default_device]
     pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_astype(
-                res,
-                self.c_array,
-                dtype.into(),
-                stream.as_ref().as_ptr(),
-            )
+            mlx_sys::mlx_astype(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
         })
     }
 
@@ -52,12 +49,7 @@ impl Array {
     #[default_device]
     pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_view(
-                res,
-                self.c_array,
-                dtype.into(),
-                stream.as_ref().as_ptr(),
-            )
+            mlx_sys::mlx_view(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
         })
     }
 }

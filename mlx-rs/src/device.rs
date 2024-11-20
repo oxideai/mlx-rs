@@ -1,6 +1,9 @@
 use std::ffi::CStr;
 
-use crate::{error::Result, utils::{guard::Guarded, SUCCESS}};
+use crate::{
+    error::Result,
+    utils::{guard::Guarded, SUCCESS},
+};
 
 ///Type of device.
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]

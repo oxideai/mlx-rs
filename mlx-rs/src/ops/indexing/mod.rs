@@ -99,7 +99,6 @@
 use std::{borrow::Cow, ops::Bound, rc::Rc};
 
 use mlx_internal_macros::default_device;
-use mlx_sys::{mlx_array_free, mlx_array_new};
 
 use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
@@ -337,7 +336,13 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_take(res, self.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_take(
+                res,
+                self.c_array,
+                indices.as_ref().c_array,
+                axis,
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -353,7 +358,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_take_all(res, self.c_array, indices.as_ref().c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_take_all(
+                res,
+                self.c_array,
+                indices.as_ref().c_array,
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -378,7 +388,13 @@ impl Array {
         };
 
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_take_along_axis(res, input.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_take_along_axis(
+                res,
+                input.c_array,
+                indices.as_ref().c_array,
+                axis,
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -402,17 +418,29 @@ impl Array {
         match axis.into() {
             None => {
                 let input = self.reshape_device(&[-1], &stream)?;
-                let array = Array::try_from_op(|res| unsafe{
-                    mlx_sys::mlx_put_along_axis(res, input.c_array, indices.as_ref().c_array, values.as_ref().c_array, 0, stream.as_ref().as_ptr())
+                let array = Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_put_along_axis(
+                        res,
+                        input.c_array,
+                        indices.as_ref().c_array,
+                        values.as_ref().c_array,
+                        0,
+                        stream.as_ref().as_ptr(),
+                    )
                 })?;
                 let array = array.reshape_device(self.shape(), &stream)?;
                 Ok(array)
-            },
-            Some(ax) => {
-                Array::try_from_op(|res| unsafe{
-                    mlx_sys::mlx_put_along_axis(res, self.c_array, indices.as_ref().c_array, values.as_ref().c_array, ax, stream.as_ref().as_ptr())
-                })
-            },
+            }
+            Some(ax) => Array::try_from_op(|res| unsafe {
+                mlx_sys::mlx_put_along_axis(
+                    res,
+                    self.c_array,
+                    indices.as_ref().c_array,
+                    values.as_ref().c_array,
+                    ax,
+                    stream.as_ref().as_ptr(),
+                )
+            }),
         }
     }
 }
@@ -436,7 +464,13 @@ pub fn argmax_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmax(res, a.as_ref().c_array, axis, keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmax(
+            res,
+            a.as_ref().c_array,
+            axis,
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -478,7 +512,13 @@ pub fn argmin_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmin(res, a.as_ref().c_array, axis, keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmin(
+            res,
+            a.as_ref().c_array,
+            axis,
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 

@@ -1,26 +1,12 @@
 use crate::error::IoError;
 use crate::utils::guard::Guarded;
+use crate::utils::io::{FilePtr, SafeTensors};
 use crate::utils::SUCCESS;
-use crate::utils::{
-    io::{FilePtr, SafeTensors},
-    MlxString,
-};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::path::Path;
-
-fn prepare_file_path(path: &Path) -> Result<MlxString, IoError> {
-    if !path.is_file() {
-        return Err(IoError::NotFile);
-    }
-
-    let path_str = path.to_str().ok_or(IoError::InvalidUtf8)?;
-    let path = MlxString::try_from(path_str)?;
-
-    Ok(path)
-}
 
 fn check_file_extension(path: &Path, expected: &str) -> Result<(), IoError> {
     match path.extension().and_then(|ext| ext.to_str()) {
@@ -37,12 +23,16 @@ fn check_file_extension(path: &Path, expected: &str) -> Result<(), IoError> {
 /// - stream: stream or device to evaluate on
 #[default_device]
 pub fn load_array_device(path: &Path, stream: impl AsRef<Stream>) -> Result<Array, IoError> {
+    if !path.is_file() {
+        return Err(IoError::NotFile);
+    }
     let c_path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)?;
     check_file_extension(path, "npy")?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_load(res, c_path.as_ptr(), stream.as_ref().as_ptr())
-    }).map_err(Into::into)
+    })
+    .map_err(Into::into)
 }
 
 /// Load dictionary of ``MLXArray`` from a `safetensors` file.
@@ -109,9 +99,8 @@ pub fn save_arrays<'a>(
     metadata: impl Into<Option<&'a HashMap<String, String>>>,
     path: &Path,
 ) -> Result<(), IoError> {
-    crate::error::INIT_ERR_HANDLER.with(|init| {
-        init.call_once(crate::error::setup_mlx_error_handler)
-    });
+    crate::error::INIT_ERR_HANDLER
+        .with(|init| init.call_once(crate::error::setup_mlx_error_handler));
 
     check_file_extension(path, "safetensors")?;
 

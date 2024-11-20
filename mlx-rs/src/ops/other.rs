@@ -3,7 +3,7 @@ use std::ffi::CString;
 use mlx_internal_macros::default_device;
 
 use crate::utils::guard::Guarded;
-use crate::utils::{MlxString, VectorArray};
+use crate::utils::VectorArray;
 use crate::{
     error::{Exception, Result},
     Array, Stream, StreamOrDevice,
@@ -130,7 +130,8 @@ pub fn einsum_device<'a>(
     operands: impl IntoIterator<Item = &'a Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let c_subscripts = CString::new(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
+    let c_subscripts =
+        CString::new(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
     let c_operands = VectorArray::try_from_iter(operands.into_iter())?;
 
     Array::try_from_op(|res| unsafe {

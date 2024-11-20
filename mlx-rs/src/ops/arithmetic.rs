@@ -55,7 +55,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_add(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_add(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -85,7 +90,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_subtract(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_subtract(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -132,7 +142,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_multiply(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_multiply(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -203,7 +218,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_divide(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_divide(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -233,7 +253,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_power(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_power(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -263,7 +288,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_remainder(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_remainder(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -375,7 +405,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_floor_divide(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_floor_divide(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -546,7 +581,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_matmul(res, self.c_array, other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_matmul(
+                res,
+                self.c_array,
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -796,7 +836,13 @@ pub fn clip_device<'min, 'max>(
         };
 
         Array::try_from_op(|res| {
-            mlx_sys::mlx_clip(res, a.as_ref().as_ptr(), min_ptr, max_ptr, stream.as_ref().as_ptr())
+            mlx_sys::mlx_clip(
+                res,
+                a.as_ref().as_ptr(),
+                min_ptr,
+                max_ptr,
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 }
@@ -1112,7 +1158,14 @@ pub fn softmax_device(
     let s = stream.as_ref().as_ptr();
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax(res, a.as_ref().as_ptr(), axes.as_ptr(), axes.len(), precise, s)
+        mlx_sys::mlx_softmax(
+            res,
+            a.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            precise,
+            s,
+        )
     })
 }
 
@@ -1328,25 +1381,27 @@ pub fn tensordot_device<'a>(
     let a = a.as_ref();
     let b = b.as_ref();
     match axes.into() {
-        TensorDotDims::Int(dim) => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_tensordot_along_axis(res, a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr())
-            })
-        }
-        TensorDotDims::List((lhs, rhs)) => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_tensordot(
-                    res,
-                    a.as_ptr(),
-                    b.as_ptr(),
-                    lhs.as_ptr(),
-                    lhs.len(),
-                    rhs.as_ptr(),
-                    rhs.len(),
-                    stream.as_ref().as_ptr(),
-                )
-            })
-        }
+        TensorDotDims::Int(dim) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_tensordot_along_axis(
+                res,
+                a.as_ptr(),
+                b.as_ptr(),
+                dim,
+                stream.as_ref().as_ptr(),
+            )
+        }),
+        TensorDotDims::List((lhs, rhs)) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_tensordot(
+                res,
+                a.as_ptr(),
+                b.as_ptr(),
+                lhs.as_ptr(),
+                lhs.len(),
+                rhs.as_ptr(),
+                rhs.len(),
+                stream.as_ref().as_ptr(),
+            )
+        }),
     }
 }
 
@@ -2150,9 +2205,11 @@ mod tests {
         let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
         let x = split_equal(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, 180.0], &[2, 1]);
-        assert!(all_close(degrees(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(degrees(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2161,14 +2218,20 @@ mod tests {
         assert_eq!(radians(&x).unwrap().item::<f32>(), 0.0);
 
         let x = array![90.0];
-        assert_eq!(radians(&x).unwrap().item::<f32>(), std::f32::consts::PI / 2.0);
+        assert_eq!(
+            radians(&x).unwrap().item::<f32>(),
+            std::f32::consts::PI / 2.0
+        );
 
         assert_eq!(radians(array!()).unwrap(), array!());
 
         // Integer input type
         let x = array![90];
         assert_eq!(x.dtype(), Dtype::Int32);
-        assert_eq!(radians(&x).unwrap().item::<f32>(), std::f32::consts::PI / 2.0);
+        assert_eq!(
+            radians(&x).unwrap().item::<f32>(),
+            std::f32::consts::PI / 2.0
+        );
 
         // Input is irregularly strided
         let x = broadcast_to(&array!(90.0), &[2, 2, 2]).unwrap();
@@ -2181,9 +2244,11 @@ mod tests {
         let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
         let x = split_equal(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, PI], &[2, 1]);
-        assert!(all_close(radians(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(radians(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2275,9 +2340,11 @@ mod tests {
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
         let x = split_equal(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln_1p(), 3.0f32.ln_1p()], &[2, 1]);
-        assert!(all_close(log1p(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(log1p(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]

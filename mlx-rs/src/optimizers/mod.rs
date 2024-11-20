@@ -72,6 +72,9 @@ pub trait Optimizer {
     }
 }
 
+/// Type alias for clipped gradients that is returned by `clip_grad_norm`.
+pub type MaybeClippedGrads<'a> = HashMap<Rc<str>, Cow<'a, Array>>;
+
 /// Clips the global norm of the gradients
 ///
 /// This function ensures that the global norm of the gradients does not exceed
@@ -80,11 +83,11 @@ pub trait Optimizer {
 pub fn clip_grad_norm(
     gradients: &FlattenedModuleParam,
     max_norm: f32,
-) -> crate::error::Result<(HashMap<Rc<str>, Cow<'_, Array>>, f32)> {
+) -> crate::error::Result<(MaybeClippedGrads, f32)> {
     let total_norm: f32 = gradients
         .values()
-        .fold(Ok(array!(0.0)), |acc, grad| {
-            acc?.add(&grad.square()?.sum(None, None)?)
+        .try_fold(array!(0.0), |acc, grad| {
+            acc.add(&grad.square()?.sum(None, None)?)
         })?
         .sqrt()?
         .item();
@@ -141,7 +144,8 @@ mod tests {
             .into_iter()
             .map(|g| g.square().unwrap().sum(None, None).unwrap())
             .sum::<Array>()
-            .sqrt().unwrap();
+            .sqrt()
+            .unwrap();
 
         float_eq::assert_float_eq!(norm_of_clipped.item::<f32>(), max_norm, abs <= 1e-6);
 

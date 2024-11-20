@@ -106,51 +106,53 @@ pub fn clip_grad_norm(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
 
-    // def test_clip_grad_norm(self):
-    //     # Test with small gradients that do not require clipping
-    //     small_grads = {
-    //         "first": [mx.array([0.1, 0.2]), mx.array([0.1])],
-    //         "second": mx.array([0.3]),
-    //     }
-    //     max_norm = 10.0  # A large max_norm that shouldn't trigger clipping
-    //     clipped_grads, total_norm = opt.clip_grad_norm(small_grads, max_norm)
-    //     self.assertTrue(
-    //         tree_equal(lambda x, y: mx.array_equal(x, y), small_grads, clipped_grads),
-    //         "Gradients should not be modified when clipping is not necessary.",
-    //     )
+    use crate::{array, module::FlattenedModuleParam, Array};
 
-    //     # Test with large gradients that require clipping
-    //     large_grads = {
-    //         "first": [mx.array([10, 20]), mx.array([10])],
-    //         "second": mx.array([30]),
-    //     }
-    //     max_norm = 1.0  # A small max_norm that should trigger clipping
-    //     clipped_grads, total_norm = opt.clip_grad_norm(large_grads, max_norm)
-    //     # Correctly extract only the gradient values for norm calculation
-    //     clipped_values = [value for _, value in tree_flatten(clipped_grads)]
-    //     norm_of_clipped = mx.sqrt(
-    //         sum(mx.square(g).sum() for g in clipped_values)
-    //     ).item()
-    //     self.assertAlmostEqual(
-    //         norm_of_clipped,
-    //         max_norm,
-    //         places=6,
-    //         msg="Clipped gradients norm should be close to the specified max_norm.",
-    //     )
-
-    //     # Ensures that the scaling was done correctly
-    //     scale = max_norm / total_norm
-    //     expected_grads = tree_map(lambda g: g * scale, large_grads)
-    //     self.assertTrue(
-    //         tree_equal(
-    //             lambda x, y: mx.allclose(x, y, atol=1e-6), expected_grads, clipped_grads
-    //         ),
-    //         "Gradients were not scaled correctly during clipping.",
-    //     )
+    use super::clip_grad_norm;
 
     #[test]
     fn test_clip_grad_norm() {
-        todo!()
+        // Test with small gradients that do not require clipping
+        let mut small_grads: FlattenedModuleParam = HashMap::new();
+        small_grads.insert("first.a".into(), array!([0.1, 0.2]));
+        small_grads.insert("first.b".into(), array!(0.1));
+        small_grads.insert("second".into(), array!(0.3));
+
+        let max_norm = 10.0;
+
+        let (clipped_grads, _) = clip_grad_norm(&small_grads, max_norm).unwrap();
+        for (key, value) in small_grads.iter() {
+            assert_eq!(&*clipped_grads[key], value);
+        }
+
+        // Test with large gradients that require clipping
+        let mut large_grads: FlattenedModuleParam = HashMap::new();
+        large_grads.insert("first.a".into(), array!([10.0, 20.0]));
+        large_grads.insert("first.b".into(), array!(10.0));
+        large_grads.insert("second".into(), array!(30.0));
+
+        let max_norm = 1.0;
+
+        let (clipped_grads, total_norm) = clip_grad_norm(&large_grads, max_norm).unwrap();
+        let clipped_values: Vec<_> = clipped_grads.values().map(|v| v.as_ref()).collect();
+        let norm_of_clipped = clipped_values
+            .into_iter()
+            .map(|g| g.square().unwrap().sum(None, None).unwrap())
+            .sum::<Array>()
+            .sqrt().unwrap();
+
+        float_eq::assert_float_eq!(norm_of_clipped.item::<f32>(), max_norm, abs <= 1e-6);
+
+        // Ensures that the scaling was done correctly
+        let scale = max_norm / total_norm;
+        let expected_grads: FlattenedModuleParam = large_grads
+            .iter()
+            .map(|(key, value)| (key.clone(), value * scale))
+            .collect();
+        for (key, value) in expected_grads.iter() {
+            assert_eq!(&*clipped_grads[key], value);
+        }
     }
 }

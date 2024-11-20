@@ -1,4 +1,4 @@
-use mlx_macros::ModuleParameters;
+use mlx_macros::{Builder, ModuleParameters};
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     error::Exception,
@@ -10,43 +10,22 @@ use mlx_rs::{
 use crate::utils::{IntOrPair, IntOrTriple};
 
 /// Builder for the `Conv1d` module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Builder)]
 pub struct Conv1dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_WITH_BIAS`] if not
-    /// specified.
-    pub with_bias: Option<bool>,
+    /// If `true`, add a learnable bias to the output.
+    #[builder(default = true)]
+    pub with_bias: bool,
 
-    /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
-    pub padding: Option<i32>,
+    /// Padding.
+    #[builder(default = 0)]
+    pub padding: i32,
 
-    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
-    pub stride: Option<i32>,
+    /// Stride.
+    #[builder(default = 1)]
+    pub stride: i32,
 }
 
 impl Conv1dBuilder {
-    /// Creates a new `Conv1dBuilder`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Sets the `with_bias` parameter.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
-        self
-    }
-
-    /// Sets the `padding` parameter.
-    pub fn padding(mut self, padding: impl Into<Option<i32>>) -> Self {
-        self.padding = padding.into();
-        self
-    }
-
-    /// Sets the `stride` parameter.
-    pub fn stride(mut self, stride: impl Into<Option<i32>>) -> Self {
-        self.stride = stride.into();
-        self
-    }
-
     /// Builds a new `Conv1d` module.
     pub fn build(
         self,
@@ -54,10 +33,6 @@ impl Conv1dBuilder {
         output_channels: i32,
         kernel_size: i32,
     ) -> Result<Conv1d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Conv1d::DEFAULT_WITH_BIAS);
-        let padding = self.padding.unwrap_or(Conv1d::DEFAULT_PADDING);
-        let stride = self.stride.unwrap_or(Conv1d::DEFAULT_STRIDE);
-
         let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
         let weight = uniform::<_, f32>(
             -scale,
@@ -65,7 +40,7 @@ impl Conv1dBuilder {
             &[output_channels, kernel_size, input_channels],
             None,
         )?;
-        let bias = if with_bias {
+        let bias = if self.with_bias {
             Some(zeros::<f32>(&[output_channels])?)
         } else {
             None
@@ -74,8 +49,8 @@ impl Conv1dBuilder {
         Ok(Conv1d {
             weight: Param::new(weight),
             bias: Param::new(bias),
-            padding,
-            stride,
+            padding: self.padding,
+            stride: self.stride,
         })
     }
 }
@@ -105,15 +80,6 @@ pub struct Conv1d {
 }
 
 impl Conv1d {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
-
-    /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: i32 = 0;
-
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: i32 = 1;
-
     /// Creates a new `Conv1dBuilder`.
     pub fn builder() -> Conv1dBuilder {
         Conv1dBuilder::new()
@@ -151,43 +117,22 @@ impl Module for Conv1d {
 }
 
 /// Builder for the `Conv2d` module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Builder)]
 pub struct Conv2dBuilder {
-    /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_WITH_BIAS`] if not
-    /// specified.
-    with_bias: Option<bool>,
+    /// If `true`, add a learnable bias to the output.
+    #[builder(default = true)]
+    with_bias: bool,
 
-    /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
-    padding: Option<(i32, i32)>,
+    /// Padding.
+    #[builder(default = (0, 0))]
+    padding: (i32, i32),
 
-    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
-    stride: Option<(i32, i32)>,
+    /// Stride.
+    #[builder(default = (1, 1))]
+    stride: (i32, i32),
 }
 
 impl Conv2dBuilder {
-    /// Creates a new `Conv2dBuilder`.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Sets the `with_bias` parameter.
-    pub fn with_bias(mut self, with_bias: impl Into<Option<bool>>) -> Self {
-        self.with_bias = with_bias.into();
-        self
-    }
-
-    /// Sets the `padding` parameter.
-    pub fn padding(mut self, padding: impl Into<Option<(i32, i32)>>) -> Self {
-        self.padding = padding.into();
-        self
-    }
-
-    /// Sets the `stride` parameter.
-    pub fn stride(mut self, stride: impl Into<Option<(i32, i32)>>) -> Self {
-        self.stride = stride.into();
-        self
-    }
-
     /// Builds a new `Conv2d` module.
     pub fn build(
         self,
@@ -195,10 +140,6 @@ impl Conv2dBuilder {
         output_channels: i32,
         kernel_size: (i32, i32),
     ) -> Result<Conv2d, Exception> {
-        let with_bias = self.with_bias.unwrap_or(Conv2d::DEFAULT_WITH_BIAS);
-        let padding = self.padding.unwrap_or(Conv2d::DEFAULT_PADDING);
-        let stride = self.stride.unwrap_or(Conv2d::DEFAULT_STRIDE);
-
         let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
         let weight = uniform::<_, f32>(
             -scale,
@@ -211,7 +152,7 @@ impl Conv2dBuilder {
             ],
             None,
         )?;
-        let bias = if with_bias {
+        let bias = if self.with_bias {
             Some(zeros::<f32>(&[output_channels])?)
         } else {
             None
@@ -220,8 +161,8 @@ impl Conv2dBuilder {
         Ok(Conv2d {
             weight: Param::new(weight),
             bias: Param::new(bias),
-            padding,
-            stride,
+            padding: self.padding,
+            stride: self.stride,
         })
     }
 }
@@ -252,15 +193,6 @@ pub struct Conv2d {
 }
 
 impl Conv2d {
-    /// Default value for `with_bias` if not specified.
-    pub const DEFAULT_WITH_BIAS: bool = true;
-
-    /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: (i32, i32) = (0, 0);
-
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: (i32, i32) = (1, 1);
-
     /// Creates a new `Conv2dBuilder`.
     pub fn builder() -> Conv2dBuilder {
         Conv2dBuilder::new()

@@ -4,6 +4,8 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 mod module_parameters;
+mod builder;
+mod shared;
 
 /// Derive the `ModuleParameters` trait for a struct. Mark a field with `#[param]` attribute to
 /// include it in the parameters. The field type must implement the `Parameter` trait defined in
@@ -56,4 +58,11 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
         };
     };
     TokenStream::from(output)
+}
+
+/// Derive macro for the config.
+#[proc_macro_derive(Builder, attributes(builder))]
+pub fn config_derive(input: TokenStream) -> TokenStream {
+    let item = syn::parse(input).unwrap();
+    builder::derive_impl(&item)
 }

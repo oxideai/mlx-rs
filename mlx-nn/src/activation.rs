@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use mlx_internal_macros::generate_builder;
-use mlx_macros::ModuleParameters;
+use mlx_macros::{Builder, ModuleParameters};
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,
@@ -596,34 +596,22 @@ pub struct Prelu {
     pub weight: Param<Array>, // TODO: double check if this is trainable
 }
 
-/// The builder for the Prelu module.
-#[derive(Debug, Clone, Default)]
+/// The builder for the [`Prelu`] module.
+#[derive(Debug, Builder)]
 pub struct PreluBuilder {
-    /// The count. Default to [`Prelu::DEFAULT_COUNT`] if not provided.
-    pub count: Option<i32>,
+    /// The count.
+    #[builder(default = 1)]
+    pub count: i32,
 
-    /// The value. Default to [`Prelu::DEFAULT_VALUE`] if not provided.
-    pub value: Option<f32>,
+    /// The value.
+    #[builder(default = 0.25)]
+    pub value: f32,
 }
 
 impl PreluBuilder {
-    /// Sets the count value.
-    pub fn count(mut self, count: i32) -> Self {
-        self.count = Some(count);
-        self
-    }
-
-    /// Sets the value.
-    pub fn value(mut self, value: f32) -> Self {
-        self.value = Some(value);
-        self
-    }
-
     /// Builds the Prelu module.
     pub fn build(self) -> Result<Prelu, Exception> {
-        let count = self.count.unwrap_or(Prelu::DEFAULT_COUNT);
-        let value = self.value.unwrap_or(Prelu::DEFAULT_VALUE);
-        let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
+        let weight = Param::new(mlx_rs::ops::full::<f32>(&[self.count], &array!(self.value))?);
         Ok(Prelu { weight })
     }
 }
@@ -635,20 +623,14 @@ impl Default for Prelu {
 }
 
 impl Prelu {
-    /// The default count value.
-    pub const DEFAULT_COUNT: i32 = 1;
-
-    /// The default value.
-    pub const DEFAULT_VALUE: f32 = 0.25;
-
     /// Creates a new PreluBuilder.
     pub fn builder() -> PreluBuilder {
-        PreluBuilder::default()
+        PreluBuilder::new()
     }
 
     /// Creates a new Prelu module with the default values.
     pub fn new() -> Prelu {
-        PreluBuilder::default()
+        PreluBuilder::new()
             .build()
             .expect("Default value should be valid")
     }

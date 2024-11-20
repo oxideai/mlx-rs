@@ -32,18 +32,16 @@ impl Array {
         let stream = stream.as_ref();
 
         match axis.into() {
-            Some(axis) => {
-                Array::try_from_op(|res| unsafe {
-                    mlx_sys::mlx_cummax(
-                        res,
-                        self.c_array,
-                        axis,
-                        reverse.into().unwrap_or(false),
-                        inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
-                    )
-                })
-            },
+            Some(axis) => Array::try_from_op(|res| unsafe {
+                mlx_sys::mlx_cummax(
+                    res,
+                    self.c_array,
+                    axis,
+                    reverse.into().unwrap_or(false),
+                    inclusive.into().unwrap_or(true),
+                    stream.as_ptr(),
+                )
+            }),
             None => {
                 let shape = &[-1];
                 let flat = self.reshape_device(shape, stream)?;
@@ -89,18 +87,16 @@ impl Array {
         let stream = stream.as_ref();
 
         match axis.into() {
-            Some(axis) => {
-                Array::try_from_op(|res| unsafe {
-                    mlx_sys::mlx_cummin(
-                        res,
-                        self.c_array,
-                        axis,
-                        reverse.into().unwrap_or(false),
-                        inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
-                    )
-                })
-            },
+            Some(axis) => Array::try_from_op(|res| unsafe {
+                mlx_sys::mlx_cummin(
+                    res,
+                    self.c_array,
+                    axis,
+                    reverse.into().unwrap_or(false),
+                    inclusive.into().unwrap_or(true),
+                    stream.as_ptr(),
+                )
+            }),
             None => {
                 let shape = &[-1];
                 let flat = self.reshape_device(shape, stream)?;
@@ -146,18 +142,16 @@ impl Array {
         let stream = stream.as_ref();
 
         match axis.into() {
-            Some(axis) => {
-                Array::try_from_op(|res| unsafe {
-                    mlx_sys::mlx_cumprod(
-                        res,
-                        self.c_array,
-                        axis,
-                        reverse.into().unwrap_or(false),
-                        inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
-                    )
-                })
-            },
+            Some(axis) => Array::try_from_op(|res| unsafe {
+                mlx_sys::mlx_cumprod(
+                    res,
+                    self.c_array,
+                    axis,
+                    reverse.into().unwrap_or(false),
+                    inclusive.into().unwrap_or(true),
+                    stream.as_ptr(),
+                )
+            }),
             None => {
                 let shape = &[-1];
                 let flat = self.reshape_device(shape, stream)?;
@@ -203,18 +197,16 @@ impl Array {
         let stream = stream.as_ref();
 
         match axis.into() {
-            Some(axis) => {
-                Array::try_from_op(|res| unsafe {
-                    mlx_sys::mlx_cumsum(
-                        res,
-                        self.c_array,
-                        axis,
-                        reverse.into().unwrap_or(false),
-                        inclusive.into().unwrap_or(true),
-                        stream.as_ptr(),
-                    )
-                })
-            },
+            Some(axis) => Array::try_from_op(|res| unsafe {
+                mlx_sys::mlx_cumsum(
+                    res,
+                    self.c_array,
+                    axis,
+                    reverse.into().unwrap_or(false),
+                    inclusive.into().unwrap_or(true),
+                    stream.as_ptr(),
+                )
+            }),
             None => {
                 let shape = &[-1];
                 let flat = self.reshape_device(shape, stream)?;

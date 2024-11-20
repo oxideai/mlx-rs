@@ -196,7 +196,7 @@ const ATOL: f64 = 1e-5;
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_ada_delta() {
-    mlx_rs::random::seed(547);
+    mlx_rs::random::seed(547).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
@@ -252,7 +252,7 @@ fn test_ada_delta() {
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_adagrad() {
-    mlx_rs::random::seed(958);
+    mlx_rs::random::seed(958).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -292,7 +292,7 @@ fn test_adagrad() {
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_adam() {
-    mlx_rs::random::seed(616);
+    mlx_rs::random::seed(616).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -348,7 +348,7 @@ fn test_adam() {
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_adamw() {
-    mlx_rs::random::seed(696);
+    mlx_rs::random::seed(696).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -404,7 +404,7 @@ fn test_adamw() {
 // `mlx/python/tests/test_optimizers.py`.
 #[test]
 fn test_adamax() {
-    mlx_rs::random::seed(75);
+    mlx_rs::random::seed(75).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -535,7 +535,7 @@ fn test_sgd() {
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_lion() {
-    mlx_rs::random::seed(27);
+    mlx_rs::random::seed(27).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -591,7 +591,7 @@ fn test_lion() {
 // `mlx-swift/Tests/MLXTests/IntegrationTests.swift`
 #[test]
 fn test_lion1() {
-    mlx_rs::random::seed(127);
+    mlx_rs::random::seed(127).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -645,7 +645,7 @@ fn test_lion1() {
 
 #[test]
 fn test_adafactor() {
-    mlx_rs::random::seed(650);
+    mlx_rs::random::seed(650).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -703,7 +703,7 @@ fn test_adafactor() {
 
 #[test]
 fn test_adafactor1() {
-    mlx_rs::random::seed(193);
+    mlx_rs::random::seed(193).unwrap();
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
@@ -757,7 +757,7 @@ fn test_adafactor1() {
 
 #[test]
 fn test_adafactor2() {
-    mlx_rs::random::seed(620);
+    mlx_rs::random::seed(620).unwrap();
     let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[10], None).unwrap();
     assert_eq!(a.shape(), &[10]);
     assert_eq!(a.dtype(), Dtype::Float32);

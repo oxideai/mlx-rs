@@ -1,17 +1,17 @@
 use crate::{
     dtype::Dtype,
-    error::{
-        get_and_clear_last_mlx_error, setup_mlx_error_handler,
-        AsSliceError,
-    },
+    error::AsSliceError,
     sealed::Sealed,
-    utils::{guard::{Guard, Guarded}, SUCCESS},
+    utils::{guard::Guarded, SUCCESS},
     Stream, StreamOrDevice,
 };
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
-use std::{ffi::{c_void, CStr}, iter::Sum};
+use std::{
+    ffi::{c_void, CStr},
+    iter::Sum,
+};
 
 mod element;
 mod operators;
@@ -251,9 +251,7 @@ impl Array {
     // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&self) -> crate::error::Result<()> {
-        <() as Guarded>::try_from_op(|_| unsafe {
-            mlx_sys::mlx_array_eval(self.c_array)
-        })
+        <() as Guarded>::try_from_op(|_| unsafe { mlx_sys::mlx_array_eval(self.c_array) })
     }
 
     /// Access the value of a scalar array.

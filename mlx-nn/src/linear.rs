@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn test_linear() {
-        mlx_rs::random::seed(744);
+        mlx_rs::random::seed(744).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);

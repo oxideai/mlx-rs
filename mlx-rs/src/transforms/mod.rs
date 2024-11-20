@@ -1,12 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
-use mlx_sys::{mlx_closure_value_and_grad, mlx_closure_value_and_grad_apply};
+use mlx_sys::mlx_closure_value_and_grad;
 
 use crate::{
-    error::{
-        get_and_clear_last_mlx_error, setup_mlx_error_handler, Exception,
-        Result,
-    },
+    error::{Exception, Result},
     module::ModuleParamRef,
     utils::{guard::Guarded, Closure, IntoOption, VectorArray},
     Array,
@@ -17,9 +14,7 @@ pub mod compile;
 /// Evaluate an iterator of [`Array`]s.
 pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()> {
     let vec = VectorArray::try_from_iter(outputs.into_iter())?;
-    <() as Guarded>::try_from_op(|_| unsafe {
-        mlx_sys::mlx_eval(vec.as_ptr())
-    })
+    <() as Guarded>::try_from_op(|_| unsafe { mlx_sys::mlx_eval(vec.as_ptr()) })
 }
 
 /// Evaluate a module's parameters.
@@ -34,9 +29,7 @@ pub fn eval_params(params: ModuleParamRef<'_>) -> Result<()> {
 /// Please note that this is not a rust async function.
 pub fn async_eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()> {
     let vec = VectorArray::try_from_iter(outputs.into_iter())?;
-    <() as Guarded>::try_from_op(|_| unsafe {
-        mlx_sys::mlx_async_eval(vec.as_ptr())
-    })
+    <() as Guarded>::try_from_op(|_| unsafe { mlx_sys::mlx_async_eval(vec.as_ptr()) })
 }
 
 /// Asynchronously evaluate a module's parameters.
@@ -55,8 +48,14 @@ fn jvp_inner(
     let c_primals = VectorArray::try_from_iter(primals.iter())?;
     let c_tangents = VectorArray::try_from_iter(tangents.iter())?;
 
-    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
-        mlx_sys::mlx_jvp(res_0, res_1, closure.as_ptr(), c_primals.as_ptr(), c_tangents.as_ptr())
+    <(Vec<Array>, Vec<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_jvp(
+            res_0,
+            res_1,
+            closure.as_ptr(),
+            c_primals.as_ptr(),
+            c_tangents.as_ptr(),
+        )
     })
 }
 
@@ -107,7 +106,7 @@ fn vjp_inner(
     let c_primals = VectorArray::try_from_iter(primals.iter())?;
     let c_cotangents = VectorArray::try_from_iter(cotangents.iter())?;
 
-    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+    <(Vec<Array>, Vec<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_vjp(
             res_0,
             res_1,
@@ -161,7 +160,7 @@ fn value_and_gradient(
 ) -> Result<(Vec<Array>, Vec<Array>)> {
     let input_vector = VectorArray::try_from_iter(arrays)?;
 
-    <(Vec::<Array>, Vec::<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+    <(Vec<Array>, Vec<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_closure_value_and_grad_apply(
             res_0,
             res_1,
@@ -341,8 +340,7 @@ macro_rules! value_and_grad_with_hashmap {
                 )
             })?;
 
-            let (value, grads) =
-                value_and_gradient(cvg.as_ptr(), flattened_values.into_iter())?;
+            let (value, grads) = value_and_gradient(cvg.as_ptr(), flattened_values.into_iter())?;
 
             let grads_map = flattened_keys.iter().cloned().zip(grads).collect();
 

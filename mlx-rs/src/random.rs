@@ -1,13 +1,12 @@
 use crate::ops::indexing::TryIndexOp;
-use crate::prelude::IndexOp;
 use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
 use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
 use mlx_internal_macros::default_device;
+use parking_lot::Mutex;
 use std::borrow::Cow;
 use std::sync::OnceLock;
-use parking_lot::Mutex;
 
 struct RandomState {
     state: Array,
@@ -59,21 +58,14 @@ pub fn seed(seed: u64) -> Result<()> {
 /// functions take an optional key -- this will let you control the
 /// random number generation.
 pub fn key(seed: u64) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_random_key(res, seed)
-    })
+    Array::try_from_op(|res| unsafe { mlx_sys::mlx_random_key(res, seed) })
 }
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
 pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
     let keys = Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_random_split_equal_parts(
-            res,
-            key.as_ptr(),
-            2,
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_random_split_equal_parts(res, key.as_ptr(), 2, stream.as_ref().as_ptr())
     })?;
 
     Ok((keys.try_index(0)?, keys.try_index(1)?))
@@ -419,42 +411,36 @@ pub fn categorical_device<'a>(
     let key = key_or_next(key)?;
 
     match shape_or_count.into() {
-        Some(ShapeOrCount::Shape(shape)) => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_random_categorical_shape(
-                    res,
-                    logits.as_ptr(),
-                    axis,
-                    shape.as_ptr(),
-                    shape.len(),
-                    key.as_ptr(),
-                    stream.as_ref().as_ptr(),
-                )
-            })
-        },
-        Some(ShapeOrCount::Count(num_samples)) => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_random_categorical_num_samples(
-                    res,
-                    logits.as_ptr(),
-                    axis,
-                    num_samples,
-                    key.as_ptr(),
-                    stream.as_ref().as_ptr(),
-                )
-            })
-        },
-        None => {
-            Array::try_from_op(|res| unsafe {
-                mlx_sys::mlx_random_categorical(
-                    res,
-                    logits.as_ptr(),
-                    axis,
-                    key.as_ptr(),
-                    stream.as_ref().as_ptr(),
-                )
-            })
-        },
+        Some(ShapeOrCount::Shape(shape)) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_random_categorical_shape(
+                res,
+                logits.as_ptr(),
+                axis,
+                shape.as_ptr(),
+                shape.len(),
+                key.as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
+        }),
+        Some(ShapeOrCount::Count(num_samples)) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_random_categorical_num_samples(
+                res,
+                logits.as_ptr(),
+                axis,
+                num_samples,
+                key.as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
+        }),
+        None => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_random_categorical(
+                res,
+                logits.as_ptr(),
+                axis,
+                key.as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
+        }),
     }
 }
 
@@ -466,11 +452,11 @@ mod tests {
 
     #[test]
     fn test_global_rng() {
-        seed(3);
+        seed(3).unwrap();
         let a = uniform::<_, f32>(0, 1, None, None).unwrap();
         let b = uniform::<_, f32>(0, 1, None, None).unwrap();
 
-        seed(3);
+        seed(3).unwrap();
         let x = uniform::<_, f32>(0, 1, None, None).unwrap();
         let y = uniform::<_, f32>(0, 1, None, None).unwrap();
 

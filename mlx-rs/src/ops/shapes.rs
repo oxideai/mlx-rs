@@ -1,7 +1,6 @@
-use std::{borrow::Cow, default};
+use std::borrow::Cow;
 
 use mlx_internal_macros::default_device;
-use mlx_sys::mlx_vector_array_new;
 use smallvec::SmallVec;
 
 use crate::{
@@ -121,11 +120,7 @@ impl Array {
 
     /// See [`transpose`]
     #[default_device]
-    pub fn transpose_device(
-        &self,
-        axes: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn transpose_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
         transpose_device(self, axes, stream)
     }
 
@@ -137,8 +132,7 @@ impl Array {
 
     /// [`transpose`] and unwrap the result.
     pub fn t(&self) -> Array {
-        self.transpose_all()
-            .unwrap()
+        self.transpose_all().unwrap()
     }
 }
 
@@ -248,7 +242,13 @@ pub fn as_strided_device<'a>(
 #[default_device]
 pub fn broadcast_to_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_broadcast_to(res, a.c_array, shape.as_ptr(), shape.len(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_broadcast_to(
+            res,
+            a.c_array,
+            shape.as_ptr(),
+            shape.len(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -299,7 +299,13 @@ pub fn concatenate_device(
 #[default_device]
 pub fn expand_dims_device(a: &Array, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_expand_dims(res, a.c_array, axes.as_ptr(), axes.len(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_expand_dims(
+            res,
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -334,7 +340,13 @@ pub fn flatten_device(
     let end_axis = end_axis.into().unwrap_or(-1);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_flatten(res, a.c_array, start_axis, end_axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_flatten(
+            res,
+            a.c_array,
+            start_axis,
+            end_axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -356,7 +368,13 @@ pub fn flatten_device(
 #[default_device]
 pub fn reshape_device(a: &Array, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_reshape(res, a.c_array, shape.as_ptr(), shape.len(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_reshape(
+            res,
+            a.c_array,
+            shape.as_ptr(),
+            shape.len(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -383,7 +401,13 @@ pub fn squeeze_device<'a>(
 ) -> Result<Array> {
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_squeeze(res, a.c_array, axes.as_ptr(), axes.len(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_squeeze(
+            res,
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -641,7 +665,8 @@ pub fn pad_device<'a>(
     let axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = (0..ndim).map(|i| i as i32).collect();
     let low_pads = width.low_pads(ndim);
     let high_pads = width.high_pads(ndim);
-    let value = value.into()
+    let value = value
+        .into()
         .map(Ok)
         .unwrap_or_else(|| Array::from_int(0).as_dtype(a.dtype()))?;
     let mode = mode.into().unwrap_or(PadMode::Constant);
@@ -760,7 +785,13 @@ pub fn swap_axes_device(
 #[default_device]
 pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_tile(res, a.c_array, reps.as_ptr(), reps.len(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_tile(
+            res,
+            a.c_array,
+            reps.as_ptr(),
+            reps.len(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -780,16 +811,12 @@ pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Resul
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
 /// let y = transpose(&x, None);
 /// ```
-/// 
+///
 /// # See also
-/// 
+///
 /// - [`transpose_all`]
 #[default_device]
-pub fn transpose_device(
-    a: &Array,
-    axes: &[i32],
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn transpose_device(a: &Array, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose(
             res,
@@ -1119,12 +1146,20 @@ mod tests {
         let empty: Vec<Array> = Vec::new();
         assert!(stack(&empty, 0).is_err());
 
-        let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Float16).unwrap();
-        let y = Array::from_slice(&[4, 5, 6], &[3]).as_dtype(Dtype::Int32).unwrap();
+        let x = Array::from_slice(&[1, 2, 3], &[3])
+            .as_dtype(Dtype::Float16)
+            .unwrap();
+        let y = Array::from_slice(&[4, 5, 6], &[3])
+            .as_dtype(Dtype::Int32)
+            .unwrap();
         assert_eq!(stack(&[x, y], 0).unwrap().dtype(), Dtype::Float16);
 
-        let x = Array::from_slice(&[1, 2, 3], &[3]).as_dtype(Dtype::Int32).unwrap();
-        let y = Array::from_slice(&[4, 5, 6, 7], &[4]).as_dtype(Dtype::Int32).unwrap();
+        let x = Array::from_slice(&[1, 2, 3], &[3])
+            .as_dtype(Dtype::Int32)
+            .unwrap();
+        let y = Array::from_slice(&[4, 5, 6, 7], &[4])
+            .as_dtype(Dtype::Int32)
+            .unwrap();
         assert!(stack(&[x, y], 0).is_err());
     }
 

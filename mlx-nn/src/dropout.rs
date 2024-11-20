@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_dropout() {
-        mlx_rs::random::seed(959);
+        mlx_rs::random::seed(959).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_dropout2d() {
-        mlx_rs::random::seed(695);
+        mlx_rs::random::seed(695).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_dropout3d() {
-        mlx_rs::random::seed(23);
+        mlx_rs::random::seed(23).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);

@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn test_embedding() {
-        mlx_rs::random::seed(557);
+        mlx_rs::random::seed(557).unwrap();
         let a = mlx_rs::random::randint::<_, i32>(0, 10, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Int32);

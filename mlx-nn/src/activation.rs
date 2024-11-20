@@ -45,10 +45,7 @@ pub fn relu(x: impl AsRef<Array>) -> Result<Array> {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
-pub fn leaky_relu(
-    x: impl AsRef<Array>,
-    neg_slope: impl Into<Option<f32>>,
-) -> Result<Array> {
+pub fn leaky_relu(x: impl AsRef<Array>, neg_slope: impl Into<Option<f32>>) -> Result<Array> {
     let neg_slope = array!(neg_slope.into().unwrap_or(0.01));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -856,7 +853,10 @@ fn compiled_log_sigmoid(x: &Array) -> Result<Array> {
 #[inline]
 fn compiled_gelu(x: &Array) -> Result<Array> {
     use mlx_rs::ops::erf;
-    let f = |x_: &Array| x_.multiply(array!(1) + erf(&(x_ / array!(2f32.sqrt())))?)?.divide(array!(2.0));
+    let f = |x_: &Array| {
+        x_.multiply(array!(1) + erf(&(x_ / array!(2f32.sqrt())))?)?
+            .divide(array!(2.0))
+    };
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
@@ -870,7 +870,7 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array> {
         array!(0.5).multiply(x_)?.multiply(
             array!(1.0).add(tanh(
                 &(sqrt(&array!(2.0 / PI))?
-                    .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?)
+                    .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?),
             )?)?,
         )
     };
@@ -932,7 +932,7 @@ mod tests {
 
     #[test]
     fn test_glu() {
-        mlx_rs::random::seed(850);
+        mlx_rs::random::seed(850).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -963,7 +963,7 @@ mod tests {
 
     #[test]
     fn test_sigmoid() {
-        mlx_rs::random::seed(589);
+        mlx_rs::random::seed(589).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -994,7 +994,7 @@ mod tests {
 
     #[test]
     fn test_mish() {
-        mlx_rs::random::seed(122);
+        mlx_rs::random::seed(122).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1025,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_relu() {
-        mlx_rs::random::seed(400);
+        mlx_rs::random::seed(400).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1056,7 +1056,7 @@ mod tests {
 
     #[test]
     fn test_leaky_relu() {
-        mlx_rs::random::seed(93);
+        mlx_rs::random::seed(93).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1087,7 +1087,7 @@ mod tests {
 
     #[test]
     fn test_relu6() {
-        mlx_rs::random::seed(379);
+        mlx_rs::random::seed(379).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1118,7 +1118,7 @@ mod tests {
 
     #[test]
     fn test_softmax() {
-        mlx_rs::random::seed(853);
+        mlx_rs::random::seed(853).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1149,7 +1149,7 @@ mod tests {
 
     #[test]
     fn test_softplus() {
-        mlx_rs::random::seed(118);
+        mlx_rs::random::seed(118).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1180,7 +1180,7 @@ mod tests {
 
     #[test]
     fn test_softsign() {
-        mlx_rs::random::seed(37);
+        mlx_rs::random::seed(37).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1211,7 +1211,7 @@ mod tests {
 
     #[test]
     fn test_celu() {
-        mlx_rs::random::seed(620);
+        mlx_rs::random::seed(620).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1242,7 +1242,7 @@ mod tests {
 
     #[test]
     fn test_silu() {
-        mlx_rs::random::seed(22);
+        mlx_rs::random::seed(22).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1273,7 +1273,7 @@ mod tests {
 
     #[test]
     fn test_log_softmax() {
-        mlx_rs::random::seed(199);
+        mlx_rs::random::seed(199).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1304,7 +1304,7 @@ mod tests {
 
     #[test]
     fn test_log_sigmoid() {
-        mlx_rs::random::seed(984);
+        mlx_rs::random::seed(984).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1335,7 +1335,7 @@ mod tests {
 
     #[test]
     fn test_prelu() {
-        mlx_rs::random::seed(993);
+        mlx_rs::random::seed(993).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1366,7 +1366,7 @@ mod tests {
 
     #[test]
     fn test_gelu() {
-        mlx_rs::random::seed(189);
+        mlx_rs::random::seed(189).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1397,7 +1397,7 @@ mod tests {
 
     #[test]
     fn test_tanh() {
-        mlx_rs::random::seed(735);
+        mlx_rs::random::seed(735).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1428,7 +1428,7 @@ mod tests {
 
     #[test]
     fn test_hardswish() {
-        mlx_rs::random::seed(126);
+        mlx_rs::random::seed(126).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1459,7 +1459,7 @@ mod tests {
 
     #[test]
     fn test_step() {
-        mlx_rs::random::seed(490);
+        mlx_rs::random::seed(490).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1490,7 +1490,7 @@ mod tests {
 
     #[test]
     fn test_selu() {
-        mlx_rs::random::seed(215);
+        mlx_rs::random::seed(215).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);

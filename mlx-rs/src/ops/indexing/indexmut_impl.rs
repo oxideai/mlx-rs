@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use mlx_sys::{mlx_array_free, mlx_array_new};
 use smallvec::{smallvec, SmallVec};
 
 use crate::{

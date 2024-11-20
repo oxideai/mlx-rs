@@ -30,7 +30,12 @@ impl Array {
     #[default_device]
     pub fn eq_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_equal(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_equal(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -57,7 +62,12 @@ impl Array {
     #[default_device]
     pub fn le_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_less_equal(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_less_equal(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -84,7 +94,12 @@ impl Array {
     #[default_device]
     pub fn ge_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_greater_equal(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_greater_equal(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -111,7 +126,12 @@ impl Array {
     #[default_device]
     pub fn ne_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_not_equal(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_not_equal(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -137,7 +157,12 @@ impl Array {
     #[default_device]
     pub fn lt_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_less(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_less(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -163,7 +188,12 @@ impl Array {
     #[default_device]
     pub fn gt_device(&self, other: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_greater(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_greater(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -193,7 +223,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_logical_and(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_logical_and(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 
@@ -223,7 +258,12 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_logical_or(res, self.as_ptr(), other.as_ref().as_ptr(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_logical_or(
+                res,
+                self.as_ptr(),
+                other.as_ref().as_ptr(),
+                stream.as_ref().as_ptr(),
+            )
         })
     }
 

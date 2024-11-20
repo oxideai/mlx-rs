@@ -26,7 +26,7 @@ pub fn fft_device(
     let a = as_complex64(a.as_ref())?;
 
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_fft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
     })
 }
@@ -56,7 +56,7 @@ pub fn fft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_fft2(
             res,
             a.c_array,
@@ -94,7 +94,7 @@ pub fn fftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_fftn(
             res,
             a.c_array,
@@ -125,7 +125,7 @@ pub fn ifft_device(
     let a = as_complex64(a.as_ref())?;
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_ifft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
     })
 }
@@ -155,7 +155,7 @@ pub fn ifft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_ifft2(
             res,
             a.c_array,
@@ -193,7 +193,7 @@ pub fn ifftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_ifftn(
             res,
             a.c_array,

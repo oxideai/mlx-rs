@@ -268,7 +268,7 @@ fn mlx_vector_array_values(
         let size = mlx_sys::mlx_vector_array_size(vector_array);
         (0..size)
             .map(|index| {
-                Array::try_op(|res| {
+                Array::try_from_op(|res| {
                     mlx_sys::mlx_vector_array_get(res, vector_array, index)
                 })
             })

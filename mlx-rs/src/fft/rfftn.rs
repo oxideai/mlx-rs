@@ -28,7 +28,7 @@ pub fn rfft_device(
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_rfft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
     })
 }
@@ -62,7 +62,7 @@ pub fn rfft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_rfft2(
             res,
             a.c_array,
@@ -104,7 +104,7 @@ pub fn rfftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_rfftn(
             res,
             a.c_array,
@@ -143,7 +143,7 @@ pub fn irfft_device(
         n = (n - 1) * 2;
     }
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_irfft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
     })
 }
@@ -185,7 +185,7 @@ pub fn irfft2_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_irfft2(
             res,
             a.c_array,
@@ -236,7 +236,7 @@ pub fn irfftn_device<'a>(
     let s_ptr = s.as_ptr();
     let axes_ptr = axes.as_ptr();
 
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_irfftn(
             res,
             a.c_array,

@@ -20,7 +20,7 @@ pub trait Guard<T>: Default {
 pub(crate) trait Guarded: Sized {
     type Guard: Guard<Self>;
 
-    fn try_op<F>(f: F) -> Result<Self, Exception>
+    fn try_from_op<F>(f: F) -> Result<Self, Exception>
     where 
         F: FnOnce(<Self::Guard as Guard<Self>>::MutRawPtr) -> Status,
     {
@@ -144,7 +144,7 @@ impl Guard<Vec<Array>> for MaybeUninitVectorArray {
             let size = mlx_sys::mlx_vector_array_size(self.ptr);
             (0..size)
                 .map(|i| {
-                    Array::try_op(|res| {
+                    Array::try_from_op(|res| {
                         mlx_sys::mlx_vector_array_get(res, self.ptr, i)
                     })
                 })

@@ -426,7 +426,11 @@ impl Clone for Array {
             let mut c_array = mlx_sys::mlx_array_new();
             // `mlx_array_set` should invoke the copy constructor of the array,
             // which contains a shared_ptr to the data.
-            mlx_sys::mlx_array_set(&mut c_array as *mut _, self.c_array);
+            let status = mlx_sys::mlx_array_set(&mut c_array as *mut _, self.c_array);
+            if status != SUCCESS {
+                mlx_sys::mlx_array_free(c_array);
+                debug_panic!("Failed to clone array");
+            }
             Array::from_ptr(c_array)
         }
     }

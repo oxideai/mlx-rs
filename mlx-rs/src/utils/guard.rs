@@ -174,6 +174,49 @@ impl Guarded for (Array, Array) {
     type Guard = (MaybeUninitArray, MaybeUninitArray);
 }
 
+impl Guard<(Array, Array, Array)> for (MaybeUninitArray, MaybeUninitArray, MaybeUninitArray) {
+    type MutRawPtr = (*mut mlx_array, *mut mlx_array, *mut mlx_array);
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        (self.0.as_mut_raw_ptr(), self.1.as_mut_raw_ptr(), self.2.as_mut_raw_ptr())
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.0.set_init_success(success);
+        self.1.set_init_success(success);
+        self.2.set_init_success(success);
+    }
+    
+    fn try_into_guarded(self) -> Result<(Array, Array, Array), Exception> {
+        Ok((self.0.try_into_guarded()?, self.1.try_into_guarded()?, self.2.try_into_guarded()?))
+    }
+}
+
+impl Guarded for (Array, Array, Array) {
+    type Guard = (MaybeUninitArray, MaybeUninitArray, MaybeUninitArray);
+}
+
+impl Guard<(Vec<Array>, Vec<Array>)> for (MaybeUninitVectorArray, MaybeUninitVectorArray) {
+    type MutRawPtr = (*mut mlx_sys::mlx_vector_array, *mut mlx_sys::mlx_vector_array);
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        (self.0.as_mut_raw_ptr(), self.1.as_mut_raw_ptr())
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.0.set_init_success(success);
+        self.1.set_init_success(success);
+    }
+    
+    fn try_into_guarded(self) -> Result<(Vec<Array>, Vec<Array>), Exception> {
+        Ok((self.0.try_into_guarded()?, self.1.try_into_guarded()?))
+    }
+}
+
+impl Guarded for (Vec<Array>, Vec<Array>) {
+    type Guard = (MaybeUninitVectorArray, MaybeUninitVectorArray);
+}
+
 macro_rules! impl_guarded_for_primitive {
     ($type:ty) => {
         impl Guarded for $type {

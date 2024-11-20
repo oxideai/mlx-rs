@@ -301,6 +301,61 @@ impl Guarded for crate::Device {
     type Guard = MaybeUninitDevice;
 }
 
+pub(crate) struct MaybeUninitStream {
+    pub(crate) ptr: mlx_sys::mlx_stream,
+    pub(crate) init_success: bool,
+}
+
+impl Default for MaybeUninitStream {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MaybeUninitStream {
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                ptr: mlx_sys::mlx_stream_new(),
+                init_success: false,
+            }
+        }
+    }
+}
+
+impl Drop for MaybeUninitStream {
+    fn drop(&mut self) {
+        if !self.init_success {
+            unsafe {
+                mlx_sys::mlx_stream_free(self.ptr);
+            }
+        }
+    }
+}
+
+impl Guard<crate::Stream> for MaybeUninitStream {
+    type MutRawPtr = *mut mlx_sys::mlx_stream;
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        &mut self.ptr
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<crate::Stream, Exception> {
+        debug_assert!(self.init_success);
+        Ok(crate::Stream {
+            c_stream: self.ptr,
+        })
+    }
+}
+
+impl Guarded for crate::Stream {
+    type Guard = MaybeUninitStream;
+}
+
 macro_rules! impl_guarded_for_primitive {
     ($type:ty) => {
         impl Guarded for $type {

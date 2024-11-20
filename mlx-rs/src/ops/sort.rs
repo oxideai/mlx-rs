@@ -2,7 +2,7 @@
 
 use mlx_internal_macros::default_device;
 
-use crate::{error::Result, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
 /// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
 ///
@@ -22,14 +22,9 @@ use crate::{error::Result, Array, Stream, StreamOrDevice};
 /// ```
 #[default_device]
 pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_sort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_sort(res, a.as_ptr(), axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns a sorted copy of the flattened array. Returns an error if the arguments are invalid.
@@ -48,14 +43,9 @@ pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<A
 /// ```
 #[default_device]
 pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_sort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_sort_all(res, a.as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that sort the array. Returns an error if the arguments are invalid.
@@ -76,14 +66,9 @@ pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
 /// ```
 #[default_device]
 pub fn argsort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ptr(), axis, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argsort(res, a.as_ptr(), axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that sort the flattened array. Returns an error if the arguments are
@@ -103,14 +88,9 @@ pub fn argsort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Resul
 /// ```
 #[default_device]
 pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ptr(), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argsort_all(res, a.as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns a partitioned copy of the array such that the smaller `kth` elements are first.
@@ -143,14 +123,9 @@ pub fn partition_device(
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_partition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_partition(res, a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns a partitioned copy of the flattened array such that the smaller `kth` elements are
@@ -176,14 +151,9 @@ pub fn partition_device(
 /// ```
 #[default_device]
 pub fn partition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_partition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_partition_all(res, a.as_ptr(), kth, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that partition the array. Returns an error if the arguments are invalid.
@@ -216,14 +186,9 @@ pub fn argpartition_device(
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ptr(), kth, axis, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argpartition(res, a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that partition the flattened array. Returns an error if the arguments are
@@ -250,14 +215,9 @@ pub fn argpartition_device(
 /// ```
 #[default_device]
 pub fn argpartition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ptr(), kth, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argpartition_all(res, a.as_ptr(), kth, stream.as_ref().as_ptr())
+    })
 }
 
 #[cfg(test)]

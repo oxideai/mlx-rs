@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::utils::guard::Guarded;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -20,29 +21,20 @@ pub fn rope_device<'a>(
         value: base.unwrap_or(0.0),
         has_value: base.is_some(),
     };
-
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fast_rope(
-                &mut c_array as *mut _,
-                array.as_ref().as_ptr(),
-                dimensions,
-                traditional,
-                base,
-                scale,
-                offset,
-                freqs
-                    .into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(mlx_sys::mlx_array_new()),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    let freqs = freqs.into();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rope(
+            res,
+            array.as_ref().as_ptr(),
+            dimensions,
+            traditional,
+            base,
+            scale,
+            offset,
+            freqs.map(|a| a.as_ptr()).unwrap_or(mlx_sys::mlx_array_new()),
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// A fast implementation of multi-head attention: `O = softmax(Q @ K.T, dim=-1) @ V`
@@ -70,26 +62,20 @@ pub fn scaled_dot_product_attention_device<'a>(
         has_value: memory_efficient_threshold.is_some(),
     };
 
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fast_scaled_dot_product_attention(
-                &mut c_array as *mut _,
-                queries.as_ref().as_ptr(),
-                keys.as_ref().as_ptr(),
-                values.as_ref().as_ptr(),
-                scale,
-                mask.into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(mlx_sys::mlx_array_new()),
-                memory_efficient_threshold,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_scaled_dot_product_attention(
+            res,
+            queries.as_ref().as_ptr(),
+            keys.as_ref().as_ptr(),
+            values.as_ref().as_ptr(),
+            scale,
+            mask.into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            memory_efficient_threshold,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Root Mean Square normalization (RMS norm).
@@ -109,21 +95,15 @@ pub fn rms_norm_device(
     eps: f32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fast_rms_norm(
-                &mut c_array as *mut _,
-                x.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                eps,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rms_norm(
+            res,
+            x.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            eps,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Layer normalization.
@@ -147,27 +127,21 @@ pub fn layer_norm_device<'a>(
     eps: f32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fast_layer_norm(
-                &mut c_array as *mut _,
-                x.as_ref().as_ptr(),
-                weight
-                    .into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(mlx_sys::mlx_array_new()),
-                bias.into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(mlx_sys::mlx_array_new()),
-                eps,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_layer_norm(
+            res,
+            x.as_ref().as_ptr(),
+            weight
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            bias.into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            eps,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Quantize the matrix `w` using the provided `scales` and `biases` and the `groupSize` and `bits` configuration.
@@ -196,23 +170,17 @@ pub fn affine_quantized(
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_fast_affine_quantize(
-                &mut c_array as *mut _,
-                w.as_ref().as_ptr(),
-                scales.as_ref().as_ptr(),
-                biases.as_ref().as_ptr(),
-                group_size,
-                bits,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_affine_quantize(
+            res,
+            w.as_ref().as_ptr(),
+            scales.as_ref().as_ptr(),
+            biases.as_ref().as_ptr(),
+            group_size,
+            bits,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]

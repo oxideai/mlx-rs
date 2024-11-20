@@ -3,6 +3,7 @@ use crate::error::Result;
 use crate::sealed::Sealed;
 use crate::stream::StreamOrDevice;
 
+use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
 use crate::Stream;
 use mlx_internal_macros::default_device;
@@ -23,16 +24,9 @@ impl Array {
     /// ```
     #[default_device]
     pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            // SAFETY: `mlx_abs` internally never throws an error.
-            mlx_sys::mlx_abs(
-                &mut c_array as *mut _,
-                self.c_array,
-                stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(c_array)
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_abs(res, self.c_array, stream.as_ref().as_ptr())
+        })
     }
 
     /// Element-wise addition returning an error if arrays are not broadcastable.

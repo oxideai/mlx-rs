@@ -809,7 +809,8 @@ pub fn tile_device(a: &Array, reps: &[i32], stream: impl AsRef<Stream>) -> Resul
 /// use mlx_rs::{prelude::*, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
-/// let y = transpose(&x, None);
+/// let y1 = transpose(&x, &[0, 1]).unwrap();
+/// let y2 = transpose_all(&x).unwrap();
 /// ```
 ///
 /// # See also

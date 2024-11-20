@@ -17,7 +17,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
-    /// let mut result = array.abs();
+    /// let mut result = array.abs().unwrap();
     ///
     /// let data: &[i32] = result.as_slice();
     /// // data == [1, 2, 3, 4, 5]
@@ -304,7 +304,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
-    /// let mut b = a.sqrt();
+    /// let mut b = a.sqrt().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.0, 3.0]
@@ -323,7 +323,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
-    /// let mut b = a.cos();
+    /// let mut b = a.cos().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.54030234, -0.41614687]
@@ -344,7 +344,7 @@ impl Array {
     ///
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
-    /// let mut b = a.exp();
+    /// let mut b = a.exp().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 2.7182817, 7.389056]
@@ -476,7 +476,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.log();
+    /// let mut b = a.log().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 0.6931472, 1.0986123]
@@ -495,7 +495,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
-    /// let mut b = a.log2();
+    /// let mut b = a.log2().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0, 3.0]
@@ -514,7 +514,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
-    /// let mut b = a.log10();
+    /// let mut b = a.log10().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.0, 1.0, 2.0]
@@ -533,7 +533,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
-    /// let mut b = a.log1p();
+    /// let mut b = a.log1p().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [0.6931472, 1.0986123, 1.3862944]
@@ -597,7 +597,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
-    /// let mut b = a.reciprocal();
+    /// let mut b = a.reciprocal().unwrap();
     ///
     /// let b_data: &[f32] = b.as_slice();
     /// // b_data == [1.0, 0.5, 0.25]
@@ -663,7 +663,7 @@ impl Array {
 /// use mlx_rs::{prelude::*, ops};
 ///
 /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
-/// let result = ops::abs(&array);
+/// let result = ops::abs(&array).unwrap();
 /// ```
 #[default_device]
 pub fn abs_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {

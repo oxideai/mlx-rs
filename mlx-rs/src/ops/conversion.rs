@@ -13,7 +13,7 @@ impl Array {
     /// use mlx_rs::{Array, Dtype};
     ///
     /// let array = Array::from_slice(&[1i16,2,3], &[3]);
-    /// let mut new_array = array.as_type::<f32>();
+    /// let mut new_array = array.as_type::<f32>().unwrap();
     ///
     /// assert_eq!(new_array.dtype(), Dtype::Float32);
     /// assert_eq!(new_array.shape(), &[3]);

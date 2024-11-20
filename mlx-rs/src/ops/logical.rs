@@ -274,7 +274,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::prelude::*;
     /// let a: Array = false.into();
-    /// let mut b = a.logical_not_device(StreamOrDevice::default());
+    /// let mut b = a.logical_not_device(StreamOrDevice::default()).unwrap();
     ///
     /// let b_data: &[bool] = b.as_slice();
     /// // b_data == [true]
@@ -306,7 +306,7 @@ impl Array {
     /// ```rust
     /// use num_traits::Pow;
     /// use mlx_rs::array;
-    /// let a = array!([0., 1., 2., 3.]).sqrt();
+    /// let a = array!([0., 1., 2., 3.]).sqrt().unwrap();
     /// let b = array!([0., 1., 2., 3.]).power(array!(0.5)).unwrap();
     /// let mut c = a.all_close(&b, None, None, None).unwrap();
     ///

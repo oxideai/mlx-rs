@@ -1,11 +1,11 @@
 use crate::{
     dtype::Dtype,
     error::{
-        get_and_clear_last_mlx_error, is_mlx_error_handler_set, setup_mlx_error_handler,
+        get_and_clear_last_mlx_error, setup_mlx_error_handler,
         AsSliceError,
     },
     sealed::Sealed,
-    utils::SUCCESS,
+    utils::{guard::{Guard, Guarded}, SUCCESS},
     Stream, StreamOrDevice,
 };
 use mlx_internal_macros::default_device;
@@ -251,13 +251,9 @@ impl Array {
     // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&self) -> crate::error::Result<()> {
-        if !is_mlx_error_handler_set() {
-            setup_mlx_error_handler();
-        }
-
-        unsafe { mlx_sys::mlx_array_eval(self.c_array) };
-
-        get_and_clear_last_mlx_error().map_or(Ok(()), Err)
+        <() as Guarded>::try_op(|_| unsafe {
+            mlx_sys::mlx_array_eval(self.c_array)
+        })
     }
 
     /// Access the value of a scalar array.
@@ -281,21 +277,16 @@ impl Array {
         // Though `mlx_array_item_<dtype>` returns a status code, it doesn't
         // return any non-success status code even if the dtype doesn't match.
         if self.dtype() != T::DTYPE {
-            unsafe {
-                let mut res = mlx_sys::mlx_array_new();
-                check_status! {
-                    mlx_sys::mlx_astype(
-                        &mut res as *mut _,
-                        self.c_array,
-                        T::DTYPE.into(),
-                        Stream::default().as_ptr(),
-                    ),
-                    mlx_sys::mlx_array_free(res)
-                };
-                let new_array = Array::from_ptr(res);
-                new_array.eval()?;
-                return T::array_item(&new_array);
-            }
+            let new_array = Array::try_op(|res| unsafe {
+                mlx_sys::mlx_astype(
+                    res,
+                    self.c_array,
+                    T::DTYPE.into(),
+                    Stream::default().as_ptr(),
+                )
+            })?;
+            new_array.eval()?;
+            return T::array_item(&new_array);
         }
 
         T::array_item(self)
@@ -445,18 +436,9 @@ pub fn stop_gradient_device(
     a: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> crate::error::Result<Array> {
-    unsafe {
-        let mut res = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_stop_gradient(
-                &mut res as *mut _,
-                a.as_ref().as_ptr(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(res)
-        };
-        Ok(Array::from_ptr(res))
-    }
+    Array::try_op(|res| unsafe {
+        mlx_sys::mlx_stop_gradient(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 impl From<bool> for Array {

@@ -1,6 +1,3 @@
-#[cfg(feature = "io")]
-pub(crate) mod io;
-
 use mlx_sys::mlx_vector_array;
 
 use crate::{complex64, error::Exception, Array, FromNested};
@@ -11,6 +8,11 @@ use std::{ffi::NulError, marker::PhantomData, rc::Rc};
 /// Success status code from the c binding
 pub(crate) const SUCCESS: i32 = 0;
 pub(crate) const FAILURE: i32 = 1;
+
+#[cfg(feature = "io")]
+pub(crate) mod io;
+
+pub(crate) mod guard;
 
 pub(crate) fn resolve_index_signed_unchecked(index: i32, len: i32) -> i32 {
     if index < 0 {

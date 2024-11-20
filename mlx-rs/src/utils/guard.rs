@@ -3,7 +3,7 @@ use mlx_sys::{__BindgenComplex, bfloat16_t, float16_t, mlx_array};
 
 use crate::{complex64, error::{setup_mlx_error_handler, Exception}, Array};
 
-use super::SUCCESS;
+use super::{VectorArray, SUCCESS};
 
 type Status = i32;
 
@@ -153,6 +153,32 @@ impl Guard<Vec<Array>> for MaybeUninitVectorArray {
     }
 }
 
+impl Guarded for Vec<Array> {
+    type Guard = MaybeUninitVectorArray;
+}
+
+impl Guard<VectorArray> for MaybeUninitVectorArray {
+    type MutRawPtr = *mut mlx_sys::mlx_vector_array;
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        &mut self.ptr
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<VectorArray, Exception> {
+        Ok(VectorArray {
+            c_vec: self.ptr,
+        })
+    }
+}
+
+impl Guarded for VectorArray {
+    type Guard = MaybeUninitVectorArray;
+}
+
 impl Guard<(Array, Array)> for (MaybeUninitArray, MaybeUninitArray) {
     type MutRawPtr = (*mut mlx_array, *mut mlx_array);
 
@@ -200,12 +226,15 @@ impl Guard<(Vec<Array>, Vec<Array>)> for (MaybeUninitVectorArray, MaybeUninitVec
     type MutRawPtr = (*mut mlx_sys::mlx_vector_array, *mut mlx_sys::mlx_vector_array);
 
     fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
-        (self.0.as_mut_raw_ptr(), self.1.as_mut_raw_ptr())
+        (
+            <MaybeUninitVectorArray as Guard<Vec<Array>>>::as_mut_raw_ptr(&mut self.0), 
+            <MaybeUninitVectorArray as Guard<Vec<Array>>>::as_mut_raw_ptr(&mut self.1)
+        )
     }
 
     fn set_init_success(&mut self, success: bool) {
-        self.0.set_init_success(success);
-        self.1.set_init_success(success);
+        <MaybeUninitVectorArray as Guard<Vec<Array>>>::set_init_success(&mut self.0, success);
+        <MaybeUninitVectorArray as Guard<Vec<Array>>>::set_init_success(&mut self.1, success);
     }
     
     fn try_into_guarded(self) -> Result<(Vec<Array>, Vec<Array>), Exception> {

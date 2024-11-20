@@ -25,7 +25,7 @@ pub(crate) trait Guarded: Sized {
         F: FnOnce(<Self::Guard as Guard<Self>>::MutRawPtr) -> Status,
     {
         crate::error::INIT_ERR_HANDLER.with(|init| {
-            init.call_once(setup_mlx_error_handler)
+            init.call_once(crate::error::setup_mlx_error_handler)
         });
 
         let mut guard = Self::Guard::default();
@@ -354,6 +354,179 @@ impl Guard<crate::Stream> for MaybeUninitStream {
 
 impl Guarded for crate::Stream {
     type Guard = MaybeUninitStream;
+}
+
+pub(crate) struct MaybeUninitSafeTensors {
+    pub(crate) c_data: mlx_sys::mlx_map_string_to_array,
+    pub(crate) c_metadata: mlx_sys::mlx_map_string_to_string,
+    pub(crate) init_success: bool,
+}
+
+impl Default for MaybeUninitSafeTensors {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MaybeUninitSafeTensors {
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                c_metadata: mlx_sys::mlx_map_string_to_string_new(),
+                c_data: mlx_sys::mlx_map_string_to_array_new(),
+                init_success: false,
+            }
+        }
+    }
+}
+
+impl Drop for MaybeUninitSafeTensors {
+    fn drop(&mut self) {
+        if !self.init_success {
+            unsafe {
+                mlx_sys::mlx_map_string_to_string_free(self.c_metadata);
+                mlx_sys::mlx_map_string_to_array_free(self.c_data);
+            }
+        }
+    }
+}
+
+impl Guard<crate::utils::io::SafeTensors> for MaybeUninitSafeTensors {
+    type MutRawPtr = (
+        *mut mlx_sys::mlx_map_string_to_array,
+        *mut mlx_sys::mlx_map_string_to_string, 
+    );
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        (&mut self.c_data, &mut self.c_metadata)
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<crate::utils::io::SafeTensors, Exception> {
+        debug_assert!(self.init_success);
+        Ok(crate::utils::io::SafeTensors {
+            c_metadata: self.c_metadata,
+            c_data: self.c_data,
+        })
+    }
+}
+
+impl Guarded for crate::utils::io::SafeTensors {
+    type Guard = MaybeUninitSafeTensors;
+}
+
+pub(crate) struct MaybeUninitClosure {
+    pub(crate) ptr: mlx_sys::mlx_closure,
+    pub(crate) init_success: bool,
+}
+
+impl Default for MaybeUninitClosure {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MaybeUninitClosure {
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                ptr: mlx_sys::mlx_closure_new(),
+                init_success: false,
+            }
+        }
+    }
+}
+
+impl Drop for MaybeUninitClosure {
+    fn drop(&mut self) {
+        if !self.init_success {
+            unsafe {
+                mlx_sys::mlx_closure_free(self.ptr);
+            }
+        }
+    }
+}
+
+impl<'a> Guard<crate::utils::Closure<'a>> for MaybeUninitClosure {
+    type MutRawPtr = *mut mlx_sys::mlx_closure;
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        &mut self.ptr
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<crate::utils::Closure<'a>, Exception> {
+        debug_assert!(self.init_success);
+        Ok(crate::utils::Closure {
+            c_closure: self.ptr,
+            lt_marker: std::marker::PhantomData,
+        })
+    }
+}
+
+impl<'a> Guarded for crate::utils::Closure<'a> {
+    type Guard = MaybeUninitClosure;
+}
+
+pub(crate) struct MaybeUninitClosureValueAndGrad {
+    pub(crate) ptr: mlx_sys::mlx_closure_value_and_grad,
+    pub(crate) init_success: bool,
+}
+
+impl Default for MaybeUninitClosureValueAndGrad {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MaybeUninitClosureValueAndGrad {
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                ptr: mlx_sys::mlx_closure_value_and_grad_new(),
+                init_success: false,
+            }
+        }
+    }
+}
+
+impl Drop for MaybeUninitClosureValueAndGrad {
+    fn drop(&mut self) {
+        if !self.init_success {
+            unsafe {
+                mlx_sys::mlx_closure_value_and_grad_free(self.ptr);
+            }
+        }
+    }
+}
+
+impl Guard<crate::transforms::ClosureValueAndGrad> for MaybeUninitClosureValueAndGrad {
+    type MutRawPtr = *mut mlx_sys::mlx_closure_value_and_grad;
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        &mut self.ptr
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<crate::transforms::ClosureValueAndGrad, Exception> {
+        debug_assert!(self.init_success);
+        Ok(crate::transforms::ClosureValueAndGrad {
+            c_closure_value_and_grad: self.ptr,
+        })
+    }
+}
+
+impl Guarded for crate::transforms::ClosureValueAndGrad {
+    type Guard = MaybeUninitClosureValueAndGrad;
 }
 
 macro_rules! impl_guarded_for_primitive {

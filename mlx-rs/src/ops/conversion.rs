@@ -1,6 +1,6 @@
 use mlx_internal_macros::default_device;
 
-use crate::{Array, ArrayElement, Dtype, Stream, StreamOrDevice};
+use crate::{utils::guard::Guarded, Array, ArrayElement, Dtype, Stream, StreamOrDevice, error::Result};
 
 impl Array {
     /// Create a new array with the contents converted to the given [ArrayElement] type.
@@ -25,17 +25,14 @@ impl Array {
 
     #[default_device]
     pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
-        unsafe {
-            let mut new_array = mlx_sys::mlx_array_new();
-            // SAFETY: self is a valid array
+        Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_astype(
-                &mut new_array as *mut _,
+                res,
                 self.c_array,
                 dtype.into(),
                 stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(new_array)
-        }
+            )
+        })
     }
 
     /// View the array as a different type.
@@ -54,17 +51,14 @@ impl Array {
 
     #[default_device]
     pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
-        unsafe {
-            let mut new_array = mlx_sys::mlx_array_new();
-            // SAFETY: self is a valid array
+        Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_view(
-                &mut new_array as *mut _,
+                res,
                 self.c_array,
                 dtype.into(),
                 stream.as_ref().as_ptr(),
-            );
-            Array::from_ptr(new_array)
-        }
+            )
+        })
     }
 }
 
@@ -81,7 +75,7 @@ mod tests {
                 #[test]
                 fn [<test_as_type_ $src_type _ $dst_type>]() {
                     let array = Array::from_slice(&[$src_val; $len], &[$len as i32]);
-                    let new_array = array.as_type::<$dst_type>();
+                    let new_array = array.as_type::<$dst_type>().unwrap();
 
                     assert_eq!(new_array.dtype(), $dst_type::DTYPE);
                     assert_eq!(new_array.shape(), &[3]);
@@ -281,7 +275,7 @@ mod tests {
     #[test]
     fn test_view() {
         let array = Array::from_slice(&[1i16, 2, 3], &[3]);
-        let new_array = array.view::<i8>();
+        let new_array = array.view::<i8>().unwrap();
 
         assert_eq!(new_array.dtype(), Dtype::Int8);
         assert_eq!(new_array.shape(), &[6]);

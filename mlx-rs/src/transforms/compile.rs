@@ -13,7 +13,7 @@ use mlx_sys::{
 
 use crate::{
     error::Exception,
-    utils::{Closure, VectorArray},
+    utils::{guard::Guarded, Closure, VectorArray},
     Array,
 };
 
@@ -400,22 +400,17 @@ fn call_mut_inner(
 ) -> crate::error::Result<Vec<Array>> {
     // note: this will use the cached compile (via the id)
     // but will be able to re-evaluate with fresh state if needed
-    let compiled = unsafe {
+    let compiled = Closure::try_from_op(|res| unsafe {
         let constants = &[];
-        let mut c_closure = mlx_sys::mlx_closure_new();
-        check_status! {
-            mlx_detail_compile(
-                &mut c_closure as *mut _,
-                inner_closure.as_ptr(),
-                fun_id,
-                shapeless,
-                constants.as_ptr(),
-                0,
-            ),
-            mlx_sys::mlx_closure_free(c_closure)
-        };
-        Closure::from_ptr(c_closure)
-    };
+        mlx_detail_compile(
+            res,
+            inner_closure.as_ptr(),
+            fun_id,
+            shapeless,
+            constants.as_ptr(),
+            0,
+        )
+    })?;
 
     let inner_inputs_vector = match state_inputs.borrow().as_ref() {
         Some(s) => VectorArray::try_from_iter(args.iter().chain(s.iter()))?,
@@ -424,14 +419,9 @@ fn call_mut_inner(
 
     // will compile the function (if needed) and evaluate the
     // compiled graph
-    let result_vector = unsafe {
-        let mut c_vector = mlx_sys::mlx_vector_array_new();
-        check_status! {
-            mlx_closure_apply(&mut c_vector as *mut _, compiled.as_ptr(), inner_inputs_vector.as_ptr()),
-            mlx_sys::mlx_vector_array_free(c_vector)
-        };
-        VectorArray::from_ptr(c_vector)
-    };
+    let result_vector = VectorArray::try_from_op(|res| unsafe {
+        mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
+    })?;
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
     // push the stateOutput into the state

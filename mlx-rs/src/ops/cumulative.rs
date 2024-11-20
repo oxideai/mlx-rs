@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::utils::guard::Guarded;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -28,37 +29,35 @@ impl Array {
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                match axis.into() {
-                    Some(axis) => {
-                        mlx_sys::mlx_cummax(
-                            &mut c_array as *mut _,
-                            self.c_array,
-                            axis,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                    None => {
-                        let shape = &[-1];
-                        let flat = self.reshape_device(shape, &stream)?;
-                        mlx_sys::mlx_cummax(
-                            &mut c_array as *mut _,
-                            flat.c_array,
-                            0,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                },
-                mlx_sys::mlx_array_free(c_array)
-            };
+        let stream = stream.as_ref();
 
-            Ok(Array::from_ptr(c_array))
+        match axis.into() {
+            Some(axis) => {
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cummax(
+                        res,
+                        self.c_array,
+                        axis,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            },
+            None => {
+                let shape = &[-1];
+                let flat = self.reshape_device(shape, stream)?;
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cummax(
+                        res,
+                        flat.c_array,
+                        0,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            }
         }
     }
 
@@ -87,37 +86,35 @@ impl Array {
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                match axis.into() {
-                    Some(axis) => {
-                        mlx_sys::mlx_cummin(
-                            &mut c_array as *mut _,
-                            self.c_array,
-                            axis,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                    None => {
-                        let shape = &[-1];
-                        let flat = self.reshape_device(shape, &stream)?;
-                        mlx_sys::mlx_cummin(
-                            &mut c_array as *mut _,
-                            flat.c_array,
-                            0,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                },
-                mlx_sys::mlx_array_free(c_array)
-            };
+        let stream = stream.as_ref();
 
-            Ok(Array::from_ptr(c_array))
+        match axis.into() {
+            Some(axis) => {
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cummin(
+                        res,
+                        self.c_array,
+                        axis,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            },
+            None => {
+                let shape = &[-1];
+                let flat = self.reshape_device(shape, stream)?;
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cummin(
+                        res,
+                        flat.c_array,
+                        0,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            }
         }
     }
 
@@ -146,37 +143,35 @@ impl Array {
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                match axis.into() {
-                    Some(axis) => {
-                        mlx_sys::mlx_cumprod(
-                            &mut c_array as *mut _,
-                            self.c_array,
-                            axis,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                    None => {
-                        let shape = &[-1];
-                        let flat = self.reshape_device(shape, &stream)?;
-                        mlx_sys::mlx_cumprod(
-                            &mut c_array as *mut _,
-                            flat.c_array,
-                            0,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                },
-                mlx_sys::mlx_array_free(c_array)
-            };
+        let stream = stream.as_ref();
 
-            Ok(Array::from_ptr(c_array))
+        match axis.into() {
+            Some(axis) => {
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cumprod(
+                        res,
+                        self.c_array,
+                        axis,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            },
+            None => {
+                let shape = &[-1];
+                let flat = self.reshape_device(shape, stream)?;
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cumprod(
+                        res,
+                        flat.c_array,
+                        0,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            }
         }
     }
 
@@ -205,37 +200,35 @@ impl Array {
         inclusive: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                match axis.into() {
-                    Some(axis) => {
-                        mlx_sys::mlx_cumsum(
-                            &mut c_array as *mut _,
-                            self.c_array,
-                            axis,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                    None => {
-                        let shape = &[-1];
-                        let flat = self.reshape_device(shape, &stream)?;
-                        mlx_sys::mlx_cumsum(
-                            &mut c_array as *mut _,
-                            flat.c_array,
-                            0,
-                            reverse.into().unwrap_or(false),
-                            inclusive.into().unwrap_or(true),
-                            stream.as_ref().as_ptr(),
-                        )
-                    }
-                },
-                mlx_sys::mlx_array_free(c_array)
-            };
+        let stream = stream.as_ref();
 
-            Ok(Array::from_ptr(c_array))
+        match axis.into() {
+            Some(axis) => {
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cumsum(
+                        res,
+                        self.c_array,
+                        axis,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            },
+            None => {
+                let shape = &[-1];
+                let flat = self.reshape_device(shape, stream)?;
+                Array::try_from_op(|res| unsafe {
+                    mlx_sys::mlx_cumsum(
+                        res,
+                        flat.c_array,
+                        0,
+                        reverse.into().unwrap_or(false),
+                        inclusive.into().unwrap_or(true),
+                        stream.as_ptr(),
+                    )
+                })
+            }
         }
     }
 }

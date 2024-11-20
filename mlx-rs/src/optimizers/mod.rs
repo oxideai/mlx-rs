@@ -80,16 +80,13 @@ pub trait Optimizer {
 pub fn clip_grad_norm(
     gradients: &FlattenedModuleParam,
     max_norm: f32,
-) -> (HashMap<Rc<str>, Cow<'_, Array>>, f32) {
+) -> crate::error::Result<(HashMap<Rc<str>, Cow<'_, Array>>, f32)> {
     let total_norm: f32 = gradients
         .values()
-        .fold(array!(0.0), |acc, grad| {
-            acc + grad
-                .square()
-                .sum(None, None)
-                .expect("Sum with default axes should not fail")
-        })
-        .sqrt()
+        .fold(Ok(array!(0.0)), |acc, grad| {
+            acc?.add(&grad.square()?.sum(None, None)?)
+        })?
+        .sqrt()?
         .item();
     let normalizer = array!(max_norm / (total_norm + 1e-6));
 
@@ -104,5 +101,56 @@ pub fn clip_grad_norm(
             (key.clone(), clipped_grad)
         })
         .collect();
-    (clipped_gradients, total_norm)
+    Ok((clipped_gradients, total_norm))
+}
+
+#[cfg(test)]
+mod tests {
+
+    // def test_clip_grad_norm(self):
+    //     # Test with small gradients that do not require clipping
+    //     small_grads = {
+    //         "first": [mx.array([0.1, 0.2]), mx.array([0.1])],
+    //         "second": mx.array([0.3]),
+    //     }
+    //     max_norm = 10.0  # A large max_norm that shouldn't trigger clipping
+    //     clipped_grads, total_norm = opt.clip_grad_norm(small_grads, max_norm)
+    //     self.assertTrue(
+    //         tree_equal(lambda x, y: mx.array_equal(x, y), small_grads, clipped_grads),
+    //         "Gradients should not be modified when clipping is not necessary.",
+    //     )
+
+    //     # Test with large gradients that require clipping
+    //     large_grads = {
+    //         "first": [mx.array([10, 20]), mx.array([10])],
+    //         "second": mx.array([30]),
+    //     }
+    //     max_norm = 1.0  # A small max_norm that should trigger clipping
+    //     clipped_grads, total_norm = opt.clip_grad_norm(large_grads, max_norm)
+    //     # Correctly extract only the gradient values for norm calculation
+    //     clipped_values = [value for _, value in tree_flatten(clipped_grads)]
+    //     norm_of_clipped = mx.sqrt(
+    //         sum(mx.square(g).sum() for g in clipped_values)
+    //     ).item()
+    //     self.assertAlmostEqual(
+    //         norm_of_clipped,
+    //         max_norm,
+    //         places=6,
+    //         msg="Clipped gradients norm should be close to the specified max_norm.",
+    //     )
+
+    //     # Ensures that the scaling was done correctly
+    //     scale = max_norm / total_norm
+    //     expected_grads = tree_map(lambda g: g * scale, large_grads)
+    //     self.assertTrue(
+    //         tree_equal(
+    //             lambda x, y: mx.allclose(x, y, atol=1e-6), expected_grads, clipped_grads
+    //         ),
+    //         "Gradients were not scaled correctly during clipping.",
+    //     )
+
+    #[test]
+    fn test_clip_grad_norm() {
+        todo!()
+    }
 }

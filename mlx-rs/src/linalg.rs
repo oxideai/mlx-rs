@@ -1,4 +1,5 @@
 use crate::error::{Exception, Result};
+use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
@@ -61,37 +62,29 @@ pub fn norm_p_device<'a>(
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            match axes.into_option() {
-                Some(axes) => {
-                    mlx_sys::mlx_linalg_norm_p(
-                        &mut c_array as *mut _,
-                        array.as_ref().as_ptr(),
-                        ord,
-                        axes.as_ptr(),
-                        axes.len(),
-                        keep_dims,
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-                None => {
-                    mlx_sys::mlx_linalg_norm_p(
-                        &mut c_array as *mut _,
-                        array.as_ref().as_ptr(),
-                        ord,
-                        std::ptr::null(),
-                        0,
-                        keep_dims,
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-            },
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
+    match axes.into_option() {
+        Some(axes) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linalg_norm_p(
+                res,
+                array.as_ref().as_ptr(),
+                ord,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
+        None => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linalg_norm_p(
+                res,
+                array.as_ref().as_ptr(),
+                ord,
+                std::ptr::null(),
+                0,
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
     }
 }
 
@@ -104,39 +97,32 @@ pub fn norm_ord_device<'a>(
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let ord = CString::new(ord).map_err(|e| Exception::custom(format!("{}", e)))?;
+    let ord = CString::new(ord).map_err(|e| Exception::custom(format!("{}", e)))?;
+    let keep_dims = keep_dims.into().unwrap_or(false);
 
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            match axes.into_option() {
-                Some(axes) => {
-                    mlx_sys::mlx_linalg_norm_ord(
-                        &mut c_array as *mut _,
-                        array.as_ref().as_ptr(),
-                        ord.as_ptr(),
-                        axes.as_ptr(),
-                        axes.len(),
-                        keep_dims.into().unwrap_or(false),
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-                None => {
-                    mlx_sys::mlx_linalg_norm_ord(
-                        &mut c_array as *mut _,
-                        array.as_ref().as_ptr(),
-                        ord.as_ptr(),
-                        std::ptr::null(),
-                        0,
-                        keep_dims.into().unwrap_or(false),
-                        stream.as_ref().as_ptr(),
-                    )
-                }
-            },
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
+    match axes.into_option() {
+        Some(axes) => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linalg_norm_ord(
+                res,
+                array.as_ref().as_ptr(),
+                ord.as_ptr(),
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
+        None => Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linalg_norm_ord(
+                res,
+                array.as_ref().as_ptr(),
+                ord.as_ptr(),
+                std::ptr::null(),
+                0,
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
     }
 }
 
@@ -192,21 +178,18 @@ pub fn norm_device<'a>(
 
     match (ord, axes) {
         // If axis and ord are both unspecified, computes the 2-norm of flatten(x).
-        (None, None) => unsafe {
+        (None, None) => {
             let axes_ptr = std::ptr::null(); // mlx-c already handles the case where axes is null
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
+            Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_linalg_norm(
-                    &mut c_array as *mut _,
+                    res,
                     array.as_ref().as_ptr(),
                     axes_ptr,
                     0,
                     keep_dims,
                     stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
+                )
+            })
         },
         // If axis is not provided but ord is, then x must be either 1D or 2D.
         //
@@ -215,20 +198,17 @@ pub fn norm_device<'a>(
         (Some(Ord::P(p)), None) => norm_p_device(array, p, axes, keep_dims, stream),
         // If axis is provided, but ord is not, then the 2-norm (or Frobenius norm for matrices) is
         // computed along the given axes. At most 2 axes can be specified.
-        (None, Some(axes)) => unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
+        (None, Some(axes)) => {
+            Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_linalg_norm(
-                    &mut c_array as *mut _,
+                    res,
                     array.as_ref().as_ptr(),
                     axes.as_ptr(),
                     axes.len(),
                     keep_dims,
                     stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
+                )
+            })
         },
         // If both axis and ord are provided, then the corresponding matrix or vector
         // norm is computed. At most 2 axes can be specified.
@@ -265,22 +245,9 @@ pub fn norm_device<'a>(
 /// ```
 #[default_device]
 pub fn qr_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
-    unsafe {
-        let mut res_0 = mlx_sys::mlx_array_new();
-        let mut res_1 = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_qr(
-                &mut res_0 as *mut _,
-                &mut res_1 as *mut _,
-                a.as_ref().as_ptr(), stream.as_ref().as_ptr()),
-            {
-                mlx_sys::mlx_array_free(res_0);
-                mlx_sys::mlx_array_free(res_1);
-            }
-        };
-
-        Ok((Array::from_ptr(res_0), Array::from_ptr(res_1)))
-    }
+    <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_linalg_qr(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 /// The Singular Value Decomposition (SVD) of the input matrix. Returns an error if the input is not
@@ -315,25 +282,17 @@ pub fn svd_device(
     array: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array, Array)> {
-    unsafe {
-        let mut c_vec = mlx_sys::mlx_vector_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_svd(
-                &mut c_vec as *mut _,
-                array.as_ref().as_ptr(), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_vector_array_free(c_vec)
-        };
+    let v = VectorArray::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_svd(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })?;
 
-        let v = VectorArray::from_ptr(c_vec);
+    let vals: SmallVec<[Array; 3]> = v.try_into_values()?;
+    let mut iter = vals.into_iter();
+    let u = iter.next().unwrap();
+    let s = iter.next().unwrap();
+    let vt = iter.next().unwrap();
 
-        let vals: SmallVec<[Array; 3]> = v.try_into_values()?;
-        let mut iter = vals.into_iter();
-        let u = iter.next().unwrap();
-        let s = iter.next().unwrap();
-        let vt = iter.next().unwrap();
-
-        Ok((u, s, vt))
-    }
+    Ok((u, s, vt))
 }
 
 /// Compute the inverse of a square matrix. Returns an error if the input is not valid.
@@ -359,15 +318,9 @@ pub fn svd_device(
 /// ```
 #[default_device]
 pub fn inv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_inv(&mut c_array as *mut _, a.as_ref().as_ptr(), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_inv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 /// Compute the Cholesky decomposition of a real symmetric positive semi-definite matrix.
@@ -390,15 +343,9 @@ pub fn cholesky_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_cholesky(&mut c_array as *mut _, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_cholesky(res, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr())
+    })
 }
 
 /// Compute the inverse of a real symmetric positive semi-definite matrix using it’s Cholesky decomposition.
@@ -411,15 +358,9 @@ pub fn cholesky_inv_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_cholesky_inv(&mut c_array as *mut _, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_cholesky_inv(res, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr())
+    })
 }
 
 /// Compute the cross product of two arrays along a specified axis.
@@ -433,15 +374,10 @@ pub fn cross_device(
     axis: Option<i32>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_cross(&mut c_array as *mut _, a.as_ref().as_ptr(), b.as_ref().as_ptr(), axis.unwrap_or(-1), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    let axis = axis.unwrap_or(-1);
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_cross(res, a.as_ref().as_ptr(), b.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Compute the eigenvalues and eigenvectors of a complex Hermitian or real symmetric matrix.
@@ -458,25 +394,16 @@ pub fn eigh_device(
     let a = a.as_ref();
     let uplo =
         CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
-    unsafe {
-        let mut res_0 = mlx_sys::mlx_array_new();
-        let mut res_1 = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_eigh(
-                &mut res_0 as *mut _,
-                &mut res_1 as *mut _,
-                a.as_ref().as_ptr(),
-                uplo.as_ptr(),
-                stream.as_ref().as_ptr(),
-            ),
-            {
-                mlx_sys::mlx_array_free(res_0);
-                mlx_sys::mlx_array_free(res_1);
-            }
-        };
 
-        Ok((Array::from_ptr(res_0), Array::from_ptr(res_1)))
-    }
+    <(Array, Array) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_linalg_eigh(
+            res_0,
+            res_1,
+            a.as_ptr(),
+            uplo.as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Compute the eigenvalues of a complex Hermitian or real symmetric matrix.
@@ -492,33 +419,16 @@ pub fn eigvalsh_device(
     let a = a.as_ref();
     let uplo =
         CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
-    unsafe {
-        let mut res = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_eigvalsh(
-                &mut res as *mut _,
-                a.as_ref().as_ptr(),
-                uplo.as_ptr(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(res)
-        };
-
-        Ok(Array::from_ptr(res))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_eigvalsh(res, a.as_ptr(), uplo.as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 #[default_device]
 pub fn pinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_pinv(&mut c_array as *mut _, a.as_ref().as_ptr(), stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_pinv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
 }
 
 /// Compute the inverse of a triangular square matrix.
@@ -532,15 +442,9 @@ pub fn tri_inv_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_linalg_tri_inv(&mut c_array as *mut _, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr()),
-            mlx_sys::mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_tri_inv(res, a.as_ref().as_ptr(), upper, stream.as_ref().as_ptr())
+    })
 }
 
 #[cfg(test)]

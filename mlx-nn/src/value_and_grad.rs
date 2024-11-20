@@ -200,7 +200,7 @@ mod tests {
                 model
                     .forward(x)?
                     .subtract(y)?
-                    .square()
+                    .square()?
                     .sum(None, None)
                     .map(|v| vec![v])
             };

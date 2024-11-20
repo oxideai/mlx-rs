@@ -14,7 +14,7 @@ use crate::{
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, IndexMutOp, RangeIndex};
+use super::{ArrayIndex, ArrayIndexOp, Guarded, IndexMutOp, RangeIndex};
 
 impl Array {
     pub(crate) fn slice_update_device(
@@ -25,25 +25,20 @@ impl Array {
         strides: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_slice_update(
-                    &mut c_array as *mut _,
-                    self.as_ptr(),
-                    update.as_ptr(),
-                    starts.as_ptr(),
-                    starts.len(),
-                    ends.as_ptr(),
-                    ends.len(),
-                    strides.as_ptr(),
-                    strides.len(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_slice_update(
+                res,
+                self.as_ptr(),
+                update.as_ptr(),
+                starts.as_ptr(),
+                starts.len(),
+                ends.as_ptr(),
+                ends.len(),
+                strides.as_ptr(),
+                strides.len(),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 }
 
@@ -546,22 +541,17 @@ unsafe fn scatter_device(
 ) -> Result<Array> {
     let indices_vector = VectorArray::try_from_iter(indices.iter())?;
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_scatter(
-                &mut c_array as *mut _,
-                a.as_ptr(),
-                indices_vector.as_ptr(),
-                updates.as_ptr(),
-                axes.as_ptr(),
-                axes.len(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        }
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter(
+            res,
+            a.as_ptr(),
+            indices_vector.as_ptr(),
+            updates.as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 impl Array {

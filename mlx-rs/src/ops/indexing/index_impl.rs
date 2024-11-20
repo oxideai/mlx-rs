@@ -12,7 +12,7 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Result,
     ops::indexing::expand_ellipsis_operations,
-    utils::resolve_index_unchecked,
+    utils::{resolve_index_unchecked, VectorArray},
     Array, Stream,
 };
 
@@ -699,26 +699,6 @@ impl Array {
         strides: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        // unsafe {
-        //     let mut c_array = mlx_array_new();
-        //     check_status! {
-        //         mlx_sys::mlx_slice(
-        //             &mut c_array as *mut _,
-        //             self.c_array,
-        //             start.as_ptr(),
-        //             start.len(),
-        //             stop.as_ptr(),
-        //             stop.len(),
-        //             strides.as_ptr(),
-        //             strides.len(),
-        //             stream.as_ref().as_ptr(),
-        //         ),
-        //         mlx_array_free(c_array)
-        //     };
-
-        //     Ok(Array::from_ptr(c_array))
-        // }
-
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_slice(
                 res,
@@ -877,24 +857,18 @@ fn gather_nd<'a>(
     // `gather_indices` is managed by the `gather_indices` vector.
     let indices = VectorArray::try_from_iter(gather_indices.iter())?;
 
-    let gathered = unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_gather(
-                &mut c_array as *mut _,
-                src.c_array,
-                indices.as_ptr(),
-                axes.as_ptr(),
-                axes.len(),
-                slice_sizes.as_ptr(),
-                slice_sizes.len(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_array_free(c_array)
-        };
-
-        Array::from_ptr(c_array)
-    };
+    let gathered = Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_gather(
+            res,
+            src.c_array,
+            indices.as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            slice_sizes.as_ptr(),
+            slice_sizes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })?;
     let gathered_shape = gathered.shape();
 
     // Squeeze the dims

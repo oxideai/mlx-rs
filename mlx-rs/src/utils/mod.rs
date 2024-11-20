@@ -42,6 +42,59 @@ pub(crate) fn axes_or_default_to_all<'a>(axes: impl IntoOption<&'a [i32]>, ndim:
     }
 }
 
+
+pub(crate) struct VectorArray {
+    c_vec: mlx_sys::mlx_vector_array,
+}
+
+impl VectorArray {
+    pub(crate) fn as_ptr(&self) -> mlx_sys::mlx_vector_array {
+        self.c_vec
+    }
+
+    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_array) -> Self {
+        Self { c_vec }
+    }
+
+    pub(crate) fn try_from_iter(
+        iter: impl Iterator<Item = impl AsRef<Array>>,
+    ) -> Result<Self, Exception> {
+        VectorArray::try_from_op(|res| unsafe {
+            let mut status = SUCCESS;
+            for arr in iter {
+                status = mlx_sys::mlx_vector_array_append_value(*res, arr.as_ref().as_ptr());
+                if status != SUCCESS {
+                    return status;
+                }
+            }
+            status
+        })
+    }
+
+    pub(crate) fn try_into_values<T>(self) -> Result<T, Exception>
+    where
+        T: FromIterator<Array>,
+    {
+        unsafe {
+            let size = mlx_sys::mlx_vector_array_size(self.c_vec);
+            (0..size)
+                .map(|i| {
+                    Array::try_from_op(|res| {
+                        mlx_sys::mlx_vector_array_get(res, self.c_vec, i)
+                    })
+                })
+                .collect::<Result<T, Exception>>()
+        }
+    }
+}
+
+impl Drop for VectorArray {
+    fn drop(&mut self) {
+        let status = unsafe { mlx_sys::mlx_vector_array_free(self.c_vec) };
+        debug_assert_eq!(status, SUCCESS);
+    }
+}
+
 pub(crate) struct MlxString {
     c_str: mlx_sys::mlx_string,
 }

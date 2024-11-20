@@ -1,6 +1,7 @@
 use crate::array::Array;
 use crate::error::Result;
 use crate::stream::StreamOrDevice;
+use crate::utils::guard::Guarded;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_internal_macros::default_device;
@@ -31,22 +32,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_all_axes(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_all_axes(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `product` reduction over the given axes returning an error if the axes are invalid.
@@ -73,22 +68,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_prod(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_prod(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `max` reduction over the given axes returning an error if the axes are invalid.
@@ -115,22 +104,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_max(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_max(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Sum reduce the array over the given axes returning an error if the axes are invalid.
@@ -157,22 +140,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_sum(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_sum(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `mean` reduction over the given axes returning an error if the axes are invalid.
@@ -199,22 +176,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_mean(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_mean(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `min` reduction over the given axes returning an error if the axes are invalid.
@@ -241,22 +212,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_min(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_min(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Compute the variance(s) over the given axes returning an error if the axes are invalid.
@@ -275,23 +240,17 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_var(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    ddof.into().unwrap_or(0),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_var(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                ddof.into().unwrap_or(0),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// A `log-sum-exp` reduction over the given axes returning an error if the axes are invalid.
@@ -310,22 +269,16 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_logsumexp(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    axes.as_ptr(),
-                    axes.len(),
-                    keep_dims.into().unwrap_or(false),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_logsumexp(
+                res,
+                self.c_array,
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 }
 
@@ -382,23 +335,17 @@ pub fn std_device<'a>(
     let axes = axes_or_default_to_all(axes, a.ndim() as i32);
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
-
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_std(
-                &mut c_array as *mut _,
-                a.as_ptr(),
-                axes.as_ptr(),
-                axes.len(),
-                keep_dims,
-                ddof,
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_std(
+            res,
+            a.c_array,
+            axes.as_ptr(),
+            axes.len(),
+            keep_dims,
+            ddof,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// See [`Array::sum`]

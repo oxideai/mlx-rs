@@ -1,5 +1,6 @@
 use crate::array::ArrayElement;
 use crate::error::Result;
+use crate::utils::guard::Guarded;
 use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
 use mlx_internal_macros::default_device;
@@ -70,22 +71,9 @@ impl Array {
         k: Option<i32>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_eye(
-                    &mut c_array as *mut _,
-                    n,
-                    m.unwrap_or(n),
-                    k.unwrap_or(0),
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_eye(res, n, m.unwrap_or(n), k.unwrap_or(0), T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// Construct an array with the given value returning an error if shape is invalid.
@@ -111,21 +99,9 @@ impl Array {
         values: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_full(
-                    &mut c_array as *mut _,
-                    shape.as_ptr(),
-                    shape.len(),
-                    values.as_ref().as_ptr(),
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_full(res, shape.as_ptr(), shape.len(), values.as_ref().c_array, T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// Create a square identity matrix returning an error if params are invalid.
@@ -143,16 +119,9 @@ impl Array {
     /// ```
     #[default_device]
     pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_identity(
-                    &mut c_array as *mut _,
-                    n, T::DTYPE.into(), stream.as_ref().as_ptr()),
-                    mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_identity(res, n, T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// Generates ranges of numbers.
@@ -188,21 +157,9 @@ impl Array {
         let stop: f64 = NumCast::from(stop).unwrap();
         let step: f64 = step.into().and_then(NumCast::from).unwrap_or(1.0);
 
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_arange(
-                    &mut c_array as *mut _,
-                    start,
-                    stop,
-                    step,
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_arange(res, start, stop, step, T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// Generate `num` evenly spaced numbers over interval `[start, stop]` returning an error if params are invalid.
@@ -235,21 +192,9 @@ impl Array {
         let start_f32 = NumCast::from(start).unwrap();
         let stop_f32 = NumCast::from(stop).unwrap();
 
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_linspace(
-                    &mut c_array as *mut _,
-                    start_f32,
-                    stop_f32,
-                    count,
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_linspace(res, start_f32, stop_f32, count, T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// Repeat an array along a specified axis returning an error if params are invalid.
@@ -275,20 +220,15 @@ impl Array {
         axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_repeat(
-                    &mut c_array as *mut _,
-                    array.c_array,
-                    count,
-                    axis,
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_repeat(
+                res,
+                array.c_array,
+                count,
+                axis,
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 
     /// Repeat a flattened array along axis 0 returning an error if params are invalid.
@@ -312,19 +252,9 @@ impl Array {
         count: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_repeat_all(
-                    &mut c_array as *mut _,
-                    array.c_array,
-                    count,
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_repeat_all(res, array.c_array, count, stream.as_ref().as_ptr())
+        })
     }
 
     /// An array with ones at and below the given diagonal and zeros elsewhere.
@@ -349,21 +279,9 @@ impl Array {
         k: Option<i32>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_sys::mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_tri(
-                    &mut c_array as *mut _,
-                    n,
-                    m.unwrap_or(n),
-                    k.unwrap_or(0),
-                    T::DTYPE.into(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_sys::mlx_array_free(c_array)
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_tri(res, n, m.unwrap_or(n), k.unwrap_or(0), T::DTYPE.into(), stream.as_ref().as_ptr())
+        })
     }
 }
 
@@ -389,20 +307,9 @@ pub fn zeros_dtype_device(
     dtype: Dtype,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_zeros(
-                &mut c_array as *mut _,
-                shape.as_ptr(),
-                shape.len(),
-                dtype.into(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_zeros(res, shape.as_ptr(), shape.len(), dtype.into(), stream.as_ref().as_ptr())
+    })
 }
 
 /// See [`Array::ones`]
@@ -422,20 +329,9 @@ pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) ->
 
 /// Similar to [`Array::ones`] but with a specified dtype.
 pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_sys::mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_ones(
-                &mut c_array as *mut _,
-                shape.as_ptr(),
-                shape.len(),
-                dtype.into(),
-                stream.as_ref().as_ptr(),
-            ),
-            mlx_sys::mlx_array_free(c_array)
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_ones(res, shape.as_ptr(), shape.len(), dtype.into(), stream.as_ref().as_ptr())
+    })
 }
 
 /// See [`Array::eye`]

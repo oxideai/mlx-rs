@@ -5,7 +5,7 @@ use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,
-    error::Exception,
+    error::{Exception, Result},
     ops::{abs, exp, log_sum_exp, maximum, minimum, multiply, which},
     transforms::compile::compile,
     Array,
@@ -32,7 +32,7 @@ pub fn sigmoid(x: impl AsRef<Array>) -> Result<Array> {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-pub fn relu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn relu(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::maximum(x.as_ref(), &array!(0))
 }
 
@@ -48,7 +48,7 @@ pub fn relu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 pub fn leaky_relu(
     x: impl AsRef<Array>,
     neg_slope: impl Into<Option<f32>>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let neg_slope = array!(neg_slope.into().unwrap_or(0.01));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -62,7 +62,7 @@ pub fn leaky_relu(
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
-pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
+pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array> {
     let x = x.as_ref();
     let axis = axis.into().unwrap_or(-1);
     x.subtract(log_sum_exp(x, &[axis], true)?)
@@ -80,7 +80,7 @@ pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result
 ///
 /// - `x`: The input array
 /// - `alpha`: Default to 1.0 if not provided
-pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -94,7 +94,7 @@ pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array,
 /// ```rust, ignore
 /// minimum(maximum(x, 0), 6)
 /// ```
-pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn relu6(x: impl AsRef<Array>) -> Result<Array> {
     compiled_relu6(x.as_ref())
 }
 
@@ -105,7 +105,7 @@ pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn softplus(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::log_add_exp(x.as_ref(), &array!(0))
 }
 
@@ -116,7 +116,7 @@ pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x / (1 + abs(x))
 /// ```
-pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn softsign(x: impl AsRef<Array>) -> Result<Array> {
     compiled_softsign(x.as_ref())
 }
 
@@ -127,7 +127,7 @@ pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// maximum(x, 0) + alpha * (exp(minimum(x, 0) / alpha) - 1)
 /// ```
-pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -141,7 +141,7 @@ pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn silu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_silu(x.as_ref())
 }
 
@@ -152,7 +152,7 @@ pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array> {
     compiled_log_sigmoid(x.as_ref())
 }
 
@@ -163,7 +163,7 @@ pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * (1 + erf(x / 2.sqrt())) / 2
 /// ```
-pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu(x.as_ref())
 }
 
@@ -174,7 +174,7 @@ pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// 0.5 * x * (1 + tanh(sqrt(2 / PI) * (x + 0.044715 * x ** 3)))
 /// ```
-pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu_approximate(x.as_ref())
 }
 
@@ -185,7 +185,7 @@ pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * sigmoid(1.773 * x)
 /// ```
-pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu_fast_approximate(x.as_ref())
 }
 
@@ -193,10 +193,10 @@ pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This function splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
-pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
+pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array> {
     let split = x.as_ref().split_equal(2, axis)?;
     let (a, b) = (&split[0], &split[1]);
-    Ok(a * sigmoid(b))
+    Ok(a * sigmoid(b)?)
 }
 
 /// Applies the Step Activation Function.
@@ -209,7 +209,7 @@ pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, 
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
-pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array> {
     let threshold = array!(threshold.into().unwrap_or(0.0));
     mlx_rs::ops::r#where(&x.as_ref().gt(threshold)?, &array!(1), &array!(0))
 }
@@ -221,7 +221,7 @@ pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<A
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn selu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_selu(x.as_ref())
 }
 
@@ -232,7 +232,7 @@ pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array> {
     compiled_prelu(x.as_ref(), alpha.as_ref())
 }
 
@@ -247,7 +247,7 @@ pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Ex
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn mish(x: impl AsRef<Array>) -> Result<Array> {
     compiled_mish(x.as_ref())
 }
 
@@ -258,7 +258,7 @@ pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array> {
     compiled_hard_swish(x.as_ref())
 }
 
@@ -284,7 +284,7 @@ impl<'a> Module<&'a Array> for Glu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -308,8 +308,8 @@ impl<'a> Module<&'a Array> for Sigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(sigmoid(x))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        sigmoid(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -333,7 +333,7 @@ impl<'a> Module<&'a Array> for Mish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         mish(x).map_err(Into::into)
     }
 
@@ -354,7 +354,7 @@ impl<'a> Module<&'a Array> for Relu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu(x).map_err(Into::into)
     }
 
@@ -386,7 +386,7 @@ impl<'a> Module<&'a Array> for LeakyRelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -407,7 +407,7 @@ impl<'a> Module<&'a Array> for Relu6 {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu6(x).map_err(Into::into)
     }
 
@@ -439,8 +439,8 @@ impl<'a> Module<&'a Array> for Softmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(mlx_rs::ops::softmax(x, &[self.axis], None))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        mlx_rs::ops::softmax(x, &[self.axis], None)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -460,7 +460,7 @@ impl<'a> Module<&'a Array> for Softplus {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softplus(x).map_err(Into::into)
     }
 
@@ -481,7 +481,7 @@ impl<'a> Module<&'a Array> for Softsign {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softsign(x).map_err(Into::into)
     }
 
@@ -514,7 +514,7 @@ impl<'a> Module<&'a Array> for Celu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -535,7 +535,7 @@ impl<'a> Module<&'a Array> for Silu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         silu(x).map_err(Into::into)
     }
 
@@ -567,7 +567,7 @@ impl<'a> Module<&'a Array> for LogSoftmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -588,7 +588,7 @@ impl<'a> Module<&'a Array> for LogSigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -647,7 +647,7 @@ impl<'a> Module<&'a Array> for Prelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -688,7 +688,7 @@ impl<'a> Module<&'a Array> for Gelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -707,8 +707,8 @@ impl<'a> Module<&'a Array> for Tanh {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(mlx_rs::ops::tanh(x))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        mlx_rs::ops::tanh(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -728,7 +728,7 @@ impl<'a> Module<&'a Array> for HardSwish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         hard_swish(x).map_err(Into::into)
     }
 
@@ -763,7 +763,7 @@ impl<'a> Module<&'a Array> for Step {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -784,7 +784,7 @@ impl<'a> Module<&'a Array> for Selu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         selu(x).map_err(Into::into)
     }
 
@@ -796,7 +796,7 @@ impl<'a> Module<&'a Array> for Selu {
 /* -------------------------------------------------------------------------- */
 
 #[inline]
-fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception> {
+fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array> {
     let f = |(x_, neg_slope_): (&Array, &Array)| {
         // This will not panic because a scalar can always be broadcasted to any shape
         let a = multiply(neg_slope_, x_)?;
@@ -807,71 +807,71 @@ fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception>
 }
 
 #[inline]
-fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
-        which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_) - array!(1.0)))
+        which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_)? - array!(1.0)))
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
 }
 
 #[inline]
-fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
+fn compiled_relu6(x: &Array) -> Result<Array> {
     let f = |x_: &Array| minimum(maximum(x_, &array!(0.0))?, &array!(6.0));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_softsign(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ / (array!(1.0) + abs(x_));
+fn compiled_softsign(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.divide(array!(1.0) + abs(x_)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         maximum(x_, &array!(0.0))?
-            .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_)) - array!(1.0))?)
+            .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_))? - array!(1.0))?)
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
 }
 
 #[inline]
-fn compiled_silu(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ * sigmoid(x_);
+fn compiled_silu(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.multiply(sigmoid(x_)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_log_sigmoid(x: &Array) -> Result<Array, Exception> {
+fn compiled_log_sigmoid(x: &Array) -> Result<Array> {
     let f = |x_: &Array| Ok(-softplus(&(-x_))?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_gelu(x: &Array) -> Result<Array, Exception> {
+fn compiled_gelu(x: &Array) -> Result<Array> {
     use mlx_rs::ops::erf;
-    let f = |x_: &Array| x_ * (array!(1) + erf(&(x_ / array!(2f32.sqrt())))) / array!(2.0);
+    let f = |x_: &Array| x_.multiply(array!(1) + erf(&(x_ / array!(2f32.sqrt())))?)?.divide(array!(2.0));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
+fn compiled_gelu_approximate(x: &Array) -> Result<Array> {
     use mlx_rs::ops::{sqrt, tanh};
 
     let f = move |x_: &Array| {
         // 0.5 * x * (1 + tanh(sqrt(2 / Float.pi) * (x + 0.044715 * x ** 3)))
         array!(0.5).multiply(x_)?.multiply(
             array!(1.0).add(tanh(
-                &(sqrt(&array!(2.0 / PI))
-                    .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?),
-            ))?,
+                &(sqrt(&array!(2.0 / PI))?
+                    .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?)
+            )?)?,
         )
     };
     let mut compiled = compile(f, Some(true), None, None);
@@ -879,21 +879,21 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
 }
 
 #[inline]
-fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ * sigmoid(&(array!(1.773) * x_));
+fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.multiply(sigmoid(&(array!(1.773) * x_))?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_selu(x: &Array) -> Result<Array, Exception> {
+fn compiled_selu(x: &Array) -> Result<Array> {
     let f = |x_: &Array| elu(x_, 1.67326)?.multiply(array!(1.0507));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         maximum(&array!(0.0), x_)?.add(alpha_ * minimum(&array!(0.0), x_)?)
     };
@@ -902,16 +902,16 @@ fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
 }
 
 #[inline]
-fn compiled_mish(x: &Array) -> Result<Array, Exception> {
+fn compiled_mish(x: &Array) -> Result<Array> {
     use mlx_rs::ops::tanh;
 
-    let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?));
+    let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_hard_swish(x: &Array) -> Result<Array, Exception> {
+fn compiled_hard_swish(x: &Array) -> Result<Array> {
     let f = |x_: &Array| {
         let max_x_plus_3 = maximum(&(x_ + array!(3.0)), &array!(0.0))?;
         x_.multiply(minimum(&max_x_plus_3, &array!(6.0))?)?

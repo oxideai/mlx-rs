@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::{error::Result, utils::SUCCESS};
+use crate::{error::Result, utils::{guard::Guarded, SUCCESS}};
 
 ///Type of device.
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]
@@ -22,14 +22,7 @@ impl Device {
     }
 
     pub fn try_default() -> Result<Self> {
-        unsafe {
-            let mut c_device = mlx_sys::mlx_device_new();
-            check_status! {
-                mlx_sys::mlx_get_default_device(&mut c_device as *mut _),
-                mlx_sys::mlx_device_free(c_device)
-            };
-            Ok(Device { c_device })
-        }
+        Device::try_op(|res| unsafe { mlx_sys::mlx_get_default_device(res) })
     }
 
     pub fn cpu() -> Device {

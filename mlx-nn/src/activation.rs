@@ -21,7 +21,7 @@ use mlx_rs::{
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-pub fn sigmoid(x: impl AsRef<Array>) -> Array {
+pub fn sigmoid(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::sigmoid(x.as_ref())
 }
 

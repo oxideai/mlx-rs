@@ -16,7 +16,7 @@ impl RandomState {
         Self { state: key(now) }
     }
 
-    fn next(&mut self) -> Array {
+    fn next(&mut self) -> Result<Array> {
         let next = split(&self.state);
         self.state = next.0;
         next.1
@@ -54,7 +54,7 @@ pub fn seed(seed: u64) {
 /// Return a value that can be used as a PRNG key.  All ``random::*``
 /// functions take an optional key -- this will let you control the
 /// random number generation.
-pub fn key(seed: u64) -> Array {
+pub fn key(seed: u64) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_random_key never throws internally

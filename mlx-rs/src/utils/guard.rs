@@ -217,6 +217,61 @@ impl Guarded for (Vec<Array>, Vec<Array>) {
     type Guard = (MaybeUninitVectorArray, MaybeUninitVectorArray);
 }
 
+pub(crate) struct MaybeUninitDevice {
+    pub(crate) ptr: mlx_sys::mlx_device,
+    pub(crate) init_success: bool,
+}
+
+impl Default for MaybeUninitDevice {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MaybeUninitDevice {
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                ptr: mlx_sys::mlx_device_new(),
+                init_success: false,
+            }
+        }
+    }
+}
+
+impl Drop for MaybeUninitDevice {
+    fn drop(&mut self) {
+        if !self.init_success {
+            unsafe {
+                mlx_sys::mlx_device_free(self.ptr);
+            }
+        }
+    }
+}
+
+impl Guard<crate::Device> for MaybeUninitDevice {
+    type MutRawPtr = *mut mlx_sys::mlx_device;
+
+    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
+        &mut self.ptr
+    }
+
+    fn set_init_success(&mut self, success: bool) {
+        self.init_success = success;
+    }
+    
+    fn try_into_guarded(self) -> Result<crate::Device, Exception> {
+        debug_assert!(self.init_success);
+        Ok(crate::Device {
+            c_device: self.ptr,
+        })
+    }
+}
+
+impl Guarded for crate::Device {
+    type Guard = MaybeUninitDevice;
+}
+
 macro_rules! impl_guarded_for_primitive {
     ($type:ty) => {
         impl Guarded for $type {

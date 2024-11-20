@@ -53,25 +53,25 @@ impl Array {
         strides: impl IntoOption<&'a [usize]>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<Array> {
         as_strided_device(self, shape, strides, offset, stream)
     }
 
     /// See [`at_least_1d`]
     #[default_device]
-    pub fn at_least_1d_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn at_least_1d_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         at_least_1d_device(self, stream)
     }
 
     /// See [`at_least_2d`]
     #[default_device]
-    pub fn at_least_2d_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn at_least_2d_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         at_least_2d_device(self, stream)
     }
 
     /// See [`at_least_3d`]
     #[default_device]
-    pub fn at_least_3d_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn at_least_3d_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         at_least_3d_device(self, stream)
     }
 
@@ -130,7 +130,7 @@ impl Array {
     }
 
     /// [`transpose`] and unwrap the result.
-    pub fn t(&self) -> Array {
+    pub fn t(&self) -> Result<Array> {
         self.transpose_device(None, StreamOrDevice::default())
             .unwrap()
     }
@@ -211,7 +211,7 @@ pub fn as_strided_device<'a>(
     strides: impl IntoOption<&'a [usize]>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
-) -> Array {
+) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(a.shape());
     let resolved_strides = resolve_strides(shape, strides.into_option());
     let offset = offset.into().unwrap_or(0);
@@ -463,7 +463,7 @@ pub fn squeeze_device<'a>(
 /// let out = at_least_1d(&x);
 /// ```
 #[default_device]
-pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_atleast_1d should not throw an exception if `a` is a valid array.
@@ -487,7 +487,7 @@ pub fn at_least_1d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// let out = at_least_2d(&x);
 /// ```
 #[default_device]
-pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_atleast_2d should not throw an exception if `a` is a valid array.
@@ -511,7 +511,7 @@ pub fn at_least_2d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
 /// let out = at_least_3d(&x);
 /// ```
 #[default_device]
-pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Array {
+pub fn at_least_3d_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: mlx_atleast_3d should not throw an exception if `a` is a valid array.

@@ -22,7 +22,7 @@ impl Array {
     /// // data == [1, 2, 3, 4, 5]
     /// ```
     #[default_device]
-    pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_abs` internally never throws an error.
@@ -178,7 +178,7 @@ impl Array {
         pos_inf: impl IntoOption<f32>,
         neg_inf: impl IntoOption<f32>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<Array> {
         let pos_inf = pos_inf.into_option();
         let neg_inf = neg_inf.into_option();
 
@@ -324,7 +324,7 @@ impl Array {
     /// // b_data == [1.0, 2.0, 3.0]
     /// ```
     #[default_device]
-    pub fn sqrt_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn sqrt_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_sqrt` internally shouldn't throw if self is a valid array.
@@ -350,7 +350,7 @@ impl Array {
     /// // b_data == [1.0, 0.54030234, -0.41614687]
     /// ```
     #[default_device]
-    pub fn cos_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn cos_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_cos` internally shouldn't throw if self is a valid array.
@@ -378,7 +378,7 @@ impl Array {
     /// // b_data == [1.0, 2.7182817, 7.389056]
     /// ```
     #[default_device]
-    pub fn exp_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn exp_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_exp` internally shouldn't throw if self is a valid array.
@@ -459,7 +459,7 @@ impl Array {
     /// # Params
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn is_nan_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn is_nan_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_isnan` internally never throws an error.
@@ -477,7 +477,7 @@ impl Array {
     /// # Params
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn is_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn is_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_isinf` internally never throws an error.
@@ -495,7 +495,7 @@ impl Array {
     /// # Params
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn is_finite_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn is_finite_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_isfinite` internally never throws an error.
@@ -513,7 +513,7 @@ impl Array {
     /// # Params
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn is_neg_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn is_neg_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_isneginf` internally never throws an error.
@@ -531,7 +531,7 @@ impl Array {
     /// # Params
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn is_pos_inf_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn is_pos_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_isposinf` internally never throws an error.
@@ -557,7 +557,7 @@ impl Array {
     /// // b_data == [0.0, 0.6931472, 1.0986123]
     /// ```
     #[default_device]
-    pub fn log_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn log_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_log` internally never throws an error.
@@ -583,7 +583,7 @@ impl Array {
     /// // b_data == [0.0, 1.0, 2.0, 3.0]
     /// ```
     #[default_device]
-    pub fn log2_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn log2_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_log2` internally never throws an error.
@@ -609,7 +609,7 @@ impl Array {
     /// // b_data == [0.0, 1.0, 2.0]
     /// ```
     #[default_device]
-    pub fn log10_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn log10_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_log10` internally never throws an error.
@@ -635,7 +635,7 @@ impl Array {
     /// // b_data == [0.6931472, 1.0986123, 1.3862944]
     /// ```
     #[default_device]
-    pub fn log1p_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn log1p_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_log1p` internally never throws an error.
@@ -706,7 +706,7 @@ impl Array {
     /// // b_data == [1.0, 0.5, 0.25]
     /// ```
     #[default_device]
-    pub fn reciprocal_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn reciprocal_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_reciprocal` internally never throws an error.
@@ -729,7 +729,7 @@ impl Array {
         &self,
         decimals: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
-    ) -> Array {
+    ) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_round` internally never throws an error.
@@ -745,7 +745,7 @@ impl Array {
 
     /// Element-wise reciprocal and square root.
     #[default_device]
-    pub fn rsqrt_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn rsqrt_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_rsqrt` internally never throws an error.
@@ -760,7 +760,7 @@ impl Array {
 
     /// Element-wise sine.
     #[default_device]
-    pub fn sin_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn sin_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_sin` internally never throws an error.
@@ -775,7 +775,7 @@ impl Array {
 
     /// Element-wise square.
     #[default_device]
-    pub fn square_device(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn square_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         unsafe {
             let mut c_array = mlx_sys::mlx_array_new();
             // SAFETY: `mlx_square` internally never throws an error.
@@ -800,13 +800,13 @@ impl Array {
 /// let result = ops::abs(&array);
 /// ```
 #[default_device]
-pub fn abs_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn abs_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().abs_device(stream)
 }
 
 /// Element-wise inverse cosine.
 #[default_device]
-pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arccos` internally shouldn't throw if a is a valid array.
@@ -821,7 +821,7 @@ pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise inverse hyperbolic cosine.
 #[default_device]
-pub fn acosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn acosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arccosh` internally shouldn't throw if a is a valid array.
@@ -846,7 +846,7 @@ pub fn add_device(
 
 /// Element-wise inverse sine.
 #[default_device]
-pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arcsin` internally shouldn't throw if a is a valid array.
@@ -861,7 +861,7 @@ pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise inverse hyperbolic sine.
 #[default_device]
-pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arcsinh` internally shouldn't throw if a is a valid array.
@@ -876,7 +876,7 @@ pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise inverse tangent.
 #[default_device]
-pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arctan` internally shouldn't throw if a is a valid array.
@@ -891,7 +891,7 @@ pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise inverse hyperbolic tangent.
 #[default_device]
-pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_arctanh` internally shouldn't throw if a is a valid array.
@@ -1030,13 +1030,13 @@ pub fn clip_device<'min, 'max>(
 
 /// Element-wise cosine.
 #[default_device]
-pub fn cos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn cos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().cos_device(stream)
 }
 
 /// Element-wise hyperbolic cosine.
 #[default_device]
-pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_cosh` internally shouldn't throw if a is a valid array.
@@ -1051,7 +1051,7 @@ pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Convert angles from radians to degrees.
 #[default_device]
-pub fn degrees_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn degrees_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_degrees` internally shouldn't throw if a is a valid array.
@@ -1107,7 +1107,7 @@ pub fn divmod_device(
 
 /// Element-wise error function.
 #[default_device]
-pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_erf` internally shouldn't throw if a is a valid array.
@@ -1122,7 +1122,7 @@ pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise inverse error function.
 #[default_device]
-pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_erfinv` internally shouldn't throw if a is a valid array.
@@ -1137,13 +1137,13 @@ pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array 
 
 /// See [`Array::exp`].
 #[default_device]
-pub fn exp_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn exp_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().exp_device(stream)
 }
 
 /// Element-wise exponential minus 1.
 #[default_device]
-pub fn expm1_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn expm1_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_expm1` internally shouldn't throw if a is a valid array.
@@ -1174,25 +1174,25 @@ pub fn floor_divide_device(
 
 /// See [`Array::log`].
 #[default_device]
-pub fn log_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn log_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log_device(stream)
 }
 
 /// See [`Array::log10`].
 #[default_device]
-pub fn log10_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn log10_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log10_device(stream)
 }
 
 /// See [`Array::log1p`].
 #[default_device]
-pub fn log1p_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn log1p_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log1p_device(stream)
 }
 
 /// See [`Array::log2`].
 #[default_device]
-pub fn log2_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn log2_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log2_device(stream)
 }
 
@@ -1305,7 +1305,7 @@ pub fn power_device(
 
 /// Convert angles from degrees to radians.
 #[default_device]
-pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_radians` internally shouldn't throw if a is a valid array.
@@ -1320,7 +1320,7 @@ pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array
 
 /// See [`Array::reciprocal`].
 #[default_device]
-pub fn reciprocal_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn reciprocal_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().reciprocal_device(stream)
 }
 
@@ -1340,13 +1340,13 @@ pub fn round_device(
     a: impl AsRef<Array>,
     decimals: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Array {
+) -> Result<Array> {
     a.as_ref().round_device(decimals, stream)
 }
 
 /// See [`Array::rsqrt`].
 #[default_device]
-pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().rsqrt_device(stream)
 }
 
@@ -1356,7 +1356,7 @@ pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 /// docs](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.sigmoid.html#mlx.core.sigmoid)
 /// for more information
 #[default_device]
-pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sigmoid` internally shouldn't throw if a is a valid array.
@@ -1371,7 +1371,7 @@ pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array
 
 /// Element-wise sign.
 #[default_device]
-pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sign` internally shouldn't throw if a is a valid array.
@@ -1386,13 +1386,13 @@ pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// See [`Array::sin`].
 #[default_device]
-pub fn sin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn sin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().sin_device(stream)
 }
 
 /// Element-wise hyperbolic sine.
 #[default_device]
-pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_sinh` internally shouldn't throw if a is a valid array.
@@ -1416,7 +1416,7 @@ pub fn softmax_device<'a>(
     axes: impl IntoOption<&'a [i32]>,
     precise: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Array {
+) -> Result<Array> {
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
 
@@ -1443,13 +1443,13 @@ pub fn softmax_device<'a>(
 
 /// See [`Array::sqrt`].
 #[default_device]
-pub fn sqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn sqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().sqrt_device(stream)
 }
 
 /// See [`Array::square`].
 #[default_device]
-pub fn square_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn square_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().square_device(stream)
 }
 
@@ -1465,7 +1465,7 @@ pub fn subtract_device(
 
 /// See [`Array::tan`].
 #[default_device]
-pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_tan` internally shouldn't throw if a is a valid array.
@@ -1480,7 +1480,7 @@ pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
 
 /// Element-wise hyperbolic tangent.
 #[default_device]
-pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Array {
+pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     unsafe {
         let mut c_array = mlx_sys::mlx_array_new();
         // SAFETY: `mlx_tanh` internally shouldn't throw if a is a valid array.

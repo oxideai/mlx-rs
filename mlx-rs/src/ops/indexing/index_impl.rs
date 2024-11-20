@@ -12,11 +12,11 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Result,
     ops::indexing::expand_ellipsis_operations,
-    utils::{resolve_index_unchecked, VectorArray},
+    utils::resolve_index_unchecked,
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, Ellipsis, NewAxis, RangeIndex, StrideBy, TryIndexOp};
+use super::{ArrayIndex, ArrayIndexOp, Ellipsis, Guarded, NewAxis, RangeIndex, StrideBy, TryIndexOp};
 
 /* -------------------------------------------------------------------------- */
 /*                               Implementation                               */
@@ -699,25 +699,39 @@ impl Array {
         strides: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_slice(
-                    &mut c_array as *mut _,
-                    self.c_array,
-                    start.as_ptr(),
-                    start.len(),
-                    stop.as_ptr(),
-                    stop.len(),
-                    strides.as_ptr(),
-                    strides.len(),
-                    stream.as_ref().as_ptr(),
-                ),
-                mlx_array_free(c_array)
-            };
+        // unsafe {
+        //     let mut c_array = mlx_array_new();
+        //     check_status! {
+        //         mlx_sys::mlx_slice(
+        //             &mut c_array as *mut _,
+        //             self.c_array,
+        //             start.as_ptr(),
+        //             start.len(),
+        //             stop.as_ptr(),
+        //             stop.len(),
+        //             strides.as_ptr(),
+        //             strides.len(),
+        //             stream.as_ref().as_ptr(),
+        //         ),
+        //         mlx_array_free(c_array)
+        //     };
 
-            Ok(Array::from_ptr(c_array))
-        }
+        //     Ok(Array::from_ptr(c_array))
+        // }
+
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_slice(
+                res,
+                self.c_array,
+                start.as_ptr(),
+                start.len(),
+                stop.as_ptr(),
+                stop.len(),
+                strides.as_ptr(),
+                strides.len(),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 }
 

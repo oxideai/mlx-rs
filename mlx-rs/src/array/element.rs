@@ -22,7 +22,7 @@ macro_rules! impl_array_element {
                 fn array_item(array: &Array) -> Result<Self> {
                     use crate::utils::guard::*;
 
-                    <$type as Guarded>::try_op(|ptr| unsafe {
+                    <$type as Guarded>::try_from_op(|ptr| unsafe {
                         mlx_sys::[<mlx_array_item_ $ctype >](ptr, array.c_array)
                     })
                 }

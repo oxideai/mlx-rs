@@ -22,7 +22,7 @@ impl Device {
     }
 
     pub fn try_default() -> Result<Self> {
-        Device::try_op(|res| unsafe { mlx_sys::mlx_get_default_device(res) })
+        Device::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_device(res) })
     }
 
     pub fn cpu() -> Device {

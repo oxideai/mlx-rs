@@ -101,7 +101,7 @@ use std::{borrow::Cow, ops::Bound, rc::Rc};
 use mlx_internal_macros::default_device;
 use mlx_sys::{mlx_array_free, mlx_array_new};
 
-use crate::{error::Result, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
 pub(crate) mod index_impl;
 pub(crate) mod indexmut_impl;
@@ -336,15 +336,9 @@ impl Array {
         axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_take(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr()),
-                mlx_array_free(c_array)
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_take(res, self.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr())
+        })
     }
 
     /// Take elements from flattened 1-D array.
@@ -358,15 +352,9 @@ impl Array {
         indices: impl AsRef<Array>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        unsafe {
-            let mut c_array = mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_take_all(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, stream.as_ref().as_ptr()),
-                mlx_array_free(c_array)
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_take_all(res, self.c_array, indices.as_ref().c_array, stream.as_ref().as_ptr())
+        })
     }
 
     /// Take values along an axis at the specified indices.
@@ -389,15 +377,9 @@ impl Array {
             Some(ax) => (Cow::Borrowed(self), ax),
         };
 
-        unsafe {
-            let mut c_array = mlx_array_new();
-            check_status! {
-                mlx_sys::mlx_take_along_axis(&mut c_array as *mut _, input.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr()),
-                mlx_array_free(c_array)
-            };
-
-            Ok(Array::from_ptr(c_array))
-        }
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_take_along_axis(res, input.c_array, indices.as_ref().c_array, axis, stream.as_ref().as_ptr())
+        })
     }
 
     /// Put values along an axis at the specified indices.
@@ -418,27 +400,18 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         match axis.into() {
-            None => unsafe {
+            None => {
                 let input = self.reshape_device(&[-1], &stream)?;
-
-                let mut c_array = mlx_array_new();
-                check_status! {
-                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, input.c_array, indices.as_ref().c_array, values.as_ref().c_array, 0, stream.as_ref().as_ptr()),
-                    mlx_array_free(c_array)
-                };
-
-                let array = Array::from_ptr(c_array);
+                let array = Array::try_from_op(|res| unsafe{
+                    mlx_sys::mlx_put_along_axis(res, input.c_array, indices.as_ref().c_array, values.as_ref().c_array, 0, stream.as_ref().as_ptr())
+                })?;
                 let array = array.reshape_device(self.shape(), &stream)?;
                 Ok(array)
             },
-            Some(ax) => unsafe {
-                let mut c_array = mlx_array_new();
-                check_status! {
-                    mlx_sys::mlx_put_along_axis(&mut c_array as *mut _, self.c_array, indices.as_ref().c_array, values.as_ref().c_array, ax, stream.as_ref().as_ptr()),
-                    mlx_array_free(c_array)
-                };
-
-                Ok(Array::from_ptr(c_array))
+            Some(ax) => {
+                Array::try_from_op(|res| unsafe{
+                    mlx_sys::mlx_put_along_axis(res, self.c_array, indices.as_ref().c_array, values.as_ref().c_array, ax, stream.as_ref().as_ptr())
+                })
             },
         }
     }
@@ -462,15 +435,9 @@ pub fn argmax_device(
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argmax(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argmax(res, a.as_ref().c_array, axis, keep_dims, stream.as_ref().as_ptr())
+    })
 }
 
 /// Indices of the maximum value over the entire array.
@@ -487,15 +454,9 @@ pub fn argmax_all_device(
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argmax_all(&mut c_array as *mut _, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argmax_all(res, a.as_ref().c_array, keep_dims, stream.as_ref().as_ptr())
+    })
 }
 
 /// Indices of the minimum values along the axis.
@@ -516,15 +477,9 @@ pub fn argmin_device(
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argmin(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, keep_dims, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argmin(res, a.as_ref().c_array, axis, keep_dims, stream.as_ref().as_ptr())
+    })
 }
 
 /// Indices of the minimum value over the entire array.
@@ -541,15 +496,9 @@ pub fn argmin_all_device(
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argmin_all(&mut c_array as *mut _, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argmin_all(res, a.as_ref().c_array, keep_dims, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that partition the array.
@@ -573,15 +522,9 @@ pub fn argpartition_device(
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argpartition(&mut c_array as *mut _, a.as_ref().as_ptr(), kth, axis, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argpartition(res, a.as_ref().c_array, kth, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that partition the flattened array.
@@ -601,15 +544,9 @@ pub fn argpartition_all_device(
     kth: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argpartition_all(&mut c_array as *mut _, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argpartition_all(res, a.as_ref().c_array, kth, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that sort the array.
@@ -626,29 +563,17 @@ pub fn argsort_device(
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argsort(&mut c_array as *mut _, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argsort(res, a.as_ref().c_array, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the indices that sort the flattened array.
 #[default_device]
 pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_argsort_all(&mut c_array as *mut _, a.as_ref().as_ptr(), stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_argsort_all(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+    })
 }
 
 /// See [`Array::take_along_axis`]
@@ -716,29 +641,17 @@ pub fn topk_device(
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
 
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_topk(&mut c_array as *mut _, a.as_ref().as_ptr(), k, axis, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_topk(res, a.as_ref().c_array, k, axis, stream.as_ref().as_ptr())
+    })
 }
 
 /// Returns the `k` largest elements from the flattened input array.
 #[default_device]
 pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-    unsafe {
-        let mut c_array = mlx_array_new();
-        check_status! {
-            mlx_sys::mlx_topk_all(&mut c_array as *mut _, a.as_ref().as_ptr(), k, stream.as_ref().as_ptr()),
-            mlx_array_free(c_array)
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_topk_all(res, a.as_ref().c_array, k, stream.as_ref().as_ptr())
+    })
 }
 
 /* -------------------------------------------------------------------------- */

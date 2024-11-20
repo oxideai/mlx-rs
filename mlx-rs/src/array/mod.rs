@@ -251,7 +251,7 @@ impl Array {
     // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&self) -> crate::error::Result<()> {
-        <() as Guarded>::try_op(|_| unsafe {
+        <() as Guarded>::try_from_op(|_| unsafe {
             mlx_sys::mlx_array_eval(self.c_array)
         })
     }
@@ -277,7 +277,7 @@ impl Array {
         // Though `mlx_array_item_<dtype>` returns a status code, it doesn't
         // return any non-success status code even if the dtype doesn't match.
         if self.dtype() != T::DTYPE {
-            let new_array = Array::try_op(|res| unsafe {
+            let new_array = Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_astype(
                     res,
                     self.c_array,
@@ -413,7 +413,7 @@ impl Array {
 
 impl Clone for Array {
     fn clone(&self) -> Self {
-        Array::try_op(|res| unsafe { mlx_sys::mlx_array_set(res, self.c_array) })
+        Array::try_from_op(|res| unsafe { mlx_sys::mlx_array_set(res, self.c_array) })
             // Exception may be thrown when calling `new` in cpp.
             .expect("Failed to clone array")
     }
@@ -428,7 +428,7 @@ pub fn stop_gradient_device(
     a: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
 ) -> crate::error::Result<Array> {
-    Array::try_op(|res| unsafe {
+    Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_stop_gradient(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }

@@ -48,30 +48,6 @@ where
 
 impl<M> UnaryModule for M where for<'a> M: Module<&'a Array> {}
 
-/// Marker trait for a binary neural network module.
-///
-/// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
-/// tuple of two references to the inputs.
-pub trait BinaryModule
-where
-    for<'a> Self: Module<(&'a Array, &'a Array)>,
-{
-}
-
-impl<M> BinaryModule for M where for<'a> M: Module<(&'a Array, &'a Array)> {}
-
-/// Marker trait for a terary neural network module.
-///
-/// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
-/// tuple of three references to the inputs.
-pub trait TernaryModule
-where
-    for<'a> Self: Module<(&'a Array, &'a Array, &'a Array)>,
-{
-}
-
-impl<M> TernaryModule for M where for<'a> M: Module<(&'a Array, &'a Array, &'a Array)> {}
-
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {
     /// Get references to the module parameters.

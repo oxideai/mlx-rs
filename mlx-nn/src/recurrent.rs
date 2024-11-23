@@ -90,22 +90,26 @@ impl Rnn {
     ) -> Result<Rnn, Exception> {
         RnnBuilder::default().build(input_size, hidden_size, non_linearity)
     }
-}
 
-impl Module for Rnn {
-    type Error = Exception;
-
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let x = if let Some(bias) = &self.bias.value {
-            addmm(bias, x, self.wxh.t(), None, None)?
-        } else {
-            matmul(x, &self.wxh.t())?
-        };
-
-        todo!()
-    }
-
-    fn training_mode(&mut self, _mode: bool) {
+    fn forward_inner(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
 
     }
 }
+
+// impl Module for Rnn {
+//     type Error = Exception;
+
+//     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+//         let x = if let Some(bias) = &self.bias.value {
+//             addmm(bias, x, self.wxh.t(), None, None)?
+//         } else {
+//             matmul(x, &self.wxh.t())?
+//         };
+
+//         todo!()
+//     }
+
+//     fn training_mode(&mut self, _mode: bool) {
+
+//     }
+// }

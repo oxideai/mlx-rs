@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
-use mlx_internal_macros::generate_builder;
+use crate::{array, builder::Builder, ops::sqrt, utils::get_mut_or_insert_with, Array};
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
 
@@ -13,30 +13,34 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Zeiler, M.D., 2012. ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(manual_impl, root = crate)]
     pub struct AdaDelta {
         /// The learning rate
         pub lr: Array,
 
         /// The coefficient used for computing a running average of squared gradients. Default to
         /// [`AdaDelta::DEFAULT_RHO`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdaDelta::DEFAULT_RHO)]
         pub rho: Array,
 
         /// The epsilon added to the denominator to improve numerical stability. Default to
         /// [`AdaDelta::DEFAULT_EPS`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdaDelta::DEFAULT_EPS)]
         pub eps: Array,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState<(Array, Array)>,
     }
 }
 
-impl AdaDeltaBuilder {
+impl Builder<AdaDelta> for AdaDeltaBuilder {
+    type Error = AdaDeltaBuildError;
+
     /// Builds a new [`AdaDelta`] optimizer
-    pub fn build(self, lr: f32) -> Result<AdaDelta, AdaDeltaBuildError> {
+    fn build(self) -> Result<AdaDelta, AdaDeltaBuildError> {
         let rho = self.rho.unwrap_or(AdaDelta::DEFAULT_RHO);
         let eps = self.eps.unwrap_or(AdaDelta::DEFAULT_EPS);
 
@@ -49,7 +53,7 @@ impl AdaDeltaBuilder {
         }
 
         Ok(AdaDelta {
-            lr: array!(lr),
+            lr: array!(self.lr),
             rho: array!(rho),
             eps: array!(eps),
             state: OptimizerState::new(),

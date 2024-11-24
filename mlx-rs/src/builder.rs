@@ -6,7 +6,7 @@ pub trait Buildable: Sized {
 }
 
 /// Helper trait for builder
-pub trait Builder<T> {
+pub trait Builder<T: Buildable> {
     type Error: std::error::Error;
 
     fn build(self) -> Result<T, Self::Error>;

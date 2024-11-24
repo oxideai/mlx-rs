@@ -1,255 +1,141 @@
-use darling::FromAttributes;
-use proc_macro2::TokenTree;
+use darling::{FromDeriveInput, FromField};
 use quote::quote;
-use syn::{Attribute, Ident, ItemStruct, Path, Type, TypePath};
+use syn::{DeriveInput, TypeGenerics, WhereClause};
 
-#[derive(Debug, FromAttributes)]
-#[darling(attributes(generate_builder))]
-struct StructAttr {
-    generate_build_fn: Option<bool>,
-}
+use crate::{
+    derive_buildable::StructProperty,
+    derive_builder::{self, impl_builder, BuilderFieldProperty, BuilderStructProperty},
+    shared::{MandatoryField, OptionalField, PathOrIdent, Result},
+};
 
-#[derive(Debug, FromAttributes)]
-#[darling(attributes(optional))]
-struct FieldAttr {
-    default_value: Option<Path>,
-    skip: Option<bool>,
-    ty: Option<Path>,
-}
+pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2::TokenStream> {
+    let struct_prop = StructProperty::from_derive_input(&input)?;
+    let manual_impl_builder_trait = BuilderStructProperty::from_derive_input(&input)?
+        .manual_impl;
+    let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
-fn struct_attr_derive_default(attrs: &[Attribute]) -> bool {
-    attrs
-        .iter()
-        .filter_map(|attr| {
-            if attr.path().is_ident("derive") {
-                attr.meta
-                    .require_list()
-                    .map(|list| list.tokens.clone())
-                    .ok()
-            } else {
-                None
-            }
-        })
-        .any(|tokens| {
-            tokens.into_iter().any(|tree| {
-                if let TokenTree::Ident(ident) = tree {
-                    ident == "Default"
-                } else {
-                    false
-                }
-            })
-        })
-}
-
-fn attrs_contains_optional(attrs: &[Attribute]) -> bool {
-    attrs.iter().any(|attr| attr.path().is_ident("optional"))
-}
-
-fn remove_generate_builder_attr(attrs: &mut Vec<Attribute>) {
-    attrs.retain(|attr| !attr.path().is_ident("generate_builder"));
-}
-
-fn remove_optional_attr(attrs: &mut Vec<Attribute>) {
-    attrs.retain(|attr| !attr.path().is_ident("optional"));
-}
-
-pub(crate) fn expand_generate_builder(
-    mut input: ItemStruct,
-) -> Result<proc_macro2::TokenStream, Box<dyn std::error::Error>> {
-    if struct_attr_derive_default(&input.attrs) {
-        return Err("#[derive(Default)] is not allowed".into());
-    }
-
-    let generate_build_fn = StructAttr::from_attributes(&input.attrs)?
-        .generate_build_fn
-        .unwrap_or(true);
-    let struct_ident = &input.ident;
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-
-    let mut optional_field_idents = Vec::new();
-    let mut optional_field_types = Vec::new();
-    let mut optional_field_defaults = Vec::new();
-    let mut optional_field_skip = Vec::new();
-    let mut mandatory_field_idents = Vec::new();
-    let mut mandatory_field_types = Vec::new();
-
-    for field in input.fields.iter() {
-        if attrs_contains_optional(&field.attrs) {
-            let field_attr = FieldAttr::from_attributes(&field.attrs)?;
-            let skip = field_attr.skip.unwrap_or(false);
-            if skip && generate_build_fn {
-                return Err("Skip is not allowed when build function is generated".into());
-            }
-            optional_field_skip.push(skip);
-
-            optional_field_idents.push(
-                field
-                    .ident
-                    .as_ref()
-                    .ok_or("Only named fields are supported")?,
-            );
-
-            match field_attr.ty {
-                Some(path) => {
-                    if generate_build_fn {
-                        return Err("Type is not allowed when build function is generated".into());
-                    }
-                    let ty = Type::Path(TypePath { qself: None, path });
-                    optional_field_types.push(ty)
-                }
-                None => optional_field_types.push(field.ty.clone()),
-            }
-
-            if generate_build_fn {
-                optional_field_defaults.push(field_attr.default_value);
-            }
-        } else {
-            mandatory_field_idents.push(&field.ident);
-            mandatory_field_types.push(&field.ty);
-        }
-    }
-
-    let builder_ident = Ident::new(&format!("{}Builder", struct_ident), struct_ident.span());
-    let modified_optional_field_types = optional_field_types
-        .iter()
-        .zip(optional_field_skip.iter())
-        .map(|(field_type, skip)| {
-            if !skip {
-                quote! { Option<#field_type> }
-            } else {
-                quote! { #field_type }
-            }
-        });
-
-    let builder_struct_doc = format!("Builder for [`{}`]", struct_ident);
-    let field_doc = format!("See [`{}`] for more details", struct_ident);
-    let builder_struct = quote! {
-        #[doc = #builder_struct_doc]
-        #[derive(Debug, Clone, Default)]
-        pub struct #builder_ident #ty_generics #where_clause {
-            #(
-                #[doc = #field_doc]
-                pub #optional_field_idents: #modified_optional_field_types,
-            )*
-        }
+    let struct_ident = &struct_prop.ident;
+    let builder_ident = syn::Ident::new(&format!("{}Builder", struct_ident), struct_ident.span());
+    let root = match struct_prop.root {
+        Some(path) => path,
+        None => syn::parse_quote!(::mlx_rs),
     };
 
-    let builder_new_doc = format!("Create a new [`{}`]", builder_ident);
-    let struct_builder_doc = format!(
-        "Create a new [`{}`] builder with the default values",
-        struct_ident
+    let struct_builder_ident = match &struct_prop.builder {
+        Some(path) => PathOrIdent::Path(path.clone()),
+        None => PathOrIdent::Ident(builder_ident),
+    };
+
+    let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(&input)?;
+    let builder_struct = if struct_prop.builder.is_none() {
+        generate_builder_struct(
+            &struct_builder_ident,
+            &mandatory_fields,
+            &optional_fields,
+            &type_generics,
+            where_clause,
+        )
+    } else {
+        quote! {}
+    };
+    let impl_builder = impl_builder(
+        &struct_builder_ident,
+        struct_ident,
+        &root,
+        &impl_generics,
+        &type_generics,
+        where_clause,
+        &mandatory_fields,
+        &optional_fields,
+        manual_impl_builder_trait,
     );
 
-    let builder_init = quote! {
-        impl #impl_generics #builder_ident #ty_generics #where_clause {
-            #[doc = #builder_new_doc]
-            pub fn new() -> Self {
-                Self::default()
-            }
+    Ok(quote! {
+        #builder_struct
+        #impl_builder
+    })
+}
+
+fn parse_fields_from_derive_input(
+    item: &DeriveInput,
+) -> Result<(Vec<MandatoryField>, Vec<OptionalField>)> {
+    match &item.data {
+        syn::Data::Struct(data) => parse_fields_from_datastruct(data),
+        _ => Err("Only structs are supported".into()),
+    }
+}
+
+fn parse_fields_from_datastruct(
+    item: &syn::DataStruct,
+) -> Result<(Vec<MandatoryField>, Vec<OptionalField>)> {
+    parse_fields(&item.fields)
+}
+
+fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<OptionalField>)> {
+    let mut mandatory_fields = Vec::new();
+    let mut optional_fields = Vec::new();
+
+    let field_props = fields.iter().map(|field| BuilderFieldProperty::from_field(field));
+
+    for field_prop in field_props {
+        let field_prop = field_prop?;
+        if field_prop.ignore {
+            continue;
         }
 
-        impl #impl_generics #struct_ident #ty_generics #where_clause {
-            #[doc = #struct_builder_doc]
-            pub fn builder() -> #builder_ident #ty_generics {
-                #builder_ident::new()
-            }
+        let mut ident = match field_prop.ident {
+            Some(ident) => ident,
+            None => return Err("Unnamed fields are not supported".into()),
+        };
+
+        if let Some(rename) = field_prop.rename {
+            ident = syn::Ident::new(&rename, ident.span());
         }
-    };
 
-    let builder_setter_docs = optional_field_idents
-        .iter()
-        .zip(optional_field_skip.iter())
-        .filter_map(|(field_ident, skip)| {
-            if !skip {
-                Some(format!("Set the value of `{:?}`", field_ident))
-            } else {
-                None
-            }
-        });
-    let filtered_optional_field_idents = optional_field_idents
-        .iter()
-        .zip(optional_field_skip.iter())
-        .filter_map(|(field_ident, skip)| if !skip { Some(field_ident) } else { None });
-    let filtered_optional_field_types = optional_field_types
-        .iter()
-        .zip(optional_field_skip.iter())
-        .filter_map(|(field_type, skip)| if !skip { Some(field_type) } else { None });
+        let ty = match field_prop.ty_override {
+            Some(ty_override) => syn::Type::Path(syn::TypePath {
+                qself: None,
+                path: ty_override,
+            }),
+            None => field_prop.ty,
+        };
 
-    let builder_setters = quote! {
-        impl #impl_generics #builder_ident #ty_generics #where_clause {
-            #(
-                #[doc = #builder_setter_docs]
-                pub fn #filtered_optional_field_idents(mut self, value: impl Into<#filtered_optional_field_types>) -> Self {
-                    self.#filtered_optional_field_idents = Some(value.into());
-                    self
+        if field_prop.optional {
+            let default = match field_prop.default {
+                Some(default) => default,
+                None => {
+                    return Err(
+                        format!("Field {} is optional but has no default value", ident).into(),
+                    )
                 }
-            )*
+            };
+
+            optional_fields.push(OptionalField { ident, ty, default });
+        } else {
+            mandatory_fields.push(MandatoryField { ident, ty });
         }
-    };
-
-    let builder_build = if generate_build_fn {
-        let builder_build_doc = format!("Build a new [`{}`]", struct_ident);
-        let struct_new_doc = format!("Create a new [`{}`] with default values", struct_ident);
-        let optional_field_defaults: Vec<_> = optional_field_defaults
-            .iter()
-            .map(|default| {
-                default
-                    .clone()
-                    .ok_or("Default value must be supplied to generate build function")
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        quote! {
-            impl #impl_generics #builder_ident #ty_generics #where_clause {
-                #[doc = #builder_build_doc]
-                pub fn build(self, #(#mandatory_field_idents: #mandatory_field_types),*) -> #struct_ident #ty_generics {
-                    #struct_ident {
-                        #(
-                            #mandatory_field_idents,
-                        )*
-                        #(
-                            #optional_field_idents: self.#optional_field_idents.unwrap_or_else(|| #optional_field_defaults),
-                        )*
-                    }
-                }
-            }
-
-            impl #impl_generics #struct_ident #ty_generics #where_clause {
-                #[doc = #struct_new_doc]
-                pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
-                    Self::builder().build(#(#mandatory_field_idents),*)
-                }
-            }
-        }
-    } else {
-        quote! {}
-    };
-
-    // Only implement Default trait if no mandatory fields are present
-    let default_impl = if mandatory_field_idents.is_empty() && generate_build_fn {
-        quote! {
-            impl #impl_generics Default for #struct_ident #ty_generics #where_clause {
-                fn default() -> Self {
-                    Self::new()
-                }
-            }
-        }
-    } else {
-        quote! {}
-    };
-
-    // Clean up the attributes
-    remove_generate_builder_attr(&mut input.attrs);
-    for field in input.fields.iter_mut() {
-        remove_optional_attr(&mut field.attrs);
     }
 
-    Ok(quote! {
-        #input
-        #builder_struct
-        #builder_init
-        #builder_setters
-        #builder_build
-        #default_impl
-    })
+    Ok((mandatory_fields, optional_fields))
+}
+
+fn generate_builder_struct<'a>(
+    ident: &PathOrIdent,
+    mandatory_fields: &[MandatoryField],
+    optional_fields: &[OptionalField],
+    type_generics: &TypeGenerics<'a>,
+    where_clause: Option<&'a WhereClause>,
+) -> proc_macro2::TokenStream {
+    let mandatory_field_idents = mandatory_fields.iter().map(|field| &field.ident);
+    let mandatory_field_tys = mandatory_fields.iter().map(|field| &field.ty);
+
+    let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
+    let optional_field_tys = optional_fields.iter().map(|field| &field.ty);
+
+    quote! {
+        struct #ident #type_generics #where_clause {
+            #(#mandatory_field_idents: #mandatory_field_tys,)*
+            #(#optional_field_idents: #optional_field_tys,)*
+        }
+    }
 }

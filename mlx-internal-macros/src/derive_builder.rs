@@ -1,9 +1,45 @@
 use std::default;
 
+use darling::FromDeriveInput;
 use quote::{quote, ToTokens};
-use syn::{Ident, ImplGenerics, TypeGenerics, WhereClause};
+use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
 
 use crate::shared::{MandatoryField, OptionalField, PathOrIdent, Result};
+
+#[derive(Debug, Clone, FromDeriveInput)]
+#[darling(attributes(builder))]
+pub(crate) struct BuilderStructProperty {
+    pub ident: Ident,
+    
+    #[darling(default)]
+    pub manual_impl: bool,
+    
+    pub root: Option<syn::Path>,
+}
+
+#[derive(Debug, darling::FromField, PartialEq)]
+#[darling(attributes(builder))]
+pub(crate) struct BuilderFieldProperty {
+    pub ident: Option<syn::Ident>,
+    
+    pub ty: syn::Type,
+    
+    #[darling(default)]
+    pub optional: bool,
+    
+    pub default: Option<syn::Path>,
+    
+    pub rename: Option<String>,
+    
+    #[darling(default)]
+    pub ignore: bool,
+
+    pub ty_override: Option<syn::Path>,
+}
+
+pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::TokenStream> {
+    todo!()
+}
 
 fn impl_builder_setters(
     builder_struct_ident: &PathOrIdent,
@@ -90,19 +126,24 @@ pub(crate) fn impl_builder<'a>(
     where_clause: Option<&'a WhereClause>,
     mandatory_fields: &[MandatoryField],
     optional_fields: &[OptionalField],
+    manual_impl: bool,
 ) -> proc_macro2::TokenStream {
     let builder_new = impl_builder_new(builder_struct_ident, mandatory_fields, optional_fields);
     let builder_setters = impl_builder_setters(builder_struct_ident, optional_fields);
-    let builder_trait = impl_builder_trait(
-        builder_struct_ident,
-        struct_ident,
-        root,
-        impl_generics,
-        type_generics,
-        where_clause,
-        mandatory_fields,
-        optional_fields,
-    );
+    let builder_trait = if !manual_impl {
+        impl_builder_trait(
+            builder_struct_ident,
+            struct_ident,
+            root,
+            impl_generics,
+            type_generics,
+            where_clause,
+            mandatory_fields,
+            optional_fields,
+        )
+    } else {
+        quote! {}
+    };
 
     quote! {
         #builder_new

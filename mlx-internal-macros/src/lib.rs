@@ -8,7 +8,7 @@ use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemEnum, ItemFn, 
 mod generate_builder;
 mod derive_buildable;
 mod derive_builder;
-pub(crate) mod shared;
+mod shared;
 
 #[derive(Debug, FromMeta)]
 enum DeviceType {
@@ -210,15 +210,27 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 #[doc(hidden)]
 #[proc_macro]
 pub fn generate_builder(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as ItemStruct);
-    let builder = generate_builder::expand_generate_builder(input).unwrap();
+    // let input = parse_macro_input!(input as ItemStruct);
+    let input = parse_macro_input!(input as DeriveInput);
+    let builder = generate_builder::expand_generate_builder(&input).unwrap();
+    quote::quote! {
+        #input
+        #builder
+    }.into()
+}
+
+#[doc(hidden)]
+#[proc_macro_derive(Buildable, attributes(buildable, builder))]
+pub fn derive_buildable(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let builder = derive_buildable::expand_derive_buildable(input).unwrap();
     TokenStream::from(builder)
 }
 
 #[doc(hidden)]
-#[proc_macro_derive(Buildable, attributes(buildable))]
-pub fn derive_buildable(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Builder, attributes(builder))]
+pub fn derive_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let builder = derive_buildable::expand_derive_buildable(input).unwrap();
+    let builder = derive_builder::expand_derive_builder(input).unwrap();
     TokenStream::from(builder)
 }

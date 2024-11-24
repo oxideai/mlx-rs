@@ -3,9 +3,12 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, parse_quote, FnArg, ItemEnum, ItemFn, ItemStruct, Pat};
+use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemEnum, ItemFn, ItemStruct, Pat};
 
 mod generate_builder;
+mod derive_buildable;
+mod derive_builder;
+pub(crate) mod shared;
 
 #[derive(Debug, FromMeta)]
 enum DeviceType {
@@ -209,5 +212,13 @@ pub fn generate_test_cases(input: TokenStream) -> TokenStream {
 pub fn generate_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemStruct);
     let builder = generate_builder::expand_generate_builder(input).unwrap();
+    TokenStream::from(builder)
+}
+
+#[doc(hidden)]
+#[proc_macro_derive(Buildable, attributes(buildable))]
+pub fn derive_buildable(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let builder = derive_buildable::expand_derive_buildable(input).unwrap();
     TokenStream::from(builder)
 }

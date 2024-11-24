@@ -5,6 +5,7 @@
 mod macros; // Must be first to ensure the other modules can use the macros
 
 mod array;
+pub mod builder;
 mod device;
 mod dtype;
 pub mod error;

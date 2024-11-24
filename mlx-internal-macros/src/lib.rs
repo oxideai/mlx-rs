@@ -3,7 +3,7 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemEnum, ItemFn, ItemStruct, Pat};
+use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemEnum, ItemFn, Pat};
 
 mod generate_builder;
 mod derive_buildable;

@@ -1,44 +1,47 @@
-use std::default;
 
 use darling::FromDeriveInput;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
 
-use crate::shared::{MandatoryField, OptionalField, PathOrIdent, Result};
+use crate::shared::{parse_fields_from_derive_input, MandatoryField, OptionalField, PathOrIdent, Result, BuilderStructProperty};
 
-#[derive(Debug, Clone, FromDeriveInput)]
-#[darling(attributes(builder))]
-pub(crate) struct BuilderStructProperty {
-    pub ident: Ident,
-    
-    #[darling(default)]
-    pub manual_impl: bool,
-    
-    pub root: Option<syn::Path>,
-}
-
-#[derive(Debug, darling::FromField, PartialEq)]
-#[darling(attributes(builder))]
-pub(crate) struct BuilderFieldProperty {
-    pub ident: Option<syn::Ident>,
-    
-    pub ty: syn::Type,
-    
-    #[darling(default)]
-    pub optional: bool,
-    
-    pub default: Option<syn::Path>,
-    
-    pub rename: Option<String>,
-    
-    #[darling(default)]
-    pub ignore: bool,
-
-    pub ty_override: Option<syn::Path>,
-}
 
 pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::TokenStream> {
-    todo!()
+    let struct_prop = BuilderStructProperty::from_derive_input(&input)?;
+    let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
+
+    let builder_ident = &struct_prop.ident;
+    if !is_builder_struct_end_with_builder(builder_ident) {
+        return Err("Builder struct must end with 'Builder'".into());
+    }
+    let builder_ident_str = builder_ident.to_string();
+    let struct_ident = Ident::new(
+        // We have already checked that the builder struct ends with 'Builder'
+        &builder_ident_str[..builder_ident_str.len() - "Builder".len()],
+        builder_ident.span(),
+    );
+    let root = match struct_prop.root {
+        Some(path) => path,
+        None => syn::parse_quote!(::mlx_rs),
+    };
+
+    let builder_struct_ident = PathOrIdent::Ident(builder_ident.clone());
+    let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(&input)?;
+    Ok(impl_builder(
+        &builder_struct_ident,
+        &struct_ident,
+        &root,
+        &impl_generics,
+        &type_generics,
+        where_clause,
+        &mandatory_fields,
+        &optional_fields,
+        struct_prop.manual_impl,
+    ))
+}
+
+fn is_builder_struct_end_with_builder(ident: &Ident) -> bool {
+    ident.to_string().ends_with("Builder")
 }
 
 fn impl_builder_setters(
@@ -90,6 +93,7 @@ fn impl_builder_new(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn impl_builder_trait<'a>(
     builder_struct_ident: &PathOrIdent,
     struct_ident: &Ident,

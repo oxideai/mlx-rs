@@ -1,8 +1,8 @@
-use darling::{FromDeriveInput, FromField, FromMeta};
-use quote::{quote, ToTokens};
-use syn::{DeriveInput, ItemStruct, TypeGenerics, WhereClause};
+use darling::FromDeriveInput;
+use quote::quote;
+use syn::DeriveInput;
 
-use crate::{derive_builder::impl_builder, shared::{MandatoryField, OptionalField, PathOrIdent, Result}};
+use crate::shared::{PathOrIdent, Result};
 
 #[derive(Debug, Clone, FromDeriveInput)]
 #[darling(attributes(buildable))]

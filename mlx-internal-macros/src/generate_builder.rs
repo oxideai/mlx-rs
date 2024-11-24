@@ -40,7 +40,7 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
 
     let builder_struct = if struct_prop.builder.is_none() {
         generate_builder_struct(
-            &struct_ident,
+            struct_ident,
             &struct_builder_ident,
             &mandatory_fields,
             &optional_fields,
@@ -113,10 +113,11 @@ fn impl_struct_new<'a>(
     quote! {
         impl #impl_generics #struct_ident #type_generics #where_clause {
             #[doc = #doc]
-            pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) 
-                -> Result<Self, <<Self as #root::builder::Buildable>::Builder as #root::builder::Builder<Self>>::Error> 
+            pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self
             {
+                use #root::builder::Builder;
                 <Self as #root::builder::Buildable>::Builder::new(#(#mandatory_field_idents),*).build()
+                    .unwrap()
             }
         }
     }

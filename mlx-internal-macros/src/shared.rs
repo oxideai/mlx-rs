@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use quote::ToTokens;
-use syn::DeriveInput;
+use syn::{DeriveInput, Ident};
 use darling::{FromDeriveInput, FromField};
 
 pub(crate) type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -35,6 +35,8 @@ pub(crate) struct BuilderFieldProperty {
     pub ignore: bool,
 
     pub ty_override: Option<syn::Path>,
+
+    pub setter: Option<syn::Ident>,
 }
 
 pub(crate) struct MandatoryField {
@@ -46,6 +48,7 @@ pub(crate) struct OptionalField {
     pub ident: syn::Ident,
     pub ty: syn::Type,
     pub default: syn::Path,
+    pub setter: Option<Ident>,
 }
 
 
@@ -103,7 +106,7 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
                 }
             };
 
-            optional_fields.push(OptionalField { ident, ty, default });
+            optional_fields.push(OptionalField { ident, ty, default, setter: field_prop.setter });
         } else {
             mandatory_fields.push(MandatoryField { ident, ty });
         }

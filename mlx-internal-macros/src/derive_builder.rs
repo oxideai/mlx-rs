@@ -44,35 +44,14 @@ fn is_builder_struct_end_with_builder(ident: &Ident) -> bool {
     ident.to_string().ends_with("Builder")
 }
 
-fn impl_builder_setters(
-    builder_struct_ident: &PathOrIdent,
-    optional_fields: &[OptionalField],
-) -> proc_macro2::TokenStream {
-    let setters = optional_fields.iter().map(|field| {
-        let ident = &field.ident;
-        let ty = &field.ty;
-        let default = &field.default;
-        let doc = format!("Sets the value of [`{}`].", ident.to_string());
-        quote! {
-            #[doc = #doc]
-            pub fn #ident(mut self, #ident: impl Into<Option<#ty>>) -> Self {
-                self.#ident = #ident.into().unwrap_or(#default);
-                self
-            }
-        }
-    });
 
-    quote! {
-        impl #builder_struct_ident {
-            #(#setters)*
-        }
-    }
-}
-
-fn impl_builder_new(
+fn impl_builder_new<'a>(
     builder_struct_ident: &PathOrIdent,
     mandatory_fields: &[MandatoryField],
     optional_fields: &[OptionalField],
+    impl_generics: &'a ImplGenerics,
+    type_generics: &TypeGenerics<'a>,
+    where_clause: Option<&'a WhereClause>,
 ) -> proc_macro2::TokenStream {
     let mandatory_field_idents = mandatory_fields
         .iter()
@@ -85,11 +64,11 @@ fn impl_builder_new(
 
     let doc = format!(
         "Creates a new [`{}`].",
-        builder_struct_ident.to_string()
+        builder_struct_ident
     );
 
     quote! {
-        impl #builder_struct_ident {
+        impl #impl_generics #builder_struct_ident #type_generics #where_clause {
             #[doc = #doc]
             pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
                 Self {
@@ -97,6 +76,42 @@ fn impl_builder_new(
                     #(#optional_field_idents: #optional_field_defaults,)*
                 }
             }
+        }
+    }
+}
+
+
+fn impl_builder_setters<'a>(
+    builder_struct_ident: &PathOrIdent,
+    optional_fields: &[OptionalField],
+    impl_generics: &'a ImplGenerics,
+    type_generics: &TypeGenerics<'a>,
+    where_clause: Option<&'a WhereClause>,
+) -> proc_macro2::TokenStream {
+    let setters = optional_fields.iter().map(|field| {
+        let ident = &field.ident;
+        let ty = &field.ty;
+        let doc = format!("Sets the value of [`{}`].", ident);
+
+        let setter = match &field.setter {
+            Some(setter) => quote!{#setter(self, #ident)},
+            None => quote!{
+                self.#ident = #ident.into();
+                self
+            },
+        };
+
+        quote! {
+            #[doc = #doc]
+            pub fn #ident(mut self, #ident: impl Into<#ty>) -> Self {
+                #setter
+            }
+        }
+    });
+
+    quote! {
+        impl #impl_generics #builder_struct_ident #type_generics #where_clause {
+            #(#setters)*
         }
     }
 }
@@ -116,10 +131,10 @@ fn impl_builder_trait<'a>(
     let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
 
     quote! {
-        impl #impl_generics #root::builder::Builder<#struct_ident> for #builder_struct_ident #type_generics #where_clause {
+        impl #impl_generics #root::builder::Builder<#struct_ident #type_generics> for #builder_struct_ident #type_generics #where_clause {
             type Error = std::convert::Infallible;
 
-            fn build(self) -> std::result::Result<#struct_ident, Self::Error> {
+            fn build(self) -> std::result::Result<#struct_ident #type_generics, Self::Error> {
                 Ok(#struct_ident {
                     #(#mandatory_field_idents: self.#mandatory_field_idents,)*
                     #(#optional_field_idents: self.#optional_field_idents,)*
@@ -129,6 +144,7 @@ fn impl_builder_trait<'a>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn impl_builder<'a>(
     builder_struct_ident: &PathOrIdent,
     struct_ident: &Ident,
@@ -140,8 +156,8 @@ pub(crate) fn impl_builder<'a>(
     optional_fields: &[OptionalField],
     manual_impl: bool,
 ) -> proc_macro2::TokenStream {
-    let builder_new = impl_builder_new(builder_struct_ident, mandatory_fields, optional_fields);
-    let builder_setters = impl_builder_setters(builder_struct_ident, optional_fields);
+    let builder_new = impl_builder_new(builder_struct_ident, mandatory_fields, optional_fields, impl_generics, type_generics, where_clause);
+    let builder_setters = impl_builder_setters(builder_struct_ident, optional_fields, impl_generics, type_generics, where_clause);
     let builder_trait = if !manual_impl {
         impl_builder_trait(
             builder_struct_ident,

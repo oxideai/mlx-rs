@@ -35,7 +35,7 @@ pub(crate) fn expand_derive_buildable(input: DeriveInput) -> Result<proc_macro2:
 
     let impl_buildable = quote! {
         impl #impl_generics #root::builder::Buildable for #struct_ident #type_generics #where_clause {
-            type Builder = #struct_builder_ident;
+            type Builder = #struct_builder_ident #type_generics;
         }
     };
 

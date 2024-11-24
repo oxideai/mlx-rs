@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 
 use mlx_internal_macros::{generate_builder, Buildable};
 use mlx_macros::ModuleParameters;
+use mlx_rs::builder;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,
@@ -267,10 +268,10 @@ generate_builder! {
     ///
     /// This splits the `axis` dimension of the input into two halves
     /// (`a` and `b`) and applies `a * sigmoid(b)`.
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Glu {
         /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
-        #[optional(default_value = Glu::DEFAULT_AXIS)]
+        #[builder(optional, default = Glu::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -365,10 +366,10 @@ generate_builder! {
     /// ```rust, ignore
     /// maximum(neg_slope * x, x)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct LeakyRelu {
         /// The negative slope. Default to [`LeakyReLU::DEFAULT_NEG_SLOPE`] if not provided.
-        #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
+        #[builder(optional, default = LeakyRelu::DEFAULT_NEG_SLOPE)]
         pub neg_slope: f32,
     }
 }
@@ -416,10 +417,10 @@ generate_builder! {
     /// ```rust, ignore
     /// softmax(&x, None, None)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Softmax {
         /// The axis to apply the softmax.
-        #[optional(default_value = Softmax::DEFAULT_AXIS)]
+        #[builder(optional, default = Softmax::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -488,10 +489,10 @@ generate_builder! {
     /// maximum(x, 0.0).unwrap()
     ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Celu {
         /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
-        #[optional(default_value = Celu::DEFAULT_ALPHA)]
+        #[builder(optional, default = Celu::DEFAULT_ALPHA)]
         pub alpha: f32,
     }
 }
@@ -539,10 +540,10 @@ generate_builder! {
     /// ```rust, ignore
     /// x - log_sum_exp(x, axis, true)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct LogSoftmax {
         /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
-        #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
+        #[builder(optional, default = LogSoftmax::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -686,10 +687,10 @@ generate_builder! {
     /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
     /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
     /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Gelu {
         /// The approximation to use. Default to `GeluApprox::None` if not provided.
-        #[optional(default_value = GeluApprox::None)]
+        #[builder(optional, default = GeluApprox::None)]
         pub approximate: GeluApprox,
     }
 }
@@ -753,10 +754,10 @@ generate_builder! {
     /// ```rust, ignore
     /// r#where(x.gt(threshold), 1, 0)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Step {
         /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
-        #[optional(default_value = Step::DEFAULT_THRESHOLD)]
+        #[builder(optional, default = Step::DEFAULT_THRESHOLD)]
         pub threshold: f32,
     }
 }
@@ -951,7 +952,7 @@ mod tests {
             140.096_68,
             abs <= 2.801_933_5
         );
-        let result = Glu::default().forward(&a).unwrap();
+        let result = Glu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1075,7 +1076,7 @@ mod tests {
             127.982_254,
             abs <= 2.559_645_2
         );
-        let result = LeakyRelu::default().forward(&a).unwrap();
+        let result = LeakyRelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1137,7 +1138,7 @@ mod tests {
             131.685_46,
             abs <= 2.633_709_2
         );
-        let result = Softmax::default().forward(&a).unwrap();
+        let result = Softmax::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1230,7 +1231,7 @@ mod tests {
             119.487_53,
             abs <= 2.389_750_7
         );
-        let result = Celu::default().forward(&a).unwrap();
+        let result = Celu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1292,7 +1293,7 @@ mod tests {
             135.127_99,
             abs <= 2.702_559_7
         );
-        let result = LogSoftmax::default().forward(&a).unwrap();
+        let result = LogSoftmax::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1385,7 +1386,7 @@ mod tests {
             126.195_28,
             abs <= 2.523_905_8
         );
-        let result = Gelu::default().forward(&a).unwrap();
+        let result = Gelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1478,7 +1479,7 @@ mod tests {
             122.716_324,
             abs <= 2.454_326_4
         );
-        let result = Step::default().forward(&a).unwrap();
+        let result = Step::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Int32);
         assert_float_eq!(

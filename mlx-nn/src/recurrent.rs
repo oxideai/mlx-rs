@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use mlx_internal_macros::generate_builder;
 use mlx_macros::ModuleParameters;
-use mlx_rs::{error::Exception, module::{Module, Param}, ops::{addmm, matmul}, random::uniform, Array, Stream};
+use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{addmm, matmul, sigmoid, split, split_equal, stack, tanh}, prelude::{Ellipsis, IndexOp}, random::uniform, Array, Stream};
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
@@ -92,24 +92,147 @@ impl Rnn {
     }
 
     fn forward_inner(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+        let x = if let Some(bias) = &self.bias.value {
+            addmm(bias, x, self.wxh.t(), None, None)?
+        } else {
+            matmul(x, &self.wxh.t())?
+        };
 
+        let mut all_hidden = Vec::new();
+        for index in 0..x.dim(-2) {
+            let hidden = match hidden {
+                Some(hidden_) => addmm(x.index((Ellipsis, index, 0..)), hidden_, self.whh.t(), None, None)?,
+                None => x.index((Ellipsis, index, 0..)),
+            };
+
+            let hidden = (self.non_linearity)(&hidden, &Stream::default())?;
+            all_hidden.push(hidden);
+        }
+
+        stack(&all_hidden[..], -2)
     }
 }
 
-// impl Module for Rnn {
-//     type Error = Exception;
+generate_builder! {
+    /// A gated recurrent unit (GRU) RNN layer.
+    #[derive(Debug, Clone, ModuleParameters)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct Gru {
+        /// Dimension of the hidden state, `H`
+        pub hidden_size: i32,
 
-//     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-//         let x = if let Some(bias) = &self.bias.value {
-//             addmm(bias, x, self.wxh.t(), None, None)?
-//         } else {
-//             matmul(x, &self.wxh.t())?
-//         };
+        /// Wx
+        #[param]
+        pub wx: Param<Array>,
 
-//         todo!()
-//     }
+        /// Wh
+        #[param]
+        pub wh: Param<Array>,
 
-//     fn training_mode(&mut self, _mode: bool) {
+        /// Bias. Enabled by default.
+        #[param]
+        #[optional(ty = bool)]
+        pub bias: Param<Option<Array>>,
 
-//     }
-// }
+        /// bhn. Enabled by default.
+        #[param]
+        pub bhn: Param<Option<Array>>,
+    }
+}
+
+impl GruBuilder {
+    /// Build the [`Gru`] module.
+    pub fn build(self, input_size: i32, hidden_size: i32) -> Result<Gru, Exception> {
+        let scale = 1.0 / f32::sqrt(hidden_size as f32);
+        let wx = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
+        let wh = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
+        let (bias, bhn) = if self.bias.unwrap_or(Gru::DEFAULT_BIAS) {
+            let bias = uniform::<_, f32>(-scale, scale, &[3 * hidden_size], None)?;
+            let bhn = uniform::<_, f32>(-scale, scale, &[hidden_size], None)?;
+            (Some(bias), Some(bhn))
+        } else {
+            (None, None)
+        };
+
+        Ok(Gru {
+            hidden_size,
+            wx: Param::new(wx),
+            wh: Param::new(wh),
+            bias: Param::new(bias),
+            bhn: Param::new(bhn),
+        })
+    }
+}
+
+impl Gru {
+    /// Enable `bias` and `bhn` by default
+    pub const DEFAULT_BIAS: bool = true;
+
+    /// Create a new [`Gru`] layer.
+    pub fn new(input_size: i32, hidden_size: i32) -> Result<Gru, Exception> {
+        GruBuilder::default().build(input_size, hidden_size)
+    }
+
+    fn forward_inner(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+        let x = if let Some(b) = &self.bias.value {
+            addmm(b, x, self.wx.t(), None, None)?
+        } else {
+            matmul(x, &self.wx.t())?
+        };
+
+        let x_rz = x.index((Ellipsis, ..(-self.hidden_size)));
+        let x_n = x.index((Ellipsis, (-self.hidden_size)..));
+
+        let mut all_hidden = Vec::new();
+
+        for index in 0..x.dim(-2) {
+            let mut rz = x_rz.index((Ellipsis, index, 0..));
+            let mut h_proj_n = None;
+            if let Some(hidden_) = hidden {
+                let h_proj = matmul(hidden_, &self.wh.t())?;
+                let h_proj_rz = h_proj.index((Ellipsis, 0..(-self.hidden_size)));
+                h_proj_n = Some(h_proj.index((Ellipsis, (-self.hidden_size)..)));
+
+                if let Some(bhn) = &self.bhn.value {
+                    h_proj_n = h_proj_n.map(|h_proj_n| h_proj_n.add(bhn))
+                        // This is not matrix transpose, but from `Option<Result<_>>` to `Result<Option<_>>`
+                        .transpose()?;
+                }
+
+                rz = rz.add(h_proj_rz)?;
+
+            }
+            
+            rz = sigmoid(&rz);
+
+            let parts = split_equal(&rz, 2, -1)?;
+            let r = &parts[0];
+            let z = &parts[1];
+
+            let mut n = x_n.index((Ellipsis, index, 0..));
+
+            if let Some(h_proj_n) = h_proj_n {
+                n = n.add(r.multiply(h_proj_n)?)?;
+            }
+            n = tanh(&n);
+
+            let hidden = match hidden {
+                Some(hidden) => {
+                    array!(1.0)
+                        .subtract(z)?
+                        .multiply(&n)?
+                        .add(z.multiply(hidden)?)?
+                },
+                None => {
+                    array!(1.0)
+                        .subtract(z)?
+                        .multiply(&n)?
+                },
+            };
+
+            all_hidden.push(hidden);
+        }
+
+        stack(&all_hidden[..], -2)
+    }
+}

@@ -2,14 +2,13 @@ use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
-    builder::Builder,
     error::Exception,
     ops::{conv1d, conv2d, zeros},
     random::uniform,
     Array,
 };
 
-use crate::utils::{IntOrPair, IntOrTriple};
+use crate::utils::{SingleOrPair, SingleOrTriple};
 
 /// Builder for the `Conv1d` module.
 #[derive(Debug, Clone, Builder)]
@@ -103,15 +102,6 @@ impl Conv1d {
 
     /// Default value for `stride` if not specified.
     pub const DEFAULT_STRIDE: i32 = 1;
-
-    /// Creates a new Conv1d module with all optional parameters set to their default values.
-    pub fn new(
-        input_channels: i32,
-        output_channels: i32,
-        kernel_size: i32,
-    ) -> Result<Self, Exception> {
-        Conv1dBuilder::new(input_channels, output_channels, kernel_size).build()
-    }
 }
 
 impl Module for Conv1d {
@@ -149,7 +139,7 @@ pub struct Conv2dBuilder {
     pub output_channels: i32,
 
     /// Size of the convolution filters.
-    pub kernel_size: (i32, i32),
+    pub kernel_size: SingleOrPair<i32>,
 
     /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_BIAS`] if not
     /// specified.
@@ -158,20 +148,20 @@ pub struct Conv2dBuilder {
 
     /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv2d::DEFAULT_PADDING)]
-    pub padding: (i32, i32),
+    pub padding: SingleOrPair<i32>,
 
     /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = Conv2d::DEFAULT_STRIDE)]
-    pub stride: (i32, i32),
+    pub stride: SingleOrPair<i32>,
 }
 
 fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
-    let kernel_size = builder.kernel_size;
+    let kernel_size: (i32, i32) = builder.kernel_size.into();
     let with_bias = builder.bias;
-    let padding = builder.padding;
-    let stride = builder.stride;
+    let padding = builder.padding.into();
+    let stride = builder.stride.into();
 
     let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
     let weight = uniform::<_, f32>(
@@ -229,26 +219,10 @@ impl Conv2d {
     pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: (i32, i32) = (0, 0);
+    pub const DEFAULT_PADDING: SingleOrPair = SingleOrPair::Pair(0, 0);
 
     /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: (i32, i32) = (1, 1);
-
-    /// Creates a new 2-dimensional convolution layer.
-    ///
-    /// # Params
-    ///
-    /// - `input_channels`: number of input channels
-    /// - `output_channels`: number of output channels
-    /// - `kernel_size`: size of the convolution filters
-    pub fn new(
-        input_channels: i32,
-        output_channels: i32,
-        kernel_size: impl IntOrPair,
-    ) -> Result<Self, Exception> {
-        let kernel_size = kernel_size.into_pair();
-        Conv2dBuilder::new(input_channels, output_channels, kernel_size).build()
-    }
+    pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
 }
 
 impl Module for Conv2d {
@@ -286,7 +260,7 @@ pub struct Conv3dBuilder {
     pub output_channels: i32,
 
     /// Size of the convolution filters.
-    pub kernel_size: (i32, i32, i32),
+    pub kernel_size: SingleOrTriple<i32>,
 
     /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_BIAS`] if not
     /// specified.
@@ -295,20 +269,20 @@ pub struct Conv3dBuilder {
 
     /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv3d::DEFAULT_PADDING)]
-    pub padding: (i32, i32, i32),
+    pub padding:  SingleOrTriple<i32>,
 
     /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = Conv3d::DEFAULT_STRIDE)]
-    pub stride: (i32, i32, i32),
+    pub stride:  SingleOrTriple<i32>,
 }
 
 fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
-    let kernel_size = builder.kernel_size;
+    let kernel_size: (i32, i32, i32) = builder.kernel_size.into();
     let with_bias = builder.bias;
-    let padding = builder.padding;
-    let stride = builder.stride;
+    let padding = builder.padding.into();
+    let stride = builder.stride.into();
 
     let scale =
         f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1 * kernel_size.2) as f32);
@@ -368,26 +342,10 @@ impl Conv3d {
     pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: (i32, i32, i32) = (0, 0, 0);
+    pub const DEFAULT_PADDING: SingleOrTriple<i32> = SingleOrTriple::Triple(0, 0, 0);
 
     /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: (i32, i32, i32) = (1, 1, 1);
-
-    /// Creates a new 3-dimensional convolution layer.
-    ///
-    /// # Params
-    ///
-    /// - `input_channels`: number of input channels
-    /// - `output_channels`: number of output channels
-    /// - `kernel_size`: size of the convolution filters
-    pub fn new(
-        input_channels: i32,
-        output_channels: i32,
-        kernel_size: impl IntOrTriple,
-    ) -> Result<Self, Exception> {
-        let kernel_size = kernel_size.into_triple();
-        Conv3dBuilder::new(input_channels, output_channels, kernel_size).build()
-    }
+    pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
 impl Module for Conv3d {

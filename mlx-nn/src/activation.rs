@@ -3,7 +3,6 @@ use std::f32::consts::PI;
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
-use mlx_rs::prelude::Builder;
 use mlx_rs::{
     array,
     error::Exception,
@@ -594,6 +593,7 @@ impl Module for LogSigmoid {
 pub struct Prelu {
     /// The alpha value. See [`prelu`] for more details.
     #[param]
+    #[builder(ignore)]
     pub weight: Param<Array>, // TODO: double check if this is trainable
 }
 
@@ -601,6 +601,7 @@ pub struct Prelu {
 #[derive(Debug, Clone, Builder)]
 #[builder(
     build_with = build_prelu,
+    default_infallible,
     err = Exception,
 )]
 pub struct PreluBuilder {
@@ -621,25 +622,12 @@ fn build_prelu(builder: PreluBuilder) -> Result<Prelu, Exception> {
     Ok(Prelu { weight })
 }
 
-impl Default for Prelu {
-    fn default() -> Self {
-        Prelu::new()
-    }
-}
-
 impl Prelu {
     /// The default count value.
     pub const DEFAULT_COUNT: i32 = 1;
 
     /// The default value.
     pub const DEFAULT_VALUE: f32 = 0.25;
-
-    /// Creates a new Prelu module with the default values.
-    pub fn new() -> Prelu {
-        PreluBuilder::new()
-            .build()
-            .expect("Default value should be valid")
-    }
 }
 
 impl Module for Prelu {
@@ -1342,7 +1330,7 @@ mod tests {
             127.142_77,
             abs <= 2.542_855_3
         );
-        let result = Prelu::default().forward(&a).unwrap();
+        let result = Prelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(

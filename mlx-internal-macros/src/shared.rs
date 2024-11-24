@@ -16,6 +16,9 @@ pub(crate) struct BuilderStructProperty {
     pub root: Option<syn::Path>,
 
     pub err: Option<syn::Path>,
+
+    /// Whether building with the default parameters can fail
+    pub default_infallible: Option<bool>,
 }
 
 pub(crate) struct BuilderStructAnalyzer<'a> {
@@ -84,9 +87,9 @@ impl<'a> BuilderStructAnalyzer<'a> {
         quote! {
             impl #impl_generics #builder_struct_ident #type_generics #where_clause {
                 #[doc = #doc]
-                pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
+                pub fn new(#(#mandatory_field_idents: impl Into<#mandatory_field_types>),*) -> Self {
                     Self {
-                        #(#mandatory_field_idents,)*
+                        #(#mandatory_field_idents: #mandatory_field_idents.into(),)*
                         #(#optional_field_idents: #optional_field_defaults,)*
                     }
                 }
@@ -99,25 +102,21 @@ impl<'a> BuilderStructAnalyzer<'a> {
         let impl_generics = self.impl_generics;
         let type_generics = self.type_generics;
         let where_clause = self.where_clause;
-        let setters = self.optional_fields.iter().map(|field| {
+        let setters = self.optional_fields.iter().filter_map(|field| {
+            if field.skip_setter {
+                return None;
+            }
+
             let ident = &field.ident;
             let ty = &field.ty;
             let doc = format!("Sets the value of [`{}`].", ident);
-
-            let setter = match &field.setter {
-                Some(setter) => quote! {#setter(self, #ident)},
-                None => quote! {
-                    self.#ident = #ident.into();
-                    self
-                },
-            };
-
-            quote! {
+            Some(quote! {
                 #[doc = #doc]
                 pub fn #ident(mut self, #ident: impl Into<#ty>) -> Self {
-                    #setter
+                    self.#ident = #ident.into();
+                    self
                 }
-            }
+            })
         });
 
         quote! {
@@ -176,6 +175,50 @@ impl<'a> BuilderStructAnalyzer<'a> {
             #builder_trait
         }
     }
+
+    pub(crate) fn impl_struct_new(
+        &self,
+        is_default_infallible: bool,
+    ) -> proc_macro2::TokenStream {
+        let struct_ident = self.struct_ident;
+        let root = self.root;
+        let impl_generics = self.impl_generics;
+        let type_generics = self.type_generics;
+        let where_clause = self.where_clause;
+
+        let mandatory_field_idents = self.mandatory_fields
+            .iter()
+            .map(|field| &field.ident)
+            .collect::<Vec<_>>();
+        let mandatory_field_types = self.mandatory_fields.iter().map(|field| &field.ty);
+
+        let doc = format!("Creates a new instance of `{}`.", struct_ident);
+
+        // TODO: do we want to generate different code for infallible and fallible cases
+        let ret = if is_default_infallible {
+            quote! { -> Self }
+        } else {
+            quote! { -> std::result::Result<Self, <<Self as #root::builder::Buildable>::Builder as #root::builder::Builder<Self>>::Error> }
+        };
+
+        let unwrap_result = if is_default_infallible {
+            quote! { .expect("Build with default parameters should not fail") }
+        } else {
+            quote! {}
+        };
+
+        quote! {
+            impl #impl_generics #struct_ident #type_generics #where_clause {
+                #[doc = #doc]
+                pub fn new(#(#mandatory_field_idents: impl Into<#mandatory_field_types>),*) #ret
+                {
+                    use #root::builder::Builder;
+                    <Self as #root::builder::Buildable>::Builder::new(#(#mandatory_field_idents),*).build()
+                        #unwrap_result
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, darling::FromField, PartialEq)]
@@ -197,7 +240,8 @@ pub(crate) struct BuilderFieldProperty {
 
     pub ty_override: Option<syn::Path>,
 
-    pub setter: Option<syn::Ident>,
+    #[darling(default)]
+    pub skip_setter: bool,
 }
 
 pub(crate) struct MandatoryField {
@@ -209,7 +253,7 @@ pub(crate) struct OptionalField {
     pub ident: syn::Ident,
     pub ty: syn::Type,
     pub default: syn::Path,
-    pub setter: Option<Ident>,
+    pub skip_setter: bool,
 }
 
 pub(crate) fn parse_fields_from_derive_input(
@@ -270,7 +314,7 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
                 ident,
                 ty,
                 default,
-                setter: field_prop.setter,
+                skip_setter: field_prop.skip_setter,
             });
         } else {
             mandatory_fields.push(MandatoryField { ident, ty });

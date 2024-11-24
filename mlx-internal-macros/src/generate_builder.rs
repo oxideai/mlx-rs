@@ -1,13 +1,13 @@
 use darling::FromDeriveInput;
 use proc_macro2::TokenTree;
 use quote::quote;
-use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
+use syn::DeriveInput;
 
 use crate::{
     derive_buildable::StructProperty,
     shared::{
         parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty,
-        MandatoryField, PathOrIdent, Result,
+        PathOrIdent, Result,
     },
 };
 
@@ -30,16 +30,7 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
     };
 
     let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(input)?;
-    let is_infallible = builder_struct_prop.err.is_none();
-    let impl_struct_new = impl_struct_new(
-        struct_ident,
-        &root,
-        &mandatory_fields,
-        &impl_generics,
-        &type_generics,
-        where_clause,
-        is_infallible,
-    );
+    let is_default_infallible = builder_struct_prop.default_infallible.unwrap_or_else(|| builder_struct_prop.err.is_none());
 
     let builder_struct_ident = match &struct_prop.builder {
         Some(path) => PathOrIdent::Path(path.clone()),
@@ -63,55 +54,13 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
         quote! {}
     };
     let impl_builder = builder_struct_analyzer.impl_builder();
+    let impl_struct_new = builder_struct_analyzer.impl_struct_new(is_default_infallible);
 
     Ok(quote! {
-        #impl_struct_new
         #builder_struct
         #impl_builder
+        #impl_struct_new
     })
-}
-
-fn impl_struct_new<'a>(
-    struct_ident: &Ident,
-    root: &syn::Path,
-    mandatory_fields: &[MandatoryField],
-    impl_generics: &'a ImplGenerics,
-    type_generics: &TypeGenerics<'a>,
-    where_clause: Option<&'a WhereClause>,
-    is_infallible: bool,
-) -> proc_macro2::TokenStream {
-    let mandatory_field_idents = mandatory_fields
-        .iter()
-        .map(|field| &field.ident)
-        .collect::<Vec<_>>();
-    let mandatory_field_types = mandatory_fields.iter().map(|field| &field.ty);
-
-    let doc = format!("Creates a new instance of `{}`.", struct_ident);
-
-    // TODO: do we want to generate different code for infallible and fallible cases
-    let ret = if is_infallible {
-        quote! { -> Self }
-    } else {
-        quote! { -> std::result::Result<Self, <<Self as #root::builder::Buildable>::Builder as #root::builder::Builder<Self>>::Error> }
-    };
-
-    let unwrap_result = if is_infallible {
-        quote! { .expect("Build with default parameters should not fail") }
-    } else {
-        quote! {}
-    };
-
-    quote! {
-        impl #impl_generics #struct_ident #type_generics #where_clause {
-            #[doc = #doc]
-            pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) #ret
-            {
-                use #root::builder::Builder;
-                <Self as #root::builder::Buildable>::Builder::new(#(#mandatory_field_idents),*).build()
-                    #unwrap_result
-            }
-        }
-    }
 }
 
 fn struct_attr_derive_default(attrs: &[syn::Attribute]) -> bool {

@@ -1,3 +1,4 @@
+use mlx_internal_macros::{Builder, Buildable};
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::Module;
 use mlx_rs::Array;
@@ -5,77 +6,38 @@ use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
 
 use crate::error::DropoutBuildError;
 
-macro_rules! impl_dropout_builder {
-    ($builder_name:ident, $target_name:ident, $default_p:expr, $default_training:expr) => {
-        /// Builder for [`$target_name`].
-        #[derive(Debug, Clone, Default)]
-        pub struct $builder_name {
-            /// Probability of zeroing an element.
-            p: Option<f32>,
-        }
-
-        impl $builder_name {
-            /// Creates a new dropout builder.
-            pub fn new() -> Self {
-                Self::default()
-            }
-
-            /// Sets the probability of zeroing an element.
-            pub fn p(mut self, p: impl Into<f32>) -> Self {
-                self.p = Some(p.into());
-                self
-            }
-
-            /// Builds a dropout layer.
-            pub fn build(self) -> Result<$target_name, DropoutBuildError> {
-                let p = self.p.unwrap_or($default_p);
-
-                if !(0.0..1.0).contains(&p) {
-                    return Err(DropoutBuildError::InvalidProbability);
-                }
-
-                Ok($target_name {
-                    one_minus_p: 1.0 - p,
-                    training: $default_training,
-                })
-            }
-        }
-
-        impl $target_name {
-            /// Creates a builder for the dropout layer.
-            pub fn builder() -> $builder_name {
-                $builder_name::new()
-            }
-
-            /// Creates a new dropout layer with the default parameters.
-            pub fn new() -> Self {
-                $builder_name::new()
-                    .build()
-                    .expect("Default values are valid")
-            }
-        }
-
-        impl Default for $target_name {
-            fn default() -> Self {
-                Self::new()
-            }
-        }
-    };
+/// Builder for [`Dropout`].
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_dropout,
+    default_infallible,
+    err = DropoutBuildError,
+)]
+pub struct DropoutBuilder {
+    /// The probability of zeroing an element.
+    #[builder(optional, default = Dropout::DEFAULT_P)]
+    p: f32,
 }
 
-impl_dropout_builder!(
-    DropoutBuilder,
-    Dropout,
-    Dropout::DEFAULT_P,
-    Dropout::DEFAULT_TRAINING
-);
+fn build_dropout(builder: DropoutBuilder) -> Result<Dropout, DropoutBuildError> {
+    let p = builder.p;
+
+    if !(0.0..1.0).contains(&p) {
+        return Err(DropoutBuildError::InvalidProbability);
+    }
+
+    Ok(Dropout {
+        one_minus_p: 1.0 - p,
+        training: Dropout::DEFAULT_TRAINING,
+    })
+}
 
 /// Randomly zero a portion of the elements during training.
 ///
 /// The remaining elements are multiplied with `1 / (1-p)` where
 /// `p` is the probability of zeroing an element. This is done so the
 /// expected value of a given element will remain the same.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 pub struct Dropout {
     /// `1-p`, where `p` is the probability of zeroing an element. `p` is default to
     /// [`Dropout::DEFAULT_P`] if not specified.
@@ -112,12 +74,31 @@ impl Module for Dropout {
     }
 }
 
-impl_dropout_builder!(
-    Dropout2dBuilder,
-    Dropout2d,
-    Dropout2d::DEFAULT_P,
-    Dropout2d::DEFAULT_TRAINING
-);
+/// Builder for [`Dropout2d`].
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_dropout2d,
+    default_infallible,
+    err = DropoutBuildError,
+)]
+pub struct Dropout2dBuilder {
+    /// The probability of zeroing a channel.
+    #[builder(optional, default = Dropout2d::DEFAULT_P)]
+    p: f32,
+}
+
+fn build_dropout2d(builder: Dropout2dBuilder) -> Result<Dropout2d, DropoutBuildError> {
+    let p = builder.p;
+
+    if !(0.0..1.0).contains(&p) {
+        return Err(DropoutBuildError::InvalidProbability);
+    }
+
+    Ok(Dropout2d {
+        one_minus_p: 1.0 - p,
+        training: Dropout2d::DEFAULT_TRAINING,
+    })
+}
 
 /// Apply 2D channel-wise dropout during training.
 ///
@@ -136,7 +117,7 @@ impl_dropout_builder!(
 ///
 /// [1]: Thompson, J., Goroshin, R., Jain, A., LeCun, Y. and Bregler C., 2015.
 /// Efficient Object Localization Using Convolutional Networks. CVPR 2015.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 pub struct Dropout2d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout2d::DEFAULT_P`] if not specified.
@@ -189,12 +170,31 @@ impl Module for Dropout2d {
     }
 }
 
-impl_dropout_builder!(
-    Dropout3dBuilder,
-    Dropout3d,
-    Dropout3d::DEFAULT_P,
-    Dropout3d::DEFAULT_TRAINING
-);
+/// Builder for [`Dropout3d`].
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_dropout3d,
+    default_infallible,
+    err = DropoutBuildError,
+)]
+pub struct Dropout3dBuilder {
+    /// The probability of zeroing a channel.
+    #[builder(optional, default = Dropout3d::DEFAULT_P)]
+    p: f32,
+}
+
+fn build_dropout3d(builder: Dropout3dBuilder) -> Result<Dropout3d, DropoutBuildError> {
+    let p = builder.p;
+
+    if !(0.0..1.0).contains(&p) {
+        return Err(DropoutBuildError::InvalidProbability);
+    }
+
+    Ok(Dropout3d {
+        one_minus_p: 1.0 - p,
+        training: Dropout3d::DEFAULT_TRAINING,
+    })
+}
 
 /// Apply 3D channel-wise dropout during training.
 ///
@@ -209,7 +209,7 @@ impl_dropout_builder!(
 /// which zeros individual entries, this layer zeros entire channels. This is
 /// often beneficial for convolutional layers processing 3D data, like in
 /// medical imaging or video processing.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 pub struct Dropout3d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout3d::DEFAULT_P`] if not specified.

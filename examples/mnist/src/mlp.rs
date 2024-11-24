@@ -9,6 +9,7 @@ pub struct Mlp {
 
 impl<'a> Module<&'a Array> for Mlp {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         self.layers.forward(x)

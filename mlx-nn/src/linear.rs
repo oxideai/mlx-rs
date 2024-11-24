@@ -87,6 +87,7 @@ impl Linear {
 
 impl<'a> Module<&'a Array> for Linear {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
@@ -181,6 +182,7 @@ impl Bilinear {
 
 impl<'a> Module<&'a Array> for Bilinear {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let shape = self.weights.shape();

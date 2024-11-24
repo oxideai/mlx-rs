@@ -25,8 +25,11 @@ pub trait Module<Args>: ModuleParameters {
     /// Error type for the module.
     type Error: std::error::Error;
 
+    /// Output type of the module.
+    type Output;
+
     /// Forward pass of the module.
-    fn forward(&mut self, x: Args) -> Result<Array, Self::Error>;
+    fn forward(&mut self, x: Args) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -42,11 +45,11 @@ pub trait Module<Args>: ModuleParameters {
 /// reference to the input.
 pub trait UnaryModule
 where
-    for<'a> Self: Module<&'a Array>,
+    for<'a> Self: Module<&'a Array, Output = Array>,
 {
 }
 
-impl<M> UnaryModule for M where for<'a> M: Module<&'a Array> {}
+impl<M> UnaryModule for M where for<'a> M: Module<&'a Array, Output = Array> {}
 
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {

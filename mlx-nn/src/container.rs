@@ -28,6 +28,7 @@ pub struct Sequential<Err = Exception> {
 
 impl<'a> Module<&'a Array> for Sequential {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);

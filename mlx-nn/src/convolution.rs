@@ -131,6 +131,7 @@ impl Conv1d {
 
 impl<'a> Module<&'a Array> for Conv1d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv1d(
@@ -285,6 +286,7 @@ impl Conv2d {
 
 impl<'a> Module<&'a Array> for Conv2d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv2d(
@@ -442,6 +444,7 @@ impl Conv3d {
 
 impl<'a> Module<&'a Array> for Conv3d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = mlx_rs::ops::conv3d(

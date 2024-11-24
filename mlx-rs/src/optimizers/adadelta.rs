@@ -18,6 +18,7 @@ generate_builder! {
     #[builder(manual_impl, root = crate)]
     pub struct AdaDelta {
         /// The learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The coefficient used for computing a running average of squared gradients. Default to
@@ -41,8 +42,8 @@ impl Builder<AdaDelta> for AdaDeltaBuilder {
 
     /// Builds a new [`AdaDelta`] optimizer
     fn build(self) -> Result<AdaDelta, AdaDeltaBuildError> {
-        let rho = self.rho.unwrap_or(AdaDelta::DEFAULT_RHO);
-        let eps = self.eps.unwrap_or(AdaDelta::DEFAULT_EPS);
+        let rho = self.rho;
+        let eps = self.eps;
 
         if rho < 0.0 {
             return Err(AdaDeltaBuildError::NegativeRho);
@@ -67,12 +68,6 @@ impl AdaDelta {
 
     /// Default value for `eps`
     pub const DEFAULT_EPS: f32 = 1e-6;
-
-    /// Creates a new AdaDelta optimizer with all optional parameters set to their default values
-    pub fn new(lr: f32) -> Self {
-        // SAFETY: The default values are valid
-        Self::builder().build(lr).unwrap()
-    }
 }
 
 impl Optimizer for AdaDelta {

@@ -117,24 +117,6 @@ impl From<Option<Array>> for AdafactorBeta1 {
     }
 }
 
-/// A thin wrapper around `bool`. This wrapper is added to prevent accidental change of
-/// the beta1 after the optimizer is built while keeping all fields public.
-#[derive(Debug, Clone)]
-pub struct AdafactorRelativeStep(bool);
-
-impl AdafactorRelativeStep {
-    /// Returns the inner value.
-    pub fn value(&self) -> bool {
-        self.0
-    }
-}
-
-impl From<bool> for AdafactorRelativeStep {
-    fn from(relative_step: bool) -> Self {
-        Self(relative_step)
-    }
-}
-
 generate_builder! {
     /// The Adafactor optimizer.
     ///
@@ -164,7 +146,7 @@ generate_builder! {
         pub decay_rate: Array,
 
         /// If set then the first moment will be used.
-        #[builder(optional, ty_override = AdafactorBeta1, default = Adafactor::DEFAULT_BETA1)]
+        #[builder(optional, ty_override = AdafactorBuilderBeta1, default = Adafactor::DEFAULT_BETA1)]
         pub beta1: AdafactorBeta1,
 
         /// The weight decay. Default to [`Adafactor::DEFAULT_WEIGHT_DECAY`].
@@ -178,8 +160,8 @@ generate_builder! {
 
         /// If `true` the `learningRate` will be ignored and the relative step size will be
         /// computed. Default to [`Adafactor::DEFAULT_RELATIVE_STEP`].
-        #[builder(optional, default = Adafactor::DEFAULT_RELATIVE_STEP)]
-        pub relative_step: AdafactorRelativeStep,
+        #[builder(optional, ty_override = bool, default = Adafactor::DEFAULT_RELATIVE_STEP)]
+        pub relative_step: bool,
 
         /// If `true` the relative step size will be calculated by the current step. Default to
         /// [`Adafactor::DEFAULT_WARMUP_INIT`].
@@ -197,22 +179,18 @@ impl Builder<Adafactor> for AdafactorBuilder {
 
     /// Builds a new [`Adafactor`] optimizer.
     fn build(self) -> Result<Adafactor, AdafactorBuildError> {
-        let eps = self.eps.unwrap_or(Adafactor::DEFAULT_EPS);
+        let eps = self.eps;
         let clip_threshold = self
-            .clip_threshold
-            .unwrap_or(Adafactor::DEFAULT_CLIP_THRESHOLD);
-        let decay_rate = self.decay_rate.unwrap_or(Adafactor::DEFAULT_DECAY_RATE);
-        let weight_decay = self.weight_decay.unwrap_or(Adafactor::DEFAULT_WEIGHT_DECAY);
+            .clip_threshold;
+        let decay_rate = self.decay_rate;
+        let weight_decay = self.weight_decay;
         let scale_parameter = self
-            .scale_parameter
-            .unwrap_or(Adafactor::DEFAULT_SCALE_PARAMETER);
-        let relative_step: AdafactorRelativeStep = self
-            .relative_step
-            .unwrap_or(Adafactor::DEFAULT_RELATIVE_STEP)
-            .into();
-        let warmup_init = self.warmup_init.unwrap_or(Adafactor::DEFAULT_WARMUP_INIT);
+            .scale_parameter;
+        let relative_step= self
+            .relative_step;
+        let warmup_init = self.warmup_init;
 
-        if self.lr.is_none() && !relative_step.value() {
+        if self.lr.is_none() && !relative_step {
             return Err(AdafactorBuildError::LrIsNoneAndRelativeStepIsFalse);
         }
 
@@ -258,17 +236,6 @@ impl Adafactor {
 
     /// Default value for `beta1`
     pub const DEFAULT_BETA1: Option<f32> = None;
-
-    /// Creates a new [`Adafactor`] optimizer with the default values.
-    pub fn new() -> Adafactor {
-        Self::builder().build().unwrap()
-    }
-}
-
-impl Default for Adafactor {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 fn get_mut_or_insert_with<'a, T, E>(
@@ -337,7 +304,7 @@ impl Optimizer for Adafactor {
 
         let parameter_rms = rms(parameter)?;
         let lr = compute_lr(
-            self.relative_step.value(),
+            self.relative_step,
             self.warmup_init,
             self.lr.value(),
             self.scale_parameter,

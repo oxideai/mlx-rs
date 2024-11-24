@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use quote::ToTokens;
 use syn::DeriveInput;
 use darling::{FromDeriveInput, FromField};
@@ -122,6 +124,15 @@ impl ToTokens for PathOrIdent {
         match self {
             PathOrIdent::Path(path) => path.to_tokens(tokens),
             PathOrIdent::Ident(ident) => ident.to_tokens(tokens),
+        }
+    }
+}
+
+impl Display for PathOrIdent {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            PathOrIdent::Path(path) => path.to_token_stream().fmt(f),
+            PathOrIdent::Ident(ident) => Display::fmt(ident, f),
         }
     }
 }

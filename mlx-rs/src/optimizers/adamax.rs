@@ -1,16 +1,12 @@
 use std::rc::Rc;
 
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array,
-    error::Exception,
-    ops::{abs, maximum},
-    utils::get_mut_or_insert_with,
-    Array,
+    array, builder::Builder, error::Exception, ops::{abs, maximum}, utils::get_mut_or_insert_with, Array
 };
 
-use super::{Optimizer, OptimizerState};
+use super::{Betas, Optimizer, OptimizerState};
 
 generate_builder! {
     /// The Adamax optimizer, a variant of Adam based on the infinity norm [1].
@@ -19,37 +15,42 @@ generate_builder! {
     /// correction in the first and second moment estimates. In detail,
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(manual_impl, root = crate)]
     pub struct Adamax {
         /// The learning rate.
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The beta coefficients
-        #[optional(ty = super::Betas)]
+        #[builder(optional, ty_override = Betas, default = Adamax::DEFAULT_BETAS)]
         pub betas: (Array, Array),
 
         /// The epsilon added to the denominator to improve numerical stability.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Adamax::DEFAULT_EPS)]
         pub eps: Array,
 
         /// Inner state.
+        #[builder(ignore)]
         pub state: OptimizerState<(Array, Array)>,
     }
 }
 
-impl AdamaxBuilder {
-    /// Builds a new [`Adamax`] optimizer.
-    pub fn build(self, lr: f32) -> Adamax {
-        let betas = self.betas.unwrap_or(Adamax::DEFAULT_BETAS);
-        let eps = self.eps.unwrap_or(Adamax::DEFAULT_EPS);
+impl Builder<Adamax> for AdamaxBuilder {
+    type Error = std::convert::Infallible;
 
-        Adamax {
+    fn build(self) -> Result<Adamax, Self::Error> {
+        let lr = self.lr;
+        let betas = self.betas;
+        let eps = self.eps;
+
+        Ok(Adamax {
             lr: array!(lr),
             betas: (array!(betas.0), array!(betas.1)),
             eps: array!(eps),
             state: OptimizerState::new(),
-        }
+        })
     }
 }
 
@@ -59,11 +60,6 @@ impl Adamax {
 
     /// Default value for `eps`.
     pub const DEFAULT_EPS: f32 = 1e-8;
-
-    /// Creates a new Adamax optimizer with all optional parameters set to their default values.
-    pub fn new(lr: f32) -> Adamax {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for Adamax {

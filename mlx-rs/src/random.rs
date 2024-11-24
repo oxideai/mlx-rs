@@ -468,7 +468,7 @@ pub fn categorical_device<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{array, assert_array_eq};
+    use crate::{array, builder::Builder, assert_array_eq};
     use float_eq::float_eq;
 
     #[test]

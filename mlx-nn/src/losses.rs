@@ -1,6 +1,6 @@
 //! Loss functions
 
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 use mlx_rs::{
     array,
     error::CrossEntropyBuildError,

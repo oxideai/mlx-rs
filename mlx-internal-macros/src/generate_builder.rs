@@ -1,6 +1,6 @@
 use darling::FromDeriveInput;
 use quote::quote;
-use syn::{DeriveInput, TypeGenerics, WhereClause};
+use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
 
 use crate::{
     derive_buildable::StructProperty,
@@ -29,8 +29,18 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
     };
 
     let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(input)?;
+    let impl_struct_new = impl_struct_new(
+        struct_ident,
+        &root,
+        &mandatory_fields,
+        &impl_generics,
+        &type_generics,
+        where_clause,
+    );
+
     let builder_struct = if struct_prop.builder.is_none() {
         generate_builder_struct(
+            &struct_ident,
             &struct_builder_ident,
             &mandatory_fields,
             &optional_fields,
@@ -53,13 +63,15 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
     );
 
     Ok(quote! {
+        #impl_struct_new
         #builder_struct
         #impl_builder
     })
 }
 
 fn generate_builder_struct<'a>(
-    ident: &PathOrIdent,
+    struct_ident: &Ident,
+    builder_ident: &PathOrIdent,
     mandatory_fields: &[MandatoryField],
     optional_fields: &[OptionalField],
     type_generics: &TypeGenerics<'a>,
@@ -71,10 +83,41 @@ fn generate_builder_struct<'a>(
     let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
     let optional_field_tys = optional_fields.iter().map(|field| &field.ty);
 
+    let doc = format!("Builder for `{}`.", struct_ident);
+
     quote! {
-        struct #ident #type_generics #where_clause {
+        #[doc = #doc]
+        pub struct #builder_ident #type_generics #where_clause {
             #(#mandatory_field_idents: #mandatory_field_tys,)*
             #(#optional_field_idents: #optional_field_tys,)*
+        }
+    }
+}
+
+fn impl_struct_new<'a>(
+    struct_ident: &Ident,
+    root: &syn::Path,
+    mandatory_fields: &[MandatoryField],
+    impl_generics: &'a ImplGenerics,
+    type_generics: &TypeGenerics<'a>,
+    where_clause: Option<&'a WhereClause>,
+) -> proc_macro2::TokenStream {
+    let mandatory_field_idents = mandatory_fields
+        .iter()
+        .map(|field| &field.ident)
+        .collect::<Vec<_>>();
+    let mandatory_field_types = mandatory_fields.iter().map(|field| &field.ty);
+
+    let doc = format!("Creates a new instance of `{}`.", struct_ident);
+
+    quote! {
+        impl #impl_generics #struct_ident #type_generics #where_clause {
+            #[doc = #doc]
+            pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) 
+                -> Result<Self, <<Self as #root::builder::Buildable>::Builder as #root::builder::Builder<Self>>::Error> 
+            {
+                <Self as #root::builder::Buildable>::Builder::new(#(#mandatory_field_idents),*).build()
+            }
         }
     }
 }

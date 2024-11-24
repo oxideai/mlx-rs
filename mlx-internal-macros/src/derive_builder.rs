@@ -52,7 +52,9 @@ fn impl_builder_setters(
         let ident = &field.ident;
         let ty = &field.ty;
         let default = &field.default;
+        let doc = format!("Sets the value of [`{}`].", ident.to_string());
         quote! {
+            #[doc = #doc]
             pub fn #ident(mut self, #ident: impl Into<Option<#ty>>) -> Self {
                 self.#ident = #ident.into().unwrap_or(#default);
                 self
@@ -81,8 +83,14 @@ fn impl_builder_new(
     let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
     let optional_field_defaults = optional_fields.iter().map(|field| &field.default);
 
+    let doc = format!(
+        "Creates a new [`{}`].",
+        builder_struct_ident.to_string()
+    );
+
     quote! {
         impl #builder_struct_ident {
+            #[doc = #doc]
             pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
                 Self {
                     #(#mandatory_field_idents,)*

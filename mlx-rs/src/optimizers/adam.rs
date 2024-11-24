@@ -1,6 +1,6 @@
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, utils::get_mut_or_insert_with};
+use crate::{array, builder::Builder, utils::get_mut_or_insert_with};
 
 use super::*;
 
@@ -14,41 +14,47 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(manual_impl, root = crate)]
     pub struct Adam {
         /// The learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The coefficients used for computing running averages of the gradient and its square
         ///
         /// Default to [`Adam::DEFAULT_BETAS`]
-        #[optional(ty = Betas)]
+        #[builder(optional, ty_override = Betas, default = Adam::DEFAULT_BETAS)]
         pub betas: (Array, Array),
 
         /// The epsilon added to the denominator to improve numerical stability
         ///
         /// Default to [`Adam::DEFAULT_EPS`]
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Adam::DEFAULT_EPS)]
         pub eps: Array,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState<(Array, Array)>,
     }
 }
 
-impl AdamBuilder {
-    /// Builds a new [`Adam`].
-    pub fn build(self, lr: f32) -> Adam {
-        let betas = self.betas.unwrap_or(Adam::DEFAULT_BETAS);
-        let eps = array!(self.eps.unwrap_or(Adam::DEFAULT_EPS));
+impl Builder<Adam> for AdamBuilder {
+    type Error = std::convert::Infallible;
 
-        Adam {
+    /// Builds a new [`Adam`].
+    fn build(self) -> Result<Adam, Self::Error> {
+        let lr = self.lr;
+        let betas = self.betas;
+        let eps = array!(self.eps);
+
+        Ok(Adam {
             lr: array!(lr),
             betas: (array!(betas.0), array!(betas.1)),
             eps,
             state: OptimizerState::new(),
-        }
+        })
     }
 }
 
@@ -58,11 +64,6 @@ impl Adam {
 
     /// Default value for `eps`
     pub const DEFAULT_EPS: f32 = 1e-8;
-
-    /// Creates a new Adam optimizer with all optional parameters set to their default values.
-    pub fn new(lr: f32) -> Adam {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for Adam {

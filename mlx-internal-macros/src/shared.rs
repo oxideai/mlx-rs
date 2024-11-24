@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use quote::ToTokens;
-use syn::{DeriveInput, Ident};
 use darling::{FromDeriveInput, FromField};
+use quote::{quote, ToTokens};
+use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
 
 pub(crate) type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -10,27 +10,188 @@ pub(crate) type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[darling(attributes(builder))]
 pub(crate) struct BuilderStructProperty {
     pub ident: syn::Ident,
-    
-    #[darling(default)]
-    pub manual_impl: bool,
-    
+
+    pub build_with: Option<syn::Ident>,
+
     pub root: Option<syn::Path>,
+
+    pub err: Option<syn::Path>,
+}
+
+pub(crate) struct BuilderStructAnalyzer<'a> {
+    pub struct_ident: &'a Ident,
+    pub builder_struct_ident: &'a PathOrIdent,
+    pub root: &'a syn::Path,
+    pub impl_generics: &'a ImplGenerics<'a>,
+    pub type_generics: &'a TypeGenerics<'a>,
+    pub where_clause: Option<&'a WhereClause>,
+    pub mandatory_fields: &'a [MandatoryField],
+    pub optional_fields: &'a [OptionalField],
+    pub build_with: Option<&'a Ident>,
+    pub err: Option<&'a syn::Path>,
+}
+
+impl<'a> BuilderStructAnalyzer<'a> {
+    pub fn generate_builder_struct(&self) -> proc_macro2::TokenStream {
+        let struct_ident = self.struct_ident;
+        let builder_ident = self.builder_struct_ident;
+        let type_generics = self.type_generics;
+        let where_clause = self.where_clause;
+
+        let mandatory_field_idents = self.mandatory_fields.iter().map(|field| &field.ident);
+        let mandatory_field_tys = self.mandatory_fields.iter().map(|field| &field.ty);
+
+        let optional_field_idents = self.optional_fields.iter().map(|field| &field.ident);
+        let optional_field_tys = self.optional_fields.iter().map(|field| &field.ty);
+
+        let doc = format!("Builder for `{}`.", struct_ident);
+
+        let field_doc = format!("See [`{}`] for more information.", struct_ident);
+
+        quote! {
+            #[doc = #doc]
+            #[derive(Debug, Clone)]
+            pub struct #builder_ident #type_generics #where_clause {
+                #(
+                    #[doc = #field_doc]
+                    #mandatory_field_idents: #mandatory_field_tys,
+                )*
+                #(
+                    #[doc = #field_doc]
+                    #optional_field_idents: #optional_field_tys,
+                )*
+            }
+        }
+    }
+
+    pub fn impl_builder_new(&self) -> proc_macro2::TokenStream {
+        let builder_struct_ident = self.builder_struct_ident;
+        let impl_generics = self.impl_generics;
+        let type_generics = self.type_generics;
+        let where_clause = self.where_clause;
+        let mandatory_field_idents = self
+            .mandatory_fields
+            .iter()
+            .map(|field| &field.ident)
+            .collect::<Vec<_>>();
+        let mandatory_field_types = self.mandatory_fields.iter().map(|field| &field.ty);
+
+        let optional_field_idents = self.optional_fields.iter().map(|field| &field.ident);
+        let optional_field_defaults = self.optional_fields.iter().map(|field| &field.default);
+
+        let doc = format!("Creates a new [`{}`].", builder_struct_ident);
+
+        quote! {
+            impl #impl_generics #builder_struct_ident #type_generics #where_clause {
+                #[doc = #doc]
+                pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
+                    Self {
+                        #(#mandatory_field_idents,)*
+                        #(#optional_field_idents: #optional_field_defaults,)*
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn impl_builder_setters(&self) -> proc_macro2::TokenStream {
+        let builder_struct_ident = self.builder_struct_ident;
+        let impl_generics = self.impl_generics;
+        let type_generics = self.type_generics;
+        let where_clause = self.where_clause;
+        let setters = self.optional_fields.iter().map(|field| {
+            let ident = &field.ident;
+            let ty = &field.ty;
+            let doc = format!("Sets the value of [`{}`].", ident);
+
+            let setter = match &field.setter {
+                Some(setter) => quote! {#setter(self, #ident)},
+                None => quote! {
+                    self.#ident = #ident.into();
+                    self
+                },
+            };
+
+            quote! {
+                #[doc = #doc]
+                pub fn #ident(mut self, #ident: impl Into<#ty>) -> Self {
+                    #setter
+                }
+            }
+        });
+
+        quote! {
+            impl #impl_generics #builder_struct_ident #type_generics #where_clause {
+                #(#setters)*
+            }
+        }
+    }
+
+    pub fn impl_builder_trait(&self) -> proc_macro2::TokenStream {
+        let struct_ident = self.struct_ident;
+        let builder_struct_ident = self.builder_struct_ident;
+        let root = self.root;
+        let impl_generics = self.impl_generics;
+        let type_generics = self.type_generics;
+        let where_clause = self.where_clause;
+        let mandatory_field_idents = self.mandatory_fields.iter().map(|field| &field.ident);
+        let optional_field_idents = self.optional_fields.iter().map(|field| &field.ident);
+
+        let err_ty = match self.err {
+            Some(err) => quote! { #err },
+            None => quote! { std::convert::Infallible },
+        };
+
+        let build_body = match self.build_with {
+            Some(f) => quote! {
+                #f(self)
+            },
+            None => quote! {
+                Ok(#struct_ident {
+                    #(#mandatory_field_idents: self.#mandatory_field_idents,)*
+                    #(#optional_field_idents: self.#optional_field_idents,)*
+                })
+            },
+        };
+
+        quote! {
+            impl #impl_generics #root::builder::Builder<#struct_ident #type_generics> for #builder_struct_ident #type_generics #where_clause {
+                type Error = #err_ty;
+
+                fn build(self) -> std::result::Result<#struct_ident #type_generics, Self::Error> {
+                    #build_body
+                }
+            }
+        }
+    }
+
+    pub(crate) fn impl_builder(&self) -> proc_macro2::TokenStream {
+        let builder_new = self.impl_builder_new();
+        let builder_setters = self.impl_builder_setters();
+        let builder_trait = self.impl_builder_trait();
+
+        quote! {
+            #builder_new
+            #builder_setters
+            #builder_trait
+        }
+    }
 }
 
 #[derive(Debug, darling::FromField, PartialEq)]
 #[darling(attributes(builder))]
 pub(crate) struct BuilderFieldProperty {
     pub ident: Option<syn::Ident>,
-    
+
     pub ty: syn::Type,
-    
+
     #[darling(default)]
     pub optional: bool,
-    
+
     pub default: Option<syn::Path>,
-    
+
     pub rename: Option<String>,
-    
+
     #[darling(default)]
     pub ignore: bool,
 
@@ -50,7 +211,6 @@ pub(crate) struct OptionalField {
     pub default: syn::Path,
     pub setter: Option<Ident>,
 }
-
 
 pub(crate) fn parse_fields_from_derive_input(
     item: &DeriveInput,
@@ -106,7 +266,12 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
                 }
             };
 
-            optional_fields.push(OptionalField { ident, ty, default, setter: field_prop.setter });
+            optional_fields.push(OptionalField {
+                ident,
+                ty,
+                default,
+                setter: field_prop.setter,
+            });
         } else {
             mandatory_fields.push(MandatoryField { ident, ty });
         }
@@ -114,7 +279,6 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
 
     Ok((mandatory_fields, optional_fields))
 }
-
 
 #[derive(Debug, Clone)]
 pub(crate) enum PathOrIdent {

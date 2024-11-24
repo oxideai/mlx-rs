@@ -5,9 +5,9 @@ use quote::{format_ident, quote};
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, parse_quote, DeriveInput, FnArg, ItemEnum, ItemFn, Pat};
 
-mod generate_builder;
 mod derive_buildable;
 mod derive_builder;
+mod generate_builder;
 mod shared;
 
 #[derive(Debug, FromMeta)]
@@ -216,7 +216,8 @@ pub fn generate_builder(input: TokenStream) -> TokenStream {
     quote::quote! {
         #input
         #builder
-    }.into()
+    }
+    .into()
 }
 
 #[doc(hidden)]

@@ -3,7 +3,10 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array, builder::Builder, error::{AdafactorBuildError, Exception}, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, Array
+    array,
+    error::{AdafactorBuildError, Exception},
+    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    Array,
 };
 
 use super::{Optimizer, OptimizerState};
@@ -125,7 +128,11 @@ generate_builder! {
     /// <https://arxiv.org/abs/1804.04235>
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adafactor,
+        err = AdafactorBuildError,
+        root = crate
+    )]
     pub struct Adafactor {
         /// The learning rate.
         #[builder(optional, ty_override = AdafactorBuilderLr, default = Adafactor::DEFAULT_LR)]
@@ -174,39 +181,32 @@ generate_builder! {
     }
 }
 
-impl Builder<Adafactor> for AdafactorBuilder {
-    type Error = AdafactorBuildError;
+/// Builds a new [`Adafactor`] optimizer.
+fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuildError> {
+    let eps = builder.eps;
+    let clip_threshold = builder.clip_threshold;
+    let decay_rate = builder.decay_rate;
+    let weight_decay = builder.weight_decay;
+    let scale_parameter = builder.scale_parameter;
+    let relative_step = builder.relative_step;
+    let warmup_init = builder.warmup_init;
 
-    /// Builds a new [`Adafactor`] optimizer.
-    fn build(self) -> Result<Adafactor, AdafactorBuildError> {
-        let eps = self.eps;
-        let clip_threshold = self
-            .clip_threshold;
-        let decay_rate = self.decay_rate;
-        let weight_decay = self.weight_decay;
-        let scale_parameter = self
-            .scale_parameter;
-        let relative_step= self
-            .relative_step;
-        let warmup_init = self.warmup_init;
-
-        if self.lr.is_none() && !relative_step {
-            return Err(AdafactorBuildError::LrIsNoneAndRelativeStepIsFalse);
-        }
-
-        Ok(Adafactor {
-            lr: self.lr.map(Array::from).into(),
-            eps: (array!(eps.0), array!(eps.1)),
-            clip_threshold: array!(clip_threshold),
-            decay_rate: array!(decay_rate),
-            beta1: self.beta1.map(Array::from).into(),
-            weight_decay: array!(weight_decay),
-            scale_parameter,
-            relative_step,
-            warmup_init,
-            state: OptimizerState::new(),
-        })
+    if builder.lr.is_none() && !relative_step {
+        return Err(AdafactorBuildError::LrIsNoneAndRelativeStepIsFalse);
     }
+
+    Ok(Adafactor {
+        lr: builder.lr.map(Array::from).into(),
+        eps: (array!(eps.0), array!(eps.1)),
+        clip_threshold: array!(clip_threshold),
+        decay_rate: array!(decay_rate),
+        beta1: builder.beta1.map(Array::from).into(),
+        weight_decay: array!(weight_decay),
+        scale_parameter,
+        relative_step,
+        warmup_init,
+        state: OptimizerState::new(),
+    })
 }
 
 impl Adafactor {

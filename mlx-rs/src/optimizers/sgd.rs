@@ -1,6 +1,6 @@
 use std::{borrow::Cow, rc::Rc};
 
-use crate::{array, builder::Builder, utils::get_mut_or_insert_with, Array};
+use crate::{array, utils::get_mut_or_insert_with, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use super::*;
@@ -9,7 +9,10 @@ generate_builder! {
     /// Stochastic gradient descent optimizer.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_sgd,
+        root = crate
+    )]
     pub struct Sgd {
         /// Learning rate
         #[builder(ty_override = f32)]
@@ -37,25 +40,20 @@ generate_builder! {
     }
 }
 
-impl Builder<Sgd> for SgdBuilder {
-    type Error = std::convert::Infallible;
-    
-    /// Builds a new [`Sgd`].
-    fn build(self) -> Result<Sgd, Self::Error> {
-        let momentum = array!(self.momentum);
-        let weight_decay = array!(self.weight_decay);
-        let dampening = array!(self.dampening);
-        let nesterov = self.nesterov;
+fn build_sgd(builder: SgdBuilder) -> Result<Sgd, std::convert::Infallible> {
+    let momentum = array!(builder.momentum);
+    let weight_decay = array!(builder.weight_decay);
+    let dampening = array!(builder.dampening);
+    let nesterov = builder.nesterov;
 
-        Ok(Sgd {
-            lr: array!(self.lr),
-            momentum,
-            weight_decay,
-            dampening,
-            nesterov,
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(Sgd {
+        lr: array!(builder.lr),
+        momentum,
+        weight_decay,
+        dampening,
+        nesterov,
+        state: OptimizerState::new(),
+    })
 }
 
 impl Sgd {

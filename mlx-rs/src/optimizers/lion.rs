@@ -1,6 +1,6 @@
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, builder::Builder, utils::get_mut_or_insert_with, Array};
+use crate::{array, utils::get_mut_or_insert_with, Array};
 
 use super::{Betas, Optimizer, OptimizerState};
 
@@ -16,7 +16,10 @@ generate_builder! {
     ///     arXiv:2302.06675.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_lion,
+        root = crate
+    )]
     pub struct Lion {
         /// The learning rate.
         #[builder(ty_override = f32)]
@@ -37,22 +40,17 @@ generate_builder! {
     }
 }
 
-impl Builder<Lion> for LionBuilder {
-    type Error = std::convert::Infallible;
+fn build_lion(builder: LionBuilder) -> Result<Lion, std::convert::Infallible> {
+    let lr = builder.lr;
+    let betas = builder.betas;
+    let weight_decay = builder.weight_decay;
 
-    /// Builds a new [`Lion`] optimizer.
-    fn build(self) -> Result<Lion, Self::Error> {
-        let lr = self.lr;
-        let betas = self.betas;
-        let weight_decay = self.weight_decay;
-
-        Ok(Lion {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            weight_decay: array!(weight_decay),
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(Lion {
+        lr: array!(lr),
+        betas: (array!(betas.0), array!(betas.1)),
+        weight_decay: array!(weight_decay),
+        state: OptimizerState::new(),
+    })
 }
 
 impl Lion {

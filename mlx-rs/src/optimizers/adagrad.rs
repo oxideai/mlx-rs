@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::{convert::Infallible, rc::Rc};
 
-use crate::{array, builder::Builder, error::Exception, ops::square, Array};
+use crate::{array, error::Exception, ops::square, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::utils::get_mut_or_insert_with;
@@ -16,7 +16,10 @@ generate_builder! {
     ///     learning and stochastic optimization. JMLR 2011.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adagrad,
+        root = crate
+    )]
     pub struct AdaGrad {
         /// Learning rate
         #[builder(ty_override = f32)]
@@ -33,19 +36,15 @@ generate_builder! {
     }
 }
 
-impl Builder<AdaGrad> for AdaGradBuilder {
-    type Error = std::convert::Infallible;
+/// Builds a new [`AdaGrad`].
+fn build_adagrad(builder: AdaGradBuilder) -> Result<AdaGrad, Infallible> {
+    let eps = array!(builder.eps);
 
-    /// Builds a new [`AdaGrad`].
-    fn build(self) -> Result<AdaGrad, Self::Error> {
-        let eps = array!(self.eps);
-
-        Ok(AdaGrad {
-            lr: array!(self.lr),
-            eps,
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(AdaGrad {
+        lr: array!(builder.lr),
+        eps,
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdaGrad {

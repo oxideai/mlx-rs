@@ -1,9 +1,9 @@
 use std::f32::consts::PI;
 
-use mlx_internal_macros::{generate_builder, Buildable};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::builder;
 use mlx_rs::module::{Module, Param};
+use mlx_rs::prelude::Builder;
 use mlx_rs::{
     array,
     error::Exception,
@@ -590,7 +590,7 @@ impl Module for LogSigmoid {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 pub struct Prelu {
     /// The alpha value. See [`prelu`] for more details.
     #[param]
@@ -598,35 +598,27 @@ pub struct Prelu {
 }
 
 /// The builder for the Prelu module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_prelu,
+    err = Exception,
+)]
 pub struct PreluBuilder {
     /// The count. Default to [`Prelu::DEFAULT_COUNT`] if not provided.
-    pub count: Option<i32>,
+    #[builder(optional, default = Prelu::DEFAULT_COUNT)]
+    pub count: i32,
 
     /// The value. Default to [`Prelu::DEFAULT_VALUE`] if not provided.
-    pub value: Option<f32>,
+    #[builder(optional, default = Prelu::DEFAULT_VALUE)]
+    pub value: f32,
 }
 
-impl PreluBuilder {
-    /// Sets the count value.
-    pub fn count(mut self, count: i32) -> Self {
-        self.count = Some(count);
-        self
-    }
-
-    /// Sets the value.
-    pub fn value(mut self, value: f32) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    /// Builds the Prelu module.
-    pub fn build(self) -> Result<Prelu, Exception> {
-        let count = self.count.unwrap_or(Prelu::DEFAULT_COUNT);
-        let value = self.value.unwrap_or(Prelu::DEFAULT_VALUE);
-        let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
-        Ok(Prelu { weight })
-    }
+/// Builds the Prelu module.
+fn build_prelu(builder: PreluBuilder) -> Result<Prelu, Exception> {
+    let count = builder.count;
+    let value = builder.value;
+    let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
+    Ok(Prelu { weight })
 }
 
 impl Default for Prelu {
@@ -642,14 +634,9 @@ impl Prelu {
     /// The default value.
     pub const DEFAULT_VALUE: f32 = 0.25;
 
-    /// Creates a new PreluBuilder.
-    pub fn builder() -> PreluBuilder {
-        PreluBuilder::default()
-    }
-
     /// Creates a new Prelu module with the default values.
     pub fn new() -> Prelu {
-        PreluBuilder::default()
+        PreluBuilder::new()
             .build()
             .expect("Default value should be valid")
     }

@@ -4,7 +4,7 @@ use mlx_rs::builder::{Buildable, Builder};
 generate_builder! {
     /// Test struct for the builder generation.
     #[derive(Debug, Buildable)]
-    #[builder(manual_impl)]
+    #[builder(build_with = build_test_struct)]
     struct TestStruct {
         #[builder(optional, default = TestStruct::DEFAULT_OPT_FIELD_1)]
         opt_field_1: i32,
@@ -17,17 +17,15 @@ generate_builder! {
     }
 }
 
-impl Builder<TestStruct> for TestStructBuilder {
-    type Error = std::convert::Infallible;
-
-    fn build(self) -> std::result::Result<TestStruct, Self::Error> {
-        Ok(TestStruct {
-            opt_field_1: self.opt_field_1,
-            opt_field_2: self.opt_field_2,
-            mandatory_field_1: self.mandatory_field_1,
-            ignored_field: String::from("ignored"),
-        })
-    }
+fn build_test_struct(
+    builder: TestStructBuilder,
+) -> std::result::Result<TestStruct, std::convert::Infallible> {
+    Ok(TestStruct {
+        opt_field_1: builder.opt_field_1,
+        opt_field_2: builder.opt_field_2,
+        mandatory_field_1: builder.mandatory_field_1,
+        ignored_field: String::from("ignored"),
+    })
 }
 
 impl TestStruct {
@@ -36,11 +34,12 @@ impl TestStruct {
 }
 
 #[test]
-fn build_test_struct() {
+fn test_generated_builder() {
     let test_struct = <TestStruct as Buildable>::Builder::new(4)
         .opt_field_1(2)
         .opt_field_2(3)
-        .build().unwrap();
+        .build()
+        .unwrap();
 
     assert_eq!(test_struct.opt_field_1, 2);
     assert_eq!(test_struct.opt_field_2, 3);

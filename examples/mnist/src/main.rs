@@ -4,12 +4,12 @@ use mlx_nn::{
 };
 use mlx_rs::{
     array,
+    builder::Builder,
     error::Exception,
     module::{Module, ModuleParameters},
     optimizers::{Optimizer, Sgd},
     transforms::eval_params,
     Array,
-    builder::Builder
 };
 
 /// MLP model

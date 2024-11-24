@@ -1,9 +1,13 @@
-use std::rc::Rc;
+use std::{convert::Infallible, rc::Rc};
 
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array, builder::Builder, error::Exception, ops::{abs, maximum}, utils::get_mut_or_insert_with, Array
+    array,
+    error::Exception,
+    ops::{abs, maximum},
+    utils::get_mut_or_insert_with,
+    Array,
 };
 
 use super::{Betas, Optimizer, OptimizerState};
@@ -17,7 +21,10 @@ generate_builder! {
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adamax,
+        root = crate
+    )]
     pub struct Adamax {
         /// The learning rate.
         #[builder(ty_override = f32)]
@@ -37,21 +44,17 @@ generate_builder! {
     }
 }
 
-impl Builder<Adamax> for AdamaxBuilder {
-    type Error = std::convert::Infallible;
+fn build_adamax(builder: AdamaxBuilder) -> Result<Adamax, Infallible> {
+    let lr = builder.lr;
+    let betas = builder.betas;
+    let eps = builder.eps;
 
-    fn build(self) -> Result<Adamax, Self::Error> {
-        let lr = self.lr;
-        let betas = self.betas;
-        let eps = self.eps;
-
-        Ok(Adamax {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            eps: array!(eps),
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(Adamax {
+        lr: array!(lr),
+        betas: (array!(betas.0), array!(betas.1)),
+        eps: array!(eps),
+        state: OptimizerState::new(),
+    })
 }
 
 impl Adamax {

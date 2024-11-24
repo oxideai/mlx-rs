@@ -30,10 +30,10 @@ pub use stream::*;
 pub mod prelude {
     pub use crate::{
         array::Array,
+        builder::{Buildable, Builder},
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,
-        builder::{Builder, Buildable},
     };
 
     pub use num_traits::Pow;

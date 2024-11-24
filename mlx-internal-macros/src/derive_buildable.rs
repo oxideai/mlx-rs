@@ -9,7 +9,7 @@ use crate::shared::{PathOrIdent, Result};
 #[allow(dead_code)]
 pub(crate) struct StructProperty {
     pub ident: syn::Ident,
-    
+
     /// Generate builder if None
     pub builder: Option<syn::Path>,
 

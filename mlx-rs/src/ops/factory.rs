@@ -518,7 +518,7 @@ pub fn tri_device<T: ArrayElement>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{array, builder::Builder, dtype::Dtype};
+    use crate::{array, dtype::Dtype};
     use half::f16;
 
     #[test]

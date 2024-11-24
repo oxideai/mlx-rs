@@ -1,10 +1,10 @@
-
 use darling::FromDeriveInput;
-use quote::quote;
-use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
+use syn::{DeriveInput, Ident};
 
-use crate::shared::{parse_fields_from_derive_input, MandatoryField, OptionalField, PathOrIdent, Result, BuilderStructProperty};
-
+use crate::shared::{
+    parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent,
+    Result,
+};
 
 pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::TokenStream> {
     let struct_prop = BuilderStructProperty::from_derive_input(&input)?;
@@ -27,155 +27,23 @@ pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::T
 
     let builder_struct_ident = PathOrIdent::Ident(builder_ident.clone());
     let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(&input)?;
-    Ok(impl_builder(
-        &builder_struct_ident,
-        &struct_ident,
-        &root,
-        &impl_generics,
-        &type_generics,
+
+    let builder_struct_analyzer = BuilderStructAnalyzer {
+        struct_ident: &struct_ident,
+        builder_struct_ident: &builder_struct_ident,
+        root: &root,
+        impl_generics: &impl_generics,
+        type_generics: &type_generics,
         where_clause,
-        &mandatory_fields,
-        &optional_fields,
-        struct_prop.manual_impl,
-    ))
+        mandatory_fields: &mandatory_fields,
+        optional_fields: &optional_fields,
+        build_with: struct_prop.build_with.as_ref(),
+        err: struct_prop.err.as_ref(),
+    };
+
+    Ok(builder_struct_analyzer.impl_builder())
 }
 
 fn is_builder_struct_end_with_builder(ident: &Ident) -> bool {
     ident.to_string().ends_with("Builder")
-}
-
-
-fn impl_builder_new<'a>(
-    builder_struct_ident: &PathOrIdent,
-    mandatory_fields: &[MandatoryField],
-    optional_fields: &[OptionalField],
-    impl_generics: &'a ImplGenerics,
-    type_generics: &TypeGenerics<'a>,
-    where_clause: Option<&'a WhereClause>,
-) -> proc_macro2::TokenStream {
-    let mandatory_field_idents = mandatory_fields
-        .iter()
-        .map(|field| &field.ident)
-        .collect::<Vec<_>>();
-    let mandatory_field_types = mandatory_fields.iter().map(|field| &field.ty);
-
-    let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
-    let optional_field_defaults = optional_fields.iter().map(|field| &field.default);
-
-    let doc = format!(
-        "Creates a new [`{}`].",
-        builder_struct_ident
-    );
-
-    quote! {
-        impl #impl_generics #builder_struct_ident #type_generics #where_clause {
-            #[doc = #doc]
-            pub fn new(#(#mandatory_field_idents: #mandatory_field_types),*) -> Self {
-                Self {
-                    #(#mandatory_field_idents,)*
-                    #(#optional_field_idents: #optional_field_defaults,)*
-                }
-            }
-        }
-    }
-}
-
-
-fn impl_builder_setters<'a>(
-    builder_struct_ident: &PathOrIdent,
-    optional_fields: &[OptionalField],
-    impl_generics: &'a ImplGenerics,
-    type_generics: &TypeGenerics<'a>,
-    where_clause: Option<&'a WhereClause>,
-) -> proc_macro2::TokenStream {
-    let setters = optional_fields.iter().map(|field| {
-        let ident = &field.ident;
-        let ty = &field.ty;
-        let doc = format!("Sets the value of [`{}`].", ident);
-
-        let setter = match &field.setter {
-            Some(setter) => quote!{#setter(self, #ident)},
-            None => quote!{
-                self.#ident = #ident.into();
-                self
-            },
-        };
-
-        quote! {
-            #[doc = #doc]
-            pub fn #ident(mut self, #ident: impl Into<#ty>) -> Self {
-                #setter
-            }
-        }
-    });
-
-    quote! {
-        impl #impl_generics #builder_struct_ident #type_generics #where_clause {
-            #(#setters)*
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn impl_builder_trait<'a>(
-    builder_struct_ident: &PathOrIdent,
-    struct_ident: &Ident,
-    root: &syn::Path,
-    impl_generics: &ImplGenerics<'a>,
-    type_generics: &TypeGenerics<'a>,
-    where_clause: Option<&'a WhereClause>,
-    mandatory_fields: &[MandatoryField],
-    optional_fields: &[OptionalField],
-) -> proc_macro2::TokenStream {
-    let mandatory_field_idents = mandatory_fields.iter().map(|field| &field.ident);
-    let optional_field_idents = optional_fields.iter().map(|field| &field.ident);
-
-    quote! {
-        impl #impl_generics #root::builder::Builder<#struct_ident #type_generics> for #builder_struct_ident #type_generics #where_clause {
-            type Error = std::convert::Infallible;
-
-            fn build(self) -> std::result::Result<#struct_ident #type_generics, Self::Error> {
-                Ok(#struct_ident {
-                    #(#mandatory_field_idents: self.#mandatory_field_idents,)*
-                    #(#optional_field_idents: self.#optional_field_idents,)*
-                })
-            }
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn impl_builder<'a>(
-    builder_struct_ident: &PathOrIdent,
-    struct_ident: &Ident,
-    root: &syn::Path,
-    impl_generics: &ImplGenerics<'a>,
-    type_generics: &TypeGenerics<'a>,
-    where_clause: Option<&'a WhereClause>,
-    mandatory_fields: &[MandatoryField],
-    optional_fields: &[OptionalField],
-    manual_impl: bool,
-) -> proc_macro2::TokenStream {
-    let builder_new = impl_builder_new(builder_struct_ident, mandatory_fields, optional_fields, impl_generics, type_generics, where_clause);
-    let builder_setters = impl_builder_setters(builder_struct_ident, optional_fields, impl_generics, type_generics, where_clause);
-    let builder_trait = if !manual_impl {
-        impl_builder_trait(
-            builder_struct_ident,
-            struct_ident,
-            root,
-            impl_generics,
-            type_generics,
-            where_clause,
-            mandatory_fields,
-            optional_fields,
-        )
-    } else {
-        quote! {}
-    };
-
-    quote! {
-        #builder_new
-        #builder_setters
-        #builder_trait
-    }
 }

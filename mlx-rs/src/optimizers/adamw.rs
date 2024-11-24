@@ -1,6 +1,8 @@
+use std::convert::Infallible;
+
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, builder::Builder, utils::get_mut_or_insert_with, Array};
+use crate::{array, utils::get_mut_or_insert_with, Array};
 
 use super::{Betas, Optimizer, OptimizerState};
 
@@ -14,7 +16,10 @@ generate_builder! {
     /// [1]: Loshchilov, I. and Hutter, F., 2019. Decoupled weight decay regularization. ICLR 2019.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adamw,
+        root = crate
+    )]
     pub struct AdamW {
         /// The learning rate.
         #[builder(ty_override = f32)]
@@ -44,24 +49,20 @@ generate_builder! {
     }
 }
 
-impl Builder<AdamW> for AdamWBuilder {
-    type Error = std::convert::Infallible;
+/// Builds a new [`AdamW`] optimizer.
+fn build_adamw(builder: AdamWBuilder) -> Result<AdamW, Infallible> {
+    let lr = builder.lr;
+    let betas = builder.betas;
+    let eps = builder.eps;
+    let weight_decay = builder.weight_decay;
 
-    /// Builds a new [`AdamW`] optimizer.
-    fn build(self) -> Result<AdamW, Self::Error> {
-        let lr = self.lr;
-        let betas = self.betas;
-        let eps = self.eps;
-        let weight_decay = self.weight_decay;
-
-        Ok(AdamW {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            eps: array!(eps),
-            weight_decay: array!(weight_decay),
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(AdamW {
+        lr: array!(lr),
+        betas: (array!(betas.0), array!(betas.1)),
+        eps: array!(eps),
+        weight_decay: array!(weight_decay),
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdamW {

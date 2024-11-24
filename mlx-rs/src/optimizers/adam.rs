@@ -1,6 +1,8 @@
+use std::convert::Infallible;
+
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, builder::Builder, utils::get_mut_or_insert_with};
+use crate::{array, utils::get_mut_or_insert_with};
 
 use super::*;
 
@@ -16,7 +18,10 @@ generate_builder! {
     /// [1]: Kingma, D.P. and Ba, J., 2015. Adam: A method for stochastic optimization. ICLR 2015.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adam,
+        root = crate
+    )]
     pub struct Adam {
         /// The learning rate
         #[builder(ty_override = f32)]
@@ -40,22 +45,18 @@ generate_builder! {
     }
 }
 
-impl Builder<Adam> for AdamBuilder {
-    type Error = std::convert::Infallible;
+/// Builds a new [`Adam`].
+fn build_adam(builder: AdamBuilder) -> Result<Adam, Infallible> {
+    let lr = array!(builder.lr);
+    let betas = builder.betas;
+    let eps = array!(builder.eps);
 
-    /// Builds a new [`Adam`].
-    fn build(self) -> Result<Adam, Self::Error> {
-        let lr = self.lr;
-        let betas = self.betas;
-        let eps = array!(self.eps);
-
-        Ok(Adam {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            eps,
-            state: OptimizerState::new(),
-        })
-    }
+    Ok(Adam {
+        lr,
+        betas: (array!(betas.0), array!(betas.1)),
+        eps,
+        state: OptimizerState::new(),
+    })
 }
 
 impl Adam {

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{array, builder::Builder, ops::sqrt, utils::get_mut_or_insert_with, Array};
+use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
@@ -15,7 +15,11 @@ generate_builder! {
     /// [1]: Zeiler, M.D., 2012. ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_adadelta,
+        err = AdaDeltaBuildError,
+        root = crate
+    )]
     pub struct AdaDelta {
         /// The learning rate
         #[builder(ty_override = f32)]
@@ -37,29 +41,25 @@ generate_builder! {
     }
 }
 
-impl Builder<AdaDelta> for AdaDeltaBuilder {
-    type Error = AdaDeltaBuildError;
+/// Builds a new [`AdaDelta`] optimizer
+fn build_adadelta(builder: AdaDeltaBuilder) -> Result<AdaDelta, AdaDeltaBuildError> {
+    let rho = builder.rho;
+    let eps = builder.eps;
 
-    /// Builds a new [`AdaDelta`] optimizer
-    fn build(self) -> Result<AdaDelta, AdaDeltaBuildError> {
-        let rho = self.rho;
-        let eps = self.eps;
-
-        if rho < 0.0 {
-            return Err(AdaDeltaBuildError::NegativeRho);
-        }
-
-        if eps < 0.0 {
-            return Err(AdaDeltaBuildError::NegativeEps);
-        }
-
-        Ok(AdaDelta {
-            lr: array!(self.lr),
-            rho: array!(rho),
-            eps: array!(eps),
-            state: OptimizerState::new(),
-        })
+    if rho < 0.0 {
+        return Err(AdaDeltaBuildError::NegativeRho);
     }
+
+    if eps < 0.0 {
+        return Err(AdaDeltaBuildError::NegativeEps);
+    }
+
+    Ok(AdaDelta {
+        lr: array!(builder.lr),
+        rho: array!(rho),
+        eps: array!(eps),
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdaDelta {

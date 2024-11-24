@@ -715,7 +715,7 @@ pub fn which_device(
 
 #[cfg(test)]
 mod tests {
-    use crate::{array, builder::Builder, Dtype};
+    use crate::{array, Dtype};
 
     use super::*;
 

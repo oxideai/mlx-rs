@@ -1,7 +1,9 @@
 use std::rc::Rc;
 
 use crate::{
-    array, builder::Builder, ops::{sqrt, square}, Array
+    array,
+    ops::{sqrt, square},
+    Array,
 };
 use mlx_internal_macros::{generate_builder, Buildable};
 
@@ -16,7 +18,11 @@ generate_builder! {
     ///     machine learning
     #[derive(Debug, Clone, Buildable)]
     #[buildable(root = crate)]
-    #[builder(manual_impl, root = crate)]
+    #[builder(
+        build_with = build_rmdprop,
+        err = RmsPropBuildError,
+        root = crate
+    )]
     pub struct RmsProp {
         /// Learning rate
         #[builder(ty_override = f32)]
@@ -37,29 +43,25 @@ generate_builder! {
     }
 }
 
-impl Builder<RmsProp> for RmsPropBuilder {
-    type Error = RmsPropBuildError;
+fn build_rmdprop(builder: RmsPropBuilder) -> Result<RmsProp, RmsPropBuildError> {
+    let lr = builder.lr;
+    let alpha = builder.alpha;
+    let epsilon = builder.epsilon;
 
-    fn build(self) -> Result<RmsProp, RmsPropBuildError> {
-        let lr = self.lr;
-        let alpha = self.alpha;
-        let epsilon = self.epsilon;
-
-        if alpha < 0.0 {
-            return Err(RmsPropBuildError::NegativeAlpha);
-        }
-
-        if epsilon < 0.0 {
-            return Err(RmsPropBuildError::NegativeEpsilon);
-        }
-
-        Ok(RmsProp {
-            lr: array!(lr),
-            alpha: array!(alpha),
-            epsilon: array!(epsilon),
-            state: OptimizerState::new(),
-        })
+    if alpha < 0.0 {
+        return Err(RmsPropBuildError::NegativeAlpha);
     }
+
+    if epsilon < 0.0 {
+        return Err(RmsPropBuildError::NegativeEpsilon);
+    }
+
+    Ok(RmsProp {
+        lr: array!(lr),
+        alpha: array!(alpha),
+        epsilon: array!(epsilon),
+        state: OptimizerState::new(),
+    })
 }
 
 impl RmsProp {

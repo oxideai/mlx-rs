@@ -91,7 +91,7 @@ impl Rnn {
         RnnBuilder::default().build(input_size, hidden_size, non_linearity)
     }
 
-    fn forward_inner(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+    fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
         let x = if let Some(bias) = &self.bias.value {
             addmm(bias, x, self.wxh.t(), None, None)?
         } else {
@@ -115,6 +115,16 @@ impl Rnn {
 
 generate_builder! {
     /// A gated recurrent unit (GRU) RNN layer.
+    ///
+    /// The input has shape `NLD` or `LD` where:
+    ///
+    /// * `N` is the optional batch dimension
+    /// * `L` is the sequence length
+    /// * `D` is the input's feature dimension
+    ///
+    /// The hidden state `h` has shape `NH` or `H`, depending on
+    /// whether the input is batched or not. Returns the hidden state at each
+    /// time step, of shape `NLH` or `LH`.
     #[derive(Debug, Clone, ModuleParameters)]
     #[generate_builder(generate_build_fn = false)]
     pub struct Gru {
@@ -142,6 +152,11 @@ generate_builder! {
 
 impl GruBuilder {
     /// Build the [`Gru`] module.
+    /// 
+    /// # Params
+    /// 
+    /// - `input_size`: dimension of the input, `D` (see [`Gru`] for more details)
+    /// - `hidden_size`: dimension of the hidden state, `H` (see [`Gru`] for more details)
     pub fn build(self, input_size: i32, hidden_size: i32) -> Result<Gru, Exception> {
         let scale = 1.0 / f32::sqrt(hidden_size as f32);
         let wx = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
@@ -173,7 +188,7 @@ impl Gru {
         GruBuilder::default().build(input_size, hidden_size)
     }
 
-    fn forward_inner(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+    fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
         let x = if let Some(b) = &self.bias.value {
             addmm(b, x, self.wx.t(), None, None)?
         } else {
@@ -234,5 +249,97 @@ impl Gru {
         }
 
         stack(&all_hidden[..], -2)
+    }
+}
+
+generate_builder! {
+    /// A long short-term memory (LSTM) RNN layer.
+    #[derive(Debug, Clone, ModuleParameters)]
+    #[generate_builder(generate_build_fn = false)]
+    pub struct Lstm {
+        /// Wx
+        #[param]
+        pub wx: Param<Array>,
+
+        /// Wh
+        #[param]
+        pub wh: Param<Array>,
+
+        /// Bias. Enabled by default.
+        #[param]
+        #[optional(ty = bool)]
+        pub bias: Param<Option<Array>>,
+    }
+}
+
+impl LstmBuilder {
+    /// Build the [`Lstm`] module.
+    pub fn build(self, input_size: i32, hidden_size: i32) -> Result<Lstm, Exception> {
+        let scale = 1.0 / f32::sqrt(hidden_size as f32);
+        let wx = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
+        let wh = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
+        let bias = if self.bias.unwrap_or(Lstm::DEFAULT_BIAS) {
+            Some(uniform::<_, f32>(-scale, scale, &[4 * hidden_size], None)?)
+        } else {
+            None
+        };
+
+        Ok(Lstm {
+            wx: Param::new(wx),
+            wh: Param::new(wh),
+            bias: Param::new(bias),
+        })
+    }
+}
+
+impl Lstm {
+    /// Default value for `bias`
+    pub const DEFAULT_BIAS: bool = true;
+
+    /// Create a new [`Lstm`] layer.
+    pub fn new(input_size: i32, hidden_size: i32) -> Result<Lstm, Exception> {
+        LstmBuilder::default().build(input_size, hidden_size)
+    }
+
+    fn step(&mut self, x: &Array, hidden: Option<&Array>, cell: Option<&Array>) -> Result<(Array, Array), Exception> {
+        let x = if let Some(b) = &self.bias.value {
+            addmm(b, x, self.wx.t(), None, None)?
+        } else {
+            matmul(x, &self.wx.t())?
+        };
+
+        let mut all_hidden = Vec::new();
+        let mut all_cell = Vec::new();
+
+        for index in 0..x.dim(-2) {
+            let mut ifgo = x.index((Ellipsis, index, 0..));
+            if let Some(hidden) = hidden {
+                ifgo = addmm(&ifgo, hidden, self.wh.t(), None, None)?;
+            }
+
+            let pieces = split_equal(&ifgo, 4, -1)?;
+
+            let i = sigmoid(&pieces[0]);
+            let f = sigmoid(&pieces[1]);
+            let g = tanh(&pieces[2]);
+            let o = sigmoid(&pieces[3]);
+
+            let cell = match cell {
+                Some(cell) => {
+                    f.multiply(cell)?.add(i.multiply(&g)?)?
+                },
+                None => {
+                    i.multiply(&g)?
+                },
+            };
+
+            let hidden = o.multiply(&tanh(&cell))?;
+
+            all_hidden.push(hidden);
+            all_cell.push(cell);
+        }
+
+
+        Ok((stack(&all_hidden[..], -2)?, stack(&all_cell[..], -2)?))
     }
 }

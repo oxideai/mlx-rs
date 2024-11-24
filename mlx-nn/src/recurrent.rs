@@ -2,53 +2,86 @@ use std::sync::Arc;
 
 use mlx_internal_macros::generate_builder;
 use mlx_macros::ModuleParameters;
-use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{addmm, matmul, sigmoid, split, split_equal, stack, tanh}, prelude::{Ellipsis, IndexOp}, random::uniform, Array, Stream};
+use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{addmm, matmul, sigmoid, split, split_equal, stack, tanh, tanh_device}, prelude::{Ellipsis, IndexOp}, random::uniform, Array, Stream};
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
 
-generate_builder! {
-    /// An Elman recurrent layer.
-    ///
-    /// The input is a sequence of shape `NLD` or `LD` where:
-    ///
-    /// * `N` is the optional batch dimension
-    /// * `L` is the sequence length
-    /// * `D` is the input's feature dimension
-    ///
-    /// The hidden state `h` has shape `NH` or `H`, depending on
-    /// whether the input is batched or not. Returns the hidden state at each
-    /// time step, of shape `NLH` or `LH`.
-    #[derive(Clone, ModuleParameters)]
-    #[generate_builder(generate_build_fn = false)]
-    pub struct Rnn {
-        /// non-linearity function to use
-        pub non_linearity: Arc<NonLinearity>,
-    
-        /// Wxh
-        #[param]
-        pub wxh: Param<Array>,
-    
-        /// Whh
-        #[param]
-        pub whh: Param<Array>,
-    
-        /// Bias. Enabled by default.
-        #[param]
-        #[optional(ty = bool)]
-        pub bias: Param<Option<Array>>,
+
+/// An Elman recurrent layer.
+///
+/// The input is a sequence of shape `NLD` or `LD` where:
+///
+/// * `N` is the optional batch dimension
+/// * `L` is the sequence length
+/// * `D` is the input's feature dimension
+///
+/// The hidden state `h` has shape `NH` or `H`, depending on
+/// whether the input is batched or not. Returns the hidden state at each
+/// time step, of shape `NLH` or `LH`.
+#[derive(Clone, ModuleParameters)]
+pub struct Rnn {
+    /// non-linearity function to use
+    pub non_linearity: Arc<NonLinearity>,
+
+    /// Wxh
+    #[param]
+    pub wxh: Param<Array>,
+
+    /// Whh
+    #[param]
+    pub whh: Param<Array>,
+
+    /// Bias. Enabled by default.
+    #[param]
+    pub bias: Param<Option<Array>>,
+}
+
+/// Builder for the [`Rnn`] module.
+#[derive(Clone, Default)]
+pub struct RnnBuilder {
+    /// non-linearity function to use
+    pub non_linearity: Option<Arc<NonLinearity>>,
+
+    /// Bias. Default to [`Rnn::DEFAULT_BIAS`].
+    pub bias: Option<bool>,
+}
+
+impl std::fmt::Debug for RnnBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("RnnBuilder")
+            .field("bias", &self.bias)
+            .finish()
     }
 }
 
 impl RnnBuilder {
+    /// Create a new [`RnnBuilder`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the non-linearity function to use.
+    pub fn non_linearity(mut self, non_linearity: impl Into<Option<Arc<NonLinearity>>>) -> Self {
+        self.non_linearity = non_linearity.into();
+        self
+    }
+
+    /// Set the bias.
+    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
+        self.bias = bias.into();
+        self
+    }
+
     /// Build the [`Rnn`] module.
     pub fn build(
         self, 
         input_size: i32, 
         hidden_size: i32,
-        non_linearity: impl Fn(&Array, &Stream) -> Result<Array, Exception> + 'static
     ) -> Result<Rnn, Exception> {
-        let non_linearity = Arc::new(non_linearity);
+        let non_linearity = self.non_linearity.unwrap_or_else(|| {
+            Arc::new(|x, d| Ok(tanh_device(x, d)))
+        });
 
         let scale = 1.0 / (input_size as f32).sqrt();
         let wxh = uniform::<_, f32>(-scale, scale, &[hidden_size, input_size], None)?;
@@ -82,13 +115,17 @@ impl Rnn {
     /// Default value for bias
     pub const DEFAULT_BIAS: bool = true;
 
+    /// Create a new [`RnnBuilder`].
+    pub fn builder() -> RnnBuilder {
+        RnnBuilder::new()
+    }
+
     /// Create a new [`RNN`] layer.
     pub fn new(
         input_size: i32,
         hidden_size: i32,
-        non_linearity: impl Fn(&Array, &Stream) -> Result<Array, Exception> + 'static
     ) -> Result<Rnn, Exception> {
-        RnnBuilder::default().build(input_size, hidden_size, non_linearity)
+        RnnBuilder::default().build(input_size, hidden_size)
     }
 
     fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
@@ -341,5 +378,61 @@ impl Lstm {
 
 
         Ok((stack(&all_hidden[..], -2)?, stack(&all_cell[..], -2)?))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    // def test_rnn(self):
+    //     layer = nn.RNN(input_size=5, hidden_size=12, bias=True)
+    //     inp = mx.random.normal((2, 25, 5))
+
+    //     h_out = layer(inp)
+    //     self.assertEqual(h_out.shape, (2, 25, 12))
+
+    //     layer = nn.RNN(
+    //         5,
+    //         12,
+    //         bias=False,
+    //         nonlinearity=lambda x: mx.maximum(0, x),
+    //     )
+
+    //     h_out = layer(inp)
+    //     self.assertEqual(h_out.shape, (2, 25, 12))
+
+    //     with self.assertRaises(ValueError):
+    //         nn.RNN(5, 12, nonlinearity="tanh")
+
+    //     inp = mx.random.normal((44, 5))
+    //     h_out = layer(inp)
+    //     self.assertEqual(h_out.shape, (44, 12))
+
+    //     h_out = layer(inp, hidden=h_out[-1, :])
+    //     self.assertEqual(h_out.shape, (44, 12))
+
+    use mlx_rs::{ops::maximum_device, random::normal};
+
+    use super::*;
+
+    #[test]
+    fn test_rnn() {
+        let mut layer = Rnn::new(5, 12).unwrap();
+        let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
+
+        let h_out = layer.step(&inp, None).unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+
+        let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
+        let mut layer = Rnn::builder()
+            .bias(false)
+            .non_linearity(Arc::new(nonlinearity) as Arc<NonLinearity>)
+            .build(5, 12)
+            .unwrap();
+
+        let h_out = layer.step(&inp, None).unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+
+        todo!()
     }
 }

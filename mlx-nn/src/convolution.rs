@@ -269,11 +269,11 @@ pub struct Conv3dBuilder {
 
     /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv3d::DEFAULT_PADDING)]
-    pub padding:  SingleOrTriple<i32>,
+    pub padding: SingleOrTriple<i32>,
 
     /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = Conv3d::DEFAULT_STRIDE)]
-    pub stride:  SingleOrTriple<i32>,
+    pub stride: SingleOrTriple<i32>,
 }
 
 fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {

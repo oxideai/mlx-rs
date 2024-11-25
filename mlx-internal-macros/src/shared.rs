@@ -176,17 +176,15 @@ impl<'a> BuilderStructAnalyzer<'a> {
         }
     }
 
-    pub(crate) fn impl_struct_new(
-        &self,
-        is_default_infallible: bool,
-    ) -> proc_macro2::TokenStream {
+    pub(crate) fn impl_struct_new(&self, is_default_infallible: bool) -> proc_macro2::TokenStream {
         let struct_ident = self.struct_ident;
         let root = self.root;
         let impl_generics = self.impl_generics;
         let type_generics = self.type_generics;
         let where_clause = self.where_clause;
 
-        let mandatory_field_idents = self.mandatory_fields
+        let mandatory_field_idents = self
+            .mandatory_fields
             .iter()
             .map(|field| &field.ident)
             .collect::<Vec<_>>();

@@ -6,8 +6,8 @@ use syn::DeriveInput;
 use crate::{
     derive_buildable::StructProperty,
     shared::{
-        parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty,
-        PathOrIdent, Result,
+        parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent,
+        Result,
     },
 };
 
@@ -30,7 +30,9 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
     };
 
     let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(input)?;
-    let is_default_infallible = builder_struct_prop.default_infallible.unwrap_or_else(|| builder_struct_prop.err.is_none());
+    let is_default_infallible = builder_struct_prop
+        .default_infallible
+        .unwrap_or_else(|| builder_struct_prop.err.is_none());
 
     let builder_struct_ident = match &struct_prop.builder {
         Some(path) => PathOrIdent::Path(path.clone()),

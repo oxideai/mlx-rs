@@ -1,4 +1,4 @@
-use mlx_internal_macros::{Builder, Buildable};
+use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::Module;
 use mlx_rs::Array;

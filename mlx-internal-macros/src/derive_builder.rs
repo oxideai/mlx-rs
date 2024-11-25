@@ -1,6 +1,6 @@
 use darling::FromDeriveInput;
-use syn::{DeriveInput, Ident};
 use quote::quote;
+use syn::{DeriveInput, Ident};
 
 use crate::shared::{
     parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent,
@@ -28,7 +28,9 @@ pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::T
 
     let builder_struct_ident = PathOrIdent::Ident(builder_ident.clone());
     let (mandatory_fields, optional_fields) = parse_fields_from_derive_input(&input)?;
-    let is_default_infallible = builder_struct_prop.default_infallible.unwrap_or_else(|| builder_struct_prop.err.is_none());
+    let is_default_infallible = builder_struct_prop
+        .default_infallible
+        .unwrap_or_else(|| builder_struct_prop.err.is_none());
 
     let builder_struct_analyzer = BuilderStructAnalyzer {
         struct_ident: &struct_ident,

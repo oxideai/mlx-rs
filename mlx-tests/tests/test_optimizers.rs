@@ -8,8 +8,8 @@ use mlx_rs::{
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
     optimizers::{
-        AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder,
-        Optimizer, RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
+        AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
+        RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
     transforms::{eval, eval_params},

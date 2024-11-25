@@ -847,7 +847,7 @@ impl MarginRankingLoss {
 #[allow(clippy::approx_constant)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{array, assert_array_eq, ops::is_nan, builder::Builder};
+    use mlx_rs::{array, assert_array_eq, builder::Builder, ops::is_nan};
 
     use super::*;
 

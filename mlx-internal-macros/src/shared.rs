@@ -44,23 +44,38 @@ impl<'a> BuilderStructAnalyzer<'a> {
         let mandatory_field_idents = self.mandatory_fields.iter().map(|field| &field.ident);
         let mandatory_field_tys = self.mandatory_fields.iter().map(|field| &field.ty);
 
-        let optional_field_idents = self.optional_fields.iter().map(|field| &field.ident);
+        let optional_field_idents = self
+            .optional_fields
+            .iter()
+            .map(|field| &field.ident)
+            .collect::<Vec<_>>();
         let optional_field_tys = self.optional_fields.iter().map(|field| &field.ty);
+        let optional_field_defaults = self.optional_fields.iter().map(|field| &field.default);
 
         let doc = format!("Builder for `{}`.", struct_ident);
 
-        let field_doc = format!("See [`{}`] for more information.", struct_ident);
+        let mandatory_field_doc = format!("See [`{}`] for more information.", struct_ident);
+        let optional_field_doc =
+            optional_field_idents
+                .iter()
+                .zip(optional_field_defaults)
+                .map(|(ident, default)| {
+                    format!(
+                    "See [`{}::{}`] for more information. Initialized with default value [`{}`].",
+                    struct_ident, ident, default.to_token_stream()
+                )
+                });
 
         quote! {
             #[doc = #doc]
             #[derive(Debug, Clone)]
             pub struct #builder_ident #type_generics #where_clause {
                 #(
-                    #[doc = #field_doc]
+                    #[doc = #mandatory_field_doc]
                     #mandatory_field_idents: #mandatory_field_tys,
                 )*
                 #(
-                    #[doc = #field_doc]
+                    #[doc = #optional_field_doc]
                     #optional_field_idents: #optional_field_tys,
                 )*
             }

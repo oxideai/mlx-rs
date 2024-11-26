@@ -38,8 +38,9 @@ struct LinearFunctionModel {
     pub b: Param<Array>,
 }
 
-impl Module for LinearFunctionModel {
+impl<'a> Module<&'a Array> for LinearFunctionModel {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         self.m.multiply(x)?.add(&self.b)

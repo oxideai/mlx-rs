@@ -64,7 +64,8 @@ impl Pool {
     }
 }
 
-impl Module for Pool {
+impl<'a> Module<&'a Array> for Pool {
+    type Output = Array;
     type Error = Exception;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -114,7 +115,8 @@ impl Module for Pool {
 
 macro_rules! impl_module {
     ($name:ident) => {
-        impl Module for $name {
+        impl<'a> Module<&'a Array> for $name {
+            type Output = Array;
             type Error = Exception;
 
             fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
@@ -177,11 +179,14 @@ impl MaxPool2d {
     ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
-    pub fn new(kernel_size: impl SingleOrPair<i32>, stride: impl SingleOrPair<usize>) -> Self {
-        let kernel_size = kernel_size.into_pair();
-        let kernel_size = vec![kernel_size.0, kernel_size.1];
-        let stride = stride.into_pair();
-        let stride = vec![stride.0, stride.1];
+    pub fn new(
+        kernel_size: impl Into<SingleOrPair<i32>>,
+        stride: impl Into<SingleOrPair<usize>>,
+    ) -> Self {
+        let kernel_size = kernel_size.into();
+        let kernel_size = vec![kernel_size.first(), kernel_size.second()];
+        let stride = stride.into();
+        let stride = vec![stride.first(), stride.second()];
 
         let op = |x: &Array, axes: &[i32]| x.max(axes, None);
         let inner = Pool::new(kernel_size, stride, op);
@@ -240,11 +245,14 @@ impl AvgPool2d {
     ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
-    pub fn new(kernel_size: impl SingleOrPair<i32>, stride: impl SingleOrPair<usize>) -> Self {
-        let kernel_size = kernel_size.into_pair();
-        let kernel_size = vec![kernel_size.0, kernel_size.1];
-        let stride = stride.into_pair();
-        let stride = vec![stride.0, stride.1];
+    pub fn new(
+        kernel_size: impl Into<SingleOrPair<i32>>,
+        stride: impl Into<SingleOrPair<usize>>,
+    ) -> Self {
+        let kernel_size = kernel_size.into();
+        let kernel_size = vec![kernel_size.first(), kernel_size.second()];
+        let stride = stride.into();
+        let stride = vec![stride.first(), stride.second()];
 
         let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
         let inner = Pool::new(kernel_size, stride, op);

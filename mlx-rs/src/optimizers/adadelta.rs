@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
 
@@ -13,48 +13,53 @@ generate_builder! {
     /// Please refer to the original paper for more details:
     ///
     /// [1]: Zeiler, M.D., 2012. ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_adadelta,
+        err = AdaDeltaBuildError,
+        root = crate
+    )]
     pub struct AdaDelta {
         /// The learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The coefficient used for computing a running average of squared gradients. Default to
         /// [`AdaDelta::DEFAULT_RHO`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdaDelta::DEFAULT_RHO)]
         pub rho: Array,
 
         /// The epsilon added to the denominator to improve numerical stability. Default to
         /// [`AdaDelta::DEFAULT_EPS`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdaDelta::DEFAULT_EPS)]
         pub eps: Array,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState<(Array, Array)>,
     }
 }
 
-impl AdaDeltaBuilder {
-    /// Builds a new [`AdaDelta`] optimizer
-    pub fn build(self, lr: f32) -> Result<AdaDelta, AdaDeltaBuildError> {
-        let rho = self.rho.unwrap_or(AdaDelta::DEFAULT_RHO);
-        let eps = self.eps.unwrap_or(AdaDelta::DEFAULT_EPS);
+/// Builds a new [`AdaDelta`] optimizer
+fn build_adadelta(builder: AdaDeltaBuilder) -> Result<AdaDelta, AdaDeltaBuildError> {
+    let rho = builder.rho;
+    let eps = builder.eps;
 
-        if rho < 0.0 {
-            return Err(AdaDeltaBuildError::NegativeRho);
-        }
-
-        if eps < 0.0 {
-            return Err(AdaDeltaBuildError::NegativeEps);
-        }
-
-        Ok(AdaDelta {
-            lr: array!(lr),
-            rho: array!(rho),
-            eps: array!(eps),
-            state: OptimizerState::new(),
-        })
+    if rho < 0.0 {
+        return Err(AdaDeltaBuildError::NegativeRho);
     }
+
+    if eps < 0.0 {
+        return Err(AdaDeltaBuildError::NegativeEps);
+    }
+
+    Ok(AdaDelta {
+        lr: array!(builder.lr),
+        rho: array!(rho),
+        eps: array!(eps),
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdaDelta {
@@ -63,12 +68,6 @@ impl AdaDelta {
 
     /// Default value for `eps`
     pub const DEFAULT_EPS: f32 = 1e-6;
-
-    /// Creates a new AdaDelta optimizer with all optional parameters set to their default values
-    pub fn new(lr: f32) -> Self {
-        // SAFETY: The default values are valid
-        Self::builder().build(lr).unwrap()
-    }
 }
 
 impl Optimizer for AdaDelta {

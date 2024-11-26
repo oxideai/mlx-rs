@@ -214,7 +214,7 @@ fn build_gru(builder: GruBuilder) -> Result<Gru, Exception> {
 
     let scale = 1.0 / f32::sqrt(hidden_size as f32);
     let wx = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
-    let wh = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
+    let wh = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, hidden_size], None)?;
     let (bias, bhn) = if builder.bias {
         let bias = uniform::<_, f32>(-scale, scale, &[3 * hidden_size], None)?;
         let bhn = uniform::<_, f32>(-scale, scale, &[hidden_size], None)?;
@@ -250,11 +250,11 @@ impl Gru {
         let mut all_hidden = Vec::new();
 
         for index in 0..x.dim(-2) {
-            let mut rz = x_rz.index((Ellipsis, index, 0..));
+            let mut rz = x_rz.index((Ellipsis, index, ..));
             let mut h_proj_n = None;
             if let Some(hidden_) = hidden {
                 let h_proj = matmul(hidden_, &self.wh.t())?;
-                let h_proj_rz = h_proj.index((Ellipsis, 0..(-self.hidden_size)));
+                let h_proj_rz = h_proj.index((Ellipsis, ..(-self.hidden_size)));
                 h_proj_n = Some(h_proj.index((Ellipsis, (-self.hidden_size)..)));
 
                 if let Some(bhn) = &self.bhn.value {
@@ -346,7 +346,7 @@ fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
     let hidden_size = builder.hidden_size;
     let scale = 1.0 / f32::sqrt(hidden_size as f32);
     let wx = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
-    let wh = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
+    let wh = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, hidden_size], None)?;
     let bias = if builder.bias {
         Some(uniform::<_, f32>(-scale, scale, &[4 * hidden_size], None)?)
     } else {
@@ -423,6 +423,7 @@ impl<'a> Module<(&'a Array, Option<&'a Array>, Option<&'a Array>)> for Lstm {
     fn training_mode(&mut self, _mode: bool) {}
 }
 
+// The uint tests below are ported from the python codebase
 #[cfg(test)]
 mod tests {
     use mlx_rs::{ops::maximum_device, prelude::Builder, random::normal};
@@ -453,5 +454,59 @@ mod tests {
 
         let h_out = layer.step(&inp, Some(&h_out.index((-1, ..)))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
+    }
+
+    #[test]
+    fn test_gru() {
+        let mut layer = Gru::new(5, 12).unwrap();
+        let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
+
+        let h_out = layer.step(&inp, None).unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+
+        let h_out = layer.step(&inp, Some(&h_out.index((.., -1, ..)))).unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+
+        let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
+        let h_out = layer.forward((&inp, None)).unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
+
+        let h_out = layer.step(&inp, Some(&h_out.index((-1, ..)))).unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
+    }
+
+    #[test]
+    fn test_lstm() {
+        let mut layer = Lstm::new(5, 12).unwrap();
+        let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
+
+        let (h_out, c_out) = layer.step(&inp, None, None).unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+        assert_eq!(c_out.shape(), &[2, 25, 12]);
+
+        let (h_out, c_out) = layer
+            .step(
+                &inp,
+                Some(&h_out.index((.., -1, ..))),
+                Some(&c_out.index((.., -1, ..))),
+            )
+            .unwrap();
+        assert_eq!(h_out.shape(), &[2, 25, 12]);
+        assert_eq!(c_out.shape(), &[2, 25, 12]);
+
+        let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
+        let (h_out, c_out) = layer.forward((&inp, None, None)).unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
+        assert_eq!(c_out.shape(), &[44, 12]);
+
+        let (h_out, c_out) = layer
+            .step(
+                &inp,
+                Some(&h_out.index((-1, ..))),
+                Some(&c_out.index((-1, ..))),
+            )
+            .unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
+        assert_eq!(c_out.shape(), &[44, 12]);
     }
 }

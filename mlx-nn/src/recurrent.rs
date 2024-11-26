@@ -1,12 +1,19 @@
 use std::sync::Arc;
 
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{array, error::Exception, module::{Module, Param}, ops::{addmm, matmul, sigmoid, split, split_equal, stack, tanh, tanh_device}, prelude::{Ellipsis, IndexOp}, random::uniform, Array, Stream};
+use mlx_rs::{
+    array,
+    error::Exception,
+    module::{Module, Param},
+    ops::{addmm, matmul, sigmoid, split_equal, stack, tanh, tanh_device},
+    prelude::{Ellipsis, IndexOp},
+    random::uniform,
+    Array, Stream,
+};
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
-
 
 /// An Elman recurrent layer.
 ///
@@ -19,7 +26,7 @@ pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
 /// The hidden state `h` has shape `NH` or `H`, depending on
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
-#[derive(Clone, ModuleParameters)]
+#[derive(Clone, ModuleParameters, Buildable)]
 pub struct Rnn {
     /// non-linearity function to use
     pub non_linearity: Arc<NonLinearity>,
@@ -38,13 +45,25 @@ pub struct Rnn {
 }
 
 /// Builder for the [`Rnn`] module.
-#[derive(Clone, Default)]
+#[derive(Clone, Builder)]
+#[builder(
+    build_with = build_rnn,
+    err = Exception,
+)]
 pub struct RnnBuilder {
-    /// non-linearity function to use
+    /// Dimension of the input, `D`.
+    pub input_size: i32,
+
+    /// Dimension of the hidden state, `H`.
+    pub hidden_size: i32,
+
+    /// non-linearity function to use. Default to `tanh` if not set.
+    #[builder(optional, default = Rnn::DEFAULT_NONLINEARITY)]
     pub non_linearity: Option<Arc<NonLinearity>>,
 
     /// Bias. Default to [`Rnn::DEFAULT_BIAS`].
-    pub bias: Option<bool>,
+    #[builder(optional, default = Rnn::DEFAULT_BIAS)]
+    pub bias: bool,
 }
 
 impl std::fmt::Debug for RnnBuilder {
@@ -55,50 +74,29 @@ impl std::fmt::Debug for RnnBuilder {
     }
 }
 
-impl RnnBuilder {
-    /// Create a new [`RnnBuilder`].
-    pub fn new() -> Self {
-        Self::default()
-    }
+/// Build the [`Rnn`] module.
+fn build_rnn(builder: RnnBuilder) -> Result<Rnn, Exception> {
+    let input_size = builder.input_size;
+    let hidden_size = builder.hidden_size;
+    let non_linearity = builder
+        .non_linearity
+        .unwrap_or_else(|| Arc::new(|x, d| Ok(tanh_device(x, d))));
 
-    /// Set the non-linearity function to use.
-    pub fn non_linearity(mut self, non_linearity: impl Into<Option<Arc<NonLinearity>>>) -> Self {
-        self.non_linearity = non_linearity.into();
-        self
-    }
+    let scale = 1.0 / (input_size as f32).sqrt();
+    let wxh = uniform::<_, f32>(-scale, scale, &[hidden_size, input_size], None)?;
+    let whh = uniform::<_, f32>(-scale, scale, &[hidden_size, hidden_size], None)?;
+    let bias = if builder.bias {
+        Some(uniform::<_, f32>(-scale, scale, &[hidden_size], None)?)
+    } else {
+        None
+    };
 
-    /// Set the bias.
-    pub fn bias(mut self, bias: impl Into<Option<bool>>) -> Self {
-        self.bias = bias.into();
-        self
-    }
-
-    /// Build the [`Rnn`] module.
-    pub fn build(
-        self, 
-        input_size: i32, 
-        hidden_size: i32,
-    ) -> Result<Rnn, Exception> {
-        let non_linearity = self.non_linearity.unwrap_or_else(|| {
-            Arc::new(|x, d| Ok(tanh_device(x, d)))
-        });
-
-        let scale = 1.0 / (input_size as f32).sqrt();
-        let wxh = uniform::<_, f32>(-scale, scale, &[hidden_size, input_size], None)?;
-        let whh = uniform::<_, f32>(-scale, scale, &[hidden_size, hidden_size], None)?;
-        let bias = if self.bias.unwrap_or(Rnn::DEFAULT_BIAS) {
-            Some(uniform::<_, f32>(-scale, scale, &[hidden_size], None)?)
-        } else {
-            None
-        };
-
-        Ok(Rnn {
-            non_linearity,
-            wxh: Param::new(wxh),
-            whh: Param::new(whh),
-            bias: Param::new(bias),
-        })
-    }
+    Ok(Rnn {
+        non_linearity,
+        wxh: Param::new(wxh),
+        whh: Param::new(whh),
+        bias: Param::new(bias),
+    })
 }
 
 impl std::fmt::Debug for Rnn {
@@ -115,20 +113,11 @@ impl Rnn {
     /// Default value for bias
     pub const DEFAULT_BIAS: bool = true;
 
-    /// Create a new [`RnnBuilder`].
-    pub fn builder() -> RnnBuilder {
-        RnnBuilder::new()
-    }
+    /// RnnBuilder::non_linearity is initialized with `None`, and the default non-linearity is `tanh` if not set.
+    pub const DEFAULT_NONLINEARITY: Option<Arc<NonLinearity>> = None;
 
-    /// Create a new [`RNN`] layer.
-    pub fn new(
-        input_size: i32,
-        hidden_size: i32,
-    ) -> Result<Rnn, Exception> {
-        RnnBuilder::default().build(input_size, hidden_size)
-    }
-
-    fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+    /// Apply a single step of the RNN.
+    pub fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
         let x = if let Some(bias) = &self.bias.value {
             addmm(bias, x, self.wxh.t(), None, None)?
         } else {
@@ -138,7 +127,13 @@ impl Rnn {
         let mut all_hidden = Vec::new();
         for index in 0..x.dim(-2) {
             let hidden = match hidden {
-                Some(hidden_) => addmm(x.index((Ellipsis, index, 0..)), hidden_, self.whh.t(), None, None)?,
+                Some(hidden_) => addmm(
+                    x.index((Ellipsis, index, 0..)),
+                    hidden_,
+                    self.whh.t(),
+                    None,
+                    None,
+                )?,
                 None => x.index((Ellipsis, index, 0..)),
             };
 
@@ -150,82 +145,99 @@ impl Rnn {
     }
 }
 
-generate_builder! {
-    /// A gated recurrent unit (GRU) RNN layer.
-    ///
-    /// The input has shape `NLD` or `LD` where:
-    ///
-    /// * `N` is the optional batch dimension
-    /// * `L` is the sequence length
-    /// * `D` is the input's feature dimension
-    ///
-    /// The hidden state `h` has shape `NH` or `H`, depending on
-    /// whether the input is batched or not. Returns the hidden state at each
-    /// time step, of shape `NLH` or `LH`.
-    #[derive(Debug, Clone, ModuleParameters)]
-    #[generate_builder(generate_build_fn = false)]
-    pub struct Gru {
-        /// Dimension of the hidden state, `H`
-        pub hidden_size: i32,
+impl<'a> Module<(&'a Array, Option<&'a Array>)> for Rnn {
+    type Output = Array;
+    type Error = Exception;
 
-        /// Wx
-        #[param]
-        pub wx: Param<Array>,
-
-        /// Wh
-        #[param]
-        pub wh: Param<Array>,
-
-        /// Bias. Enabled by default.
-        #[param]
-        #[optional(ty = bool)]
-        pub bias: Param<Option<Array>>,
-
-        /// bhn. Enabled by default.
-        #[param]
-        pub bhn: Param<Option<Array>>,
+    fn forward(&mut self, input: (&'a Array, Option<&'a Array>)) -> Result<Array, Exception> {
+        let (x, hidden) = input;
+        self.step(x, hidden)
     }
+
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
-impl GruBuilder {
-    /// Build the [`Gru`] module.
-    /// 
-    /// # Params
-    /// 
-    /// - `input_size`: dimension of the input, `D` (see [`Gru`] for more details)
-    /// - `hidden_size`: dimension of the hidden state, `H` (see [`Gru`] for more details)
-    pub fn build(self, input_size: i32, hidden_size: i32) -> Result<Gru, Exception> {
-        let scale = 1.0 / f32::sqrt(hidden_size as f32);
-        let wx = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
-        let wh = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
-        let (bias, bhn) = if self.bias.unwrap_or(Gru::DEFAULT_BIAS) {
-            let bias = uniform::<_, f32>(-scale, scale, &[3 * hidden_size], None)?;
-            let bhn = uniform::<_, f32>(-scale, scale, &[hidden_size], None)?;
-            (Some(bias), Some(bhn))
-        } else {
-            (None, None)
-        };
+/// A gated recurrent unit (GRU) RNN layer.
+///
+/// The input has shape `NLD` or `LD` where:
+///
+/// * `N` is the optional batch dimension
+/// * `L` is the sequence length
+/// * `D` is the input's feature dimension
+///
+/// The hidden state `h` has shape `NH` or `H`, depending on
+/// whether the input is batched or not. Returns the hidden state at each
+/// time step, of shape `NLH` or `LH`.
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
+pub struct Gru {
+    /// Dimension of the hidden state, `H`
+    pub hidden_size: i32,
 
-        Ok(Gru {
-            hidden_size,
-            wx: Param::new(wx),
-            wh: Param::new(wh),
-            bias: Param::new(bias),
-            bhn: Param::new(bhn),
-        })
-    }
+    /// Wx
+    #[param]
+    pub wx: Param<Array>,
+
+    /// Wh
+    #[param]
+    pub wh: Param<Array>,
+
+    /// Bias. Enabled by default.
+    #[param]
+    pub bias: Param<Option<Array>>,
+
+    /// bhn. Enabled by default.
+    #[param]
+    pub bhn: Param<Option<Array>>,
+}
+
+/// Builder for the [`Gru`] module.
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_gru,
+    err = Exception,
+)]
+pub struct GruBuilder {
+    /// Dimension of the input, `D`.
+    pub input_size: i32,
+
+    /// Dimension of the hidden state, `H`.
+    pub hidden_size: i32,
+
+    /// Bias. Default to [`Gru::DEFAULT_BIAS`].
+    #[builder(optional, default = Gru::DEFAULT_BIAS)]
+    pub bias: bool,
+}
+
+fn build_gru(builder: GruBuilder) -> Result<Gru, Exception> {
+    let input_size = builder.input_size;
+    let hidden_size = builder.hidden_size;
+
+    let scale = 1.0 / f32::sqrt(hidden_size as f32);
+    let wx = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
+    let wh = uniform::<_, f32>(-scale, scale, &[3 * hidden_size, input_size], None)?;
+    let (bias, bhn) = if builder.bias {
+        let bias = uniform::<_, f32>(-scale, scale, &[3 * hidden_size], None)?;
+        let bhn = uniform::<_, f32>(-scale, scale, &[hidden_size], None)?;
+        (Some(bias), Some(bhn))
+    } else {
+        (None, None)
+    };
+
+    Ok(Gru {
+        hidden_size,
+        wx: Param::new(wx),
+        wh: Param::new(wh),
+        bias: Param::new(bias),
+        bhn: Param::new(bhn),
+    })
 }
 
 impl Gru {
     /// Enable `bias` and `bhn` by default
     pub const DEFAULT_BIAS: bool = true;
 
-    /// Create a new [`Gru`] layer.
-    pub fn new(input_size: i32, hidden_size: i32) -> Result<Gru, Exception> {
-        GruBuilder::default().build(input_size, hidden_size)
-    }
-
-    fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+    /// Apply a single step of the GRU.
+    pub fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
         let x = if let Some(b) = &self.bias.value {
             addmm(b, x, self.wx.t(), None, None)?
         } else {
@@ -246,15 +258,15 @@ impl Gru {
                 h_proj_n = Some(h_proj.index((Ellipsis, (-self.hidden_size)..)));
 
                 if let Some(bhn) = &self.bhn.value {
-                    h_proj_n = h_proj_n.map(|h_proj_n| h_proj_n.add(bhn))
+                    h_proj_n = h_proj_n
+                        .map(|h_proj_n| h_proj_n.add(bhn))
                         // This is not matrix transpose, but from `Option<Result<_>>` to `Result<Option<_>>`
                         .transpose()?;
                 }
 
                 rz = rz.add(h_proj_rz)?;
-
             }
-            
+
             rz = sigmoid(&rz);
 
             let parts = split_equal(&rz, 2, -1)?;
@@ -269,17 +281,11 @@ impl Gru {
             n = tanh(&n);
 
             let hidden = match hidden {
-                Some(hidden) => {
-                    array!(1.0)
-                        .subtract(z)?
-                        .multiply(&n)?
-                        .add(z.multiply(hidden)?)?
-                },
-                None => {
-                    array!(1.0)
-                        .subtract(z)?
-                        .multiply(&n)?
-                },
+                Some(hidden) => array!(1.0)
+                    .subtract(z)?
+                    .multiply(&n)?
+                    .add(z.multiply(hidden)?)?,
+                None => array!(1.0).subtract(z)?.multiply(&n)?,
             };
 
             all_hidden.push(hidden);
@@ -289,56 +295,82 @@ impl Gru {
     }
 }
 
-generate_builder! {
-    /// A long short-term memory (LSTM) RNN layer.
-    #[derive(Debug, Clone, ModuleParameters)]
-    #[generate_builder(generate_build_fn = false)]
-    pub struct Lstm {
-        /// Wx
-        #[param]
-        pub wx: Param<Array>,
+impl<'a> Module<(&'a Array, Option<&'a Array>)> for Gru {
+    type Output = Array;
+    type Error = Exception;
 
-        /// Wh
-        #[param]
-        pub wh: Param<Array>,
-
-        /// Bias. Enabled by default.
-        #[param]
-        #[optional(ty = bool)]
-        pub bias: Param<Option<Array>>,
+    fn forward(&mut self, input: (&'a Array, Option<&'a Array>)) -> Result<Array, Exception> {
+        let (x, hidden) = input;
+        self.step(x, hidden)
     }
+
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
-impl LstmBuilder {
-    /// Build the [`Lstm`] module.
-    pub fn build(self, input_size: i32, hidden_size: i32) -> Result<Lstm, Exception> {
-        let scale = 1.0 / f32::sqrt(hidden_size as f32);
-        let wx = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
-        let wh = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
-        let bias = if self.bias.unwrap_or(Lstm::DEFAULT_BIAS) {
-            Some(uniform::<_, f32>(-scale, scale, &[4 * hidden_size], None)?)
-        } else {
-            None
-        };
+/// A long short-term memory (LSTM) RNN layer.
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
+pub struct Lstm {
+    /// Wx
+    #[param]
+    pub wx: Param<Array>,
 
-        Ok(Lstm {
-            wx: Param::new(wx),
-            wh: Param::new(wh),
-            bias: Param::new(bias),
-        })
-    }
+    /// Wh
+    #[param]
+    pub wh: Param<Array>,
+
+    /// Bias. Enabled by default.
+    #[param]
+    pub bias: Param<Option<Array>>,
+}
+
+/// Builder for the [`Lstm`] module.
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_lstm,
+    err = Exception,
+)]
+pub struct LstmBuilder {
+    /// Dimension of the input, `D`.
+    pub input_size: i32,
+
+    /// Dimension of the hidden state, `H`.
+    pub hidden_size: i32,
+
+    /// Bias. Default to [`Lstm::DEFAULT_BIAS`].
+    #[builder(optional, default = Lstm::DEFAULT_BIAS)]
+    pub bias: bool,
+}
+
+fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
+    let input_size = builder.input_size;
+    let hidden_size = builder.hidden_size;
+    let scale = 1.0 / f32::sqrt(hidden_size as f32);
+    let wx = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
+    let wh = uniform::<_, f32>(-scale, scale, &[4 * hidden_size, input_size], None)?;
+    let bias = if builder.bias {
+        Some(uniform::<_, f32>(-scale, scale, &[4 * hidden_size], None)?)
+    } else {
+        None
+    };
+
+    Ok(Lstm {
+        wx: Param::new(wx),
+        wh: Param::new(wh),
+        bias: Param::new(bias),
+    })
 }
 
 impl Lstm {
     /// Default value for `bias`
     pub const DEFAULT_BIAS: bool = true;
 
-    /// Create a new [`Lstm`] layer.
-    pub fn new(input_size: i32, hidden_size: i32) -> Result<Lstm, Exception> {
-        LstmBuilder::default().build(input_size, hidden_size)
-    }
-
-    fn step(&mut self, x: &Array, hidden: Option<&Array>, cell: Option<&Array>) -> Result<(Array, Array), Exception> {
+    /// Apply a single step of the LSTM.
+    pub fn step(
+        &mut self,
+        x: &Array,
+        hidden: Option<&Array>,
+        cell: Option<&Array>,
+    ) -> Result<(Array, Array), Exception> {
         let x = if let Some(b) = &self.bias.value {
             addmm(b, x, self.wx.t(), None, None)?
         } else {
@@ -362,56 +394,38 @@ impl Lstm {
             let o = sigmoid(&pieces[3]);
 
             let cell = match cell {
-                Some(cell) => {
-                    f.multiply(cell)?.add(i.multiply(&g)?)?
-                },
-                None => {
-                    i.multiply(&g)?
-                },
+                Some(cell) => f.multiply(cell)?.add(i.multiply(&g)?)?,
+                None => i.multiply(&g)?,
             };
 
-            let hidden = o.multiply(&tanh(&cell))?;
+            let hidden = o.multiply(tanh(&cell))?;
 
             all_hidden.push(hidden);
             all_cell.push(cell);
         }
 
-
         Ok((stack(&all_hidden[..], -2)?, stack(&all_cell[..], -2)?))
     }
 }
 
+impl<'a> Module<(&'a Array, Option<&'a Array>, Option<&'a Array>)> for Lstm {
+    type Output = (Array, Array);
+    type Error = Exception;
+
+    fn forward(
+        &mut self,
+        input: (&'a Array, Option<&'a Array>, Option<&'a Array>),
+    ) -> Result<(Array, Array), Exception> {
+        let (x, hidden, cell) = input;
+        self.step(x, hidden, cell)
+    }
+
+    fn training_mode(&mut self, _mode: bool) {}
+}
+
 #[cfg(test)]
 mod tests {
-
-    // def test_rnn(self):
-    //     layer = nn.RNN(input_size=5, hidden_size=12, bias=True)
-    //     inp = mx.random.normal((2, 25, 5))
-
-    //     h_out = layer(inp)
-    //     self.assertEqual(h_out.shape, (2, 25, 12))
-
-    //     layer = nn.RNN(
-    //         5,
-    //         12,
-    //         bias=False,
-    //         nonlinearity=lambda x: mx.maximum(0, x),
-    //     )
-
-    //     h_out = layer(inp)
-    //     self.assertEqual(h_out.shape, (2, 25, 12))
-
-    //     with self.assertRaises(ValueError):
-    //         nn.RNN(5, 12, nonlinearity="tanh")
-
-    //     inp = mx.random.normal((44, 5))
-    //     h_out = layer(inp)
-    //     self.assertEqual(h_out.shape, (44, 12))
-
-    //     h_out = layer(inp, hidden=h_out[-1, :])
-    //     self.assertEqual(h_out.shape, (44, 12))
-
-    use mlx_rs::{ops::maximum_device, random::normal};
+    use mlx_rs::{ops::maximum_device, prelude::Builder, random::normal};
 
     use super::*;
 
@@ -424,15 +438,20 @@ mod tests {
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
-        let mut layer = Rnn::builder()
+        let mut layer = RnnBuilder::new(5, 12)
             .bias(false)
             .non_linearity(Arc::new(nonlinearity) as Arc<NonLinearity>)
-            .build(5, 12)
+            .build()
             .unwrap();
 
         let h_out = layer.step(&inp, None).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
-        todo!()
+        let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
+        let h_out = layer.forward((&inp, None)).unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
+
+        let h_out = layer.step(&inp, Some(&h_out.index((-1, ..)))).unwrap();
+        assert_eq!(h_out.shape(), &[44, 12]);
     }
 }

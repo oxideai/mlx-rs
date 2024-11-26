@@ -1,56 +1,59 @@
 use std::{borrow::Cow, rc::Rc};
 
 use crate::{array, utils::get_mut_or_insert_with, Array};
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use super::*;
 
 generate_builder! {
     /// Stochastic gradient descent optimizer.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_sgd,
+        root = crate
+    )]
     pub struct Sgd {
         /// Learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_MOMENTUM)]
         pub momentum: Array,
 
         /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_WEIGHT_DECAY)]
         pub weight_decay: Array,
 
         /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_DAMPENING)]
         pub dampening: Array,
 
         /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
-        #[optional]
+        #[builder(optional, ty_override = bool, default = Sgd::DEFAULT_NESTEROV)]
         pub nesterov: bool,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState,
     }
 }
 
-impl SgdBuilder {
-    /// Builds a new [`Sgd`].
-    pub fn build(self, lr: f32) -> Sgd {
-        let momentum = array!(self.momentum.unwrap_or(Sgd::DEFAULT_MOMENTUM));
-        let weight_decay = array!(self.weight_decay.unwrap_or(Sgd::DEFAULT_WEIGHT_DECAY));
-        let dampening = array!(self.dampening.unwrap_or(Sgd::DEFAULT_DAMPENING));
-        let nesterov = self.nesterov.unwrap_or(Sgd::DEFAULT_NESTEROV);
+fn build_sgd(builder: SgdBuilder) -> Result<Sgd, std::convert::Infallible> {
+    let momentum = array!(builder.momentum);
+    let weight_decay = array!(builder.weight_decay);
+    let dampening = array!(builder.dampening);
+    let nesterov = builder.nesterov;
 
-        Sgd {
-            lr: array!(lr),
-            momentum,
-            weight_decay,
-            dampening,
-            nesterov,
-            state: OptimizerState::new(),
-        }
-    }
+    Ok(Sgd {
+        lr: array!(builder.lr),
+        momentum,
+        weight_decay,
+        dampening,
+        nesterov,
+        state: OptimizerState::new(),
+    })
 }
 
 impl Sgd {
@@ -65,11 +68,6 @@ impl Sgd {
 
     /// Default nesterov if not specified.
     pub const DEFAULT_NESTEROV: bool = false;
-
-    /// Creates a new `Sgd` optimizer.
-    pub fn new(lr: f32) -> Self {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for Sgd {

@@ -49,7 +49,7 @@ impl Module for Sequential {
     }
 }
 
-impl Default for Sequential {
+impl<Err> Default for Sequential<Err> {
     fn default() -> Self {
         Self::new()
     }

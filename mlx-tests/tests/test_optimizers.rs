@@ -3,11 +3,13 @@
 
 use mlx_rs::{
     array, assert_array_eq,
+    builder::Builder,
     error::Exception,
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
     optimizers::{
-        AdaDelta, AdaGrad, Adafactor, Adam, AdamW, Adamax, Lion, Optimizer, RmsProp, Sgd,
+        AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
+        RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
     transforms::{eval, eval_params},
@@ -15,7 +17,7 @@ use mlx_rs::{
 };
 
 use mlx_nn::{
-    losses::{LossReduction, MseLoss},
+    losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
     module_value_and_grad,
 };
@@ -64,7 +66,9 @@ where
 {
     let mut optimizer = f();
 
-    let mse_loss = MseLoss::builder().reduction(LossReduction::Mean).build();
+    let mse_loss = MseLossBuilder::new()
+        .reduction(LossReduction::Mean)
+        .build()?;
     let loss = |model: &mut LinearFunctionModel, (x, y): (&Array, &Array)| {
         mse_loss.apply(model.forward(x)?, y)
     };
@@ -123,7 +127,7 @@ fn test_rmsprop_converges() {
     let mut total_loss = 0.0;
     for _ in 0..NUM_TRIALS {
         // RMSProp doesn't seem to converge as fast as SGD
-        let loss = train(|| RmsProp::new(0.1), 100).unwrap();
+        let loss = train(|| RmsProp::new(0.1).unwrap(), 100).unwrap();
         total_loss += loss.item::<f32>();
     }
     // It sometimes doesn't converge that fast, so we take the average loss
@@ -226,7 +230,7 @@ fn test_ada_delta() {
     let mut a_grad_params = FlattenedModuleParam::new();
     a_grad_params.insert("a".into(), a_grad.clone());
 
-    let mut optimizer = AdaDelta::new(0.1);
+    let mut optimizer = AdaDelta::new(0.1).unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
@@ -460,7 +464,7 @@ fn test_rmsprop() {
 
     let (mut model, gradients) = create_default_test_model_and_grads();
 
-    let mut optim = RmsProp::builder().alpha(ALPHA).build(LR).unwrap();
+    let mut optim = RmsPropBuilder::new(LR).alpha(ALPHA).build().unwrap();
     optim.apply(&mut model, gradients).unwrap();
 
     let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;
@@ -498,7 +502,7 @@ fn test_rmsprop() {
 fn test_sgd() {
     let (mut model, gradients) = create_default_test_model_and_grads();
 
-    let mut optim = Sgd::builder().momentum(0.9).build(1e-2);
+    let mut optim = SgdBuilder::new(1e-2).momentum(0.9).build().unwrap();
     optim.apply(&mut model, gradients).unwrap();
 
     let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
@@ -621,7 +625,7 @@ fn test_lion1() {
     let mut a_grad_params = FlattenedModuleParam::new();
     a_grad_params.insert("a".into(), a_grad.clone());
 
-    let mut optimizer = Lion::builder().weight_decay(0.1).build(0.1);
+    let mut optimizer = LionBuilder::new(0.1).weight_decay(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
@@ -675,7 +679,7 @@ fn test_adafactor() {
     let mut a_grad_params = FlattenedModuleParam::new();
     a_grad_params.insert("a".into(), a_grad.clone());
 
-    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+    let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
@@ -733,7 +737,7 @@ fn test_adafactor1() {
     let mut a_grad_params = FlattenedModuleParam::new();
     a_grad_params.insert("a".into(), a_grad.clone());
 
-    let mut optimizer = Adafactor::builder().lr(0.1).beta1(0.1).build().unwrap();
+    let mut optimizer = AdafactorBuilder::new().lr(0.1).beta1(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
@@ -787,7 +791,7 @@ fn test_adafactor2() {
     let mut a_grad_params = FlattenedModuleParam::new();
     a_grad_params.insert("a".into(), a_grad.clone());
 
-    let mut optimizer = Adafactor::builder().lr(0.1).build().unwrap();
+    let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[10]);

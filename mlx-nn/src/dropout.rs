@@ -56,8 +56,9 @@ impl Dropout {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout {
+impl<'a> Module<&'a Array> for Dropout {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
@@ -136,8 +137,9 @@ impl Dropout2d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout2d {
+impl<'a> Module<&'a Array> for Dropout2d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
@@ -228,8 +230,9 @@ impl Dropout3d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout3d {
+impl<'a> Module<&'a Array> for Dropout3d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();

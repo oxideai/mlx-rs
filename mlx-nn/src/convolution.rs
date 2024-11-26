@@ -104,8 +104,9 @@ impl Conv1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl Module for Conv1d {
+impl<'a> Module<&'a Array> for Conv1d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv1d(
@@ -225,8 +226,9 @@ impl Conv2d {
     pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
 }
 
-impl Module for Conv2d {
+impl<'a> Module<&'a Array> for Conv2d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv2d(
@@ -348,8 +350,9 @@ impl Conv3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl Module for Conv3d {
+impl<'a> Module<&'a Array> for Conv3d {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = mlx_rs::ops::conv3d(

@@ -1,4 +1,4 @@
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{array, utils::get_mut_or_insert_with, Array};
 
@@ -14,39 +14,43 @@ generate_builder! {
     ///
     /// [1]: Chen, X. Symbolic Discovery of Optimization Algorithms. arXiv preprint
     ///     arXiv:2302.06675.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_lion,
+        root = crate
+    )]
     pub struct Lion {
         /// The learning rate.
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The coefficients used for computing running averages of the gradient and its square.
         /// Default to [`Lion::DEFAULT_BETAS`].
-        #[optional(ty = Betas)]
+        #[builder(optional, ty_override = Betas, default = Lion::DEFAULT_BETAS)]
         pub betas: (Array, Array),
 
         /// The weight decay. Default to [`Lion::DEFAULT_WEIGHT_DECAY`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = Lion::DEFAULT_WEIGHT_DECAY)]
         pub weight_decay: Array,
 
         /// Inner state.
+        #[builder(ignore)]
         pub state: OptimizerState,
     }
 }
 
-impl LionBuilder {
-    /// Builds a new [`Lion`] optimizer.
-    pub fn build(self, lr: f32) -> Lion {
-        let betas = self.betas.unwrap_or(Lion::DEFAULT_BETAS);
-        let weight_decay = self.weight_decay.unwrap_or(Lion::DEFAULT_WEIGHT_DECAY);
+fn build_lion(builder: LionBuilder) -> Result<Lion, std::convert::Infallible> {
+    let lr = builder.lr;
+    let betas = builder.betas;
+    let weight_decay = builder.weight_decay;
 
-        Lion {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            weight_decay: array!(weight_decay),
-            state: OptimizerState::new(),
-        }
-    }
+    Ok(Lion {
+        lr: array!(lr),
+        betas: (array!(betas.0), array!(betas.1)),
+        weight_decay: array!(weight_decay),
+        state: OptimizerState::new(),
+    })
 }
 
 impl Lion {
@@ -55,11 +59,6 @@ impl Lion {
 
     /// Default value for `weight_decay`
     pub const DEFAULT_WEIGHT_DECAY: f32 = 0.0;
-
-    /// Creates a new [`Lion`] optimizer with all optional parameters set to their default values.
-    pub fn new(lr: f32) -> Lion {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for Lion {

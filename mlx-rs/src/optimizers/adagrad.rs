@@ -1,7 +1,7 @@
-use std::rc::Rc;
+use std::{convert::Infallible, rc::Rc};
 
 use crate::{array, error::Exception, ops::square, Array};
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::utils::get_mut_or_insert_with;
 
@@ -14,43 +14,42 @@ generate_builder! {
     ///
     /// [1]: Duchi, J., Hazan, E. and Singer, Y., 2011. Adaptive subgradient methods for online
     ///     learning and stochastic optimization. JMLR 2011.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_adagrad,
+        root = crate
+    )]
     pub struct AdaGrad {
         /// Learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The epsilon added to the denominator to improve numerical stability. Default to
         /// [`AdaGrad::DEFAULT_EPS`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdaGrad::DEFAULT_EPS)]
         pub eps: Array,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState,
     }
 }
 
-impl AdaGradBuilder {
-    /// Builds a new [`AdaGrad`].
-    pub fn build(self, lr: f32) -> AdaGrad {
-        let eps = array!(self.eps.unwrap_or(AdaGrad::DEFAULT_EPS));
+/// Builds a new [`AdaGrad`].
+fn build_adagrad(builder: AdaGradBuilder) -> Result<AdaGrad, Infallible> {
+    let eps = array!(builder.eps);
 
-        AdaGrad {
-            lr: array!(lr),
-            eps,
-            state: OptimizerState::new(),
-        }
-    }
+    Ok(AdaGrad {
+        lr: array!(builder.lr),
+        eps,
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdaGrad {
     /// Default value for `eps`.
     pub const DEFAULT_EPS: f32 = 1e-8;
-
-    /// Creates a new AdaGrad optimizer with all optional parameters set to their default values.
-    pub fn new(lr: f32) -> AdaGrad {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for AdaGrad {

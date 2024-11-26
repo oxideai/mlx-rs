@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
@@ -267,10 +267,10 @@ generate_builder! {
     ///
     /// This splits the `axis` dimension of the input into two halves
     /// (`a` and `b`) and applies `a * sigmoid(b)`.
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Glu {
         /// The axis to split the input tensor. Default to [`Glu::DEFAULT_AXIS`] if not provided.
-        #[optional(default_value = Glu::DEFAULT_AXIS)]
+        #[builder(optional, default = Glu::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -280,8 +280,9 @@ impl Glu {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for Glu {
+impl<'a> Module<&'a Array> for Glu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         glu(x, self.axis).map_err(Into::into)
@@ -303,8 +304,9 @@ impl Module for Glu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
-impl Module for Sigmoid {
+impl<'a> Module<&'a Array> for Sigmoid {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(sigmoid(x))
@@ -327,8 +329,9 @@ impl Module for Sigmoid {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
-impl Module for Mish {
+impl<'a> Module<&'a Array> for Mish {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         mish(x).map_err(Into::into)
@@ -347,8 +350,9 @@ impl Module for Mish {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
-impl Module for Relu {
+impl<'a> Module<&'a Array> for Relu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         relu(x).map_err(Into::into)
@@ -365,10 +369,10 @@ generate_builder! {
     /// ```rust, ignore
     /// maximum(neg_slope * x, x)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct LeakyRelu {
         /// The negative slope. Default to [`LeakyReLU::DEFAULT_NEG_SLOPE`] if not provided.
-        #[optional(default_value = LeakyRelu::DEFAULT_NEG_SLOPE)]
+        #[builder(optional, default = LeakyRelu::DEFAULT_NEG_SLOPE)]
         pub neg_slope: f32,
     }
 }
@@ -378,8 +382,9 @@ impl LeakyRelu {
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
 }
 
-impl Module for LeakyRelu {
+impl<'a> Module<&'a Array> for LeakyRelu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         leaky_relu(x, self.neg_slope).map_err(Into::into)
@@ -398,8 +403,9 @@ impl Module for LeakyRelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
-impl Module for Relu6 {
+impl<'a> Module<&'a Array> for Relu6 {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         relu6(x).map_err(Into::into)
@@ -416,10 +422,10 @@ generate_builder! {
     /// ```rust, ignore
     /// softmax(&x, None, None)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Softmax {
         /// The axis to apply the softmax.
-        #[optional(default_value = Softmax::DEFAULT_AXIS)]
+        #[builder(optional, default = Softmax::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -429,8 +435,9 @@ impl Softmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for Softmax {
+impl<'a> Module<&'a Array> for Softmax {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(mlx_rs::ops::softmax(x, &[self.axis], None))
@@ -449,8 +456,9 @@ impl Module for Softmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
-impl Module for Softplus {
+impl<'a> Module<&'a Array> for Softplus {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         softplus(x).map_err(Into::into)
@@ -469,8 +477,9 @@ impl Module for Softplus {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
-impl Module for Softsign {
+impl<'a> Module<&'a Array> for Softsign {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         softsign(x).map_err(Into::into)
@@ -488,10 +497,10 @@ generate_builder! {
     /// maximum(x, 0.0).unwrap()
     ///     + alpha * (exp(&(minimum(x, 0.0).unwrap() / alpha)) - 1)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Celu {
         /// The alpha value. Default to [`Celu::DEFAULT_ALPHA`] if not provided.
-        #[optional(default_value = Celu::DEFAULT_ALPHA)]
+        #[builder(optional, default = Celu::DEFAULT_ALPHA)]
         pub alpha: f32,
     }
 }
@@ -501,8 +510,9 @@ impl Celu {
     pub const DEFAULT_ALPHA: f32 = 1.0;
 }
 
-impl Module for Celu {
+impl<'a> Module<&'a Array> for Celu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         celu(x, self.alpha).map_err(Into::into)
@@ -521,8 +531,9 @@ impl Module for Celu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
-impl Module for Silu {
+impl<'a> Module<&'a Array> for Silu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         silu(x).map_err(Into::into)
@@ -539,10 +550,10 @@ generate_builder! {
     /// ```rust, ignore
     /// x - log_sum_exp(x, axis, true)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct LogSoftmax {
         /// The axis value. Default to [`LogSoftmax::DEFAULT_AXIS`] if not provided.
-        #[optional(default_value = LogSoftmax::DEFAULT_AXIS)]
+        #[builder(optional, default = LogSoftmax::DEFAULT_AXIS)]
         pub axis: i32,
     }
 }
@@ -552,8 +563,9 @@ impl LogSoftmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl Module for LogSoftmax {
+impl<'a> Module<&'a Array> for LogSoftmax {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         log_softmax(x, self.axis).map_err(Into::into)
@@ -572,8 +584,9 @@ impl Module for LogSoftmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
-impl Module for LogSigmoid {
+impl<'a> Module<&'a Array> for LogSigmoid {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         log_sigmoid(x).map_err(Into::into)
@@ -589,49 +602,37 @@ impl Module for LogSigmoid {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 pub struct Prelu {
     /// The alpha value. See [`prelu`] for more details.
     #[param]
+    #[builder(ignore)]
     pub weight: Param<Array>, // TODO: double check if this is trainable
 }
 
 /// The builder for the Prelu module.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Builder)]
+#[builder(
+    build_with = build_prelu,
+    default_infallible,
+    err = Exception,
+)]
 pub struct PreluBuilder {
     /// The count. Default to [`Prelu::DEFAULT_COUNT`] if not provided.
-    pub count: Option<i32>,
+    #[builder(optional, default = Prelu::DEFAULT_COUNT)]
+    pub count: i32,
 
     /// The value. Default to [`Prelu::DEFAULT_VALUE`] if not provided.
-    pub value: Option<f32>,
+    #[builder(optional, default = Prelu::DEFAULT_VALUE)]
+    pub value: f32,
 }
 
-impl PreluBuilder {
-    /// Sets the count value.
-    pub fn count(mut self, count: i32) -> Self {
-        self.count = Some(count);
-        self
-    }
-
-    /// Sets the value.
-    pub fn value(mut self, value: f32) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    /// Builds the Prelu module.
-    pub fn build(self) -> Result<Prelu, Exception> {
-        let count = self.count.unwrap_or(Prelu::DEFAULT_COUNT);
-        let value = self.value.unwrap_or(Prelu::DEFAULT_VALUE);
-        let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
-        Ok(Prelu { weight })
-    }
-}
-
-impl Default for Prelu {
-    fn default() -> Self {
-        Prelu::new()
-    }
+/// Builds the Prelu module.
+fn build_prelu(builder: PreluBuilder) -> Result<Prelu, Exception> {
+    let count = builder.count;
+    let value = builder.value;
+    let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
+    Ok(Prelu { weight })
 }
 
 impl Prelu {
@@ -640,22 +641,11 @@ impl Prelu {
 
     /// The default value.
     pub const DEFAULT_VALUE: f32 = 0.25;
-
-    /// Creates a new PreluBuilder.
-    pub fn builder() -> PreluBuilder {
-        PreluBuilder::default()
-    }
-
-    /// Creates a new Prelu module with the default values.
-    pub fn new() -> Prelu {
-        PreluBuilder::default()
-            .build()
-            .expect("Default value should be valid")
-    }
 }
 
-impl Module for Prelu {
+impl<'a> Module<&'a Array> for Prelu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         prelu(x, &self.weight).map_err(Into::into)
@@ -686,16 +676,17 @@ generate_builder! {
     /// - `GeluApprox::None`: Uses [`gelu`]. This is the default.
     /// - `GeluApprox::Precise`: Uses [`gelu_approximate`]
     /// - `GeluApprox::Fast`: Uses [`gelu_fast_approximate`]
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Gelu {
         /// The approximation to use. Default to `GeluApprox::None` if not provided.
-        #[optional(default_value = GeluApprox::None)]
+        #[builder(optional, default = GeluApprox::None)]
         pub approximate: GeluApprox,
     }
 }
 
-impl Module for Gelu {
+impl<'a> Module<&'a Array> for Gelu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         match self.approximate {
@@ -712,8 +703,9 @@ impl Module for Gelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
-impl Module for Tanh {
+impl<'a> Module<&'a Array> for Tanh {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         Ok(mlx_rs::ops::tanh(x))
@@ -732,8 +724,9 @@ impl Module for Tanh {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
-impl Module for HardSwish {
+impl<'a> Module<&'a Array> for HardSwish {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         hard_swish(x).map_err(Into::into)
@@ -753,10 +746,10 @@ generate_builder! {
     /// ```rust, ignore
     /// r#where(x.gt(threshold), 1, 0)
     /// ```
-    #[derive(Debug, Clone, ModuleParameters)]
+    #[derive(Debug, Clone, ModuleParameters, Buildable)]
     pub struct Step {
         /// The threshold value. Default to [`Step::DEFAULT_THRESHOLD`] if not provided.
-        #[optional(default_value = Step::DEFAULT_THRESHOLD)]
+        #[builder(optional, default = Step::DEFAULT_THRESHOLD)]
         pub threshold: f32,
     }
 }
@@ -766,8 +759,9 @@ impl Step {
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
 }
 
-impl Module for Step {
+impl<'a> Module<&'a Array> for Step {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         step(x, self.threshold).map_err(Into::into)
@@ -786,8 +780,9 @@ impl Module for Step {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
-impl Module for Selu {
+impl<'a> Module<&'a Array> for Selu {
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         selu(x).map_err(Into::into)
@@ -951,7 +946,7 @@ mod tests {
             140.096_68,
             abs <= 2.801_933_5
         );
-        let result = Glu::default().forward(&a).unwrap();
+        let result = Glu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1075,7 +1070,7 @@ mod tests {
             127.982_254,
             abs <= 2.559_645_2
         );
-        let result = LeakyRelu::default().forward(&a).unwrap();
+        let result = LeakyRelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1137,7 +1132,7 @@ mod tests {
             131.685_46,
             abs <= 2.633_709_2
         );
-        let result = Softmax::default().forward(&a).unwrap();
+        let result = Softmax::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1230,7 +1225,7 @@ mod tests {
             119.487_53,
             abs <= 2.389_750_7
         );
-        let result = Celu::default().forward(&a).unwrap();
+        let result = Celu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1292,7 +1287,7 @@ mod tests {
             135.127_99,
             abs <= 2.702_559_7
         );
-        let result = LogSoftmax::default().forward(&a).unwrap();
+        let result = LogSoftmax::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1354,7 +1349,7 @@ mod tests {
             127.142_77,
             abs <= 2.542_855_3
         );
-        let result = Prelu::default().forward(&a).unwrap();
+        let result = Prelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1385,7 +1380,7 @@ mod tests {
             126.195_28,
             abs <= 2.523_905_8
         );
-        let result = Gelu::default().forward(&a).unwrap();
+        let result = Gelu::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -1478,7 +1473,7 @@ mod tests {
             122.716_324,
             abs <= 2.454_326_4
         );
-        let result = Step::default().forward(&a).unwrap();
+        let result = Step::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Int32);
         assert_float_eq!(

@@ -1,8 +1,10 @@
-use mlx_internal_macros::generate_builder;
+use std::convert::Infallible;
+
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{array, utils::get_mut_or_insert_with, Array};
 
-use super::{Optimizer, OptimizerState};
+use super::{Betas, Optimizer, OptimizerState};
 
 generate_builder! {
     /// The AdamW optimizer [1].
@@ -12,50 +14,55 @@ generate_builder! {
     /// with a `weightDecay` lambda value:
     ///
     /// [1]: Loshchilov, I. and Hutter, F., 2019. Decoupled weight decay regularization. ICLR 2019.
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_adamw,
+        root = crate
+    )]
     pub struct AdamW {
         /// The learning rate.
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The coefficients used for computing running averages of the gradient and its square.
         ///
         /// Default to [`AdamW::DEFAULT_BETAS`].
-        #[optional(ty = super::Betas)]
+        #[builder(optional, ty_override = Betas, default = AdamW::DEFAULT_BETAS)]
         pub betas: (Array, Array),
 
         /// The epsilon added to the denominator to improve numerical stability.
         ///
         /// Default to [`AdamW::DEFAULT_EPS`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdamW::DEFAULT_EPS)]
         pub eps: Array,
 
         /// The weight decay
         ///
         /// Default to [`AdamW::DEFAULT_WEIGHT_DECAY`].
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = AdamW::DEFAULT_WEIGHT_DECAY)]
         pub weight_decay: Array,
 
         /// Inner state.
+        #[builder(ignore)]
         pub state: OptimizerState<(Array, Array)>,
     }
 }
 
-impl AdamWBuilder {
-    /// Builds a new [`AdamW`] optimizer.
-    pub fn build(self, lr: f32) -> AdamW {
-        let betas = self.betas.unwrap_or(AdamW::DEFAULT_BETAS);
-        let eps = self.eps.unwrap_or(AdamW::DEFAULT_EPS);
-        let weight_decay = self.weight_decay.unwrap_or(AdamW::DEFAULT_WEIGHT_DECAY);
+/// Builds a new [`AdamW`] optimizer.
+fn build_adamw(builder: AdamWBuilder) -> Result<AdamW, Infallible> {
+    let lr = builder.lr;
+    let betas = builder.betas;
+    let eps = builder.eps;
+    let weight_decay = builder.weight_decay;
 
-        AdamW {
-            lr: array!(lr),
-            betas: (array!(betas.0), array!(betas.1)),
-            eps: array!(eps),
-            weight_decay: array!(weight_decay),
-            state: OptimizerState::new(),
-        }
-    }
+    Ok(AdamW {
+        lr: array!(lr),
+        betas: (array!(betas.0), array!(betas.1)),
+        eps: array!(eps),
+        weight_decay: array!(weight_decay),
+        state: OptimizerState::new(),
+    })
 }
 
 impl AdamW {
@@ -67,11 +74,6 @@ impl AdamW {
 
     /// Default value for `weight_decay`.
     pub const DEFAULT_WEIGHT_DECAY: f32 = 0.01;
-
-    /// Creates a new [`AdamW`] optimizer with all optional parameters set to their default values.
-    pub fn new(lr: f32) -> AdamW {
-        Self::builder().build(lr)
-    }
 }
 
 impl Optimizer for AdamW {

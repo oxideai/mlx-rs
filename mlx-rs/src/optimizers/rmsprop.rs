@@ -5,7 +5,7 @@ use crate::{
     ops::{sqrt, square},
     Array,
 };
-use mlx_internal_macros::generate_builder;
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{error::RmsPropBuildError, utils::get_mut_or_insert_with};
 
@@ -16,51 +16,52 @@ generate_builder! {
     ///
     /// [1]: Tieleman, T. and Hinton, G. 2012. Lecture 6.5-rmsprop, coursera: Neural networks for
     ///     machine learning
-    #[derive(Debug, Clone)]
-    #[generate_builder(generate_build_fn = false)]
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(
+        build_with = build_rmdprop,
+        err = RmsPropBuildError,
+        root = crate
+    )]
     pub struct RmsProp {
         /// Learning rate
+        #[builder(ty_override = f32)]
         pub lr: Array,
 
         /// The smoothing constant. Default to [`RmsProp::DEFAULT_ALPHA`] if not specified.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = RmsProp::DEFAULT_ALPHA)]
         pub alpha: Array,
 
         /// The epsilon added to the denominator to improve numerical stability. Default to
         /// [`RmsProp::DEFAULT_EPSILON`] if not specified.
-        #[optional(ty = f32)]
+        #[builder(optional, ty_override = f32, default = RmsProp::DEFAULT_EPSILON)]
         pub epsilon: Array,
 
         /// Inner state
+        #[builder(ignore)]
         pub state: OptimizerState,
     }
 }
 
-impl RmsPropBuilder {
-    /// Builds a new [`RmsProp`].
-    ///
-    /// # Params
-    ///
-    /// - `lr`: The learning rate.
-    pub fn build(self, lr: f32) -> Result<RmsProp, RmsPropBuildError> {
-        let alpha = self.alpha.unwrap_or(RmsProp::DEFAULT_ALPHA);
-        let epsilon = self.epsilon.unwrap_or(RmsProp::DEFAULT_EPSILON);
+fn build_rmdprop(builder: RmsPropBuilder) -> Result<RmsProp, RmsPropBuildError> {
+    let lr = builder.lr;
+    let alpha = builder.alpha;
+    let epsilon = builder.epsilon;
 
-        if alpha < 0.0 {
-            return Err(RmsPropBuildError::NegativeAlpha);
-        }
-
-        if epsilon < 0.0 {
-            return Err(RmsPropBuildError::NegativeEpsilon);
-        }
-
-        Ok(RmsProp {
-            lr: array!(lr),
-            alpha: array!(alpha),
-            epsilon: array!(epsilon),
-            state: OptimizerState::new(),
-        })
+    if alpha < 0.0 {
+        return Err(RmsPropBuildError::NegativeAlpha);
     }
+
+    if epsilon < 0.0 {
+        return Err(RmsPropBuildError::NegativeEpsilon);
+    }
+
+    Ok(RmsProp {
+        lr: array!(lr),
+        alpha: array!(alpha),
+        epsilon: array!(epsilon),
+        state: OptimizerState::new(),
+    })
 }
 
 impl RmsProp {
@@ -69,15 +70,6 @@ impl RmsProp {
 
     /// Default epsilon if not specified.
     pub const DEFAULT_EPSILON: f32 = 1e-8;
-
-    /// Creates a new `RmsProp` optimizer with all optional params set to their default values.
-    ///
-    /// # Params
-    ///
-    /// - `lr`: The learning rate.
-    pub fn new(lr: f32) -> Self {
-        Self::builder().build(lr).expect("Default values are valid")
-    }
 }
 
 impl Optimizer for RmsProp {

@@ -5,6 +5,7 @@
 mod macros; // Must be first to ensure the other modules can use the macros
 
 mod array;
+pub mod builder;
 mod device;
 mod dtype;
 pub mod error;
@@ -29,6 +30,7 @@ pub use stream::*;
 pub mod prelude {
     pub use crate::{
         array::Array,
+        builder::{Buildable, Builder},
         dtype::Dtype,
         ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
         stream::StreamOrDevice,

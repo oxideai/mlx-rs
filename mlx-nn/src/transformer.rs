@@ -1,8 +1,8 @@
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{error::Exception, module::Module, ops::{matmul, softmax}, prelude::Builder, Array};
+use mlx_rs::{error::Exception, module::{Module, ModuleParameters}, ops::{matmul, softmax}, prelude::Builder, Array};
 
-use crate::{error::MultiHeadAttentionBuildError, Linear, LinearBuilder};
+use crate::{error::MultiHeadAttentionBuildError, Dropout, Linear, LinearBuilder};
 
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
@@ -203,4 +203,36 @@ where
         self.value_proj.training_mode(mode);
         self.output_proj.training_mode(mode);
     }
+}
+
+#[derive(Debug, Clone, ModuleParameters)]
+pub struct TransformerEncoderLayer<A> 
+where 
+    A: ModuleParameters
+{
+    #[param]
+    pub attention: MultiHeadAttention,
+    
+    #[param]
+    pub ln1: LayerNorm,
+    
+    #[param]
+    pub ln2: LayerNorm,
+    
+    #[param]
+    pub linear1: Linear,
+    
+    #[param]
+    pub linear2: Linear,
+    
+    #[param]
+    pub dropout1: Dropout,
+    
+    #[param]
+    pub dropout2: Dropout,
+    
+    #[param]
+    pub activation: A,
+    
+    pub norm_first: bool,
 }

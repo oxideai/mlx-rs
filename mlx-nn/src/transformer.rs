@@ -145,6 +145,17 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array)> for MultiHeadAttenti
     }
 }
 
+impl<'a> From<(&'a Array, &'a Array, &'a Array, Option<&'a Array>)> for MultiHeadAttentionInput<'a> {
+    fn from((queries, keys, values, mask): (&'a Array, &'a Array, &'a Array, Option<&'a Array>)) -> Self {
+        MultiHeadAttentionInput {
+            queries,
+            keys,
+            values,
+            mask,
+        }
+    }
+}
+
 impl<'a, Input> Module<Input> for MultiHeadAttention 
 where 
     Input: Into<MultiHeadAttentionInput<'a>>,

@@ -145,13 +145,59 @@ impl Rnn {
     }
 }
 
-impl<'a> Module<(&'a Array, Option<&'a Array>)> for Rnn {
+/// Input for the RNN module.
+#[derive(Debug, Clone)]
+pub struct RnnInput<'a> {
+    /// Input tensor
+    pub x: &'a Array,
+
+    /// Hidden state
+    pub hidden: Option<&'a Array>,
+}
+
+impl<'a> From<&'a Array> for RnnInput<'a> {
+    fn from(x: &'a Array) -> Self {
+        RnnInput { x, hidden: None }
+    }
+}
+
+impl<'a> From<(&'a Array,)> for RnnInput<'a> {
+    fn from(input: (&'a Array,)) -> Self {
+        RnnInput {
+            x: input.0,
+            hidden: None,
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, &'a Array)> for RnnInput<'a> {
+    fn from(input: (&'a Array, &'a Array)) -> Self {
+        RnnInput {
+            x: input.0,
+            hidden: Some(input.1),
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, Option<&'a Array>)> for RnnInput<'a> {
+    fn from(input: (&'a Array, Option<&'a Array>)) -> Self {
+        RnnInput {
+            x: input.0,
+            hidden: input.1,
+        }
+    }
+}
+
+impl<'a, Input> Module<Input> for Rnn
+where
+    Input: Into<RnnInput<'a>>,
+{
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: (&'a Array, Option<&'a Array>)) -> Result<Array, Exception> {
-        let (x, hidden) = input;
-        self.step(x, hidden)
+    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+        let input = input.into();
+        self.step(input.x, input.hidden)
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -295,13 +341,16 @@ impl Gru {
     }
 }
 
-impl<'a> Module<(&'a Array, Option<&'a Array>)> for Gru {
+impl<'a, Input> Module<Input> for Gru
+where
+    Input: Into<RnnInput<'a>>,
+{
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: (&'a Array, Option<&'a Array>)) -> Result<Array, Exception> {
-        let (x, hidden) = input;
-        self.step(x, hidden)
+    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+        let input = input.into();
+        self.step(input.x, input.hidden)
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -360,6 +409,79 @@ fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
     })
 }
 
+/// Input for the LSTM module.
+#[derive(Debug, Clone)]
+pub struct LstmInput<'a> {
+    /// Input tensor
+    pub x: &'a Array,
+
+    /// Hidden state
+    pub hidden: Option<&'a Array>,
+
+    /// Cell state
+    pub cell: Option<&'a Array>,
+}
+
+impl<'a> From<&'a Array> for LstmInput<'a> {
+    fn from(x: &'a Array) -> Self {
+        LstmInput {
+            x,
+            hidden: None,
+            cell: None,
+        }
+    }
+}
+
+impl<'a> From<(&'a Array,)> for LstmInput<'a> {
+    fn from(input: (&'a Array,)) -> Self {
+        LstmInput {
+            x: input.0,
+            hidden: None,
+            cell: None,
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, &'a Array)> for LstmInput<'a> {
+    fn from(input: (&'a Array, &'a Array)) -> Self {
+        LstmInput {
+            x: input.0,
+            hidden: Some(input.1),
+            cell: None,
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, &'a Array, &'a Array)> for LstmInput<'a> {
+    fn from(input: (&'a Array, &'a Array, &'a Array)) -> Self {
+        LstmInput {
+            x: input.0,
+            hidden: Some(input.1),
+            cell: Some(input.2),
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, Option<&'a Array>)> for LstmInput<'a> {
+    fn from(input: (&'a Array, Option<&'a Array>)) -> Self {
+        LstmInput {
+            x: input.0,
+            hidden: input.1,
+            cell: None,
+        }
+    }
+}
+
+impl<'a> From<(&'a Array, Option<&'a Array>, Option<&'a Array>)> for LstmInput<'a> {
+    fn from(input: (&'a Array, Option<&'a Array>, Option<&'a Array>)) -> Self {
+        LstmInput {
+            x: input.0,
+            hidden: input.1,
+            cell: input.2,
+        }
+    }
+}
+
 impl Lstm {
     /// Default value for `bias`
     pub const DEFAULT_BIAS: bool = true;
@@ -408,16 +530,16 @@ impl Lstm {
     }
 }
 
-impl<'a> Module<(&'a Array, Option<&'a Array>, Option<&'a Array>)> for Lstm {
+impl<'a, Input> Module<Input> for Lstm
+where
+    Input: Into<LstmInput<'a>>,
+{
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(
-        &mut self,
-        input: (&'a Array, Option<&'a Array>, Option<&'a Array>),
-    ) -> Result<(Array, Array), Exception> {
-        let (x, hidden, cell) = input;
-        self.step(x, hidden, cell)
+    fn forward(&mut self, input: Input) -> Result<(Array, Array), Exception> {
+        let input = input.into();
+        self.step(input.x, input.hidden, input.cell)
     }
 
     fn training_mode(&mut self, _mode: bool) {}

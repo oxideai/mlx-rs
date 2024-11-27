@@ -127,6 +127,12 @@ impl Stream {
     }
 }
 
+impl AsRef<Stream> for Stream {
+    fn as_ref(&self) -> &Stream {
+        self
+    }
+}
+
 /// The `Stream` is a simple struct on the c++ side
 ///
 /// ```cpp

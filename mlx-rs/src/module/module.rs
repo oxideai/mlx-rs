@@ -21,7 +21,7 @@ pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
-pub trait Module<Args>: ModuleParameters {
+pub trait Module<Args>: ModuleParameters + std::fmt::Debug {
     /// Error type for the module.
     type Error: std::error::Error;
 

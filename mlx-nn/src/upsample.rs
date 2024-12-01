@@ -1,7 +1,15 @@
 use mlx_rs::{
-    array, error::Exception, macros::ModuleParameters, module::Module, ops::{
-        abs, broadcast_to, ceil, clip, expand_dims, floor, indexing::{ArrayIndex, ArrayIndexOp}
-    }, prelude::{Ellipsis, IndexOp, NewAxis}, transforms::compile::compile, Array,
+    array,
+    error::Exception,
+    macros::ModuleParameters,
+    module::Module,
+    ops::{
+        abs, broadcast_to, ceil, clip, expand_dims, floor,
+        indexing::{ArrayIndex, ArrayIndexOp},
+    },
+    prelude::{Ellipsis, IndexOp, NewAxis},
+    transforms::compile::compile,
+    Array,
 };
 
 use crate::utils::SingleOrVec;
@@ -50,8 +58,12 @@ impl Upsample {
     fn forward_inner(&self, x: &Array, scale: &[f32]) -> Result<Array, Exception> {
         match self.mode {
             UpsampleMode::Nearest => upsample_nearest(x, scale),
-            UpsampleMode::Linear { align_corners } => interpolate(x, scale, linear_indices, align_corners),
-            UpsampleMode::Cubic { align_corners } => interpolate(x, scale, cubic_indices, align_corners),
+            UpsampleMode::Linear { align_corners } => {
+                interpolate(x, scale, linear_indices, align_corners)
+            }
+            UpsampleMode::Cubic { align_corners } => {
+                interpolate(x, scale, cubic_indices, align_corners)
+            }
         }
     }
 }
@@ -65,24 +77,24 @@ impl<'a> Module<&'a Array> for Upsample {
         let dimensions = x.ndim() - 2;
 
         if dimensions == 0 {
-            return Err(Exception::custom(
-                format!("[Upsample] The input should have at least 
+            return Err(Exception::custom(format!(
+                "[Upsample] The input should have at least 
                 1 spatial dimension which means it should be at least 
-                3D but {}D was provided", x.ndim())));
+                3D but {}D was provided",
+                x.ndim()
+            )));
         }
 
         match &self.scale_factor {
             SingleOrVec::Single(scale) => {
                 let scale = vec![*scale; dimensions];
                 self.forward_inner(x, &scale[..])
-            },
-            SingleOrVec::Vec(scales) => {
-                self.forward_inner(x, &scales[..])
-            },
+            }
+            SingleOrVec::Vec(scales) => self.forward_inner(x, &scales[..]),
         }
     }
 
-    fn training_mode(&mut self, _mode: bool) { }
+    fn training_mode(&mut self, _mode: bool) {}
 }
 
 #[allow(non_snake_case)]
@@ -100,7 +112,7 @@ fn upsample_nearest(x: &Array, scale: &[f32]) -> Result<Array, Exception> {
     let int_scales = scale.iter().map(|&s| s as i32).collect::<Vec<_>>();
     let int_float_scales = int_scales.iter().map(|&s| s as f32).collect::<Vec<_>>();
 
-    if &int_float_scales == scale {
+    if int_float_scales == scale {
         // Int scale means we can simply expand-broadcast and reshape
         let mut shape = x.shape().to_vec();
         (0..dimensions).for_each(|d| {
@@ -136,11 +148,13 @@ fn upsample_nearest(x: &Array, scale: &[f32]) -> Result<Array, Exception> {
 
 type IndexWeight = (Array, Array);
 
+type IndicesFn = fn(i32, f32, bool, usize, usize) -> Result<Vec<IndexWeight>, Exception>;
+
 #[allow(non_snake_case)]
 fn interpolate(
     x: &Array,
     scale: &[f32],
-    indices_fn: fn(i32, f32, bool, usize, usize) -> Result<Vec<IndexWeight>, Exception>,
+    indices_fn: IndicesFn,
     align_corners: bool,
 ) -> Result<Array, Exception> {
     let dimensions = x.ndim() - 2;
@@ -155,18 +169,20 @@ fn interpolate(
     let N = &x.shape()[1..x.ndim() - 1];
 
     // compute the sampling grid
-    let mut index_weights = Vec::new();
+    let mut index_weights = Vec::with_capacity(N.len());
     for (i, (n, s)) in N.iter().zip(scale.iter()).enumerate() {
         index_weights.push(indices_fn(*n, *s, align_corners, i, dimensions)?);
     }
 
     // sample and compute the weights
-    let mut samples = Vec::new();
-    let mut weights = Vec::new();
-    for index_weight in product(&index_weights) {
-        let (index, weight): (Vec<&Array>, Vec<&Array>) = index_weight.iter().map(|(i, w)| (i, w)).unzip();
+    let prod = product(&index_weights);
+    let mut samples = Vec::with_capacity(prod.len());
+    let mut weights = Vec::with_capacity(prod.len());
+    for index_weight in prod {
+        let (index, weight): (Vec<&Array>, Vec<&Array>) =
+            index_weight.iter().map(|(i, w)| (i, w)).unzip();
         let mut index_ops = index.iter().map(|i| i.index_op()).collect::<Vec<_>>();
-        
+
         let mut sample_indices = vec![(..).index_op()];
         sample_indices.append(&mut index_ops);
         samples.push(x.index(&sample_indices[..]));
@@ -176,13 +192,15 @@ fn interpolate(
 
     // interpolate
     let acc = &weights[0] * &samples[0];
-    weights[1..].into_iter().zip(samples[1..].into_iter())
-        .fold(Ok(acc), |acc, (w, s)| acc.and_then(|acc| acc.add(w.multiply(s)?)))
+    weights[1..]
+        .iter()
+        .zip(samples[1..].iter())
+        .try_fold(acc, |acc, (w, s)| acc.add(w.multiply(s)?))
 }
 
-fn product<'a, T>(values: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {
+fn product<T>(values: &[Vec<T>]) -> Vec<Vec<&T>> {
     if values.is_empty() {
-        return vec![]
+        return vec![];
     }
 
     // if there are N items in values and M values per tuple there
@@ -190,15 +208,15 @@ fn product<'a, T>(values: &'a Vec<Vec<T>>) -> Vec<Vec<&'a T>> {
     let per_tuple = values[0].len();
     let count = (0..values.len()).fold(1, |acc, _| acc * per_tuple);
 
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(count);
     for result_index in 0..count {
         let mut items = vec![];
 
         // use % and / to compute which item will be used from each value[i]
         let mut index_generator = result_index;
-        for i in 0..values.len() {
+        for value in values {
             let index = index_generator % per_tuple;
-            items.push(&values[i][index]);
+            items.push(&value[index]);
             index_generator /= per_tuple;
         }
 
@@ -214,8 +232,7 @@ fn nearest_indices(
     dim: usize,
     ndim: usize,
 ) -> Result<Array, Exception> {
-    scaled_indices(dimension, scale, true, dim, ndim)
-        .map(|i| i.as_type::<i32>())
+    scaled_indices(dimension, scale, true, dim, ndim).map(|i| i.as_type::<i32>())
 }
 
 fn linear_indices(
@@ -236,7 +253,7 @@ fn linear_indices(
 
     Ok(vec![
         // SAFETY: arith ops with scalars won't panic
-        (indices_left, array!(1.0) - &weight), 
+        (indices_left, array!(1.0) - &weight),
         (indices_right, weight),
     ])
 }
@@ -256,14 +273,10 @@ fn cubic_indices(
     let mut indices_l2 = (&indices_l1) - 1;
     let mut indices_r2 = (&indices_r1) + 1;
 
-    let weight_l1 = compiled_get_weight1(&indices, &indices_l1)?
-        .index((Ellipsis, NewAxis));
-    let weight_r1 = compiled_get_weight1(&indices, &indices_r1)?
-        .index((Ellipsis, NewAxis));
-    let weight_l2 = compiled_get_weight2(&indices, &indices_l2)?
-        .index((Ellipsis, NewAxis));
-    let weight_r2 = compiled_get_weight2(&indices, &indices_r2)?
-        .index((Ellipsis, NewAxis));
+    let weight_l1 = compiled_get_weight1(&indices, &indices_l1)?.index((Ellipsis, NewAxis));
+    let weight_r1 = compiled_get_weight1(&indices, &indices_r1)?.index((Ellipsis, NewAxis));
+    let weight_l2 = compiled_get_weight2(&indices, &indices_l2)?.index((Ellipsis, NewAxis));
+    let weight_r2 = compiled_get_weight2(&indices, &indices_r2)?.index((Ellipsis, NewAxis));
 
     // Padding with border value
     indices_l1 = clip(&indices_l1, (0, dimension - 1))?.as_type::<i32>();
@@ -278,7 +291,6 @@ fn cubic_indices(
         (indices_r2, weight_r2),
     ])
 }
-
 
 fn compiled_get_weight1(ind: &Array, grid: &Array) -> Result<Array, Exception> {
     // PyTorch uses -0.5 for antialiasing=true (compatibility with PIL)
@@ -327,7 +339,7 @@ fn scaled_indices(
     };
 
     let mut shape = vec![1; ndim];
-    shape[dim as usize] = -1;
+    shape[dim] = -1;
 
     indices.reshape(&shape)
 }
@@ -342,7 +354,7 @@ mod tests {
     #[test]
     fn test_nearest() {
         // BHWC
-        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+        let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
         let mut up = Upsample::new(2.0, UpsampleMode::Nearest);
         let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
@@ -353,12 +365,11 @@ mod tests {
         //        [1, 1, 2, 2],
         //        [3, 3, 4, 4],
         //        [3, 3, 4, 4]], dtype=int32)
-        let expected = array!([1, 1, 2, 2, 
-                                      1, 1, 2, 2, 
-                                      3, 3, 4, 4, 
-                                      3, 3, 4, 4], 
-                                    shape=[4, 4])
-            .as_type::<i32>();
+        let expected = array!(
+            [1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 4, 4],
+            shape = [4, 4]
+        )
+        .as_type::<i32>();
         assert_eq!(result, expected);
     }
 
@@ -366,9 +377,14 @@ mod tests {
     #[test]
     fn test_linear() {
         // BHWC
-        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+        let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
-        let mut up = Upsample::new(2.0, UpsampleMode::Linear { align_corners: false });
+        let mut up = Upsample::new(
+            2.0,
+            UpsampleMode::Linear {
+                align_corners: false,
+            },
+        );
         let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
@@ -377,12 +393,14 @@ mod tests {
         //        [1.5, 1.75, 2.25, 2.5],
         //        [2.5, 2.75, 3.25, 3.5],
         //        [3, 3.25, 3.75, 4]], dtype=float32)
-        let expected = array!([1.0, 1.25, 1.75, 2.0, 
-                                      1.5, 1.75, 2.25, 2.5, 
-                                      2.5, 2.75, 3.25, 3.5, 
-                                      3.0, 3.25, 3.75, 4.0], 
-                                    shape=[4, 4])
-            .as_type::<f32>();
+        let expected = array!(
+            [
+                1.0, 1.25, 1.75, 2.0, 1.5, 1.75, 2.25, 2.5, 2.5, 2.75, 3.25, 3.5, 3.0, 3.25, 3.75,
+                4.0
+            ],
+            shape = [4, 4]
+        )
+        .as_type::<f32>();
         assert_eq!(result, expected);
     }
 
@@ -390,9 +408,14 @@ mod tests {
     #[test]
     fn test_cubic() {
         // BHWC
-        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+        let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
-        let mut up = Upsample::new(2.0, UpsampleMode::Cubic { align_corners: false });
+        let mut up = Upsample::new(
+            2.0,
+            UpsampleMode::Cubic {
+                align_corners: false,
+            },
+        );
         let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
@@ -402,12 +425,14 @@ mod tests {
         //     [1.34766, 1.67969, 2.22656, 2.55859],
         //     [2.44141, 2.77344, 3.32031, 3.65234],
         //     [3.10547, 3.4375, 3.98438, 4.31641]], dtype=float32)
-        let expected = array!([0.683594, 1.01562, 1.5625, 1.89453, 
-                                      1.34766, 1.67969, 2.22656, 2.55859, 
-                                      2.44141, 2.77344, 3.32031, 3.65234, 
-                                      3.10547, 3.4375, 3.98438, 4.31641], 
-                                    shape=[4, 4])
-            .as_type::<f32>();
+        let expected = array!(
+            [
+                0.683594, 1.01562, 1.5625, 1.89453, 1.34766, 1.67969, 2.22656, 2.55859, 2.44141,
+                2.77344, 3.32031, 3.65234, 3.10547, 3.4375, 3.98438, 4.31641
+            ],
+            shape = [4, 4]
+        )
+        .as_type::<f32>();
 
         assert_array_eq!(result, expected, 1e-5);
     }

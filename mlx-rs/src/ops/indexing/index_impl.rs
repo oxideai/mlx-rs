@@ -108,6 +108,12 @@ impl<'a> ArrayIndex<'a> for StrideBy<std::ops::RangeFull> {
     }
 }
 
+impl<'a> IndexOp<&'a [ArrayIndexOp<'a>]> for Array {
+    fn index_device(&self, i: &'a [ArrayIndexOp<'a>], stream: impl AsRef<Stream>) -> Array {
+        get_item_nd(self, i, stream).unwrap()
+    }
+}
+
 impl<'a, T> IndexOp<T> for Array
 where
     T: ArrayIndex<'a>,

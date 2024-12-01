@@ -21,6 +21,7 @@ targets = [
 [dependencies]
 mlx-sys.workspace = true
 mlx-internal-macros.workspace = true
+mlx-macros.workspace = true
 half = "2"
 mach-sys = "0.5"
 num-complex = "0.4"

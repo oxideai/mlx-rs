@@ -1,8 +1,8 @@
 use crate::{utils::ScalarOrArray, Array, StreamOrDevice};
 use num_traits::Pow;
-use std::ops::{
+use std::{iter::Product, ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Not, Rem, RemAssign, Sub, SubAssign,
-};
+}};
 
 macro_rules! impl_binary_op {
     ($trait:ident, $method:ident, $c_method:ident) => {
@@ -91,6 +91,18 @@ impl Not for Array {
     type Output = Array;
     fn not(self) -> Self::Output {
         self.logical_not_device(StreamOrDevice::default()).unwrap()
+    }
+}
+
+impl Product<Array> for Array {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(1.0.into(), |acc, x| acc * x)
+    }
+}
+
+impl<'a> Product<&'a Array> for Array {
+    fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+        iter.fold(1.0.into(), |acc, x| acc * x)
     }
 }
 

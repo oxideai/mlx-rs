@@ -73,7 +73,7 @@ impl<'a> Module<&'a Array> for Upsample {
 
         match &self.scale_factor {
             SingleOrVec::Single(scale) => {
-                let scale = [*scale];
+                let scale = vec![*scale; dimensions];
                 self.forward_inner(x, &scale[..])
             },
             SingleOrVec::Vec(scales) => {
@@ -330,4 +330,85 @@ fn scaled_indices(
     shape[dim as usize] = -1;
 
     indices.reshape(&shape)
+}
+
+#[cfg(test)]
+mod tests {
+    use mlx_rs::assert_array_eq;
+
+    use super::*;
+
+    // The unit test below is adapted from the swift binding.
+    #[test]
+    fn test_nearest() {
+        // BHWC
+        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+
+        let mut up = Upsample::new(2.0, UpsampleMode::Nearest);
+        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+
+        assert_eq!(result.shape(), &[4, 4]);
+
+        // array([[1, 1, 2, 2],
+        //        [1, 1, 2, 2],
+        //        [3, 3, 4, 4],
+        //        [3, 3, 4, 4]], dtype=int32)
+        let expected = array!([1, 1, 2, 2, 
+                                      1, 1, 2, 2, 
+                                      3, 3, 4, 4, 
+                                      3, 3, 4, 4], 
+                                    shape=[4, 4])
+            .as_type::<i32>();
+        assert_eq!(result, expected);
+    }
+
+    // The unit test below is adapted from the swift binding.
+    #[test]
+    fn test_linear() {
+        // BHWC
+        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+
+        let mut up = Upsample::new(2.0, UpsampleMode::Linear { align_corners: false });
+        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+
+        assert_eq!(result.shape(), &[4, 4]);
+
+        // array([[1, 1.25, 1.75, 2],
+        //        [1.5, 1.75, 2.25, 2.5],
+        //        [2.5, 2.75, 3.25, 3.5],
+        //        [3, 3.25, 3.75, 4]], dtype=float32)
+        let expected = array!([1.0, 1.25, 1.75, 2.0, 
+                                      1.5, 1.75, 2.25, 2.5, 
+                                      2.5, 2.75, 3.25, 3.5, 
+                                      3.0, 3.25, 3.75, 4.0], 
+                                    shape=[4, 4])
+            .as_type::<f32>();
+        assert_eq!(result, expected);
+    }
+
+    // The expected output for the test case below is obtained from the python binding.
+    #[test]
+    fn test_cubic() {
+        // BHWC
+        let input = array!([1, 2, 3, 4], shape=[1, 2, 2, 1]);
+
+        let mut up = Upsample::new(2.0, UpsampleMode::Cubic { align_corners: false });
+        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+
+        assert_eq!(result.shape(), &[4, 4]);
+
+        // Expected output from the python binding version 0.17.2
+        // array([[0.683594, 1.01562, 1.5625, 1.89453],
+        //     [1.34766, 1.67969, 2.22656, 2.55859],
+        //     [2.44141, 2.77344, 3.32031, 3.65234],
+        //     [3.10547, 3.4375, 3.98438, 4.31641]], dtype=float32)
+        let expected = array!([0.683594, 1.01562, 1.5625, 1.89453, 
+                                      1.34766, 1.67969, 2.22656, 2.55859, 
+                                      2.44141, 2.77344, 3.32031, 3.65234, 
+                                      3.10547, 3.4375, 3.98438, 4.31641], 
+                                    shape=[4, 4])
+            .as_type::<f32>();
+
+        assert_array_eq!(result, expected, 1e-5);
+    }
 }

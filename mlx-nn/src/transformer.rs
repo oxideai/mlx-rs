@@ -1,8 +1,42 @@
+use std::borrow::Cow;
+
+use dyn_clone::DynClone;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::{error::Exception, module::{Module, ModuleParameters, UnaryModule}, ops::{matmul, softmax}, prelude::Builder, Array};
 
-use crate::{error::{MultiHeadAttentionBuildError, TransformerBulidError}, Dropout, DropoutBuilder, Linear, LinearBuilder, Relu, Sequential};
+use crate::{error::{MultiHeadAttentionBuildError, TransformerBulidError}, Dropout, DropoutBuilder, Linear, LinearBuilder, Relu};
+
+/// Placeholder type for the [`LayerNorm`] module
+#[derive(Debug, ModuleParameters)]
+struct LayerNorm;
+
+impl LayerNorm {
+    pub fn new(_: i32) -> Result<Self, Exception> {
+        Ok(Self)
+    }
+}
+
+impl<'a> Module<&'a Array> for LayerNorm {
+    type Error = Exception;
+
+    type Output = Array;
+
+    fn forward(&mut self, x: &'a Array) -> Result<Self::Output, Self::Error> {
+        Ok(x.clone())
+    }
+
+    fn training_mode(&mut self, _: bool) {}
+}
+
+/// A marker trait for activation functions used in transformers.
+pub trait Activation
+where
+    for<'a> Self: Module<&'a Array, Output = Array, Error = Exception> + DynClone,
+{
+}
+
+impl<M> Activation for M where for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + DynClone {}
 
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
@@ -205,34 +239,29 @@ where
     }
 }
 
-type Activation = dyn UnaryModule<Error = Exception>;
-
 #[derive(Debug, Builder)]
 #[builder(
     build_with = build_transformer_encoder_layer,
     err = TransformerBulidError,
 )]
 struct TransformerEncoderLayerBuilder {
-    pub layer_count: i32,
     pub dimensions: i32,
     pub num_heads: i32,
 
-    #[builder(optional, default = Self::DEFAULT_MLP_DIMENSIONS)]
+    #[builder(optional, default = None)]
     pub mlp_dimensions: Option<i32>,
     
     #[builder(optional, default = Self::DEFAULT_DROPOUT)]
     pub dropout: f32,
 
     #[builder(optional, default = None)]
-    pub activation: Option<Box<Activation>>,
+    pub activation: Option<Box<dyn Activation>>,
 
     pub norm_first: bool,
 }
 
 // The const are placed in the builder because the encoder layer is not public anyway
 impl TransformerEncoderLayerBuilder {
-    const DEFAULT_MLP_DIMENSIONS: Option<i32> = None;
-    
     const DEFAULT_DROPOUT: f32 = 0.0;
 }
 
@@ -242,10 +271,8 @@ fn build_transformer_encoder_layer(builder: TransformerEncoderLayerBuilder) -> R
     let mlp_dimensions = builder.mlp_dimensions.unwrap_or(4 * dimensions);
     let dropout = builder.dropout;
     let attention = MultiHeadAttention::new(dimensions, num_heads)?;
-    // let ln1 = LayerNorm::new(dimensions)?;
-    // let ln2 = LayerNorm::new(dimensions)?;
-    let ln1 = crate::Sequential::<Exception>::new();
-    let ln2 = crate::Sequential::<Exception>::new();
+    let ln1 = LayerNorm::new(dimensions)?;
+    let ln2 = LayerNorm::new(dimensions)?;
     let linear1 = Linear::new(dimensions, mlp_dimensions)?;
     let linear2 = Linear::new(mlp_dimensions, dimensions)?;
     let dropout1 = DropoutBuilder::new().p(dropout).build()?;
@@ -275,11 +302,11 @@ struct TransformerEncoderLayer {
     
     /// First layer norm module
     #[param]
-    pub ln1: Sequential, // TODO: placeholder for LayerNorm
+    pub ln1: LayerNorm,
     
     /// Second layer norm module
     #[param]
-    pub ln2: Sequential, // TODO: placeholder for LayerNorm
+    pub ln2: LayerNorm,
     
     /// First linear module
     #[param]
@@ -299,20 +326,20 @@ struct TransformerEncoderLayer {
     
     /// Activation function
     #[param]
-    pub activation: Box<Activation>,
+    pub activation: Box<dyn Activation>,
     
     /// If `true`, apply the layer norm before the first linear layer
     pub norm_first: bool,
 }
 
-struct TransformerEncoderLayerInput<'a> {
+struct TransformerEncoderInput<'a> {
     pub x: &'a Array,
     pub mask: &'a Array,
 }
 
-impl<'a> From<(&'a Array, &'a Array)> for TransformerEncoderLayerInput<'a> {
+impl<'a> From<(&'a Array, &'a Array)> for TransformerEncoderInput<'a> {
     fn from((x, mask): (&'a Array, &'a Array)) -> Self {
-        TransformerEncoderLayerInput {
+        TransformerEncoderInput {
             x,
             mask,
         }
@@ -321,7 +348,7 @@ impl<'a> From<(&'a Array, &'a Array)> for TransformerEncoderLayerInput<'a> {
 
 impl<'a, T> Module<T> for TransformerEncoderLayer
 where
-    T: Into<TransformerEncoderLayerInput<'a>>,
+    T: Into<TransformerEncoderInput<'a>>,
 {
     type Error = Exception;
 
@@ -371,5 +398,93 @@ where
         self.linear2.training_mode(mode);
         self.dropout1.training_mode(mode);
         self.dropout2.training_mode(mode);
+    }
+}
+
+#[derive(Debug, Builder)]
+#[builder(
+    build_with = build_transformer_encoder,
+    err = TransformerBulidError,
+)]
+struct TransformerEncoderBuilder {
+    pub layer_count: usize,
+    pub dimensions: i32,
+    pub num_heads: i32,
+    
+    #[builder(optional, default = None)]
+    pub mlp_dimensions: Option<i32>,
+    
+    #[builder(optional, default = Self::DEFAULT_DROPOUT)]
+    pub dropout: f32,
+    
+    #[builder(optional, default = None)]
+    pub activation: Option<Box<dyn Activation>>,
+    
+    pub norm_first: bool,
+}
+
+impl TransformerEncoderBuilder {
+    const DEFAULT_DROPOUT: f32 = 0.0;
+}
+
+fn build_transformer_encoder(builder: TransformerEncoderBuilder) -> Result<TransformerEncoder, TransformerBulidError> {
+    let layer_count = builder.layer_count;
+    let dimensions = builder.dimensions;
+    let num_heads = builder.num_heads;
+    let norm_first = builder.norm_first;
+    let activation = builder.activation.unwrap_or(Box::new(Relu));
+
+    let layers = (0..layer_count)
+        .map(|_| {
+            TransformerEncoderLayerBuilder::new(dimensions, num_heads, norm_first)
+                .mlp_dimensions(builder.mlp_dimensions)
+                .dropout(builder.dropout)
+                .activation(dyn_clone::clone_box(&*activation))
+                .build()
+        }).collect::<Result<Vec<_>, _>>()?;
+    let ln = LayerNorm::new(dimensions)?;
+
+    Ok(TransformerEncoder {
+        layers,
+        ln,
+    })
+}
+
+#[derive(Debug, ModuleParameters, Buildable)]
+struct TransformerEncoder {
+    #[param]
+    pub layers: Vec<TransformerEncoderLayer>,
+
+    #[param]
+    pub ln: LayerNorm,
+}
+
+impl<'a, T> Module<T> for TransformerEncoder 
+where 
+    T: Into<TransformerEncoderInput<'a>>,
+{
+    type Error = Exception;
+
+    type Output = Array;
+
+    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+        let input = input.into();
+        let x = input.x;
+        let mask = input.mask;
+
+        let mut x = Cow::Borrowed(x);
+
+        for l in &mut self.layers {
+            x = Cow::Owned(l.forward((&*x, mask))?);
+        }
+
+        self.ln.forward(&*x)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.layers.iter_mut().for_each(|layer| {
+            <TransformerEncoderLayer as Module<TransformerEncoderInput>>::training_mode(layer, mode);
+        });
+        self.ln.training_mode(mode);
     }
 }

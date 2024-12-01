@@ -1,11 +1,20 @@
-use std::{borrow::Cow, ops::Deref};
+use std::borrow::Cow;
 
 use dyn_clone::DynClone;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{error::Exception, module::{Module, ModuleParameters, UnaryModule}, ops::{matmul, softmax}, prelude::Builder, Array};
+use mlx_rs::{
+    error::Exception,
+    module::Module,
+    ops::{matmul, softmax},
+    prelude::Builder,
+    Array,
+};
 
-use crate::{error::{MultiHeadAttentionBuildError, TransformerBulidError}, Dropout, DropoutBuilder, Linear, LinearBuilder, Relu};
+use crate::{
+    error::{MultiHeadAttentionBuildError, TransformerBulidError},
+    Dropout, DropoutBuilder, Linear, LinearBuilder, Relu,
+};
 
 /// Placeholder type for the [`LayerNorm`] module
 #[derive(Debug, Clone, ModuleParameters)]
@@ -36,7 +45,10 @@ where
 {
 }
 
-impl<M> Activation for M where for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + DynClone {}
+impl<M> Activation for M where
+    for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + DynClone
+{
+}
 
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
@@ -50,35 +62,39 @@ pub struct MultiHeadAttentionBuilder {
 
     /// Number of attention heads
     pub num_heads: i32,
-    
+
     /// Input dimensions of queries
     #[builder(optional, default = None)]
     pub query_input_dims: Option<i32>,
-    
+
     /// Input dimensions of keys
     #[builder(optional, default = None)]
     pub key_input_dims: Option<i32>,
-    
+
     /// Input dimensions of values
     #[builder(optional, default = None)]
     pub value_input_dims: Option<i32>,
-    
+
     /// Dimensions of values after the projection
     #[builder(optional, default = None)]
     pub value_dims: Option<i32>,
-    
+
     /// Dimensions new values will be projected to
     #[builder(optional, default = None)]
     pub value_output_dims: Option<i32>,
-    
+
     /// If `true`, use a bias in the [`Linear`] layers
     #[builder(optional, default = MultiHeadAttention::DEFAULT_BIAS)]
     pub bias: bool,
 }
 
-fn build_multi_head_attention(builder: MultiHeadAttentionBuilder) -> Result<MultiHeadAttention, MultiHeadAttentionBuildError> {
+fn build_multi_head_attention(
+    builder: MultiHeadAttentionBuilder,
+) -> Result<MultiHeadAttention, MultiHeadAttentionBuildError> {
     if builder.dims % builder.num_heads != 0 {
-        return Err(MultiHeadAttentionBuildError::InvalidNumHeads(builder.num_heads));
+        return Err(MultiHeadAttentionBuildError::InvalidNumHeads(
+            builder.num_heads,
+        ));
     }
 
     let dims = builder.dims;
@@ -179,8 +195,12 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array)> for MultiHeadAttenti
     }
 }
 
-impl<'a> From<(&'a Array, &'a Array, &'a Array, Option<&'a Array>)> for MultiHeadAttentionInput<'a> {
-    fn from((queries, keys, values, mask): (&'a Array, &'a Array, &'a Array, Option<&'a Array>)) -> Self {
+impl<'a> From<(&'a Array, &'a Array, &'a Array, Option<&'a Array>)>
+    for MultiHeadAttentionInput<'a>
+{
+    fn from(
+        (queries, keys, values, mask): (&'a Array, &'a Array, &'a Array, Option<&'a Array>),
+    ) -> Self {
         MultiHeadAttentionInput {
             queries,
             keys,
@@ -190,8 +210,8 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, Option<&'a Array>)> for MultiHea
     }
 }
 
-impl<'a, Input> Module<Input> for MultiHeadAttention 
-where 
+impl<'a, Input> Module<Input> for MultiHeadAttention
+where
     Input: Into<MultiHeadAttentionInput<'a>>,
 {
     type Error = Exception;
@@ -210,11 +230,14 @@ where
         let L = queries.dim(1);
         let S = keys.dim(1);
 
-        let queries = queries.reshape(&[B, L, self.num_heads, -1])?
+        let queries = queries
+            .reshape(&[B, L, self.num_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
-        let keys = keys.reshape(&[B, S, self.num_heads, -1])?
+        let keys = keys
+            .reshape(&[B, S, self.num_heads, -1])?
             .transpose(&[0, 2, 3, 1])?;
-        let values = values.reshape(&[B, S, self.num_heads, -1])?
+        let values = values
+            .reshape(&[B, S, self.num_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
 
         // Dimensions are [batch x num_heads x sequence x hidden_dim]
@@ -227,7 +250,7 @@ where
         let value_hat = matmul(&scores, &values)?
             .transpose(&[0, 2, 1, 3])?
             .reshape(&[B, L, -1])?;
-            
+
         self.output_proj.forward(&value_hat)
     }
 
@@ -250,7 +273,7 @@ struct TransformerEncoderLayerBuilder {
 
     #[builder(optional, default = None)]
     pub mlp_dimensions: Option<i32>,
-    
+
     #[builder(optional, default = Self::DEFAULT_DROPOUT)]
     pub dropout: f32,
 
@@ -267,7 +290,10 @@ impl Clone for TransformerEncoderLayerBuilder {
             num_heads: self.num_heads,
             mlp_dimensions: self.mlp_dimensions,
             dropout: self.dropout,
-            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            activation: self
+                .activation
+                .as_ref()
+                .map(|a| dyn_clone::clone_box(a.as_ref())),
             norm_first: self.norm_first,
         }
     }
@@ -278,7 +304,9 @@ impl TransformerEncoderLayerBuilder {
     const DEFAULT_DROPOUT: f32 = 0.0;
 }
 
-fn build_transformer_encoder_layer(builder: TransformerEncoderLayerBuilder) -> Result<TransformerEncoderLayer, TransformerBulidError> {
+fn build_transformer_encoder_layer(
+    builder: TransformerEncoderLayerBuilder,
+) -> Result<TransformerEncoderLayer, TransformerBulidError> {
     let dimensions = builder.dimensions;
     let num_heads = builder.num_heads;
     let mlp_dimensions = builder.mlp_dimensions.unwrap_or(4 * dimensions);
@@ -312,35 +340,35 @@ struct TransformerEncoderLayer {
     /// Multi-head attention module
     #[param]
     pub attention: MultiHeadAttention,
-    
+
     /// First layer norm module
     #[param]
     pub ln1: LayerNorm,
-    
+
     /// Second layer norm module
     #[param]
     pub ln2: LayerNorm,
-    
+
     /// First linear module
     #[param]
     pub linear1: Linear,
-    
+
     /// Second linear module
     #[param]
     pub linear2: Linear,
-    
+
     /// Dropout module for the first layer
     #[param]
     pub dropout1: Dropout,
-    
+
     /// Dropout module for the second layer
     #[param]
     pub dropout2: Dropout,
-    
+
     /// Activation function
     #[param]
     pub activation: Box<dyn Activation>,
-    
+
     /// If `true`, apply the layer norm before the first linear layer
     pub norm_first: bool,
 }
@@ -368,10 +396,7 @@ struct TransformerEncoderInput<'a> {
 
 impl<'a> From<(&'a Array, &'a Array)> for TransformerEncoderInput<'a> {
     fn from((x, mask): (&'a Array, &'a Array)) -> Self {
-        TransformerEncoderInput {
-            x,
-            mask,
-        }
+        TransformerEncoderInput { x, mask }
     }
 }
 
@@ -382,7 +407,7 @@ where
     type Error = Exception;
 
     type Output = Array;
-    
+
     fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
@@ -418,9 +443,12 @@ where
             Ok(y)
         }
     }
-    
+
     fn training_mode(&mut self, mode: bool) {
-        <MultiHeadAttention as Module<MultiHeadAttentionInput<'a>>>::training_mode(&mut self.attention, mode);
+        <MultiHeadAttention as Module<MultiHeadAttentionInput<'a>>>::training_mode(
+            &mut self.attention,
+            mode,
+        );
         self.ln1.training_mode(mode);
         self.ln2.training_mode(mode);
         self.linear1.training_mode(mode);
@@ -440,16 +468,16 @@ struct TransformerEncoderBuilder {
     pub layer_count: usize,
     pub dimensions: i32,
     pub num_heads: i32,
-    
+
     #[builder(optional, default = None)]
     pub mlp_dimensions: Option<i32>,
-    
+
     #[builder(optional, default = Self::DEFAULT_DROPOUT)]
     pub dropout: f32,
-    
+
     #[builder(optional, default = None)]
     pub activation: Option<Box<dyn Activation>>,
-    
+
     pub norm_first: bool,
 }
 
@@ -465,13 +493,18 @@ impl Clone for TransformerEncoderBuilder {
             num_heads: self.num_heads,
             mlp_dimensions: self.mlp_dimensions,
             dropout: self.dropout,
-            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            activation: self
+                .activation
+                .as_ref()
+                .map(|a| dyn_clone::clone_box(a.as_ref())),
             norm_first: self.norm_first,
         }
     }
 }
 
-fn build_transformer_encoder(builder: TransformerEncoderBuilder) -> Result<TransformerEncoder, TransformerBulidError> {
+fn build_transformer_encoder(
+    builder: TransformerEncoderBuilder,
+) -> Result<TransformerEncoder, TransformerBulidError> {
     let layer_count = builder.layer_count;
     let dimensions = builder.dimensions;
     let num_heads = builder.num_heads;
@@ -485,13 +518,11 @@ fn build_transformer_encoder(builder: TransformerEncoderBuilder) -> Result<Trans
                 .dropout(builder.dropout)
                 .activation(dyn_clone::clone_box(&*activation))
                 .build()
-        }).collect::<Result<Vec<_>, _>>()?;
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let ln = LayerNorm::new(dimensions)?;
 
-    Ok(TransformerEncoder {
-        layers,
-        ln,
-    })
+    Ok(TransformerEncoder { layers, ln })
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
@@ -503,8 +534,8 @@ struct TransformerEncoder {
     pub ln: LayerNorm,
 }
 
-impl<'a, T> Module<T> for TransformerEncoder 
-where 
+impl<'a, T> Module<T> for TransformerEncoder
+where
     T: Into<TransformerEncoderInput<'a>>,
 {
     type Error = Exception;
@@ -527,7 +558,9 @@ where
 
     fn training_mode(&mut self, mode: bool) {
         self.layers.iter_mut().for_each(|layer| {
-            <TransformerEncoderLayer as Module<TransformerEncoderInput>>::training_mode(layer, mode);
+            <TransformerEncoderLayer as Module<TransformerEncoderInput>>::training_mode(
+                layer, mode,
+            );
         });
         self.ln.training_mode(mode);
     }
@@ -561,13 +594,18 @@ impl Clone for TransformerDecoderLayerBuilder {
             num_heads: self.num_heads,
             ml_dimensions: self.ml_dimensions,
             dropout: self.dropout,
-            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            activation: self
+                .activation
+                .as_ref()
+                .map(|a| dyn_clone::clone_box(a.as_ref())),
             norm_first: self.norm_first,
         }
     }
 }
 
-fn build_transformer_decoder_layer(builder: TransformerDecoderLayerBuilder) -> Result<TransformerDecoderLayer, TransformerBulidError> {
+fn build_transformer_decoder_layer(
+    builder: TransformerDecoderLayerBuilder,
+) -> Result<TransformerDecoderLayer, TransformerBulidError> {
     let dimensions = builder.dimensions;
     let num_heads = builder.num_heads;
     let mlp_dimensions = builder.ml_dimensions.unwrap_or(4 * dimensions);
@@ -604,39 +642,39 @@ fn build_transformer_decoder_layer(builder: TransformerDecoderLayerBuilder) -> R
 
 #[derive(Debug, ModuleParameters, Buildable)]
 struct TransformerDecoderLayer {
-    #[param] 
+    #[param]
     pub self_attention: MultiHeadAttention,
-    
-    #[param] 
+
+    #[param]
     pub cross_attention: MultiHeadAttention,
-    
-    #[param] 
+
+    #[param]
     pub ln1: LayerNorm,
-    
-    #[param] 
+
+    #[param]
     pub ln2: LayerNorm,
-    
-    #[param] 
+
+    #[param]
     pub ln3: LayerNorm,
-    
-    #[param] 
+
+    #[param]
     pub linear1: Linear,
-    
-    #[param] 
+
+    #[param]
     pub linear2: Linear,
-    
-    #[param] 
+
+    #[param]
     pub dropout1: Dropout,
-    
-    #[param] 
+
+    #[param]
     pub dropout2: Dropout,
-    
-    #[param] 
+
+    #[param]
     pub dropout3: Dropout,
-    
-    #[param] 
+
+    #[param]
     pub activation: Box<dyn Activation>,
-    
+
     pub norm_first: bool,
 }
 
@@ -667,7 +705,9 @@ struct TransformerDecoderInput<'a> {
 }
 
 impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array)> for TransformerDecoderInput<'a> {
-    fn from((x, memory, x_mask, memory_mask): (&'a Array, &'a Array, &'a Array, &'a Array)) -> Self {
+    fn from(
+        (x, memory, x_mask, memory_mask): (&'a Array, &'a Array, &'a Array, &'a Array),
+    ) -> Self {
         TransformerDecoderInput {
             x,
             memory,
@@ -677,8 +717,8 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array)> for TransformerDecod
     }
 }
 
-impl<'a, T> Module<T> for TransformerDecoderLayer 
-where 
+impl<'a, T> Module<T> for TransformerDecoderLayer
+where
     T: Into<TransformerDecoderInput<'a>>,
 {
     type Error = Exception;
@@ -699,7 +739,9 @@ where
             let x = x.add(&y)?;
 
             y = self.ln2.forward(&x)?;
-            y = self.cross_attention.forward((&y, memory, memory, memory_mask))?;
+            y = self
+                .cross_attention
+                .forward((&y, memory, memory, memory_mask))?;
             y = self.dropout2.forward(&y)?;
             let x = x.add(&y)?;
 
@@ -715,7 +757,9 @@ where
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
 
-            y = self.cross_attention.forward((&y, memory, memory, memory_mask))?;
+            y = self
+                .cross_attention
+                .forward((&y, memory, memory, memory_mask))?;
             y = self.dropout2.forward(&y)?;
             x = x.add(&y)?;
             x = self.ln2.forward(&x)?; // TODO: https://github.com/ml-explore/mlx/issues/1636
@@ -730,8 +774,14 @@ where
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <MultiHeadAttention as Module<MultiHeadAttentionInput>>::training_mode(&mut self.self_attention, mode);
-        <MultiHeadAttention as Module<MultiHeadAttentionInput>>::training_mode(&mut self.cross_attention, mode);
+        <MultiHeadAttention as Module<MultiHeadAttentionInput>>::training_mode(
+            &mut self.self_attention,
+            mode,
+        );
+        <MultiHeadAttention as Module<MultiHeadAttentionInput>>::training_mode(
+            &mut self.cross_attention,
+            mode,
+        );
         self.ln1.training_mode(mode);
         self.ln2.training_mode(mode);
         self.ln3.training_mode(mode);
@@ -778,13 +828,18 @@ impl Clone for TransformerDecoderBuilder {
             num_heads: self.num_heads,
             mlp_dimensions: self.mlp_dimensions,
             dropout: self.dropout,
-            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            activation: self
+                .activation
+                .as_ref()
+                .map(|a| dyn_clone::clone_box(a.as_ref())),
             norm_first: self.norm_first,
         }
     }
 }
 
-fn build_transformer_decoder(builder: TransformerDecoderBuilder) -> Result<TransformerDecoder, TransformerBulidError> {
+fn build_transformer_decoder(
+    builder: TransformerDecoderBuilder,
+) -> Result<TransformerDecoder, TransformerBulidError> {
     let layer_count = builder.layer_count;
     let dimensions = builder.dimensions;
     let num_heads = builder.num_heads;
@@ -799,13 +854,11 @@ fn build_transformer_decoder(builder: TransformerDecoderBuilder) -> Result<Trans
                 .dropout(builder.dropout)
                 .activation(dyn_clone::clone_box(&*activation))
                 .build()
-        }).collect::<Result<Vec<_>, _>>()?;
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let ln = LayerNorm::new(dimensions)?;
 
-    Ok(TransformerDecoder {
-        layers,
-        ln,
-    })
+    Ok(TransformerDecoder { layers, ln })
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
@@ -817,8 +870,8 @@ struct TransformerDecoder {
     pub ln: LayerNorm,
 }
 
-impl<'a, T> Module<T> for TransformerDecoder 
-where 
+impl<'a, T> Module<T> for TransformerDecoder
+where
     T: Into<TransformerDecoderInput<'a>>,
 {
     type Error = Exception;
@@ -843,7 +896,9 @@ where
 
     fn training_mode(&mut self, mode: bool) {
         self.layers.iter_mut().for_each(|layer| {
-            <TransformerDecoderLayer as Module<TransformerDecoderInput>>::training_mode(layer, mode);
+            <TransformerDecoderLayer as Module<TransformerDecoderInput>>::training_mode(
+                layer, mode,
+            );
         });
         self.ln.training_mode(mode);
     }
@@ -901,7 +956,10 @@ impl Clone for TransformerBuilder {
             decoder_layer_count: self.decoder_layer_count,
             mlp_dimensions: self.mlp_dimensions,
             dropout: self.dropout,
-            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            activation: self
+                .activation
+                .as_ref()
+                .map(|a| dyn_clone::clone_box(a.as_ref())),
             norm_first: self.norm_first,
         }
     }
@@ -917,21 +975,20 @@ fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, Transfo
     let activation = builder.activation.unwrap_or(Box::new(Relu));
     let norm_first = builder.norm_first;
 
-    let encoder = TransformerEncoderBuilder::new(encoder_layer_count, dimensions, num_heads, norm_first)
-        .mlp_dimensions(mlp_dimensions)
-        .dropout(dropout)
-        .activation(dyn_clone::clone_box(&*activation))
-        .build()?;
-    let decoder = TransformerDecoderBuilder::new(decoder_layer_count, dimensions, num_heads, norm_first)
-        .mlp_dimensions(mlp_dimensions)
-        .dropout(dropout)
-        .activation(dyn_clone::clone_box(&*activation))
-        .build()?;
+    let encoder =
+        TransformerEncoderBuilder::new(encoder_layer_count, dimensions, num_heads, norm_first)
+            .mlp_dimensions(mlp_dimensions)
+            .dropout(dropout)
+            .activation(dyn_clone::clone_box(&*activation))
+            .build()?;
+    let decoder =
+        TransformerDecoderBuilder::new(decoder_layer_count, dimensions, num_heads, norm_first)
+            .mlp_dimensions(mlp_dimensions)
+            .dropout(dropout)
+            .activation(dyn_clone::clone_box(&*activation))
+            .build()?;
 
-    Ok(Transformer {
-        encoder,
-        decoder,
-    })
+    Ok(Transformer { encoder, decoder })
 }
 
 /// Implements a standard Transformer model.
@@ -966,7 +1023,7 @@ impl Transformer {
 
     /// Default number of decoder layers
     pub const DEFAULT_DECODER_LAYERS_COUNT: usize = 6;
-    
+
     /// Default value for dropout
     pub const DEFAULT_DROPOUT: f32 = 0.0;
 
@@ -994,7 +1051,15 @@ pub struct TransformerInput<'a> {
 }
 
 impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)> for TransformerInput<'a> {
-    fn from((source, target, source_mask, target_mask, memory_mask): (&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)) -> Self {
+    fn from(
+        (source, target, source_mask, target_mask, memory_mask): (
+            &'a Array,
+            &'a Array,
+            &'a Array,
+            &'a Array,
+            &'a Array,
+        ),
+    ) -> Self {
         TransformerInput {
             source,
             target,
@@ -1005,8 +1070,8 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)> for Trans
     }
 }
 
-impl<'a, T> Module<T> for Transformer 
-where 
+impl<'a, T> Module<T> for Transformer
+where
     T: Into<TransformerInput<'a>>,
 {
     type Error = Exception;
@@ -1022,11 +1087,18 @@ where
         let memory_mask = input.memory_mask;
 
         let memory = self.encoder.forward((source, source_mask))?;
-        self.decoder.forward((target, &memory, target_mask, memory_mask))
+        self.decoder
+            .forward((target, &memory, target_mask, memory_mask))
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <TransformerEncoder as Module<TransformerEncoderInput>>::training_mode(&mut self.encoder, mode);
-        <TransformerDecoder as Module<TransformerDecoderInput>>::training_mode(&mut self.decoder, mode);
+        <TransformerEncoder as Module<TransformerEncoderInput>>::training_mode(
+            &mut self.encoder,
+            mode,
+        );
+        <TransformerDecoder as Module<TransformerDecoderInput>>::training_mode(
+            &mut self.decoder,
+            mode,
+        );
     }
 }

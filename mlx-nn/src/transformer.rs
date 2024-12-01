@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Deref};
 
 use dyn_clone::DynClone;
 use mlx_internal_macros::{Buildable, Builder};
@@ -8,7 +8,7 @@ use mlx_rs::{error::Exception, module::{Module, ModuleParameters, UnaryModule}, 
 use crate::{error::{MultiHeadAttentionBuildError, TransformerBulidError}, Dropout, DropoutBuilder, Linear, LinearBuilder, Relu};
 
 /// Placeholder type for the [`LayerNorm`] module
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 struct LayerNorm;
 
 impl LayerNorm {
@@ -260,6 +260,19 @@ struct TransformerEncoderLayerBuilder {
     pub norm_first: bool,
 }
 
+impl Clone for TransformerEncoderLayerBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            dimensions: self.dimensions,
+            num_heads: self.num_heads,
+            mlp_dimensions: self.mlp_dimensions,
+            dropout: self.dropout,
+            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            norm_first: self.norm_first,
+        }
+    }
+}
+
 // The const are placed in the builder because the encoder layer is not public anyway
 impl TransformerEncoderLayerBuilder {
     const DEFAULT_DROPOUT: f32 = 0.0;
@@ -330,6 +343,22 @@ struct TransformerEncoderLayer {
     
     /// If `true`, apply the layer norm before the first linear layer
     pub norm_first: bool,
+}
+
+impl Clone for TransformerEncoderLayer {
+    fn clone(&self) -> Self {
+        Self {
+            attention: self.attention.clone(),
+            ln1: self.ln1.clone(),
+            ln2: self.ln2.clone(),
+            linear1: self.linear1.clone(),
+            linear2: self.linear2.clone(),
+            dropout1: self.dropout1.clone(),
+            dropout2: self.dropout2.clone(),
+            activation: dyn_clone::clone_box(&*self.activation),
+            norm_first: self.norm_first,
+        }
+    }
 }
 
 struct TransformerEncoderInput<'a> {
@@ -428,6 +457,20 @@ impl TransformerEncoderBuilder {
     const DEFAULT_DROPOUT: f32 = 0.0;
 }
 
+impl Clone for TransformerEncoderBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            layer_count: self.layer_count,
+            dimensions: self.dimensions,
+            num_heads: self.num_heads,
+            mlp_dimensions: self.mlp_dimensions,
+            dropout: self.dropout,
+            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            norm_first: self.norm_first,
+        }
+    }
+}
+
 fn build_transformer_encoder(builder: TransformerEncoderBuilder) -> Result<TransformerEncoder, TransformerBulidError> {
     let layer_count = builder.layer_count;
     let dimensions = builder.dimensions;
@@ -451,7 +494,7 @@ fn build_transformer_encoder(builder: TransformerEncoderBuilder) -> Result<Trans
     })
 }
 
-#[derive(Debug, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
 struct TransformerEncoder {
     #[param]
     pub layers: Vec<TransformerEncoderLayer>,
@@ -509,6 +552,19 @@ struct TransformerDecoderLayerBuilder {
 
 impl TransformerDecoderLayerBuilder {
     const DEFAULT_DROPOUT: f32 = 0.0;
+}
+
+impl Clone for TransformerDecoderLayerBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            dimensions: self.dimensions,
+            num_heads: self.num_heads,
+            ml_dimensions: self.ml_dimensions,
+            dropout: self.dropout,
+            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            norm_first: self.norm_first,
+        }
+    }
 }
 
 fn build_transformer_decoder_layer(builder: TransformerDecoderLayerBuilder) -> Result<TransformerDecoderLayer, TransformerBulidError> {
@@ -582,6 +638,25 @@ struct TransformerDecoderLayer {
     pub activation: Box<dyn Activation>,
     
     pub norm_first: bool,
+}
+
+impl Clone for TransformerDecoderLayer {
+    fn clone(&self) -> Self {
+        Self {
+            self_attention: self.self_attention.clone(),
+            cross_attention: self.cross_attention.clone(),
+            ln1: self.ln1.clone(),
+            ln2: self.ln2.clone(),
+            ln3: self.ln3.clone(),
+            linear1: self.linear1.clone(),
+            linear2: self.linear2.clone(),
+            dropout1: self.dropout1.clone(),
+            dropout2: self.dropout2.clone(),
+            dropout3: self.dropout3.clone(),
+            activation: dyn_clone::clone_box(&*self.activation),
+            norm_first: self.norm_first,
+        }
+    }
 }
 
 struct TransformerDecoderInput<'a> {
@@ -666,5 +741,110 @@ where
         self.dropout2.training_mode(mode);
         self.dropout3.training_mode(mode);
         self.activation.training_mode(mode);
+    }
+}
+
+#[derive(Debug, Builder)]
+#[builder(
+    build_with = build_transformer_decoder,
+    err = TransformerBulidError,
+)]
+struct TransformerDecoderBuilder {
+    pub layer_count: usize,
+    pub dimensions: i32,
+    pub num_heads: i32,
+
+    #[builder(optional, default = None)]
+    pub mlp_dimensions: Option<i32>,
+
+    #[builder(optional, default = Self::DEFAULT_DROPOUT)]
+    pub dropout: f32,
+
+    #[builder(optional, default = None)]
+    pub activation: Option<Box<dyn Activation>>,
+
+    pub norm_first: bool,
+}
+
+impl TransformerDecoderBuilder {
+    const DEFAULT_DROPOUT: f32 = 0.0;
+}
+
+impl Clone for TransformerDecoderBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            layer_count: self.layer_count,
+            dimensions: self.dimensions,
+            num_heads: self.num_heads,
+            mlp_dimensions: self.mlp_dimensions,
+            dropout: self.dropout,
+            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            norm_first: self.norm_first,
+        }
+    }
+}
+
+fn build_transformer_decoder(builder: TransformerDecoderBuilder) -> Result<TransformerDecoder, TransformerBulidError> {
+    let layer_count = builder.layer_count;
+    let dimensions = builder.dimensions;
+    let num_heads = builder.num_heads;
+    let norm_first = builder.norm_first;
+
+    let activation = builder.activation.unwrap_or(Box::new(Relu));
+
+    let layers = (0..layer_count)
+        .map(|_| {
+            TransformerDecoderLayerBuilder::new(dimensions, num_heads, norm_first)
+                .ml_dimensions(builder.mlp_dimensions)
+                .dropout(builder.dropout)
+                .activation(dyn_clone::clone_box(&*activation))
+                .build()
+        }).collect::<Result<Vec<_>, _>>()?;
+    let ln = LayerNorm::new(dimensions)?;
+
+    Ok(TransformerDecoder {
+        layers,
+        ln,
+    })
+}
+
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
+struct TransformerDecoder {
+    #[param]
+    pub layers: Vec<TransformerDecoderLayer>,
+
+    #[param]
+    pub ln: LayerNorm,
+}
+
+impl<'a, T> Module<T> for TransformerDecoder 
+where 
+    T: Into<TransformerDecoderInput<'a>>,
+{
+    type Error = Exception;
+
+    type Output = Array;
+
+    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+        let input = input.into();
+        let x = input.x;
+        let memory = input.memory;
+        let x_mask = input.x_mask;
+        let memory_mask = input.memory_mask;
+
+        let mut x = Cow::Borrowed(x);
+
+        for l in &mut self.layers {
+            x = Cow::Owned(l.forward((&*x, memory, x_mask, memory_mask))?);
+        }
+
+        self.ln.forward(&*x)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.layers.iter_mut().for_each(|layer| {
+            <TransformerDecoderLayer as Module<TransformerDecoderInput>>::training_mode(layer, mode);
+        });
+        self.ln.training_mode(mode);
     }
 }

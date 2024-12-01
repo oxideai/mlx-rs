@@ -83,13 +83,3 @@ impl<T> From<Vec<T>> for SingleOrVec<T> {
         SingleOrVec::Vec(value)
     }
 }
-
-impl<T> SingleOrVec<T> {
-    /// Number of elements in the `SingleOrVec`.
-    pub fn len(&self) -> usize {
-        match self {
-            SingleOrVec::Single(_) => 1,
-            SingleOrVec::Vec(v) => v.len(),
-        }
-    }
-}

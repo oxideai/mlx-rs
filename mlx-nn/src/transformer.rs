@@ -848,3 +848,185 @@ where
         self.ln.training_mode(mode);
     }
 }
+
+/// Builder for the [`Transformer`] module
+#[derive(Debug, Builder)]
+#[builder(
+    build_with = build_transformer,
+    err = TransformerBulidError,
+)]
+pub struct TransformerBuilder {
+    /// number of expected features in the encoder/decoder
+    #[builder(optional, default = Transformer::DEFAULT_DIMENSIONS)]
+    pub dimensions: i32,
+
+    /// number of attention heads
+    #[builder(optional, default = Transformer::DEFAULT_NUM_HEADS)]
+    pub num_heads: i32,
+
+    /// number of layers in the encoder
+    #[builder(optional, default = Transformer::DEFAULT_ENCODER_LAYERS_COUNT)]
+    pub encoder_layer_count: usize,
+
+    /// number of layers in the decoder
+    #[builder(optional, default = Transformer::DEFAULT_DECODER_LAYERS_COUNT)]
+    pub decoder_layer_count: usize,
+
+    /// hidden dimensions of the MLP block in each layer. Defaults to `4 * dimensions`
+    /// if not specified
+    #[builder(optional, default = None)]
+    pub mlp_dimensions: Option<i32>,
+
+    /// dropout value for the encode and decoder. Dropout is used after each attention layer
+    /// and the activation in the MLP layer
+    #[builder(optional, default = Transformer::DEFAULT_DROPOUT)]
+    pub dropout: f32,
+
+    /// the activation layer for the MLP hidden layer
+    #[builder(optional, default = None)]
+    pub activation: Option<Box<dyn Activation>>,
+
+    /// if `true` encode and decoder layers will perform layer normalization before
+    /// attention and MLP operations, otherwise after
+    #[builder(optional, default = Transformer::DEFAULT_NORM_FIRST)]
+    pub norm_first: bool,
+}
+
+impl Clone for TransformerBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            dimensions: self.dimensions,
+            num_heads: self.num_heads,
+            encoder_layer_count: self.encoder_layer_count,
+            decoder_layer_count: self.decoder_layer_count,
+            mlp_dimensions: self.mlp_dimensions,
+            dropout: self.dropout,
+            activation: self.activation.as_ref().map(|a| dyn_clone::clone_box(a.as_ref())),
+            norm_first: self.norm_first,
+        }
+    }
+}
+
+fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, TransformerBulidError> {
+    let dimensions = builder.dimensions;
+    let num_heads = builder.num_heads;
+    let encoder_layer_count = builder.encoder_layer_count;
+    let decoder_layer_count = builder.decoder_layer_count;
+    let mlp_dimensions = builder.mlp_dimensions;
+    let dropout = builder.dropout;
+    let activation = builder.activation.unwrap_or(Box::new(Relu));
+    let norm_first = builder.norm_first;
+
+    let encoder = TransformerEncoderBuilder::new(encoder_layer_count, dimensions, num_heads, norm_first)
+        .mlp_dimensions(mlp_dimensions)
+        .dropout(dropout)
+        .activation(dyn_clone::clone_box(&*activation))
+        .build()?;
+    let decoder = TransformerDecoderBuilder::new(decoder_layer_count, dimensions, num_heads, norm_first)
+        .mlp_dimensions(mlp_dimensions)
+        .dropout(dropout)
+        .activation(dyn_clone::clone_box(&*activation))
+        .build()?;
+
+    Ok(Transformer {
+        encoder,
+        decoder,
+    })
+}
+
+/// Implements a standard Transformer model.
+///
+/// The implementation is based on "Attention Is All You Need"
+/// <https://arxiv.org/abs/1706.03762>.
+///
+/// The Transformer model contains an encoder and a decoder. The encoder
+/// processes the input sequence and the decoder generates the output sequence.
+/// The interaction between encoder and decoder happens through the attention
+/// mechanism.
+#[derive(Debug, Clone, ModuleParameters, Buildable)]
+pub struct Transformer {
+    /// Encoder module
+    #[param]
+    encoder: TransformerEncoder, // TODO: visibility?
+
+    /// Decoder module
+    #[param]
+    decoder: TransformerDecoder, // TODO: visibility?
+}
+
+impl Transformer {
+    /// Default value for `dimensions`
+    pub const DEFAULT_DIMENSIONS: i32 = 512;
+
+    /// Default value for `num_heads`
+    pub const DEFAULT_NUM_HEADS: i32 = 8;
+
+    /// Default number of encoder layers
+    pub const DEFAULT_ENCODER_LAYERS_COUNT: usize = 6;
+
+    /// Default number of decoder layers
+    pub const DEFAULT_DECODER_LAYERS_COUNT: usize = 6;
+    
+    /// Default value for dropout
+    pub const DEFAULT_DROPOUT: f32 = 0.0;
+
+    /// Default value for `activation`
+    pub const DEFAULT_NORM_FIRST: bool = false;
+}
+
+/// Input to the [`Transformer`] module
+#[derive(Debug, Clone)]
+pub struct TransformerInput<'a> {
+    /// Source
+    pub source: &'a Array,
+
+    /// Target
+    pub target: &'a Array,
+
+    /// Source mask
+    pub source_mask: &'a Array,
+
+    /// Target mask
+    pub target_mask: &'a Array,
+
+    /// Memory mask
+    pub memory_mask: &'a Array,
+}
+
+impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)> for TransformerInput<'a> {
+    fn from((source, target, source_mask, target_mask, memory_mask): (&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)) -> Self {
+        TransformerInput {
+            source,
+            target,
+            source_mask,
+            target_mask,
+            memory_mask,
+        }
+    }
+}
+
+impl<'a, T> Module<T> for Transformer 
+where 
+    T: Into<TransformerInput<'a>>,
+{
+    type Error = Exception;
+
+    type Output = Array;
+
+    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+        let input = input.into();
+        let source = input.source;
+        let target = input.target;
+        let source_mask = input.source_mask;
+        let target_mask = input.target_mask;
+        let memory_mask = input.memory_mask;
+
+        let memory = self.encoder.forward((source, source_mask))?;
+        self.decoder.forward((target, &memory, target_mask, memory_mask))
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        <TransformerEncoder as Module<TransformerEncoderInput>>::training_mode(&mut self.encoder, mode);
+        <TransformerDecoder as Module<TransformerDecoderInput>>::training_mode(&mut self.decoder, mode);
+    }
+}

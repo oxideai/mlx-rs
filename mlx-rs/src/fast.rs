@@ -159,7 +159,7 @@ pub fn layer_norm_device<'a>(
 }
 
 /// Quantize the matrix `w` using the provided `scales` and `biases` and the `groupSize` and `bits` configuration.
-
+///
 /// For details, please see
 /// [this documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.fast.affine_quantize.html)
 ///

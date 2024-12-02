@@ -593,7 +593,7 @@ impl<'a, F> CompiledState<'a, F> {
     }
 }
 
-impl<'a, F> Drop for CompiledState<'a, F> {
+impl<F> Drop for CompiledState<'_, F> {
     fn drop(&mut self) {
         unsafe {
             // remove the compiled structure from the back end

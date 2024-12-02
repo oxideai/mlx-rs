@@ -28,7 +28,7 @@ pub struct Array {
 
 impl Sealed for Array {}
 
-impl<'a> Sealed for &'a Array {}
+impl Sealed for &Array {}
 
 impl std::fmt::Debug for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

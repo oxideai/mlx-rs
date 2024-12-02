@@ -280,7 +280,7 @@ impl Glu {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for Glu {
+impl Module<&Array> for Glu {
     type Error = Exception;
     type Output = Array;
 
@@ -304,7 +304,7 @@ impl<'a> Module<&'a Array> for Glu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
-impl<'a> Module<&'a Array> for Sigmoid {
+impl Module<&Array> for Sigmoid {
     type Error = Exception;
     type Output = Array;
 
@@ -329,7 +329,7 @@ impl<'a> Module<&'a Array> for Sigmoid {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
-impl<'a> Module<&'a Array> for Mish {
+impl Module<&Array> for Mish {
     type Error = Exception;
     type Output = Array;
 
@@ -350,7 +350,7 @@ impl<'a> Module<&'a Array> for Mish {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
-impl<'a> Module<&'a Array> for Relu {
+impl Module<&Array> for Relu {
     type Error = Exception;
     type Output = Array;
 
@@ -382,7 +382,7 @@ impl LeakyRelu {
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
 }
 
-impl<'a> Module<&'a Array> for LeakyRelu {
+impl Module<&Array> for LeakyRelu {
     type Error = Exception;
     type Output = Array;
 
@@ -403,7 +403,7 @@ impl<'a> Module<&'a Array> for LeakyRelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
-impl<'a> Module<&'a Array> for Relu6 {
+impl Module<&Array> for Relu6 {
     type Error = Exception;
     type Output = Array;
 
@@ -435,7 +435,7 @@ impl Softmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for Softmax {
+impl Module<&Array> for Softmax {
     type Error = Exception;
     type Output = Array;
 
@@ -456,7 +456,7 @@ impl<'a> Module<&'a Array> for Softmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
-impl<'a> Module<&'a Array> for Softplus {
+impl Module<&Array> for Softplus {
     type Error = Exception;
     type Output = Array;
 
@@ -477,7 +477,7 @@ impl<'a> Module<&'a Array> for Softplus {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
-impl<'a> Module<&'a Array> for Softsign {
+impl Module<&Array> for Softsign {
     type Error = Exception;
     type Output = Array;
 
@@ -510,7 +510,7 @@ impl Celu {
     pub const DEFAULT_ALPHA: f32 = 1.0;
 }
 
-impl<'a> Module<&'a Array> for Celu {
+impl Module<&Array> for Celu {
     type Error = Exception;
     type Output = Array;
 
@@ -531,7 +531,7 @@ impl<'a> Module<&'a Array> for Celu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
-impl<'a> Module<&'a Array> for Silu {
+impl Module<&Array> for Silu {
     type Error = Exception;
     type Output = Array;
 
@@ -563,7 +563,7 @@ impl LogSoftmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for LogSoftmax {
+impl Module<&Array> for LogSoftmax {
     type Error = Exception;
     type Output = Array;
 
@@ -584,7 +584,7 @@ impl<'a> Module<&'a Array> for LogSoftmax {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
-impl<'a> Module<&'a Array> for LogSigmoid {
+impl Module<&Array> for LogSigmoid {
     type Error = Exception;
     type Output = Array;
 
@@ -643,7 +643,7 @@ impl Prelu {
     pub const DEFAULT_VALUE: f32 = 0.25;
 }
 
-impl<'a> Module<&'a Array> for Prelu {
+impl Module<&Array> for Prelu {
     type Error = Exception;
     type Output = Array;
 
@@ -684,7 +684,7 @@ generate_builder! {
     }
 }
 
-impl<'a> Module<&'a Array> for Gelu {
+impl Module<&Array> for Gelu {
     type Error = Exception;
     type Output = Array;
 
@@ -703,7 +703,7 @@ impl<'a> Module<&'a Array> for Gelu {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
-impl<'a> Module<&'a Array> for Tanh {
+impl Module<&Array> for Tanh {
     type Error = Exception;
     type Output = Array;
 
@@ -724,7 +724,7 @@ impl<'a> Module<&'a Array> for Tanh {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
-impl<'a> Module<&'a Array> for HardSwish {
+impl Module<&Array> for HardSwish {
     type Error = Exception;
     type Output = Array;
 
@@ -759,7 +759,7 @@ impl Step {
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
 }
 
-impl<'a> Module<&'a Array> for Step {
+impl Module<&Array> for Step {
     type Error = Exception;
     type Output = Array;
 
@@ -780,7 +780,7 @@ impl<'a> Module<&'a Array> for Step {
 #[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
-impl<'a> Module<&'a Array> for Selu {
+impl Module<&Array> for Selu {
     type Error = Exception;
     type Output = Array;
 

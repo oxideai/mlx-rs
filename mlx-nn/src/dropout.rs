@@ -56,7 +56,7 @@ impl Dropout {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<&'a Array> for Dropout {
+impl Module<&Array> for Dropout {
     type Error = Exception;
     type Output = Array;
 
@@ -137,7 +137,7 @@ impl Dropout2d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<&'a Array> for Dropout2d {
+impl Module<&Array> for Dropout2d {
     type Error = Exception;
     type Output = Array;
 
@@ -230,7 +230,7 @@ impl Dropout3d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<&'a Array> for Dropout3d {
+impl Module<&Array> for Dropout3d {
     type Error = Exception;
     type Output = Array;
 

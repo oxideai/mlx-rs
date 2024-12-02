@@ -38,7 +38,7 @@ struct LinearFunctionModel {
     pub b: Param<Array>,
 }
 
-impl<'a> Module<&'a Array> for LinearFunctionModel {
+impl Module<&Array> for LinearFunctionModel {
     type Error = Exception;
     type Output = Array;
 

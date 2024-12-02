@@ -76,7 +76,7 @@ impl Linear {
     }
 }
 
-impl<'a> Module<&'a Array> for Linear {
+impl Module<&Array> for Linear {
     type Error = Exception;
     type Output = Array;
 
@@ -159,7 +159,7 @@ impl Bilinear {
     pub const DEFAULT_BIAS: bool = true;
 }
 
-impl<'a> Module<&'a Array> for Bilinear {
+impl Module<&Array> for Bilinear {
     type Error = Exception;
     type Output = Array;
 

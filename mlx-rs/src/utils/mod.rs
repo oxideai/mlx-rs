@@ -161,7 +161,7 @@ pub trait ScalarOrArray<'a> {
     fn into_owned_or_ref_array(self) -> Self::Array;
 }
 
-impl<'a> ScalarOrArray<'a> for Array {
+impl ScalarOrArray<'_> for Array {
     type Array = Array;
 
     fn into_owned_or_ref_array(self) -> Array {
@@ -262,7 +262,7 @@ impl<'a> Closure<'a> {
     }
 }
 
-impl<'a> Drop for Closure<'a> {
+impl Drop for Closure<'_> {
     fn drop(&mut self) {
         unsafe { mlx_sys::mlx_free(self.c_closure as *mut _) }
     }

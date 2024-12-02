@@ -252,10 +252,13 @@ where
     build_gradient_inner(closure, argument_numbers)
 }
 
+/// Type alias for `(value, gradient)` pair.
+pub type ValueAndGrad = (Vec<Array>, Vec<Array>);
+
 fn build_value_and_gradient_inner<'a>(
     closure: Closure<'a>,
     argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
+) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a {
     move |arrays: &[Array]| {
         let c_value_and_grad = unsafe {
             try_catch_mlx_closure_error! {
@@ -274,7 +277,7 @@ fn build_value_and_gradient_inner<'a>(
 fn build_value_and_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
@@ -285,7 +288,7 @@ where
 fn build_fallible_value_and_gradient<'a, F>(
     f: F,
     argument_numbers: &'a [i32],
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
@@ -297,7 +300,7 @@ pub trait IntoValueAndGrad<'a, Err> {
     fn into_value_and_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
-    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a;
+    ) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a;
 }
 
 impl<'a, F> IntoValueAndGrad<'a, ()> for F
@@ -310,7 +313,7 @@ where
     fn into_value_and_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
-    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
+    ) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a {
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         build_value_and_gradient(self, argument_numbers)
     }
@@ -324,7 +327,7 @@ where
     fn into_value_and_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
-    ) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a {
+    ) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a {
         let argument_numbers = argument_numbers.into_option().unwrap_or(&[0]);
         build_fallible_value_and_gradient(self, argument_numbers)
     }
@@ -334,7 +337,7 @@ where
 pub fn value_and_grad<'a, F, Err>(
     f: F,
     argument_numbers: impl IntoOption<&'a [i32]>,
-) -> impl FnMut(&[Array]) -> Result<(Vec<Array>, Vec<Array>), Exception> + 'a
+) -> impl FnMut(&[Array]) -> Result<ValueAndGrad, Exception> + 'a
 where
     F: IntoValueAndGrad<'a, Err> + 'a,
 {
@@ -383,6 +386,9 @@ macro_rules! value_and_grad_with_hashmap {
     };
 }
 
+/// Type alias for a hashmap of parameters.
+pub type KeyedParameters<Arr> = HashMap<Rc<str>, Arr>;
+
 pub trait IntoValueAndGradWithHashMap<'a, Arr, Args, Err>
 where
     Arr: AsRef<Array>,
@@ -390,18 +396,18 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a;
+    ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a;
 }
 
 impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, ()> for F
 where
-    F: FnMut(HashMap<Rc<str>, &Array>, Args) -> Vec<Array> + 'a,
+    F: FnMut(KeyedParameters<&Array>, Args) -> Vec<Array> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
     fn into_value_and_grad_with_hashmap(
         mut self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+    ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
     {
         value_and_grad_with_hashmap!(Vec<Array>, new, self, Args)
     }
@@ -423,7 +429,7 @@ where
 
 pub fn value_and_grad_with_hashmap<'a, F, Arr, Args, Err>(
     f: F,
-) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
+) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, HashMapGrad), Exception> + 'a
 where
     F: IntoValueAndGradWithHashMap<'a, Arr, Args, Err> + 'a,
     Arr: AsRef<Array>,

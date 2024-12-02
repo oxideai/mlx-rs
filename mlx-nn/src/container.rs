@@ -26,7 +26,7 @@ pub struct Sequential<Err = Exception> {
     pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
 }
 
-impl<'a> Module<&'a Array> for Sequential {
+impl Module<&Array> for Sequential {
     type Error = Exception;
     type Output = Array;
 

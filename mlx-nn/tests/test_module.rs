@@ -17,7 +17,7 @@ impl M {
     }
 }
 
-impl<'a> Module<&'a Array> for M {
+impl Module<&Array> for M {
     type Error = Exception;
     type Output = Array;
 

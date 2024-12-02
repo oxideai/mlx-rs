@@ -249,7 +249,7 @@ pub enum ArrayIndexOp<'a> {
     ExpandDims,
 }
 
-impl<'a> ArrayIndexOp<'a> {
+impl ArrayIndexOp<'_> {
     fn is_array_or_index(&self) -> bool {
         // Using the full match syntax to avoid forgetting to add new variants
         match self {

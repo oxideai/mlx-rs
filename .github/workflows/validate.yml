@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: true
       - name: Setup Xcode
-        run: sudo xcodes select 15.2
+        run: sudo xcodes select 16.1
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -44,7 +44,7 @@ jobs:
         with:
           submodules: true
       - name: Setup Xcode
-        run: sudo xcodes select 15.2
+        run: sudo xcodes select 16.1
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:

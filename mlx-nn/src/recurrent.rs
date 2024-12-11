@@ -80,7 +80,7 @@ fn build_rnn(builder: RnnBuilder) -> Result<Rnn, Exception> {
     let hidden_size = builder.hidden_size;
     let non_linearity = builder
         .non_linearity
-        .unwrap_or_else(|| Arc::new(|x, d| Ok(tanh_device(x, d))));
+        .unwrap_or_else(|| Arc::new(|x, d| tanh_device(x, d)));
 
     let scale = 1.0 / (input_size as f32).sqrt();
     let wxh = uniform::<_, f32>(-scale, scale, &[hidden_size, input_size], None)?;
@@ -121,7 +121,7 @@ impl Rnn {
         let x = if let Some(bias) = &self.bias.value {
             addmm(bias, x, self.wxh.t(), None, None)?
         } else {
-            matmul(x, &self.wxh.t())?
+            matmul(x, self.wxh.t())?
         };
 
         let mut all_hidden = Vec::new();
@@ -287,7 +287,7 @@ impl Gru {
         let x = if let Some(b) = &self.bias.value {
             addmm(b, x, self.wx.t(), None, None)?
         } else {
-            matmul(x, &self.wx.t())?
+            matmul(x, self.wx.t())?
         };
 
         let x_rz = x.index((Ellipsis, ..(-self.hidden_size)));
@@ -299,7 +299,7 @@ impl Gru {
             let mut rz = x_rz.index((Ellipsis, index, ..));
             let mut h_proj_n = None;
             if let Some(hidden_) = hidden {
-                let h_proj = matmul(hidden_, &self.wh.t())?;
+                let h_proj = matmul(hidden_, self.wh.t())?;
                 let h_proj_rz = h_proj.index((Ellipsis, ..(-self.hidden_size)));
                 h_proj_n = Some(h_proj.index((Ellipsis, (-self.hidden_size)..)));
 
@@ -313,7 +313,7 @@ impl Gru {
                 rz = rz.add(h_proj_rz)?;
             }
 
-            rz = sigmoid(&rz);
+            rz = sigmoid(&rz)?;
 
             let parts = split_equal(&rz, 2, -1)?;
             let r = &parts[0];
@@ -324,7 +324,7 @@ impl Gru {
             if let Some(h_proj_n) = h_proj_n {
                 n = n.add(r.multiply(h_proj_n)?)?;
             }
-            n = tanh(&n);
+            n = tanh(&n)?;
 
             let hidden = match hidden {
                 Some(hidden) => array!(1.0)
@@ -496,7 +496,7 @@ impl Lstm {
         let x = if let Some(b) = &self.bias.value {
             addmm(b, x, self.wx.t(), None, None)?
         } else {
-            matmul(x, &self.wx.t())?
+            matmul(x, self.wx.t())?
         };
 
         let mut all_hidden = Vec::new();
@@ -510,17 +510,17 @@ impl Lstm {
 
             let pieces = split_equal(&ifgo, 4, -1)?;
 
-            let i = sigmoid(&pieces[0]);
-            let f = sigmoid(&pieces[1]);
-            let g = tanh(&pieces[2]);
-            let o = sigmoid(&pieces[3]);
+            let i = sigmoid(&pieces[0])?;
+            let f = sigmoid(&pieces[1])?;
+            let g = tanh(&pieces[2])?;
+            let o = sigmoid(&pieces[3])?;
 
             let cell = match cell {
                 Some(cell) => f.multiply(cell)?.add(i.multiply(&g)?)?,
                 None => i.multiply(&g)?,
             };
 
-            let hidden = o.multiply(tanh(&cell))?;
+            let hidden = o.multiply(tanh(&cell)?)?;
 
             all_hidden.push(hidden);
             all_cell.push(cell);

@@ -1,4 +1,5 @@
-use crate::error::Exception;
+use crate::error::Result;
+use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
@@ -32,7 +33,7 @@ pub fn conv_general_device<'a>(
     groups: impl Into<Option<i32>>,
     flip: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let strides = strides.into_option().unwrap_or(&[1]);
     let padding = padding.into_option().unwrap_or(&[0]);
     let kernel_dilation = kernel_dilation.into_option().unwrap_or(&[1]);
@@ -40,28 +41,26 @@ pub fn conv_general_device<'a>(
     let groups = groups.into().unwrap_or(1);
     let flip = flip.into().unwrap_or(false);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv_general(
-                array.as_ptr(),
-                weight.as_ptr(),
-                strides.as_ptr(),
-                strides.len(),
-                padding.as_ptr(),
-                padding.len(),
-                padding.as_ptr(),
-                padding.len(),
-                kernel_dilation.as_ptr(),
-                kernel_dilation.len(),
-                input_dilation.as_ptr(),
-                input_dilation.len(),
-                groups,
-                flip,
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv_general(
+            res,
+            array.as_ptr(),
+            weight.as_ptr(),
+            strides.as_ptr(),
+            strides.len(),
+            padding.as_ptr(),
+            padding.len(),
+            padding.as_ptr(),
+            padding.len(),
+            kernel_dilation.as_ptr(),
+            kernel_dilation.len(),
+            input_dilation.as_ptr(),
+            input_dilation.len(),
+            groups,
+            flip,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 1D convolution over an input with several channels returning an error if the inputs are invalid.
@@ -85,26 +84,24 @@ pub fn conv1d_device(
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
     let dilation = dilation.into().unwrap_or(1);
     let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv1d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride,
-                padding,
-                dilation,
-                groups,
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv1d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride,
+            padding,
+            dilation,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 2D convolution over an input with several channels returning an error if the inputs are invalid.
@@ -128,28 +125,27 @@ pub fn conv2d_device(
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));
     let dilation = dilation.into().unwrap_or((1, 1));
+    let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv2d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride.0,
-                stride.1,
-                padding.0,
-                padding.1,
-                dilation.0,
-                dilation.1,
-                groups.into().unwrap_or(1),
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv2d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride.0,
+            stride.1,
+            padding.0,
+            padding.1,
+            dilation.0,
+            dilation.1,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 3D convolution over an input with several channels.
@@ -164,31 +160,30 @@ pub fn conv3d_device(
     dilation: impl Into<Option<(i32, i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1, 1));
     let padding = padding.into().unwrap_or((0, 0, 0));
     let dilation = dilation.into().unwrap_or((1, 1, 1));
+    let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv3d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride.0,
-                stride.1,
-                stride.2,
-                padding.0,
-                padding.1,
-                padding.2,
-                dilation.0,
-                dilation.1,
-                dilation.2,
-                groups.into().unwrap_or(1),
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv3d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride.0,
+            stride.1,
+            stride.2,
+            padding.0,
+            padding.1,
+            padding.2,
+            dilation.0,
+            dilation.1,
+            dilation.2,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 1D transposed convolution over an input with several channels.
@@ -213,26 +208,24 @@ pub fn conv_transpose1d_device(
     dilation: impl Into<Option<i32>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
     let dilation = dilation.into().unwrap_or(1);
     let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv_transpose1d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride,
-                padding,
-                dilation,
-                groups,
-                stream.as_ref().as_ptr(),
-            )
-        };
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv_transpose1d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride,
+            padding,
+            dilation,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 2D transposed convolution over an input with several channels.
@@ -258,29 +251,27 @@ pub fn conv_transpose2d_device(
     dilation: impl Into<Option<(i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));
     let dilation = dilation.into().unwrap_or((1, 1));
+    let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv_transpose2d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride.0,
-                stride.1,
-                padding.0,
-                padding.1,
-                dilation.0,
-                dilation.1,
-                groups.into().unwrap_or(1),
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv_transpose2d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride.0,
+            stride.1,
+            padding.0,
+            padding.1,
+            dilation.0,
+            dilation.1,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// 3D transposed convolution over an input with several channels.
@@ -306,32 +297,30 @@ pub fn conv_transpose3d_device(
     dilation: impl Into<Option<(i32, i32, i32)>>,
     groups: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1, 1));
     let padding = padding.into().unwrap_or((0, 0, 0));
     let dilation = dilation.into().unwrap_or((1, 1, 1));
+    let groups = groups.into().unwrap_or(1);
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_conv_transpose3d(
-                array.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                stride.0,
-                stride.1,
-                stride.2,
-                padding.0,
-                padding.1,
-                padding.2,
-                dilation.0,
-                dilation.1,
-                dilation.2,
-                groups.into().unwrap_or(1),
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_conv_transpose3d(
+            res,
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            stride.0,
+            stride.1,
+            stride.2,
+            padding.0,
+            padding.1,
+            padding.2,
+            dilation.0,
+            dilation.1,
+            dilation.2,
+            groups,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 // TODO: Implement convolve once we have `reshape` and `slice`

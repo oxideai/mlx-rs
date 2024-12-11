@@ -356,7 +356,7 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed1d() {
+    fn test_conv_transpose1d() {
         // Single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0], &[1, 3, 1]);
         // Single input/output channel kernel
@@ -406,7 +406,7 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed2d() {
+    fn test_conv_transpose2d() {
         // 2x2 single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[1, 2, 2, 1]);
         // 2x2 single channel kernel (identity-like)
@@ -463,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed3d() {
+    fn test_conv_transpose3d() {
         // 2x2x2 single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[1, 2, 2, 2, 1]);
         // 2x2x2 single channel kernel

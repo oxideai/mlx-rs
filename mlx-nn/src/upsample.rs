@@ -5,7 +5,7 @@ use mlx_rs::{
     module::Module,
     ops::{
         abs, broadcast_to, ceil, clip, expand_dims, floor,
-        indexing::{ArrayIndex, ArrayIndexOp},
+        indexing::{ArrayIndex, ArrayIndexOp, TryIndexOp},
     },
     prelude::{Ellipsis, IndexOp, NewAxis},
     transforms::compile::compile,
@@ -142,7 +142,7 @@ fn upsample_nearest(x: &Array, scale: &[f32]) -> Result<Array, Exception> {
             indices.push(nearest_indices(*n, *s, i, dimensions)?.index_op());
         }
 
-        Ok(x.index(&indices[..]))
+        x.try_index(&indices[..])
     }
 }
 
@@ -232,7 +232,7 @@ fn nearest_indices(
     dim: usize,
     ndim: usize,
 ) -> Result<Array, Exception> {
-    scaled_indices(dimension, scale, true, dim, ndim).map(|i| i.as_type::<i32>())
+    scaled_indices(dimension, scale, true, dim, ndim).and_then(|i| i.as_type::<i32>())
 }
 
 fn linear_indices(
@@ -248,8 +248,8 @@ fn linear_indices(
     let indices_right = ceil(&indices)?;
     let weight = expand_dims(&indices.subtract(&indices_left)?, &[-1])?;
 
-    let indices_left = indices_left.as_type::<i32>();
-    let indices_right = indices_right.as_type::<i32>();
+    let indices_left = indices_left.as_type::<i32>()?;
+    let indices_right = indices_right.as_type::<i32>()?;
 
     Ok(vec![
         // SAFETY: arith ops with scalars won't panic
@@ -279,10 +279,10 @@ fn cubic_indices(
     let weight_r2 = compiled_get_weight2(&indices, &indices_r2)?.index((Ellipsis, NewAxis));
 
     // Padding with border value
-    indices_l1 = clip(&indices_l1, (0, dimension - 1))?.as_type::<i32>();
-    indices_r1 = clip(&indices_r1, (0, dimension - 1))?.as_type::<i32>();
-    indices_l2 = clip(&indices_l2, (0, dimension - 1))?.as_type::<i32>();
-    indices_r2 = clip(&indices_r2, (0, dimension - 1))?.as_type::<i32>();
+    indices_l1 = clip(&indices_l1, (0, dimension - 1))?.as_type::<i32>()?;
+    indices_r1 = clip(&indices_r1, (0, dimension - 1))?.as_type::<i32>()?;
+    indices_l2 = clip(&indices_l2, (0, dimension - 1))?.as_type::<i32>()?;
+    indices_r2 = clip(&indices_r2, (0, dimension - 1))?.as_type::<i32>()?;
 
     Ok(vec![
         (indices_l1, weight_l1),
@@ -298,7 +298,7 @@ fn compiled_get_weight1(ind: &Array, grid: &Array) -> Result<Array, Exception> {
 
     let get_weight1 = |(ind_, grid_): (&Array, &Array)| {
         let a = -0.75;
-        let x = abs(&(ind_ - grid_));
+        let x = abs(ind_ - grid_)?;
         Ok((array!(a + 2.0) * &x - array!(a + 3.0)) * &x * &x + 1.0)
     };
     let mut compiled = compile(get_weight1, Some(true), None, None);
@@ -308,7 +308,7 @@ fn compiled_get_weight1(ind: &Array, grid: &Array) -> Result<Array, Exception> {
 fn compiled_get_weight2(ind: &Array, grid: &Array) -> Result<Array, Exception> {
     let get_weight2 = |(ind_, grid_): (&Array, &Array)| {
         let a = -0.75;
-        let x = abs(&(ind_ - grid_));
+        let x = abs(ind_ - grid_)?;
         Ok((((&x - 5.0) * &x + 8.0) * &x - 4.0) * a)
     };
     let mut compiled = compile(get_weight2, Some(true), None, None);
@@ -328,13 +328,13 @@ fn scaled_indices(
     let indices = match align_corners {
         true => {
             // SAFETY: arith ops on with scalars won't panic
-            Array::from_iter(0..M, &[M]).as_type::<f32>() * ((N as f32 - 1.0) / (M as f32 - 1.0))
+            Array::from_iter(0..M, &[M]).as_type::<f32>()? * ((N as f32 - 1.0) / (M as f32 - 1.0))
         }
         false => {
             let step = 1.0 / scale;
             let start = ((M as f32 - 1.0) * step - N as f32 + 1.0) / 2.0;
             // SAFETY: arith ops with scalars won't panic
-            Array::from_iter(0..M, &[M]).as_type::<f32>() * step - start
+            Array::from_iter(0..M, &[M]).as_type::<f32>()? * step - start
         }
     };
 
@@ -369,7 +369,8 @@ mod tests {
             [1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 4, 4],
             shape = [4, 4]
         )
-        .as_type::<i32>();
+        .as_type::<i32>()
+        .unwrap();
         assert_eq!(result, expected);
     }
 
@@ -400,7 +401,8 @@ mod tests {
             ],
             shape = [4, 4]
         )
-        .as_type::<f32>();
+        .as_type::<f32>()
+        .unwrap();
         assert_eq!(result, expected);
     }
 
@@ -432,7 +434,8 @@ mod tests {
             ],
             shape = [4, 4]
         )
-        .as_type::<f32>();
+        .as_type::<f32>()
+        .unwrap();
 
         assert_array_eq!(result, expected, 1e-5);
     }

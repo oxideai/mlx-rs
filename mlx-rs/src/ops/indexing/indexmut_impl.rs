@@ -13,7 +13,7 @@ use crate::{
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, Guarded, TryIndexMutOp, RangeIndex};
+use super::{ArrayIndex, ArrayIndexOp, Guarded, RangeIndex, TryIndexMutOp};
 
 impl Array {
     pub(crate) fn slice_update_device(
@@ -571,9 +571,7 @@ impl Array {
             axes,
         } = scatter_args(self, operations, update, &stream)?;
         if !indices.is_empty() {
-            let result = unsafe {
-                scatter_device(self, &indices, &update, &axes, stream)?
-            };
+            let result = unsafe { scatter_device(self, &indices, &update, &axes, stream)? };
             drop(indices);
             *self = result;
         } else {
@@ -588,7 +586,12 @@ impl<'a, Val> TryIndexMutOp<&'a [ArrayIndexOp<'a>], Val> for Array
 where
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: &'a [ArrayIndexOp<'a>], val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: &'a [ArrayIndexOp<'a>],
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let update = val.as_ref();
         self.try_index_mut_device_inner(i, update, stream)
     }
@@ -611,7 +614,12 @@ where
     A: ArrayIndex<'a>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, (i,): (A,), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        (i,): (A,),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [i.index_op()];
         let update = val.as_ref();
         self.try_index_mut_device_inner(&operations, update, stream)
@@ -624,7 +632,12 @@ where
     B: ArrayIndex<'b>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [i.0.index_op(), i.1.index_op()];
         let update = val.as_ref();
         self.try_index_mut_device_inner(&operations, update, stream)
@@ -638,7 +651,12 @@ where
     C: ArrayIndex<'c>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B, C), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B, C),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [i.0.index_op(), i.1.index_op(), i.2.index_op()];
         let update = val.as_ref();
         self.try_index_mut_device_inner(&operations, update, stream)
@@ -653,7 +671,12 @@ where
     D: ArrayIndex<'d>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B, C, D), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B, C, D),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -674,7 +697,12 @@ where
     E: ArrayIndex<'e>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B, C, D, E), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -697,7 +725,12 @@ where
     F: ArrayIndex<'f>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B, C, D, E, F), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -723,7 +756,12 @@ where
     G: ArrayIndex<'g>,
     Val: AsRef<Array>,
 {
-    fn try_index_mut_device(&mut self, i: (A, B, C, D, E, F, G), val: Val, stream: impl AsRef<Stream>) -> Result<()> {
+    fn try_index_mut_device(
+        &mut self,
+        i: (A, B, C, D, E, F, G),
+        val: Val,
+        stream: impl AsRef<Stream>,
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -791,7 +829,7 @@ where
         i: (A, B, C, D, E, F, G, H, I),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -828,7 +866,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -867,7 +905,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -908,7 +946,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K, L),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -978,7 +1016,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -1052,7 +1090,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -1130,7 +1168,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),
@@ -1212,7 +1250,7 @@ where
         i: (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P),
         val: Val,
         stream: impl AsRef<Stream>,
-    ) -> Result<()>  {
+    ) -> Result<()> {
         let operations = [
             i.0.index_op(),
             i.1.index_op(),

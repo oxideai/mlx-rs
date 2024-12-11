@@ -5,16 +5,13 @@ on:
       - main
   pull_request:
     types: [opened, synchronize]
-
-env:
-  CMAKE_OSX_DEPLOYMENT_TARGET: 14.0
-
+    
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   rustfmt-check:
-    runs-on: blaze/macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +29,7 @@ jobs:
         run: cargo clippy -- -D warnings
 
   tests:
-    runs-on: blaze/macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         rust: [ stable, 1.75.0 ]

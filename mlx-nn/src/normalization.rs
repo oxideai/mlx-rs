@@ -16,7 +16,7 @@ fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exceptio
     let variance = x.variance(axes, true, None)?;
 
     // Normalize
-    let x = x.subtract(&mean)?.multiply(rsqrt(&variance.add(eps)?))?;
+    let x = x.subtract(&mean)?.multiply(rsqrt(&variance.add(eps)?)?)?;
 
     Ok(x)
 }
@@ -587,7 +587,7 @@ impl<'a> Module<&'a Array> for BatchNorm {
 
         let x = x
             .subtract(&mean)?
-            .multiply(rsqrt(&variance.add(&self.eps)?))?;
+            .multiply(rsqrt(&variance.add(&self.eps)?)?)?;
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
             weight.multiply(&x)?.add(bias)
@@ -613,7 +613,7 @@ mod tests {
 
     #[test]
     fn test_instance_norm() {
-        mlx_rs::random::seed(435);
+        mlx_rs::random::seed(435).unwrap();
         let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -649,7 +649,7 @@ mod tests {
 
     #[test]
     fn test_layer_norm() {
-        mlx_rs::random::seed(635);
+        mlx_rs::random::seed(635).unwrap();
         let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -685,7 +685,7 @@ mod tests {
 
     #[test]
     fn test_rms_norm() {
-        mlx_rs::random::seed(103);
+        mlx_rs::random::seed(103).unwrap();
         let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -717,7 +717,7 @@ mod tests {
 
     #[test]
     fn test_group_norm() {
-        mlx_rs::random::seed(855);
+        mlx_rs::random::seed(855).unwrap();
         let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -753,7 +753,7 @@ mod tests {
 
     #[test]
     fn test_batch_norm() {
-        mlx_rs::random::seed(266);
+        mlx_rs::random::seed(266).unwrap();
         let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);

@@ -10,7 +10,7 @@ use mlx_rs::Array;
 /// Implements a simple lookup table that maps each input integer to a high-dimensional vector.
 ///
 /// Typically used to embed discrete tokens for processing by neural networks.
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Embedding {
     /// The weight of the
     #[param]

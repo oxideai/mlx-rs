@@ -104,7 +104,7 @@ impl Conv1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl<'a> Module<&'a Array> for Conv1d {
+impl Module<&Array> for Conv1d {
     type Error = Exception;
     type Output = Array;
 
@@ -226,7 +226,7 @@ impl Conv2d {
     pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
 }
 
-impl<'a> Module<&'a Array> for Conv2d {
+impl Module<&Array> for Conv2d {
     type Error = Exception;
     type Output = Array;
 
@@ -350,7 +350,7 @@ impl Conv3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl<'a> Module<&'a Array> for Conv3d {
+impl Module<&Array> for Conv3d {
     type Error = Exception;
     type Output = Array;
 
@@ -384,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_conv1d() {
-        mlx_rs::random::seed(819);
+        mlx_rs::random::seed(819).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -415,7 +415,7 @@ mod tests {
 
     #[test]
     fn test_conv2d() {
-        mlx_rs::random::seed(62);
+        mlx_rs::random::seed(62).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), Dtype::Float32);

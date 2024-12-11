@@ -308,14 +308,17 @@ where
 {
     f.into_value_and_grad(argument_numbers)
 }
+/// Type alias for a hashmap of parameters.
+pub type KeyedParameters<Arr> = HashMap<Rc<str>, Arr>;
 
-pub type HashMapGrad = HashMap<Rc<str>, Array>;
+/// Type alias for a hashmap of gradients.
+pub type KeyedGrad = KeyedParameters<Array>;
 
 macro_rules! value_and_grad_with_hashmap {
     ($inner_ret:ty, $cls_new:ident, $f:ident, $args_ty:ty) => {
-        move |parameters: HashMap<Rc<str>, Arr>,
+        move |parameters: KeyedParameters<Arr>,
               arrays: $args_ty|
-              -> Result<(Vec<Array>, HashMapGrad)> {
+              -> Result<(Vec<Array>, KeyedGrad)> {
             let (flattened_keys, flattened_values): (Vec<_>, Vec<_>) =
                 parameters.into_iter().unzip();
 
@@ -356,7 +359,7 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a;
+    ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a;
 }
 
 impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, ()> for F
@@ -367,7 +370,7 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         mut self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a {
+    ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
         value_and_grad_with_hashmap!(Vec<Array>, new, self, Args)
     }
 }
@@ -380,14 +383,14 @@ where
 {
     fn into_value_and_grad_with_hashmap(
         mut self,
-    ) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a {
+    ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
         value_and_grad_with_hashmap!(Result<Vec<Array>>, new_fallible, self, Args)
     }
 }
 
 pub fn value_and_grad_with_hashmap<'a, F, Arr, Args, Err>(
     f: F,
-) -> impl FnMut(HashMap<Rc<str>, Arr>, Args) -> Result<(Vec<Array>, HashMapGrad)> + 'a
+) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
 where
     F: IntoValueAndGradWithHashMap<'a, Arr, Args, Err> + 'a,
     Arr: AsRef<Array>,

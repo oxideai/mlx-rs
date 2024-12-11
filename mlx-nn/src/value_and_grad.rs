@@ -1,7 +1,7 @@
 use mlx_rs::module::{update_flattened_parameters, ModuleParameters};
 use mlx_rs::{error::Exception, Array};
 
-use crate::module::{FlattenedModuleParam, FlattenedModuleParamRef};
+use crate::module::FlattenedModuleParam;
 
 fn trainable_params(model: &impl ModuleParameters) -> FlattenedModuleParam {
     model

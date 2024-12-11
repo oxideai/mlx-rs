@@ -166,11 +166,11 @@ fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuil
     }
 
     Ok(Adafactor {
-        lr: builder.lr.map(Array::from).into(),
+        lr: builder.lr.map(Array::from),
         eps: (array!(eps.0), array!(eps.1)),
         clip_threshold: array!(clip_threshold),
         decay_rate: array!(decay_rate),
-        beta1: builder.beta1.map(Array::from).into(),
+        beta1: builder.beta1.map(Array::from),
         weight_decay: array!(weight_decay),
         scale_parameter,
         relative_step,

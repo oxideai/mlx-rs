@@ -44,7 +44,7 @@ impl Embedding {
     }
 }
 
-impl<'a> Module<&'a Array> for Embedding {
+impl Module<&Array> for Embedding {
     type Error = Exception;
     type Output = Array;
 

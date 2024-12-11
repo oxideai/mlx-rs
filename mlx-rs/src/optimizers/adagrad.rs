@@ -1,6 +1,6 @@
 use std::{convert::Infallible, rc::Rc};
 
-use crate::{array, error::Exception, ops::square, Array};
+use crate::{array, ops::square, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::utils::get_mut_or_insert_with;

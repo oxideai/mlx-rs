@@ -13,13 +13,13 @@ pub enum Ord<'a> {
     P(f64),
 }
 
-impl<'a> Default for Ord<'a> {
+impl Default for Ord<'_> {
     fn default() -> Self {
         Ord::Str("fro")
     }
 }
 
-impl<'a> std::fmt::Display for Ord<'a> {
+impl std::fmt::Display for Ord<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Ord::Str(s) => write!(f, "{}", s),
@@ -34,7 +34,7 @@ impl<'a> From<&'a str> for Ord<'a> {
     }
 }
 
-impl<'a> From<f64> for Ord<'a> {
+impl From<f64> for Ord<'_> {
     fn from(value: f64) -> Self {
         Ord::P(value)
     }

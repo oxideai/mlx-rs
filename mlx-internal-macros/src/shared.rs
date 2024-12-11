@@ -34,7 +34,7 @@ pub(crate) struct BuilderStructAnalyzer<'a> {
     pub err: Option<&'a syn::Path>,
 }
 
-impl<'a> BuilderStructAnalyzer<'a> {
+impl BuilderStructAnalyzer<'_> {
     pub fn generate_builder_struct(&self) -> proc_macro2::TokenStream {
         let struct_ident = self.struct_ident;
         let builder_ident = self.builder_struct_ident;

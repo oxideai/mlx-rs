@@ -598,7 +598,7 @@ impl<'a, const N: usize> From<&'a [(i32, i32); N]> for PadWidth<'a> {
     }
 }
 
-impl<'a> PadWidth<'a> {
+impl PadWidth<'_> {
     fn low_pads(&self, ndim: usize) -> SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> {
         match self {
             PadWidth::Same((low, _high)) => (0..ndim).map(|_| *low).collect(),

@@ -468,7 +468,7 @@ impl<'a> Guard<crate::utils::Closure<'a>> for MaybeUninitClosure {
     }
 }
 
-impl<'a> Guarded for crate::utils::Closure<'a> {
+impl Guarded for crate::utils::Closure<'_> {
     type Guard = MaybeUninitClosure;
 }
 

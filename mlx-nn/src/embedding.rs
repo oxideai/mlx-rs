@@ -10,7 +10,7 @@ use mlx_rs::Array;
 /// Implements a simple lookup table that maps each input integer to a high-dimensional vector.
 ///
 /// Typically used to embed discrete tokens for processing by neural networks.
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Embedding {
     /// The weight of the
     #[param]
@@ -40,11 +40,11 @@ impl Embedding {
     /// Use this for example when input embedding and output projection
     /// weights are tied.
     pub fn as_linear(&self, x: &Array) -> Result<Array, Exception> {
-        mlx_rs::ops::matmul(x, &self.weight.value.t())
+        mlx_rs::ops::matmul(x, self.weight.value.t())
     }
 }
 
-impl<'a> Module<&'a Array> for Embedding {
+impl Module<&Array> for Embedding {
     type Error = Exception;
     type Output = Array;
 
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn test_embedding() {
-        mlx_rs::random::seed(557);
+        mlx_rs::random::seed(557).unwrap();
         let a = mlx_rs::random::randint::<_, i32>(0, 10, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), mlx_rs::Dtype::Int32);

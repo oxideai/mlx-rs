@@ -8,12 +8,12 @@ use std::{
 
 use mlx_sys::{
     mlx_closure_apply, mlx_detail_compile, mlx_detail_compile_clear_cache,
-    mlx_detail_compile_erase, mlx_disable_compile, mlx_enable_compile, mlx_free, mlx_retain,
+    mlx_detail_compile_erase, mlx_disable_compile, mlx_enable_compile,
 };
 
 use crate::{
     error::Exception,
-    utils::{Closure, VectorArray},
+    utils::{guard::Guarded, Closure, VectorArray},
     Array,
 };
 
@@ -397,37 +397,32 @@ fn call_mut_inner(
     state_inputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
     state_outputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
     args: &[Array],
-) -> Result<Vec<Array>, Exception> {
+) -> crate::error::Result<Vec<Array>> {
     // note: this will use the cached compile (via the id)
     // but will be able to re-evaluate with fresh state if needed
-    let compiled = unsafe {
+    let compiled = Closure::try_from_op(|res| unsafe {
         let constants = &[];
-        let c_closure = try_catch_mlx_closure_error! {
-            mlx_detail_compile(
-                inner_closure.as_ptr(),
-                fun_id,
-                shapeless,
-                constants.as_ptr(),
-                0,
-            )
-        };
-        Closure::from_ptr(c_closure)
-    };
+        mlx_detail_compile(
+            res,
+            inner_closure.as_ptr(),
+            fun_id,
+            shapeless,
+            constants.as_ptr(),
+            0,
+        )
+    })?;
 
     let inner_inputs_vector = match state_inputs.borrow().as_ref() {
-        Some(s) => VectorArray::from_iter(args.iter().chain(s.iter())),
-        None => VectorArray::from_iter(args.iter()),
+        Some(s) => VectorArray::try_from_iter(args.iter().chain(s.iter()))?,
+        None => VectorArray::try_from_iter(args.iter())?,
     };
 
     // will compile the function (if needed) and evaluate the
     // compiled graph
-    let result_vector = unsafe {
-        let c_vector = try_catch_mlx_closure_error! {
-            mlx_closure_apply(compiled.as_ptr(), inner_inputs_vector.as_ptr())
-        };
-        VectorArray::from_ptr(c_vector)
-    };
-    let result_plus_state_output: Vec<Array> = result_vector.into_values();
+    let result_vector = VectorArray::try_from_op(|res| unsafe {
+        mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
+    })?;
+    let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
     // push the stateOutput into the state
     if let Some(outputs) = state_outputs.borrow_mut().as_mut() {
@@ -593,7 +588,7 @@ impl<'a, F> CompiledState<'a, F> {
     }
 }
 
-impl<'a, F> Drop for CompiledState<'a, F> {
+impl<F> Drop for CompiledState<'_, F> {
     fn drop(&mut self) {
         unsafe {
             // remove the compiled structure from the back end
@@ -614,12 +609,8 @@ where
 }
 
 fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
-    if src.as_ptr() != new_array.as_ptr() {
-        unsafe {
-            mlx_retain(new_array.as_ptr() as *mut _);
-            mlx_free(src.as_ptr() as *mut _);
-            src.c_array = new_array.c_array;
-        }
+    unsafe {
+        mlx_sys::mlx_array_set(&mut src.c_array as *mut _, new_array.c_array);
     }
 }
 

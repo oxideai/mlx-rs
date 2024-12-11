@@ -5,7 +5,7 @@ use mlx_macros::ModuleParameters;
 use mlx_rs::module::{Module, Param};
 use mlx_rs::{
     array,
-    error::Exception,
+    error::{Exception, Result},
     ops::{abs, exp, log_sum_exp, maximum, minimum, multiply, which},
     transforms::compile::compile,
     Array,
@@ -21,7 +21,7 @@ use mlx_rs::{
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-pub fn sigmoid(x: impl AsRef<Array>) -> Array {
+pub fn sigmoid(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::sigmoid(x.as_ref())
 }
 
@@ -32,7 +32,7 @@ pub fn sigmoid(x: impl AsRef<Array>) -> Array {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-pub fn relu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn relu(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::maximum(x.as_ref(), &array!(0))
 }
 
@@ -45,10 +45,7 @@ pub fn relu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// maximum(neg_slope * x, x)
 /// ```
-pub fn leaky_relu(
-    x: impl AsRef<Array>,
-    neg_slope: impl Into<Option<f32>>,
-) -> Result<Array, Exception> {
+pub fn leaky_relu(x: impl AsRef<Array>, neg_slope: impl Into<Option<f32>>) -> Result<Array> {
     let neg_slope = array!(neg_slope.into().unwrap_or(0.01));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -62,7 +59,7 @@ pub fn leaky_relu(
 /// ```rust, ignore
 /// x - log_sum_exp(x, axis, true)
 /// ```
-pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
+pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array> {
     let x = x.as_ref();
     let axis = axis.into().unwrap_or(-1);
     x.subtract(log_sum_exp(x, &[axis], true)?)
@@ -80,7 +77,7 @@ pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result
 ///
 /// - `x`: The input array
 /// - `alpha`: Default to 1.0 if not provided
-pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -94,7 +91,7 @@ pub fn elu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array,
 /// ```rust, ignore
 /// minimum(maximum(x, 0), 6)
 /// ```
-pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn relu6(x: impl AsRef<Array>) -> Result<Array> {
     compiled_relu6(x.as_ref())
 }
 
@@ -105,7 +102,7 @@ pub fn relu6(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn softplus(x: impl AsRef<Array>) -> Result<Array> {
     mlx_rs::ops::log_add_exp(x.as_ref(), &array!(0))
 }
 
@@ -116,7 +113,7 @@ pub fn softplus(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x / (1 + abs(x))
 /// ```
-pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn softsign(x: impl AsRef<Array>) -> Result<Array> {
     compiled_softsign(x.as_ref())
 }
 
@@ -127,7 +124,7 @@ pub fn softsign(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// maximum(x, 0) + alpha * (exp(minimum(x, 0) / alpha) - 1)
 /// ```
-pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array> {
     let alpha = array!(alpha.into().unwrap_or(1.0));
     // We have to use this indirection, otherwise the compiler cannot
     // infer the lifetime of the value returned by the closure properly
@@ -141,7 +138,7 @@ pub fn celu(x: impl AsRef<Array>, alpha: impl Into<Option<f32>>) -> Result<Array
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn silu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_silu(x.as_ref())
 }
 
@@ -152,7 +149,7 @@ pub fn silu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array> {
     compiled_log_sigmoid(x.as_ref())
 }
 
@@ -163,7 +160,7 @@ pub fn log_sigmoid(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * (1 + erf(x / 2.sqrt())) / 2
 /// ```
-pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu(x.as_ref())
 }
 
@@ -174,7 +171,7 @@ pub fn gelu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// 0.5 * x * (1 + tanh(sqrt(2 / PI) * (x + 0.044715 * x ** 3)))
 /// ```
-pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu_approximate(x.as_ref())
 }
 
@@ -185,7 +182,7 @@ pub fn gelu_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * sigmoid(1.773 * x)
 /// ```
-pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array> {
     compiled_gelu_fast_approximate(x.as_ref())
 }
 
@@ -193,10 +190,10 @@ pub fn gelu_fast_approximate(x: impl AsRef<Array>) -> Result<Array, Exception> {
 ///
 /// This function splits the `axis` dimension of the input into two halves
 /// (`a` and `b`) and applies `a * sigmoid(b)`.
-pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, Exception> {
+pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array> {
     let split = x.as_ref().split_equal(2, axis)?;
     let (a, b) = (&split[0], &split[1]);
-    Ok(a * sigmoid(b))
+    Ok(a * sigmoid(b)?)
 }
 
 /// Applies the Step Activation Function.
@@ -209,7 +206,7 @@ pub fn glu(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array, 
 /// ```rust, ignore
 /// r#where(x.gt(threshold), 1, 0)
 /// ```
-pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array, Exception> {
+pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<Array> {
     let threshold = array!(threshold.into().unwrap_or(0.0));
     mlx_rs::ops::r#where(&x.as_ref().gt(threshold)?, &array!(1), &array!(0))
 }
@@ -221,7 +218,7 @@ pub fn step(x: impl AsRef<Array>, threshold: impl Into<Option<f32>>) -> Result<A
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn selu(x: impl AsRef<Array>) -> Result<Array> {
     compiled_selu(x.as_ref())
 }
 
@@ -232,7 +229,7 @@ pub fn selu(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// maximum(0, x) + alpha * minimum(0, x)
 /// ```
-pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array> {
     compiled_prelu(x.as_ref(), alpha.as_ref())
 }
 
@@ -247,7 +244,7 @@ pub fn prelu(x: impl AsRef<Array>, alpha: impl AsRef<Array>) -> Result<Array, Ex
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn mish(x: impl AsRef<Array>) -> Result<Array> {
     compiled_mish(x.as_ref())
 }
 
@@ -258,7 +255,7 @@ pub fn mish(x: impl AsRef<Array>) -> Result<Array, Exception> {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array, Exception> {
+pub fn hard_swish(x: impl AsRef<Array>) -> Result<Array> {
     compiled_hard_swish(x.as_ref())
 }
 
@@ -280,11 +277,11 @@ impl Glu {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for Glu {
+impl Module<&Array> for Glu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -301,15 +298,15 @@ impl<'a> Module<&'a Array> for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Sigmoid;
 
-impl<'a> Module<&'a Array> for Sigmoid {
+impl Module<&Array> for Sigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(sigmoid(x))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        sigmoid(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -326,14 +323,14 @@ impl<'a> Module<&'a Array> for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Mish;
 
-impl<'a> Module<&'a Array> for Mish {
+impl Module<&Array> for Mish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         mish(x).map_err(Into::into)
     }
 
@@ -347,14 +344,14 @@ impl<'a> Module<&'a Array> for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Relu;
 
-impl<'a> Module<&'a Array> for Relu {
+impl Module<&Array> for Relu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu(x).map_err(Into::into)
     }
 
@@ -382,11 +379,11 @@ impl LeakyRelu {
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
 }
 
-impl<'a> Module<&'a Array> for LeakyRelu {
+impl Module<&Array> for LeakyRelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -400,14 +397,14 @@ impl<'a> Module<&'a Array> for LeakyRelu {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Relu6;
 
-impl<'a> Module<&'a Array> for Relu6 {
+impl Module<&Array> for Relu6 {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu6(x).map_err(Into::into)
     }
 
@@ -435,12 +432,12 @@ impl Softmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for Softmax {
+impl Module<&Array> for Softmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(mlx_rs::ops::softmax(x, &[self.axis], None))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        mlx_rs::ops::softmax(x, &[self.axis], None)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -453,14 +450,14 @@ impl<'a> Module<&'a Array> for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Softplus;
 
-impl<'a> Module<&'a Array> for Softplus {
+impl Module<&Array> for Softplus {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softplus(x).map_err(Into::into)
     }
 
@@ -474,14 +471,14 @@ impl<'a> Module<&'a Array> for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Softsign;
 
-impl<'a> Module<&'a Array> for Softsign {
+impl Module<&Array> for Softsign {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softsign(x).map_err(Into::into)
     }
 
@@ -510,11 +507,11 @@ impl Celu {
     pub const DEFAULT_ALPHA: f32 = 1.0;
 }
 
-impl<'a> Module<&'a Array> for Celu {
+impl Module<&Array> for Celu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -528,14 +525,14 @@ impl<'a> Module<&'a Array> for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Silu;
 
-impl<'a> Module<&'a Array> for Silu {
+impl Module<&Array> for Silu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         silu(x).map_err(Into::into)
     }
 
@@ -563,11 +560,11 @@ impl LogSoftmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<&'a Array> for LogSoftmax {
+impl Module<&Array> for LogSoftmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -581,14 +578,14 @@ impl<'a> Module<&'a Array> for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct LogSigmoid;
 
-impl<'a> Module<&'a Array> for LogSigmoid {
+impl Module<&Array> for LogSigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -628,7 +625,7 @@ pub struct PreluBuilder {
 }
 
 /// Builds the Prelu module.
-fn build_prelu(builder: PreluBuilder) -> Result<Prelu, Exception> {
+fn build_prelu(builder: PreluBuilder) -> Result<Prelu> {
     let count = builder.count;
     let value = builder.value;
     let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);
@@ -643,11 +640,11 @@ impl Prelu {
     pub const DEFAULT_VALUE: f32 = 0.25;
 }
 
-impl<'a> Module<&'a Array> for Prelu {
+impl Module<&Array> for Prelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -684,11 +681,11 @@ generate_builder! {
     }
 }
 
-impl<'a> Module<&'a Array> for Gelu {
+impl Module<&Array> for Gelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -700,15 +697,15 @@ impl<'a> Module<&'a Array> for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Tanh;
 
-impl<'a> Module<&'a Array> for Tanh {
+impl Module<&Array> for Tanh {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        Ok(mlx_rs::ops::tanh(x))
+    fn forward(&mut self, x: &Array) -> Result<Array> {
+        mlx_rs::ops::tanh(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -721,14 +718,14 @@ impl<'a> Module<&'a Array> for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct HardSwish;
 
-impl<'a> Module<&'a Array> for HardSwish {
+impl Module<&Array> for HardSwish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         hard_swish(x).map_err(Into::into)
     }
 
@@ -759,11 +756,11 @@ impl Step {
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
 }
 
-impl<'a> Module<&'a Array> for Step {
+impl Module<&Array> for Step {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -777,14 +774,14 @@ impl<'a> Module<&'a Array> for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 pub struct Selu;
 
-impl<'a> Module<&'a Array> for Selu {
+impl Module<&Array> for Selu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         selu(x).map_err(Into::into)
     }
 
@@ -796,7 +793,7 @@ impl<'a> Module<&'a Array> for Selu {
 /* -------------------------------------------------------------------------- */
 
 #[inline]
-fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception> {
+fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array> {
     let f = |(x_, neg_slope_): (&Array, &Array)| {
         // This will not panic because a scalar can always be broadcasted to any shape
         let a = multiply(neg_slope_, x_)?;
@@ -807,71 +804,74 @@ fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array, Exception>
 }
 
 #[inline]
-fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
-        which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_) - array!(1.0)))
+        which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_)? - array!(1.0)))
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
 }
 
 #[inline]
-fn compiled_relu6(x: &Array) -> Result<Array, Exception> {
+fn compiled_relu6(x: &Array) -> Result<Array> {
     let f = |x_: &Array| minimum(maximum(x_, &array!(0.0))?, &array!(6.0));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_softsign(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ / (array!(1.0) + abs(x_));
+fn compiled_softsign(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.divide(array!(1.0) + abs(x_)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         maximum(x_, &array!(0.0))?
-            .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_)) - array!(1.0))?)
+            .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_))? - array!(1.0))?)
     };
     let mut compiled = compile(f, Some(true), None, None);
     compiled((x, alpha))
 }
 
 #[inline]
-fn compiled_silu(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ * sigmoid(x_);
+fn compiled_silu(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.multiply(sigmoid(x_)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_log_sigmoid(x: &Array) -> Result<Array, Exception> {
+fn compiled_log_sigmoid(x: &Array) -> Result<Array> {
     let f = |x_: &Array| Ok(-softplus(&(-x_))?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_gelu(x: &Array) -> Result<Array, Exception> {
+fn compiled_gelu(x: &Array) -> Result<Array> {
     use mlx_rs::ops::erf;
-    let f = |x_: &Array| x_ * (array!(1) + erf(&(x_ / array!(2f32.sqrt())))) / array!(2.0);
+    let f = |x_: &Array| {
+        x_.multiply(array!(1) + erf(&(x_ / array!(2f32.sqrt())))?)?
+            .divide(array!(2.0))
+    };
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
+fn compiled_gelu_approximate(x: &Array) -> Result<Array> {
     use mlx_rs::ops::{sqrt, tanh};
 
     let f = move |x_: &Array| {
         // 0.5 * x * (1 + tanh(sqrt(2 / Float.pi) * (x + 0.044715 * x ** 3)))
         array!(0.5).multiply(x_)?.multiply(
             array!(1.0).add(tanh(
-                &(sqrt(&array!(2.0 / PI))
+                &(sqrt(&array!(2.0 / PI))?
                     .multiply(x_ + array!(0.044715).multiply(x_.power(&array!(3))?)?)?),
-            ))?,
+            )?)?,
         )
     };
     let mut compiled = compile(f, Some(true), None, None);
@@ -879,21 +879,21 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array, Exception> {
 }
 
 #[inline]
-fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array, Exception> {
-    let f = |x_: &Array| x_ * sigmoid(&(array!(1.773) * x_));
+fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array> {
+    let f = |x_: &Array| x_.multiply(sigmoid(&(array!(1.773) * x_))?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_selu(x: &Array) -> Result<Array, Exception> {
+fn compiled_selu(x: &Array) -> Result<Array> {
     let f = |x_: &Array| elu(x_, 1.67326)?.multiply(array!(1.0507));
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
+fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         maximum(&array!(0.0), x_)?.add(alpha_ * minimum(&array!(0.0), x_)?)
     };
@@ -902,16 +902,16 @@ fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array, Exception> {
 }
 
 #[inline]
-fn compiled_mish(x: &Array) -> Result<Array, Exception> {
+fn compiled_mish(x: &Array) -> Result<Array> {
     use mlx_rs::ops::tanh;
 
-    let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?));
+    let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?)?);
     let mut compiled = compile(f, Some(true), None, None);
     compiled(x)
 }
 
 #[inline]
-fn compiled_hard_swish(x: &Array) -> Result<Array, Exception> {
+fn compiled_hard_swish(x: &Array) -> Result<Array> {
     let f = |x_: &Array| {
         let max_x_plus_3 = maximum(&(x_ + array!(3.0)), &array!(0.0))?;
         x_.multiply(minimum(&max_x_plus_3, &array!(6.0))?)?
@@ -926,13 +926,13 @@ fn compiled_hard_swish(x: &Array) -> Result<Array, Exception> {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{random::uniform, Dtype};
+    use mlx_rs::{prelude::Builder, random::uniform, Dtype};
 
     use super::*;
 
     #[test]
     fn test_glu() {
-        mlx_rs::random::seed(850);
+        mlx_rs::random::seed(850).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -963,7 +963,7 @@ mod tests {
 
     #[test]
     fn test_sigmoid() {
-        mlx_rs::random::seed(589);
+        mlx_rs::random::seed(589).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -994,7 +994,7 @@ mod tests {
 
     #[test]
     fn test_mish() {
-        mlx_rs::random::seed(122);
+        mlx_rs::random::seed(122).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1025,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_relu() {
-        mlx_rs::random::seed(400);
+        mlx_rs::random::seed(400).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1056,7 +1056,7 @@ mod tests {
 
     #[test]
     fn test_leaky_relu() {
-        mlx_rs::random::seed(93);
+        mlx_rs::random::seed(93).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1087,7 +1087,7 @@ mod tests {
 
     #[test]
     fn test_relu6() {
-        mlx_rs::random::seed(379);
+        mlx_rs::random::seed(379).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1118,7 +1118,7 @@ mod tests {
 
     #[test]
     fn test_softmax() {
-        mlx_rs::random::seed(853);
+        mlx_rs::random::seed(853).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1149,7 +1149,7 @@ mod tests {
 
     #[test]
     fn test_softplus() {
-        mlx_rs::random::seed(118);
+        mlx_rs::random::seed(118).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1180,7 +1180,7 @@ mod tests {
 
     #[test]
     fn test_softsign() {
-        mlx_rs::random::seed(37);
+        mlx_rs::random::seed(37).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1209,40 +1209,51 @@ mod tests {
         );
     }
 
+    // The unit test below is adapted from the python binding:
+    // mlx/python/tests/test_nn.py
     #[test]
     fn test_celu() {
-        mlx_rs::random::seed(620);
-        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
-        assert_eq!(a.shape(), &[2, 8, 16]);
-        assert_eq!(a.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
-            0.466_748_18,
-            abs <= 0.009_334_964
-        );
-        assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
-            119.487_53,
-            abs <= 2.389_750_7
-        );
-        let result = Celu::new().forward(&a).unwrap();
-        assert_eq!(result.shape(), &[2, 8, 16]);
-        assert_eq!(result.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
-            0.466_748_18,
-            abs <= 0.009_334_964
-        );
-        assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
-            119.487_53,
-            abs <= 2.389_750_7
-        );
+        let x = array!([1.0, -1.0, 0.0]);
+        let y = Celu::new().forward(&x).unwrap();
+        let epsilon = array!(1e-4);
+        let expected_y = array!([1.0, -0.6321, 0.0]);
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
+        assert_eq!(y.shape(), &[3]);
+        assert_eq!(y.dtype(), Dtype::Float32);
+
+        let y = CeluBuilder::new()
+            .alpha(1.1)
+            .build()
+            .unwrap()
+            .forward(&x)
+            .unwrap();
+        let expected_y = array!([1.0, -0.6568, 0.0]);
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
+        assert_eq!(y.shape(), &[3]);
+        assert_eq!(y.dtype(), Dtype::Float32);
     }
 
     #[test]
     fn test_silu() {
-        mlx_rs::random::seed(22);
+        mlx_rs::random::seed(22).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1273,7 +1284,7 @@ mod tests {
 
     #[test]
     fn test_log_softmax() {
-        mlx_rs::random::seed(199);
+        mlx_rs::random::seed(199).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1304,7 +1315,7 @@ mod tests {
 
     #[test]
     fn test_log_sigmoid() {
-        mlx_rs::random::seed(984);
+        mlx_rs::random::seed(984).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1335,7 +1346,7 @@ mod tests {
 
     #[test]
     fn test_prelu() {
-        mlx_rs::random::seed(993);
+        mlx_rs::random::seed(993).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1366,7 +1377,7 @@ mod tests {
 
     #[test]
     fn test_gelu() {
-        mlx_rs::random::seed(189);
+        mlx_rs::random::seed(189).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1397,7 +1408,7 @@ mod tests {
 
     #[test]
     fn test_tanh() {
-        mlx_rs::random::seed(735);
+        mlx_rs::random::seed(735).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1428,7 +1439,7 @@ mod tests {
 
     #[test]
     fn test_hardswish() {
-        mlx_rs::random::seed(126);
+        mlx_rs::random::seed(126).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1459,7 +1470,7 @@ mod tests {
 
     #[test]
     fn test_step() {
-        mlx_rs::random::seed(490);
+        mlx_rs::random::seed(490).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -1490,7 +1501,7 @@ mod tests {
 
     #[test]
     fn test_selu() {
-        mlx_rs::random::seed(215);
+        mlx_rs::random::seed(215).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);

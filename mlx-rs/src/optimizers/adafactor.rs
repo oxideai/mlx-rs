@@ -28,7 +28,7 @@ fn approvate_exp_moving_avg(
 pub type AdafactorEps = (f32, f32);
 
 /// State of the Adafactor optimizer.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AdafactorState {
     pub(crate) step: Array,
     pub(crate) exp_avg_sq_row: Option<Array>,
@@ -80,45 +80,15 @@ impl AdafactorState {
 /// the `generate_builder` macro
 pub type AdafactorBuilderLr = Option<f32>;
 
-/// A thin wrapper around `Option<Array>`. This wrapper is added to prevent accidental change of
-/// the learning rate after the optimizer is built while keeping all fields public.
-#[derive(Debug)]
-pub struct AdafactorLr(Option<Array>);
-
-impl AdafactorLr {
-    /// Returns the inner value.
-    pub fn value(&self) -> &Option<Array> {
-        &self.0
-    }
-}
-
-impl From<Option<Array>> for AdafactorLr {
-    fn from(lr: Option<Array>) -> Self {
-        Self(lr)
-    }
-}
+/// Type alias for the learning rate used in Adafactor 
+pub type AdafactorLr = Option<Array>;
 
 /// `Option<f32>` Type alias for the beta1 used in Adafactor builder due to limitation in the
 /// `generate_builder` macro
 pub type AdafactorBuilderBeta1 = Option<f32>;
 
-/// A thin wrapper around `Option<f32>`. This wrapper is added to prevent accidental change of
-/// the beta1 after the optimizer is built while keeping all fields public.
-#[derive(Debug)]
-pub struct AdafactorBeta1(Option<Array>);
-
-impl AdafactorBeta1 {
-    /// Returns the inner value.
-    pub fn value(&self) -> &Option<Array> {
-        &self.0
-    }
-}
-
-impl From<Option<Array>> for AdafactorBeta1 {
-    fn from(beta1: Option<Array>) -> Self {
-        Self(beta1)
-    }
-}
+/// Type alias for the beta1 used in Adafactor
+pub type AdafactorBeta1 = Option<Array>;
 
 generate_builder! {
     /// The Adafactor optimizer.
@@ -291,7 +261,7 @@ impl Optimizer for Adafactor {
         gradient: &Array,
         parameter: &mut Array,
     ) -> crate::error::Result<()> {
-        let beta1_is_some = self.beta1.value().is_some();
+        let beta1_is_some = self.beta1.is_some();
         let state = get_mut_or_insert_with(&mut self.state, key, || {
             AdafactorState::new(parameter, beta1_is_some)
         })?;
@@ -306,7 +276,7 @@ impl Optimizer for Adafactor {
         let lr = compute_lr(
             self.relative_step,
             self.warmup_init,
-            self.lr.value(),
+            &self.lr,
             self.scale_parameter,
             &self.eps,
             step,
@@ -349,7 +319,7 @@ impl Optimizer for Adafactor {
         update = Cow::Owned(update.divide(max)?);
         update = Cow::Owned(lr.multiply(update)?);
 
-        if let Some(beta1) = self.beta1.value() {
+        if let Some(beta1) = &self.beta1 {
             // SAFETY: This field is created in the `new` when beta1 is set and won't panic.
             let exp_avg = state.exp_avg.as_mut().unwrap();
             let one_minus_beta1 = array!(1.0).subtract(beta1)?;

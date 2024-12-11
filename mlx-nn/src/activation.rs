@@ -625,7 +625,7 @@ pub struct PreluBuilder {
 }
 
 /// Builds the Prelu module.
-fn build_prelu(builder: PreluBuilder) -> Result<Prelu, Exception> {
+fn build_prelu(builder: PreluBuilder) -> Result<Prelu> {
     let count = builder.count;
     let value = builder.value;
     let weight = Param::new(mlx_rs::ops::full::<f32>(&[count], &array!(value))?);

@@ -124,7 +124,7 @@ impl QuantizedEmbedding {
     }
 }
 
-impl<'a> Module<&'a Array> for QuantizedEmbedding {
+impl Module<&Array> for QuantizedEmbedding {
     type Output = Array;
     type Error = Exception;
 
@@ -259,7 +259,7 @@ impl QuantizedLinear {
     pub const DEFAULT_BITS: i32 = 4;
 }
 
-impl<'a> Module<&'a Array> for QuantizedLinear {
+impl Module<&Array> for QuantizedLinear {
     type Output = Array;
     type Error = Exception;
 

@@ -91,7 +91,7 @@ impl InstanceNorm {
     pub const DEFAULT_AFFINE: bool = false;
 }
 
-impl<'a> Module<&'a Array> for InstanceNorm {
+impl Module<&Array> for InstanceNorm {
     type Output = Array;
     type Error = Exception;
 
@@ -182,7 +182,7 @@ impl LayerNorm {
     pub const DEFAULT_AFFINE: bool = true;
 }
 
-impl<'a> Module<&'a Array> for LayerNorm {
+impl Module<&Array> for LayerNorm {
     type Output = Array;
     type Error = Exception;
 
@@ -250,7 +250,7 @@ impl RmsNorm {
     pub const DEFAULT_EPS: f32 = 1e-5;
 }
 
-impl<'a> Module<&'a Array> for RmsNorm {
+impl Module<&Array> for RmsNorm {
     type Output = Array;
     type Error = Exception;
 
@@ -399,7 +399,7 @@ impl GroupNorm {
     }
 }
 
-impl<'a> Module<&'a Array> for GroupNorm {
+impl Module<&Array> for GroupNorm {
     type Output = Array;
     type Error = Exception;
 
@@ -549,7 +549,7 @@ impl BatchNorm {
     }
 }
 
-impl<'a> Module<&'a Array> for BatchNorm {
+impl Module<&Array> for BatchNorm {
     type Output = Array;
     type Error = Exception;
 

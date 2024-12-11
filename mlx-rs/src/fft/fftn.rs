@@ -21,7 +21,7 @@ use super::{
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn fft_device(
     a: impl AsRef<Array>,
     n: impl Into<Option<i32>>,
@@ -44,7 +44,7 @@ pub fn fft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn fft2_device<'a>(
     a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
@@ -84,7 +84,7 @@ pub fn fft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn fftn_device<'a>(
     a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
@@ -120,7 +120,7 @@ pub fn fftn_device<'a>(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn ifft_device(
     a: impl AsRef<Array>,
     n: impl Into<Option<i32>>,
@@ -143,7 +143,7 @@ pub fn ifft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn ifft2_device<'a>(
     a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,
@@ -183,7 +183,7 @@ pub fn ifft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
-#[default_device(device = "cpu")]
+#[default_device]
 pub fn ifftn_device<'a>(
     a: impl AsRef<Array>,
     s: impl IntoOption<&'a [i32]>,

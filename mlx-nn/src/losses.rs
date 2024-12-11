@@ -216,8 +216,8 @@ impl<'a> BinaryCrossEntropy<'a> {
         let mut loss = if inputs_are_logits {
             log_add_exp(array!(0.0), logits)?.subtract(targets.multiply(logits)?)?
         } else {
-            let log_inputs_clip = clip(&log(logits), (-100.0, ()))?;
-            let log_inputs_inverse_clip = clip(&log(&array!(1.0).subtract(logits)?), (-100.0, ()))?;
+            let log_inputs_clip = clip(log(logits)?, (-100.0, ()))?;
+            let log_inputs_inverse_clip = clip(log(&array!(1.0).subtract(logits)?)?, (-100.0, ()))?;
             -(targets.multiply(log_inputs_clip)?.add(
                 array!(1.0)
                     .subtract(targets)?
@@ -264,7 +264,7 @@ impl L1Loss {
         let reduction = self.reduction;
 
         check_shape(predictions, targets, "predictions", "targets")?;
-        let loss = predictions.subtract(targets)?.abs();
+        let loss = predictions.subtract(targets)?.abs()?;
         reduction.reduce(loss)
     }
 }
@@ -299,7 +299,7 @@ impl MseLoss {
         let reduction = self.reduction;
 
         check_shape(predictions, targets, "predictions", "targets")?;
-        let loss = predictions.subtract(targets)?.square();
+        let loss = predictions.subtract(targets)?.square()?;
         reduction.reduce(loss)
     }
 }
@@ -401,11 +401,11 @@ impl GaussianNllLoss {
 
         let vars = maximum(vars, array!(eps))?;
         let mut loss =
-            array!(0.5) * (log(&vars).add(square(&targets.subtract(inputs)?).divide(&vars)?)?);
+            array!(0.5) * (log(&vars)?.add(square(&targets.subtract(inputs)?)?.divide(&vars)?)?);
 
         if full {
             let pi = array!(std::f32::consts::PI);
-            loss = loss.add(array!(0.5).multiply(log(&array!(2.0).multiply(pi)?))?)?;
+            loss = loss.add(array!(0.5).multiply(log(&array!(2.0).multiply(pi)?)?)?)?;
         }
 
         reduction.reduce(loss)
@@ -456,7 +456,7 @@ impl KlDivLoss {
         let reduction = self.reduction;
 
         let loss = sum(
-            &exp(targets).multiply(targets.subtract(inputs)?)?,
+            &exp(targets)?.multiply(targets.subtract(inputs)?)?,
             &[axis],
             None,
         )?;
@@ -510,8 +510,10 @@ impl SmoothL1Loss {
         let diff = predictions.subtract(targets)?;
         let loss = r#where(
             &diff.lt(array!(beta))?,
-            array!(0.5).multiply(square(&diff))?.divide(&array!(beta))?,
-            abs(&diff).subtract(array!(0.5).multiply(array!(beta))?)?,
+            array!(0.5)
+                .multiply(square(&diff)?)?
+                .divide(&array!(beta))?,
+            abs(&diff)?.subtract(array!(0.5).multiply(array!(beta))?)?,
         )?;
         reduction.reduce(loss)
     }
@@ -591,12 +593,12 @@ impl TripletLoss {
             &power(&anchors.subtract(positives)?, &p)?
                 .sum(&[axis], None)?
                 .add(&eps)?,
-        );
+        )?;
         let neg = sqrt(
             &power(&anchors.subtract(negatives)?, &p)?
                 .sum(&[axis], None)?
                 .add(&eps)?,
-        );
+        )?;
         let loss = maximum(pos.subtract(neg)?.add(margin)?, array!(0.0))?;
         reduction.reduce(loss)
     }
@@ -677,11 +679,11 @@ impl HuberLoss {
         let reduction = self.reduction;
 
         let errors = inputs.subtract(targets)?;
-        let abs_errors = errors.abs();
+        let abs_errors = errors.abs()?;
         let quadratic = minimum(&abs_errors, array!(delta))?;
         let linear = abs_errors.subtract(&quadratic)?;
         let loss = array!(0.5)
-            .multiply(square(&quadratic))?
+            .multiply(square(&quadratic)?)?
             .add(array!(delta).multiply(linear)?)?;
         reduction.reduce(loss)
     }
@@ -722,7 +724,7 @@ impl LogCoshLoss {
 
         let errors = inputs.subtract(targets)?;
         let neg_errors = errors.negative()?;
-        let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0)))?;
+        let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0))?)?;
         reduction.reduce(loss)
     }
 }
@@ -771,9 +773,9 @@ impl CosineSimilarityLoss {
 
         fn l2_loss(a: &Array, axis: i32) -> Result<Array, Exception> {
             if a.dtype().is_complex() {
-                Ok(sqrt(&sum(&abs(a).square(), &[axis], None)?))
+                Ok(sqrt(&sum(&abs(a)?.square()?, &[axis], None)?)?)
             } else {
-                Ok(sqrt(&sum(&a.square(), &[axis], None)?))
+                Ok(sqrt(&sum(&a.square()?, &[axis], None)?)?)
             }
         }
 
@@ -871,7 +873,11 @@ mod tests {
             .build()
             .unwrap();
         let loss = cross_entropy.apply(logits, probs).unwrap();
-        assert!(is_nan(&loss).all(None, None).unwrap().item::<bool>());
+        assert!(is_nan(&loss)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
 
         // With weights, no label smoothing
         let logits = array!([[2.0, -1.0], [-1.0, 2.0]]);
@@ -1255,8 +1261,8 @@ mod tests {
 
     #[test]
     fn test_kl_div_loss() {
-        let p_logits = array!([[0.5, 0.5], [0.8, 0.2]]).log();
-        let q_logits = array!([[0.5, 0.5], [0.2, 0.8]]).log();
+        let p_logits = array!([[0.5, 0.5], [0.8, 0.2]]).log().unwrap();
+        let q_logits = array!([[0.5, 0.5], [0.2, 0.8]]).log().unwrap();
 
         // Test with reduction 'none'
         let kl_div_loss = KlDivLossBuilder::new()

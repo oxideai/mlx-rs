@@ -1,4 +1,5 @@
-use crate::error::Exception;
+use crate::error::Result;
+use crate::utils::guard::Guarded;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -14,32 +15,28 @@ pub fn rope_device<'a>(
     offset: i32,
     freqs: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let base = base.into();
     let base = mlx_sys::mlx_optional_float {
         value: base.unwrap_or(0.0),
         has_value: base.is_some(),
     };
-
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fast_rope(
-                array.as_ref().as_ptr(),
-                dimensions,
-                traditional,
-                base,
-                scale,
-                offset,
-                freqs
-                    .into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    let freqs = freqs.into();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rope(
+            res,
+            array.as_ref().as_ptr(),
+            dimensions,
+            traditional,
+            base,
+            scale,
+            offset,
+            freqs
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// A fast implementation of multi-head attention: `O = softmax(Q @ K.T, dim=-1) @ V`
@@ -60,30 +57,27 @@ pub fn scaled_dot_product_attention_device<'a>(
     mask: impl Into<Option<&'a Array>>,
     memory_efficient_threshold: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
+) -> Result<Array> {
     let memory_efficient_threshold = memory_efficient_threshold.into();
     let memory_efficient_threshold = mlx_sys::mlx_optional_int {
         value: memory_efficient_threshold.unwrap_or(0),
         has_value: memory_efficient_threshold.is_some(),
     };
 
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fast_scaled_dot_product_attention(
-                queries.as_ref().as_ptr(),
-                keys.as_ref().as_ptr(),
-                values.as_ref().as_ptr(),
-                scale,
-                mask.into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
-                memory_efficient_threshold,
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_scaled_dot_product_attention(
+            res,
+            queries.as_ref().as_ptr(),
+            keys.as_ref().as_ptr(),
+            values.as_ref().as_ptr(),
+            scale,
+            mask.into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            memory_efficient_threshold,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Root Mean Square normalization (RMS norm).
@@ -102,19 +96,16 @@ pub fn rms_norm_device(
     weight: impl AsRef<Array>,
     eps: f32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fast_rms_norm(
-                x.as_ref().as_ptr(),
-                weight.as_ref().as_ptr(),
-                eps,
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rms_norm(
+            res,
+            x.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
+            eps,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 /// Layer normalization.
@@ -137,67 +128,22 @@ pub fn layer_norm_device<'a>(
     bias: impl Into<Option<&'a Array>>,
     eps: f32,
     stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fast_layer_norm(
-                x.as_ref().as_ptr(),
-                weight
-                    .into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
-                bias.into()
-                    .map(|a| a.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()),
-                eps,
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
-}
-
-/// Quantize the matrix `w` using the provided `scales` and `biases` and the `groupSize` and `bits` configuration.
-
-/// For details, please see
-/// [this documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.fast.affine_quantize.html)
-///
-/// # Params
-///
-/// - w: Matrix to be quantized
-/// - scales: The scales to use per `groupSize` elements of `w`
-/// - biases: The biases to use per `groupSize` elements of `w`
-/// - groupSize: The size of the group in `w` that shares a scale and bias. Defaults to 64 if not provided.
-/// - bits: The number of bits occupied by each element in `w`. Defaults to 4 if not provided.
-/// - stream: stream or device to evaluate on
-///
-/// @return: The quantized version of `w`.
-pub fn affine_quantized(
-    w: impl AsRef<Array>,
-    scales: impl AsRef<Array>,
-    biases: impl AsRef<Array>,
-    group_size: impl Into<Option<i32>>,
-    bits: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
-) -> Result<Array, Exception> {
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
-
-    unsafe {
-        let c_array = try_catch_c_ptr_expr! {
-            mlx_sys::mlx_fast_affine_quantize(
-                w.as_ref().as_ptr(),
-                scales.as_ref().as_ptr(),
-                biases.as_ref().as_ptr(),
-                group_size,
-                bits,
-                stream.as_ref().as_ptr(),
-            )
-        };
-
-        Ok(Array::from_ptr(c_array))
-    }
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_layer_norm(
+            res,
+            x.as_ref().as_ptr(),
+            weight
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            bias.into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            eps,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]
@@ -210,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_rope() {
-        crate::random::seed(71);
+        crate::random::seed(71).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);
@@ -232,7 +178,7 @@ mod tests {
 
     #[test]
     fn test_rms_norm() {
-        crate::random::seed(103);
+        crate::random::seed(103).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);
@@ -255,16 +201,15 @@ mod tests {
 
     #[test]
     pub fn test_layer_norm_affine() {
-        crate::random::seed(635);
+        crate::random::seed(635).unwrap();
         let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), [2, 8, 16]);
         assert_eq!(a.dtype(), crate::Dtype::Float32);
 
         let weight = Array::ones::<f32>(&[16]).unwrap();
         let bias = Array::zeros::<f32>(&[16]).unwrap();
-        let result = layer_norm(a, &weight, &bias, 1e-5)
-            .unwrap()
-            .index((ArrayIndexOp::Ellipsis, 0));
+        let result = layer_norm(a, &weight, &bias, 1e-5).unwrap();
+        let result = result.index((ArrayIndexOp::Ellipsis, 0));
         assert_eq!(result.shape(), [2, 8]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(

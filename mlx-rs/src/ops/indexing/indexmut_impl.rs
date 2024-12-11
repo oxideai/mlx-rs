@@ -4,7 +4,7 @@ use smallvec::{smallvec, SmallVec};
 
 use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
-    error::Exception,
+    error::Result,
     ops::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
@@ -13,7 +13,7 @@ use crate::{
     Array, Stream,
 };
 
-use super::{ArrayIndex, ArrayIndexOp, IndexMutOp, RangeIndex};
+use super::{ArrayIndex, ArrayIndexOp, Guarded, IndexMutOp, RangeIndex};
 
 impl Array {
     pub(crate) fn slice_update_device(
@@ -23,23 +23,21 @@ impl Array {
         ends: &[i32],
         strides: &[i32],
         stream: impl AsRef<Stream>,
-    ) -> Result<Array, Exception> {
-        unsafe {
-            let c_array = try_catch_c_ptr_expr! {
-                mlx_sys::mlx_slice_update(
-                    self.as_ptr(),
-                    update.as_ptr(),
-                    starts.as_ptr(),
-                    starts.len(),
-                    ends.as_ptr(),
-                    ends.len(),
-                    strides.as_ptr(),
-                    strides.len(),
-                    stream.as_ref().as_ptr(),
-                )
-            };
-            Ok(Array::from_ptr(c_array))
-        }
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_slice_update(
+                res,
+                self.as_ptr(),
+                update.as_ptr(),
+                starts.as_ptr(),
+                starts.len(),
+                ends.as_ptr(),
+                ends.len(),
+                strides.as_ptr(),
+                strides.len(),
+                stream.as_ref().as_ptr(),
+            )
+        })
     }
 }
 
@@ -49,7 +47,7 @@ fn update_slice(
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<Option<Array>, Exception> {
+) -> Result<Option<Array>> {
     let ndim = src.ndim();
     if ndim == 0 || operations.is_empty() {
         return Ok(None);
@@ -141,7 +139,7 @@ fn update_slice(
 fn remove_leading_singleton_dimensions(
     a: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<Cow<'_, Array>, Exception> {
+) -> Result<Cow<'_, Array>> {
     let shape = a.shape();
     let mut new_shape: Vec<_> = shape.iter().skip_while(|&&dim| dim == 1).cloned().collect();
     if shape != new_shape {
@@ -154,26 +152,30 @@ fn remove_leading_singleton_dimensions(
     }
 }
 
-struct ScatterArgs {
-    indices: SmallVec<[Array; DEFAULT_STACK_VEC_LEN]>,
+struct ScatterArgs<'a> {
+    indices: SmallVec<[Cow<'a, Array>; DEFAULT_STACK_VEC_LEN]>,
     update: Array,
     axes: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]>,
 }
 
 /// See `scatterArguments` in the swift binding
-fn scatter_args(
-    src: &Array,
-    operations: &[ArrayIndexOp],
+fn scatter_args<'a>(
+    src: &'a Array,
+    operations: &'a [ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs, Exception> {
+) -> Result<ScatterArgs<'a>> {
     use ArrayIndexOp::*;
 
     if operations.len() == 1 {
         return match &operations[0] {
             TakeIndex { index } => scatter_args_index(src, *index, update, stream),
-            TakeArray { indices } => scatter_args_array(src, indices, update, stream),
-            TakeArrayRef { indices } => scatter_args_array(src, indices, update, stream),
+            TakeArray { indices } => {
+                scatter_args_array(src, Cow::Borrowed(indices), update, stream)
+            }
+            TakeArrayRef { indices } => {
+                scatter_args_array(src, Cow::Borrowed(indices), update, stream)
+            }
             Slice(range_index) => scatter_args_slice(src, range_index, update, stream),
             ExpandDims => Ok(ScatterArgs {
                 indices: smallvec![],
@@ -187,12 +189,12 @@ fn scatter_args(
     scatter_args_nd(src, operations, update, stream)
 }
 
-fn scatter_args_index(
-    src: &Array,
+fn scatter_args_index<'a>(
+    src: &'a Array,
     index: i32,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_index
 
     // Remove any leading singleton dimensions from the update
@@ -203,21 +205,21 @@ fn scatter_args_index(
     shape[0] = 1;
 
     Ok(ScatterArgs {
-        indices: smallvec![Array::from_int(resolve_index_signed_unchecked(
+        indices: smallvec![Cow::Owned(Array::from_int(resolve_index_signed_unchecked(
             index,
             src.dim(0)
-        ))],
+        )))],
         update: broadcast_to_device(&update, &shape, &stream)?,
         axes: smallvec![0],
     })
 }
 
-fn scatter_args_array(
-    src: &Array,
-    a: &Array,
+fn scatter_args_array<'a>(
+    src: &'a Array,
+    a: Cow<'a, Array>,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_array
 
     // trim leading singleton dimensions
@@ -236,18 +238,18 @@ fn scatter_args_array(
     let update = update.reshape_device(&update_shape, &stream)?;
 
     Ok(ScatterArgs {
-        indices: smallvec![a.clone()],
+        indices: smallvec![a],
         update,
         axes: smallvec![0],
     })
 }
 
-fn scatter_args_slice(
-    src: &Array,
-    range_index: &RangeIndex,
+fn scatter_args_slice<'a>(
+    src: &'a Array,
+    range_index: &'a RangeIndex,
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs, Exception> {
+) -> Result<ScatterArgs<'a>> {
     // mlx_scatter_args_slice
 
     // if none slice is requested braodcast the update to the src size and return it
@@ -278,7 +280,7 @@ fn scatter_args_slice(
 
         let indices = Array::from_slice(&[start], &[1]);
         Ok(ScatterArgs {
-            indices: smallvec![indices],
+            indices: smallvec![Cow::Owned(indices)],
             update,
             axes: smallvec![0],
         })
@@ -287,16 +289,16 @@ fn scatter_args_slice(
         let a_vals = strided_range_to_vec(start, end, stride);
         let a = Array::from_slice(&a_vals, &[a_vals.len() as i32]);
 
-        scatter_args_array(src, &a, update, stream)
+        scatter_args_array(src, Cow::Owned(a), update, stream)
     }
 }
 
-fn scatter_args_nd(
-    src: &Array,
+fn scatter_args_nd<'a>(
+    src: &'a Array,
     operations: &[ArrayIndexOp],
     update: &Array,
     stream: impl AsRef<Stream>,
-) -> Result<ScatterArgs, Exception> {
+) -> Result<ScatterArgs<'a>> {
     use ArrayIndexOp::*;
 
     // mlx_scatter_args_nd
@@ -499,8 +501,9 @@ fn scatter_args_nd(
 
     let array_indices_len = array_indices.len();
 
+    let indices = array_indices.into_iter().map(Cow::Owned).collect();
     Ok(ScatterArgs {
-        indices: array_indices.into(),
+        indices,
         update,
         axes: (0..array_indices_len as i32).collect(),
     })
@@ -528,26 +531,26 @@ fn strided_range_to_vec(start: i32, exclusive_end: i32, stride: i32) -> Vec<i32>
     vec
 }
 
-unsafe fn scatter_device_unchecked(
+unsafe fn scatter_device(
     a: &Array,
     indices: &[impl AsRef<Array>],
     updates: &Array,
     axes: &[i32],
     stream: impl AsRef<Stream>,
-) -> Array {
-    let indices_vector = VectorArray::from_iter(indices.iter());
+) -> Result<Array> {
+    let indices_vector = VectorArray::try_from_iter(indices.iter())?;
 
-    unsafe {
-        let result = mlx_sys::mlx_scatter(
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter(
+            res,
             a.as_ptr(),
             indices_vector.as_ptr(),
             updates.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
-        );
-        Array::from_ptr(result)
-    }
+        )
+    })
 }
 
 impl Array {
@@ -568,10 +571,14 @@ impl Array {
             axes,
         } = scatter_args(self, operations, update, &stream).unwrap();
         if !indices.is_empty() {
-            let result =
-                unsafe { scatter_device_unchecked(self, &indices, &update, &axes, stream) };
+            let result = unsafe {
+                scatter_device(self, &indices, &update, &axes, stream)
+                    .expect("scatter_device failed")
+            };
+            drop(indices);
             *self = result;
         } else {
+            drop(indices);
             *self = update;
         }
     }
@@ -1387,28 +1394,25 @@ mod tests {
         let i = Array::from_slice(&[2, 1], &[2]);
 
         // a[0, i] = 1
-        check!((0, i.clone()), 131310);
+        check!((0, &i), 131310);
 
         // a[..., i, 0] = 1
-        check!((Ellipsis, i.clone(), 0), 126378);
+        check!((Ellipsis, &i, 0), 126378);
 
         // a[i, 0, ...] = 1
-        check!((i.clone(), 0, Ellipsis), 109710);
+        check!((&i, 0, Ellipsis), 109710);
 
         // a[i, ..., i] = 1
-        check!((i.clone(), Ellipsis, i.clone()), 102450);
+        check!((&i, Ellipsis, &i), 102450);
 
         // a[i, ..., ::2, :] = 1
-        check!((i.clone(), Ellipsis, (..).stride_by(2), ..), 68094);
+        check!((&i, Ellipsis, (..).stride_by(2), ..), 68094);
 
         // a[..., i, None, ::2, -1] = 1
-        check!(
-            (Ellipsis, i.clone(), NewAxis, (..).stride_by(2), -1),
-            130977
-        );
+        check!((Ellipsis, &i, NewAxis, (..).stride_by(2), -1), 130977);
 
         // a[:, 2:, i] = 1
-        check!((.., 2.., i.clone()), 115965);
+        check!((.., 2.., &i), 115965);
 
         // a[::-1, :2, i, 2:, ..., None, ::2] = 1
         check!(

@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   rustfmt-check:
-    runs-on: macos-15
+    runs-on: blaze/macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
         run: cargo clippy -- -D warnings
 
   tests:
-    runs-on: macos-15
+    runs-on: blaze/macos-14
     strategy:
       matrix:
         rust: [ stable, 1.75.0 ]

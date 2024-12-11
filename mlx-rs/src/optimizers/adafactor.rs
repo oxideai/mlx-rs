@@ -80,7 +80,7 @@ impl AdafactorState {
 /// the `generate_builder` macro
 pub type AdafactorBuilderLr = Option<f32>;
 
-/// Type alias for the learning rate used in Adafactor 
+/// Type alias for the learning rate used in Adafactor
 pub type AdafactorLr = Option<Array>;
 
 /// `Option<f32>` Type alias for the beta1 used in Adafactor builder due to limitation in the

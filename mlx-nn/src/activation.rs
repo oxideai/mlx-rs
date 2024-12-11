@@ -926,7 +926,7 @@ fn compiled_hard_swish(x: &Array) -> Result<Array> {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{random::uniform, Dtype};
+    use mlx_rs::{prelude::Builder, random::uniform, Dtype};
 
     use super::*;
 
@@ -1209,35 +1209,46 @@ mod tests {
         );
     }
 
+    // The unit test below is adapted from the python binding:
+    // mlx/python/tests/test_nn.py
     #[test]
     fn test_celu() {
-        mlx_rs::random::seed(620).unwrap();
-        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
-        assert_eq!(a.shape(), &[2, 8, 16]);
-        assert_eq!(a.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
-            0.466_748_18,
-            abs <= 0.009_334_964
-        );
-        assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
-            119.487_53,
-            abs <= 2.389_750_7
-        );
-        let result = Celu::new().forward(&a).unwrap();
-        assert_eq!(result.shape(), &[2, 8, 16]);
-        assert_eq!(result.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
-            0.466_748_18,
-            abs <= 0.009_334_964
-        );
-        assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
-            119.487_53,
-            abs <= 2.389_750_7
-        );
+        let x = array!([1.0, -1.0, 0.0]);
+        let y = Celu::new().forward(&x).unwrap();
+        let epsilon = array!(1e-4);
+        let expected_y = array!([1.0, -0.6321, 0.0]);
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
+        assert_eq!(y.shape(), &[3]);
+        assert_eq!(y.dtype(), Dtype::Float32);
+
+        let y = CeluBuilder::new()
+            .alpha(1.1)
+            .build()
+            .unwrap()
+            .forward(&x)
+            .unwrap();
+        let expected_y = array!([1.0, -0.6568, 0.0]);
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None, None)
+            .unwrap()
+            .item::<bool>());
+        assert_eq!(y.shape(), &[3]);
+        assert_eq!(y.dtype(), Dtype::Float32);
     }
 
     #[test]

@@ -98,7 +98,6 @@ impl From<Infallible> for Exception {
 
 thread_local! {
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
-    // static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
     pub(crate) static INIT_ERR_HANDLER: Once = const { Once::new() };
 }
 

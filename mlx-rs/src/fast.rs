@@ -146,45 +146,6 @@ pub fn layer_norm_device<'a>(
     })
 }
 
-/// Quantize the matrix `w` using the provided `scales` and `biases` and the `groupSize` and `bits` configuration.
-
-/// For details, please see
-/// [this documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.fast.affine_quantize.html)
-///
-/// # Params
-///
-/// - w: Matrix to be quantized
-/// - scales: The scales to use per `groupSize` elements of `w`
-/// - biases: The biases to use per `groupSize` elements of `w`
-/// - groupSize: The size of the group in `w` that shares a scale and bias. Defaults to 64 if not provided.
-/// - bits: The number of bits occupied by each element in `w`. Defaults to 4 if not provided.
-/// - stream: stream or device to evaluate on
-///
-/// @return: The quantized version of `w`.
-pub fn affine_quantized(
-    w: impl AsRef<Array>,
-    scales: impl AsRef<Array>,
-    biases: impl AsRef<Array>,
-    group_size: impl Into<Option<i32>>,
-    bits: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
-
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_fast_affine_quantize(
-            res,
-            w.as_ref().as_ptr(),
-            scales.as_ref().as_ptr(),
-            biases.as_ref().as_ptr(),
-            group_size,
-            bits,
-            stream.as_ref().as_ptr(),
-        )
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

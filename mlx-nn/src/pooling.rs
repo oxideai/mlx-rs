@@ -64,7 +64,7 @@ impl Pool {
     }
 }
 
-impl<'a> Module<&'a Array> for Pool {
+impl Module<&Array> for Pool {
     type Output = Array;
     type Error = Exception;
 
@@ -106,7 +106,7 @@ impl<'a> Module<&'a Array> for Pool {
             .collect::<Vec<_>>();
 
         // TODO: double check if as_strided would ever panic
-        let strided = as_strided(x, &final_shape, &final_strides, None);
+        let strided = as_strided(x, &final_shape, &final_strides, None)?;
         (self.pooling_op)(&strided, &self.axes)
     }
 

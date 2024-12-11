@@ -105,7 +105,7 @@ impl ConvTranspose1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl<'a> Module<&'a Array> for ConvTranspose1d {
+impl Module<&Array> for ConvTranspose1d {
     type Output = Array;
     type Error = Exception;
 
@@ -228,7 +228,7 @@ impl ConvTranspose2d {
     pub const DEFAULT_STRIDE: SingleOrPair<i32> = SingleOrPair::Pair(1, 1);
 }
 
-impl<'a> Module<&'a Array> for ConvTranspose2d {
+impl Module<&Array> for ConvTranspose2d {
     type Output = Array;
     type Error = Exception;
 
@@ -353,7 +353,7 @@ impl ConvTranspose3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl<'a> Module<&'a Array> for ConvTranspose3d {
+impl Module<&Array> for ConvTranspose3d {
     type Output = Array;
     type Error = Exception;
 

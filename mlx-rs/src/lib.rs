@@ -2,7 +2,7 @@
 #![cfg_attr(test, allow(clippy::approx_constant))]
 
 #[macro_use]
-mod macros; // Must be first to ensure the other modules can use the macros
+pub mod macros; // Must be first to ensure the other modules can use the macros
 
 mod array;
 pub mod builder;

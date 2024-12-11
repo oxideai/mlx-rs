@@ -96,7 +96,7 @@ where
 
     for (key, value) in flattened_parameters {
         if let Some(self_value) = flattened_self_parameters.get_mut(&key) {
-            **self_value = value.to_owned();
+            **self_value = value;
         }
     }
 }

@@ -1,8 +1,13 @@
 use crate::Dtype;
 use libc::strdup;
+use std::convert::Infallible;
 use std::ffi::NulError;
+use std::sync::Once;
 use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
+
+/// Type alias for a `Result` with an `Exception` error type.
+pub type Result<T> = std::result::Result<T, Exception>;
 
 #[derive(Error, PartialEq, Debug)]
 pub enum ItemError {
@@ -85,9 +90,15 @@ impl From<&str> for Exception {
     }
 }
 
+impl From<Infallible> for Exception {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
+
 thread_local! {
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
-    static IS_HANDLER_SET: Cell<bool> = const { Cell::new(false) };
+    pub(crate) static INIT_ERR_HANDLER: Once = const { Once::new() };
 }
 
 #[no_mangle]
@@ -109,12 +120,6 @@ pub fn setup_mlx_error_handler() {
     unsafe {
         mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
     }
-
-    IS_HANDLER_SET.with(|is_set| is_set.set(true));
-}
-
-pub(crate) fn is_mlx_error_handler_set() -> bool {
-    IS_HANDLER_SET.with(|is_set| is_set.get())
 }
 
 pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {

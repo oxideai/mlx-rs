@@ -68,7 +68,7 @@ impl_binary_op!(Rem, rem, remainder);
 impl_binary_op_assign!(RemAssign, rem_assign, remainder);
 impl_binary_op!(Pow, pow, power);
 
-impl<'a> Neg for &'a Array {
+impl Neg for &Array {
     type Output = Array;
     fn neg(self) -> Self::Output {
         self.negative_device(StreamOrDevice::default()).unwrap()
@@ -81,16 +81,16 @@ impl Neg for Array {
     }
 }
 
-impl<'a> Not for &'a Array {
+impl Not for &Array {
     type Output = Array;
     fn not(self) -> Self::Output {
-        self.logical_not_device(StreamOrDevice::default())
+        self.logical_not_device(StreamOrDevice::default()).unwrap()
     }
 }
 impl Not for Array {
     type Output = Array;
     fn not(self) -> Self::Output {
-        self.logical_not_device(StreamOrDevice::default())
+        self.logical_not_device(StreamOrDevice::default()).unwrap()
     }
 }
 

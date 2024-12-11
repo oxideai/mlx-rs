@@ -73,7 +73,7 @@ impl Optimizer for Adam {
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
-    ) -> Result<(), Exception> {
+    ) -> crate::error::Result<()> {
         let betas = &self.betas;
         let state = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
@@ -95,7 +95,7 @@ pub(super) fn adam_apply_single(
     gradient: &Array,
     parameter: &Array,
     state: &(Array, Array),
-) -> Result<(Array, (Array, Array)), Exception> {
+) -> crate::error::Result<(Array, (Array, Array))> {
     let (b1, b2) = betas;
     let (m, v) = state;
 
@@ -105,10 +105,10 @@ pub(super) fn adam_apply_single(
     let new_m = b1.multiply(m)?.add(&one_minus_b1.multiply(gradient)?)?;
     let new_v = b2
         .multiply(v)?
-        .add(&one_minus_b2.multiply(gradient.square())?)?;
+        .add(&one_minus_b2.multiply(gradient.square()?)?)?;
 
     let new_parameter =
-        parameter.subtract(&lr.multiply(&new_m.divide(&new_v.sqrt().add(eps)?)?)?)?;
+        parameter.subtract(&lr.multiply(&new_m.divide(&new_v.sqrt()?.add(eps)?)?)?)?;
 
     Ok((new_parameter, (new_m, new_v)))
 }

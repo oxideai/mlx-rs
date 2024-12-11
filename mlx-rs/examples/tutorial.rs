@@ -73,20 +73,22 @@ fn array_basics() {
 }
 
 fn automatic_differentiation() {
-    fn f(x: &Array) -> Array {
+    use mlx_rs::error::Result;
+
+    fn f(x: &Array) -> Result<Array> {
         x.square()
     }
 
-    fn calculate_grad(func: impl Fn(&Array) -> Array, arg: &Array) -> Array {
-        grad(&func, &[0])(arg).unwrap()
+    fn calculate_grad(func: impl Fn(&Array) -> Result<Array>, arg: &Array) -> Result<Array> {
+        grad(&func, &[0])(arg)
     }
 
     let x = Array::from(1.5);
 
-    let dfdx = calculate_grad(f, &x);
+    let dfdx = calculate_grad(f, &x).unwrap();
     assert_eq!(dfdx.item::<f32>(), 2.0 * 1.5);
 
-    let dfdx2 = calculate_grad(|args| calculate_grad(f, args), &x);
+    let dfdx2 = calculate_grad(|args| calculate_grad(f, args), &x).unwrap();
     assert_eq!(dfdx2.item::<f32>(), 2.0);
 }
 

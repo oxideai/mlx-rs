@@ -160,3 +160,21 @@ mod rfftn;
 mod utils;
 
 pub use self::{fftn::*, rfftn::*};
+
+/* -------------------------------------------------------------------------- */
+/*                              Helper functions                              */
+/* -------------------------------------------------------------------------- */
+
+use crate::{complex64, error::Exception, Array, Dtype};
+use std::borrow::Cow;
+
+fn as_complex64(src: &Array) -> Result<Cow<'_, Array>, Exception> {
+    match src.dtype() {
+        Dtype::Complex64 => Ok(Cow::Borrowed(src)),
+        _ => {
+            let new_array = src.as_type::<complex64>()?;
+            new_array.eval()?;
+            Ok(Cow::Owned(new_array))
+        }
+    }
+}

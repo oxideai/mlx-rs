@@ -1,6 +1,8 @@
 use mlx_internal_macros::default_device;
 
-use crate::{Array, ArrayElement, Dtype, Stream, StreamOrDevice};
+use crate::{
+    error::Result, utils::guard::Guarded, Array, ArrayElement, Dtype, Stream, StreamOrDevice,
+};
 
 impl Array {
     /// Create a new array with the contents converted to the given [ArrayElement] type.
@@ -11,7 +13,7 @@ impl Array {
     /// use mlx_rs::{Array, Dtype};
     ///
     /// let array = Array::from_slice(&[1i16,2,3], &[3]);
-    /// let mut new_array = array.as_type::<f32>();
+    /// let mut new_array = array.as_type::<f32>().unwrap();
     ///
     /// assert_eq!(new_array.dtype(), Dtype::Float32);
     /// assert_eq!(new_array.shape(), &[3]);
@@ -19,17 +21,15 @@ impl Array {
     /// assert_eq!(new_array.as_slice::<f32>(), &[1.0,2.0,3.0]);
     /// ```
     #[default_device]
-    pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn as_type_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         self.as_dtype_device(T::DTYPE, stream)
     }
 
     #[default_device]
-    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
-        unsafe {
-            let new_array =
-                mlx_sys::mlx_astype(self.c_array, dtype.into(), stream.as_ref().as_ptr());
-            Array::from_ptr(new_array)
-        }
+    pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_astype(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
+        })
     }
 
     /// View the array as a different type.
@@ -42,16 +42,15 @@ impl Array {
     /// representation of each element (or group of elements) is the same._
     ///
     #[default_device]
-    pub fn view_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Array {
+    pub fn view_device<T: ArrayElement>(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         self.view_dtype_device(T::DTYPE, stream)
     }
 
     #[default_device]
-    pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Array {
-        unsafe {
-            let new_array = mlx_sys::mlx_view(self.c_array, dtype.into(), stream.as_ref().as_ptr());
-            Array::from_ptr(new_array)
-        }
+    pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_view(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
+        })
     }
 }
 
@@ -68,7 +67,7 @@ mod tests {
                 #[test]
                 fn [<test_as_type_ $src_type _ $dst_type>]() {
                     let array = Array::from_slice(&[$src_val; $len], &[$len as i32]);
-                    let new_array = array.as_type::<$dst_type>();
+                    let new_array = array.as_type::<$dst_type>().unwrap();
 
                     assert_eq!(new_array.dtype(), $dst_type::DTYPE);
                     assert_eq!(new_array.shape(), &[3]);
@@ -268,7 +267,7 @@ mod tests {
     #[test]
     fn test_view() {
         let array = Array::from_slice(&[1i16, 2, 3], &[3]);
-        let new_array = array.view::<i8>();
+        let new_array = array.view::<i8>().unwrap();
 
         assert_eq!(new_array.dtype(), Dtype::Int8);
         assert_eq!(new_array.shape(), &[6]);

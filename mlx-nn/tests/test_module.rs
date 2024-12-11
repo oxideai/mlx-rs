@@ -3,7 +3,7 @@ use mlx_nn::Linear;
 use mlx_rs::module::Module;
 use mlx_rs::{error::Exception, Array};
 
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, ModuleParameters)]
 struct M {
     #[param]
     linear: Linear,
@@ -17,7 +17,7 @@ impl M {
     }
 }
 
-impl<'a> Module<&'a Array> for M {
+impl Module<&Array> for M {
     type Error = Exception;
     type Output = Array;
 

@@ -84,7 +84,7 @@ impl Optimizer for Lion {
             *parameter = (array!(1.0) - &self.lr * &self.weight_decay) * &*parameter;
         }
 
-        *parameter = parameter.subtract(self.lr.multiply(sign(&c))?)?;
+        *parameter = parameter.subtract(self.lr.multiply(sign(&c)?)?)?;
 
         Ok(())
     }

@@ -13,40 +13,18 @@ use mlx_rs::{
 
 use crate::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
-    Dropout, DropoutBuilder, Linear, LinearBuilder, Relu,
+    Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu,
 };
 
-/// Placeholder type for the [`LayerNorm`] module
-#[derive(Debug, Clone, ModuleParameters)]
-struct LayerNorm;
-
-impl LayerNorm {
-    pub fn new(_: i32) -> Result<Self, Exception> {
-        Ok(Self)
-    }
-}
-
-impl<'a> Module<&'a Array> for LayerNorm {
-    type Error = Exception;
-
-    type Output = Array;
-
-    fn forward(&mut self, x: &'a Array) -> Result<Self::Output, Self::Error> {
-        Ok(x.clone())
-    }
-
-    fn training_mode(&mut self, _: bool) {}
-}
-
 /// A marker trait for activation functions used in transformers.
-pub trait Activation
+pub trait Activation: std::fmt::Debug
 where
     for<'a> Self: Module<&'a Array, Output = Array, Error = Exception> + DynClone,
 {
 }
 
 impl<M> Activation for M where
-    for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + DynClone
+    for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + std::fmt::Debug + DynClone
 {
 }
 
@@ -244,9 +222,9 @@ where
         let scale = f32::sqrt(1.0 / queries.dim(-1) as f32);
         let mut scores = (queries * scale).matmul(&keys)?;
         if let Some(mask) = input.mask {
-            scores = scores.add(mask.as_dtype(scores.dtype()))?;
+            scores = scores.add(mask.as_dtype(scores.dtype())?)?;
         }
-        scores = softmax(&scores, &[-1], None);
+        scores = softmax(&scores, &[-1], None)?;
         let value_hat = matmul(&scores, &values)?
             .transpose(&[0, 2, 1, 3])?
             .reshape(&[B, L, -1])?;

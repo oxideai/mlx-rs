@@ -16,6 +16,7 @@ mod convolution;
 mod dropout;
 mod embedding;
 mod linear;
+mod normalization;
 mod transformer;
 mod value_and_grad;
 
@@ -25,6 +26,7 @@ pub use convolution::*;
 pub use dropout::*;
 pub use embedding::*;
 pub use linear::*;
+pub use normalization::*;
 pub use transformer::*;
 pub use value_and_grad::*;
 

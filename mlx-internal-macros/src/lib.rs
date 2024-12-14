@@ -316,9 +316,9 @@ pub fn derive_builder(input: TokenStream) -> TokenStream {
 /// fn foo_device(
 ///     a: i32, // Mandatory argument
 ///     b: i32, // Mandatory argument
-///     #[arg(optional)] c: Option<i32>, // Optional argument
-///     #[arg(optional)] d: impl Into<Option<i32>>, // Optional argument but impl Trait
-///     #[arg(optional)] stream: impl AsRef<Stream>, // stream always optional and placed at the end
+///     #[optional] c: Option<i32>, // Optional argument
+///     #[optional] d: impl Into<Option<i32>>, // Optional argument but impl Trait
+///     #[optional] stream: impl AsRef<Stream>, // stream always optional and placed at the end
 /// ) -> i32 {
 ///     a + b + c.unwrap_or(0) + d.into().unwrap_or(0)
 /// }

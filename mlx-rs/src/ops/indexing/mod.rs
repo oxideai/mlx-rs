@@ -296,14 +296,26 @@ pub trait IndexOp<Idx>: TryIndexOp<Idx> {
 
 impl<T, Idx> IndexOp<Idx> for T where T: TryIndexOp<Idx> {}
 
-// TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
-pub trait IndexMutOp<Idx, Val> {
-    fn index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>);
+pub trait TryIndexMutOp<Idx, Val> {
+    fn try_index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>) -> Result<()>;
 
-    fn index_mut(&mut self, i: Idx, val: Val) {
-        self.index_mut_device(i, val, StreamOrDevice::default())
+    fn try_index_mut(&mut self, i: Idx, val: Val) -> Result<()> {
+        self.try_index_mut_device(i, val, StreamOrDevice::default())
     }
 }
+
+// TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
+pub trait IndexMutOp<Idx, Val>: TryIndexMutOp<Idx, Val> {
+    fn index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>) {
+        self.try_index_mut_device(i, val, stream).unwrap()
+    }
+
+    fn index_mut(&mut self, i: Idx, val: Val) {
+        self.try_index_mut(i, val).unwrap()
+    }
+}
+
+impl<T, Idx, Val> IndexMutOp<Idx, Val> for T where T: TryIndexMutOp<Idx, Val> {}
 
 /// Trait for custom indexing operations.
 pub trait ArrayIndex<'a> {

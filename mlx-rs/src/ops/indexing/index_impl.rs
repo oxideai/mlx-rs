@@ -126,6 +126,16 @@ where
     }
 }
 
+impl<'a> TryIndexOp<&'a [ArrayIndexOp<'a>]> for Array {
+    fn try_index_device(
+        &self,
+        i: &'a [ArrayIndexOp<'a>],
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        get_item_nd(self, i, stream)
+    }
+}
+
 impl<'a, A> TryIndexOp<(A,)> for Array
 where
     A: ArrayIndex<'a>,

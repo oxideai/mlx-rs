@@ -200,7 +200,7 @@ pub fn conv3d_device(
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
 #[default_device]
-pub fn conv_transposed1d_device(
+pub fn conv_transpose1d_device(
     array: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     stride: impl Into<Option<i32>>,
@@ -243,7 +243,7 @@ pub fn conv_transposed1d_device(
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
 #[default_device]
-pub fn conv_transposed2d_device(
+pub fn conv_transpose2d_device(
     array: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32)>>,
@@ -289,7 +289,7 @@ pub fn conv_transposed2d_device(
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
 #[default_device]
-pub fn conv_transposed3d_device(
+pub fn conv_transpose3d_device(
     array: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     stride: impl Into<Option<(i32, i32, i32)>>,
@@ -356,13 +356,13 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed1d() {
+    fn test_conv_transpose1d() {
         // Single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0], &[1, 3, 1]);
         // Single input/output channel kernel
         let weights = Array::from_slice(&[1.0, 0.5], &[1, 2, 1]);
 
-        let result = conv_transposed1d(
+        let result = conv_transpose1d(
             &input,
             &weights,
             Some(1), // stride
@@ -406,13 +406,13 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed2d() {
+    fn test_conv_transpose2d() {
         // 2x2 single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[1, 2, 2, 1]);
         // 2x2 single channel kernel (identity-like)
         let weights = Array::from_slice(&[1.0, 0.0, 0.0, 1.0], &[1, 2, 2, 1]);
 
-        let result = conv_transposed2d(
+        let result = conv_transpose2d(
             &input,
             &weights,
             Some((1, 1)), // stride
@@ -463,14 +463,14 @@ mod tests {
     }
 
     #[test]
-    fn test_conv_transposed3d() {
+    fn test_conv_transpose3d() {
         // 2x2x2 single channel input
         let input = Array::from_slice(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], &[1, 2, 2, 2, 1]);
         // 2x2x2 single channel kernel
         let weights =
             Array::from_slice(&[1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0], &[1, 2, 2, 2, 1]);
 
-        let result = conv_transposed3d(
+        let result = conv_transpose3d(
             &input,
             &weights,
             Some((1, 1, 1)), // stride

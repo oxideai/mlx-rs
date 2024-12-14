@@ -13,18 +13,22 @@ pub mod utils;
 mod activation;
 mod container;
 mod convolution;
+mod convolution_transpose;
 mod dropout;
 mod embedding;
 mod linear;
+mod normalization;
 mod upsample;
 mod value_and_grad;
 
 pub use activation::*;
 pub use container::*;
 pub use convolution::*;
+pub use convolution_transpose::*;
 pub use dropout::*;
 pub use embedding::*;
 pub use linear::*;
+pub use normalization::*;
 pub use upsample::*;
 pub use value_and_grad::*;
 

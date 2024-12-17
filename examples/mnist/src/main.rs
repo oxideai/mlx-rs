@@ -33,6 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let learning_rate = 1e-1;
 
     let (train_images, train_labels, test_images, test_labels) = data::read_data();
+    let loader = data::iterate_data(&train_images, &train_labels, batch_size)?;
 
     let input_dim = train_images[0].shape()[0];
     let mut model = mlp::Mlp::new(num_layers, input_dim, hidden_dim, num_classes)?;
@@ -49,11 +50,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut optimizer = Sgd::new(learning_rate);
 
     for e in 0..num_epochs {
-        let loader = data::iterate_data(&train_images, &train_labels, batch_size);
         let now = std::time::Instant::now();
-        for result in loader {
-            let (x, y) = result?;
-            let (_loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
+        for (x, y) in &loader {
+            let (_loss, grad) = loss_and_grad_fn(&mut model, (x, y))?;
             optimizer.apply(&mut model, grad).unwrap();
             eval_params(model.parameters())?;
         }

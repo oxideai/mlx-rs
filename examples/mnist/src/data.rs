@@ -43,11 +43,12 @@ pub fn read_data() -> (Vec<Array>, Vec<u8>, Array, Array) {
     (train_images, trn_lbl, test_images, test_labels)
 }
 
+/// The iterator is collected to avoid repeated calls to `stack` in the training loop.
 pub fn iterate_data<'a>(
     images: &'a [Array],
     labels: &'a [u8],
     batch_size: usize,
-) -> impl Iterator<Item = Result<(Array, Array), Exception>> + 'a {
+) -> Result<Vec<(Array, Array)>, Exception> {
     images
         .chunks_exact(batch_size)
         .zip(labels.chunks_exact(batch_size))
@@ -56,4 +57,5 @@ pub fn iterate_data<'a>(
             let labels = Array::from_slice(labels, &[batch_size as i32]);
             Ok((images, labels))
         })
+        .collect()
 }

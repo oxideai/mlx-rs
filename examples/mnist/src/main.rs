@@ -58,9 +58,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             eval_params(model.parameters())?;
         }
 
-        let elapsed = now.elapsed();
         // Evaluate on test set
         let accuracy = eval_fn(&mut model, (&test_images, &test_labels))?;
+        let elapsed = now.elapsed();
         println!(
             "Epoch: {}, Test accuracy: {:.2}, Time: {:.2} s",
             e,

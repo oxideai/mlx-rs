@@ -173,6 +173,23 @@ mod tests {
     }
 
     #[test]
+    fn test_module_value_and_grad_with_unary_output() {
+        let mut model = Linear::new(2, 2).unwrap();
+        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
+
+        let loss = |model: &mut Linear, x: &Array| -> Array {
+            model.forward(x).unwrap().sum(None, None).unwrap()
+        };
+
+        let mut vg = module_value_and_grad(loss);
+        let (v, g) = vg(&mut model, &x).unwrap();
+
+        assert_ne!(v.sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(g["weight"].sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(g["bias"].sum(None, None).unwrap(), array!(0.0));
+    }
+
+    #[test]
     fn test_fallible_module_value_and_grad() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();

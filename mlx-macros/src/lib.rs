@@ -23,7 +23,7 @@ mod module_parameters;
 ///     regular: Param<Array>,
 ///
 ///     #[param]
-///     optional: Param<Option<Array>>,
+///     optional: Option<Param<Array>>,
 ///
 ///     #[param]
 ///     nested: Inner,
@@ -44,14 +44,13 @@ mod module_parameters;
 ///     a: Param<Array>,
 /// }
 /// ```
-#[proc_macro_derive(ModuleParameters, attributes(param))]
+#[proc_macro_derive(ModuleParameters, attributes(module, param))]
 pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let module_param_impl = module_parameters::expand_module_parameters(&input).unwrap();
 
     let output = quote! {
         const _: () = {
-            extern crate mlx_rs as _mlx_rs;
             #module_param_impl
         };
     };

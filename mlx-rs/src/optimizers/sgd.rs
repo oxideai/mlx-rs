@@ -77,7 +77,7 @@ impl Optimizer for Sgd {
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> crate::error::Result<()> {
         // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
         // is implemented for Array.

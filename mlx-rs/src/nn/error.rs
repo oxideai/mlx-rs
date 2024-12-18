@@ -1,6 +1,6 @@
 //! Custom error types for mlx-nn
 
-use mlx_rs::error::Exception;
+use crate::error::Exception;
 use thiserror::Error;
 
 /// Error with building a dropout layer

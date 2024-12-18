@@ -72,13 +72,13 @@ impl Optimizer for Adam {
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> crate::error::Result<()> {
         let betas = &self.betas;
         let state = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));
 
         let (new_parameter, new_state) =
-            adam_apply_single(&self.lr, betas, &self.eps, gradient, parameter, state)?;
+            adam_apply_single(&self.lr, betas, &self.eps, gradient, &parameter, state)?;
 
         *state = new_state;
         *parameter = new_parameter;

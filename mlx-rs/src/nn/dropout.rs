@@ -1,10 +1,10 @@
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::module::Module;
-use mlx_rs::Array;
-use mlx_rs::{array, error::Exception, ops::multiply, random::bernoulli};
+use crate::module::Module;
+use crate::Array;
+use crate::{array, error::Exception, ops::multiply, random::bernoulli};
 
-use crate::error::DropoutBuildError;
+use crate::nn::error::DropoutBuildError;
 
 /// Builder for [`Dropout`].
 #[derive(Debug, Clone, Builder)]
@@ -12,6 +12,7 @@ use crate::error::DropoutBuildError;
     build_with = build_dropout,
     default_infallible,
     err = DropoutBuildError,
+    root = crate,
 )]
 pub struct DropoutBuilder {
     /// The probability of zeroing an element.
@@ -38,6 +39,8 @@ fn build_dropout(builder: DropoutBuilder) -> Result<Dropout, DropoutBuildError> 
 /// `p` is the probability of zeroing an element. This is done so the
 /// expected value of a given element will remain the same.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Dropout {
     /// `1-p`, where `p` is the probability of zeroing an element. `p` is default to
     /// [`Dropout::DEFAULT_P`] if not specified.
@@ -60,7 +63,7 @@ impl Module<&Array> for Dropout {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
             return Ok(x.clone());
         }
@@ -81,6 +84,7 @@ impl Module<&Array> for Dropout {
     build_with = build_dropout2d,
     default_infallible,
     err = DropoutBuildError,
+    root = crate,
 )]
 pub struct Dropout2dBuilder {
     /// The probability of zeroing a channel.
@@ -119,6 +123,8 @@ fn build_dropout2d(builder: Dropout2dBuilder) -> Result<Dropout2d, DropoutBuildE
 /// [1]: Thompson, J., Goroshin, R., Jain, A., LeCun, Y. and Bregler C., 2015.
 /// Efficient Object Localization Using Convolutional Networks. CVPR 2015.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Dropout2d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout2d::DEFAULT_P`] if not specified.
@@ -141,7 +147,7 @@ impl Module<&Array> for Dropout2d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
@@ -178,6 +184,7 @@ impl Module<&Array> for Dropout2d {
     build_with = build_dropout3d,
     default_infallible,
     err = DropoutBuildError,
+    root = crate,
 )]
 pub struct Dropout3dBuilder {
     /// The probability of zeroing a channel.
@@ -212,6 +219,8 @@ fn build_dropout3d(builder: Dropout3dBuilder) -> Result<Dropout3d, DropoutBuildE
 /// often beneficial for convolutional layers processing 3D data, like in
 /// medical imaging or video processing.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Dropout3d {
     /// `1-p`, where `p` is the probability of zeroing a channel. `p` is default to
     /// [`Dropout3d::DEFAULT_P`] if not specified.
@@ -234,7 +243,7 @@ impl Module<&Array> for Dropout3d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {
@@ -271,16 +280,16 @@ impl Module<&Array> for Dropout3d {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::random::uniform;
+    use crate::random::uniform;
 
     use super::*;
 
     #[test]
     fn test_dropout() {
-        mlx_rs::random::seed(959).unwrap();
+        crate::random::seed(959).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
-        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(a.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             a.mean(None, None).unwrap().item::<f32>(),
             0.511_429_2,
@@ -293,7 +302,7 @@ mod tests {
         );
         let result = Dropout::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
-        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
             0.477_913_62,
@@ -308,10 +317,10 @@ mod tests {
 
     #[test]
     fn test_dropout2d() {
-        mlx_rs::random::seed(695).unwrap();
+        crate::random::seed(695).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
-        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(a.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             a.mean(None, None).unwrap().item::<f32>(),
             0.457_839_9,
@@ -324,7 +333,7 @@ mod tests {
         );
         let result = Dropout2d::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
-        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
             0.368_284_34,
@@ -339,10 +348,10 @@ mod tests {
 
     #[test]
     fn test_dropout3d() {
-        mlx_rs::random::seed(23).unwrap();
+        crate::random::seed(23).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
-        assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(a.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             a.mean(None, None).unwrap().item::<f32>(),
             0.500_606_2,
@@ -355,7 +364,7 @@ mod tests {
         );
         let result = Dropout3d::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 8, 4]);
-        assert_eq!(result.dtype(), mlx_rs::Dtype::Float32);
+        assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
             result.mean(None, None).unwrap().item::<f32>(),
             0.237_284_15,

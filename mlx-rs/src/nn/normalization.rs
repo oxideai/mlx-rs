@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
@@ -26,6 +26,7 @@ fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exceptio
 #[builder(
     build_with = build_instance_norm,
     err = Exception,
+    root = crate,
 )]
 pub struct InstanceNormBuilder {
     /// Number of features in the input
@@ -58,8 +59,8 @@ fn build_instance_norm(builder: InstanceNormBuilder) -> Result<InstanceNorm, Exc
     Ok(InstanceNorm {
         dimensions: builder.dimensions,
         eps: array!(eps),
-        weight: Param::new(weight),
-        bias: Param::new(bias),
+        weight: weight.map(Param::new),
+        bias: bias.map(Param::new),
     })
 }
 
@@ -69,6 +70,8 @@ fn build_instance_norm(builder: InstanceNormBuilder) -> Result<InstanceNorm, Exc
 ///
 /// 1. [https://arxiv.org/abs/1607.08022](https://arxiv.org/abs/1607.08022)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct InstanceNorm {
     /// Number of features in the input
     pub dimensions: i32,
@@ -77,10 +80,10 @@ pub struct InstanceNorm {
     pub eps: Array,
 
     /// An optional trainable weight
-    pub weight: Param<Option<Array>>,
+    pub weight: Option<Param<Array>>,
 
     /// An optional trainable bias
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 }
 
 impl InstanceNorm {
@@ -95,13 +98,13 @@ impl Module<&Array> for InstanceNorm {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
         let x = instance_norm(x, &reduction_axes, &self.eps)?;
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            weight.multiply(x)?.add(bias)
+            weight.borrow().multiply(x)?.add(&*bias.borrow())
         } else {
             Ok(x)
         }
@@ -115,6 +118,7 @@ impl Module<&Array> for InstanceNorm {
 #[builder(
     build_with = build_layer_norm,
     err = Exception,
+    root = crate,
 )]
 pub struct LayerNormBuilder {
     /// Number of features in the input
@@ -147,8 +151,8 @@ fn build_layer_norm(builder: LayerNormBuilder) -> Result<LayerNorm, Exception> {
     Ok(LayerNorm {
         dimensions: builder.dimensions,
         eps,
-        weight: Param::new(weight),
-        bias: Param::new(bias),
+        weight: weight.map(Param::new),
+        bias: bias.map(Param::new),
     })
 }
 
@@ -158,6 +162,8 @@ fn build_layer_norm(builder: LayerNormBuilder) -> Result<LayerNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1607.06450](https://arxiv.org/abs/1607.06450)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct LayerNorm {
     /// Number of features in the input
     pub dimensions: i32,
@@ -167,11 +173,11 @@ pub struct LayerNorm {
 
     /// An optional trainable weight
     #[param]
-    pub weight: Param<Option<Array>>,
+    pub weight: Option<Param<Array>>,
 
     /// An optional trainable bias
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 }
 
 impl LayerNorm {
@@ -186,11 +192,18 @@ impl Module<&Array> for LayerNorm {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let weight = self.weight.as_ref();
-        let bias = self.bias.as_ref();
-        let eps = self.eps;
-        mlx_rs::fast::layer_norm(x, weight, bias, eps)
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        // This is unfortunately how we can get around the borrow checker
+        match &self.weight {
+            Some(weight) => match &self.bias {
+                Some(bias) => crate::fast::layer_norm(x, Some(&*weight.borrow()), Some(&*bias.borrow()), self.eps),
+                None => crate::fast::layer_norm(x, Some(&*weight.borrow()), None, self.eps),
+            },
+            None => match &self.bias {
+                Some(bias) => crate::fast::layer_norm(x, None, Some(&*bias.borrow()), self.eps),
+                None => crate::fast::layer_norm(x, None, None, self.eps),
+            },
+        }
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -201,6 +214,7 @@ impl Module<&Array> for LayerNorm {
 #[builder(
     build_with = build_rms_norm,
     err = Exception,
+    root = crate,
 )]
 pub struct RmsNormBuilder {
     /// Number of features in the input
@@ -236,6 +250,8 @@ fn build_rms_norm(builder: RmsNormBuilder) -> Result<RmsNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1910.07467](https://arxiv.org/abs/1910.07467)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct RmsNorm {
     /// Weight
     #[param]
@@ -254,10 +270,10 @@ impl Module<&Array> for RmsNorm {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let weight = self.weight.as_ref();
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let weight = self.weight.borrow();
         let eps = self.eps;
-        mlx_rs::fast::rms_norm(x, weight, eps)
+        crate::fast::rms_norm(x, &*weight, eps)
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -268,6 +284,7 @@ impl Module<&Array> for RmsNorm {
 #[builder(
     build_with = build_group_norm,
     err = Exception,
+    root = crate,
 )]
 pub struct GroupNormBuilder {
     /// Number of groups to separate the features into
@@ -311,8 +328,8 @@ fn build_group_norm(builder: GroupNormBuilder) -> Result<GroupNorm, Exception> {
         dimensions: builder.dimensions,
         eps: array!(eps),
         pytorch_compatible,
-        weight: Param::new(weight),
-        bias: Param::new(bias),
+        weight: weight.map(Param::new),
+        bias: bias.map(Param::new),
     })
 }
 
@@ -322,6 +339,8 @@ fn build_group_norm(builder: GroupNormBuilder) -> Result<GroupNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1803.08494](https://arxiv.org/abs/1803.08494)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct GroupNorm {
     /// Number of groups to separate the features into
     pub group_count: i32,
@@ -337,11 +356,11 @@ pub struct GroupNorm {
 
     /// An optional trainable weight
     #[param]
-    pub weight: Param<Option<Array>>,
+    pub weight: Option<Param<Array>>,
 
     /// An optional trainable bias
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 }
 
 impl GroupNorm {
@@ -367,7 +386,7 @@ impl GroupNorm {
             .reshape(&[batch, self.group_count, -1])?;
 
         // Normalize
-        let x = mlx_rs::fast::layer_norm(x, None, None, self.eps.item::<f32>())?;
+        let x = crate::fast::layer_norm(x, None, None, self.eps.item::<f32>())?;
 
         let x = x.reshape(&[batch, self.group_count, -1, group_size])?;
 
@@ -403,7 +422,7 @@ impl Module<&Array> for GroupNorm {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let x = if self.pytorch_compatible {
             self.pytorch_group_norm(x)?
         } else {
@@ -411,7 +430,7 @@ impl Module<&Array> for GroupNorm {
         };
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            weight.multiply(&x)?.add(bias)
+            weight.borrow().multiply(&x)?.add(&*bias.borrow())
         } else {
             Ok(x)
         }
@@ -425,6 +444,7 @@ impl Module<&Array> for GroupNorm {
 #[builder(
     build_with = build_batch_norm,
     err = Exception,
+    root = crate,
 )]
 pub struct BatchNormBuilder {
     /// Number of features in the input
@@ -479,10 +499,10 @@ fn build_batch_norm(builder: BatchNormBuilder) -> Result<BatchNorm, Exception> {
         feature_count: builder.feature_count,
         eps: array!(eps),
         momentum: array!(momentum),
-        weight: Param::new(weight),
-        bias: Param::new(bias),
-        running_mean: Param::new(running_mean),
-        running_var: Param::new(running_var),
+        weight: weight.map(Param::new),
+        bias: bias.map(Param::new),
+        running_mean: running_mean.map(Param::new),
+        running_var: running_var.map(Param::new),
         training: BatchNorm::DEFAULT_TRAINING,
     })
 }
@@ -493,6 +513,8 @@ fn build_batch_norm(builder: BatchNormBuilder) -> Result<BatchNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1502.03167](https://arxiv.org/abs/1502.03167)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct BatchNorm {
     /// Number of features in the input
     pub feature_count: i32,
@@ -505,19 +527,19 @@ pub struct BatchNorm {
 
     /// An optional trainable weight
     #[param]
-    pub weight: Param<Option<Array>>,
+    pub weight: Option<Param<Array>>,
 
     /// An optional trainable bias
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 
     /// Tracked running mean
     #[param]
-    pub running_mean: Param<Option<Array>>,
+    pub running_mean: Option<Param<Array>>,
 
     /// Tracked running variance
     #[param]
-    pub running_var: Param<Option<Array>>,
+    pub running_var: Option<Param<Array>>,
 
     /// If `true`, the module is in training mode.
     pub training: bool,
@@ -553,7 +575,7 @@ impl Module<&Array> for BatchNorm {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
         if !(2..=4).contains(&ndim) {
             return Err(Exception::custom(
@@ -562,35 +584,42 @@ impl Module<&Array> for BatchNorm {
         }
 
         let (mean, variance) = Self::stats(x)?;
-        let mut mean = Cow::Owned(mean);
-        let mut variance = Cow::Owned(variance);
+        // Unfortunate workaround to avoid borrow checker complaints
+        let mut use_non_train_mean_and_var = false;
 
         if let (Some(running_mean), Some(running_var)) =
-            (self.running_mean.as_mut(), self.running_var.as_mut())
+            (&self.running_mean, &self.running_var)
         {
             if self.training {
                 let mu = &self.momentum;
                 // SAFETY: momentum is a single element array
                 let one_minus_mu = array!(1.0) - mu;
 
+                let mut running_mean = running_mean.borrow_mut();
+                let mut running_var = running_var.borrow_mut();
+
                 *running_mean = one_minus_mu
-                    .multiply(&running_mean)?
+                    .multiply(&*running_mean)?
                     .add(mu.multiply(&mean)?)?;
                 *running_var = one_minus_mu
-                    .multiply(&running_var)?
+                    .multiply(&*running_var)?
                     .add(mu.multiply(&variance)?)?;
             } else {
-                mean = Cow::Borrowed(&*running_mean);
-                variance = Cow::Borrowed(&*running_var);
+                use_non_train_mean_and_var = true;
             }
         }
 
-        let x = x
-            .subtract(&mean)?
-            .multiply(rsqrt(&variance.add(&self.eps)?)?)?;
+        let x = if use_non_train_mean_and_var {
+            // SAFETY: we have already checked that running_mean and running_var are Some
+            let mean = self.running_mean.as_ref().unwrap();
+            let variance = self.running_var.as_ref().unwrap();
+            x.subtract(&*mean.borrow())?.multiply(rsqrt(&variance.borrow().add(&self.eps)?)?)?
+        } else {
+            x.subtract(&mean)?.multiply(rsqrt(&variance.add(&self.eps)?)?)?
+        };
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
-            weight.multiply(&x)?.add(bias)
+            weight.borrow().multiply(&x)?.add(&*bias.borrow())
         } else {
             Ok(x)
         }
@@ -604,7 +633,7 @@ impl Module<&Array> for BatchNorm {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{
+    use crate::{
         prelude::{Ellipsis, IndexOp},
         Dtype,
     };
@@ -613,8 +642,8 @@ mod tests {
 
     #[test]
     fn test_instance_norm() {
-        mlx_rs::random::seed(435).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(435).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -649,8 +678,8 @@ mod tests {
 
     #[test]
     fn test_layer_norm() {
-        mlx_rs::random::seed(635).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(635).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -685,8 +714,8 @@ mod tests {
 
     #[test]
     fn test_rms_norm() {
-        mlx_rs::random::seed(103).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(103).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -717,8 +746,8 @@ mod tests {
 
     #[test]
     fn test_group_norm() {
-        mlx_rs::random::seed(855).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(855).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -753,8 +782,8 @@ mod tests {
 
     #[test]
     fn test_batch_norm() {
-        mlx_rs::random::seed(266).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(266).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(

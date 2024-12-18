@@ -3,9 +3,7 @@
 #![deny(missing_docs)]
 
 use std::{
-    borrow::{Borrow, Cow},
-    collections::HashMap,
-    rc::Rc,
+    borrow::{Borrow, Cow}, collections::HashMap, ops::DerefMut, rc::Rc
 };
 
 use crate::{
@@ -47,24 +45,24 @@ pub trait Optimizer {
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        parameter: impl DerefMut<Target = Array>,
     ) -> crate::error::Result<()>;
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
     fn apply<M>(
         &mut self,
-        model: &mut M,
+        model: &M,
         gradients: impl Borrow<FlattenedModuleParam>,
     ) -> crate::error::Result<()>
     where
         M: ModuleParameters,
     {
-        let mut parameters = model.parameters_mut().flatten();
+        let parameters = model.parameters().flatten();
 
         for (key, gradient) in gradients.borrow().iter() {
-            if let Some(parameter) = parameters.get_mut(key) {
-                self.apply_single(key, gradient, parameter)?;
+            if let Some(parameter) = parameters.get(key) {
+                self.apply_single(key, gradient, parameter.borrow_mut())?;
             }
         }
 

@@ -57,7 +57,7 @@ impl Optimizer for AdaGrad {
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> crate::error::Result<()> {
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
 

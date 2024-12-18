@@ -259,11 +259,11 @@ impl Optimizer for Adafactor {
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> crate::error::Result<()> {
         let beta1_is_some = self.beta1.is_some();
         let state = get_mut_or_insert_with(&mut self.state, key, || {
-            AdafactorState::new(parameter, beta1_is_some)
+            AdafactorState::new(&parameter, beta1_is_some)
         })?;
 
         state.step = state.step.add(array!(1))?;
@@ -272,7 +272,7 @@ impl Optimizer for Adafactor {
         let factored = gradient_shape.len() >= 2;
         let step = &state.step;
 
-        let parameter_rms = rms(parameter)?;
+        let parameter_rms = rms(&parameter)?;
         let lr = compute_lr(
             self.relative_step,
             self.warmup_init,

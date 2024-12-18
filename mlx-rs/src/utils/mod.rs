@@ -1,8 +1,11 @@
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
+use crate::module::ModuleParamRef;
 use crate::{complex64, error::Exception, Array, FromNested};
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::{marker::PhantomData, rc::Rc};
 
 /// Success status code from the c binding
@@ -77,6 +80,19 @@ impl VectorArray {
                 })
                 .collect::<Result<T, Exception>>()
         }
+    }
+
+    pub(crate) fn try_from_module_parameter_values<'a>(param_values: impl IntoIterator<Item = &'a RefCell<Array>>) -> Result<Self, Exception> {
+        VectorArray::try_from_op(|res| unsafe {
+            let mut status = SUCCESS;
+            for val in param_values {
+                status = mlx_sys::mlx_vector_array_append_value(*res, val.borrow().as_ptr());
+                if status != SUCCESS {
+                    break;
+                }
+            }
+            status
+        })
     }
 }
 
@@ -348,4 +364,89 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
     }
 
     map.get_mut(key).unwrap()
+}
+
+
+/// Helper type to represent either a single value or a pair of values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SingleOrPair<T = i32> {
+    /// Single value.
+    Single(T),
+
+    /// Pair of values.
+    Pair(T, T),
+}
+
+impl<T> From<T> for SingleOrPair<T> {
+    fn from(value: T) -> Self {
+        SingleOrPair::Single(value)
+    }
+}
+
+impl<T> From<(T, T)> for SingleOrPair<T> {
+    fn from(value: (T, T)) -> Self {
+        SingleOrPair::Pair(value.0, value.1)
+    }
+}
+
+impl<T: Clone> From<SingleOrPair<T>> for (T, T) {
+    fn from(value: SingleOrPair<T>) -> Self {
+        match value {
+            SingleOrPair::Single(v) => (v.clone(), v),
+            SingleOrPair::Pair(v1, v2) => (v1, v2),
+        }
+    }
+}
+
+/// Helper type to represent either a single value or a triple of values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SingleOrTriple<T = i32> {
+    /// Single value.
+    Single(T),
+
+    /// Triple of values.
+    Triple(T, T, T),
+}
+
+impl<T> From<T> for SingleOrTriple<T> {
+    fn from(value: T) -> Self {
+        SingleOrTriple::Single(value)
+    }
+}
+
+impl<T> From<(T, T, T)> for SingleOrTriple<T> {
+    fn from(value: (T, T, T)) -> Self {
+        SingleOrTriple::Triple(value.0, value.1, value.2)
+    }
+}
+
+impl<T: Clone> From<SingleOrTriple<T>> for (T, T, T) {
+    fn from(value: SingleOrTriple<T>) -> Self {
+        match value {
+            SingleOrTriple::Single(v) => (v.clone(), v.clone(), v),
+            SingleOrTriple::Triple(v1, v2, v3) => (v1, v2, v3),
+        }
+    }
+}
+
+/// Helper type to represent either a single value or a vector of values.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SingleOrVec<T> {
+    /// Single value.
+    Single(T),
+
+    /// Vector of values.
+    Vec(Vec<T>),
+}
+
+impl<T> From<T> for SingleOrVec<T> {
+    fn from(value: T) -> Self {
+        SingleOrVec::Single(value)
+    }
+}
+
+impl<T> From<Vec<T>> for SingleOrVec<T> {
+    fn from(value: Vec<T>) -> Self {
+        SingleOrVec::Vec(value)
+    }
 }

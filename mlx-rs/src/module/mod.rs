@@ -4,9 +4,11 @@
 //! crate. This also allows using the `mlx_macros::ModuleParameters` derive macro in crates other
 //! than `mlx-nn`.
 
+mod cache;
 #[allow(clippy::module_inception)]
 mod module;
 mod param;
 
+pub use cache::*;
 pub use module::*;
 pub use param::*;

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use dyn_clone::DynClone;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     error::Exception,
     module::Module,
     ops::{matmul, softmax},
@@ -11,7 +11,7 @@ use mlx_rs::{
     Array,
 };
 
-use crate::{
+use crate::nn::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
     Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu,
 };
@@ -33,6 +33,7 @@ impl<M> Activation for M where
 #[builder(
     build_with = build_multi_head_attention,
     err = MultiHeadAttentionBuildError,
+    root = crate
 )]
 pub struct MultiHeadAttentionBuilder {
     /// Model dimensions and default for the other dimensions if they are not supplied
@@ -109,6 +110,8 @@ fn build_multi_head_attention(
 
 /// Implements the scaled dot product attention with multiple heads.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct MultiHeadAttention {
     /// Number of attention heads
     pub num_heads: i32,
@@ -197,7 +200,7 @@ where
     type Output = Array;
 
     #[allow(non_snake_case)]
-    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
 
         let queries = self.query_proj.forward(input.queries)?;
@@ -244,6 +247,7 @@ where
 #[builder(
     build_with = build_transformer_encoder_layer,
     err = TransformerBulidError,
+    root = crate
 )]
 struct TransformerEncoderLayerBuilder {
     pub dimensions: i32,
@@ -314,6 +318,8 @@ fn build_transformer_encoder_layer(
 
 /// Transformer encoder layer.
 #[derive(Debug, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoderLayer {
     /// Multi-head attention module
     #[param]
@@ -386,7 +392,7 @@ where
 
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let mask = input.mask;
@@ -441,6 +447,7 @@ where
 #[builder(
     build_with = build_transformer_encoder,
     err = TransformerBulidError,
+    root = crate
 )]
 struct TransformerEncoderBuilder {
     pub layer_count: usize,
@@ -504,6 +511,8 @@ fn build_transformer_encoder(
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoder {
     #[param]
     pub layers: Vec<TransformerEncoderLayer>,
@@ -520,14 +529,14 @@ where
 
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let mask = input.mask;
 
         let mut x = Cow::Borrowed(x);
 
-        for l in &mut self.layers {
+        for l in &self.layers {
             x = Cow::Owned(l.forward((&*x, mask))?);
         }
 
@@ -548,6 +557,7 @@ where
 #[builder(
     build_with = build_transformer_decoder_layer,
     err = TransformerBulidError,
+    root = crate
 )]
 struct TransformerDecoderLayerBuilder {
     pub dimensions: i32,
@@ -619,6 +629,8 @@ fn build_transformer_decoder_layer(
 }
 
 #[derive(Debug, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoderLayer {
     #[param]
     pub self_attention: MultiHeadAttention,
@@ -703,7 +715,7 @@ where
 
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let memory = input.memory;
@@ -776,6 +788,7 @@ where
 #[builder(
     build_with = build_transformer_decoder,
     err = TransformerBulidError,
+    root = crate
 )]
 struct TransformerDecoderBuilder {
     pub layer_count: usize,
@@ -840,6 +853,8 @@ fn build_transformer_decoder(
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoder {
     #[param]
     pub layers: Vec<TransformerDecoderLayer>,
@@ -856,7 +871,7 @@ where
 
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let memory = input.memory;
@@ -865,7 +880,7 @@ where
 
         let mut x = Cow::Borrowed(x);
 
-        for l in &mut self.layers {
+        for l in &self.layers {
             x = Cow::Owned(l.forward((&*x, memory, x_mask, memory_mask))?);
         }
 
@@ -887,6 +902,7 @@ where
 #[builder(
     build_with = build_transformer,
     err = TransformerBulidError,
+    root = crate
 )]
 pub struct TransformerBuilder {
     /// number of expected features in the encoder/decoder
@@ -979,6 +995,8 @@ fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, Transfo
 /// The interaction between encoder and decoder happens through the attention
 /// mechanism.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Transformer {
     /// Encoder module
     #[param]
@@ -1056,7 +1074,7 @@ where
 
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, input: T) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let source = input.source;
         let target = input.target;

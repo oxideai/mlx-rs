@@ -69,7 +69,7 @@ impl Optimizer for Adamax {
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> crate::error::Result<()> {
         let (b1, b2) = &self.betas;
         let (m, v) = get_mut_or_insert_with(&mut self.state, key, || (array!(0.0), array!(0.0)));

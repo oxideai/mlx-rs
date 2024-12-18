@@ -8,7 +8,6 @@
 pub mod error;
 pub mod losses;
 pub mod macros;
-pub mod utils;
 
 mod activation;
 mod container;
@@ -38,5 +37,5 @@ pub use value_and_grad::*;
 
 /// Re-export of the `mlx-nn-module` crate.
 pub mod module {
-    pub use mlx_rs::module::*;
+    pub use crate::module::*;
 }

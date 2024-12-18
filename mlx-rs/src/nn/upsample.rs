@@ -1,4 +1,4 @@
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     macros::ModuleParameters,
@@ -36,6 +36,7 @@ pub enum UpsampleMode {
 
 /// Upsample the input signal spatially
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct Upsample {
     /// The multiplier for the spatial size.
     ///
@@ -73,7 +74,7 @@ impl<'a> Module<&'a Array> for Upsample {
 
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Self::Output, Self::Error> {
+    fn forward(&self, x: &'a Array) -> Result<Self::Output, Self::Error> {
         let dimensions = x.ndim() - 2;
 
         if dimensions == 0 {
@@ -346,7 +347,7 @@ fn scaled_indices(
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::assert_array_eq;
+    use crate::assert_array_eq;
 
     use super::*;
 

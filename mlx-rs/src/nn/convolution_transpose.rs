@@ -1,50 +1,52 @@
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, Param};
-use mlx_rs::{
+use crate::module::{Module, Param};
+use crate::{
     error::Exception,
-    ops::{conv1d, conv2d, zeros},
+    ops::{conv_transpose1d, conv_transpose2d, conv_transpose3d, zeros},
     random::uniform,
     Array,
 };
 
 use crate::utils::{SingleOrPair, SingleOrTriple};
 
-/// Builder for the `Conv1d` module.
+/// Builder for the `ConvTranspose1d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
-    build_with = build_conv1d,
+    build_with = build_conv_transpose_1d,
     err = Exception,
+    root = crate,
 )]
-pub struct Conv1dBuilder {
-    /// Number of input channels.
+pub struct ConvTranspose1dBuilder {
+    /// The number of input channels.
     pub input_channels: i32,
 
-    /// Number of output channels.
+    /// The number of output channels.
     pub output_channels: i32,
 
-    /// Size of the convolution filters.
+    /// The size of the convolution filters.
     pub kernel_size: i32,
 
-    /// If `true`, add a learnable bias to the output. Default to [`Conv1d::DEFAULT_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`ConvTranspose1d::DEFAULT_BIAS`] if not
     /// specified.
-    #[builder(optional, default = Conv1d::DEFAULT_BIAS)]
+    #[builder(optional, default = ConvTranspose1d::DEFAULT_BIAS)]
     pub bias: bool,
 
-    /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
-    #[builder(optional, default = Conv1d::DEFAULT_PADDING)]
+    /// Padding. Default to [`ConvTranspose1d::DEFAULT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose1d::DEFAULT_PADDING)]
     pub padding: i32,
 
-    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv1d::DEFAULT_STRIDE)]
+    /// Stride. Default to [`ConvTranspose1d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = ConvTranspose1d::DEFAULT_STRIDE)]
     pub stride: i32,
 }
 
-fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
+fn build_conv_transpose_1d(builder: ConvTranspose1dBuilder) -> Result<ConvTranspose1d, Exception> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size = builder.kernel_size;
-    let with_bias = builder.bias;
+
+    let bias = builder.bias;
     let padding = builder.padding;
     let stride = builder.stride;
 
@@ -55,15 +57,15 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
         &[output_channels, kernel_size, input_channels],
         None,
     )?;
-    let bias = if with_bias {
+    let bias = if bias {
         Some(zeros::<f32>(&[output_channels])?)
     } else {
         None
     };
 
-    Ok(Conv1d {
+    Ok(ConvTranspose1d {
         weight: Param::new(weight),
-        bias: Param::new(bias),
+        bias: bias.map(Param::new),
         padding,
         stride,
     })
@@ -77,14 +79,16 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
 /// - `L` is the sequence length
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
-pub struct Conv1d {
+#[module(root = crate)]
+#[buildable(root = crate)]
+pub struct ConvTranspose1d {
     /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
 
     /// The bias of the convolution layer.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 
     /// Padding. Default to 0 if not specified.
     pub padding: i32,
@@ -93,8 +97,8 @@ pub struct Conv1d {
     pub stride: i32,
 }
 
-impl Conv1d {
-    /// Default value for `with_bias` if not specified.
+impl ConvTranspose1d {
+    /// Default value for `bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
@@ -104,21 +108,21 @@ impl Conv1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl Module<&Array> for Conv1d {
-    type Error = Exception;
+impl Module<&Array> for ConvTranspose1d {
     type Output = Array;
+    type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut y = conv1d(
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let mut y = conv_transpose1d(
             x,
-            self.weight.as_ref(),
+            &*self.weight.borrow(),
             self.stride,
             self.padding,
             None,
             None,
         )?;
-        if let Some(bias) = &self.bias.value {
-            y += bias;
+        if let Some(bias) = &self.bias {
+            y += &*bias.borrow();
         }
         Ok(y)
     }
@@ -126,41 +130,43 @@ impl Module<&Array> for Conv1d {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Builder for the `Conv2d` module.
+/// Builder for the `ConvTranspose2d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
-    build_with = build_conv2d,
+    build_with = build_conv_transpose_2d,
     err = Exception,
+    root = crate,
 )]
-pub struct Conv2dBuilder {
-    /// Number of input channels.
+pub struct ConvTranspose2dBuilder {
+    /// The number of input channels.
     pub input_channels: i32,
 
-    /// Number of output channels.
+    /// The number of output channels.
     pub output_channels: i32,
 
-    /// Size of the convolution filters.
+    /// The size of the convolution filters.
     pub kernel_size: SingleOrPair<i32>,
 
-    /// If `true`, add a learnable bias to the output. Default to [`Conv2d::DEFAULT_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`ConvTranspose2d::DEFAULT_BIAS`] if not
     /// specified.
-    #[builder(optional, default = Conv2d::DEFAULT_BIAS)]
-    pub bias: bool,
+    #[builder(optional, default = ConvTranspose2d::DEFAULT_BIAS)]
+    bias: bool,
 
-    /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
-    #[builder(optional, default = Conv2d::DEFAULT_PADDING)]
-    pub padding: SingleOrPair<i32>,
+    /// Padding. Default to [`ConvTranspose2d::DEFAULT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose2d::DEFAULT_PADDING)]
+    padding: SingleOrPair<i32>,
 
-    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv2d::DEFAULT_STRIDE)]
-    pub stride: SingleOrPair<i32>,
+    /// Stride. Default to [`ConvTranspose2d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = ConvTranspose2d::DEFAULT_STRIDE)]
+    stride: SingleOrPair<i32>,
 }
 
-fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
+fn build_conv_transpose_2d(builder: ConvTranspose2dBuilder) -> Result<ConvTranspose2d, Exception> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size: (i32, i32) = builder.kernel_size.into();
-    let with_bias = builder.bias;
+
+    let bias = builder.bias;
     let padding = builder.padding.into();
     let stride = builder.stride.into();
 
@@ -176,15 +182,15 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
         ],
         None,
     )?;
-    let bias = if with_bias {
+    let bias = if bias {
         Some(zeros::<f32>(&[output_channels])?)
     } else {
         None
     };
 
-    Ok(Conv2d {
+    Ok(ConvTranspose2d {
         weight: Param::new(weight),
-        bias: Param::new(bias),
+        bias: bias.map(Param::new),
         padding,
         stride,
     })
@@ -199,14 +205,16 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
-pub struct Conv2d {
+#[module(root = crate)]
+#[buildable(root = crate)]
+pub struct ConvTranspose2d {
     /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
 
     /// The bias of the convolution layer.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 
     /// Padding. Default to `(0, 0)` if not specified.
     pub padding: (i32, i32),
@@ -215,32 +223,32 @@ pub struct Conv2d {
     pub stride: (i32, i32),
 }
 
-impl Conv2d {
-    /// Default value for `with_bias` if not specified.
+impl ConvTranspose2d {
+    /// Default value for `bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
-    pub const DEFAULT_PADDING: SingleOrPair = SingleOrPair::Pair(0, 0);
+    pub const DEFAULT_PADDING: SingleOrPair<i32> = SingleOrPair::Pair(0, 0);
 
     /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
+    pub const DEFAULT_STRIDE: SingleOrPair<i32> = SingleOrPair::Pair(1, 1);
 }
 
-impl Module<&Array> for Conv2d {
-    type Error = Exception;
+impl Module<&Array> for ConvTranspose2d {
     type Output = Array;
+    type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut y = conv2d(
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let mut y = conv_transpose2d(
             x,
-            self.weight.as_ref(),
+            &*self.weight.borrow(),
             self.stride,
             self.padding,
             None,
             None,
         )?;
-        if let Some(bias) = &self.bias.value {
-            y += bias;
+        if let Some(bias) = &self.bias {
+            y += &*bias.borrow();
         }
         Ok(y)
     }
@@ -248,41 +256,43 @@ impl Module<&Array> for Conv2d {
     fn training_mode(&mut self, _: bool) {}
 }
 
-/// Builder for the `Conv3d` module.
+/// Builder for the `ConvTranspose3d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
-    build_with = build_conv3d,
+    build_with = build_conv_transpose_3d,
     err = Exception,
+    root = crate,
 )]
-pub struct Conv3dBuilder {
-    /// Number of input channels.
+pub struct ConvTranspose3dBuilder {
+    /// The number of input channels.
     pub input_channels: i32,
 
-    /// Number of output channels.
+    /// The number of output channels.
     pub output_channels: i32,
 
-    /// Size of the convolution filters.
+    /// The size of the convolution filters.
     pub kernel_size: SingleOrTriple<i32>,
 
-    /// If `true`, add a learnable bias to the output. Default to [`Conv3d::DEFAULT_BIAS`] if not
+    /// If `true`, add a learnable bias to the output. Default to [`ConvTranspose3d::DEFAULT_BIAS`] if not
     /// specified.
-    #[builder(optional, default = Conv3d::DEFAULT_BIAS)]
+    #[builder(optional, default = ConvTranspose3d::DEFAULT_BIAS)]
     pub bias: bool,
 
-    /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
-    #[builder(optional, default = Conv3d::DEFAULT_PADDING)]
+    /// Padding. Default to [`ConvTranspose3d::DEFAULT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose3d::DEFAULT_PADDING)]
     pub padding: SingleOrTriple<i32>,
 
-    /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv3d::DEFAULT_STRIDE)]
+    /// Stride. Default to [`ConvTranspose3d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = ConvTranspose3d::DEFAULT_STRIDE)]
     pub stride: SingleOrTriple<i32>,
 }
 
-fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
+fn build_conv_transpose_3d(builder: ConvTranspose3dBuilder) -> Result<ConvTranspose3d, Exception> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size: (i32, i32, i32) = builder.kernel_size.into();
-    let with_bias = builder.bias;
+
+    let bias = builder.bias;
     let padding = builder.padding.into();
     let stride = builder.stride.into();
 
@@ -300,15 +310,15 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
         ],
         None,
     )?;
-    let bias = if with_bias {
+    let bias = if bias {
         Some(zeros::<f32>(&[output_channels])?)
     } else {
         None
     };
 
-    Ok(Conv3d {
+    Ok(ConvTranspose3d {
         weight: Param::new(weight),
-        bias: Param::new(bias),
+        bias: bias.map(Param::new),
         padding,
         stride,
     })
@@ -323,14 +333,16 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
-pub struct Conv3d {
+#[module(root = crate)]
+#[buildable(root = crate)]
+pub struct ConvTranspose3d {
     /// The weight of the convolution layer.
     #[param]
     pub weight: Param<Array>,
 
     /// The bias of the convolution layer.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 
     /// Padding. Default to `(0, 0, 0)` if not specified.
     pub padding: (i32, i32, i32),
@@ -339,8 +351,8 @@ pub struct Conv3d {
     pub stride: (i32, i32, i32),
 }
 
-impl Conv3d {
-    /// Default value for `with_bias` if not specified.
+impl ConvTranspose3d {
+    /// Default value for `bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
     /// Default value for `padding` if not specified.
@@ -350,100 +362,24 @@ impl Conv3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl Module<&Array> for Conv3d {
-    type Error = Exception;
+impl Module<&Array> for ConvTranspose3d {
     type Output = Array;
+    type Error = Exception;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut y = mlx_rs::ops::conv3d(
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        let mut y = conv_transpose3d(
             x,
-            self.weight.as_ref(),
+            &*self.weight.borrow(),
             self.stride,
             self.padding,
             None,
             None,
         )?;
-        if let Some(bias) = &self.bias.value {
-            y += bias;
+        if let Some(bias) = &self.bias {
+            y += &*bias.borrow();
         }
         Ok(y)
     }
 
     fn training_mode(&mut self, _: bool) {}
-}
-
-// The following tests are ported from the swift bindings:
-// mlx-swift/Tests/MLXTests/IntegrationTests.swift
-#[cfg(test)]
-mod tests {
-    use float_eq::assert_float_eq;
-    use mlx_rs::module::Module;
-    use mlx_rs::{random::uniform, Dtype};
-
-    use crate::Conv1d;
-
-    #[test]
-    fn test_conv1d() {
-        mlx_rs::random::seed(819).unwrap();
-        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
-        assert_eq!(a.shape(), &[2, 8, 16]);
-        assert_eq!(a.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
-            0.512_987_5,
-            abs <= 0.010_259_75
-        );
-        assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
-            131.324_8,
-            abs <= 2.626_496
-        );
-        let result = Conv1d::new(16, 2, 8).unwrap().forward(&a).unwrap();
-        assert_eq!(result.shape(), &[2, 1, 2]);
-        assert_eq!(result.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
-            0.264_865_2,
-            abs <= 0.005_297_303_7
-        );
-        assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
-            1.059_460_8,
-            abs <= 0.021_189_215
-        );
-    }
-
-    #[test]
-    fn test_conv2d() {
-        mlx_rs::random::seed(62).unwrap();
-        let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
-        assert_eq!(a.shape(), &[2, 8, 8, 4]);
-        assert_eq!(a.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
-            0.522_504_27,
-            abs <= 0.010_450_086
-        );
-        assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
-            267.522_2,
-            abs <= 5.350_444
-        );
-        let result = crate::Conv2d::new(4, 2, (8, 8))
-            .unwrap()
-            .forward(&a)
-            .unwrap();
-        assert_eq!(result.shape(), &[2, 1, 1, 2]);
-        assert_eq!(result.dtype(), Dtype::Float32);
-        assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
-            -0.279_321_5,
-            abs <= 0.005_586_43
-        );
-        assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
-            -1.117_286,
-            abs <= 0.022_345_72
-        );
-    }
 }

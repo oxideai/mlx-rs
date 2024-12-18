@@ -1,4 +1,4 @@
-use mlx_nn::{
+use mlx_rs::nn::{
     losses::{CrossEntropyBuilder, LossReduction},
     module_value_and_grad,
 };
@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cross_entropy = CrossEntropyBuilder::new()
         .reduction(LossReduction::Mean)
         .build()?;
-    let loss_fn = |model: &mut mlp::Mlp, (x, y): (&Array, &Array)| -> Result<Array, Exception> {
+    let loss_fn = |model: &mlp::Mlp, (x, y): (&Array, &Array)| -> Result<Array, Exception> {
         let y_pred = model.forward(x)?;
         cross_entropy.apply(y_pred, y)
     };
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for _ in 0..num_epochs {
         let mut loss_sum = array!(0.0);
         for (x, y) in loader.clone() {
-            let (loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
+            let (loss, grad) = loss_and_grad_fn(&model, (&x, &y))?;
             optimizer.apply(&mut model, grad).unwrap();
             eval_params(model.parameters())?;
 

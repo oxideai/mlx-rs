@@ -10,7 +10,6 @@ members = [
     "mlx-macros", 
     "mlx-sys", 
     "mlx-rs", 
-    "mlx-nn",
     "mlx-internal-macros",
     "mlx-tests",
     "examples/*", 

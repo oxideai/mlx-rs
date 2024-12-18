@@ -1,4 +1,4 @@
-use mlx_nn::{macros::ModuleParameters, Linear, Relu, Sequential};
+use mlx_rs::nn::{macros::ModuleParameters, Linear, Relu, Sequential};
 use mlx_rs::{error::Exception, module::Module, Array};
 
 #[derive(Debug, ModuleParameters)]
@@ -11,7 +11,7 @@ impl Module<&Array> for Mlp {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         self.layers.forward(x)
     }
 

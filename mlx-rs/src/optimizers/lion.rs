@@ -66,7 +66,7 @@ impl Optimizer for Lion {
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
-        parameter: &mut Array,
+        mut parameter: impl std::ops::DerefMut<Target = Array>,
     ) -> Result<(), crate::error::Exception> {
         use crate::ops::sign;
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
@@ -27,6 +27,8 @@ pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Rnn {
     /// non-linearity function to use
     pub non_linearity: Arc<NonLinearity>,
@@ -41,7 +43,7 @@ pub struct Rnn {
 
     /// Bias. Enabled by default.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 }
 
 /// Builder for the [`Rnn`] module.
@@ -49,6 +51,7 @@ pub struct Rnn {
 #[builder(
     build_with = build_rnn,
     err = Exception,
+    root = crate,
 )]
 pub struct RnnBuilder {
     /// Dimension of the input, `D`.
@@ -95,7 +98,7 @@ fn build_rnn(builder: RnnBuilder) -> Result<Rnn, Exception> {
         non_linearity,
         wxh: Param::new(wxh),
         whh: Param::new(whh),
-        bias: Param::new(bias),
+        bias: bias.map(Param::new),
     })
 }
 
@@ -117,11 +120,11 @@ impl Rnn {
     pub const DEFAULT_NONLINEARITY: Option<Arc<NonLinearity>> = None;
 
     /// Apply a single step of the RNN.
-    pub fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
-        let x = if let Some(bias) = &self.bias.value {
-            addmm(bias, x, self.wxh.t(), None, None)?
+    pub fn step(&self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+        let x = if let Some(bias) = &self.bias {
+            addmm(&*bias.borrow(), x, self.wxh.borrow().t(), None, None)?
         } else {
-            matmul(x, self.wxh.t())?
+            matmul(x, self.wxh.borrow().t())?
         };
 
         let mut all_hidden = Vec::new();
@@ -130,7 +133,7 @@ impl Rnn {
                 Some(hidden_) => addmm(
                     x.index((Ellipsis, index, 0..)),
                     hidden_,
-                    self.whh.t(),
+                    self.whh.borrow().t(),
                     None,
                     None,
                 )?,
@@ -195,7 +198,7 @@ where
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+    fn forward(&self, input: Input) -> Result<Array, Exception> {
         let input = input.into();
         self.step(input.x, input.hidden)
     }
@@ -215,6 +218,8 @@ where
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Gru {
     /// Dimension of the hidden state, `H`
     pub hidden_size: i32,
@@ -229,11 +234,11 @@ pub struct Gru {
 
     /// Bias. Enabled by default.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 
     /// bhn. Enabled by default.
     #[param]
-    pub bhn: Param<Option<Array>>,
+    pub bhn: Option<Param<Array>>,
 }
 
 /// Builder for the [`Gru`] module.
@@ -241,6 +246,7 @@ pub struct Gru {
 #[builder(
     build_with = build_gru,
     err = Exception,
+    root = crate,
 )]
 pub struct GruBuilder {
     /// Dimension of the input, `D`.
@@ -273,8 +279,8 @@ fn build_gru(builder: GruBuilder) -> Result<Gru, Exception> {
         hidden_size,
         wx: Param::new(wx),
         wh: Param::new(wh),
-        bias: Param::new(bias),
-        bhn: Param::new(bhn),
+        bias: bias.map(Param::new),
+        bhn: bhn.map(Param::new),
     })
 }
 
@@ -283,11 +289,11 @@ impl Gru {
     pub const DEFAULT_BIAS: bool = true;
 
     /// Apply a single step of the GRU.
-    pub fn step(&mut self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
-        let x = if let Some(b) = &self.bias.value {
-            addmm(b, x, self.wx.t(), None, None)?
+    pub fn step(&self, x: &Array, hidden: Option<&Array>) -> Result<Array, Exception> {
+        let x = if let Some(b) = &self.bias {
+            addmm(&*b.borrow(), x, self.wx.borrow().t(), None, None)?
         } else {
-            matmul(x, self.wx.t())?
+            matmul(x, self.wx.borrow().t())?
         };
 
         let x_rz = x.index((Ellipsis, ..(-self.hidden_size)));
@@ -299,13 +305,13 @@ impl Gru {
             let mut rz = x_rz.index((Ellipsis, index, ..));
             let mut h_proj_n = None;
             if let Some(hidden_) = hidden {
-                let h_proj = matmul(hidden_, self.wh.t())?;
+                let h_proj = matmul(hidden_, self.wh.borrow().t())?;
                 let h_proj_rz = h_proj.index((Ellipsis, ..(-self.hidden_size)));
                 h_proj_n = Some(h_proj.index((Ellipsis, (-self.hidden_size)..)));
 
-                if let Some(bhn) = &self.bhn.value {
+                if let Some(bhn) = &self.bhn {
                     h_proj_n = h_proj_n
-                        .map(|h_proj_n| h_proj_n.add(bhn))
+                        .map(|h_proj_n| h_proj_n.add(&*bhn.borrow()))
                         // This is not matrix transpose, but from `Option<Result<_>>` to `Result<Option<_>>`
                         .transpose()?;
                 }
@@ -348,7 +354,7 @@ where
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+    fn forward(&self, input: Input) -> Result<Array, Exception> {
         let input = input.into();
         self.step(input.x, input.hidden)
     }
@@ -358,6 +364,8 @@ where
 
 /// A long short-term memory (LSTM) RNN layer.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Lstm {
     /// Wx
     #[param]
@@ -369,7 +377,7 @@ pub struct Lstm {
 
     /// Bias. Enabled by default.
     #[param]
-    pub bias: Param<Option<Array>>,
+    pub bias: Option<Param<Array>>,
 }
 
 /// Builder for the [`Lstm`] module.
@@ -377,6 +385,7 @@ pub struct Lstm {
 #[builder(
     build_with = build_lstm,
     err = Exception,
+    root = crate,
 )]
 pub struct LstmBuilder {
     /// Dimension of the input, `D`.
@@ -405,7 +414,7 @@ fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
     Ok(Lstm {
         wx: Param::new(wx),
         wh: Param::new(wh),
-        bias: Param::new(bias),
+        bias: bias.map(Param::new),
     })
 }
 
@@ -488,15 +497,15 @@ impl Lstm {
 
     /// Apply a single step of the LSTM.
     pub fn step(
-        &mut self,
+        &self,
         x: &Array,
         hidden: Option<&Array>,
         cell: Option<&Array>,
     ) -> Result<(Array, Array), Exception> {
-        let x = if let Some(b) = &self.bias.value {
-            addmm(b, x, self.wx.t(), None, None)?
+        let x = if let Some(b) = &self.bias {
+            addmm(&*b.borrow(), x, self.wx.borrow().t(), None, None)?
         } else {
-            matmul(x, self.wx.t())?
+            matmul(x, self.wx.borrow().t())?
         };
 
         let mut all_hidden = Vec::new();
@@ -505,7 +514,7 @@ impl Lstm {
         for index in 0..x.dim(-2) {
             let mut ifgo = x.index((Ellipsis, index, 0..));
             if let Some(hidden) = hidden {
-                ifgo = addmm(&ifgo, hidden, self.wh.t(), None, None)?;
+                ifgo = addmm(&ifgo, hidden, self.wh.borrow().t(), None, None)?;
             }
 
             let pieces = split_equal(&ifgo, 4, -1)?;
@@ -537,7 +546,7 @@ where
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: Input) -> Result<(Array, Array), Exception> {
+    fn forward(&self, input: Input) -> Result<(Array, Array), Exception> {
         let input = input.into();
         self.step(input.x, input.hidden, input.cell)
     }
@@ -548,7 +557,7 @@ where
 // The uint tests below are ported from the python codebase
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{ops::maximum_device, prelude::Builder, random::normal};
+    use crate::{ops::maximum_device, prelude::Builder, random::normal};
 
     use super::*;
 

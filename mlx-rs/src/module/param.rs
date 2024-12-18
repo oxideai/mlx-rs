@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    ops::{Deref, DerefMut},
+    cell::RefCell, collections::HashMap, ops::{Deref, DerefMut}
 };
 
 use crate::{nested::NestedValue, Array};
@@ -20,20 +19,17 @@ pub trait Parameter {
     fn is_frozen(&self) -> Option<bool>;
 
     /// Get the parameter as a nested value.
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array>;
-
-    /// Get the parameter as a mutable nested value.
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array>;
+    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &RefCell<Array>>;
 
     /// Get the parameter as a nested value if it is trainable.
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>>;
+    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &RefCell<Array>>>;
 }
 
 /// A simple wrapper for a module parameter.
 #[derive(Debug, Clone)]
 pub struct Param<T> {
     /// The value of the parameter.
-    pub value: T,
+    pub value: RefCell<T>,
 
     /// Whether the parameter is frozen.
     ///
@@ -45,7 +41,7 @@ impl<T> Param<T> {
     /// Create a new `Param`
     pub fn new(value: T) -> Self {
         Self {
-            value,
+            value: RefCell::new(value),
             is_frozen: false,
         }
     }
@@ -58,7 +54,7 @@ impl<T> From<T> for Param<T> {
 }
 
 impl<T> Deref for Param<T> {
-    type Target = T;
+    type Target = RefCell<T>;
 
     fn deref(&self) -> &Self::Target {
         &self.value
@@ -67,18 +63,6 @@ impl<T> Deref for Param<T> {
 
 impl<T> DerefMut for Param<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.value
-    }
-}
-
-impl<T> AsRef<T> for Param<T> {
-    fn as_ref(&self) -> &T {
-        &self.value
-    }
-}
-
-impl<T> AsMut<T> for Param<T> {
-    fn as_mut(&mut self) -> &mut T {
         &mut self.value
     }
 }
@@ -96,15 +80,11 @@ impl Parameter for Param<Array> {
         Some(self.is_frozen)
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
+    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &RefCell<Array>> {
         NestedValue::Value(&self.value)
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
-        NestedValue::Value(&mut self.value)
-    }
-
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
+    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &RefCell<Array>>> {
         match self.is_frozen {
             true => None,
             false => Some(NestedValue::Value(&self.value)),
@@ -112,40 +92,34 @@ impl Parameter for Param<Array> {
     }
 }
 
-impl Parameter for Param<Option<Array>> {
+impl Parameter for Option<Param<Array>> {
     fn freeze(&mut self, _recursive: bool) {
-        self.is_frozen = true;
+        self.as_mut().map(|param| param.freeze(_recursive));
     }
 
     fn unfreeze(&mut self, _recursive: bool) {
-        self.is_frozen = false;
+        self.as_mut().map(|param| param.unfreeze(_recursive));
     }
 
     fn is_frozen(&self) -> Option<bool> {
-        Some(self.is_frozen)
+        self.as_ref().map(|param| param.is_frozen).or(Some(true))
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
-        match &self.value {
-            Some(array) => NestedValue::Value(array),
-            // An empty map entry will be ignored during flattening
-            None => NestedValue::Map(HashMap::with_capacity(0)),
-        }
+    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &RefCell<Array>> {
+        self.as_ref().map_or_else(
+            || NestedValue::Map(HashMap::with_capacity(0)),
+            |param| NestedValue::Value(&param.value),
+        )
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
-        match &mut self.value {
-            Some(array) => NestedValue::Value(array),
-            // An empty map entry will be ignored during flattening
-            None => NestedValue::Map(HashMap::with_capacity(0)),
-        }
-    }
-
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
-        match self.is_frozen {
-            true => None,
-            false => self.value.as_ref().map(NestedValue::Value),
-        }
+    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &RefCell<Array>>> {
+        self.as_ref().and_then(|param| {
+            if param.is_frozen {
+                None
+            } else {
+                Some(NestedValue::Value(&param.value))
+            }
+        })
     }
 }
 
@@ -165,15 +139,11 @@ where
         self.all_frozen()
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
+    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &RefCell<Array>> {
         self.parameters().into()
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
-        self.parameters_mut().into()
-    }
-
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
+    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &RefCell<Array>>> {
         Some(self.trainable_parameters().into())
     }
 }

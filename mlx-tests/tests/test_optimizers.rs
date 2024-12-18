@@ -16,7 +16,7 @@ use mlx_rs::{
     Array, Dtype,
 };
 
-use mlx_nn::{
+use mlx_rs::nn::{
     losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
     module_value_and_grad,
@@ -42,8 +42,8 @@ impl Module<&Array> for LinearFunctionModel {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        self.m.multiply(x)?.add(&self.b)
+    fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
+        self.m.borrow().multiply(x)?.add(&*self.b.borrow())
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -70,7 +70,7 @@ where
     let mse_loss = MseLossBuilder::new()
         .reduction(LossReduction::Mean)
         .build()?;
-    let loss = |model: &mut LinearFunctionModel, (x, y): (&Array, &Array)| {
+    let loss = |model: &LinearFunctionModel, (x, y): (&Array, &Array)| {
         mse_loss.apply(model.forward(x)?, y)
     };
 
@@ -182,7 +182,7 @@ fn create_default_test_model_and_grads() -> (NestedModel, GradsMap) {
         .flatten()
         .iter()
         .map(|(k, v)| {
-            let g = ones::<f32>(v.shape()).unwrap();
+            let g = ones::<f32>(v.borrow().shape()).unwrap();
             (k.clone(), g)
         })
         .collect();
@@ -234,15 +234,15 @@ fn test_ada_delta() {
     let mut optimizer = AdaDelta::new(0.1).unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), mlx_rs::Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.348_442_4),
         0.348442405462265
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-4.181_308_7),
         0.08362617492675782
     );
@@ -274,15 +274,15 @@ fn test_adagrad() {
     let mut optimizer = AdaGrad::new(0.1);
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.062_509_984),
         ATOL
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-0.750_119_8),
         ATOL
     );
@@ -330,15 +330,15 @@ fn test_adam() {
     let mut optimizer = Adam::new(0.1);
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(0.112_292_78),
         0.0022458556294441224
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(1.347_513_3),
         0.026950266361236572
     );
@@ -386,15 +386,15 @@ fn test_adamw() {
     let mut optimizer = AdamW::new(0.1);
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.468_437_6),
         0.009368752241134645
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-5.621_251),
         0.11242502212524415
     );
@@ -442,15 +442,15 @@ fn test_adamax() {
     let mut optimizer = Adamax::new(0.1);
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.303_923_6),
         0.006078472137451172
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-3.647_083_3),
         0.07294166564941407
     );
@@ -472,9 +472,9 @@ fn test_rmsprop() {
     let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.1;
     let expected_second = ones::<f32>(&[1]).unwrap() * -0.1;
 
-    assert_array_eq!(model.first.a.as_ref(), expected_first_a, ATOL);
-    assert_array_eq!(model.first.b.as_ref(), expected_first_b, ATOL);
-    assert_array_eq!(model.second.as_ref(), expected_second, ATOL);
+    assert_array_eq!(model.first.a.borrow(), expected_first_a, ATOL);
+    assert_array_eq!(model.first.b.borrow(), expected_first_b, ATOL);
+    assert_array_eq!(model.second.borrow(), expected_second, ATOL);
 
     let expected_state_first_a = ones::<f32>(&[10]).unwrap() * 0.01;
     let expected_state_first_b = ones::<f32>(&[1]).unwrap() * 0.01;
@@ -510,9 +510,9 @@ fn test_sgd() {
     let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;
     let expected_second = ones::<f32>(&[1]).unwrap() * -0.01;
 
-    assert_array_eq!(model.first.a.as_ref(), expected_first_a, ATOL);
-    assert_array_eq!(model.first.b.as_ref(), expected_first_b, ATOL);
-    assert_array_eq!(model.second.as_ref(), expected_second, ATOL);
+    assert_array_eq!(model.first.a.borrow(), expected_first_a, ATOL);
+    assert_array_eq!(model.first.b.borrow(), expected_first_b, ATOL);
+    assert_array_eq!(model.second.borrow(), expected_second, ATOL);
 
     let expected_state_first_a = ones::<f32>(&[10]).unwrap();
     let expected_state_first_b = ones::<f32>(&[1]).unwrap();
@@ -573,15 +573,15 @@ fn test_lion() {
     let mut optimizer = Lion::new(0.1);
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(0.211_025_57),
         0.004220511317253113
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(2.532_306_7),
         0.05064613342285156
     );
@@ -629,15 +629,15 @@ fn test_lion1() {
     let mut optimizer = LionBuilder::new(0.1).weight_decay(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.182_764_5),
         0.003655290007591248
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-2.193_174),
         0.04386347770690918
     );
@@ -683,19 +683,19 @@ fn test_adafactor() {
     let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     println!(
         "a_model.a.mean(None, None).unwrap(): {:?}",
-        a_model.a.mean(None, None).unwrap()
+        a_model.a.borrow().mean(None, None).unwrap()
     );
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(-0.526_828_47),
         0.010536569356918336
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(-6.321_941_4),
         0.12643882751464844
     );
@@ -741,15 +741,15 @@ fn test_adafactor1() {
     let mut optimizer = AdafactorBuilder::new().lr(0.1).beta1(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[4, 3]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[4, 3]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(0.399_430_7),
         0.007988613843917847
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(4.793_168),
         0.09586336135864258
     );
@@ -795,15 +795,15 @@ fn test_adafactor2() {
     let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
     optimizer.apply(&mut a_model, a_grad_params).unwrap();
-    assert_eq!(a_model.a.shape(), &[10]);
-    assert_eq!(a_model.a.dtype(), Dtype::Float32);
+    assert_eq!(a_model.a.borrow().shape(), &[10]);
+    assert_eq!(a_model.a.borrow().dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.borrow().mean(None, None).unwrap(),
         array!(0.483_533_05),
         0.009670661091804504
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.borrow().sum(None, None).unwrap(),
         array!(4.835_330_5),
         0.09670660972595214
     );

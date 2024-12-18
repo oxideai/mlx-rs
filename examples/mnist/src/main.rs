@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let num_classes = 10;
     let batch_size = 256;
     let num_epochs = 10;
-    let learning_rate = 1e-1;
+    let learning_rate = 1e-2;
 
     let (train_images, train_labels, test_images, test_labels) = data::read_data();
     let loader = data::iterate_data(&train_images, &train_labels, batch_size)?;

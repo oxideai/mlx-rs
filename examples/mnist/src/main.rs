@@ -1,7 +1,7 @@
-use mlx_rs::nn::{
+use mlx_rs::{nn::{
     losses::{CrossEntropyBuilder, LossReduction},
     module_value_and_grad,
-};
+}, transforms::async_eval_params};
 use mlx_rs::{
     builder::Builder,
     error::Exception,
@@ -49,24 +49,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut optimizer = Sgd::new(learning_rate);
 
+    println!("{:?}", model.parameters().flatten()["layers.layers.0.bias"]);
+
+    let accuracy = eval_fn(&mut model, (&test_images, &test_labels))?;
+    println!("Initial accuracy: {:?}", accuracy.item::<f32>());
+
     for e in 0..num_epochs {
         let now = std::time::Instant::now();
+        let mut lg_time = std::time::Duration::from_secs(0);
+        let mut apply_time = std::time::Duration::from_secs(0);
+        let mut eval_time = std::time::Duration::from_secs(0);
+        let mut train_loss = mlx_rs::array!(0.0);
         for (x, y) in &loader {
-            let (_loss, grad) = loss_and_grad_fn(&model, (x, y))?;
+            let lg_start = std::time::Instant::now();
+            let (loss, grad) = loss_and_grad_fn(&model, (x, y))?;
+            lg_time += lg_start.elapsed();
+
+            let apply_start = std::time::Instant::now();
             optimizer.apply(&model, grad).unwrap();
-            eval_params(model.parameters())?;
+            apply_time += apply_start.elapsed();
+
+            let eval_start = std::time::Instant::now();
+            async_eval_params(model.parameters())?;
+            eval_time += eval_start.elapsed();
+
+            train_loss += loss;
         }
 
         // Evaluate on test set
         let accuracy = eval_fn(&mut model, (&test_images, &test_labels))?;
         let elapsed = now.elapsed();
+
         println!(
-            "Epoch: {}, Test accuracy: {:.2}, Time: {:.2} s",
+            "Epoch: {}, Test accuracy: {:?}, Time: {:?}",
             e,
             accuracy.item::<f32>(),
-            elapsed.as_secs_f32()
+            elapsed
+        );
+
+        println!(
+            "Loss and grad time: {:?} s, Apply time: {:?}, Eval time: {:?}, train loss: {:?}",
+            lg_time,
+            apply_time,
+            eval_time,
+            train_loss
         );
     }
+
+    println!("{:?}", model.parameters().flatten()["layers.layers.0.bias"]);
 
     Ok(())
 }

@@ -63,11 +63,21 @@ pub trait Optimizer {
     {
         let parameters = model.parameters().flatten();
 
+        let mut lookup_time = std::time::Duration::from_micros(0);
+        let mut apply_time = std::time::Duration::from_micros(0);
         for (key, gradient) in gradients.borrow().iter() {
-            if let Some(parameter) = parameters.get(key) {
+            let lookup_start = std::time::Instant::now();
+            let value = parameters.get(key);
+            lookup_time += lookup_start.elapsed();
+            if let Some(parameter) = value {
+                let apply_start = std::time::Instant::now();
                 self.apply_single(key, gradient, parameter.borrow_mut())?;
+                apply_time += apply_start.elapsed();
             }
         }
+
+        // println!("Lookup time: {:?}", lookup_time);
+        // println!("Apply time: {:?}", apply_time);
 
         Ok(())
     }

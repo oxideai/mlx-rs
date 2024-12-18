@@ -1,24 +1,21 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{nested::NestedHashMap, Array};
+use crate::{
+    nested::{NestedHashMap, NestedValue},
+    Array,
+};
 
 /// Type alias for owned module parameters.
-pub type ModuleParam = NestedHashMap<&'static str, Array>;
+pub type ModuleParam = NestedHashMap<Rc<str>, Array>;
 
 /// Type alias for borrowed module parameters.
-pub type ModuleParamRef<'a> = NestedHashMap<&'static str, &'a RefCell<Array>>;
-
-// /// Type alias for mutably borrowed module parameters.
-// pub type ModuleParamMut<'a> = NestedHashMap<&'static str, &'a mut Array>;
+pub type ModuleParamRef<'a> = NestedHashMap<Rc<str>, &'a RefCell<Array>>;
 
 /// Type alias for flattened module parameters.
 pub type FlattenedModuleParam = HashMap<Rc<str>, Array>;
 
 /// Type alias for borrowed flattened module parameters.
 pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a RefCell<Array>>;
-
-// /// Type alias for mutably borrowed flattened module parameters.
-// pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
 pub trait Module<Args>: ModuleParameters + std::fmt::Debug {
@@ -89,10 +86,10 @@ where
     M: ModuleParameters + ?Sized,
     I: IntoIterator<Item = (Rc<str>, Array)>,
 {
-    let mut flattened_self_parameters = module.parameters().flatten();
+    let flattened_self_parameters = module.parameters().flatten();
 
     for (key, value) in flattened_parameters {
-        if let Some(self_value) = flattened_self_parameters.get_mut(&key) {
+        if let Some(self_value) = flattened_self_parameters.get(&key) {
             *self_value.borrow_mut() = value;
         }
     }
@@ -133,18 +130,18 @@ where
 {
     fn parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
 
     fn trainable_parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.trainable_parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.trainable_parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }

@@ -22,8 +22,7 @@ generate_builder! {
     )]
     pub struct Lion {
         /// The learning rate.
-        #[builder(ty_override = f32)]
-        pub lr: Array,
+        pub lr: f32,
 
         /// The coefficients used for computing running averages of the gradient and its square.
         /// Default to [`Lion::DEFAULT_BETAS`].
@@ -31,8 +30,8 @@ generate_builder! {
         pub betas: (Array, Array),
 
         /// The weight decay. Default to [`Lion::DEFAULT_WEIGHT_DECAY`].
-        #[builder(optional, ty_override = f32, default = Lion::DEFAULT_WEIGHT_DECAY)]
-        pub weight_decay: Array,
+        #[builder(optional, default = Lion::DEFAULT_WEIGHT_DECAY)]
+        pub weight_decay: f32,
 
         /// Inner state.
         #[builder(ignore)]
@@ -46,9 +45,9 @@ fn build_lion(builder: LionBuilder) -> Result<Lion, std::convert::Infallible> {
     let weight_decay = builder.weight_decay;
 
     Ok(Lion {
-        lr: array!(lr),
+        lr,
         betas: (array!(betas.0), array!(betas.1)),
-        weight_decay: array!(weight_decay),
+        weight_decay,
         state: OptimizerState::new(),
     })
 }
@@ -79,12 +78,13 @@ impl Optimizer for Lion {
         let c = b1.multiply(&m)?.add(&one_minus_b1.multiply(gradient)?)?;
         *m = b2.multiply(&m)?.add(&one_minus_b2.multiply(gradient)?)?;
 
-        if self.weight_decay.gt(array!(0.0))?.item() {
+        if self.weight_decay > 0.0 {
             // SAFETY: These coeffs are all single-element arrays and won't panic.
-            *parameter = (array!(1.0) - &self.lr * &self.weight_decay) * &*parameter;
+            *parameter = array!(1.0 - self.lr * self.weight_decay) * &*parameter;
         }
 
-        *parameter = parameter.subtract(self.lr.multiply(sign(&c)?)?)?;
+        let lr = array!(self.lr);
+        *parameter = parameter.subtract(lr.multiply(sign(&c)?)?)?;
 
         Ok(())
     }

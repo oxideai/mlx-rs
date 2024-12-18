@@ -72,3 +72,22 @@ impl<Err> Sequential<Err> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use mlx_rs::module::ModuleParameters;
+
+    use crate::Linear;
+
+    #[test]
+    fn test_sequential_linear_param_len() {
+        use super::*;
+
+        let model = Sequential::new()
+            .append(Linear::new(2, 3).unwrap())
+            .append(Linear::new(3, 1).unwrap());
+
+        let params = model.parameters().flatten();
+        assert_eq!(params.len(), 4);
+    }
+}

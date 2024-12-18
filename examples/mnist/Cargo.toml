@@ -6,5 +6,4 @@ edition = "2021"
 [dependencies]
 mlx-rs.workspace = true
 mlx-nn.workspace = true
-tempfile = "3"
 mnist = "0.6"

@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     ops::{Deref, DerefMut},
+    rc::Rc,
 };
 
 use crate::{nested::NestedValue, Array};
@@ -20,13 +21,13 @@ pub trait Parameter {
     fn is_frozen(&self) -> Option<bool>;
 
     /// Get the parameter as a nested value.
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array>;
+    fn as_nested_value(&self) -> NestedValue<Rc<str>, &Array>;
 
     /// Get the parameter as a mutable nested value.
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array>;
+    fn as_nested_value_mut(&mut self) -> NestedValue<Rc<str>, &mut Array>;
 
     /// Get the parameter as a nested value if it is trainable.
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>>;
+    fn as_trainable_nested_value(&self) -> Option<NestedValue<Rc<str>, &Array>>;
 }
 
 /// A simple wrapper for a module parameter.
@@ -96,15 +97,15 @@ impl Parameter for Param<Array> {
         Some(self.is_frozen)
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
+    fn as_nested_value<'a>(&self) -> NestedValue<Rc<str>, &Array> {
         NestedValue::Value(&self.value)
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
+    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<Rc<str>, &mut Array> {
         NestedValue::Value(&mut self.value)
     }
 
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
+    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<Rc<str>, &Array>> {
         match self.is_frozen {
             true => None,
             false => Some(NestedValue::Value(&self.value)),
@@ -125,7 +126,7 @@ impl Parameter for Param<Option<Array>> {
         Some(self.is_frozen)
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
+    fn as_nested_value(&self) -> NestedValue<Rc<str>, &Array> {
         match &self.value {
             Some(array) => NestedValue::Value(array),
             // An empty map entry will be ignored during flattening
@@ -133,7 +134,7 @@ impl Parameter for Param<Option<Array>> {
         }
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
+    fn as_nested_value_mut(&mut self) -> NestedValue<Rc<str>, &mut Array> {
         match &mut self.value {
             Some(array) => NestedValue::Value(array),
             // An empty map entry will be ignored during flattening
@@ -141,7 +142,7 @@ impl Parameter for Param<Option<Array>> {
         }
     }
 
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
+    fn as_trainable_nested_value(&self) -> Option<NestedValue<Rc<str>, &Array>> {
         match self.is_frozen {
             true => None,
             false => self.value.as_ref().map(NestedValue::Value),
@@ -165,15 +166,15 @@ where
         self.all_frozen()
     }
 
-    fn as_nested_value<'a>(&self) -> NestedValue<&'a str, &Array> {
+    fn as_nested_value(&self) -> NestedValue<Rc<str>, &Array> {
         self.parameters().into()
     }
 
-    fn as_nested_value_mut<'a>(&mut self) -> NestedValue<&'a str, &mut Array> {
+    fn as_nested_value_mut(&mut self) -> NestedValue<Rc<str>, &mut Array> {
         self.parameters_mut().into()
     }
 
-    fn as_trainable_nested_value<'a>(&self) -> Option<NestedValue<&'a str, &Array>> {
+    fn as_trainable_nested_value(&self) -> Option<NestedValue<Rc<str>, &Array>> {
         Some(self.trainable_parameters().into())
     }
 }

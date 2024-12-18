@@ -105,8 +105,8 @@ generate_builder! {
     )]
     pub struct Adafactor {
         /// The learning rate.
-        #[builder(optional, ty_override = AdafactorBuilderLr, default = Adafactor::DEFAULT_LR)]
-        pub lr: AdafactorLr,
+        #[builder(optional, default = Adafactor::DEFAULT_LR)]
+        pub lr: Option<f32>,
 
         /// The first term is added to the square of the gradients to improve numerical stability.
         /// Default to [`Adafactor::DEFAULT_EPS`].
@@ -127,8 +127,8 @@ generate_builder! {
         pub beta1: AdafactorBeta1,
 
         /// The weight decay. Default to [`Adafactor::DEFAULT_WEIGHT_DECAY`].
-        #[builder(optional, ty_override = f32, default = Adafactor::DEFAULT_WEIGHT_DECAY)]
-        pub weight_decay: Array,
+        #[builder(optional, default = Adafactor::DEFAULT_WEIGHT_DECAY)]
+        pub weight_decay: f32,
 
         /// If `true` the `learningRate` will be scaled by `max(eps.0, RMS(parameter))`. Default to
         /// [`Adafactor::DEFAULT_SCALE_PARAMETER`].
@@ -166,12 +166,12 @@ fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuil
     }
 
     Ok(Adafactor {
-        lr: builder.lr.map(Array::from),
+        lr: builder.lr,
         eps: (array!(eps.0), array!(eps.1)),
         clip_threshold: array!(clip_threshold),
         decay_rate: array!(decay_rate),
         beta1: builder.beta1.map(Array::from),
-        weight_decay: array!(weight_decay),
+        weight_decay,
         scale_parameter,
         relative_step,
         warmup_init,
@@ -223,7 +223,7 @@ fn get_mut_or_insert_with<'a, T, E>(
 fn compute_lr(
     relative_step: bool,
     warmup_init: bool,
-    lr: &Option<Array>,
+    lr: Option<f32>,
     scale_parameter: bool,
     eps: &(Array, Array),
     step: &Array,
@@ -237,13 +237,10 @@ fn compute_lr(
             array!(1e-2)
         };
         // SAFETY: `step` is a single-element array and won't panic.
-        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step)?)?)
+        minimum(min_step, array!(1.0) / sqrt(step)?)?
     } else {
         // SAFETY: This is already checked in the `build` stage.
-        Cow::Borrowed(
-            lr.as_ref()
-                .expect("The learning rate should be set if the relative step is not enabled"),
-        )
+        array!(lr.expect("The learning rate should be set if the relative step is not enabled"))
     };
 
     let mut parameter_scale = array!(1.0);
@@ -251,7 +248,7 @@ fn compute_lr(
         parameter_scale = maximum(&eps.1, parameter_rms)?;
     }
 
-    parameter_scale.multiply(&*relative_step_size)
+    parameter_scale.multiply(relative_step_size)
 }
 
 impl Optimizer for Adafactor {
@@ -276,7 +273,7 @@ impl Optimizer for Adafactor {
         let lr = compute_lr(
             self.relative_step,
             self.warmup_init,
-            &self.lr,
+            self.lr,
             self.scale_parameter,
             &self.eps,
             step,
@@ -329,8 +326,8 @@ impl Optimizer for Adafactor {
             update = Cow::Borrowed(&*exp_avg);
         }
 
-        if self.weight_decay.ne(&array!(0.0))?.item() {
-            let rhs = parameter.multiply(self.weight_decay.negative()?.multiply(&lr)?)?;
+        if self.weight_decay != 0.0 {
+            let rhs = parameter.multiply(array!(-self.weight_decay).multiply(lr)?)?;
             *parameter = parameter.add(rhs)?;
         }
 

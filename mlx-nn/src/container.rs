@@ -75,15 +75,25 @@ impl<Err> Sequential<Err> {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{array, module::ModuleParameters, ops::zeros, optimizers::{Optimizer, Sgd}, prelude::Builder, random::uniform, transforms::{eval, eval_params}};
-    
-    use crate::{losses::{LossReduction, MseLossBuilder}, module_value_and_grad, Linear};
+    use mlx_rs::{
+        array,
+        module::ModuleParameters,
+        ops::zeros,
+        optimizers::{Optimizer, Sgd},
+        prelude::Builder,
+        random::uniform,
+        transforms::{eval, eval_params},
+    };
+
+    use crate::{
+        losses::{LossReduction, MseLossBuilder},
+        module_value_and_grad, Linear,
+    };
 
     use super::*;
 
     #[test]
     fn test_sequential_linear_param_len() {
-
         let model = Sequential::new()
             .append(Linear::new(2, 3).unwrap())
             .append(Linear::new(3, 1).unwrap());
@@ -98,14 +108,27 @@ mod tests {
             .append(Linear::new(2, 3).unwrap())
             .append(Linear::new(3, 1).unwrap());
 
-        model.trainable_parameters().flatten().iter().for_each(|(key, value)| {
-            println!("{}: {:?}", key, value);
-        });
+        model
+            .trainable_parameters()
+            .flatten()
+            .iter()
+            .for_each(|(key, value)| {
+                println!("{}: {:?}", key, value);
+            });
 
         let mut params = model.parameters_mut().flatten();
 
         // Check that the initial weights are not all zeros
-        assert!(params["layers.0.weight"].abs().unwrap().sum(None, None).unwrap().item::<f32>() - 0.0 > 1e-6);
+        assert!(
+            params["layers.0.weight"]
+                .abs()
+                .unwrap()
+                .sum(None, None)
+                .unwrap()
+                .item::<f32>()
+                - 0.0
+                > 1e-6
+        );
 
         // Update the weight with zeros
         let shape = params["layers.0.weight"].shape();
@@ -137,7 +160,8 @@ mod tests {
 
         let loss = MseLossBuilder::new()
             .reduction(LossReduction::Mean)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let loss_fn = |model: &mut Sequential, (x, y): (&Array, &Array)| {
             let y_pred = model.forward(x)?;
             loss.apply(&y_pred, y)
@@ -165,6 +189,10 @@ mod tests {
         }
 
         // Check that it converges
-        assert!(losses[0] > losses[losses.len() - 1], "Not converging loss: {:?}", losses);
+        assert!(
+            losses[0] > losses[losses.len() - 1],
+            "Not converging loss: {:?}",
+            losses
+        );
     }
 }

@@ -1,5 +1,3 @@
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::module::{Module, Param};
 use crate::{
     error::Exception,
@@ -7,6 +5,8 @@ use crate::{
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::utils::{SingleOrPair, SingleOrTriple};
 

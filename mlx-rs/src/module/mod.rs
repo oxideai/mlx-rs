@@ -9,6 +9,5 @@ mod cache;
 mod module;
 mod param;
 
-pub use cache::*;
 pub use module::*;
 pub use param::*;

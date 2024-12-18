@@ -1,6 +1,5 @@
 //! Loss functions
 
-use mlx_internal_macros::{generate_builder, Buildable};
 use crate::{
     array,
     error::{CrossEntropyBuildError, Exception},
@@ -10,6 +9,7 @@ use crate::{
     },
     Array,
 };
+use mlx_internal_macros::{generate_builder, Buildable};
 
 #[inline]
 fn check_shape(
@@ -876,8 +876,8 @@ impl MarginRankingLoss {
 #[cfg(test)]
 #[allow(clippy::approx_constant)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::{array, assert_array_eq, builder::Builder, ops::is_nan};
+    use float_eq::assert_float_eq;
 
     use super::*;
 

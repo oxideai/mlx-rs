@@ -3,7 +3,10 @@
 #![deny(missing_docs)]
 
 use std::{
-    borrow::{Borrow, Cow}, collections::HashMap, ops::DerefMut, rc::Rc
+    borrow::{Borrow, Cow},
+    collections::HashMap,
+    ops::DerefMut,
+    rc::Rc,
 };
 
 use crate::{

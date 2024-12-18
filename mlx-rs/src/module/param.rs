@@ -1,5 +1,7 @@
 use std::{
-    cell::RefCell, collections::HashMap, ops::{Deref, DerefMut}
+    cell::RefCell,
+    collections::HashMap,
+    ops::{Deref, DerefMut},
 };
 
 use crate::{nested::NestedValue, Array};
@@ -94,11 +96,15 @@ impl Parameter for Param<Array> {
 
 impl Parameter for Option<Param<Array>> {
     fn freeze(&mut self, _recursive: bool) {
-        self.as_mut().map(|param| param.freeze(_recursive));
+        if let Some(param) = self.as_mut() {
+            param.freeze(_recursive)
+        }
     }
 
     fn unfreeze(&mut self, _recursive: bool) {
-        self.as_mut().map(|param| param.unfreeze(_recursive));
+        if let Some(param) = self.as_mut() {
+            param.unfreeze(_recursive)
+        }
     }
 
     fn is_frozen(&self) -> Option<bool> {

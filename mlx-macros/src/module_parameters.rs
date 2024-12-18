@@ -54,7 +54,9 @@ fn expand_module_parameters_for_struct(
         }
     };
 
-    Ok(impl_module_parameters_for_struct(ident, generics, fields, root))
+    Ok(impl_module_parameters_for_struct(
+        ident, generics, fields, root,
+    ))
 }
 
 fn impl_module_parameters_for_struct(

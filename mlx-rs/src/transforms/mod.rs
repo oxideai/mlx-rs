@@ -1,11 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, ops::Deref, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use mlx_sys::mlx_closure_value_and_grad;
 
 use crate::{
     error::{Exception, Result},
     module::ModuleParamRef,
-    utils::{guard::Guarded, Closure, IntoOption, VectorArray, SUCCESS},
+    utils::{guard::Guarded, Closure, IntoOption, VectorArray},
     Array,
 };
 
@@ -399,7 +399,14 @@ where
     fn into_keyed_value_and_grad(
         mut self,
     ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
-        value_and_grad_with_hashmap!(Result<Vec<Array>>, new_fallible, self, Arr, Args, value_and_gradient)
+        value_and_grad_with_hashmap!(
+            Result<Vec<Array>>,
+            new_fallible,
+            self,
+            Arr,
+            Args,
+            value_and_gradient
+        )
     }
 }
 
@@ -411,8 +418,16 @@ where
     #[allow(refining_impl_trait)]
     fn into_keyed_value_and_grad(
         mut self,
-    ) -> impl FnMut(KeyedParameters<&RefCell<Array>>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
-        value_and_grad_with_hashmap!(Vec<Array>, new, self, &RefCell<Array>, Args, module_parameter_value_and_gradient)
+    ) -> impl FnMut(KeyedParameters<&RefCell<Array>>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
+    {
+        value_and_grad_with_hashmap!(
+            Vec<Array>,
+            new,
+            self,
+            &RefCell<Array>,
+            Args,
+            module_parameter_value_and_gradient
+        )
     }
 }
 
@@ -424,14 +439,24 @@ where
     #[allow(refining_impl_trait)]
     fn into_keyed_value_and_grad(
         mut self,
-    ) -> impl FnMut(KeyedParameters<&RefCell<Array>>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
-        value_and_grad_with_hashmap!(Result<Vec<Array>>, new_fallible, self, &RefCell<Array>, Args, module_parameter_value_and_gradient)
+    ) -> impl FnMut(KeyedParameters<&RefCell<Array>>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
+    {
+        value_and_grad_with_hashmap!(
+            Result<Vec<Array>>,
+            new_fallible,
+            self,
+            &RefCell<Array>,
+            Args,
+            module_parameter_value_and_gradient
+        )
     }
 }
 
+pub type ModuleParamValueAndGrad<'a> = KeyedParameters<&'a RefCell<Array>>;
+
 pub fn keyed_value_and_grad<'a, F, Args, Err>(
     f: F,
-) -> impl FnMut(KeyedParameters<&'a RefCell<Array>>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
+) -> impl FnMut(ModuleParamValueAndGrad<'a>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
 where
     F: IntoKeyedValueAndGrad<'a, &'a RefCell<Array>, Args, Err> + 'a,
     Args: Clone,
@@ -607,7 +632,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, rc::Rc};
 
     use crate::{
         array,
@@ -616,8 +640,6 @@ mod tests {
     };
 
     use super::*;
-
-    use super::keyed_value_and_grad;
 
     // The unit tests below are adapted from the mlx c++ codebase
 

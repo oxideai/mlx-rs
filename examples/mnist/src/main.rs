@@ -52,8 +52,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for e in 0..num_epochs {
         let now = std::time::Instant::now();
         for (x, y) in &loader {
-            let (_loss, grad) = loss_and_grad_fn(&mut model, (x, y))?;
-            optimizer.apply(&mut model, grad).unwrap();
+            let (_loss, grad) = loss_and_grad_fn(&model, (x, y))?;
+            optimizer.apply(&model, grad).unwrap();
             eval_params(model.parameters())?;
         }
 

@@ -1,7 +1,5 @@
 use std::f32::consts::PI;
 
-use mlx_internal_macros::{generate_builder, Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::module::{Module, Param};
 use crate::{
     array,
@@ -10,6 +8,8 @@ use crate::{
     transforms::compile::compile,
     Array,
 };
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 /// Applies the element-wise sigmoid logistic sigmoid.
 ///
@@ -960,8 +960,8 @@ fn compiled_hard_swish(x: &Array) -> Result<Array> {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::{prelude::Builder, random::uniform, Dtype};
+    use float_eq::assert_float_eq;
 
     use super::*;
 

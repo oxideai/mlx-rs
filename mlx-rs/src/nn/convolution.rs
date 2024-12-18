@@ -1,5 +1,3 @@
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::module::{Module, Param};
 use crate::{
     error::Exception,
@@ -7,6 +5,8 @@ use crate::{
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::utils::{SingleOrPair, SingleOrTriple};
 
@@ -385,9 +385,9 @@ impl Module<&Array> for Conv3d {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::module::Module;
     use crate::{random::uniform, Dtype};
+    use float_eq::assert_float_eq;
 
     use crate::nn::Conv1d;
 

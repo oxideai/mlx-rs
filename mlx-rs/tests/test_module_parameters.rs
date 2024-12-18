@@ -61,7 +61,7 @@ fn test_module_trainable_parameters_all_trainable() {
     let m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
-        c: None
+        c: None,
     };
 
     let flattened = m.trainable_parameters().flatten();
@@ -87,7 +87,7 @@ fn test_module_trainable_parameters_partial_freeze() {
     let mut m = StructModule {
         a: Param::new(array!(1.0)),
         b: Param::new(array!(2.0)),
-        c: None
+        c: None,
     };
 
     // Freeze one parameter that is not optional
@@ -173,7 +173,7 @@ fn test_nested_module_parameters() {
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
-            c: None
+            c: None,
         },
         neste_no_param: UnitStructModule,
     };
@@ -192,7 +192,7 @@ fn test_nested_module_recursive_freeze() {
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
-            c: None
+            c: None,
         },
         neste_no_param: UnitStructModule,
     };
@@ -211,7 +211,7 @@ fn test_nested_module_freeze_submodule() {
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
-            c: None
+            c: None,
         },
         neste_no_param: UnitStructModule,
     };
@@ -233,7 +233,7 @@ fn test_nested_module_unfreeze_submodule() {
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
-            c: None
+            c: None,
         },
         neste_no_param: UnitStructModule,
     };
@@ -257,7 +257,7 @@ fn test_nested_module_recursive_unfreeze() {
         nested: StructModule {
             a: Param::new(array!(2.0)),
             b: Param::new(array!(3.0)),
-            c: None
+            c: None,
         },
         neste_no_param: UnitStructModule,
     };

@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     array,
     error::Exception,
@@ -11,6 +9,8 @@ use crate::{
     random::uniform,
     Array, Stream,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
@@ -563,14 +563,14 @@ mod tests {
 
     #[test]
     fn test_rnn() {
-        let mut layer = Rnn::new(5, 12).unwrap();
+        let layer = Rnn::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
         let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
-        let mut layer = RnnBuilder::new(5, 12)
+        let layer = RnnBuilder::new(5, 12)
             .bias(false)
             .non_linearity(Arc::new(nonlinearity) as Arc<NonLinearity>)
             .build()
@@ -590,7 +590,7 @@ mod tests {
 
     #[test]
     fn test_gru() {
-        let mut layer = Gru::new(5, 12).unwrap();
+        let layer = Gru::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
         let h_out = layer.forward(&inp).unwrap();
@@ -611,7 +611,7 @@ mod tests {
 
     #[test]
     fn test_lstm() {
-        let mut layer = Lstm::new(5, 12).unwrap();
+        let layer = Lstm::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
         let (h_out, c_out) = layer.forward(&inp).unwrap();

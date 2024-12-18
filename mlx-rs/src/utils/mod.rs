@@ -1,11 +1,9 @@
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
-use crate::module::ModuleParamRef;
 use crate::{complex64, error::Exception, Array, FromNested};
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::{marker::PhantomData, rc::Rc};
 
 /// Success status code from the c binding
@@ -82,7 +80,9 @@ impl VectorArray {
         }
     }
 
-    pub(crate) fn try_from_module_parameter_values<'a>(param_values: impl IntoIterator<Item = &'a RefCell<Array>>) -> Result<Self, Exception> {
+    pub(crate) fn try_from_module_parameter_values<'a>(
+        param_values: impl IntoIterator<Item = &'a RefCell<Array>>,
+    ) -> Result<Self, Exception> {
         VectorArray::try_from_op(|res| unsafe {
             let mut status = SUCCESS;
             for val in param_values {
@@ -365,7 +365,6 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 
     map.get_mut(key).unwrap()
 }
-
 
 /// Helper type to represent either a single value or a pair of values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

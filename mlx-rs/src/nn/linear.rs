@@ -1,7 +1,7 @@
 use std::iter::once;
 
-use mlx_internal_macros::{Buildable, Builder};
 use crate::{error::Exception, Array};
+use mlx_internal_macros::{Buildable, Builder};
 
 use crate::{
     macros::ModuleParameters,
@@ -34,8 +34,7 @@ fn build_linear(builder: LinearBuilder) -> Result<Linear, Exception> {
     let with_bias = builder.bias;
 
     let scale = f32::sqrt(1.0 / (input_dims as f32));
-    let weight =
-        crate::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
+    let weight = crate::random::uniform::<_, f32>(-scale, scale, &[output_dims, input_dims], None)?;
 
     let bias = if with_bias {
         Some(crate::random::uniform::<_, f32>(
@@ -86,7 +85,13 @@ impl Module<&Array> for Linear {
 
     fn forward(&self, x: &Array) -> Result<Array, Self::Error> {
         match &self.bias {
-            Some(bias) => crate::ops::addmm(&*bias.borrow(), x, self.weight.value.borrow().t(), None, None),
+            Some(bias) => crate::ops::addmm(
+                &*bias.borrow(),
+                x,
+                self.weight.value.borrow().t(),
+                None,
+                None,
+            ),
             None => crate::ops::matmul(x, self.weight.value.borrow().t()),
         }
     }
@@ -203,8 +208,8 @@ impl Module<&Array> for Bilinear {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::{random::uniform, Dtype};
+    use float_eq::assert_float_eq;
 
     use super::*;
 

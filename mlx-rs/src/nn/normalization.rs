@@ -1,7 +1,3 @@
-use std::borrow::Cow;
-
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     array,
     error::Exception,
@@ -9,6 +5,8 @@ use crate::{
     ops::{ones, rsqrt, zeros},
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
@@ -196,7 +194,12 @@ impl Module<&Array> for LayerNorm {
         // This is unfortunately how we can get around the borrow checker
         match &self.weight {
             Some(weight) => match &self.bias {
-                Some(bias) => crate::fast::layer_norm(x, Some(&*weight.borrow()), Some(&*bias.borrow()), self.eps),
+                Some(bias) => crate::fast::layer_norm(
+                    x,
+                    Some(&*weight.borrow()),
+                    Some(&*bias.borrow()),
+                    self.eps,
+                ),
                 None => crate::fast::layer_norm(x, Some(&*weight.borrow()), None, self.eps),
             },
             None => match &self.bias {
@@ -587,9 +590,7 @@ impl Module<&Array> for BatchNorm {
         // Unfortunate workaround to avoid borrow checker complaints
         let mut use_non_train_mean_and_var = false;
 
-        if let (Some(running_mean), Some(running_var)) =
-            (&self.running_mean, &self.running_var)
-        {
+        if let (Some(running_mean), Some(running_var)) = (&self.running_mean, &self.running_var) {
             if self.training {
                 let mu = &self.momentum;
                 // SAFETY: momentum is a single element array
@@ -613,9 +614,11 @@ impl Module<&Array> for BatchNorm {
             // SAFETY: we have already checked that running_mean and running_var are Some
             let mean = self.running_mean.as_ref().unwrap();
             let variance = self.running_var.as_ref().unwrap();
-            x.subtract(&*mean.borrow())?.multiply(rsqrt(&variance.borrow().add(&self.eps)?)?)?
+            x.subtract(&*mean.borrow())?
+                .multiply(rsqrt(&variance.borrow().add(&self.eps)?)?)?
         } else {
-            x.subtract(&mean)?.multiply(rsqrt(&variance.add(&self.eps)?)?)?
+            x.subtract(&mean)?
+                .multiply(rsqrt(&variance.add(&self.eps)?)?)?
         };
 
         if let (Some(weight), Some(bias)) = (self.weight.as_ref(), self.bias.as_ref()) {
@@ -632,11 +635,11 @@ impl Module<&Array> for BatchNorm {
 
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::{
         prelude::{Ellipsis, IndexOp},
         Dtype,
     };
+    use float_eq::assert_float_eq;
 
     use super::*;
 

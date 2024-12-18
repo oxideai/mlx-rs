@@ -1,8 +1,5 @@
 use std::borrow::Cow;
 
-use dyn_clone::DynClone;
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     error::Exception,
     module::Module,
@@ -10,6 +7,9 @@ use crate::{
     prelude::Builder,
     Array,
 };
+use dyn_clone::DynClone;
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::nn::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},

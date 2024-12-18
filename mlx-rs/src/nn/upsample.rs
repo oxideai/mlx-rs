@@ -357,7 +357,7 @@ mod tests {
         // BHWC
         let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
-        let mut up = Upsample::new(2.0, UpsampleMode::Nearest);
+        let up = Upsample::new(2.0, UpsampleMode::Nearest);
         let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
@@ -381,7 +381,7 @@ mod tests {
         // BHWC
         let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
-        let mut up = Upsample::new(
+        let up = Upsample::new(
             2.0,
             UpsampleMode::Linear {
                 align_corners: false,
@@ -413,7 +413,7 @@ mod tests {
         // BHWC
         let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
-        let mut up = Upsample::new(
+        let up = Upsample::new(
             2.0,
             UpsampleMode::Cubic {
                 align_corners: false,

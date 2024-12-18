@@ -1,8 +1,8 @@
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::module::Module;
 use crate::Array;
 use crate::{array, error::Exception, ops::multiply, random::bernoulli};
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::nn::error::DropoutBuildError;
 
@@ -279,8 +279,8 @@ impl Module<&Array> for Dropout3d {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::random::uniform;
+    use float_eq::assert_float_eq;
 
     use super::*;
 

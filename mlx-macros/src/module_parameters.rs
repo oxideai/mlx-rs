@@ -94,7 +94,7 @@ fn impl_module_parameters_for_struct(
 
             fn parameters(&self) -> #root::module::ModuleParamRef<'_> {
                 let mut parameters = #root::nested::NestedHashMap::new();
-                #(parameters.insert(stringify!(#field_names), #root::module::Parameter::as_nested_value(&self.#field_names));)*
+                #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value(&self.#field_names));)*
                 parameters
             }
 
@@ -102,7 +102,7 @@ fn impl_module_parameters_for_struct(
                 let mut parameters = #root::nested::NestedHashMap::new();
                 #(
                     if let Some(field) = #root::module::Parameter::as_trainable_nested_value(&self.#field_names) {
-                        parameters.insert(stringify!(#field_names), field);
+                        parameters.insert(std::rc::Rc::from(stringify!(#field_names)), field);
                     }
                 )*
                 parameters

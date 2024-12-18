@@ -76,9 +76,9 @@ impl<Err> Sequential<Err> {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::module::ModuleParameters;
+    use crate::module::ModuleParameters;
 
-    use crate::Linear;
+    use crate::nn::Linear;
 
     #[test]
     fn test_sequential_linear_param_len() {

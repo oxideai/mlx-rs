@@ -97,7 +97,7 @@ impl From<Infallible> for Exception {
 }
 
 thread_local! {
-    static CLOSURE_ERROR: Cell<Option<Exception>> = Cell::new(None);
+    static CLOSURE_ERROR: Cell<Option<Exception>> = const { Cell::new(None) };
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     pub(crate) static INIT_ERR_HANDLER: Once = const { Once::new() };
 }

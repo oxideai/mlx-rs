@@ -57,11 +57,9 @@ fn jvp_inner(
             c_tangents.as_ptr(),
         )
     })
-    .map_err(|e| {
-        match get_and_clear_closure_error() {
-            Some(err) => err,
-            None => e,
-        }
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
     })
 }
 
@@ -121,11 +119,9 @@ fn vjp_inner(
             c_cotangents.as_ptr(),
         )
     })
-    .map_err(|e| {
-        match get_and_clear_closure_error() {
-            Some(err) => err,
-            None => e,
-        }
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
     })
 }
 
@@ -179,11 +175,10 @@ fn value_and_gradient(
             value_and_grad,
             input_vector.as_ptr(),
         )
-    }).map_err(|e| {
-        match get_and_clear_closure_error() {
-            Some(err) => err,
-            None => e,
-        }
+    })
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
     })
 }
 

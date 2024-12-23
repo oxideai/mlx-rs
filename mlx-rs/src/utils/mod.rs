@@ -336,7 +336,7 @@ where
             Err(err) => {
                 set_closure_error(err);
                 FAILURE
-            },
+            }
         }
     }
 }

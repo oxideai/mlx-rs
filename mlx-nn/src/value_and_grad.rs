@@ -1,4 +1,5 @@
 use mlx_rs::module::{update_flattened_parameters, ModuleParameters};
+use mlx_rs::transforms::keyed_value_and_grad;
 use mlx_rs::{error::Exception, Array};
 
 use crate::module::FlattenedModuleParam;
@@ -43,7 +44,7 @@ where
 
                 self(model, arrays)
             };
-            let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
+            let mut vg = keyed_value_and_grad(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;
             Ok((v, g))
@@ -70,7 +71,7 @@ where
 
                     self(model, arrays)
                 };
-            let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
+            let mut vg = keyed_value_and_grad(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;
             Ok((v, g))
@@ -95,7 +96,7 @@ where
 
                 vec![self(model, arrays)]
             };
-            let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
+            let mut vg = keyed_value_and_grad(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;
             let v = v.into_iter().next().expect("Expected a single value");
@@ -122,7 +123,7 @@ where
 
                     self(model, arrays).map(|v| vec![v])
                 };
-            let mut vg = mlx_rs::transforms::value_and_grad_with_hashmap(inner);
+            let mut vg = keyed_value_and_grad(inner);
 
             let (v, g) = vg(trainable_parameters, arrays)?;
             let v = v.into_iter().next().expect("Expected a single value");

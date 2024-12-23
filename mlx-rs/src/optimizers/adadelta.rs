@@ -106,4 +106,8 @@ impl Updatable for AdaDelta {
     fn updatable_parameters(&self) -> Vec<&Array> {
         self.state.values().map(|(v, u)| [v, u]).flatten().collect()
     }
+    
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+        self.state.values_mut().map(|(v, u)| vec![v, u]).flatten().collect()
+    }
 }

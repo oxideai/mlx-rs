@@ -53,8 +53,9 @@ where
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -76,8 +77,9 @@ where
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -103,8 +105,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -130,8 +133,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -157,8 +161,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -184,8 +189,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -211,8 +217,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -238,8 +245,9 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs: None,
-            outputs: None,
+            // inputs: None,
+            // outputs: None,
+            state: None,
             shapeless,
             id,
         };
@@ -365,8 +373,9 @@ where
     F: 'a,
 {
     f: F,
-    inputs: Option<&'a mut [Array]>,
-    outputs: Option<&'a mut [Array]>,
+    // inputs: Option<Vec<&'a Array>>,
+    // outputs: Option<Vec<&'a Array>>,
+    state: Option<Vec<&'a mut Array>>,
     shapeless: bool,
     id: usize,
 }
@@ -376,8 +385,8 @@ fn call_mut_inner(
     inner_closure: Closure,
     fun_id: usize,
     shapeless: bool,
-    state_inputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
-    state_outputs: Rc<RefCell<&mut Option<&mut [Array]>>>,
+    state_inputs: Rc<RefCell<&mut Option<Vec<Array>>>>,
+    state_outputs: Rc<RefCell<&mut Option<Vec<Array>>>>,
     args: &[Array],
 ) -> crate::error::Result<Vec<Array>> {
     // note: this will use the cached compile (via the id)
@@ -437,8 +446,12 @@ impl<'a, F> CompiledState<'a, F> {
         F: FnMut(&[Array]) -> Vec<Array> + 'a,
     {
         let args_len = args.len();
-        let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
-        let state_outputs = Rc::new(RefCell::new(&mut self.outputs));
+
+        let mut inputs: Option<Vec<Array>> = self.state.as_ref().map(|s| s.iter().map(|a| (*a).clone()).collect::<Vec<_>>());
+        let mut outputs: Option<Vec<Array>> = self.state.as_ref().map(|s| s.iter().map(|a| (*a).clone()).collect::<Vec<_>>());
+
+        let state_inputs = Rc::new(RefCell::new(&mut inputs));
+        let state_outputs = Rc::new(RefCell::new(&mut outputs));
         let f = &mut self.f;
 
         let state_inputs_clone = Rc::clone(&state_inputs);
@@ -454,7 +467,7 @@ impl<'a, F> CompiledState<'a, F> {
             let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
                 .borrow()
                 .as_ref()
-                .map(|inputs| inputs.iter().map(Clone::clone).collect());
+                .map(|inputs| inputs.iter().map(|a| (*a).clone()).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -470,7 +483,7 @@ impl<'a, F> CompiledState<'a, F> {
             let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
                 .borrow()
                 .as_ref()
-                .map(|outputs| outputs.iter().map(Clone::clone).collect());
+                .map(|outputs| outputs.iter().map(|a| (*a).clone()).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -504,8 +517,15 @@ impl<'a, F> CompiledState<'a, F> {
         F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     {
         let args_len = args.len();
-        let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
-        let state_outputs = Rc::new(RefCell::new(&mut self.outputs));
+
+        let mut inputs: Option<Vec<Array>> = self.state.as_ref().map(|s| s.iter().map(|a| (*a).clone()).collect::<Vec<_>>());
+        let mut outputs: Option<Vec<Array>> = self.state.as_ref().map(|s| s.iter().map(|a| (*a).clone()).collect::<Vec<_>>());
+
+        let state_inputs = Rc::new(RefCell::new(&mut inputs));
+        let state_outputs = Rc::new(RefCell::new(&mut outputs));
+
+        // let state_inputs = Rc::new(RefCell::new(&mut self.inputs));
+        // let state_outputs = Rc::new(RefCell::new(&mut self.outputs));
         let f = &mut self.f;
 
         let state_inputs_clone = Rc::clone(&state_inputs);
@@ -521,7 +541,7 @@ impl<'a, F> CompiledState<'a, F> {
             let saved_state_inputs: Option<Vec<Array>> = state_inputs_clone
                 .borrow()
                 .as_ref()
-                .map(|inputs| inputs.iter().map(Clone::clone).collect());
+                .map(|inputs| inputs.iter().map(|a| (*a).clone()).collect());
 
             // replace the inner state with the tracers
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {
@@ -537,7 +557,7 @@ impl<'a, F> CompiledState<'a, F> {
             let state_output_tracers: Option<Vec<Array>> = state_outputs_clone
                 .borrow()
                 .as_ref()
-                .map(|outputs| outputs.iter().map(Clone::clone).collect());
+                .map(|outputs| outputs.iter().map(|a| (*a).clone()).collect());
 
             // put the original values back in the state
             if let Some(inputs) = state_inputs_clone.borrow_mut().as_mut() {

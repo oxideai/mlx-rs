@@ -351,4 +351,21 @@ impl Updatable for Adafactor {
         .flatten()
         .collect()
     }
+    
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+        self.state.values_mut().map(|v| {
+            // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+            [
+                &mut v.exp_avg_sq_row,
+                &mut v.exp_avg_sq_col,
+                &mut v.exp_avg_sq,
+                &mut v.exp_avg,
+            ]
+            .into_iter()
+            .filter_map(|v| v.as_mut())
+            .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect()
+    }
 }

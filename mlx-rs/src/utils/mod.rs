@@ -356,6 +356,8 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 /// This is automatically implemented for all types that implement ModuleParameters
 pub trait Updatable {
     fn updatable_parameters(&self) -> Vec<&Array>;
+
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array>;
 }
 
 impl<T> Updatable for T
@@ -364,5 +366,9 @@ where
 {
     fn updatable_parameters(&self) -> Vec<&Array> {
         self.parameters().flatten().values().copied().collect()
+    }
+
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+        self.parameters_mut().flatten().into_values().collect()
     }
 }

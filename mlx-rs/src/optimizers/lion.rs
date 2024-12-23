@@ -94,4 +94,8 @@ impl Updatable for Lion {
     fn updatable_parameters(&self) -> Vec<&Array> {
         self.state.values().collect()
     }
+    
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+        self.state.values_mut().collect()
+    }
 }

@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use mlx_sys::mlx_closure_value_and_grad;
 
 use crate::{
-    error::{Exception, Result},
+    error::{get_and_clear_closure_error, Exception, Result},
     module::ModuleParamRef,
     utils::{guard::Guarded, Closure, IntoOption, VectorArray},
     Array,
@@ -56,6 +56,12 @@ fn jvp_inner(
             c_primals.as_ptr(),
             c_tangents.as_ptr(),
         )
+    })
+    .map_err(|e| {
+        match get_and_clear_closure_error() {
+            Some(err) => err,
+            None => e,
+        }
     })
 }
 
@@ -115,6 +121,12 @@ fn vjp_inner(
             c_cotangents.as_ptr(),
         )
     })
+    .map_err(|e| {
+        match get_and_clear_closure_error() {
+            Some(err) => err,
+            None => e,
+        }
+    })
 }
 
 /// Compute the vector-Jacobian product.
@@ -167,6 +179,11 @@ fn value_and_gradient(
             value_and_grad,
             input_vector.as_ptr(),
         )
+    }).map_err(|e| {
+        match get_and_clear_closure_error() {
+            Some(err) => err,
+            None => e,
+        }
     })
 }
 

@@ -97,6 +97,7 @@ impl From<Infallible> for Exception {
 }
 
 thread_local! {
+    static CLOSURE_ERROR: Cell<Option<Exception>> = Cell::new(None);
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     pub(crate) static INIT_ERR_HANDLER: Once = const { Once::new() };
 }
@@ -120,6 +121,14 @@ pub fn setup_mlx_error_handler() {
     unsafe {
         mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
     }
+}
+
+pub(crate) fn set_closure_error(err: Exception) {
+    CLOSURE_ERROR.with(|closure_error| closure_error.set(Some(err)));
+}
+
+pub(crate) fn get_and_clear_closure_error() -> Option<Exception> {
+    CLOSURE_ERROR.with(|closure_error| closure_error.replace(None))
 }
 
 pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {

@@ -1,6 +1,7 @@
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
+use crate::error::set_closure_error;
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::{marker::PhantomData, rc::Rc};
@@ -321,7 +322,8 @@ where
         let mut closure = Box::from_raw(raw_closure);
         let arrays = match mlx_vector_array_values(vector_array) {
             Ok(arrays) => arrays,
-            Err(_) => {
+            Err(e) => {
+                set_closure_error(e);
                 return FAILURE;
             }
         };
@@ -331,7 +333,10 @@ where
                 *ret = new_mlx_vector_array(result);
                 SUCCESS
             }
-            Err(_) => FAILURE,
+            Err(err) => {
+                set_closure_error(err);
+                FAILURE
+            },
         }
     }
 }

@@ -1,6 +1,6 @@
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, utils::get_mut_or_insert_with, Array};
+use crate::{array, utils::{get_mut_or_insert_with, Updatable}, Array};
 
 use super::{Betas, Optimizer, OptimizerState};
 
@@ -87,5 +87,11 @@ impl Optimizer for Lion {
         *parameter = parameter.subtract(lr.multiply(sign(&c)?)?)?;
 
         Ok(())
+    }
+}
+
+impl Updatable for Lion {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().collect()
     }
 }

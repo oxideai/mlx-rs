@@ -9,9 +9,7 @@ use std::{
 };
 
 use crate::{
-    array,
-    module::{FlattenedModuleParam, ModuleParameters},
-    Array,
+    array, module::{FlattenedModuleParam, ModuleParameters}, utils::Updatable, Array
 };
 
 mod adadelta;
@@ -37,7 +35,7 @@ pub use sgd::*;
 type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 
 /// Trait for optimizers.
-pub trait Optimizer {
+pub trait Optimizer: Updatable {
     /// Update a single parameter with the given gradient.
     ///
     /// The implementation should look up the state for the parameter using the key and update the

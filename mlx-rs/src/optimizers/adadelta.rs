@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
+use crate::{array, ops::sqrt, utils::{get_mut_or_insert_with, Updatable}, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
@@ -99,5 +99,11 @@ impl Optimizer for AdaDelta {
         *u = u_new;
 
         Ok(())
+    }
+}
+
+impl Updatable for AdaDelta {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().map(|(v, u)| [v, u]).flatten().collect()
     }
 }

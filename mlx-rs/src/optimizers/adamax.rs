@@ -5,7 +5,7 @@ use mlx_internal_macros::{generate_builder, Buildable};
 use crate::{
     array,
     ops::{abs, maximum},
-    utils::get_mut_or_insert_with,
+    utils::{get_mut_or_insert_with, Updatable},
     Array,
 };
 
@@ -86,5 +86,11 @@ impl Optimizer for Adamax {
         *parameter = new_parameter;
 
         Ok(())
+    }
+}
+
+impl Updatable for Adamax {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().map(|(v, u)| [v, u]).flatten().collect()
     }
 }

@@ -1,6 +1,6 @@
 use std::{convert::Infallible, rc::Rc};
 
-use crate::{array, ops::square, Array};
+use crate::{array, ops::square, utils::Updatable, Array};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::utils::get_mut_or_insert_with;
@@ -71,5 +71,11 @@ impl Optimizer for AdaGrad {
         *parameter = new_param;
 
         Ok(())
+    }
+}
+
+impl Updatable for AdaGrad {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().collect()
     }
 }

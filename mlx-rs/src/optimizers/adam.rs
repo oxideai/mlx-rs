@@ -112,3 +112,9 @@ pub(super) fn adam_apply_single(
 
     Ok((new_parameter, (new_m, new_v)))
 }
+
+impl Updatable for Adam {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().map(|(v, u)| [v, u]).flatten().collect()
+    }
+}

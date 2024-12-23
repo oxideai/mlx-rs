@@ -3,10 +3,7 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array,
-    error::AdafactorBuildError,
-    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
-    Array,
+    array, error::AdafactorBuildError, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, utils::Updatable, Array
 };
 
 use super::{Optimizer, OptimizerState};
@@ -334,5 +331,24 @@ impl Optimizer for Adafactor {
         *parameter = parameter.subtract(&update)?;
 
         Ok(())
+    }
+}
+
+impl Updatable for Adafactor {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().map(|v| {
+            // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+            [
+                &v.exp_avg_sq_row,
+                &v.exp_avg_sq_col,
+                &v.exp_avg_sq,
+                &v.exp_avg,
+            ]
+            .iter()
+            .filter_map(|v| v.as_ref())
+            .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect()
     }
 }

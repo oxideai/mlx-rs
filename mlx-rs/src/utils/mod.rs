@@ -352,15 +352,17 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 }
 
 /// Helper trait for compiling a function that takes a Module and/or an Optimizer
+/// 
+/// This is automatically implemented for all types that implement ModuleParameters
 pub trait Updatable {
-    fn updatable_parameters<V>(&self) -> Vec<&Array>;
+    fn updatable_parameters(&self) -> Vec<&Array>;
 }
 
 impl<T> Updatable for T
 where 
     T: ModuleParameters 
 {
-    fn updatable_parameters<V>(&self) -> Vec<&Array> {
+    fn updatable_parameters(&self) -> Vec<&Array> {
         self.parameters().flatten().values().copied().collect()
     }
 }

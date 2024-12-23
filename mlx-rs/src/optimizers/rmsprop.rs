@@ -100,3 +100,9 @@ impl Optimizer for RmsProp {
         Ok(())
     }
 }
+
+impl Updatable for RmsProp {
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        self.state.values().collect()
+    }
+}

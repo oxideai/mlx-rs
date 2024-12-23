@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{nested::NestedHashMap, Array};
+use crate::{nested::NestedHashMap, utils::Updatable, Array};
 
 /// Type alias for owned module parameters.
 pub type ModuleParam = NestedHashMap<&'static str, Array>;
@@ -21,7 +21,7 @@ pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
-pub trait Module<Args>: ModuleParameters + std::fmt::Debug {
+pub trait Module<Args>: ModuleParameters + Updatable + std::fmt::Debug {
     /// Error type for the module.
     type Error: std::error::Error;
 

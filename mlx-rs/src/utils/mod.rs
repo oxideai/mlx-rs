@@ -1,6 +1,7 @@
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
+use crate::module::ModuleParameters;
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::{marker::PhantomData, rc::Rc};
@@ -348,4 +349,18 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
     }
 
     map.get_mut(key).unwrap()
+}
+
+/// Helper trait for compiling a function that takes a Module and/or an Optimizer
+pub trait Updatable {
+    fn updatable_parameters<V>(&self) -> Vec<&Array>;
+}
+
+impl<T> Updatable for T
+where 
+    T: ModuleParameters 
+{
+    fn updatable_parameters<V>(&self) -> Vec<&Array> {
+        self.parameters().flatten().values().copied().collect()
+    }
 }

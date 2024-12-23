@@ -38,8 +38,6 @@ pub fn disable_compile() {
 pub trait Compile<'a, Args, Output, Err>: Sized {
     fn compile(
         self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, Args, Output, Err>;
 }
@@ -50,15 +48,13 @@ where
 {
     fn compile(
         self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a [Array], Vec<Array>, ()> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -75,15 +71,13 @@ where
 {
     fn compile(
         self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a [Array], Vec<Array>, Exception> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -100,8 +94,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
@@ -111,8 +103,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -129,8 +121,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, &'a Array, Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
@@ -140,8 +130,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -158,8 +148,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
@@ -169,8 +157,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -187,8 +175,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
@@ -198,8 +184,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -216,8 +202,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
@@ -227,8 +211,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -245,8 +229,6 @@ where
 {
     fn compile(
         mut self,
-        inputs: Option<&'a mut [Array]>,
-        outputs: Option<&'a mut [Array]>,
         shapeless: bool,
     ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
@@ -256,8 +238,8 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            inputs,
-            outputs,
+            inputs: None,
+            outputs: None,
             shapeless,
             id,
         };
@@ -621,9 +603,7 @@ fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
 /// for more information.
 pub fn compile<'a, F, Args, Output, Err>(
     f: F,
-    shapeless: Option<bool>,
-    inputs: Option<&'a mut [Array]>,
-    outputs: Option<&'a mut [Array]>,
+    shapeless: impl Into<Option<bool>>,
 ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
 where
     F: Compile<'a, Args, Output, Err> + 'static,
@@ -631,8 +611,8 @@ where
     Output: 'a,
     Err: 'a,
 {
-    let shapeless = shapeless.unwrap_or(false);
-    let mut compiled = f.compile(inputs, outputs, shapeless);
+    let shapeless = shapeless.into().unwrap_or(false);
+    let mut compiled = f.compile(shapeless);
     move |args| compiled.call_mut(args)
 }
 
@@ -710,7 +690,7 @@ mod tests {
         let r1 = f(&args).drain(0..1).next().unwrap();
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let r2 = compiled(&args).unwrap().drain(0..1).next().unwrap();
 
         assert_eq!(&r1, &r2);
@@ -734,7 +714,7 @@ mod tests {
         let r1 = f(&args).unwrap().drain(0..1).next().unwrap();
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let r2 = compiled(&args).unwrap().drain(0..1).next().unwrap();
 
         assert_eq!(&r1, &r2);
@@ -757,7 +737,7 @@ mod tests {
         assert!(result.is_err());
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let result = compiled(&args);
         assert!(result.is_err());
 
@@ -778,7 +758,7 @@ mod tests {
         let r1 = f(&i);
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let r2 = compiled(&i).unwrap();
 
         assert_eq!(&r1, &r2);
@@ -798,7 +778,7 @@ mod tests {
         let r1 = f((&i1, &i2));
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let r2 = compiled((&i1, &i2)).unwrap();
 
         assert_eq!(&r1, &r2);
@@ -819,7 +799,7 @@ mod tests {
         let r1 = f((&i1, &i2, &i3));
 
         // evaluate compiled
-        let mut compiled = compile(f, None, None, None);
+        let mut compiled = compile(f, None);
         let r2 = compiled((&i1, &i2, &i3)).unwrap();
 
         assert_eq!(&r1, &r2);

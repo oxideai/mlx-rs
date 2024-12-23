@@ -627,6 +627,10 @@ mod tests {
         let b = array!([4.0, 5.0]);
         let result = fallible_jvp(f, &[a, b], &[array!(1.0f32), array!(3.0f32)]);
         assert!(result.is_err());
+
+        // Check that the error is not just "mlx_closure returned a non-zero value"
+        let err = result.unwrap_err();
+        assert!(!err.what().contains("non-zero value"))
     }
 
     #[test]
@@ -662,6 +666,10 @@ mod tests {
         let b = array!([4.0, 5.0]);
         let result = fallible_vjp(f, &[a, b], &[array!(1.0f32)]);
         assert!(result.is_err());
+
+        // Check that the error is not just "mlx_closure returned a non-zero value"
+        let err = result.unwrap_err();
+        assert!(!err.what().contains("non-zero value"))
     }
 
     #[test]
@@ -723,5 +731,9 @@ mod tests {
         let b = array!([4.0, 5.0]);
         let result = value_and_grad(fun, argnums)(&[a, b]);
         assert!(result.is_err());
+
+        // Check that the error is not just "mlx_closure returned a non-zero value"
+        let err = result.unwrap_err();
+        assert!(!err.what().contains("non-zero value"))
     }
 }

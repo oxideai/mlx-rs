@@ -17,6 +17,8 @@ use crate::{
     Array,
 };
 
+use super::get_and_clear_closure_error;
+
 /// Globally enable the compilation of functions.
 ///
 /// Default is enabled.
@@ -421,6 +423,10 @@ fn call_mut_inner(
     // compiled graph
     let result_vector = VectorArray::try_from_op(|res| unsafe {
         mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
+    })
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
     })?;
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
@@ -766,6 +772,10 @@ mod tests {
 
         let result = compiled(&another_args);
         assert!(result.is_err());
+
+        // Check that the error message is not just "mlx_closure returned a non-zero value"
+        let error = result.unwrap_err();
+        assert!(!error.what().contains("non-zero value"));
     }
 
     #[test]

@@ -35,21 +35,21 @@ pub fn disable_compile() {
     }
 }
 
-pub trait Compile<'a, Args, Output, Err>: Sized {
+pub trait Compile<Args, Output, Err>: Sized {
     fn compile(
         self,
         shapeless: bool,
-    ) -> impl CallMut<'a, Args, Output, Err>;
+    ) -> impl CallMut<Args, Output, Err>;
 }
 
-impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, ()> for F
+impl<'a, F> Compile<&'a [Array], Vec<Array>, ()> for F
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'static,
 {
     fn compile(
         self,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a [Array], Vec<Array>, ()> {
+    ) -> impl CallMut<&'a [Array], Vec<Array>, ()> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -66,14 +66,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, &'a [Array], Vec<Array>, Exception> for F
+impl<'a, F> Compile<&'a [Array], Vec<Array>, Exception> for F
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'static,
 {
     fn compile(
         self,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a [Array], Vec<Array>, Exception> {
+    ) -> impl CallMut<&'a [Array], Vec<Array>, Exception> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -90,14 +90,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, &'a Array, Array, ()> for F
+impl<'a, F> Compile<&'a Array, Array, ()> for F
 where
     F: FnMut(&Array) -> Array + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a Array, Array, ()> {
+    ) -> impl CallMut<&'a Array, Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)(&args[0]);
             vec![result]
@@ -118,14 +118,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, &'a Array, Array, Exception> for F
+impl<'a, F> Compile<&'a Array, Array, Exception> for F
 where
     F: FnMut(&Array) -> Result<Array, Exception> + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, &'a Array, Array, Exception> {
+    ) -> impl CallMut<&'a Array, Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)(&args[0])?;
             Ok(vec![result])
@@ -146,14 +146,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, (&'a Array, &'a Array), Array, ()> for F
+impl<'a, F> Compile<(&'a Array, &'a Array), Array, ()> for F
 where
     F: FnMut((&Array, &Array)) -> Array + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, ()> {
+    ) -> impl CallMut<(&'a Array, &'a Array), Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)((&args[0], &args[1]));
             vec![result]
@@ -174,14 +174,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, (&'a Array, &'a Array), Array, Exception> for F
+impl<'a, F> Compile<(&'a Array, &'a Array), Array, Exception> for F
 where
     F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, (&'a Array, &'a Array), Array, Exception> {
+    ) -> impl CallMut<(&'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)((&args[0], &args[1]))?;
             Ok(vec![result])
@@ -202,14 +202,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, (&'a Array, &'a Array, &'a Array), Array, ()> for F
+impl<'a, F> Compile<(&'a Array, &'a Array, &'a Array), Array, ()> for F
 where
     F: FnMut((&Array, &Array, &Array)) -> Array + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> {
+    ) -> impl CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> {
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)((&args[0], &args[1], &args[2]));
             vec![result]
@@ -230,14 +230,14 @@ where
     }
 }
 
-impl<'a, F> Compile<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> for F
+impl<'a, F> Compile<(&'a Array, &'a Array, &'a Array), Array, Exception> for F
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'static,
 {
     fn compile(
         mut self,
         shapeless: bool,
-    ) -> impl CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception> {
+    ) -> impl CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception> {
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)((&args[0], &args[1], &args[2]))?;
             Ok(vec![result])
@@ -258,7 +258,7 @@ where
     }
 }
 
-pub trait CallMut<'a, Args, Output, Err> {
+pub trait CallMut<Args, Output, Err> {
     fn call_mut(&mut self, args: Args) -> Result<Output, Exception>;
 }
 
@@ -268,7 +268,7 @@ pub struct Compiled<'a, F, G> {
     state: CompiledState<'a, G>,
 }
 
-impl<'a, F, G> CallMut<'a, &'a [Array], Vec<Array>, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, ()> for Compiled<'a, F, G>
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -278,7 +278,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, &'a [Array], Vec<Array>, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, Exception> for Compiled<'a, F, G>
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -288,7 +288,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, &'a Array, Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a Array, Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut(&Array) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -301,7 +301,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, &'a Array, Array, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a Array, Array, Exception> for Compiled<'a, F, G>
 where
     F: FnMut(&Array) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -314,7 +314,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array)) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -327,7 +327,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array), Array, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, Exception> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -340,7 +340,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -353,7 +353,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<'a, (&'a Array, &'a Array, &'a Array), Array, Exception>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception>
     for Compiled<'a, F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'a,
@@ -626,7 +626,7 @@ pub fn compile<'a, F, Args, Output, Err>(
     shapeless: impl Into<Option<bool>>,
 ) -> impl FnMut(Args) -> Result<Output, Exception> + 'a
 where
-    F: Compile<'a, Args, Output, Err> + 'static,
+    F: Compile<Args, Output, Err> + 'static,
     Args: 'a,
     Output: 'a,
     Err: 'a,

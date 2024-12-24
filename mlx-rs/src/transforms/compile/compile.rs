@@ -10,7 +10,7 @@ use crate::{
     Array,
 };
 
-use super::{type_id_to_usize, CompiledState};
+use super::{type_id_to_usize, Compiled, CompiledState};
 
 /// Globally enable the compilation of functions.
 ///
@@ -57,9 +57,10 @@ where
             f: self,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -81,9 +82,10 @@ where
             f: self,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -109,9 +111,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -137,9 +140,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -165,9 +169,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -193,9 +198,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -221,9 +227,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -249,9 +256,10 @@ where
             f,
             // inputs: None,
             // outputs: None,
-            state: None,
+            // state: None,
             shapeless,
             id,
+            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -260,17 +268,11 @@ where
     }
 }
 
-pub trait CallMut<Args, Output, Err> {
-    fn call_mut(&mut self, args: Args) -> Result<Output, Exception>;
+pub trait CallMut<A, O, E> {
+    fn call_mut(&mut self, args: A) -> Result<O, Exception>;
 }
 
-#[derive(Debug)]
-pub struct Compiled<'a, F, G> {
-    f_marker: std::marker::PhantomData<F>,
-    state: CompiledState<'a, G>,
-}
-
-impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, ()> for Compiled<F, G>
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -280,7 +282,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, Exception> for Compiled<F, G>
 where
     F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -290,7 +292,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<&'a Array, Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a Array, Array, ()> for Compiled<F, G>
 where
     F: FnMut(&Array) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -303,7 +305,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<&'a Array, Array, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<&'a Array, Array, Exception> for Compiled<F, G>
 where
     F: FnMut(&Array) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -316,7 +318,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, ()> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array)) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -329,7 +331,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, Exception> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, Exception> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -342,7 +344,7 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<'a, F, G>
+impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Array + 'a,
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
@@ -356,7 +358,7 @@ where
 }
 
 impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception>
-    for Compiled<'a, F, G>
+    for Compiled<F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
@@ -374,15 +376,12 @@ where
 /// Please refer to the [swift binding
 /// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
 /// for more information.
-pub fn compile<'a, F, A, O, E>(
+pub fn compile<F, A, O, E>(
     f: F,
     shapeless: impl Into<Option<bool>>,
-) -> impl FnMut(A) -> Result<O, Exception> + 'a
+) -> impl FnMut(A) -> Result<O, Exception>
 where
     F: Compile<A, O, E> + 'static,
-    A: 'a,
-    O: 'a,
-    E: 'a,
 {
     let shapeless = shapeless.into().unwrap_or(false);
     let mut compiled = f.compile(shapeless);

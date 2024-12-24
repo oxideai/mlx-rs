@@ -101,6 +101,39 @@ where
     }
 }
 
+impl<T> ModuleParameters for &'_ mut T
+where 
+    T: ModuleParameters + ?Sized,
+{
+    fn parameters(&self) -> ModuleParamRef<'_> {
+        (**self).parameters()
+    }
+
+    fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
+        (**self).parameters_mut()
+    }
+
+    fn trainable_parameters(&self) -> ModuleParamRef<'_> {
+        (**self).trainable_parameters()
+    }
+
+    fn freeze_parameters(&mut self, recursive: bool) {
+        (**self).freeze_parameters(recursive);
+    }
+
+    fn unfreeze_parameters(&mut self, recursive: bool) {
+        (**self).unfreeze_parameters(recursive);
+    }
+
+    fn all_frozen(&self) -> Option<bool> {
+        (**self).all_frozen()
+    }
+
+    fn any_frozen(&self) -> Option<bool> {
+        (**self).any_frozen()
+    }
+}
+
 impl<T> ModuleParameters for Box<T>
 where
     T: ModuleParameters + ?Sized,

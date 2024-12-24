@@ -32,8 +32,26 @@ pub use lion::*;
 pub use rmsprop::*;
 pub use sgd::*;
 
-type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
+// Unfortunate workaround to implement Updatable for mutable references of
+// optimizers This is needed because of the orphan rule and lack of negative
+// trait bound, otherwise we would need to implement Updatable for every
+// `Module`
+macro_rules! impl_updatable_for_mut_optimizer {
+    ($optimizer:ty) => {
+        impl Updatable for &'_ mut $optimizer {
+            fn updatable_parameters(&self) -> Vec<&Array> {
+                <$optimizer as Updatable>::updatable_parameters(&**self)
+            }
+            
+            fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+                <$optimizer as Updatable>::updatable_parameters_mut(&mut **self)
+            }
+        }
+    };
+}
+use impl_updatable_for_mut_optimizer;
 
+type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 /// Trait for optimizers.
 pub trait Optimizer: Updatable {
     /// Update a single parameter with the given gradient.

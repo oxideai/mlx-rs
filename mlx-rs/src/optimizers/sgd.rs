@@ -132,3 +132,5 @@ impl Updatable for Sgd {
         self.state.values_mut().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(Sgd);

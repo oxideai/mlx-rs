@@ -111,3 +111,5 @@ impl Updatable for AdaDelta {
         self.state.values_mut().map(|(v, u)| vec![v, u]).flatten().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(AdaDelta);

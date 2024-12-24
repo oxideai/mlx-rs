@@ -372,3 +372,23 @@ where
         self.parameters_mut().flatten().into_values().collect()
     }
 }
+
+impl<'a, T1, T2> Updatable for (T1, T2)
+where 
+    T1: Updatable,
+    T2: Updatable
+{
+    fn updatable_parameters(&self) -> Vec<&Array> {
+        let (a, b) = self;
+        let mut params = a.updatable_parameters();
+        params.extend(b.updatable_parameters());
+        params
+    }
+
+    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+        let (a, b) = self;
+        let mut params = a.updatable_parameters_mut();
+        params.extend(b.updatable_parameters_mut());
+        params
+    }
+}

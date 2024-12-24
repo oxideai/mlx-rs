@@ -2,7 +2,7 @@ use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{array, utils::{get_mut_or_insert_with, Updatable}, Array};
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The Lion optimizer [1].
@@ -99,3 +99,5 @@ impl Updatable for Lion {
         self.state.values_mut().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(Lion);

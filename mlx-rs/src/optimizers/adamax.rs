@@ -9,7 +9,7 @@ use crate::{
     Array,
 };
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The Adamax optimizer, a variant of Adam based on the infinity norm [1].
@@ -98,3 +98,5 @@ impl Updatable for Adamax {
         self.state.values_mut().map(|(v, u)| [v, u]).flatten().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(Adamax);

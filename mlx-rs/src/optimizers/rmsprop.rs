@@ -110,3 +110,5 @@ impl Updatable for RmsProp {
         self.state.values_mut().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(RmsProp);

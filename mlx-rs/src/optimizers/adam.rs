@@ -122,3 +122,5 @@ impl Updatable for Adam {
         self.state.values_mut().map(|(v, u)| [v, u]).flatten().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(Adam);

@@ -6,7 +6,7 @@ use crate::{
     array, error::AdafactorBuildError, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, utils::Updatable, Array
 };
 
-use super::{Optimizer, OptimizerState};
+use super::*;
 
 fn rms(inputs: &Array) -> crate::error::Result<Array> {
     sqrt(&mean(&square(inputs)?, None, None)?)
@@ -369,3 +369,5 @@ impl Updatable for Adafactor {
         .collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(Adafactor);

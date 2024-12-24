@@ -4,7 +4,7 @@ use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{array, utils::{get_mut_or_insert_with, Updatable}, Array};
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The AdamW optimizer [1].
@@ -115,3 +115,5 @@ impl Updatable for AdamW {
         self.state.values_mut().map(|(v, u)| [v, u]).flatten().collect()
     }
 }
+
+impl_updatable_for_mut_optimizer!(AdamW);

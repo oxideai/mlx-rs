@@ -102,7 +102,7 @@ where
 }
 
 impl<T> ModuleParameters for &'_ mut T
-where 
+where
     T: ModuleParameters + ?Sized,
 {
     fn parameters(&self) -> ModuleParamRef<'_> {

@@ -9,7 +9,10 @@ use std::{
 };
 
 use crate::{
-    array, module::{FlattenedModuleParam, ModuleParameters}, utils::Updatable, Array
+    array,
+    module::{FlattenedModuleParam, ModuleParameters},
+    utils::Updatable,
+    Array,
 };
 
 mod adadelta;
@@ -42,7 +45,7 @@ macro_rules! impl_updatable_for_mut_optimizer {
             fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
                 <$optimizer as Updatable>::updatable_states(&**self)
             }
-            
+
             fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
                 <$optimizer as Updatable>::updatable_states_mut(&mut **self)
             }

@@ -1,5 +1,11 @@
-use mlx_rs::{error::Exception, macros::ModuleParameters, module::{Module, Param}, random::uniform, utils::IntoOption, Array};
-
+use mlx_rs::{
+    error::Exception,
+    macros::ModuleParameters,
+    module::{Module, Param},
+    random::uniform,
+    utils::IntoOption,
+    Array,
+};
 
 /// A helper model for testing optimizers.
 ///

@@ -1,6 +1,11 @@
 use std::rc::Rc;
 
-use crate::{array, ops::sqrt, utils::{get_mut_or_insert_with, Updatable}, Array};
+use crate::{
+    array,
+    ops::sqrt,
+    utils::{get_mut_or_insert_with, Updatable},
+    Array,
+};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
@@ -106,17 +111,19 @@ impl Updatable for AdaDelta {
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 
-        self.state.iter().sorted_by(|a, b| a.0.cmp(&b.0))
-            .map(|(_, (v, u))| vec![v, u])
-            .flatten()
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
     }
-    
+
     fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
         use itertools::Itertools;
 
-        self.state.iter_mut().sorted_by(|a, b| a.0.cmp(&b.0))
-            .map(|(_, (v, u))| vec![v, u])
-            .flatten()
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
     }
 }
 

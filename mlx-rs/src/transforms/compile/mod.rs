@@ -49,7 +49,6 @@ struct CompiledState<F> {
     id: usize,
 }
 
-
 impl<F> Drop for CompiledState<F> {
     fn drop(&mut self) {
         unsafe {

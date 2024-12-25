@@ -10,10 +10,7 @@ use mlx_rs::{
     module::{Module, ModuleParameters},
     ops::ones,
     optimizers::{Optimizer, Sgd},
-    transforms::{
-        compile::compile_with_state,
-        eval_params,
-    },
+    transforms::{compile::compile_with_state, eval_params},
     Array,
 };
 

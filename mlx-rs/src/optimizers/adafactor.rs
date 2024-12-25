@@ -3,7 +3,11 @@ use std::{borrow::Cow, collections::HashMap, rc::Rc};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    array, error::AdafactorBuildError, ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like}, utils::Updatable, Array
+    array,
+    error::AdafactorBuildError,
+    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    utils::Updatable,
+    Array,
 };
 
 use super::*;
@@ -338,9 +342,10 @@ impl Updatable for Adafactor {
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 
-        self.state.iter()
-            .sorted_by(|a, b| a.0.cmp(&b.0))
-            .map(|(_, v)| {
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
                 // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
                 [
                     &v.exp_avg_sq_row,
@@ -352,15 +357,15 @@ impl Updatable for Adafactor {
                 .filter_map(|v| v.as_ref())
                 .collect::<Vec<_>>()
             })
-            .flatten()
     }
-    
+
     fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
         use itertools::Itertools;
 
-        self.state.iter_mut()
-            .sorted_by(|a, b| a.0.cmp(&b.0))
-            .map(|(_, v)| {
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
                 // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
                 [
                     &mut v.exp_avg_sq_row,
@@ -372,7 +377,6 @@ impl Updatable for Adafactor {
                 .filter_map(|v| v.as_mut())
                 .collect::<Vec<_>>()
             })
-            .flatten()
     }
 }
 

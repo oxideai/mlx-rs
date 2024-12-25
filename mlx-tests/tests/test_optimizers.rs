@@ -44,7 +44,7 @@ where
     };
 
     // TODO: check compiled model once we have it
-    let mut model = LinearFunctionModel::new()?;
+    let mut model = LinearFunctionModel::new(None)?;
     eval_params(model.parameters())?;
 
     let m = array!(0.25);

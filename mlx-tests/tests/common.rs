@@ -1,4 +1,4 @@
-use mlx_rs::{error::Exception, macros::ModuleParameters, module::{Module, Param}, random::uniform, Array};
+use mlx_rs::{error::Exception, macros::ModuleParameters, module::{Module, Param}, random::uniform, utils::IntoOption, Array};
 
 
 /// A helper model for testing optimizers.
@@ -25,9 +25,10 @@ impl Module<&Array> for LinearFunctionModel {
 }
 
 impl LinearFunctionModel {
-    pub fn new() -> mlx_rs::error::Result<Self> {
-        let m = uniform::<_, f32>(-5.0, 5.0, None, None)?;
-        let b = uniform::<_, f32>(-5.0, 5.0, None, None)?;
+    pub fn new<'a>(shape: impl IntoOption<&'a [i32]>) -> mlx_rs::error::Result<Self> {
+        let shape = shape.into_option();
+        let m = uniform::<_, f32>(-5.0, 5.0, shape, None)?;
+        let b = uniform::<_, f32>(-5.0, 5.0, shape, None)?;
         Ok(Self {
             m: Param::new(m),
             b: Param::new(b),

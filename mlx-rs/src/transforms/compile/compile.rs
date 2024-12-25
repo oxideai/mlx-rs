@@ -523,7 +523,8 @@ mod tests {
     #[test]
     fn test_compile_with_three_args() {
         let f = |(x, y, z): (&Array, &Array, &Array)| x * y * z;
-
+        
+        let mut compiled = compile(f, None);
         let i1 = ones::<f32>(&[20, 20]).unwrap();
         let i2 = ones::<f32>(&[20, 20]).unwrap();
         let i3 = ones::<f32>(&[20, 20]).unwrap();
@@ -532,7 +533,6 @@ mod tests {
         let r1 = f((&i1, &i2, &i3));
 
         // evaluate compiled
-        let mut compiled = compile(f, None);
         let r2 = compiled((&i1, &i2, &i3)).unwrap();
 
         assert_eq!(&r1, &r2);

@@ -67,7 +67,7 @@ where
         // compute the loss and gradients.  use the optimizer
         // to adjust the parameters closer to the target
         let (loss, g) = lg(&mut model, (&x, &y))?;
-        optimizer.apply(&mut model, g)?;
+        optimizer.update(&mut model, g)?;
 
         eval_params(model.parameters())?;
 
@@ -202,7 +202,7 @@ fn test_ada_delta() {
 
     let mut optimizer = AdaDelta::new(0.1).unwrap();
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
@@ -242,7 +242,7 @@ fn test_adagrad() {
 
     let mut optimizer = AdaGrad::new(0.1);
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -298,7 +298,7 @@ fn test_adam() {
 
     let mut optimizer = Adam::new(0.1);
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -354,7 +354,7 @@ fn test_adamw() {
 
     let mut optimizer = AdamW::new(0.1);
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -410,7 +410,7 @@ fn test_adamax() {
 
     let mut optimizer = Adamax::new(0.1);
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -435,7 +435,7 @@ fn test_rmsprop() {
     let (mut model, gradients) = create_default_test_model_and_grads();
 
     let mut optim = RmsPropBuilder::new(LR).alpha(ALPHA).build().unwrap();
-    optim.apply(&mut model, gradients).unwrap();
+    optim.update(&mut model, gradients).unwrap();
 
     let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.1;
     let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.1;
@@ -473,7 +473,7 @@ fn test_sgd() {
     let (mut model, gradients) = create_default_test_model_and_grads();
 
     let mut optim = SgdBuilder::new(1e-2).momentum(0.9).build().unwrap();
-    optim.apply(&mut model, gradients).unwrap();
+    optim.update(&mut model, gradients).unwrap();
 
     let expected_first_a = ones::<f32>(&[10]).unwrap() * -0.01;
     let expected_first_b = ones::<f32>(&[1]).unwrap() * -0.01;
@@ -541,7 +541,7 @@ fn test_lion() {
 
     let mut optimizer = Lion::new(0.1);
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -597,7 +597,7 @@ fn test_lion1() {
 
     let mut optimizer = LionBuilder::new(0.1).weight_decay(0.1).build().unwrap();
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -651,7 +651,7 @@ fn test_adafactor() {
 
     let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     println!(
@@ -709,7 +709,7 @@ fn test_adafactor1() {
 
     let mut optimizer = AdafactorBuilder::new().lr(0.1).beta1(0.1).build().unwrap();
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
@@ -763,7 +763,7 @@ fn test_adafactor2() {
 
     let mut optimizer = AdafactorBuilder::new().lr(0.1).build().unwrap();
 
-    optimizer.apply(&mut a_model, a_grad_params).unwrap();
+    optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[10]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(

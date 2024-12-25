@@ -71,7 +71,7 @@ impl AdaDelta {
 }
 
 impl Optimizer for AdaDelta {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,

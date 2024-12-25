@@ -77,7 +77,7 @@ impl AdamW {
 }
 
 impl Optimizer for AdamW {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,

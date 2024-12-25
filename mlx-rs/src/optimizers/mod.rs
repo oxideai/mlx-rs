@@ -59,7 +59,7 @@ pub trait Optimizer: Updatable {
     /// The implementation should look up the state for the parameter using the key and update the
     /// state and the parameter accordingly. The key is provided instead of the state because it
     /// would otherwise create a mutable borrow conflict with the rest of the optimizer fields.
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -68,7 +68,7 @@ pub trait Optimizer: Updatable {
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
-    fn apply<M>(
+    fn update<M>(
         &mut self,
         model: &mut M,
         gradients: impl Borrow<FlattenedModuleParam>,
@@ -80,7 +80,7 @@ pub trait Optimizer: Updatable {
 
         for (key, gradient) in gradients.borrow().iter() {
             if let Some(parameter) = parameters.get_mut(key) {
-                self.apply_single(key, gradient, parameter)?;
+                self.update_single(key, gradient, parameter)?;
             }
         }
 

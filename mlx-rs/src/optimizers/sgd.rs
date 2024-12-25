@@ -73,7 +73,7 @@ impl Sgd {
 impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,

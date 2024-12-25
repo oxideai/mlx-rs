@@ -73,7 +73,7 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,

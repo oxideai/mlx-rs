@@ -12,6 +12,9 @@ mod compile_updatable;
 pub use compile::*;
 pub use compile_updatable::*;
 
+mod module;
+pub use module::*;
+
 #[derive(Debug)]
 pub struct Compiled<F, G> {
     f_marker: std::marker::PhantomData<F>,

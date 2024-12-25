@@ -68,7 +68,7 @@ impl Adam {
 }
 
 impl Optimizer for Adam {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,

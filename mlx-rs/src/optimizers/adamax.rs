@@ -65,7 +65,7 @@ impl Adamax {
 }
 
 impl Optimizer for Adamax {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,

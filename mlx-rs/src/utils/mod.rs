@@ -360,98 +360,47 @@ pub trait Updatable {
     /// 
     /// The order of the states should be consistent across calls and should be the same as the
     /// order of the states returned by [`Updatable::updatable_states_mut`].
-    fn updatable_states(&self) -> Vec<&Array>;
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array>;
 
     /// Returns a list of mutable references to the updatable states.
     /// 
     /// The order of the states should be consistent across calls and should be the same as the
     /// order of the states returned by [`Updatable::updatable_states`].
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array>;
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array>;
 }
 
 impl<T> Updatable for T
 where 
     T: ModuleParameters 
 {
-    fn updatable_states(&self) -> Vec<&Array> {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 
         // TODO: should we change the parameter map to a BTreeMap because it is sorted?
-        self.parameters().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v).collect()
+        self.parameters().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v)
     }
 
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
         use itertools::Itertools;
 
-        self.parameters_mut().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v).collect()
+        self.parameters_mut().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v)
     }
 }
 
-impl<'a, T1, T2> Updatable for (T1, T2)
+impl<T1, T2> Updatable for (T1, T2)
 where 
     T1: Updatable,
     T2: Updatable
 {
-    fn updatable_states(&self) -> Vec<&Array> {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         let (a, b) = self;
-        let mut params = a.updatable_states();
-        params.extend(b.updatable_states());
-        params
+        let params = a.updatable_states();
+        params.into_iter().chain(b.updatable_states())
     }
 
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
         let (a, b) = self;
-        let mut params = a.updatable_states_mut();
-        params.extend(b.updatable_states_mut());
-        params
-    }
-}
-
-impl<'a, T1, T2, T3> Updatable for (T1, T2, T3)
-where 
-    T1: Updatable,
-    T2: Updatable,
-    T3: Updatable
-{
-    fn updatable_states(&self) -> Vec<&Array> {
-        let (a, b, c) = self;
-        let mut params = a.updatable_states();
-        params.extend(b.updatable_states());
-        params.extend(c.updatable_states());
-        params
-    }
-
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
-        let (a, b, c) = self;
-        let mut params = a.updatable_states_mut();
-        params.extend(b.updatable_states_mut());
-        params.extend(c.updatable_states_mut());
-        params
-    }
-}
-
-impl<'a, T1, T2, T3, T4> Updatable for (T1, T2, T3, T4)
-where 
-    T1: Updatable,
-    T2: Updatable,
-    T3: Updatable,
-    T4: Updatable
-{
-    fn updatable_states(&self) -> Vec<&Array> {
-        let (a, b, c, d) = self;
-        let mut params = a.updatable_states();
-        params.extend(b.updatable_states());
-        params.extend(c.updatable_states());
-        params.extend(d.updatable_states());
-        params
-    }
-
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
-        let (a, b, c, d) = self;
-        let mut params = a.updatable_states_mut();
-        params.extend(b.updatable_states_mut());
-        params.extend(c.updatable_states_mut());
-        params.extend(d.updatable_states_mut());
-        params
+        let params = a.updatable_states_mut();
+        params.into_iter().chain(b.updatable_states_mut())
     }
 }

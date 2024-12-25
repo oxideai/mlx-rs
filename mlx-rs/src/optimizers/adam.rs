@@ -114,12 +114,20 @@ pub(super) fn adam_apply_single(
 }
 
 impl Updatable for Adam {
-    fn updatable_states(&self) -> Vec<&Array> {
-        self.state.values().map(|(v, u)| [v, u]).flatten().collect()
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state.iter().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, (v, u))| vec![v, u])
+            .flatten()
     }
     
-    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
-        self.state.values_mut().map(|(v, u)| [v, u]).flatten().collect()
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state.iter_mut().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, (v, u))| vec![v, u])
+            .flatten()
     }
 }
 

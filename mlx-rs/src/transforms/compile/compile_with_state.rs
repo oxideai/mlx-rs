@@ -374,7 +374,7 @@ where
 
     let (state_params_len, inner_inputs_vector) = {
         let borrow = state.borrow();
-        let state_params = borrow.updatable_states();
+        let state_params: Vec<_> = borrow.updatable_states().into_iter().collect();
         let state_params_len = state_params.len();
         let inner_inputs_vector = VectorArray::try_from_iter(args.iter().map(AsRef::as_ref).chain(state_params.into_iter()))?;
         (state_params_len, inner_inputs_vector)
@@ -461,7 +461,7 @@ impl<F> CompiledState<F> {
 
             // save a snapshot of the inner state
             let saved_state_inputs = state_clone.borrow().updatable_states()
-                .iter()
+                .into_iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 
@@ -475,7 +475,7 @@ impl<F> CompiledState<F> {
 
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone.borrow().updatable_states()
-                .iter()
+                .into_iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 
@@ -519,7 +519,7 @@ impl<F> CompiledState<F> {
 
             // save a snapshot of the inner state
             let saved_state_inputs = state_clone.borrow().updatable_states()
-                .iter()
+                .into_iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 
@@ -533,7 +533,7 @@ impl<F> CompiledState<F> {
 
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone.borrow().updatable_states()
-                .iter()
+                .into_iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 

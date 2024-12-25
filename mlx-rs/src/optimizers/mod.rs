@@ -39,11 +39,11 @@ pub use sgd::*;
 macro_rules! impl_updatable_for_mut_optimizer {
     ($optimizer:ty) => {
         impl Updatable for &'_ mut $optimizer {
-            fn updatable_states(&self) -> Vec<&Array> {
+            fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
                 <$optimizer as Updatable>::updatable_states(&**self)
             }
             
-            fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+            fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
                 <$optimizer as Updatable>::updatable_states_mut(&mut **self)
             }
         }

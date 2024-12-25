@@ -1,8 +1,8 @@
 use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
-use crate::{error::Exception, module::ModuleParameters, transforms::compile::{type_id_to_usize, CompiledState}, utils::Updatable, Array};
+use crate::{error::Exception, transforms::compile::{type_id_to_usize, CompiledState}, utils::Updatable, Array};
 
-use super::{update_by_replace_with_ref_to_new_array, Closure, Compile, Compiled, Guarded, VectorArray};
+use super::{update_by_replace_with_ref_to_new_array, Closure, Compiled, Guarded, VectorArray};
 
 pub trait CompileWithState<U, A, O, E> {
     fn compile(self, shapeless: bool) -> impl CallMutWithState<U, A, O, E>;
@@ -38,13 +38,13 @@ where
     U: Updatable,
 {
     fn call_mut(&mut self, state: &mut U, args: &[Array]) -> Result<Vec<Array>, Exception> {
-        self.state.call_mut_with_module(state, args)
+        self.state.call_mut_with_state(state, args)
     }
 }
 
 
 impl<F> CompiledState<F> {
-    fn call_mut_with_module<U>(&mut self, state: &mut U, args: &[Array]) -> Result<Vec<Array>, Exception> 
+    fn call_mut_with_state<U>(&mut self, state: &mut U, args: &[Array]) -> Result<Vec<Array>, Exception> 
     where 
         F: FnMut(&mut U, &[Array]) -> Vec<Array>,
         U: Updatable,
@@ -53,22 +53,8 @@ impl<F> CompiledState<F> {
 
         let state = Rc::new(RefCell::new(state));
 
-        // // TODO: do we need both inputs and outputs? They are the same in this case
-        // let mut inputs: Vec<Array> = state.updatable_parameters()
-        //     .iter()
-        //     .map(|array| (*array).clone())
-        //     .collect();
-        // let mut outputs: Vec<Array> = state.updatable_parameters()
-        //     .iter()
-        //     .map(|array| (*array).clone())
-        //     .collect();
-
-        // let state_inputs = Rc::new(RefCell::new(&mut inputs));
-        // let state_outputs = Rc::new(RefCell::new(&mut outputs));
         let f = &mut self.f;
 
-        // let state_inputs_clone = Rc::clone(&state_inputs);
-        // let state_outputs_clone = Rc::clone(&state_outputs);
         let state_clone = Rc::clone(&state);
         let inner = move |tracers: &[Array]| -> Vec<Array> {
             // put the tracers in their appropriate places:
@@ -78,9 +64,6 @@ impl<F> CompiledState<F> {
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            // let saved_state_inputs: Vec<Array> = state_inputs_clone
-            //     .borrow()
-            //     .iter().map(|a| (*a).clone()).collect();
             let saved_state_inputs = state_clone.borrow().updatable_parameters()
                 .iter()
                 .map(|array| (*array).clone())
@@ -95,9 +78,6 @@ impl<F> CompiledState<F> {
             let mut result = (f)(*state_clone.borrow_mut(), tracer_args);
 
             // recapture the state as it may have changed
-            // let mut state_output_tracers: Vec<Array> = state_outputs_clone
-            //     .borrow()
-            //     .iter().map(|a| (*a).clone()).collect();
             let mut state_output_tracers = state_clone.borrow().updatable_parameters()
                 .iter()
                 .map(|array| (*array).clone())

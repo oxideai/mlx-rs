@@ -24,37 +24,39 @@ fn test_compile_module() {
     let y = m * &x + b;
     let x = vec![x];
 
-    let step = move |model: &mut LinearFunctionModel, x: &[Array]| -> Vec<Array> {
-        let mut lg = module_value_and_grad(loss);
-        let x = &x[0];
-        let (loss, grad) = lg(model, x).unwrap();
-        // optimizer.update(model, grad).unwrap();
-        // println!("loss: {:?}", loss);
-        vec![loss]
-    };
-
-    let original = step(&mut model, x.as_slice());
-    println!("original: {:?}", original);
-
-    let mut compiled = compile_with_state(step, None);
-    let result = compiled(&mut model, x.as_slice());
-    println!("result: {:?}", result);
-    let result = compiled(&mut model, x.as_slice());
-    println!("result: {:?}", result);
-
-    // let step = move |(model, optimizer): &mut (&mut LinearFunctionModel, &mut Sgd), x: &[Array]| -> Vec<Array> {
+    // let step = move |model: &mut LinearFunctionModel, x: &[Array]| -> Vec<Array> {
     //     let mut lg = module_value_and_grad(loss);
     //     let x = &x[0];
     //     let (loss, grad) = lg(model, x).unwrap();
-    //     optimizer.update(model, grad).unwrap();
-    //     // println!("loss: {:?}", loss);
     //     vec![loss]
     // };
 
+    // let original = step(&mut model, x.as_slice());
+    // println!("original: {:?}", original);
+
     // let mut compiled = compile_with_state(step, None);
-    // let mut state = (&mut model, &mut optimizer);
-    // let result = compiled(&mut state, x.as_slice());
-    // eval_params(state.0.parameters()).unwrap();
-    // let result = compiled(&mut state, x.as_slice());
-    // eval_params(state.0.parameters()).unwrap();
+    // let result = compiled(&mut model, x.as_slice());
+    // println!("result: {:?}", result);
+    // let result = compiled(&mut model, x.as_slice());
+    // println!("result: {:?}", result);
+
+    let step = move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
+        let mut lg = module_value_and_grad(loss);
+        let x = &x[0];
+        let (loss, grad) = lg(model, x).unwrap();
+        optimizer.update(model, grad).unwrap();
+        vec![loss]
+    };
+
+    let mut compiled = compile_with_state(step, None);
+    let mut state = (model, optimizer);
+    let result = compiled(&mut state, x.as_slice());
+    println!("result: {:?}", result);
+    eval_params(state.0.parameters()).unwrap();
+    let result = compiled(&mut state, x.as_slice());
+    println!("result: {:?}", result);
+    eval_params(state.0.parameters()).unwrap();
+    let result = compiled(&mut state, x.as_slice());
+    println!("result: {:?}", result);
+    eval_params(state.0.parameters()).unwrap();
 }

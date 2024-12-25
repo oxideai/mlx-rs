@@ -55,9 +55,7 @@ where
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -80,9 +78,7 @@ where
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -109,9 +105,6 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
             shapeless,
             id,
             
@@ -138,9 +131,7 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -167,9 +158,7 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -196,9 +185,7 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -225,9 +212,7 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             
@@ -254,9 +239,7 @@ where
         let id = type_id_to_usize(&f);
         let state = CompiledState {
             f,
-            // inputs: None,
-            // outputs: None,
-            // state: None,
+
             shapeless,
             id,
             

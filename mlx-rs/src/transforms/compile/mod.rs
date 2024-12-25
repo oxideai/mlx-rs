@@ -1,6 +1,7 @@
 //! Compilation of functions.
 
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 use super::{Closure, Guarded, VectorArray};
 use crate::Array;

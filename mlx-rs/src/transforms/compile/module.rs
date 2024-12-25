@@ -51,22 +51,25 @@ impl<F> CompiledState<F> {
     {
         let args_len = args.len();
 
-        // TODO: do we need both inputs and outputs? They are the same in this case
-        let mut inputs: Vec<Array> = state.updatable_parameters()
-            .iter()
-            .map(|array| (*array).clone())
-            .collect();
-        let mut outputs: Vec<Array> = state.updatable_parameters()
-            .iter()
-            .map(|array| (*array).clone())
-            .collect();
+        let state = Rc::new(RefCell::new(state));
 
-        let state_inputs = Rc::new(RefCell::new(&mut inputs));
-        let state_outputs = Rc::new(RefCell::new(&mut outputs));
+        // // TODO: do we need both inputs and outputs? They are the same in this case
+        // let mut inputs: Vec<Array> = state.updatable_parameters()
+        //     .iter()
+        //     .map(|array| (*array).clone())
+        //     .collect();
+        // let mut outputs: Vec<Array> = state.updatable_parameters()
+        //     .iter()
+        //     .map(|array| (*array).clone())
+        //     .collect();
+
+        // let state_inputs = Rc::new(RefCell::new(&mut inputs));
+        // let state_outputs = Rc::new(RefCell::new(&mut outputs));
         let f = &mut self.f;
 
-        let state_inputs_clone = Rc::clone(&state_inputs);
-        let state_outputs_clone = Rc::clone(&state_outputs);
+        // let state_inputs_clone = Rc::clone(&state_inputs);
+        // let state_outputs_clone = Rc::clone(&state_outputs);
+        let state_clone = Rc::clone(&state);
         let inner = move |tracers: &[Array]| -> Vec<Array> {
             // put the tracers in their appropriate places:
             // - arguments to the function
@@ -75,25 +78,33 @@ impl<F> CompiledState<F> {
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            let saved_state_inputs: Vec<Array> = state_inputs_clone
-                .borrow()
-                .iter().map(|a| (*a).clone()).collect();
+            // let saved_state_inputs: Vec<Array> = state_inputs_clone
+            //     .borrow()
+            //     .iter().map(|a| (*a).clone()).collect();
+            let saved_state_inputs = state_clone.borrow().updatable_parameters()
+                .iter()
+                .map(|array| (*array).clone())
+                .collect::<Vec<Array>>();
 
             // replace the inner state with the tracers
-            for (s, tracer) in state_inputs_clone.borrow_mut().iter_mut().zip(tracers.iter().skip(args_len)) {
+            for (s, tracer) in state_clone.borrow_mut().updatable_parameters_mut().into_iter().zip(tracers.iter().skip(args_len)) {
                 update_by_replace_with_ref_to_new_array(s, tracer);
             }
 
             // call the function with the tracer arguments and the state holding tracers
-            let mut result = (f)(state, tracer_args);
+            let mut result = (f)(*state_clone.borrow_mut(), tracer_args);
 
             // recapture the state as it may have changed
-            let mut state_output_tracers: Vec<Array> = state_outputs_clone
-                .borrow()
-                .iter().map(|a| (*a).clone()).collect();
+            // let mut state_output_tracers: Vec<Array> = state_outputs_clone
+            //     .borrow()
+            //     .iter().map(|a| (*a).clone()).collect();
+            let mut state_output_tracers = state_clone.borrow().updatable_parameters()
+                .iter()
+                .map(|array| (*array).clone())
+                .collect::<Vec<Array>>();
 
             // put the original values back in the state
-            for (s, saved) in state_inputs_clone.borrow_mut().iter_mut().zip(saved_state_inputs) {
+            for (s, saved) in state_clone.borrow_mut().updatable_parameters_mut().into_iter().zip(saved_state_inputs) {
                 update_by_replace_with_ref_to_new_array(s, &saved);
             }
 
@@ -109,8 +120,7 @@ impl<F> CompiledState<F> {
             inner_closure,
             self.id,
             self.shapeless,
-            state_inputs,
-            state_outputs,
+            state,
             args,
         )
     }
@@ -118,14 +128,16 @@ impl<F> CompiledState<F> {
 
 
 #[inline]
-fn call_mut_with_module_inner(
+fn call_mut_with_module_inner<U>(
     inner_closure: Closure,
     fun_id: usize,
     shapeless: bool,
-    state_inputs: Rc<RefCell<&mut Vec<Array>>>,
-    state_outputs: Rc<RefCell<&mut Vec<Array>>>,
+    state: Rc<RefCell<&mut U>>,
     args: &[Array],
-) -> crate::error::Result<Vec<Array>> {
+) -> crate::error::Result<Vec<Array>> 
+where 
+    U: Updatable
+{
     // note: this will use the cached compile (via the id)
     // but will be able to re-evaluate with fresh state if needed
     let compiled = Closure::try_from_op(|res| unsafe {
@@ -140,7 +152,13 @@ fn call_mut_with_module_inner(
         )
     })?;
 
-    let inner_inputs_vector = VectorArray::try_from_iter(args.iter().chain(state_inputs.borrow().iter()))?;
+    let (state_params_len, inner_inputs_vector) = {
+        let borrow = state.borrow();
+        let state_params = borrow.updatable_parameters();
+        let state_params_len = state_params.len();
+        let inner_inputs_vector = VectorArray::try_from_iter(args.iter().chain(state_params.into_iter()))?;
+        (state_params_len, inner_inputs_vector)
+    };
 
     // will compile the function (if needed) and evaluate the
     // compiled graph
@@ -151,20 +169,18 @@ fn call_mut_with_module_inner(
 
     // push the stateOutput into the state
     let result_plus_state_output_len = result_plus_state_output.len();
-    let state_output_len = state_outputs.borrow().len();
-    let suffix_len = result_plus_state_output_len - state_output_len;
-    for (s, new_values) in state_outputs
+    let suffix_len = result_plus_state_output_len - state_params_len;
+    for (s, new_values) in state
         .borrow_mut()
-        .iter_mut()
+        .updatable_parameters_mut()
+        .into_iter()
         .zip(result_plus_state_output[suffix_len..].iter())
     {
         update_by_replace_with_ref_to_new_array(s, new_values);
     }
 
     let result_len = result_plus_state_output.len()
-        - state_outputs
-            .borrow()
-            .len();
+        - state_params_len;
     Ok(result_plus_state_output
         .into_iter()
         .take(result_len)

@@ -76,11 +76,19 @@ impl Optimizer for AdaGrad {
 
 impl Updatable for AdaGrad {
     fn updatable_parameters(&self) -> Vec<&Array> {
-        self.state.values().collect()
+        use itertools::Itertools;
+
+        self.state.iter().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, v)| v)
+            .collect()
     }
     
     fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
-        self.state.values_mut().collect()
+        use itertools::Itertools;
+
+        self.state.iter_mut().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, v)| v)
+            .collect()
     }
 }
 

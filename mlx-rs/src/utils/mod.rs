@@ -365,11 +365,15 @@ where
     T: ModuleParameters 
 {
     fn updatable_parameters(&self) -> Vec<&Array> {
-        self.parameters().flatten().values().copied().collect()
+        use itertools::Itertools;
+
+        self.parameters().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v).collect()
     }
 
     fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
-        self.parameters_mut().flatten().into_values().collect()
+        use itertools::Itertools;
+
+        self.parameters_mut().flatten().into_iter().sorted_by(|a, b| a.0.cmp(&b.0)).map(|(_, v)| v).collect()
     }
 }
 

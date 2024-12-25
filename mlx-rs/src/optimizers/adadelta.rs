@@ -104,11 +104,21 @@ impl Optimizer for AdaDelta {
 
 impl Updatable for AdaDelta {
     fn updatable_parameters(&self) -> Vec<&Array> {
-        self.state.values().map(|(v, u)| [v, u]).flatten().collect()
+        use itertools::Itertools;
+
+        self.state.iter().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, (v, u))| vec![v, u])
+            .flatten()
+            .collect()
     }
     
     fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
-        self.state.values_mut().map(|(v, u)| vec![v, u]).flatten().collect()
+        use itertools::Itertools;
+
+        self.state.iter_mut().sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, (v, u))| vec![v, u])
+            .flatten()
+            .collect()
     }
 }
 

@@ -1,64 +1,35 @@
+//! Compilation of functions.
+
+// TODO: there's plenty boilerplate code here but it's not clear how to reduce it
+
 use std::marker::PhantomData;
 
-use crate::{
-    error::Exception,
-    Array,
-};
+use crate::{error::Exception, Array};
 
-use super::{type_id_to_usize, Compiled, CompiledState};
+use super::{type_id_to_usize, Closure, Compiled, CompiledState, Guarded, VectorArray};
 
 /// A trait for functions that can be compiled.
 ///
 /// # Generic parameters
-/// 
+///
 /// - `A`: The type of the array arguments
 /// - `O`: The type of the output
 /// - `E`: The type of the error
 pub trait Compile<A, O, E>: Sized {
-    fn compile(
-        self,
-        shapeless: bool,
-    ) -> impl CallMut<A, O, E>;
+    fn compile(self, shapeless: bool) -> impl CallMut<A, O, E>;
 }
 
 impl<'a, F> Compile<&'a [Array], Vec<Array>, ()> for F
 where
     F: FnMut(&[Array]) -> Vec<Array> + 'static,
 {
-    fn compile(
-        self,
-        shapeless: bool,
-    ) -> impl CallMut<&'a [Array], Vec<Array>, ()> {
+    fn compile(self, shapeless: bool) -> impl CallMut<&'a [Array], Vec<Array>, ()> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
 
             shapeless,
             id,
-            
-        };
-        Compiled {
-            f_marker: PhantomData::<F>,
-            state,
-        }
-    }
-}
-
-impl<'a, F> Compile<&'a [Array], Vec<Array>, Exception> for F
-where
-    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'static,
-{
-    fn compile(
-        self,
-        shapeless: bool,
-    ) -> impl CallMut<&'a [Array], Vec<Array>, Exception> {
-        let id = type_id_to_usize(&self);
-        let state = CompiledState {
-            f: self,
-
-            shapeless,
-            id,
-            
         };
         Compiled {
             f_marker: PhantomData::<F>,
@@ -71,48 +42,13 @@ impl<'a, F> Compile<&'a Array, Array, ()> for F
 where
     F: FnMut(&Array) -> Array + 'static,
 {
-    fn compile(
-        mut self,
-        shapeless: bool,
-    ) -> impl CallMut<&'a Array, Array, ()> {
+    fn compile(mut self, shapeless: bool) -> impl CallMut<&'a Array, Array, ()> {
+        let id = type_id_to_usize(&self);
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)(&args[0]);
             vec![result]
         };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
-            shapeless,
-            id,
-            
-        };
-        Compiled {
-            f_marker: PhantomData::<F>,
-            state,
-        }
-    }
-}
-
-impl<'a, F> Compile<&'a Array, Array, Exception> for F
-where
-    F: FnMut(&Array) -> Result<Array, Exception> + 'static,
-{
-    fn compile(
-        mut self,
-        shapeless: bool,
-    ) -> impl CallMut<&'a Array, Array, Exception> {
-        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)(&args[0])?;
-            Ok(vec![result])
-        };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
-
-            shapeless,
-            id,
-            
-        };
+        let state = CompiledState { f, shapeless, id };
         Compiled {
             f_marker: PhantomData::<F>,
             state,
@@ -124,49 +60,13 @@ impl<'a, F> Compile<(&'a Array, &'a Array), Array, ()> for F
 where
     F: FnMut((&Array, &Array)) -> Array + 'static,
 {
-    fn compile(
-        mut self,
-        shapeless: bool,
-    ) -> impl CallMut<(&'a Array, &'a Array), Array, ()> {
+    fn compile(mut self, shapeless: bool) -> impl CallMut<(&'a Array, &'a Array), Array, ()> {
+        let id = type_id_to_usize(&self);
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)((&args[0], &args[1]));
             vec![result]
         };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
-
-            shapeless,
-            id,
-            
-        };
-        Compiled {
-            f_marker: PhantomData::<F>,
-            state,
-        }
-    }
-}
-
-impl<'a, F> Compile<(&'a Array, &'a Array), Array, Exception> for F
-where
-    F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'static,
-{
-    fn compile(
-        mut self,
-        shapeless: bool,
-    ) -> impl CallMut<(&'a Array, &'a Array), Array, Exception> {
-        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
-            let result = (self)((&args[0], &args[1]))?;
-            Ok(vec![result])
-        };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
-
-            shapeless,
-            id,
-            
-        };
+        let state = CompiledState { f, shapeless, id };
         Compiled {
             f_marker: PhantomData::<F>,
             state,
@@ -182,18 +82,69 @@ where
         mut self,
         shapeless: bool,
     ) -> impl CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> {
+        let id = type_id_to_usize(&self);
         let f = move |args: &[Array]| -> Vec<Array> {
             let result = (self)((&args[0], &args[1], &args[2]));
             vec![result]
         };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
+        let state = CompiledState { f, shapeless, id };
+        Compiled {
+            f_marker: PhantomData::<F>,
+            state,
+        }
+    }
+}
 
+impl<'a, F> Compile<&'a [Array], Vec<Array>, Exception> for F
+where
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'static,
+{
+    fn compile(self, shapeless: bool) -> impl CallMut<&'a [Array], Vec<Array>, Exception> {
+        let id = type_id_to_usize(&self);
+        let state = CompiledState {
+            f: self,
             shapeless,
             id,
-            
         };
+        Compiled {
+            f_marker: PhantomData::<F>,
+            state,
+        }
+    }
+}
+
+impl<'a, F> Compile<&'a Array, Array, Exception> for F
+where
+    F: FnMut(&Array) -> Result<Array, Exception> + 'static,
+{
+    fn compile(mut self, shapeless: bool) -> impl CallMut<&'a Array, Array, Exception> {
+        let id = type_id_to_usize(&self);
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
+            let result = (self)(&args[0])?;
+            Ok(vec![result])
+        };
+        let state = CompiledState { f, shapeless, id };
+        Compiled {
+            f_marker: PhantomData::<F>,
+            state,
+        }
+    }
+}
+
+impl<'a, F> Compile<(&'a Array, &'a Array), Array, Exception> for F
+where
+    F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'static,
+{
+    fn compile(
+        mut self,
+        shapeless: bool,
+    ) -> impl CallMut<(&'a Array, &'a Array), Array, Exception> {
+        let id = type_id_to_usize(&self);
+        let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
+            let result = (self)((&args[0], &args[1]))?;
+            Ok(vec![result])
+        };
+        let state = CompiledState { f, shapeless, id };
         Compiled {
             f_marker: PhantomData::<F>,
             state,
@@ -209,18 +160,12 @@ where
         mut self,
         shapeless: bool,
     ) -> impl CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception> {
+        let id = type_id_to_usize(&self);
         let f = move |args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)((&args[0], &args[1], &args[2]))?;
             Ok(vec![result])
         };
-        let id = type_id_to_usize(&f);
-        let state = CompiledState {
-            f,
-
-            shapeless,
-            id,
-            
-        };
+        let state = CompiledState { f, shapeless, id };
         Compiled {
             f_marker: PhantomData::<F>,
             state,
@@ -242,15 +187,6 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, Exception> for Compiled<F, G>
-where
-    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
-    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
-{
-    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
-        self.state.call_mut_fallible(args)
-    }
-}
 
 impl<'a, F, G> CallMut<&'a Array, Array, ()> for Compiled<F, G>
 where
@@ -258,25 +194,12 @@ where
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
-        // Is there any way to avoid this shallow clone?
-        let args = &[args.clone()];
+        let args = std::slice::from_ref(args);
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
 
-impl<'a, F, G> CallMut<&'a Array, Array, Exception> for Compiled<F, G>
-where
-    F: FnMut(&Array) -> Result<Array, Exception> + 'a,
-    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
-{
-    fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
-        // Is there any way to avoid this shallow clone?
-        let args = &[args.clone()];
-        let result = self.state.call_mut_fallible(args)?;
-        Ok(result.into_iter().next().unwrap())
-    }
-}
 
 impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, ()> for Compiled<F, G>
 where
@@ -291,18 +214,6 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, Exception> for Compiled<F, G>
-where
-    F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'a,
-    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
-{
-    fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
-        // Is there any way to avoid this shallow clone?
-        let args = &[args.0.clone(), args.1.clone()];
-        let result = self.state.call_mut_fallible(args)?;
-        Ok(result.into_iter().next().unwrap())
-    }
-}
 
 impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, ()> for Compiled<F, G>
 where
@@ -317,19 +228,56 @@ where
     }
 }
 
-impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception>
-    for Compiled<F, G>
+
+impl<'a, F, G> CallMut<&'a [Array], Vec<Array>, Exception> for Compiled<F, G>
+where
+    F: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    fn call_mut(&mut self, args: &[Array]) -> Result<Vec<Array>, Exception> {
+        self.state.fallible_call_mut(args)
+    }
+}
+
+
+impl<'a, F, G> CallMut<&'a Array, Array, Exception> for Compiled<F, G>
+where
+    F: FnMut(&Array) -> Result<Array, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    fn call_mut(&mut self, args: &Array) -> Result<Array, Exception> {
+        let args = &[args];
+        let result = self.state.fallible_call_mut(args)?;
+        Ok(result.into_iter().next().unwrap())
+    }
+}
+
+
+impl<'a, F, G> CallMut<(&'a Array, &'a Array), Array, Exception> for Compiled<F, G>
+where
+    F: FnMut((&Array, &Array)) -> Result<Array, Exception> + 'a,
+    G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
+{
+    fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
+        let args = &[args.0, args.1];
+        let result = self.state.fallible_call_mut(args)?;
+        Ok(result.into_iter().next().unwrap())
+    }
+}
+
+
+impl<'a, F, G> CallMut<(&'a Array, &'a Array, &'a Array), Array, Exception> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array, &Array)) -> Result<Array, Exception> + 'a,
     G: FnMut(&[Array]) -> Result<Vec<Array>, Exception> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
-        // Is there any way to avoid this shallow clone?
-        let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
-        let result = self.state.call_mut_fallible(args)?;
+        let args = &[args.0, args.1, args.2];
+        let result = self.state.fallible_call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
 }
+
 
 /// Returns a compiled function that produces the same output as `f`.
 ///
@@ -346,6 +294,63 @@ where
     let shapeless = shapeless.into().unwrap_or(false);
     let mut compiled = f.compile(shapeless);
     move |args| compiled.call_mut(args)
+}
+
+#[inline]
+fn call_mut_inner(
+    inner_closure: Closure,
+    fun_id: usize,
+    shapeless: bool,
+    args: &[impl AsRef<Array>],
+) -> crate::error::Result<Vec<Array>> {
+    // note: this will use the cached compile (via the id)
+    // but will be able to re-evaluate with fresh state if needed
+    let compiled = Closure::try_from_op(|res| unsafe {
+        let constants = &[];
+        mlx_sys::mlx_detail_compile(
+            res,
+            inner_closure.as_ptr(),
+            fun_id,
+            shapeless,
+            constants.as_ptr(),
+            0,
+        )
+    })?;
+
+    let inner_inputs_vector = VectorArray::try_from_iter(args.iter())?;
+
+    // will compile the function (if needed) and evaluate the
+    // compiled graph
+    let result_vector = VectorArray::try_from_op(|res| unsafe {
+        mlx_sys::mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
+    })?;
+    let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
+
+    let result_len = result_plus_state_output.len();
+    Ok(result_plus_state_output
+        .into_iter()
+        .take(result_len)
+        .collect())
+}
+
+impl<F> CompiledState<F> {
+    fn call_mut(&mut self, args: &[impl AsRef<Array>]) -> Result<Vec<Array>, Exception>
+    where
+        F: FnMut(&[Array]) -> Vec<Array>,
+    {
+        let inner_closure = Closure::new(&mut self.f);
+
+        call_mut_inner(inner_closure, self.id, self.shapeless, args)
+    }
+
+    fn fallible_call_mut(&mut self, args: &[impl AsRef<Array>]) -> Result<Vec<Array>, Exception>
+    where
+        F: FnMut(&[Array]) -> Result<Vec<Array>, Exception>,
+    {
+        let inner_closure = Closure::new_fallible(&mut self.f);
+
+        call_mut_inner(inner_closure, self.id, self.shapeless, args)
+    }
 }
 
 #[cfg(test)]

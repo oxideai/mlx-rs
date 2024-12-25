@@ -406,3 +406,52 @@ where
         params
     }
 }
+
+impl<'a, T1, T2, T3> Updatable for (T1, T2, T3)
+where 
+    T1: Updatable,
+    T2: Updatable,
+    T3: Updatable
+{
+    fn updatable_states(&self) -> Vec<&Array> {
+        let (a, b, c) = self;
+        let mut params = a.updatable_states();
+        params.extend(b.updatable_states());
+        params.extend(c.updatable_states());
+        params
+    }
+
+    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+        let (a, b, c) = self;
+        let mut params = a.updatable_states_mut();
+        params.extend(b.updatable_states_mut());
+        params.extend(c.updatable_states_mut());
+        params
+    }
+}
+
+impl<'a, T1, T2, T3, T4> Updatable for (T1, T2, T3, T4)
+where 
+    T1: Updatable,
+    T2: Updatable,
+    T3: Updatable,
+    T4: Updatable
+{
+    fn updatable_states(&self) -> Vec<&Array> {
+        let (a, b, c, d) = self;
+        let mut params = a.updatable_states();
+        params.extend(b.updatable_states());
+        params.extend(c.updatable_states());
+        params.extend(d.updatable_states());
+        params
+    }
+
+    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+        let (a, b, c, d) = self;
+        let mut params = a.updatable_states_mut();
+        params.extend(b.updatable_states_mut());
+        params.extend(c.updatable_states_mut());
+        params.extend(d.updatable_states_mut());
+        params
+    }
+}

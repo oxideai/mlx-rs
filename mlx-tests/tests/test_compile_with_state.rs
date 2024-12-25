@@ -4,9 +4,18 @@ mod common;
 
 use common::LinearFunctionModel;
 use mlx_nn::module_value_and_grad;
-use mlx_rs::{array, assert_array_eq, error::Exception, module::{Module, ModuleParameters}, ops::ones, optimizers::{Optimizer, Sgd}, random::uniform, transforms::{compile::{compile, compile_with_state}, eval_params}, Array};
-
-
+use mlx_rs::{
+    assert_array_eq,
+    error::Exception,
+    module::{Module, ModuleParameters},
+    ops::ones,
+    optimizers::{Optimizer, Sgd},
+    transforms::{
+        compile::compile_with_state,
+        eval_params,
+    },
+    Array,
+};
 
 #[test]
 fn test_compile_module() {
@@ -51,17 +60,18 @@ fn test_compile_module_and_optimizer() {
     let x = ones::<f32>(&[10, 1]).unwrap();
     let x = vec![x];
 
-    let step = move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
-        let mut lg = module_value_and_grad(loss);
-        let x = &x[0];
-        let (loss, grad) = lg(model, x).unwrap();
-        optimizer.update(model, grad).unwrap();
-        vec![loss]
-    };
+    let step =
+        move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
+            let mut lg = module_value_and_grad(loss);
+            let x = &x[0];
+            let (loss, grad) = lg(model, x).unwrap();
+            optimizer.update(model, grad).unwrap();
+            vec![loss]
+        };
 
     let mut state = (model, optimizer);
     let mut compiled = compile_with_state(step, None);
-    
+
     // Check that the original function works
     let original = step(&mut state, x.as_slice());
 
@@ -82,19 +92,16 @@ fn test_compile_module_with_error() {
     };
     let mut model = LinearFunctionModel::new(&[10]).unwrap();
 
-
-    let step = move |model: &mut LinearFunctionModel, x: &[Array]| -> Result<Vec<Array>, Exception> {
-        let mut lg = module_value_and_grad(loss);
-        let x = &x[0];
-        let (loss, _grad) = lg(model, x)?;
-        Ok(vec![loss])
-    };
-
+    let step =
+        move |model: &mut LinearFunctionModel, x: &[Array]| -> Result<Vec<Array>, Exception> {
+            let mut lg = module_value_and_grad(loss);
+            let x = &x[0];
+            let (loss, _grad) = lg(model, x)?;
+            Ok(vec![loss])
+        };
 
     // Make sure the compiled function produces the same result
     let mut compiled = compile_with_state(step, None);
-
-
 
     // input with correct shape
     let x_ok = ones::<f32>(&[10, 1]).unwrap();
@@ -103,11 +110,9 @@ fn test_compile_module_with_error() {
     let x_err = ones::<f32>(&[1, 2, 3]).unwrap();
     let x_err = vec![x_err];
 
-
     // Success case
     // Check that the original function works
     let original = step(&mut model, x_ok.as_slice()).unwrap();
-
 
     let result = compiled(&mut model, x_ok.as_slice()).unwrap();
     assert_eq!(&original, &result);

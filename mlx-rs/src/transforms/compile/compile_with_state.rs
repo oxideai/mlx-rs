@@ -16,14 +16,16 @@ use super::{update_by_replace_with_ref_to_new_array, Closure, Compiled, Guarded,
 pub fn compile_with_state<F, U, A, O, E>(
     f: F,
     shapeless: impl Into<Option<bool>>,
-) -> impl FnMut(&mut U, A) -> Result<O, Exception> 
+) -> impl for<'a> FnMut(&mut U, F::Args<'a>) -> Result<O, Exception> 
 where 
-    F: CompileWithState<U, A, O, E> + 'static,
+    F: CompileWithState<U, A, O, E> + Copy + 'static,
     U: Updatable,
 {
     let shapeless = shapeless.into().unwrap_or(false);
-    let mut compiled = f.compile(shapeless);
-    move |module, args| compiled.call_mut(module, args)
+    move |module, args| {
+        let mut compiled = f.compile(shapeless);
+        compiled.call_mut(module, args)
+    }
 }
 
 /// A trait for functions that can be compiled with state.
@@ -38,15 +40,24 @@ where
 /// - `O`: The type of the output.
 /// - `E`: The type of the exception.
 pub trait CompileWithState<U, A, O, E> {
-    fn compile(self, shapeless: bool) -> impl CallMutWithState<U, A, O, E>;
+    /// The type of the arguments that the returned closure takes.
+    /// 
+    /// This is needed to relax the lifetime requirements of the returned
+    /// closure. Otherwise, the arguments to the returned closure would have to
+    /// live longer than the closure itself.
+    type Args<'a>;
+
+    fn compile<'args>(self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, O, E>;
 }
 
-impl<'a, F, U> CompileWithState<U, &'a [Array], Vec<Array>, ()> for F
+impl<F, U> CompileWithState<U, &[Array], Vec<Array>, ()> for F
 where   
     F: FnMut(&mut U, &[Array]) -> Vec<Array> + 'static,
     U: Updatable,
 {
-    fn compile(self, shapeless: bool) -> impl CallMutWithState<U, &'a [Array], Vec<Array>, ()> {
+    type Args<'a> = &'a [Array];
+
+    fn compile<'args>(self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Vec<Array>, ()> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -60,12 +71,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, &'a Array, Array, ()> for F
+impl<F, U> CompileWithState<U, &Array, Array, ()> for F
 where   
     F: FnMut(&mut U, &Array) -> Array + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, &'a Array, Array, ()> {
+    type Args<'a> = &'a Array;
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, ()> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Vec<Array> {
             let result = (self)(state, &args[0]);
@@ -83,12 +96,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, (&'a Array, &'a Array), Array, ()> for F
+impl<F, U> CompileWithState<U, (&Array, &Array), Array, ()> for F
 where 
     F: FnMut(&mut U, (&Array, &Array)) -> Array + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, (&'a Array, &'a Array), Array, ()> {
+    type Args<'a> = (&'a Array, &'a Array);
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, ()> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Vec<Array> {
             let result = (self)(state, (&args[0], &args[1]));
@@ -106,12 +121,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, (&'a Array, &'a Array, &'a Array), Array, ()> for F
+impl<F, U> CompileWithState<U, (&Array, &Array, &Array), Array, ()> for F
 where 
     F: FnMut(&mut U, (&Array, &Array, &Array)) -> Array + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, (&'a Array, &'a Array, &'a Array), Array, ()> {
+    type Args<'a> = (&'a Array, &'a Array, &'a Array);
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, ()> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Vec<Array> {
             let result = (self)(state, (&args[0], &args[1], &args[2]));
@@ -129,12 +146,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, &'a [Array], Vec<Array>, Exception> for F
+impl<F, U> CompileWithState<U, &[Array], Vec<Array>, Exception> for F
 where   
     F: FnMut(&mut U, &[Array]) -> Result<Vec<Array>, Exception> + 'static,
     U: Updatable,
 {
-    fn compile(self, shapeless: bool) -> impl CallMutWithState<U, &'a [Array], Vec<Array>, Exception> {
+    type Args<'a> = &'a [Array];
+
+    fn compile<'args>(self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Vec<Array>, Exception> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -148,12 +167,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, &'a Array, Array, Exception> for F
+impl<F, U> CompileWithState<U, &Array, Array, Exception> for F
 where   
     F: FnMut(&mut U, &Array) -> Result<Array, Exception> + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, &'a Array, Array, Exception> {
+    type Args<'a> = &'a Array;
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, Exception> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)(state, &args[0])?;
@@ -171,12 +192,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, (&'a Array, &'a Array), Array, Exception> for F
+impl<F, U> CompileWithState<U, (&Array, &Array), Array, Exception> for F
 where 
     F: FnMut(&mut U, (&Array, &Array)) -> Result<Array, Exception> + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, (&'a Array, &'a Array), Array, Exception> {
+    type Args<'a> = (&'a Array, &'a Array);
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, Exception> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)(state, (&args[0], &args[1]))?;
@@ -194,12 +217,14 @@ where
     }
 }
 
-impl<'a, F, U> CompileWithState<U, (&'a Array, &'a Array, &'a Array), Array, Exception> for F
+impl<F, U> CompileWithState<U, (&Array, &Array, &Array), Array, Exception> for F
 where 
     F: FnMut(&mut U, (&Array, &Array, &Array)) -> Result<Array, Exception> + 'static,
     U: Updatable,
 {
-    fn compile(mut self, shapeless: bool) -> impl CallMutWithState<U, (&'a Array, &'a Array, &'a Array), Array, Exception> {
+    type Args<'a> = (&'a Array, &'a Array, &'a Array);
+
+    fn compile<'args>(mut self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, Array, Exception> {
         let id = type_id_to_usize(&self);
         let f = move |state: &mut U, args: &[Array]| -> Result<Vec<Array>, Exception> {
             let result = (self)(state, (&args[0], &args[1], &args[2]))?;

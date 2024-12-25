@@ -36,13 +36,13 @@ pub fn clear_cache() {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Compiled<F, G> {
     f_marker: std::marker::PhantomData<F>,
     state: CompiledState<G>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CompiledState<F> {
     f: F,
     shapeless: bool,

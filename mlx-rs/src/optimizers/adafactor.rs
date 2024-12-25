@@ -335,7 +335,7 @@ impl Optimizer for Adafactor {
 }
 
 impl Updatable for Adafactor {
-    fn updatable_parameters(&self) -> Vec<&Array> {
+    fn updatable_states(&self) -> Vec<&Array> {
         use itertools::Itertools;
 
         self.state.iter()
@@ -356,7 +356,7 @@ impl Updatable for Adafactor {
             .collect()
     }
     
-    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
         use itertools::Itertools;
 
         self.state.iter_mut()

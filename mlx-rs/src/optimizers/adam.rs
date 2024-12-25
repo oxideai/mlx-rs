@@ -114,11 +114,11 @@ pub(super) fn adam_apply_single(
 }
 
 impl Updatable for Adam {
-    fn updatable_parameters(&self) -> Vec<&Array> {
+    fn updatable_states(&self) -> Vec<&Array> {
         self.state.values().map(|(v, u)| [v, u]).flatten().collect()
     }
     
-    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
         self.state.values_mut().map(|(v, u)| [v, u]).flatten().collect()
     }
 }

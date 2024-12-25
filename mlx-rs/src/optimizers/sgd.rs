@@ -124,11 +124,11 @@ impl Optimizer for Sgd {
 }
 
 impl Updatable for Sgd {
-    fn updatable_parameters(&self) -> Vec<&Array> {
+    fn updatable_states(&self) -> Vec<&Array> {
         self.state.values().collect()
     }
     
-    fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
+    fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
         self.state.values_mut().collect()
     }
 }

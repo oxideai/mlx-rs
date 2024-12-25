@@ -39,12 +39,12 @@ pub use sgd::*;
 macro_rules! impl_updatable_for_mut_optimizer {
     ($optimizer:ty) => {
         impl Updatable for &'_ mut $optimizer {
-            fn updatable_parameters(&self) -> Vec<&Array> {
-                <$optimizer as Updatable>::updatable_parameters(&**self)
+            fn updatable_states(&self) -> Vec<&Array> {
+                <$optimizer as Updatable>::updatable_states(&**self)
             }
             
-            fn updatable_parameters_mut(&mut self) -> Vec<&mut Array> {
-                <$optimizer as Updatable>::updatable_parameters_mut(&mut **self)
+            fn updatable_states_mut(&mut self) -> Vec<&mut Array> {
+                <$optimizer as Updatable>::updatable_states_mut(&mut **self)
             }
         }
     };

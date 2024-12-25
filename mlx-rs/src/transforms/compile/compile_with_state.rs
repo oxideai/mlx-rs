@@ -39,6 +39,15 @@ where
 {
     fn call_mut(&mut self, state: &mut U, args: &[Array]) -> Result<Vec<Array>, Exception> {
         self.state.call_mut_with_state(state, args)
+            .or_else(|_e| {
+                // Somehow the mlx_closure_apply may fail on the first call for 
+                // certain types of state with the error message:
+                // "unordered_map::at: key not found", so we just try again.
+                //
+                // One type that is known to cause this is a tuple of 
+                // `Module` and `Optimizer` eg. `(<Module>, <Optimizer>)`
+                self.state.call_mut_with_state(state, args)
+            })
     }
 }
 
@@ -64,13 +73,13 @@ impl<F> CompiledState<F> {
             let tracer_args = &tracers[..args_len];
 
             // save a snapshot of the inner state
-            let saved_state_inputs = state_clone.borrow().updatable_parameters()
+            let saved_state_inputs = state_clone.borrow().updatable_states()
                 .iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 
             // replace the inner state with the tracers
-            for (s, tracer) in state_clone.borrow_mut().updatable_parameters_mut().into_iter().zip(tracers.iter().skip(args_len)) {
+            for (s, tracer) in state_clone.borrow_mut().updatable_states_mut().into_iter().zip(tracers.iter().skip(args_len)) {
                 update_by_replace_with_ref_to_new_array(s, tracer);
             }
 
@@ -78,13 +87,13 @@ impl<F> CompiledState<F> {
             let mut result = (f)(*state_clone.borrow_mut(), tracer_args);
 
             // recapture the state as it may have changed
-            let mut state_output_tracers = state_clone.borrow().updatable_parameters()
+            let mut state_output_tracers = state_clone.borrow().updatable_states()
                 .iter()
                 .map(|array| (*array).clone())
                 .collect::<Vec<Array>>();
 
             // put the original values back in the state
-            for (s, saved) in state_clone.borrow_mut().updatable_parameters_mut().into_iter().zip(saved_state_inputs) {
+            for (s, saved) in state_clone.borrow_mut().updatable_states_mut().into_iter().zip(saved_state_inputs) {
                 update_by_replace_with_ref_to_new_array(s, &saved);
             }
 
@@ -134,7 +143,7 @@ where
 
     let (state_params_len, inner_inputs_vector) = {
         let borrow = state.borrow();
-        let state_params = borrow.updatable_parameters();
+        let state_params = borrow.updatable_states();
         let state_params_len = state_params.len();
         let inner_inputs_vector = VectorArray::try_from_iter(args.iter().chain(state_params.into_iter()))?;
         (state_params_len, inner_inputs_vector)
@@ -152,7 +161,7 @@ where
     let suffix_len = result_plus_state_output_len - state_params_len;
     for (s, new_values) in state
         .borrow_mut()
-        .updatable_parameters_mut()
+        .updatable_states_mut()
         .into_iter()
         .zip(result_plus_state_output[suffix_len..].iter())
     {

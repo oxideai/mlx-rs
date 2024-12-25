@@ -12,6 +12,20 @@ use crate::{error::Exception, transforms::compile::{type_id_to_usize, CompiledSt
 
 use super::{update_by_replace_with_ref_to_new_array, Closure, Compiled, Guarded, VectorArray};
 
+/// Similar to [`crate::transforms::compile`] but allows for functions that take a mutable reference to a state.
+pub fn compile_with_state<F, U, A, O, E>(
+    f: F,
+    shapeless: impl Into<Option<bool>>,
+) -> impl FnMut(&mut U, A) -> Result<O, Exception> 
+where 
+    F: CompileWithState<U, A, O, E> + 'static,
+    U: Updatable,
+{
+    let shapeless = shapeless.into().unwrap_or(false);
+    let mut compiled = f.compile(shapeless);
+    move |module, args| compiled.call_mut(module, args)
+}
+
 /// A trait for functions that can be compiled with state.
 /// 
 /// This trait is used to compile a function that takes a mutable reference to a state
@@ -520,17 +534,3 @@ impl<F> CompiledState<F> {
     }
 }
 
-
-
-pub fn compile_with_state<F, U, A, O, E>(
-    f: F,
-    shapeless: impl Into<Option<bool>>,
-) -> impl FnMut(&mut U, A) -> Result<O, Exception> 
-where 
-    F: CompileWithState<U, A, O, E> + 'static,
-    U: Updatable,
-{
-    let shapeless = shapeless.into().unwrap_or(false);
-    let mut compiled = f.compile(shapeless);
-    move |module, args| compiled.call_mut(module, args)
-}

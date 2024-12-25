@@ -8,6 +8,24 @@ use crate::{error::Exception, Array};
 
 use super::{type_id_to_usize, Closure, Compiled, CompiledState, Guarded, VectorArray};
 
+
+/// Returns a compiled function that produces the same output as `f`.
+///
+/// Please refer to the [swift binding
+/// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
+/// for more information.
+pub fn compile<F, A, O, E>(
+    f: F,
+    shapeless: impl Into<Option<bool>>,
+) -> impl FnMut(A) -> Result<O, Exception>
+where
+    F: Compile<A, O, E> + 'static,
+{
+    let shapeless = shapeless.into().unwrap_or(false);
+    let mut compiled = f.compile(shapeless);
+    move |args| compiled.call_mut(args)
+}
+
 /// A trait for functions that can be compiled.
 ///
 /// # Generic parameters
@@ -279,22 +297,6 @@ where
 }
 
 
-/// Returns a compiled function that produces the same output as `f`.
-///
-/// Please refer to the [swift binding
-/// documentation](https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx/compilation)
-/// for more information.
-pub fn compile<F, A, O, E>(
-    f: F,
-    shapeless: impl Into<Option<bool>>,
-) -> impl FnMut(A) -> Result<O, Exception>
-where
-    F: Compile<A, O, E> + 'static,
-{
-    let shapeless = shapeless.into().unwrap_or(false);
-    let mut compiled = f.compile(shapeless);
-    move |args| compiled.call_mut(args)
-}
 
 #[inline]
 fn call_mut_inner(

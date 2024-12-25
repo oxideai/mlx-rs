@@ -137,14 +137,15 @@ fn test_compile_module_and_optimizer_with_error() {
     // and we can check that the compiled function produces the same result
     let optimizer = Sgd::new(0.0);
 
-    let step =
-        move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Result<Vec<Array>, Exception> {
-            let mut lg = module_value_and_grad(loss);
-            let x = &x[0];
-            let (loss, grad) = lg(model, x)?;
-            optimizer.update(model, grad)?;
-            Ok(vec![loss])
-        };
+    let step = move |(model, optimizer): &mut (LinearFunctionModel, Sgd),
+                     x: &[Array]|
+          -> Result<Vec<Array>, Exception> {
+        let mut lg = module_value_and_grad(loss);
+        let x = &x[0];
+        let (loss, grad) = lg(model, x)?;
+        optimizer.update(model, grad)?;
+        Ok(vec![loss])
+    };
 
     let mut state = (model, optimizer);
     let mut compiled = compile_with_state(step, None);

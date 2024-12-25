@@ -252,8 +252,7 @@ where
     G: FnMut(&[Array]) -> Vec<Array> + 'a,
 {
     fn call_mut(&mut self, args: (&Array, &Array)) -> Result<Array, Exception> {
-        // Is there any way to avoid this shallow clone?
-        let args = &[args.0.clone(), args.1.clone()];
+        let args = &[args.0, args.1];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }
@@ -266,7 +265,7 @@ where
 {
     fn call_mut(&mut self, args: (&Array, &Array, &Array)) -> Result<Array, Exception> {
         // Is there any way to avoid this shallow clone?
-        let args = &[args.0.clone(), args.1.clone(), args.2.clone()];
+        let args = &[args.0, args.1, args.2];
         let result = self.state.call_mut(args)?;
         Ok(result.into_iter().next().unwrap())
     }

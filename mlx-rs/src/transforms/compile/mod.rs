@@ -10,6 +10,30 @@ mod compile_with_state;
 pub use compile::*;
 pub use compile_with_state::*;
 
+/// Globally enable the compilation of functions.
+///
+/// Default is enabled.
+pub fn enable_compile() {
+    unsafe {
+        mlx_sys::mlx_enable_compile();
+    }
+}
+
+/// Globally disable the compilation of functions.
+///
+/// Default is enabled.
+pub fn disable_compile() {
+    unsafe {
+        mlx_sys::mlx_disable_compile();
+    }
+}
+
+pub fn clear_cache() {
+    unsafe {
+        mlx_sys::mlx_detail_compile_clear_cache();
+    }
+}
+
 #[derive(Debug)]
 pub struct Compiled<F, G> {
     f_marker: std::marker::PhantomData<F>,

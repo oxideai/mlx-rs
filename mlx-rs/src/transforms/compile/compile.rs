@@ -1,34 +1,11 @@
 use std::marker::PhantomData;
 
-use mlx_sys::{
-    mlx_detail_compile_clear_cache,
-    mlx_disable_compile, mlx_enable_compile,
-};
-
 use crate::{
     error::Exception,
     Array,
 };
 
 use super::{type_id_to_usize, Compiled, CompiledState};
-
-/// Globally enable the compilation of functions.
-///
-/// Default is enabled.
-pub fn enable_compile() {
-    unsafe {
-        mlx_enable_compile();
-    }
-}
-
-/// Globally disable the compilation of functions.
-///
-/// Default is enabled.
-pub fn disable_compile() {
-    unsafe {
-        mlx_disable_compile();
-    }
-}
 
 /// A trait for functions that can be compiled.
 ///
@@ -369,12 +346,6 @@ where
     let shapeless = shapeless.into().unwrap_or(false);
     let mut compiled = f.compile(shapeless);
     move |args| compiled.call_mut(args)
-}
-
-pub fn clear_cache() {
-    unsafe {
-        mlx_detail_compile_clear_cache();
-    }
 }
 
 #[cfg(test)]

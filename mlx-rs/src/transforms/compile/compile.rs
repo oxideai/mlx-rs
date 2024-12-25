@@ -9,7 +9,7 @@ use super::{type_id_to_usize, Compiled, CompiledState};
 
 /// A trait for functions that can be compiled.
 ///
-/// # Generics:
+/// # Generic parameters
 /// 
 /// - `A`: The type of the array arguments
 /// - `O`: The type of the output

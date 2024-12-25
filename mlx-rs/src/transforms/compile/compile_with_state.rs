@@ -4,6 +4,17 @@ use crate::{error::Exception, transforms::compile::{type_id_to_usize, CompiledSt
 
 use super::{update_by_replace_with_ref_to_new_array, Closure, Compiled, Guarded, VectorArray};
 
+/// A trait for functions that can be compiled with state.
+/// 
+/// This trait is used to compile a function that takes a mutable reference to a state
+/// and some arguments and returns a result.
+/// 
+/// # Generic parameters
+/// 
+/// - `U`: The type of the state.
+/// - `A`: The type of the arguments.
+/// - `O`: The type of the output.
+/// - `E`: The type of the exception.
 pub trait CompileWithState<U, A, O, E> {
     fn compile(self, shapeless: bool) -> impl CallMutWithState<U, A, O, E>;
 }

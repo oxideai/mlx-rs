@@ -61,3 +61,25 @@ impl<T: Clone> From<SingleOrTriple<T>> for (T, T, T) {
         }
     }
 }
+
+/// Helper type to represent either a single value or a vector of values.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SingleOrVec<T> {
+    /// Single value.
+    Single(T),
+
+    /// Vector of values.
+    Vec(Vec<T>),
+}
+
+impl<T> From<T> for SingleOrVec<T> {
+    fn from(value: T) -> Self {
+        SingleOrVec::Single(value)
+    }
+}
+
+impl<T> From<Vec<T>> for SingleOrVec<T> {
+    fn from(value: Vec<T>) -> Self {
+        SingleOrVec::Vec(value)
+    }
+}

@@ -298,7 +298,7 @@ impl Module<&Array> for Glu {
 /// ```rust, ignore
 /// sigmoid(x)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Sigmoid;
 
 impl Module<&Array> for Sigmoid {
@@ -323,7 +323,7 @@ impl Module<&Array> for Sigmoid {
 /// ```rust, ignore
 /// x * tanh(softplus(x))
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Mish;
 
 impl Module<&Array> for Mish {
@@ -344,7 +344,7 @@ impl Module<&Array> for Mish {
 /// ```rust, ignore
 /// maximum(x, 0)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu;
 
 impl Module<&Array> for Relu {
@@ -397,7 +397,7 @@ impl Module<&Array> for LeakyRelu {
 /// ```rust, ignore
 /// minimum(&maximum(x, 0).unwrap(), 6).unwrap()
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Relu6;
 
 impl Module<&Array> for Relu6 {
@@ -450,7 +450,7 @@ impl Module<&Array> for Softmax {
 /// ```rust, ignore
 /// log_add_exp(x, 0)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softplus;
 
 impl Module<&Array> for Softplus {
@@ -471,7 +471,7 @@ impl Module<&Array> for Softplus {
 /// ```rust, ignore
 /// x / (array!(1) + abs(x)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Softsign;
 
 impl Module<&Array> for Softsign {
@@ -525,7 +525,7 @@ impl Module<&Array> for Celu {
 /// ```rust, ignore
 /// x * sigmoid(x)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Silu;
 
 impl Module<&Array> for Silu {
@@ -578,7 +578,7 @@ impl Module<&Array> for LogSoftmax {
 /// ```rust, ignore
 /// -softplus(-x)
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct LogSigmoid;
 
 impl Module<&Array> for LogSigmoid {
@@ -697,7 +697,7 @@ impl Module<&Array> for Gelu {
 }
 
 /// Applies the hyperbolic tangent function
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Tanh;
 
 impl Module<&Array> for Tanh {
@@ -718,7 +718,7 @@ impl Module<&Array> for Tanh {
 /// ```rust, ignore
 /// x * minimum(maximum(x + 3, 0), 6) / 6
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct HardSwish;
 
 impl Module<&Array> for HardSwish {
@@ -774,7 +774,7 @@ impl Module<&Array> for Step {
 /// ```rust, ignore
 /// elu(x, 1.67326) * 1.0507
 /// ```
-#[derive(Debug, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters)]
 pub struct Selu;
 
 impl Module<&Array> for Selu {

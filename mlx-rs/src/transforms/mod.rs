@@ -314,7 +314,7 @@ pub type KeyedParameters<Arr> = HashMap<Rc<str>, Arr>;
 /// Type alias for a hashmap of gradients.
 pub type KeyedGrad = KeyedParameters<Array>;
 
-macro_rules! value_and_grad_with_hashmap {
+macro_rules! keyed_value_and_grad {
     ($inner_ret:ty, $cls_new:ident, $f:ident, $args_ty:ty) => {
         move |parameters: KeyedParameters<Arr>,
               arrays: $args_ty|
@@ -352,51 +352,51 @@ macro_rules! value_and_grad_with_hashmap {
     };
 }
 
-pub trait IntoValueAndGradWithHashMap<'a, Arr, Args, Err>
+pub trait IntoKeyedValueAndGrad<'a, Arr, Args, Err>
 where
     Arr: AsRef<Array>,
     Args: Clone,
 {
-    fn into_value_and_grad_with_hashmap(
+    fn into_keyed_value_and_grad(
         self,
     ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a;
 }
 
-impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, ()> for F
+impl<'a, F, Arr, Args> IntoKeyedValueAndGrad<'a, Arr, Args, ()> for F
 where
     F: FnMut(HashMap<Rc<str>, Array>, Args) -> Vec<Array> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
-    fn into_value_and_grad_with_hashmap(
+    fn into_keyed_value_and_grad(
         mut self,
     ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
-        value_and_grad_with_hashmap!(Vec<Array>, new, self, Args)
+        keyed_value_and_grad!(Vec<Array>, new, self, Args)
     }
 }
 
-impl<'a, F, Arr, Args> IntoValueAndGradWithHashMap<'a, Arr, Args, Exception> for F
+impl<'a, F, Arr, Args> IntoKeyedValueAndGrad<'a, Arr, Args, Exception> for F
 where
     F: FnMut(HashMap<Rc<str>, Array>, Args) -> Result<Vec<Array>> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
-    fn into_value_and_grad_with_hashmap(
+    fn into_keyed_value_and_grad(
         mut self,
     ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a {
-        value_and_grad_with_hashmap!(Result<Vec<Array>>, new_fallible, self, Args)
+        keyed_value_and_grad!(Result<Vec<Array>>, new_fallible, self, Args)
     }
 }
 
-pub fn value_and_grad_with_hashmap<'a, F, Arr, Args, Err>(
+pub fn keyed_value_and_grad<'a, F, Arr, Args, Err>(
     f: F,
 ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
 where
-    F: IntoValueAndGradWithHashMap<'a, Arr, Args, Err> + 'a,
+    F: IntoKeyedValueAndGrad<'a, Arr, Args, Err> + 'a,
     Arr: AsRef<Array>,
     Args: Clone,
 {
-    f.into_value_and_grad_with_hashmap()
+    f.into_keyed_value_and_grad()
 }
 
 pub trait IntoGrad<'a, Args, Output, Err> {
@@ -577,7 +577,7 @@ mod tests {
 
     use super::*;
 
-    use super::value_and_grad_with_hashmap;
+    use super::keyed_value_and_grad;
 
     // The unit tests below are adapted from the mlx c++ codebase
 
@@ -678,7 +678,7 @@ mod tests {
             .map(|(k, v)| (k.into(), v))
             .collect();
 
-        let mut vg = value_and_grad_with_hashmap(f);
+        let mut vg = keyed_value_and_grad(f);
 
         let (value, grad) = vg(parameters, 0).unwrap();
 

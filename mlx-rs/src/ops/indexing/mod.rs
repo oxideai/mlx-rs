@@ -10,18 +10,18 @@
 //!
 //! | Type | Description |
 //! |------|-------------|
-//! | `i32` | An integer index |
-//! | `Array` | Use an array to index another array |
+//! | [`i32`] | An integer index |
+//! | [`Array`] | Use an array to index another array |
 //! | `&Array` | Use a reference to an array to index another array |
-//! | `std::ops::Range<i32>` | A range index |
-//! | `std::ops::RangeFrom<i32>` | A range index |
-//! | `std::ops::RangeFull` | A range index |
-//! | `std::ops::RangeInclusive<i32>` | A range index |
-//! | `std::ops::RangeTo<i32>` | A range index |
-//! | `std::ops::RangeToInclusive<i32>` | A range index |
+//! | [`std::ops::Range<i32>`] | A range index |
+//! | [`std::ops::RangeFrom<i32>`] | A range index |
+//! | [`std::ops::RangeFull`] | A range index |
+//! | [`std::ops::RangeInclusive<i32>`] | A range index |
+//! | [`std::ops::RangeTo<i32>`] | A range index |
+//! | [`std::ops::RangeToInclusive<i32>`] | A range index |
 //! | [`StrideBy`] | A range index with stride |
-//! | `NewAxis` | Add a new axis |
-//! | `Ellipsis` | Consume all axes |
+//! | [`NewAxis`] | Add a new axis |
+//! | [`Ellipsis`] | Consume all axes |
 //!
 //! # Single axis indexing
 //!
@@ -109,19 +109,33 @@ pub(crate) mod indexmut_impl;
 /*                                Custom types                                */
 /* -------------------------------------------------------------------------- */
 
+/// New axis indexing operation.
+/// 
+/// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct NewAxis;
 
+/// Ellipsis indexing operation.
+/// 
+/// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct Ellipsis;
 
+/// Stride indexing operation.
+/// 
+/// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct StrideBy<I> {
+    /// The inner iterator
     pub inner: I,
+
+    /// The stride
     pub stride: i32,
 }
 
+/// Helper trait for creating a stride indexing operation.
 pub trait IntoStrideBy: Sized {
+    /// Create a stride indexing operation.
     fn stride_by(self, stride: i32) -> StrideBy<Self>;
 }
 
@@ -134,6 +148,7 @@ impl<T> IntoStrideBy for T {
     }
 }
 
+/// Range indexing operation.
 #[derive(Debug, Clone)]
 pub struct RangeIndex {
     start: Bound<i32>,
@@ -220,6 +235,7 @@ impl RangeIndex {
     }
 }
 
+/// Indexing operation for arrays.
 #[derive(Debug, Clone)]
 pub enum ArrayIndexOp<'a> {
     /// An `Ellipsis` is used to consume all axes
@@ -230,13 +246,22 @@ pub enum ArrayIndexOp<'a> {
     /// A single index operation
     ///
     /// This is equivalent to `arr[1]` in python
-    TakeIndex { index: i32 },
+    TakeIndex { 
+        /// The index to take
+        index: i32 
+    },
 
     /// Indexing with an array
-    TakeArray { indices: Rc<Array> },
+    TakeArray { 
+        /// The indices to take
+        indices: Rc<Array> // TODO: remove `Rc` because `Array` is `Clone`
+    },
 
     /// Indexing with an array reference
-    TakeArrayRef { indices: &'a Array },
+    TakeArrayRef { 
+        /// The indices to take
+        indices: &'a Array 
+    },
 
     /// Indexing with a range
     ///
@@ -276,19 +301,29 @@ impl ArrayIndexOp<'_> {
 /*                                Custom traits                               */
 /* -------------------------------------------------------------------------- */
 
+/// Trait for custom indexing operations.
+/// 
+/// Out of bounds indexing is allowed and wouldn't return an error.
 pub trait TryIndexOp<Idx> {
+    /// Try to index the array with the given index.
     fn try_index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Result<Array>;
 
+    /// Try to index the array with the given index.
     fn try_index(&self, i: Idx) -> Result<Array> {
         self.try_index_device(i, StreamOrDevice::default())
     }
 }
 
+/// Trait for custom indexing operations.
+/// 
+/// This is implemented for all types that implement `TryIndexOp`.
 pub trait IndexOp<Idx>: TryIndexOp<Idx> {
+    /// Index the array with the given index.
     fn index_device(&self, i: Idx, stream: impl AsRef<Stream>) -> Array {
         self.try_index_device(i, stream).unwrap()
     }
 
+    /// Index the array with the given index.
     fn index(&self, i: Idx) -> Array {
         self.try_index(i).unwrap()
     }
@@ -296,20 +331,27 @@ pub trait IndexOp<Idx>: TryIndexOp<Idx> {
 
 impl<T, Idx> IndexOp<Idx> for T where T: TryIndexOp<Idx> {}
 
+/// Trait for custom mutable indexing operations.
 pub trait TryIndexMutOp<Idx, Val> {
+    /// Try to index the array with the given index and set the value.
     fn try_index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>) -> Result<()>;
 
+    /// Try to index the array with the given index and set the value.
     fn try_index_mut(&mut self, i: Idx, val: Val) -> Result<()> {
         self.try_index_mut_device(i, val, StreamOrDevice::default())
     }
 }
 
 // TODO: should `Val` impl `AsRef<Array>` or `Into<Array>`?
+
+/// Trait for custom mutable indexing operations.
 pub trait IndexMutOp<Idx, Val>: TryIndexMutOp<Idx, Val> {
+    /// Index the array with the given index and set the value.
     fn index_mut_device(&mut self, i: Idx, val: Val, stream: impl AsRef<Stream>) {
         self.try_index_mut_device(i, val, stream).unwrap()
     }
 
+    /// Index the array with the given index and set the value.
     fn index_mut(&mut self, i: Idx, val: Val) {
         self.try_index_mut(i, val).unwrap()
     }

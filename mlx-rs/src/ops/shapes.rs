@@ -568,9 +568,13 @@ pub fn split_equal_device(
     })
 }
 
+/// Number of padding values to add to the edges of each axis.
 #[derive(Debug)]
 pub enum PadWidth<'a> {
+    /// (before, after) values for all axes.
     Same((i32, i32)),
+
+    /// List of (before, after) values for each axis.
     Widths(&'a [(i32, i32)]),
 }
 
@@ -614,9 +618,13 @@ impl PadWidth<'_> {
     }
 }
 
+/// The padding mode.
 #[derive(Debug)]
 pub enum PadMode {
+    /// Pad with a constant value.
     Constant,
+
+    /// Pad with the edge value.
     Edge,
 }
 

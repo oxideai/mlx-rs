@@ -1,3 +1,5 @@
+//! Custom error types and handler for the c ffi
+
 use crate::Dtype;
 use libc::strdup;
 use std::convert::Infallible;
@@ -9,15 +11,7 @@ use thiserror::Error;
 /// Type alias for a `Result` with an `Exception` error type.
 pub type Result<T> = std::result::Result<T, Exception>;
 
-#[derive(Error, PartialEq, Debug)]
-pub enum ItemError {
-    #[error("not a scalar array")]
-    NotScalar,
-
-    #[error(transparent)]
-    Exception(#[from] Exception),
-}
-
+/// Error with io operations
 #[derive(Error, PartialEq, Debug)]
 pub enum IoError {
     #[error("Path must point to a local file")]

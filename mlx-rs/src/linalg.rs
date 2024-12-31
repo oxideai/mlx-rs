@@ -1,3 +1,5 @@
+//! Linear algebra operations.
+
 use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, VectorArray};

@@ -1,3 +1,5 @@
+//! Implements a nested hashmap
+
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 const DELIMITER: char = '.';

@@ -29,7 +29,7 @@ pub use device::*;
 pub use dtype::*;
 pub use stream::*;
 
-// TODO: what to put in the prelude?
+/// Prelude module that re-exports commonly used types and traits.
 pub mod prelude {
     pub use crate::{
         array::Array,

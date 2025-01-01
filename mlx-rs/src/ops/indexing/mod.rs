@@ -110,19 +110,19 @@ pub(crate) mod indexmut_impl;
 /* -------------------------------------------------------------------------- */
 
 /// New axis indexing operation.
-/// 
+///
 /// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct NewAxis;
 
 /// Ellipsis indexing operation.
-/// 
+///
 /// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct Ellipsis;
 
 /// Stride indexing operation.
-/// 
+///
 /// See the module level documentation for more information.
 #[derive(Debug, Clone, Copy)]
 pub struct StrideBy<I> {
@@ -246,21 +246,21 @@ pub enum ArrayIndexOp<'a> {
     /// A single index operation
     ///
     /// This is equivalent to `arr[1]` in python
-    TakeIndex { 
+    TakeIndex {
         /// The index to take
-        index: i32 
+        index: i32,
     },
 
     /// Indexing with an array
-    TakeArray { 
+    TakeArray {
         /// The indices to take
-        indices: Rc<Array> // TODO: remove `Rc` because `Array` is `Clone`
+        indices: Rc<Array>, // TODO: remove `Rc` because `Array` is `Clone`
     },
 
     /// Indexing with an array reference
-    TakeArrayRef { 
+    TakeArrayRef {
         /// The indices to take
-        indices: &'a Array 
+        indices: &'a Array,
     },
 
     /// Indexing with a range
@@ -302,7 +302,7 @@ impl ArrayIndexOp<'_> {
 /* -------------------------------------------------------------------------- */
 
 /// Trait for custom indexing operations.
-/// 
+///
 /// Out of bounds indexing is allowed and wouldn't return an error.
 pub trait TryIndexOp<Idx> {
     /// Try to index the array with the given index.
@@ -315,7 +315,7 @@ pub trait TryIndexOp<Idx> {
 }
 
 /// Trait for custom indexing operations.
-/// 
+///
 /// This is implemented for all types that implement `TryIndexOp`.
 pub trait IndexOp<Idx>: TryIndexOp<Idx> {
     /// Index the array with the given index.

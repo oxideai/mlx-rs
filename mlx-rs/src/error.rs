@@ -62,12 +62,12 @@ pub enum AsSliceError {
 
     /// The output dtype does not match the data type of the array.
     #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
-    DtypeMismatch { 
+    DtypeMismatch {
         /// The expected data type.
-        expecting: Dtype, 
+        expecting: Dtype,
 
         /// The actual data type
-        found: Dtype 
+        found: Dtype,
     },
 
     /// Exception

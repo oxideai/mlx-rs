@@ -10,7 +10,7 @@ use std::f64;
 use std::ffi::CString;
 
 /// Order of the norm
-/// 
+///
 /// See [`norm`] for more details.
 #[derive(Debug, Clone, Copy)]
 pub enum Ord<'a> {

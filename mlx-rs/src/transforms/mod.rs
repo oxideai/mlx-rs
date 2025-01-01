@@ -263,7 +263,10 @@ where
     build_value_and_gradient_inner(closure, argument_numbers)
 }
 
+/// Trait for functions/closures that can be converted into a closure that computes the value and
+/// gradient.
 pub trait IntoValueAndGrad<'a, Err> {
+    /// Convert the function/closure into a closure that computes the value and gradient.
     fn into_value_and_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,
@@ -354,11 +357,13 @@ macro_rules! keyed_value_and_grad {
     };
 }
 
+/// Similar to [`IntoValueAndGrad`] but for functions that take a hashmap of parameters.
 pub trait IntoKeyedValueAndGrad<'a, Arr, Args, Err>
 where
     Arr: AsRef<Array>,
     Args: Clone,
 {
+    /// Convert the function/closure into a closure that computes the value and gradient.
     fn into_keyed_value_and_grad(
         self,
     ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a;
@@ -390,6 +395,7 @@ where
     }
 }
 
+/// Returns a function which computes the value and gradient of `f` with keyed parameters.
 pub fn keyed_value_and_grad<'a, F, Arr, Args, Err>(
     f: F,
 ) -> impl FnMut(KeyedParameters<Arr>, Args) -> Result<(Vec<Array>, KeyedGrad)> + 'a
@@ -401,7 +407,9 @@ where
     f.into_keyed_value_and_grad()
 }
 
+/// Trait for functions/closures that can be converted into a closure that computes the gradient.
 pub trait IntoGrad<'a, Args, Output, Err> {
+    /// Convert the function/closure into a closure that computes the gradient.
     fn into_grad(
         self,
         argument_numbers: impl IntoOption<&'a [i32]>,

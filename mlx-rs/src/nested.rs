@@ -4,13 +4,18 @@ use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 const DELIMITER: char = '.';
 
+/// A nested value that can be either a value or a map of nested values
 #[derive(Debug, Clone)]
 pub enum NestedValue<K, T> {
+    /// A value
     Value(T),
+
+    /// A map of nested values
     Map(HashMap<K, NestedValue<K, T>>),
 }
 
 impl<K, V> NestedValue<K, V> {
+    /// Flattens the nested value into a hashmap
     pub fn flatten(self, prefix: &str) -> HashMap<Rc<str>, V>
     where
         K: Display,
@@ -29,8 +34,10 @@ impl<K, V> NestedValue<K, V> {
     }
 }
 
+/// A nested hashmap
 #[derive(Debug, Clone)]
 pub struct NestedHashMap<K, V> {
+    /// The internal hashmap
     pub entries: HashMap<K, NestedValue<K, V>>,
 }
 
@@ -47,12 +54,14 @@ impl<K, V> Default for NestedHashMap<K, V> {
 }
 
 impl<K, V> NestedHashMap<K, V> {
+    /// Creates a new nested hashmap
     pub fn new() -> Self {
         Self {
             entries: HashMap::new(),
         }
     }
 
+    /// Inserts a new entry into the nested hashmap
     pub fn insert(&mut self, key: K, value: NestedValue<K, V>)
     where
         K: Eq + std::hash::Hash,
@@ -60,6 +69,7 @@ impl<K, V> NestedHashMap<K, V> {
         self.entries.insert(key, value);
     }
 
+    /// Flattens the nested hashmap into a hashmap
     pub fn flatten(self) -> HashMap<Rc<str>, V>
     where
         K: AsRef<str> + Display,

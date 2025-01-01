@@ -9,9 +9,15 @@ use smallvec::SmallVec;
 use std::f64;
 use std::ffi::CString;
 
+/// Order of the norm
+/// 
+/// See [`norm`] for more details.
 #[derive(Debug, Clone, Copy)]
 pub enum Ord<'a> {
+    /// String representation of the order
     Str(&'a str),
+
+    /// Order of the norm
     P(f64),
 }
 
@@ -54,6 +60,7 @@ impl<'a> IntoOption<Ord<'a>> for f64 {
     }
 }
 
+/// Compute p-norm of an [`Array`]
 #[default_device]
 pub fn norm_p_device<'a>(
     array: impl AsRef<Array>,
@@ -430,6 +437,7 @@ pub fn eigvalsh_device(
     })
 }
 
+/// Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 #[default_device]
 pub fn pinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {

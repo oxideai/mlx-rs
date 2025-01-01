@@ -1,3 +1,5 @@
+//! Compilation of functions.
+
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
@@ -35,7 +37,9 @@ pub fn disable_compile() {
     }
 }
 
+/// A trait for functions that can be compiled.
 pub trait Compile<'a, Args, Output, Err>: Sized {
+    /// Compile the function.
     fn compile(
         self,
         inputs: Option<&'a mut [Array]>,
@@ -268,10 +272,13 @@ where
     }
 }
 
+/// A trait for a compiled function that can be called.
 pub trait CallMut<'a, Args, Output, Err> {
+    /// Call the compiled function.
     fn call_mut(&mut self, args: Args) -> Result<Output, Exception>;
 }
 
+/// A compiled function that can be called.
 #[derive(Debug)]
 pub struct Compiled<'a, F, G> {
     f_marker: std::marker::PhantomData<F>,
@@ -636,6 +643,7 @@ where
     move |args| compiled.call_mut(args)
 }
 
+/// Clear the memory cache.
 pub fn clear_cache() {
     unsafe {
         mlx_detail_compile_clear_cache();

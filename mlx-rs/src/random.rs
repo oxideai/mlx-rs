@@ -1,3 +1,5 @@
+//! Collection of functions related to random number generation
+
 use crate::ops::indexing::TryIndexOp;
 use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
@@ -368,7 +370,10 @@ pub fn gumbel_device<'a, T: ArrayElement>(
 /// Shape or count for the categorical distribution.
 #[derive(Debug, Clone, Copy)]
 pub enum ShapeOrCount<'a> {
+    /// Shape
     Shape(&'a [i32]),
+
+    /// Count
     Count(i32),
 }
 

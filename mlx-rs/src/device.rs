@@ -9,7 +9,10 @@ use crate::{
 #[derive(num_enum::IntoPrimitive, Debug, Clone, Copy)]
 #[repr(u32)]
 pub enum DeviceType {
+    /// CPU device
     Cpu = mlx_sys::mlx_device_type__MLX_CPU,
+
+    /// GPU device
     Gpu = mlx_sys::mlx_device_type__MLX_GPU,
 }
 
@@ -19,19 +22,23 @@ pub struct Device {
 }
 
 impl Device {
+    /// Create a new [`Device`]
     pub fn new(device_type: DeviceType, index: i32) -> Device {
         let c_device = unsafe { mlx_sys::mlx_device_new_type(device_type.into(), index) };
         Device { c_device }
     }
 
+    /// Try to get the default device.
     pub fn try_default() -> Result<Self> {
         Device::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_device(res) })
     }
 
+    /// Create a default CPU device.
     pub fn cpu() -> Device {
         Device::new(DeviceType::Cpu, 0)
     }
 
+    /// Create a default GPU device.
     pub fn gpu() -> Device {
         Device::new(DeviceType::Gpu, 0)
     }

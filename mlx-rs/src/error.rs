@@ -1,3 +1,5 @@
+//! Custom error types and handler for the c ffi
+
 use crate::Dtype;
 use libc::strdup;
 use std::convert::Infallible;
@@ -9,41 +11,42 @@ use thiserror::Error;
 /// Type alias for a `Result` with an `Exception` error type.
 pub type Result<T> = std::result::Result<T, Exception>;
 
-#[derive(Error, PartialEq, Debug)]
-pub enum ItemError {
-    #[error("not a scalar array")]
-    NotScalar,
-
-    #[error(transparent)]
-    Exception(#[from] Exception),
-}
-
+/// Error with io operations
 #[derive(Error, PartialEq, Debug)]
 pub enum IoError {
+    /// Path must point to a local file
     #[error("Path must point to a local file")]
     NotFile,
 
+    /// Path contains invalid UTF-8
     #[error("Path contains invalid UTF-8")]
     InvalidUtf8,
 
+    /// Path contains null bytes
     #[error("Path contains null bytes")]
     NullBytes,
 
+    /// No file extension found
     #[error("No file extension found")]
     NoExtension,
 
+    /// Unsupported file format
     #[error("Unsupported file format")]
     UnsupportedFormat,
 
+    /// Unable to open file
     #[error("Unable to open file")]
     UnableToOpenFile,
 
+    /// Unable to allocate memory
     #[error("Unable to allocate memory")]
     AllocationError,
 
+    /// Null error
     #[error(transparent)]
     NulError(#[from] NulError),
 
+    /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
 }
@@ -59,12 +62,20 @@ pub enum AsSliceError {
 
     /// The output dtype does not match the data type of the array.
     #[error("dtype mismatch: expected {expecting:?}, found {found:?}")]
-    DtypeMismatch { expecting: Dtype, found: Dtype },
+    DtypeMismatch {
+        /// The expected data type.
+        expecting: Dtype,
 
+        /// The actual data type
+        found: Dtype,
+    },
+
+    /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
 }
 
+/// Exception. Most will come from the C API.
 #[derive(Debug, PartialEq, Error)]
 #[error("{what:?}")]
 pub struct Exception {
@@ -72,6 +83,7 @@ pub struct Exception {
 }
 
 impl Exception {
+    /// The error message.
     pub fn what(&self) -> &str {
         &self.what
     }
@@ -96,7 +108,14 @@ impl From<Infallible> for Exception {
     }
 }
 
+impl From<Exception> for String {
+    fn from(e: Exception) -> Self {
+        e.what
+    }
+}
+
 thread_local! {
+    static CLOSURE_ERROR: Cell<Option<Exception>> = const { Cell::new(None) };
     static LAST_MLX_ERROR: Cell<*const c_char> = const { Cell::new(std::ptr::null()) };
     pub(crate) static INIT_ERR_HANDLER: Once = const { Once::new() };
 }
@@ -113,13 +132,21 @@ extern "C" fn default_mlx_error_handler(msg: *const c_char, _data: *mut std::ffi
 #[no_mangle]
 extern "C" fn noop_mlx_error_handler_data_deleter(_data: *mut std::ffi::c_void) {}
 
-pub fn setup_mlx_error_handler() {
+pub(crate) fn setup_mlx_error_handler() {
     let handler = default_mlx_error_handler;
     let data_ptr = LAST_MLX_ERROR.with(|last_error| last_error.as_ptr() as *mut std::ffi::c_void);
     let dtor = noop_mlx_error_handler_data_deleter;
     unsafe {
         mlx_sys::mlx_set_error_handler(Some(handler), data_ptr, Some(dtor));
     }
+}
+
+pub(crate) fn set_closure_error(err: Exception) {
+    CLOSURE_ERROR.with(|closure_error| closure_error.set(Some(err)));
+}
+
+pub(crate) fn get_and_clear_closure_error() -> Option<Exception> {
+    CLOSURE_ERROR.with(|closure_error| closure_error.replace(None))
 }
 
 pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {

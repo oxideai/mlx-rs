@@ -5,10 +5,13 @@ use half::{bf16, f16};
 
 /// A marker trait for array elements.
 pub trait ArrayElement: Sized + Sealed {
+    /// The data type of the element.
     const DTYPE: Dtype;
 
+    /// Access the value of a scalar array. Returns `Err` if the array is not scalar.
     fn array_item(array: &Array) -> Result<Self>;
 
+    /// Access the raw data of an array.
     fn array_data(array: &Array) -> *const Self;
 }
 

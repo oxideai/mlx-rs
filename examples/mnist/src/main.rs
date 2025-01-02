@@ -3,10 +3,10 @@ use mlx_nn::{
     module_value_and_grad,
 };
 use mlx_rs::{
-    array,
     builder::Builder,
     error::Exception,
     module::{Module, ModuleParameters},
+    ops::{eq, indexing::argmax, mean},
     optimizers::{Optimizer, Sgd},
     transforms::eval_params,
     Array,
@@ -16,33 +16,27 @@ use mlx_rs::{
 mod mlp;
 
 /// Retrieves MNIST dataset
-mod mnist;
+mod data;
 
-#[derive(Clone)]
-struct Loader {}
-
-impl Iterator for Loader {
-    type Item = (Array, Array);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        todo!()
-    }
-}
-
-fn load_training_data() -> Result<Loader, Box<dyn std::error::Error>> {
-    todo!()
+fn eval_fn(model: &mut mlp::Mlp, (x, y): (&Array, &Array)) -> Result<Array, Exception> {
+    let y_pred = model.forward(x)?;
+    let accuracy = mean(&eq(&argmax(&y_pred, 1, None)?, y)?, None, None)?;
+    Ok(accuracy)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let num_layers = 3;
-    let input_dim = 784;
-    let hidden_dim = 256;
-    let output_dim = 10;
-    let lr = 1e-2;
+    let num_layers = 2;
+    let hidden_dim = 32;
+    let num_classes = 10;
+    let batch_size = 256;
     let num_epochs = 10;
+    let learning_rate = 1e-2;
 
-    let loader = load_training_data()?;
-    let mut model = mlp::Mlp::new(num_layers, input_dim, hidden_dim, output_dim)?;
+    let (train_images, train_labels, test_images, test_labels) = data::read_data();
+    let loader = data::iterate_data(&train_images, &train_labels, batch_size)?;
+
+    let input_dim = train_images[0].shape()[0];
+    let mut model = mlp::Mlp::new(num_layers, input_dim, hidden_dim, num_classes)?;
 
     let cross_entropy = CrossEntropyBuilder::new()
         .reduction(LossReduction::Mean)
@@ -53,19 +47,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut loss_and_grad_fn = module_value_and_grad(loss_fn);
 
-    let mut optimizer = Sgd::new(lr);
+    let mut optimizer = Sgd::new(learning_rate);
 
-    for _ in 0..num_epochs {
-        let mut loss_sum = array!(0.0);
-        for (x, y) in loader.clone() {
-            let (loss, grad) = loss_and_grad_fn(&mut model, (&x, &y))?;
-            optimizer.update(&mut model, grad).unwrap();
+    for e in 0..num_epochs {
+        let now = std::time::Instant::now();
+        for (x, y) in &loader {
+            let (_loss, grad) = loss_and_grad_fn(&mut model, (x, y))?;
+            optimizer.apply(&mut model, grad).unwrap();
             eval_params(model.parameters())?;
-
-            loss_sum += loss;
         }
 
-        println!("Epoch: {}, Loss sum: {}", num_epochs, loss_sum);
+        // Evaluate on test set
+        let accuracy = eval_fn(&mut model, (&test_images, &test_labels))?;
+        let elapsed = now.elapsed();
+        println!(
+            "Epoch: {}, Test accuracy: {:.2}, Time: {:.2} s",
+            e,
+            accuracy.item::<f32>(),
+            elapsed.as_secs_f32()
+        );
     }
 
     Ok(())

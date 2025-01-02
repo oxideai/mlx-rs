@@ -1,3 +1,5 @@
+//! Operations
+
 mod arithmetic;
 mod conversion;
 mod convolution;

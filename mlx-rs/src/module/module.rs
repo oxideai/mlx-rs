@@ -1,15 +1,18 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{nested::NestedHashMap, Array};
+use crate::{
+    nested::{NestedHashMap, NestedValue},
+    Array,
+};
 
 /// Type alias for owned module parameters.
-pub type ModuleParam = NestedHashMap<&'static str, Array>;
+pub type ModuleParam = NestedHashMap<Rc<str>, Array>;
 
 /// Type alias for borrowed module parameters.
-pub type ModuleParamRef<'a> = NestedHashMap<&'static str, &'a Array>;
+pub type ModuleParamRef<'a> = NestedHashMap<Rc<str>, &'a Array>;
 
 /// Type alias for mutably borrowed module parameters.
-pub type ModuleParamMut<'a> = NestedHashMap<&'static str, &'a mut Array>;
+pub type ModuleParamMut<'a> = NestedHashMap<Rc<str>, &'a mut Array>;
 
 /// Type alias for flattened module parameters.
 pub type FlattenedModuleParam = HashMap<Rc<str>, Array>;
@@ -173,27 +176,27 @@ where
 {
     fn parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
 
     fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter_mut().for_each(|module| {
-            let module_parameters = module.parameters_mut();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter_mut().enumerate().for_each(|(i, module)| {
+            let value = module.parameters_mut();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
 
     fn trainable_parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.trainable_parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.trainable_parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }

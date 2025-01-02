@@ -76,13 +76,13 @@ fn impl_module_parameters_for_struct(
 
             fn parameters(&self) -> _mlx_rs::module::ModuleParamRef<'_> {
                 let mut parameters = _mlx_rs::nested::NestedHashMap::new();
-                #(parameters.insert(stringify!(#field_names), _mlx_rs::module::Parameter::as_nested_value(&self.#field_names));)*
+                #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), _mlx_rs::module::Parameter::as_nested_value(&self.#field_names));)*
                 parameters
             }
 
             fn parameters_mut(&mut self) -> _mlx_rs::module::ModuleParamMut<'_> {
                 let mut parameters = _mlx_rs::nested::NestedHashMap::new();
-                #(parameters.insert(stringify!(#field_names), _mlx_rs::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
+                #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), _mlx_rs::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
                 parameters
             }
 
@@ -90,7 +90,7 @@ fn impl_module_parameters_for_struct(
                 let mut parameters = _mlx_rs::nested::NestedHashMap::new();
                 #(
                     if let Some(field) = _mlx_rs::module::Parameter::as_trainable_nested_value(&self.#field_names) {
-                        parameters.insert(stringify!(#field_names), field);
+                        parameters.insert(std::rc::Rc::from(stringify!(#field_names)), field);
                     }
                 )*
                 parameters

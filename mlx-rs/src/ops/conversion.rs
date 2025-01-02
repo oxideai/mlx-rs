@@ -25,6 +25,7 @@ impl Array {
         self.as_dtype_device(T::DTYPE, stream)
     }
 
+    /// Same as `as_type` but with a [`Dtype`] argument.
     #[default_device]
     pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
@@ -46,6 +47,7 @@ impl Array {
         self.view_dtype_device(T::DTYPE, stream)
     }
 
+    /// Same as `view` but with a [`Dtype`] argument.
     #[default_device]
     pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {

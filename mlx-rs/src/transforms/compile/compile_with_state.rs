@@ -27,9 +27,9 @@ where
     U: Updatable,
 {
     let shapeless = shapeless.into().unwrap_or(false);
-    move |module, args| {
+    move |state, args| {
         let mut compiled = f.compile(shapeless);
-        compiled.call_mut(module, args)
+        compiled.call_mut(state, args)
     }
 }
 
@@ -51,7 +51,8 @@ pub trait CompileWithState<U, A, O, E> {
     /// closure. Otherwise, the arguments to the returned closure would have to
     /// live longer than the closure itself.
     type Args<'a>;
-
+    
+    /// Compile the function.
     fn compile<'args>(self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, O, E>;
 }
 
@@ -247,8 +248,11 @@ where
     }
 }
 
+/// A trait for functions that can be called with state.
 pub trait CallMutWithState<U, A, O, E> {
-    fn call_mut(&mut self, module: &mut U, args: A) -> Result<O, Exception>;
+
+    /// Call the function with the given state and arguments.
+    fn call_mut(&mut self, state: &mut U, args: A) -> Result<O, Exception>;
 }
 
 impl<U, F, G> CallMutWithState<U, &[Array], Vec<Array>, ()> for Compiled<F, G>
@@ -360,7 +364,7 @@ where
 }
 
 #[inline]
-fn call_mut_with_module_inner<U>(
+fn call_mut_with_state_inner<U>(
     inner_closure: Closure,
     fun_id: usize,
     shapeless: bool,
@@ -531,7 +535,7 @@ impl<F> CompiledState<F> {
         };
 
         let inner_closure = Closure::new(inner);
-        call_mut_with_module_inner(inner_closure, self.id, self.shapeless, state, args)
+        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, state, args)
     }
 
     fn fallible_call_mut_with_state<U>(
@@ -601,6 +605,6 @@ impl<F> CompiledState<F> {
         };
 
         let inner_closure = Closure::new_fallible(inner);
-        call_mut_with_module_inner(inner_closure, self.id, self.shapeless, state, args)
+        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, state, args)
     }
 }

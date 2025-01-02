@@ -44,6 +44,7 @@ pub trait Compile<A, O, E>: Sized {
     /// live longer than the closure itself.
     type Args<'a>;
 
+    /// Compiles the function.
     fn compile<'args>(self, shapeless: bool) -> impl CallMut<Self::Args<'args>, O, E>;
 }
 
@@ -220,7 +221,9 @@ where
     }
 }
 
+/// A trait for a compiled function that can be called.
 pub trait CallMut<A, O, E> {
+    /// Calls the compiled function with the given arguments.
     fn call_mut(&mut self, args: A) -> Result<O, Exception>;
 }
 

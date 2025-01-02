@@ -31,12 +31,14 @@ pub fn disable_compile() {
     }
 }
 
+/// Clear the memory cache.
 pub fn clear_cache() {
     unsafe {
         mlx_sys::mlx_detail_compile_clear_cache();
     }
 }
 
+/// A compiled function that can be called.
 #[derive(Debug, Clone)]
 pub struct Compiled<F, G> {
     f_marker: std::marker::PhantomData<F>,

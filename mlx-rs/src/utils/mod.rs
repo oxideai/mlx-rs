@@ -1,3 +1,5 @@
+//! Utility functions and types.
+
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
@@ -90,6 +92,7 @@ impl Drop for VectorArray {
 /// A helper trait that is just like `Into<Option<T>>` but improves ergonomics by allowing
 /// implicit conversion from &[T; N] to &[T].
 pub trait IntoOption<T> {
+    /// Convert into an [`Option`].
     fn into_option(self) -> Option<T>;
 }
 
@@ -117,9 +120,12 @@ impl<'a, T> IntoOption<&'a [T]> for &'a Vec<T> {
     }
 }
 
+/// A trait for a scalar or an array.
 pub trait ScalarOrArray<'a> {
+    /// The reference type of the array.
     type Array: AsRef<Array> + 'a;
 
+    /// Convert to an owned or reference array.
     fn into_owned_or_ref_array(self) -> Self::Array;
 }
 

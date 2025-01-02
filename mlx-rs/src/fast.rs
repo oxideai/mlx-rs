@@ -1,3 +1,5 @@
+//! Fast implementations of commonly used multi-op functions.
+
 use crate::error::Result;
 use crate::utils::guard::Guarded;
 use crate::{Array, Stream, StreamOrDevice};

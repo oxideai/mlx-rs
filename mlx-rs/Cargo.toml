@@ -33,6 +33,7 @@ strum = { version = "0.26", features = ["derive"] }
 thiserror.workspace = true
 libc = "0.2"
 parking_lot = "0.12"
+itertools = "0.13"
 
 [dev-dependencies]
 pretty_assertions.workspace = true

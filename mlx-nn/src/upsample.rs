@@ -301,7 +301,7 @@ fn compiled_get_weight1(ind: &Array, grid: &Array) -> Result<Array, Exception> {
         let x = abs(ind_ - grid_)?;
         Ok((array!(a + 2.0) * &x - array!(a + 3.0)) * &x * &x + 1.0)
     };
-    let mut compiled = compile(get_weight1, Some(true), None, None);
+    let mut compiled = compile(get_weight1, true);
     compiled((ind, grid))
 }
 
@@ -311,7 +311,7 @@ fn compiled_get_weight2(ind: &Array, grid: &Array) -> Result<Array, Exception> {
         let x = abs(ind_ - grid_)?;
         Ok((((&x - 5.0) * &x + 8.0) * &x - 4.0) * a)
     };
-    let mut compiled = compile(get_weight2, Some(true), None, None);
+    let mut compiled = compile(get_weight2, true);
     compiled((ind, grid))
 }
 

@@ -11,6 +11,7 @@ use std::{
 use crate::{
     array,
     module::{FlattenedModuleParam, ModuleParameters},
+    utils::Updatable,
     Array,
 };
 
@@ -34,16 +35,34 @@ pub use lion::*;
 pub use rmsprop::*;
 pub use sgd::*;
 
-type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
+// Unfortunate workaround to implement Updatable for mutable references of
+// optimizers This is needed because of the orphan rule and lack of negative
+// trait bound, otherwise we would need to implement Updatable for every
+// `Module`
+macro_rules! impl_updatable_for_mut_optimizer {
+    ($optimizer:ty) => {
+        impl Updatable for &'_ mut $optimizer {
+            fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+                <$optimizer as Updatable>::updatable_states(&**self)
+            }
 
+            fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+                <$optimizer as Updatable>::updatable_states_mut(&mut **self)
+            }
+        }
+    };
+}
+use impl_updatable_for_mut_optimizer;
+
+type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 /// Trait for optimizers.
-pub trait Optimizer {
+pub trait Optimizer: Updatable {
     /// Update a single parameter with the given gradient.
     ///
     /// The implementation should look up the state for the parameter using the key and update the
     /// state and the parameter accordingly. The key is provided instead of the state because it
     /// would otherwise create a mutable borrow conflict with the rest of the optimizer fields.
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -52,7 +71,7 @@ pub trait Optimizer {
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
-    fn apply<M>(
+    fn update<M>(
         &mut self,
         model: &mut M,
         gradients: impl Borrow<FlattenedModuleParam>,
@@ -64,7 +83,7 @@ pub trait Optimizer {
 
         for (key, gradient) in gradients.borrow().iter() {
             if let Some(parameter) = parameters.get_mut(key) {
-                self.apply_single(key, gradient, parameter)?;
+                self.update_single(key, gradient, parameter)?;
             }
         }
 

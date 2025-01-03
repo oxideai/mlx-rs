@@ -6,10 +6,11 @@ use crate::{
     array,
     error::AdafactorBuildError,
     ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    utils::Updatable,
     Array,
 };
 
-use super::{Optimizer, OptimizerState};
+use super::*;
 
 fn rms(inputs: &Array) -> crate::error::Result<Array> {
     sqrt(&mean(&square(inputs)?, None, None)?)
@@ -252,7 +253,7 @@ fn compute_lr(
 }
 
 impl Optimizer for Adafactor {
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
@@ -336,3 +337,47 @@ impl Optimizer for Adafactor {
         Ok(())
     }
 }
+
+impl Updatable for Adafactor {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
+                // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+                [
+                    &v.exp_avg_sq_row,
+                    &v.exp_avg_sq_col,
+                    &v.exp_avg_sq,
+                    &v.exp_avg,
+                ]
+                .into_iter()
+                .filter_map(|v| v.as_ref())
+                .collect::<Vec<_>>()
+            })
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
+                // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+                [
+                    &mut v.exp_avg_sq_row,
+                    &mut v.exp_avg_sq_col,
+                    &mut v.exp_avg_sq,
+                    &mut v.exp_avg,
+                ]
+                .into_iter()
+                .filter_map(|v| v.as_mut())
+                .collect::<Vec<_>>()
+            })
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Adafactor);

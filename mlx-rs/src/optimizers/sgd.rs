@@ -73,7 +73,7 @@ impl Sgd {
 impl Optimizer for Sgd {
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -122,3 +122,25 @@ impl Optimizer for Sgd {
         Ok(())
     }
 }
+
+impl Updatable for Sgd {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Sgd);

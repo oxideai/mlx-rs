@@ -18,10 +18,12 @@ pub struct StreamOrDevice {
 }
 
 impl StreamOrDevice {
+    /// Create a new [`StreamOrDevice`] with a [`Stream`].
     pub fn new(stream: Stream) -> StreamOrDevice {
         StreamOrDevice { stream }
     }
 
+    /// Create a new [`StreamOrDevice`] with a [`Device`].
     pub fn new_with_device(device: &Device) -> StreamOrDevice {
         StreamOrDevice {
             stream: Stream::new_with_device(device),
@@ -103,10 +105,12 @@ impl Stream {
         }
     }
 
+    /// Try to get the default stream on the given device.
     pub fn try_default_on_device(device: &Device) -> Result<Stream> {
         Stream::try_from_op(|res| unsafe { mlx_sys::mlx_get_default_stream(res, device.c_device) })
     }
 
+    /// Create a new stream on the given device
     pub fn new_with_device(device: &Device) -> Stream {
         unsafe {
             let c_stream = mlx_sys::mlx_stream_new_device(device.c_device);
@@ -114,6 +118,7 @@ impl Stream {
         }
     }
 
+    /// Get the underlying C pointer.
     pub fn as_ptr(&self) -> mlx_sys::mlx_stream {
         self.c_stream
     }

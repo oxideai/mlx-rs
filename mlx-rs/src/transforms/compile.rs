@@ -1,3 +1,5 @@
+//! Compilation of functions.
+
 use std::{
     cell::RefCell,
     collections::hash_map::DefaultHasher,
@@ -17,6 +19,8 @@ use crate::{
     Array,
 };
 
+use super::get_and_clear_closure_error;
+
 /// Globally enable the compilation of functions.
 ///
 /// Default is enabled.
@@ -35,7 +39,9 @@ pub fn disable_compile() {
     }
 }
 
+/// A trait for functions that can be compiled.
 pub trait Compile<'a, Args, Output, Err>: Sized {
+    /// Compile the function.
     fn compile(
         self,
         inputs: Option<&'a mut [Array]>,
@@ -268,10 +274,13 @@ where
     }
 }
 
+/// A trait for a compiled function that can be called.
 pub trait CallMut<'a, Args, Output, Err> {
+    /// Call the compiled function.
     fn call_mut(&mut self, args: Args) -> Result<Output, Exception>;
 }
 
+/// A compiled function that can be called.
 #[derive(Debug)]
 pub struct Compiled<'a, F, G> {
     f_marker: std::marker::PhantomData<F>,
@@ -421,6 +430,10 @@ fn call_mut_inner(
     // compiled graph
     let result_vector = VectorArray::try_from_op(|res| unsafe {
         mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
+    })
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
     })?;
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
@@ -636,6 +649,7 @@ where
     move |args| compiled.call_mut(args)
 }
 
+/// Clear the memory cache.
 pub fn clear_cache() {
     unsafe {
         mlx_detail_compile_clear_cache();
@@ -766,6 +780,10 @@ mod tests {
 
         let result = compiled(&another_args);
         assert!(result.is_err());
+
+        // Check that the error message is not just "mlx_closure returned a non-zero value"
+        let error = result.unwrap_err();
+        assert!(!error.what().contains("non-zero value"));
     }
 
     #[test]

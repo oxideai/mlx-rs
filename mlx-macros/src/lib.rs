@@ -5,11 +5,9 @@ use syn::{parse_macro_input, DeriveInput};
 
 mod module_parameters;
 
-/// Derive the `ModuleParameters` trait for a struct. Mark a field with `#[param]` attribute to
-/// include it in the parameters. The field type must implement the `Parameter` trait defined in
-/// `mlx-nn-module` crate.
-///
-/// Make sure to include `mlx-nn-module` as a dependency in your `Cargo.toml`.
+/// Derive the `ModuleParameters` trait for a struct. Mark a field with
+/// `#[param]` attribute to include it in the parameters. The field type must
+/// implement the `mlx_rs::module::Parameter` trait.
 ///
 /// # Example
 ///

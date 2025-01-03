@@ -19,9 +19,12 @@ mod operators;
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
+
+/// Type alias for `num_complex::Complex<f32>`.
 #[allow(non_camel_case_types)]
 pub type complex64 = Complex<f32>;
 
+/// An n-dimensional array.
 #[repr(transparent)]
 pub struct Array {
     pub(crate) c_array: mlx_array,
@@ -89,7 +92,7 @@ impl Array {
         Self { c_array }
     }
 
-    // TODO: should this be unsafe?
+    /// Get the underlying mlx_array pointer.
     pub fn as_ptr(&self) -> mlx_array {
         self.c_array
     }
@@ -483,6 +486,7 @@ pub trait FromScalar<T>
 where
     T: ArrayElement,
 {
+    /// Create an array from a scalar value.
     fn from_scalar(val: T) -> Array;
 }
 
@@ -512,13 +516,14 @@ impl FromScalar<complex64> for Array {
 
 /// A helper trait to construct `Array` from nested arrays or slices.
 ///
-/// Given that this is not intended for use other than the macro [`array!`], we added this trait
+/// Given that this is not intended for use other than the macro [`array!`], this trait is added
 /// instead of directly implementing `From` for `Array` to avoid conflicts with other `From`
 /// implementations.
 ///
 /// Beware that this is subject to change in the future should we find a better way to implement
 /// the macro without creating conflicts.
 pub trait FromNested<T> {
+    /// Create an array from nested arrays or slices.
     fn from_nested(data: T) -> Array;
 }
 

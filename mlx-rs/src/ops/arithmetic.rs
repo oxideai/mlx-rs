@@ -741,6 +741,7 @@ pub fn ceil_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 /// This trait is only implemented for tuples of the form `(Min, Max)`, `(Min, ())`, and `((),
 /// Max)`. The `Min` and `Max` types must implement the `ScalarOrArray` trait.
 pub trait ClipBound<'min, 'max>: Sealed {
+    /// Convert the bound into a tuple of optional minimum and maximum values.
     fn into_min_max(
         self,
     ) -> (
@@ -1338,9 +1339,13 @@ pub fn outer_device(
     })
 }
 
+/// The number of dimensions to sum over
 #[derive(Debug)]
 pub enum TensorDotDims<'a> {
+    /// Sum over the last axes dimensions of a and the first axes dimensions of b.
     Int(i32),
+
+    /// Sum over the corresponding dimensions of a and b.
     List((&'a [i32], &'a [i32])),
 }
 
@@ -1369,7 +1374,7 @@ impl<'a, const M: usize, const N: usize> From<(&'a [i32; M], &'a [i32; N])> for 
 /// - `a`: input array,
 /// - `b`: input array,
 /// - `axes`: The number of dimensions to sum over. If an integer is provided, then sum over
-///   the last axes dimensions of a and the first axes dimensions of b. If a list of lists is
+///   the last axes dimensions of a and the first axes dimensions of b. If a tuple of lists is
 ///   provided, then sum over the corresponding dimensions of a and b. (default: 2)
 #[default_device]
 pub fn tensordot_device<'a>(

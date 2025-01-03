@@ -15,31 +15,59 @@ generate_test_cases! {
     )]
     #[repr(u32)]
     pub enum Dtype {
+        /// bool
         Bool = mlx_sys::mlx_dtype__MLX_BOOL,
+
+        /// u8
         Uint8 = mlx_sys::mlx_dtype__MLX_UINT8,
+
+        /// u16
         Uint16 = mlx_sys::mlx_dtype__MLX_UINT16,
+
+        /// u32
         Uint32 = mlx_sys::mlx_dtype__MLX_UINT32,
+
+        /// u64
         Uint64 = mlx_sys::mlx_dtype__MLX_UINT64,
+
+        /// i8
         Int8 = mlx_sys::mlx_dtype__MLX_INT8,
+
+        /// i16
         Int16 = mlx_sys::mlx_dtype__MLX_INT16,
+
+        /// i32
         Int32 = mlx_sys::mlx_dtype__MLX_INT32,
+
+        /// i64
         Int64 = mlx_sys::mlx_dtype__MLX_INT64,
+
+        /// f16
         Float16 = mlx_sys::mlx_dtype__MLX_FLOAT16,
+
+        /// f32
         Float32 = mlx_sys::mlx_dtype__MLX_FLOAT32,
+
+        /// bfloat16
         Bfloat16 = mlx_sys::mlx_dtype__MLX_BFLOAT16,
+
+        /// complex64
         Complex64 = mlx_sys::mlx_dtype__MLX_COMPLEX64,
     }
 }
 
 impl Dtype {
+    /// Returns `true` if the data type is complex.
     pub fn is_complex(&self) -> bool {
         matches!(self, Dtype::Complex64)
     }
 
+    /// Returns `true` if the data type is floating point.
     pub fn is_float(&self) -> bool {
         matches!(self, Dtype::Float16 | Dtype::Float32 | Dtype::Bfloat16)
     }
 
+    /// Returns `true` if the data type is one of `f16`, `f32`, `bfloat16`, or `complex64`.
     pub fn is_inexact(&self) -> bool {
         matches!(
             self,
@@ -47,6 +75,7 @@ impl Dtype {
         )
     }
 
+    /// Returns the promotion type of two data types.
     pub fn from_promoting_types(a: Dtype, b: Dtype) -> Self {
         a.promote_with(b)
     }

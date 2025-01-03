@@ -51,7 +51,7 @@ pub trait CompileWithState<U, A, O, E> {
     /// closure. Otherwise, the arguments to the returned closure would have to
     /// live longer than the closure itself.
     type Args<'a>;
-    
+
     /// Compile the function.
     fn compile<'args>(self, shapeless: bool) -> impl CallMutWithState<U, Self::Args<'args>, O, E>;
 }
@@ -250,7 +250,6 @@ where
 
 /// A trait for functions that can be called with state.
 pub trait CallMutWithState<U, A, O, E> {
-
     /// Call the function with the given state and arguments.
     fn call_mut(&mut self, state: &mut U, args: A) -> Result<O, Exception>;
 }

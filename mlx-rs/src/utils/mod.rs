@@ -3,8 +3,8 @@
 use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
-use crate::module::ModuleParameters;
 use crate::error::set_closure_error;
+use crate::module::ModuleParameters;
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::{marker::PhantomData, rc::Rc};

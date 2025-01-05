@@ -214,7 +214,7 @@ pub fn as_strided_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_as_strided(
             res,
-            a.c_array,
+            a.as_ptr(),
             shape.as_ptr(),
             shape.len(),
             resolved_strides.as_ptr(),
@@ -245,7 +245,7 @@ pub fn broadcast_to_device(a: impl AsRef<Array>, shape: &[i32], stream: impl AsR
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_broadcast_to(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             shape.as_ptr(),
             shape.len(),
             stream.as_ref().as_ptr(),
@@ -302,7 +302,7 @@ pub fn expand_dims_device(a: impl AsRef<Array>, axes: &[i32], stream: impl AsRef
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_expand_dims(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
@@ -343,7 +343,7 @@ pub fn flatten_device(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_flatten(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             start_axis,
             end_axis,
             stream.as_ref().as_ptr(),
@@ -371,7 +371,7 @@ pub fn reshape_device(a: impl AsRef<Array>, shape: &[i32], stream: impl AsRef<St
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_reshape(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             shape.as_ptr(),
             shape.len(),
             stream.as_ref().as_ptr(),
@@ -405,7 +405,7 @@ pub fn squeeze_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_squeeze(
             res,
-            a.c_array,
+            a.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
@@ -430,7 +430,7 @@ pub fn squeeze_device<'a>(
 #[default_device]
 pub fn at_least_1d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_atleast_1d(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_atleast_1d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -451,7 +451,7 @@ pub fn at_least_1d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 #[default_device]
 pub fn at_least_2d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_atleast_2d(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_atleast_2d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -472,7 +472,7 @@ pub fn at_least_2d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 #[default_device]
 pub fn at_least_3d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_atleast_3d(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_atleast_3d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -500,7 +500,7 @@ pub fn move_axis_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_moveaxis(res, a.as_ref().c_array, src, dst, stream.as_ref().as_ptr())
+        mlx_sys::mlx_moveaxis(res, a.as_ref().as_ptr(), src, dst, stream.as_ref().as_ptr())
     })
 }
 
@@ -531,7 +531,7 @@ pub fn split_device(
     Vec::<Array>::try_from_op(|res| unsafe {
         mlx_sys::mlx_split(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             indices.as_ptr(),
             indices.len(),
             axis,
@@ -566,7 +566,7 @@ pub fn split_equal_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
-        mlx_sys::mlx_split_equal_parts(res, a.as_ref().c_array, num_parts, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_split_equal_parts(res, a.as_ref().as_ptr(), num_parts, axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -685,14 +685,14 @@ pub fn pad_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_pad(
             res,
-            a.c_array,
+            a.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             low_pads.as_ptr(),
             low_pads.len(),
             high_pads.as_ptr(),
             high_pads.len(),
-            value.c_array,
+            value.as_ptr(),
             mode.as_c_str(),
             stream.as_ref().as_ptr(),
         )
@@ -774,7 +774,7 @@ pub fn swap_axes_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_swapaxes(res, a.as_ref().c_array, axis1, axis2, stream.as_ref().as_ptr())
+        mlx_sys::mlx_swapaxes(res, a.as_ref().as_ptr(), axis1, axis2, stream.as_ref().as_ptr())
     })
 }
 
@@ -798,7 +798,7 @@ pub fn tile_device(a: impl AsRef<Array>, reps: &[i32], stream: impl AsRef<Stream
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tile(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             reps.as_ptr(),
             reps.len(),
             stream.as_ref().as_ptr(),
@@ -832,7 +832,7 @@ pub fn transpose_device(a: impl AsRef<Array>, axes: &[i32], stream: impl AsRef<S
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
@@ -844,7 +844,7 @@ pub fn transpose_device(a: impl AsRef<Array>, axes: &[i32], stream: impl AsRef<S
 #[default_device]
 pub fn transpose_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_transpose_all(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_transpose_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 

@@ -35,7 +35,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cummax(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -48,7 +48,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cummax(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -90,7 +90,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cummin(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -103,7 +103,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cummin(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -145,7 +145,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cumprod(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -158,7 +158,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cumprod(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -200,7 +200,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cumsum(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -213,7 +213,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cumsum(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),

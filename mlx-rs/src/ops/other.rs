@@ -28,7 +28,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_diag(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 k.into().unwrap_or(0),
                 stream.as_ref().as_ptr(),
             )
@@ -60,7 +60,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_diagonal(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 offset.into().unwrap_or(0),
                 axis1.into().unwrap_or(0),
                 axis2.into().unwrap_or(1),
@@ -90,7 +90,7 @@ impl Array {
         };
 
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_hadamard_transform(res, self.c_array, scale, stream.as_ref().as_ptr())
+            mlx_sys::mlx_hadamard_transform(res, self.as_ptr(), scale, stream.as_ref().as_ptr())
         })
     }
 }

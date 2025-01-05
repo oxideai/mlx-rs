@@ -35,7 +35,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_all_axes(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -71,7 +71,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_prod(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -107,7 +107,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_max(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -143,7 +143,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_sum(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -179,7 +179,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_mean(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -215,7 +215,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_min(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -243,7 +243,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_var(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -272,7 +272,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_logsumexp(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
                 keep_dims.into().unwrap_or(false),
@@ -339,7 +339,7 @@ pub fn std_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_std(
             res,
-            a.c_array,
+            a.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             keep_dims,

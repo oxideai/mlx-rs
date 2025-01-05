@@ -65,7 +65,11 @@ pub fn sort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Resu
 /// let result = argsort(&a, axis);
 /// ```
 #[default_device]
-pub fn argsort_device(a: impl AsRef<Array>, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argsort_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
@@ -124,7 +128,13 @@ pub fn partition_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_partition(res, a.as_ref().as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_partition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -150,7 +160,11 @@ pub fn partition_device(
 /// let result = partition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn partition_all_device(a: impl AsRef<Array>, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn partition_all_device(
+    a: impl AsRef<Array>,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_partition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
@@ -187,7 +201,13 @@ pub fn argpartition_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(res, a.as_ref().as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -214,7 +234,11 @@ pub fn argpartition_device(
 /// let result = argpartition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn argpartition_all_device(a: impl AsRef<Array>, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argpartition_all_device(
+    a: impl AsRef<Array>,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_argpartition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })

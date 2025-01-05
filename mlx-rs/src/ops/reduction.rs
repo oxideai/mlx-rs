@@ -391,7 +391,9 @@ pub fn variance_device<'a>(
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().variance_device(axes, keep_dims, ddof, stream)
+    array
+        .as_ref()
+        .variance_device(axes, keep_dims, ddof, stream)
 }
 
 /// See [`Array::log_sum_exp`]

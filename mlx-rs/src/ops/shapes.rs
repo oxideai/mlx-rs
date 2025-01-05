@@ -241,7 +241,11 @@ pub fn as_strided_device<'a>(
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
-pub fn broadcast_to_device(a: impl AsRef<Array>, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn broadcast_to_device(
+    a: impl AsRef<Array>,
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_broadcast_to(
             res,
@@ -298,7 +302,11 @@ pub fn concatenate_device(
 /// let result = expand_dims(&x, &[0]);
 /// ```
 #[default_device]
-pub fn expand_dims_device(a: impl AsRef<Array>, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn expand_dims_device(
+    a: impl AsRef<Array>,
+    axes: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_expand_dims(
             res,
@@ -367,7 +375,11 @@ pub fn flatten_device(
 /// let result = reshape(&x, &[4]);
 /// ```
 #[default_device]
-pub fn reshape_device(a: impl AsRef<Array>, shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn reshape_device(
+    a: impl AsRef<Array>,
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_reshape(
             res,
@@ -566,7 +578,13 @@ pub fn split_equal_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
-        mlx_sys::mlx_split_equal_parts(res, a.as_ref().as_ptr(), num_parts, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_split_equal_parts(
+            res,
+            a.as_ref().as_ptr(),
+            num_parts,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -774,7 +792,13 @@ pub fn swap_axes_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_swapaxes(res, a.as_ref().as_ptr(), axis1, axis2, stream.as_ref().as_ptr())
+        mlx_sys::mlx_swapaxes(
+            res,
+            a.as_ref().as_ptr(),
+            axis1,
+            axis2,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -794,7 +818,11 @@ pub fn swap_axes_device(
 /// let y = tile(&x, &[2]);
 /// ```
 #[default_device]
-pub fn tile_device(a: impl AsRef<Array>, reps: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn tile_device(
+    a: impl AsRef<Array>,
+    reps: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tile(
             res,
@@ -828,7 +856,11 @@ pub fn tile_device(a: impl AsRef<Array>, reps: &[i32], stream: impl AsRef<Stream
 ///
 /// - [`transpose_all`]
 #[default_device]
-pub fn transpose_device(a: impl AsRef<Array>, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn transpose_device(
+    a: impl AsRef<Array>,
+    axes: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose(
             res,
@@ -1303,7 +1335,7 @@ mod tests {
         assert_eq!(y, expected);
 
         let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[4, 2]);
-        x = reshape(&transpose_all(&x).unwrap(), &[2, 2, 2]).unwrap();
+        x = reshape(transpose_all(&x).unwrap(), &[2, 2, 2]).unwrap();
         let expected = Array::from_slice(&[0, 2, 4, 6, 1, 3, 5, 7], &[2, 2, 2]);
         assert_eq!(x, expected);
 

@@ -2647,8 +2647,8 @@ mod tests {
 
     #[test]
     fn test_tensordot() {
-        let x = reshape(&arange::<f32, _>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
-        let y = reshape(&arange::<f32, _>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
+        let y = reshape(arange::<f32, _>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
         let z = tensordot(&x, &y, (&[1i32, 0], &[0i32, 1])).unwrap();
         let expected = Array::from_slice(
             &[4400, 4730, 4532, 4874, 4664, 5018, 4796, 5162, 4928, 5306],
@@ -2656,12 +2656,12 @@ mod tests {
         );
         assert_eq!(z, expected);
 
-        let x = reshape(&arange::<f32, _>(None, 360.0, None).unwrap(), &[3, 4, 5, 6]).unwrap();
-        let y = reshape(&arange::<f32, _>(None, 360.0, None).unwrap(), &[6, 4, 5, 3]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 360.0, None).unwrap(), &[3, 4, 5, 6]).unwrap();
+        let y = reshape(arange::<f32, _>(None, 360.0, None).unwrap(), &[6, 4, 5, 3]).unwrap();
         assert!(tensordot(&x, &y, (&[2, 1, 3], &[1, 2, 0])).is_err());
 
-        let x = reshape(&arange::<f32, _>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
-        let y = reshape(&arange::<f32, _>(None, 120.0, None).unwrap(), &[4, 5, 6]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
+        let y = reshape(arange::<f32, _>(None, 120.0, None).unwrap(), &[4, 5, 6]).unwrap();
         let z = tensordot(&x, &y, 2).unwrap();
         let expected = Array::from_slice(
             &[
@@ -2699,8 +2699,8 @@ mod tests {
 
     #[test]
     fn test_inner() {
-        let x = reshape(&arange::<f32, _>(None, 5.0, None).unwrap(), &[1, 5]).unwrap();
-        let y = reshape(&arange::<f32, _>(None, 6.0, None).unwrap(), &[2, 3]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 5.0, None).unwrap(), &[1, 5]).unwrap();
+        let y = reshape(arange::<f32, _>(None, 6.0, None).unwrap(), &[2, 3]).unwrap();
         assert!(inner(&x, &y).is_err());
 
         let x = array!([1.0, 2.0, 3.0]);
@@ -2708,14 +2708,14 @@ mod tests {
         let z = inner(&x, &y).unwrap();
         assert_eq!(z.item::<f32>(), 2.0);
 
-        let x = reshape(&arange::<f32, _>(None, 24.0, None).unwrap(), &[2, 3, 4]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 24.0, None).unwrap(), &[2, 3, 4]).unwrap();
         let y = arange::<f32, _>(None, 4.0, None).unwrap();
         let z = inner(&x, &y).unwrap();
         let expected = Array::from_slice(&[14.0, 38.0, 62.0, 86.0, 110.0, 134.0], &[2, 3]);
         assert_eq!(z, expected);
 
-        let x = reshape(&arange::<f32, _>(None, 2.0, None).unwrap(), &[1, 1, 2]).unwrap();
-        let y = reshape(&arange::<f32, _>(None, 6.0, None).unwrap(), &[3, 2]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 2.0, None).unwrap(), &[1, 1, 2]).unwrap();
+        let y = reshape(arange::<f32, _>(None, 6.0, None).unwrap(), &[3, 2]).unwrap();
         let z = inner(&x, &y).unwrap();
         let expected = Array::from_slice(&[1.0, 3.0, 5.0], &[1, 1, 3]);
         assert_eq!(z, expected);

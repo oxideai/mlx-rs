@@ -543,7 +543,12 @@ pub fn argmax_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmax_all(res, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmax_all(
+            res,
+            a.as_ref().as_ptr(),
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -591,7 +596,12 @@ pub fn argmin_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmin_all(res, a.as_ref().as_ptr(), keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmin_all(
+            res,
+            a.as_ref().as_ptr(),
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -617,7 +627,13 @@ pub fn argpartition_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(res, a.as_ref().as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 

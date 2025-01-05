@@ -185,7 +185,7 @@ mod tests {
         let out = diagonal(&x, 1, -1, 0).unwrap();
         assert_eq!(out, array!([[4, 9], [6, 11]]));
 
-        let x = reshape(&arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
+        let x = reshape(arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
         let out = diagonal(&x, 0, 0, 1).unwrap();
         assert_eq!(
             out,
@@ -201,8 +201,8 @@ mod tests {
     #[test]
     fn test_diag() {
         // Too few or too many dimensions
-        assert!(diag(&Array::from_float(0.0), None).is_err());
-        assert!(diag(&Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
+        assert!(diag(Array::from_float(0.0), None).is_err());
+        assert!(diag(Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array
         let x = array!([0, 1, 2, 3]);

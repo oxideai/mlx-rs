@@ -1,16 +1,9 @@
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-};
+use std::{cell::RefCell, collections::HashMap};
 
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::{
-    array,
-    error::Exception,
-    module::{Module, Param},
-    ops::{concatenate, exp, log, power},
-    Array, Dtype,
+    array, error::Exception, module::{Module, Param}, ops::{arange, concatenate, exp, indexing::TryIndexOp, log}, prelude::NewAxis, Array, Dtype
 };
 
 /// Type alias for [`RotaryPositionalEncoding`].
@@ -272,12 +265,10 @@ pub struct Alibi;
 
 impl Alibi {
     fn slope(num_heads: i32) -> Result<Array, Exception> {
-        let x = f32::powf(f32::powi(2.0, 8), 1.0 / num_heads as f32);
-        let out = power(
-            array!(x),
-            -Array::from_iter(0..=num_heads, &[num_heads + 1]),
-        )?;
-        out.expand_dims(&[-1, -2])
+        let x = 2.0_f32.powi(8).powf(1.0 / num_heads as f32);
+        array!(x)
+            .power(&arange::<_, f32>(1, num_heads + 1, None)?)?
+            .expand_dims(&[-1, -2])
     }
 
     fn matrix(key: AlibiKey) -> Result<Array, Exception> {
@@ -285,10 +276,18 @@ impl Alibi {
             return Ok(value);
         }
 
-        let x1 = Array::from_iter(key.offset..key.q_seq_len, &[key.q_seq_len - key.offset])
-            .expand_dims(&[1])?;
-        let x2 = Array::from_iter(0..key.k_seq_len, &[key.k_seq_len]).expand_dims(&[1])?;
-        let distance_matrix = x1.subtract(x2)?.expand_dims(&[0, 1])?.abs()?.negative()?;
+        // let x1 = Array::from_iter(key.offset..key.q_seq_len, &[key.q_seq_len - key.offset])
+        //     .expand_dims(&[1])?;
+        // let x2 = Array::from_iter(0..key.k_seq_len, &[key.k_seq_len]).expand_dims(&[1])?;
+        // let distance_matrix = x1.subtract(x2)?.expand_dims(&[0, 1])?.abs()?.negative()?;
+
+        let x1 = arange::<_, f32>(key.offset, key.q_seq_len, None)?;
+        let x2 = arange::<_, f32>(0, key.k_seq_len, None)?;
+        let distance_matrix = x1.try_index((.., NewAxis))?
+            .subtract(x2.try_index((NewAxis, ..))?)?
+            .expand_dims(&[0, 1])?
+            .abs()?
+            .negative()?;
 
         let slope = Self::slope(key.num_heads)?;
         let mask = distance_matrix.multiply(&slope)?.as_dtype(key.dtype)?;
@@ -405,4 +404,98 @@ where
     }
 
     fn training_mode(&mut self, _mode: bool) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use float_eq::assert_float_eq;
+    use mlx_rs::{module::Module, random::uniform, Dtype};
+
+    use crate::Rope;
+
+    // The unit test below is adapted from the swift binding at:
+    // mlx-swift/Tests/MLXTests/IntegrationTests.swift
+    #[test]
+    fn test_rope() {
+        mlx_rs::random::seed(71).unwrap();
+        let a = uniform::<_, f32>(0, 1, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.5082664489746094,
+            abs <= 0.010165328979492188
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            130.1162109375,
+            abs <= 2.60232421875
+        );
+        
+        let mut rope = Rope::new(8);
+        let result = rope.forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 16]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.4562537670135498,
+            abs <= 0.009125075340270997
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            116.80096435546875,
+            abs <= 2.3360192871093752
+        );
+    }
+
+    // The unit test below is adapted from the swift binding at:
+    // mlx-swift/Tests/MLXTests/IntegrationTests.swift
+    #[test]
+    fn test_sinpe() {
+        mlx_rs::random::seed(226).unwrap();
+        let a = uniform::<_, f32>(0, 1, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), &[2, 8, 16]);
+        assert_eq!(a.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            a.mean(None, None).unwrap().item::<f32>(),
+            0.5026599168777466,
+            abs <= 0.010053198337554931
+        );
+        assert_float_eq!(
+            a.sum(None, None).unwrap().item::<f32>(),
+            128.68093872070312,
+            abs <= 2.5736187744140624
+        );
+
+        let mut sinpe = crate::Sinpe::new(8).unwrap();
+        let result = sinpe.forward(&a).unwrap();
+        assert_eq!(result.shape(), &[2, 8, 16, 8]);
+        assert_eq!(result.dtype(), Dtype::Float32);
+        assert_float_eq!(
+            result.mean(None, None).unwrap().item::<f32>(),
+            0.2705308198928833,
+            abs <= 0.005410616397857666
+        );
+        assert_float_eq!(
+            result.sum(None, None).unwrap().item::<f32>(),
+            554.047119140625,
+            abs <= 11.0809423828125
+        );
+    }
+
+    // The unit test below is adapted from the python binding at:
+    // mlx/python/tests/test_nn.py
+    #[test]
+    fn test_alibi() {
+        let mut alibi = crate::Alibi;
+        let shape = [1, 8, 20, 20];
+        let x = uniform::<_, f32>(0, 1, &shape, None).unwrap();
+        let y = alibi.forward(&x).unwrap();
+        assert_eq!(y.shape(), shape);
+        assert_eq!(y.dtype(), Dtype::Float32);
+
+        let x2 = x.as_dtype(Dtype::Float16).unwrap();
+        let y = alibi.forward(&x2).unwrap();
+        assert_eq!(y.dtype(), Dtype::Float16);
+    }
 }

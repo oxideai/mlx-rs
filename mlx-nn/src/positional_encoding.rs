@@ -3,7 +3,12 @@ use std::{cell::RefCell, collections::HashMap};
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 use mlx_rs::{
-    array, error::Exception, module::{Module, Param}, ops::{arange, concatenate, exp, indexing::TryIndexOp, log}, prelude::NewAxis, Array, Dtype
+    array,
+    error::Exception,
+    module::{Module, Param},
+    ops::{arange, concatenate, exp, indexing::TryIndexOp, log},
+    prelude::NewAxis,
+    Array, Dtype,
 };
 
 /// Type alias for [`RotaryPositionalEncoding`].
@@ -204,7 +209,7 @@ fn build_sinpe(builder: SinpeBuilder) -> Result<SinusoidalPositionalEncoding, Ex
     let mut sigmas = exp(&one_zero * (&max_frequency - &min_frequency) + &min_frequency)?;
     if full_turns {
         // SAFETY: scalar array operation won't throw
-        sigmas = sigmas * array!(2.0 * std::f32::consts::PI);
+        sigmas *= array!(2.0 * std::f32::consts::PI);
     }
 
     let scale = scale.unwrap_or_else(|| (2.0 / dimensions as f32).sqrt());
@@ -237,7 +242,7 @@ impl Module<&Array> for Sinpe {
 
         if self.scale != 1.0 {
             // SAFETY: multiplication with scalar won't throw
-            y = y * self.scale;
+            y *= self.scale;
         }
 
         Ok(y)
@@ -276,14 +281,10 @@ impl Alibi {
             return Ok(value);
         }
 
-        // let x1 = Array::from_iter(key.offset..key.q_seq_len, &[key.q_seq_len - key.offset])
-        //     .expand_dims(&[1])?;
-        // let x2 = Array::from_iter(0..key.k_seq_len, &[key.k_seq_len]).expand_dims(&[1])?;
-        // let distance_matrix = x1.subtract(x2)?.expand_dims(&[0, 1])?.abs()?.negative()?;
-
         let x1 = arange::<_, f32>(key.offset, key.q_seq_len, None)?;
         let x2 = arange::<_, f32>(0, key.k_seq_len, None)?;
-        let distance_matrix = x1.try_index((.., NewAxis))?
+        let distance_matrix = x1
+            .try_index((.., NewAxis))?
             .subtract(x2.try_index((NewAxis, ..))?)?
             .expand_dims(&[0, 1])?
             .abs()?
@@ -406,6 +407,7 @@ where
     fn training_mode(&mut self, _mode: bool) {}
 }
 
+#[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
@@ -431,7 +433,7 @@ mod tests {
             130.1162109375,
             abs <= 2.60232421875
         );
-        
+
         let mut rope = Rope::new(8);
         let result = rope.forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);

@@ -65,9 +65,9 @@ pub fn key(seed: u64) -> Result<Array> {
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
-pub fn split_device(key: &Array, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
+pub fn split_device(key: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
     let keys = Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_random_split_equal_parts(res, key.as_ptr(), 2, stream.as_ref().as_ptr())
+        mlx_sys::mlx_random_split_equal_parts(res, key.as_ref().as_ptr(), 2, stream.as_ref().as_ptr())
     })?;
 
     Ok((keys.try_index(0)?, keys.try_index(1)?))
@@ -180,8 +180,8 @@ pub fn normal_device<'a, T: ArrayElement>(
 /// - `key`: PRNG key.
 #[default_device]
 pub fn multivariate_normal_device<'a, T: ArrayElement>(
-    mean: &Array,
-    covariance: &Array,
+    mean: impl AsRef<Array>,
+    covariance: impl AsRef<Array>,
     shape: impl IntoOption<&'a [i32]>,
     key: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
@@ -192,8 +192,8 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_multivariate_normal(
             res,
-            mean.as_ptr(),
-            covariance.as_ptr(),
+            mean.as_ref().as_ptr(),
+            covariance.as_ref().as_ptr(),
             shape.as_ptr(),
             shape.len(),
             T::DTYPE.into(),
@@ -406,7 +406,7 @@ pub enum ShapeOrCount<'a> {
 /// ```
 #[default_device]
 pub fn categorical_device<'a>(
-    logits: &Array,
+    logits: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     shape_or_count: impl Into<Option<ShapeOrCount<'a>>>,
     key: impl Into<Option<&'a Array>>,
@@ -419,7 +419,7 @@ pub fn categorical_device<'a>(
         Some(ShapeOrCount::Shape(shape)) => Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_random_categorical_shape(
                 res,
-                logits.as_ptr(),
+                logits.as_ref().as_ptr(),
                 axis,
                 shape.as_ptr(),
                 shape.len(),
@@ -430,7 +430,7 @@ pub fn categorical_device<'a>(
         Some(ShapeOrCount::Count(num_samples)) => Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_random_categorical_num_samples(
                 res,
-                logits.as_ptr(),
+                logits.as_ref().as_ptr(),
                 axis,
                 num_samples,
                 key.as_ptr(),
@@ -440,7 +440,7 @@ pub fn categorical_device<'a>(
         None => Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_random_categorical(
                 res,
-                logits.as_ptr(),
+                logits.as_ref().as_ptr(),
                 axis,
                 key.as_ptr(),
                 stream.as_ref().as_ptr(),

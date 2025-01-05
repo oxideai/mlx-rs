@@ -285,34 +285,34 @@ impl Array {
 /// See [`Array::all`]
 #[default_device]
 pub fn all_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.all_device(axes, keep_dims, stream)
+    array.as_ref().all_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::prod`]
 #[default_device]
 pub fn prod_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.prod_device(axes, keep_dims, stream)
+    array.as_ref().prod_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::max`]
 #[default_device]
 pub fn max_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.max_device(axes, keep_dims, stream)
+    array.as_ref().max_device(axes, keep_dims, stream)
 }
 
 /// Compute the standard deviation(s) over the given axes.
@@ -326,12 +326,13 @@ pub fn max_device<'a>(
 /// - `ddof`: The divisor to compute the variance is `N - ddof`, defaults to `0`.
 #[default_device]
 pub fn std_device<'a>(
-    a: &Array,
+    a: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
+    let a = a.as_ref();
     let axes = axes_or_default_to_all(axes, a.ndim() as i32);
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
@@ -351,57 +352,57 @@ pub fn std_device<'a>(
 /// See [`Array::sum`]
 #[default_device]
 pub fn sum_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.sum_device(axes, keep_dims, stream)
+    array.as_ref().sum_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::mean`]
 #[default_device]
 pub fn mean_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.mean_device(axes, keep_dims, stream)
+    array.as_ref().mean_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::min`]
 #[default_device]
 pub fn min_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.min_device(axes, keep_dims, stream)
+    array.as_ref().min_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::variance`]
 #[default_device]
 pub fn variance_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     ddof: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.variance_device(axes, keep_dims, ddof, stream)
+    array.as_ref().variance_device(axes, keep_dims, ddof, stream)
 }
 
 /// See [`Array::log_sum_exp`]
 #[default_device]
 pub fn log_sum_exp_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.log_sum_exp_device(axes, keep_dims, stream)
+    array.as_ref().log_sum_exp_device(axes, keep_dims, stream)
 }
 
 #[cfg(test)]

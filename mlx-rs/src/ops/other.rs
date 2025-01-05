@@ -98,23 +98,23 @@ impl Array {
 /// See [`Array::diag`]
 #[default_device]
 pub fn diag_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     k: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.diag_device(k, stream)
+    a.as_ref().diag_device(k, stream)
 }
 
 /// See [`Array::diagonal`]
 #[default_device]
 pub fn diagonal_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     offset: impl Into<Option<i32>>,
     axis1: impl Into<Option<i32>>,
     axis2: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.diagonal_device(offset, axis1, axis2, stream)
+    a.as_ref().diagonal_device(offset, axis1, axis2, stream)
 }
 
 /// Perform the Einstein summation convention on the operands.

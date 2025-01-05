@@ -228,49 +228,49 @@ impl Array {
 /// See [`Array::cummax`]
 #[default_device]
 pub fn cummax_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cummax_device(axis, reverse, inclusive, stream)
+    a.as_ref().cummax_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cummin`]
 #[default_device]
 pub fn cummin_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cummin_device(axis, reverse, inclusive, stream)
+    a.as_ref().cummin_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumprod`]
 #[default_device]
 pub fn cumprod_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cumprod_device(axis, reverse, inclusive, stream)
+    a.as_ref().cumprod_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumsum`]
 #[default_device]
 pub fn cumsum_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cumsum_device(axis, reverse, inclusive, stream)
+    a.as_ref().cumsum_device(axis, reverse, inclusive, stream)
 }
 
 #[cfg(test)]

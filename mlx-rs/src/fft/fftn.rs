@@ -32,7 +32,7 @@ pub fn fft_device(
 
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_fft_fft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_fft_fft(res, a.as_ptr(), n, axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -64,7 +64,7 @@ pub fn fft2_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_fft2(
             res,
-            a.c_array,
+            a.as_ptr(),
             s_ptr,
             num_s,
             axes_ptr,
@@ -102,7 +102,7 @@ pub fn fftn_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_fftn(
             res,
-            a.c_array,
+            a.as_ptr(),
             s_ptr,
             num_s,
             axes_ptr,
@@ -131,7 +131,7 @@ pub fn ifft_device(
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_fft_ifft(res, a.c_array, n, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_fft_ifft(res, a.as_ptr(), n, axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -163,7 +163,7 @@ pub fn ifft2_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_ifft2(
             res,
-            a.c_array,
+            a.as_ptr(),
             s_ptr,
             num_s,
             axes_ptr,
@@ -201,7 +201,7 @@ pub fn ifftn_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fft_ifftn(
             res,
-            a.c_array,
+            a.as_ptr(),
             s_ptr,
             num_s,
             axes_ptr,

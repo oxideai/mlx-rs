@@ -24,8 +24,8 @@ use mlx_internal_macros::default_device;
 #[default_device]
 #[allow(clippy::too_many_arguments)]
 pub fn conv_general_device<'a>(
-    array: &Array,
-    weight: &Array,
+    array: impl AsRef<Array>,
+    weight: impl AsRef<Array>,
     strides: impl IntoOption<&'a [i32]>,
     padding: impl IntoOption<&'a [i32]>,
     kernel_dilation: impl IntoOption<&'a [i32]>,
@@ -44,8 +44,8 @@ pub fn conv_general_device<'a>(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_conv_general(
             res,
-            array.as_ptr(),
-            weight.as_ptr(),
+            array.as_ref().as_ptr(),
+            weight.as_ref().as_ptr(),
             strides.as_ptr(),
             strides.len(),
             padding.as_ptr(),

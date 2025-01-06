@@ -392,8 +392,8 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_take(
                 res,
-                self.c_array,
-                indices.as_ref().c_array,
+                self.as_ptr(),
+                indices.as_ref().as_ptr(),
                 axis,
                 stream.as_ref().as_ptr(),
             )
@@ -414,8 +414,8 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_take_all(
                 res,
-                self.c_array,
-                indices.as_ref().c_array,
+                self.as_ptr(),
+                indices.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
         })
@@ -444,8 +444,8 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_take_along_axis(
                 res,
-                input.c_array,
-                indices.as_ref().c_array,
+                input.as_ptr(),
+                indices.as_ref().as_ptr(),
                 axis,
                 stream.as_ref().as_ptr(),
             )
@@ -475,9 +475,9 @@ impl Array {
                 let array = Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_put_along_axis(
                         res,
-                        input.c_array,
-                        indices.as_ref().c_array,
-                        values.as_ref().c_array,
+                        input.as_ptr(),
+                        indices.as_ref().as_ptr(),
+                        values.as_ref().as_ptr(),
                         0,
                         stream.as_ref().as_ptr(),
                     )
@@ -488,9 +488,9 @@ impl Array {
             Some(ax) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_put_along_axis(
                     res,
-                    self.c_array,
-                    indices.as_ref().c_array,
-                    values.as_ref().c_array,
+                    self.as_ptr(),
+                    indices.as_ref().as_ptr(),
+                    values.as_ref().as_ptr(),
                     ax,
                     stream.as_ref().as_ptr(),
                 )
@@ -520,7 +520,7 @@ pub fn argmax_device(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_argmax(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             axis,
             keep_dims,
             stream.as_ref().as_ptr(),
@@ -543,7 +543,12 @@ pub fn argmax_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmax_all(res, a.as_ref().c_array, keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmax_all(
+            res,
+            a.as_ref().as_ptr(),
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -568,7 +573,7 @@ pub fn argmin_device(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_argmin(
             res,
-            a.as_ref().c_array,
+            a.as_ref().as_ptr(),
             axis,
             keep_dims,
             stream.as_ref().as_ptr(),
@@ -591,7 +596,12 @@ pub fn argmin_all_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argmin_all(res, a.as_ref().c_array, keep_dims, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argmin_all(
+            res,
+            a.as_ref().as_ptr(),
+            keep_dims,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -617,7 +627,13 @@ pub fn argpartition_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(res, a.as_ref().c_array, kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -639,7 +655,7 @@ pub fn argpartition_all_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition_all(res, a.as_ref().c_array, kth, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
 }
 
@@ -658,7 +674,7 @@ pub fn argsort_device(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort(res, a.as_ref().c_array, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -666,7 +682,7 @@ pub fn argsort_device(
 #[default_device]
 pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort_all(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -736,7 +752,7 @@ pub fn topk_device(
     let axis = axis.into().unwrap_or(-1);
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_topk(res, a.as_ref().c_array, k, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_topk(res, a.as_ref().as_ptr(), k, axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -744,7 +760,7 @@ pub fn topk_device(
 #[default_device]
 pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_topk_all(res, a.as_ref().c_array, k, stream.as_ref().as_ptr())
+        mlx_sys::mlx_topk_all(res, a.as_ref().as_ptr(), k, stream.as_ref().as_ptr())
     })
 }
 

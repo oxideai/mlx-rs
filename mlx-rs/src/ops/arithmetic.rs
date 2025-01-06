@@ -25,7 +25,7 @@ impl Array {
     #[default_device]
     pub fn abs_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_abs(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_abs(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -57,7 +57,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_add(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -92,7 +92,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_subtract(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -116,7 +116,7 @@ impl Array {
     #[default_device]
     pub fn negative_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_negative(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_negative(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -144,7 +144,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_multiply(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -183,7 +183,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_nan_to_num(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 nan.into_option().unwrap_or(0.),
                 pos_inf,
                 neg_inf,
@@ -220,7 +220,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_divide(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -255,7 +255,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_power(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -290,7 +290,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_remainder(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -312,7 +312,7 @@ impl Array {
     #[default_device]
     pub fn sqrt_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_sqrt(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_sqrt(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -331,7 +331,7 @@ impl Array {
     #[default_device]
     pub fn cos_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_cos(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_cos(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -352,7 +352,7 @@ impl Array {
     #[default_device]
     pub fn exp_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_exp(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_exp(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -371,7 +371,7 @@ impl Array {
     #[default_device]
     pub fn floor_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_floor(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_floor(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -407,7 +407,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_floor_divide(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -421,7 +421,7 @@ impl Array {
     #[default_device]
     pub fn is_nan_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_isnan(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_isnan(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -432,7 +432,7 @@ impl Array {
     #[default_device]
     pub fn is_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_isinf(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_isinf(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -443,7 +443,7 @@ impl Array {
     #[default_device]
     pub fn is_finite_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_isfinite(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_isfinite(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -454,7 +454,7 @@ impl Array {
     #[default_device]
     pub fn is_neg_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_isneginf(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_isneginf(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -465,7 +465,7 @@ impl Array {
     #[default_device]
     pub fn is_pos_inf_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_isposinf(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_isposinf(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -484,7 +484,7 @@ impl Array {
     #[default_device]
     pub fn log_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_log(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_log(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -503,7 +503,7 @@ impl Array {
     #[default_device]
     pub fn log2_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_log2(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_log2(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -522,7 +522,7 @@ impl Array {
     #[default_device]
     pub fn log10_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_log10(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_log10(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -541,7 +541,7 @@ impl Array {
     #[default_device]
     pub fn log1p_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_log1p(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_log1p(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -583,7 +583,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_matmul(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 other.as_ref().as_ptr(),
                 stream.as_ref().as_ptr(),
             )
@@ -605,7 +605,7 @@ impl Array {
     #[default_device]
     pub fn reciprocal_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_reciprocal(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_reciprocal(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -623,7 +623,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_round(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 decimals.into().unwrap_or(0),
                 stream.as_ref().as_ptr(),
             )
@@ -634,7 +634,7 @@ impl Array {
     #[default_device]
     pub fn rsqrt_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_rsqrt(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_rsqrt(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -642,7 +642,7 @@ impl Array {
     #[default_device]
     pub fn sin_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_sin(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_sin(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 
@@ -650,7 +650,7 @@ impl Array {
     #[default_device]
     pub fn square_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_square(res, self.c_array, stream.as_ref().as_ptr())
+            mlx_sys::mlx_square(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
 }
@@ -674,7 +674,7 @@ pub fn abs_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arccos(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arccos(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -682,7 +682,7 @@ pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 #[default_device]
 pub fn acosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arccosh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arccosh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -700,7 +700,7 @@ pub fn add_device(
 #[default_device]
 pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arcsin(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arcsin(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -708,7 +708,7 @@ pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 #[default_device]
 pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arcsinh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arcsinh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -716,7 +716,7 @@ pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<
 #[default_device]
 pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arctan(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arctan(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -724,7 +724,7 @@ pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 #[default_device]
 pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_arctanh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_arctanh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -732,7 +732,7 @@ pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<
 #[default_device]
 pub fn ceil_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_ceil(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_ceil(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -858,7 +858,7 @@ pub fn cos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_cosh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_cosh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -866,7 +866,7 @@ pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 #[default_device]
 pub fn degrees_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_degrees(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_degrees(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -911,7 +911,7 @@ pub fn divmod_device(
 #[default_device]
 pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_erf(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_erf(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -919,7 +919,7 @@ pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_erfinv(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_erfinv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -933,7 +933,7 @@ pub fn exp_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn expm1_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_expm1(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_expm1(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1073,7 +1073,7 @@ pub fn power_device(
 #[default_device]
 pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_radians(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_radians(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1117,7 +1117,7 @@ pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<
 #[default_device]
 pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sigmoid(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_sigmoid(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1125,7 +1125,7 @@ pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Resul
 #[default_device]
 pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sign(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_sign(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1139,7 +1139,7 @@ pub fn sin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sinh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_sinh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1211,7 +1211,7 @@ pub fn subtract_device(
 #[default_device]
 pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_tan(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_tan(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1219,7 +1219,7 @@ pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Ar
 #[default_device]
 pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_tanh(res, a.as_ref().c_array, stream.as_ref().as_ptr())
+        mlx_sys::mlx_tanh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -2662,6 +2662,7 @@ mod tests {
 
         let x = reshape(&arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
         let y = reshape(&arange::<_, f32>(None, 120.0, None).unwrap(), &[4, 5, 6]).unwrap();
+
         let z = tensordot(&x, &y, 2).unwrap();
         let expected = Array::from_slice(
             &[

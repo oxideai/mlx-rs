@@ -111,7 +111,7 @@ impl Array {
                 res,
                 shape.as_ptr(),
                 shape.len(),
-                values.as_ref().c_array,
+                values.as_ref().as_ptr(),
                 T::DTYPE.into(),
                 stream.as_ref().as_ptr(),
             )
@@ -249,7 +249,7 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat(res, array.c_array, count, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
         })
     }
 
@@ -275,7 +275,7 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat_all(res, array.c_array, count, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat_all(res, array.as_ptr(), count, stream.as_ref().as_ptr())
         })
     }
 

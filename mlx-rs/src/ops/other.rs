@@ -185,7 +185,7 @@ mod tests {
         let out = diagonal(&x, 1, -1, 0).unwrap();
         assert_eq!(out, array!([[4, 9], [6, 11]]));
 
-        let x = reshape(arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
+        let x = reshape(&arange::<_, f32>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
         let out = diagonal(&x, 0, 0, 1).unwrap();
         assert_eq!(
             out,

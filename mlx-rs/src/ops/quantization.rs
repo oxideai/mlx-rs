@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_quantize_dequantize() {
         let x1 = Array::ones::<f32>(&[128, 1]).unwrap();
-        let x2 = expand_dims(Array::arange::<f32, _>(0, 512, None).unwrap(), &[0]).unwrap();
+        let x2 = expand_dims(&Array::arange::<_, f32>(0, 512, None).unwrap(), &[0]).unwrap();
         let x = x1 * x2;
 
         for i in [2, 4, 8].iter() {

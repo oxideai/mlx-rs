@@ -8,9 +8,14 @@ use crate::{
 };
 
 pub mod compile;
+mod grad;
+mod keyed_value_and_grad;
 mod module_value_and_grad;
 mod value_and_grad;
 
+pub use grad::*;
+pub use keyed_value_and_grad::*;
+use mlx_sys::mlx_closure_value_and_grad;
 pub use module_value_and_grad::*;
 pub use value_and_grad::*;
 
@@ -163,6 +168,36 @@ where
 {
     let closure = Closure::new_fallible(f);
     vjp_inner(closure, primals, cotangents)
+}
+
+pub(crate) struct ClosureValueAndGrad {
+    pub(crate) c_closure_value_and_grad: mlx_closure_value_and_grad,
+}
+
+impl ClosureValueAndGrad {
+    pub fn as_ptr(&self) -> mlx_closure_value_and_grad {
+        self.c_closure_value_and_grad
+    }
+}
+
+fn value_and_gradient(
+    value_and_grad: mlx_closure_value_and_grad,
+    arrays: impl Iterator<Item = impl AsRef<Array>>,
+) -> Result<(Vec<Array>, Vec<Array>)> {
+    let input_vector = VectorArray::try_from_iter(arrays)?;
+
+    <(Vec<Array>, Vec<Array>) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_closure_value_and_grad_apply(
+            res_0,
+            res_1,
+            value_and_grad,
+            input_vector.as_ptr(),
+        )
+    })
+    .map_err(|e| match get_and_clear_closure_error() {
+        Some(err) => err,
+        None => e,
+    })
 }
 
 #[cfg(test)]

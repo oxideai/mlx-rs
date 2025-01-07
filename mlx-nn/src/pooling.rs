@@ -63,11 +63,7 @@ impl std::fmt::Debug for Pool {
 
 impl Pool {
     /// Create a new abstract pooling layer.
-    pub fn new(
-        kernel_size: Vec<i32>,
-        stride: Vec<usize>,
-        op: impl Pooling + 'static,
-    ) -> Self {
+    pub fn new(kernel_size: Vec<i32>, stride: Vec<usize>, op: impl Pooling + 'static) -> Self {
         let start = -(kernel_size.len() as i32) - 1;
         let axes: Vec<_> = (start..-1).collect();
         Self {

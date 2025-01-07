@@ -14,9 +14,6 @@ use mlx_rs::{
     random::uniform,
     transforms::{eval, eval_params},
     Array, Dtype,
-};
-
-use mlx_rs::{
     losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
     transforms::module_value_and_grad,

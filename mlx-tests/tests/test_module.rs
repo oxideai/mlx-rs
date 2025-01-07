@@ -1,7 +1,4 @@
-use mlx_rs::macros::ModuleParameters;
-use mlx_rs::Linear;
-use mlx_rs::module::Module;
-use mlx_rs::{error::Exception, Array};
+use mlx_rs::{error::Exception, macros::ModuleParameters, module::Module, nn::Linear, Array};
 
 #[derive(Debug, ModuleParameters)]
 struct M {

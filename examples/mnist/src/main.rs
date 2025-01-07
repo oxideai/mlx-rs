@@ -1,14 +1,11 @@
-use mlx_nn::{
-    losses::{CrossEntropyBuilder, LossReduction},
-    module_value_and_grad,
-};
 use mlx_rs::{
+    losses::{CrossEntropyBuilder, LossReduction},
     builder::Builder,
     error::Exception,
     module::{Module, ModuleParameters},
     ops::{eq, indexing::argmax, mean},
     optimizers::{Optimizer, Sgd},
-    transforms::eval_params,
+    transforms::{eval_params, module_value_and_grad},
     Array,
 };
 

@@ -1,7 +1,4 @@
-use mlx_rs::module::{ModuleParameters, Param, Parameter};
-use mlx_rs::{array, Array};
-use mlx_rs::macros::ModuleParameters;
-
+use mlx_rs::{array, macros::ModuleParameters, module::{ModuleParameters, Param, Parameter}, Array};
 
 #[derive(ModuleParameters)]
 pub struct StructModule {

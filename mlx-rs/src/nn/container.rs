@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, UnaryModule};
-use mlx_rs::{error::Exception, Array};
+use crate::module::{Module, UnaryModule};
+use crate::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
@@ -20,6 +20,7 @@ where
 ///
 /// It calls each layer in sequence.
 #[derive(Debug, ModuleParameters)]
+#[module(root = crate)]
 pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
@@ -75,20 +76,11 @@ impl<Err> Sequential<Err> {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{
-        array,
-        module::ModuleParameters,
-        ops::zeros,
-        optimizers::{Optimizer, Sgd},
-        prelude::Builder,
-        random::uniform,
-        transforms::{eval, eval_params},
+    use crate::{
+        array, module::ModuleParameters, nn::Linear, ops::zeros, optimizers::{Optimizer, Sgd}, prelude::Builder, random::uniform, transforms::{eval, eval_params, module_value_and_grad}
     };
 
-    use crate::{
-        losses::{LossReduction, MseLossBuilder},
-        module_value_and_grad, Linear,
-    };
+    use crate::losses::{LossReduction, MseLossBuilder};
 
     use super::*;
 

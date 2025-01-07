@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use dyn_clone::DynClone;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     error::Exception,
     module::Module,
     ops::{matmul, softmax},
@@ -13,7 +13,7 @@ use mlx_rs::{
 
 use crate::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
-    Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu,
+    nn::{Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu},
 };
 
 /// A marker trait for activation functions used in transformers.
@@ -31,6 +31,7 @@ impl<M> Activation for M where
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_multi_head_attention,
     err = MultiHeadAttentionBuildError,
 )]
@@ -109,6 +110,8 @@ fn build_multi_head_attention(
 
 /// Implements the scaled dot product attention with multiple heads.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct MultiHeadAttention {
     /// Number of attention heads
     pub num_heads: i32,
@@ -242,6 +245,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_encoder_layer,
     err = TransformerBulidError,
 )]
@@ -314,6 +318,8 @@ fn build_transformer_encoder_layer(
 
 /// Transformer encoder layer.
 #[derive(Debug, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoderLayer {
     /// Multi-head attention module
     #[param]
@@ -439,6 +445,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_encoder,
     err = TransformerBulidError,
 )]
@@ -504,6 +511,8 @@ fn build_transformer_encoder(
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoder {
     #[param]
     pub layers: Vec<TransformerEncoderLayer>,
@@ -546,6 +555,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_decoder_layer,
     err = TransformerBulidError,
 )]
@@ -619,6 +629,8 @@ fn build_transformer_decoder_layer(
 }
 
 #[derive(Debug, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoderLayer {
     #[param]
     pub self_attention: MultiHeadAttention,
@@ -774,6 +786,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_decoder,
     err = TransformerBulidError,
 )]
@@ -840,6 +853,8 @@ fn build_transformer_decoder(
 }
 
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoder {
     #[param]
     pub layers: Vec<TransformerDecoderLayer>,
@@ -885,6 +900,7 @@ where
 /// Builder for the [`Transformer`] module
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer,
     err = TransformerBulidError,
 )]
@@ -979,6 +995,8 @@ fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, Transfo
 /// The interaction between encoder and decoder happens through the attention
 /// mechanism.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Transformer {
     /// Encoder module
     #[param]

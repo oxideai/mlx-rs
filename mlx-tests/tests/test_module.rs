@@ -1,5 +1,5 @@
-use mlx_macros::ModuleParameters;
-use mlx_nn::Linear;
+use mlx_rs::macros::ModuleParameters;
+use mlx_rs::Linear;
 use mlx_rs::module::Module;
 use mlx_rs::{error::Exception, Array};
 

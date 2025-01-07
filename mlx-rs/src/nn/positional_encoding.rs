@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap};
 
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
@@ -27,6 +27,9 @@ generate_builder! {
     /// For more details see _RoFormer: Enhanced Transformer with Rotary Position
     /// Embedding_ ([https://arxiv.org/abs/2104.09864](https://arxiv.org/abs/2104.09864))
     #[derive(Debug, Clone, ModuleParameters, Buildable)]
+    #[module(root = crate)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
     pub struct RotaryPositionalEncoding {
         /// The feature dimensions to be rotated. If the input feature is larger
         /// than dims then the rest is left unchanged
@@ -62,6 +65,8 @@ impl RotaryPositionalEncoding {
 generate_builder! {
     /// Input for the [`RotaryPositionalEncoding`] module.
     #[derive(Debug, Buildable, Clone)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
     pub struct RopeInput<'a> {
         /// The input tensor.
         pub x: &'a Array,
@@ -113,7 +118,7 @@ where
         let RopeInput { x, offset } = input.into();
         let shape = x.shape();
         let x = x.reshape(&[-1, x.dim(-2), x.dim(-1)])?;
-        let x = mlx_rs::fast::rope(
+        let x = crate::fast::rope(
             x,
             self.dimensions,
             self.traditional,
@@ -139,6 +144,8 @@ pub type SinpeBuilder = SinusoidalPositionalEncodingBuilder;
 /// For more details see the paper "Attention Is All You Need"
 /// <https://arxiv.org/abs/1706.03762>.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct SinusoidalPositionalEncoding {
     #[param]
     sigmas: Param<Array>,
@@ -167,6 +174,7 @@ impl Sinpe {
 /// Builder for [`SinusoidalPositionalEncoding`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_sinpe,
     err = Exception,
 )]
@@ -266,6 +274,7 @@ thread_local! {
 
 /// Attention with Linear Biases
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct Alibi;
 
 impl Alibi {
@@ -304,6 +313,8 @@ impl Alibi {
 generate_builder! {
     /// Input for the [`Alibi`] module.
     #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
     pub struct AlibiInput<'a> {
         /// The attention scores.
         pub attention_scores: &'a Array,
@@ -411,15 +422,15 @@ where
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-    use mlx_rs::{module::Module, random::uniform, Dtype};
+    use crate::{module::Module, random::uniform, Dtype};
 
-    use crate::Rope;
+    use crate::nn::Rope;
 
     // The unit test below is adapted from the swift binding at:
     // mlx-swift/Tests/MLXTests/IntegrationTests.swift
     #[test]
     fn test_rope() {
-        mlx_rs::random::seed(71).unwrap();
+        crate::random::seed(71).unwrap();
         let a = uniform::<_, f32>(0, 1, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -454,7 +465,7 @@ mod tests {
     // mlx-swift/Tests/MLXTests/IntegrationTests.swift
     #[test]
     fn test_sinpe() {
-        mlx_rs::random::seed(226).unwrap();
+        crate::random::seed(226).unwrap();
         let a = uniform::<_, f32>(0, 1, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -469,7 +480,7 @@ mod tests {
             abs <= 2.5736187744140624
         );
 
-        let mut sinpe = crate::Sinpe::new(8).unwrap();
+        let mut sinpe = crate::nn::Sinpe::new(8).unwrap();
         let result = sinpe.forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
@@ -489,7 +500,7 @@ mod tests {
     // mlx/python/tests/test_nn.py
     #[test]
     fn test_alibi() {
-        let mut alibi = crate::Alibi;
+        let mut alibi = crate::nn::Alibi;
         let shape = [1, 8, 20, 20];
         let x = uniform::<_, f32>(0, 1, &shape, None).unwrap();
         let y = alibi.forward(&x).unwrap();

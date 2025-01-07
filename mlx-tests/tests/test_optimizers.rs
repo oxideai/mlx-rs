@@ -16,10 +16,10 @@ use mlx_rs::{
     Array, Dtype,
 };
 
-use mlx_nn::{
+use mlx_rs::{
     losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
-    module_value_and_grad,
+    transforms::module_value_and_grad,
 };
 
 /* -------------------------------------------------------------------------- */

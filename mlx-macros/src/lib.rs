@@ -46,12 +46,5 @@ mod module_parameters;
 pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let module_param_impl = module_parameters::expand_module_parameters(&input).unwrap();
-
-    let output = quote! {
-        const _: () = {
-            extern crate mlx_rs as _mlx_rs;
-            #module_param_impl
-        };
-    };
-    TokenStream::from(output)
+    TokenStream::from(module_param_impl)
 }

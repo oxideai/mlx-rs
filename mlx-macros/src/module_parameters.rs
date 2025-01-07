@@ -72,64 +72,67 @@ fn impl_module_parameters_for_struct(
         _ => quote::quote! { Some(false) },
     };
 
-    let root = match root {
-        Some(root) => quote::quote! { #root },
-        None => quote::quote! { _mlx_rs },
+    let (extern_import, root) = match root {
+        Some(root) => (quote::quote!{ }, quote::quote! { #root }),
+        None => ( quote::quote!{ extern crate mlx_rs as _mlx_rs; }, quote::quote! { _mlx_rs } ),
     };
 
     quote::quote! {
-        impl #impl_generics #root::module::ModuleParameters for #ident #ty_generics #where_clause {
-            fn freeze_parameters(&mut self, recursive: bool) {
-                use #root::module::Parameter;
-                #(self.#field_names.freeze(recursive);)*
-            }
+        const _: () = {
+            #extern_import
+            impl #impl_generics #root::module::ModuleParameters for #ident #ty_generics #where_clause {
+                fn freeze_parameters(&mut self, recursive: bool) {
+                    use #root::module::Parameter;
+                    #(self.#field_names.freeze(recursive);)*
+                }
 
-            fn unfreeze_parameters(&mut self, recursive: bool) {
-                use #root::module::Parameter;
-                #(self.#field_names.unfreeze(recursive);)*
-            }
+                fn unfreeze_parameters(&mut self, recursive: bool) {
+                    use #root::module::Parameter;
+                    #(self.#field_names.unfreeze(recursive);)*
+                }
 
-            fn parameters(&self) -> #root::module::ModuleParamRef<'_> {
-                let mut parameters = #root::nested::NestedHashMap::new();
-                #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value(&self.#field_names));)*
-                parameters
-            }
+                fn parameters(&self) -> #root::module::ModuleParamRef<'_> {
+                    let mut parameters = #root::nested::NestedHashMap::new();
+                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value(&self.#field_names));)*
+                    parameters
+                }
 
-            fn parameters_mut(&mut self) -> #root::module::ModuleParamMut<'_> {
-                let mut parameters = #root::nested::NestedHashMap::new();
-                #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
-                parameters
-            }
+                fn parameters_mut(&mut self) -> #root::module::ModuleParamMut<'_> {
+                    let mut parameters = #root::nested::NestedHashMap::new();
+                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
+                    parameters
+                }
 
-            fn trainable_parameters(&self) -> #root::module::ModuleParamRef<'_> {
-                let mut parameters = #root::nested::NestedHashMap::new();
-                #(
-                    if let Some(field) = #root::module::Parameter::as_trainable_nested_value(&self.#field_names) {
-                        parameters.insert(std::rc::Rc::from(stringify!(#field_names)), field);
-                    }
-                )*
-                parameters
-            }
+                fn trainable_parameters(&self) -> #root::module::ModuleParamRef<'_> {
+                    let mut parameters = #root::nested::NestedHashMap::new();
+                    #(
+                        if let Some(field) = #root::module::Parameter::as_trainable_nested_value(&self.#field_names) {
+                            parameters.insert(std::rc::Rc::from(stringify!(#field_names)), field);
+                        }
+                    )*
+                    parameters
+                }
 
-            fn all_frozen(&self) -> Option<bool> {
-                use #root::module::Parameter;
-                #(
-                    if matches!(self.#field_names.is_frozen(), Some(false)) {
-                        return Some(false);
-                    }
-                )*
-                #default_all_frozen
-            }
+                fn all_frozen(&self) -> Option<bool> {
+                    use #root::module::Parameter;
+                    #(
+                        if matches!(self.#field_names.is_frozen(), Some(false)) {
+                            return Some(false);
+                        }
+                    )*
+                    #default_all_frozen
+                }
 
-            fn any_frozen(&self) -> Option<bool> {
-                use #root::module::Parameter;
-                #(
-                    if matches!(self.#field_names.is_frozen(), Some(true)) {
-                        return Some(true);
-                    }
-                )*
-                #default_any_frozen
+                fn any_frozen(&self) -> Option<bool> {
+                    use #root::module::Parameter;
+                    #(
+                        if matches!(self.#field_names.is_frozen(), Some(true)) {
+                            return Some(true);
+                        }
+                    )*
+                    #default_any_frozen
+                }
             }
-        }
+        };
     }
 }

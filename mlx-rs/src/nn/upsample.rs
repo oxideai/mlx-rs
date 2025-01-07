@@ -1,4 +1,4 @@
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     macros::ModuleParameters,
@@ -36,6 +36,7 @@ pub enum UpsampleMode {
 
 /// Upsample the input signal spatially
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct Upsample {
     /// The multiplier for the spatial size.
     ///
@@ -346,7 +347,7 @@ fn scaled_indices(
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::assert_array_eq;
+    use crate::assert_array_eq;
 
     use super::*;
 

@@ -1,7 +1,7 @@
 use mlx_rs::{
-    losses::{CrossEntropyBuilder, LossReduction},
     builder::Builder,
     error::Exception,
+    losses::{CrossEntropyBuilder, LossReduction},
     module::{Module, ModuleParameters},
     ops::{eq, indexing::argmax, mean},
     optimizers::{Optimizer, Sgd},

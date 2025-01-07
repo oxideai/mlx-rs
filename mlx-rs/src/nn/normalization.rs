@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     array,
     error::Exception,
@@ -9,6 +7,8 @@ use crate::{
     ops::{ones, rsqrt, zeros},
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
@@ -618,11 +618,11 @@ impl Module<&Array> for BatchNorm {
 
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
     use crate::{
         prelude::{Ellipsis, IndexOp},
         Dtype,
     };
+    use float_eq::assert_float_eq;
 
     use super::*;
 

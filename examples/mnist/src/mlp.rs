@@ -1,4 +1,10 @@
-use mlx_rs::{error::Exception, module::Module, Array, nn::{Linear, Relu, Sequential}, macros::ModuleParameters};
+use mlx_rs::{
+    error::Exception,
+    macros::ModuleParameters,
+    module::Module,
+    nn::{Linear, Relu, Sequential},
+    Array,
+};
 
 #[derive(Debug, ModuleParameters)]
 pub struct Mlp {

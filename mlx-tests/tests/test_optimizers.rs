@@ -5,6 +5,8 @@ use mlx_rs::{
     array, assert_array_eq,
     builder::Builder,
     error::Exception,
+    losses::{LossReduction, MseLossBuilder},
+    macros::ModuleParameters,
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
     ops::{ones, zeros},
     optimizers::{
@@ -12,11 +14,9 @@ use mlx_rs::{
         RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
+    transforms::module_value_and_grad,
     transforms::{eval, eval_params},
     Array, Dtype,
-    losses::{LossReduction, MseLossBuilder},
-    macros::ModuleParameters,
-    transforms::module_value_and_grad,
 };
 
 /* -------------------------------------------------------------------------- */

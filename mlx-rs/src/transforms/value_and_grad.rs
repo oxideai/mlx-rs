@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, rc::Rc};
 
 use mlx_sys::mlx_closure_value_and_grad;
@@ -432,14 +431,13 @@ where
     f.into_grad(argument_numbers)
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, rc::Rc};
 
     use crate::{
         array,
-        transforms::{grad, jvp, value_and_grad, vjp},
+        transforms::{grad, value_and_grad},
         Array,
     };
 

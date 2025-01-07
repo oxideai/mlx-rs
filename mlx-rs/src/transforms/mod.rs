@@ -1,22 +1,18 @@
 //! Implementations of function transformations.
 
-use std::{collections::HashMap, rc::Rc};
-
-use mlx_sys::mlx_closure_value_and_grad;
-
 use crate::{
-    error::{get_and_clear_closure_error, Exception, Result},
+    error::{get_and_clear_closure_error, Result},
     module::ModuleParamRef,
-    utils::{guard::Guarded, Closure, IntoOption, VectorArray},
+    utils::{guard::Guarded, Closure, VectorArray},
     Array,
 };
 
 pub mod compile;
-mod value_and_grad;
 mod module_value_and_grad;
+mod value_and_grad;
 
-pub use value_and_grad::*;
 pub use module_value_and_grad::*;
+pub use value_and_grad::*;
 
 /// Evaluate an iterator of [`Array`]s.
 pub fn eval<'a>(outputs: impl IntoIterator<Item = &'a Array>) -> Result<()> {
@@ -171,17 +167,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, rc::Rc};
 
     use crate::{
         array,
-        transforms::{grad, jvp, value_and_grad, vjp},
+        transforms::{jvp, vjp},
         Array,
     };
 
     use super::*;
-
-    use super::keyed_value_and_grad;
 
     // The unit tests below are adapted from the mlx c++ codebase
 

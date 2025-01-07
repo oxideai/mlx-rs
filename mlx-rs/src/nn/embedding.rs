@@ -1,11 +1,11 @@
 //! Embedding layer.
 
-use mlx_macros::ModuleParameters;
 use crate::error::Exception;
 use crate::module::Module;
 use crate::module::Param;
 use crate::prelude::IndexOp;
 use crate::Array;
+use mlx_macros::ModuleParameters;
 
 /// Implements a simple lookup table that maps each input integer to a high-dimensional vector.
 ///
@@ -28,8 +28,7 @@ impl Embedding {
     pub fn new(embedding_count: i32, dimensions: i32) -> Result<Self, Exception> {
         let scale = f32::sqrt(1.0 / (dimensions as f32));
         let weight =
-            crate::random::normal::<f32>(&[embedding_count, dimensions], None, None, None)?
-                * scale;
+            crate::random::normal::<f32>(&[embedding_count, dimensions], None, None, None)? * scale;
 
         Ok(Self {
             weight: Param::new(weight),

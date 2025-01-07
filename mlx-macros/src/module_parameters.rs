@@ -48,7 +48,9 @@ fn expand_module_parameters_for_struct(
         }
     };
 
-    Ok(impl_module_parameters_for_struct(ident, generics, fields, root))
+    Ok(impl_module_parameters_for_struct(
+        ident, generics, fields, root,
+    ))
 }
 
 fn impl_module_parameters_for_struct(
@@ -73,8 +75,11 @@ fn impl_module_parameters_for_struct(
     };
 
     let (extern_import, root) = match root {
-        Some(root) => (quote::quote!{ }, quote::quote! { #root }),
-        None => ( quote::quote!{ extern crate mlx_rs as _mlx_rs; }, quote::quote! { _mlx_rs } ),
+        Some(root) => (quote::quote! {}, quote::quote! { #root }),
+        None => (
+            quote::quote! { extern crate mlx_rs as _mlx_rs; },
+            quote::quote! { _mlx_rs },
+        ),
     };
 
     quote::quote! {

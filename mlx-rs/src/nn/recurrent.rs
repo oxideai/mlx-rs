@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     array,
     error::Exception,
@@ -11,6 +9,8 @@ use crate::{
     random::uniform,
     Array, Stream,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;

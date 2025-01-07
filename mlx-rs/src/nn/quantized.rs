@@ -1,7 +1,5 @@
 use std::iter::once;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
 use crate::{
     array,
     error::Exception,
@@ -11,6 +9,8 @@ use crate::{
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::nn::{Embedding, Linear};
 
@@ -97,8 +97,7 @@ fn build_quantized_embedding(
 
     let scale = array!(f32::sqrt(1.0 / (dims as f32)));
     // SAFETY: This is safe because the array scale is a single element array
-    let weight =
-        crate::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
+    let weight = crate::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
 
     builder.build_with_weight(weight)
 }

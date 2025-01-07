@@ -1,8 +1,8 @@
 use std::iter::{once, zip};
 
+use crate::{error::Exception, module::Module, ops::as_strided, Array};
 use dyn_clone::DynClone;
 use mlx_macros::ModuleParameters;
-use crate::{error::Exception, module::Module, ops::as_strided, Array};
 
 use crate::utils::SingleOrPair;
 

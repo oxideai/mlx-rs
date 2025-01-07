@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use mlx_macros::ModuleParameters;
 use crate::module::{Module, UnaryModule};
 use crate::{error::Exception, Array};
+use mlx_macros::ModuleParameters;
 
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
@@ -77,7 +77,14 @@ impl<Err> Sequential<Err> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        array, module::ModuleParameters, nn::Linear, ops::zeros, optimizers::{Optimizer, Sgd}, prelude::Builder, random::uniform, transforms::{eval, eval_params, module_value_and_grad}
+        array,
+        module::ModuleParameters,
+        nn::Linear,
+        ops::zeros,
+        optimizers::{Optimizer, Sgd},
+        prelude::Builder,
+        random::uniform,
+        transforms::{eval, eval_params, module_value_and_grad},
     };
 
     use crate::losses::{LossReduction, MseLossBuilder};

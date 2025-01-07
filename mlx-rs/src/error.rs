@@ -214,7 +214,6 @@ pub enum AdafactorBuildError {
     LrIsNoneAndRelativeStepIsFalse,
 }
 
-
 /// Error with building a dropout layer
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum DropoutBuildError {

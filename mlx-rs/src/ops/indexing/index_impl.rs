@@ -713,7 +713,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_slice(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 start.as_ptr(),
                 start.len(),
                 stop.as_ptr(),
@@ -871,7 +871,7 @@ fn gather_nd<'a>(
     let gathered = Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_gather(
             res,
-            src.c_array,
+            src.as_ptr(),
             indices.as_ptr(),
             axes.as_ptr(),
             axes.len(),

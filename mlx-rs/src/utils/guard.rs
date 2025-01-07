@@ -85,7 +85,7 @@ impl Guard<Array> for MaybeUninitArray {
 
     fn try_into_guarded(self) -> Result<Array, Exception> {
         debug_assert!(self.init_success);
-        Ok(Array { c_array: self.ptr })
+        unsafe { Ok(Array::from_ptr(self.ptr)) }
     }
 }
 

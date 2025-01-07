@@ -25,7 +25,7 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 ///   (default: 4)
 #[default_device]
 pub fn quantize_device(
-    w: &Array,
+    w: impl AsRef<Array>,
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
@@ -38,7 +38,7 @@ pub fn quantize_device(
             res0,
             res1,
             res2,
-            w.as_ptr(),
+            w.as_ref().as_ptr(),
             group_size,
             bits,
             stream.as_ref().as_ptr(),
@@ -52,10 +52,10 @@ pub fn quantize_device(
 #[allow(clippy::too_many_arguments)]
 #[default_device]
 pub fn quantized_matmul_device(
-    x: &Array,
-    w: &Array,
-    scales: &Array,
-    biases: &Array,
+    x: impl AsRef<Array>,
+    w: impl AsRef<Array>,
+    scales: impl AsRef<Array>,
+    biases: impl AsRef<Array>,
     transpose: impl Into<Option<bool>>,
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
@@ -68,10 +68,10 @@ pub fn quantized_matmul_device(
     <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_quantized_matmul(
             res,
-            x.as_ptr(),
-            w.as_ptr(),
-            scales.as_ptr(),
-            biases.as_ptr(),
+            x.as_ref().as_ptr(),
+            w.as_ref().as_ptr(),
+            scales.as_ref().as_ptr(),
+            biases.as_ref().as_ptr(),
             transpose,
             group_size,
             bits,
@@ -87,9 +87,9 @@ pub fn quantized_matmul_device(
 /// documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.dequantize.html)
 #[default_device]
 pub fn dequantize_device(
-    w: &Array,
-    scales: &Array,
-    biases: &Array,
+    w: impl AsRef<Array>,
+    scales: impl AsRef<Array>,
+    biases: impl AsRef<Array>,
     group_size: impl Into<Option<i32>>,
     bits: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
@@ -100,9 +100,9 @@ pub fn dequantize_device(
     <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_dequantize(
             res,
-            w.as_ptr(),
-            scales.as_ptr(),
-            biases.as_ptr(),
+            w.as_ref().as_ptr(),
+            scales.as_ref().as_ptr(),
+            biases.as_ref().as_ptr(),
             group_size,
             bits,
             stream.as_ref().as_ptr(),
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_quantize_dequantize() {
         let x1 = Array::ones::<f32>(&[128, 1]).unwrap();
-        let x2 = expand_dims(&Array::arange::<f32, _>(0, 512, None).unwrap(), &[0]).unwrap();
+        let x2 = expand_dims(&Array::arange::<_, f32>(0, 512, None).unwrap(), &[0]).unwrap();
         let x = x1 * x2;
 
         for i in [2, 4, 8].iter() {

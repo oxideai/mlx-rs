@@ -111,7 +111,7 @@ impl Array {
                 res,
                 shape.as_ptr(),
                 shape.len(),
-                values.as_ref().c_array,
+                values.as_ref().as_ptr(),
                 T::DTYPE.into(),
                 stream.as_ref().as_ptr(),
             )
@@ -154,18 +154,18 @@ impl Array {
     /// use mlx_rs::{Array, StreamOrDevice};
     ///
     /// // Create a 1-D array with values from 0 to 50
-    /// let r = Array::arange::<f32, _>(None, 50, None);
+    /// let r = Array::arange::<_, f32>(None, 50, None);
     /// ```
     #[default_device]
-    pub fn arange_device<T, U>(
+    pub fn arange_device<U, T>(
         start: impl Into<Option<U>>,
         stop: U,
         step: impl Into<Option<U>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array>
     where
-        T: ArrayElement,
         U: NumCast,
+        T: ArrayElement,
     {
         let start: f64 = start.into().and_then(NumCast::from).unwrap_or(0.0);
         let stop: f64 = NumCast::from(stop).unwrap();
@@ -196,18 +196,18 @@ impl Array {
     /// ```rust
     /// use mlx_rs::{Array, StreamOrDevice};
     /// // Create a 50 element 1-D array with values from 0 to 50
-    /// let r = Array::linspace_device::<f32, _>(0, 50, None, StreamOrDevice::default()).unwrap();
+    /// let r = Array::linspace_device::<_, f32>(0, 50, None, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn linspace_device<T, U>(
+    pub fn linspace_device<U, T>(
         start: U,
         stop: U,
         count: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array>
     where
-        T: ArrayElement,
         U: NumCast,
+        T: ArrayElement,
     {
         let count = count.into().unwrap_or(50);
         let start_f32 = NumCast::from(start).unwrap();
@@ -249,7 +249,7 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat(res, array.c_array, count, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
         })
     }
 
@@ -275,7 +275,7 @@ impl Array {
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat_all(res, array.c_array, count, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat_all(res, array.as_ptr(), count, stream.as_ref().as_ptr())
         })
     }
 
@@ -404,32 +404,32 @@ pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> R
 
 /// See [`Array::arange`]
 #[default_device]
-pub fn arange_device<T, U>(
+pub fn arange_device<U, T>(
     start: impl Into<Option<U>>,
     stop: U,
     step: impl Into<Option<U>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array>
 where
-    T: ArrayElement,
     U: NumCast,
+    T: ArrayElement,
 {
-    Array::arange_device::<T, U>(start, stop, step, stream)
+    Array::arange_device::<U, T>(start, stop, step, stream)
 }
 
 /// See [`Array::linspace`]
 #[default_device]
-pub fn linspace_device<T, U>(
+pub fn linspace_device<U, T>(
     start: U,
     stop: U,
     count: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array>
 where
-    T: ArrayElement,
     U: NumCast,
+    T: ArrayElement,
 {
-    Array::linspace_device::<T, U>(start, stop, count, stream)
+    Array::linspace_device::<U, T>(start, stop, count, stream)
 }
 
 /// See [`Array::repeat`]
@@ -553,7 +553,7 @@ mod tests {
 
     #[test]
     fn test_arange() {
-        let array = Array::arange::<f32, _>(None, 50, None).unwrap();
+        let array = Array::arange::<_, f32>(None, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -561,7 +561,7 @@ mod tests {
         let expected: Vec<f32> = (0..50).map(|x| x as f32).collect();
         assert_eq!(data, expected.as_slice());
 
-        let array = Array::arange::<i32, _>(0, 50, None).unwrap();
+        let array = Array::arange::<_, i32>(0, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -569,31 +569,31 @@ mod tests {
         let expected: Vec<i32> = (0..50).collect();
         assert_eq!(data, expected.as_slice());
 
-        let result = Array::arange::<bool, _>(None, 50, None);
+        let result = Array::arange::<_, bool>(None, 50, None);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(f64::NEG_INFINITY, 50.0, None);
+        let result = Array::arange::<_, f32>(f64::NEG_INFINITY, 50.0, None);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(0.0, f64::INFINITY, None);
+        let result = Array::arange::<_, f32>(0.0, f64::INFINITY, None);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(0.0, 50.0, f32::NAN);
+        let result = Array::arange::<_, f32>(0.0, 50.0, f32::NAN);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(f32::NAN, 50.0, None);
+        let result = Array::arange::<_, f32>(f32::NAN, 50.0, None);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(0.0, f32::NAN, None);
+        let result = Array::arange::<_, f32>(0.0, f32::NAN, None);
         assert!(result.is_err());
 
-        let result = Array::arange::<f32, _>(0, i32::MAX as i64 + 1, None);
+        let result = Array::arange::<_, f32>(0, i32::MAX as i64 + 1, None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_linspace_int() {
-        let array = Array::linspace::<f32, _>(0, 50, None).unwrap();
+        let array = Array::linspace::<_, f32>(0, 50, None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -604,7 +604,7 @@ mod tests {
 
     #[test]
     fn test_linspace_float() {
-        let array = Array::linspace::<f32, _>(0., 50., None).unwrap();
+        let array = Array::linspace::<_, f32>(0., 50., None).unwrap();
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
@@ -615,10 +615,10 @@ mod tests {
 
     #[test]
     fn test_linspace_try() {
-        let array = Array::linspace::<f32, _>(0, 50, None);
+        let array = Array::linspace::<_, f32>(0, 50, None);
         assert!(array.is_ok());
 
-        let array = Array::linspace::<f32, _>(0, 50, Some(-1));
+        let array = Array::linspace::<_, f32>(0, 50, Some(-1));
         assert!(array.is_err());
     }
 

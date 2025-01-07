@@ -77,11 +77,11 @@ pub fn load_arrays_with_metadata_device(
 ///
 /// - array: array to save
 /// - url: URL of file to load
-pub fn save_array(array: &Array, path: &Path) -> Result<(), IoError> {
+pub fn save_array(array: impl AsRef<Array>, path: &Path) -> Result<(), IoError> {
     check_file_extension(path, "npy")?;
     let file_ptr = FilePtr::open(path, "w")?;
 
-    unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), array.as_ptr()) };
+    unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), array.as_ref().as_ptr()) };
 
     Ok(())
 }

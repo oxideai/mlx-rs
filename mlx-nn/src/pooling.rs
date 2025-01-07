@@ -1,15 +1,19 @@
-use std::{
-    iter::{once, zip},
-    sync::Arc,
-};
+use std::iter::{once, zip};
 
+use dyn_clone::DynClone;
 use mlx_macros::ModuleParameters;
 use mlx_rs::{error::Exception, module::Module, ops::as_strided, Array};
 
 use crate::utils::SingleOrPair;
 
-/// Type alias for a pooling operation.
-type PoolingOp = dyn Fn(&Array, &[i32]) -> Result<Array, Exception>;
+/// Marker trait for pooling operations.
+pub trait Pooling
+where
+    Self: Fn(&Array, &[i32]) -> Result<Array, Exception> + DynClone,
+{
+}
+
+impl<T> Pooling for T where T: Fn(&Array, &[i32]) -> Result<Array, Exception> + DynClone {}
 
 /// Abstract pooling layer.
 ///
@@ -19,7 +23,7 @@ type PoolingOp = dyn Fn(&Array, &[i32]) -> Result<Array, Exception>;
 /// - [`MaxPool2d`]
 /// - [`AvgPool1d`]
 /// - [`AvgPool2d`]
-#[derive(Clone, ModuleParameters)]
+#[derive(ModuleParameters)]
 pub struct Pool {
     /// Size of the pooling window
     kernel_size: Vec<i32>,
@@ -33,7 +37,18 @@ pub struct Pool {
     /// Pooling operation
     ///
     /// TODO: We have Arc here just to make it `Clone` and `Send`. Is this necessary?
-    pooling_op: Arc<PoolingOp>,
+    pooling_op: Box<dyn Pooling>,
+}
+
+impl Clone for Pool {
+    fn clone(&self) -> Self {
+        Self {
+            kernel_size: self.kernel_size.clone(),
+            stride: self.stride.clone(),
+            axes: self.axes.clone(),
+            pooling_op: dyn_clone::clone_box(&*self.pooling_op),
+        }
+    }
 }
 
 impl std::fmt::Debug for Pool {
@@ -51,7 +66,7 @@ impl Pool {
     pub fn new(
         kernel_size: Vec<i32>,
         stride: Vec<usize>,
-        op: impl Fn(&Array, &[i32]) -> Result<Array, Exception> + 'static,
+        op: impl Pooling + 'static,
     ) -> Self {
         let start = -(kernel_size.len() as i32) - 1;
         let axes: Vec<_> = (start..-1).collect();
@@ -59,7 +74,7 @@ impl Pool {
             kernel_size,
             stride,
             axes,
-            pooling_op: Arc::new(op),
+            pooling_op: Box::new(op),
         }
     }
 }

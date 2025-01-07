@@ -371,6 +371,24 @@ pub enum SingleOrPair<T = i32> {
     Pair(T, T),
 }
 
+impl<T: Clone> SingleOrPair<T> {
+    /// Returns the first value.
+    pub fn first(&self) -> T {
+        match self {
+            SingleOrPair::Single(v) => v.clone(),
+            SingleOrPair::Pair(v1, _) => v1.clone(),
+        }
+    }
+
+    /// Returns the second value.
+    pub fn second(&self) -> T {
+        match self {
+            SingleOrPair::Single(v) => v.clone(),
+            SingleOrPair::Pair(_, v2) => v2.clone(),
+        }
+    }
+}
+
 impl<T> From<T> for SingleOrPair<T> {
     fn from(value: T) -> Self {
         SingleOrPair::Single(value)
@@ -400,6 +418,32 @@ pub enum SingleOrTriple<T = i32> {
 
     /// Triple of values.
     Triple(T, T, T),
+}
+
+impl<T: Clone> SingleOrTriple<T> {
+    /// Returns the first value.
+    pub fn first(&self) -> T {
+        match self {
+            SingleOrTriple::Single(v) => v.clone(),
+            SingleOrTriple::Triple(v1, _, _) => v1.clone(),
+        }
+    }
+
+    /// Returns the second value.
+    pub fn second(&self) -> T {
+        match self {
+            SingleOrTriple::Single(v) => v.clone(),
+            SingleOrTriple::Triple(_, v2, _) => v2.clone(),
+        }
+    }
+
+    /// Returns the third value.
+    pub fn third(&self) -> T {
+        match self {
+            SingleOrTriple::Single(v) => v.clone(),
+            SingleOrTriple::Triple(_, _, v3) => v3.clone(),
+        }
+    }
 }
 
 impl<T> From<T> for SingleOrTriple<T> {

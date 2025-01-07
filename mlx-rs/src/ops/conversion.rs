@@ -29,7 +29,7 @@ impl Array {
     #[default_device]
     pub fn as_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_astype(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_astype(res, self.as_ptr(), dtype.into(), stream.as_ref().as_ptr())
         })
     }
 
@@ -51,7 +51,7 @@ impl Array {
     #[default_device]
     pub fn view_dtype_device(&self, dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_view(res, self.c_array, dtype.into(), stream.as_ref().as_ptr())
+            mlx_sys::mlx_view(res, self.as_ptr(), dtype.into(), stream.as_ref().as_ptr())
         })
     }
 }

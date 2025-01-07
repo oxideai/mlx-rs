@@ -12,6 +12,7 @@ generate_test_cases! {
         num_enum::IntoPrimitive,
         num_enum::TryFromPrimitive,
         EnumIter,
+        Hash,
     )]
     #[repr(u32)]
     pub enum Dtype {

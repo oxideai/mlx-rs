@@ -74,6 +74,6 @@ where
 
 fn update_by_replace_with_ref_to_new_array(src: &mut Array, new_array: &Array) {
     unsafe {
-        mlx_sys::mlx_array_set(&mut src.c_array as *mut _, new_array.c_array);
+        mlx_sys::mlx_array_set(&mut src.as_ptr() as *mut _, new_array.as_ptr());
     }
 }

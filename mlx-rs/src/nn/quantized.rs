@@ -9,6 +9,7 @@ use crate::{
     random::uniform,
     Array,
 };
+use libc::group;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
@@ -191,26 +192,35 @@ impl QuantizedLinearBuilder {
         weight: Array,
         bias: Option<Array>,
     ) -> Result<QuantizedLinear, Exception> {
-        let (quantized_weight, scales, biases) = quantize(&weight, self.group_size, self.bits)?;
-
-        let inner = Linear {
-            weight: Param::new(quantized_weight),
-            bias: Param::new(bias),
-        };
-
-        let mut ql = QuantizedLinear {
-            group_size: self.group_size,
-            bits: self.bits,
-            scales: Param::new(scales),
-            biases: Param::new(biases),
-            inner,
-        };
-
-        // Freeze all parameters
-        ql.freeze_parameters(true);
-
-        Ok(ql)
+        build_quantized_linear_inner(weight, bias, self.group_size, self.bits)
     }
+}
+
+fn build_quantized_linear_inner(
+    weight: Array,
+    bias: Option<Array>,
+    group_size: i32,
+    bits: i32,
+) -> Result<QuantizedLinear, Exception> {
+    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+
+    let inner = Linear {
+        weight: Param::new(quantized_weight),
+        bias: Param::new(bias),
+    };
+
+    let mut ql = QuantizedLinear {
+        group_size: group_size,
+        bits: bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+
+    // Freeze all parameters
+    ql.freeze_parameters(true);
+
+    Ok(ql)
 }
 
 /// Builds a new [`QuantizedLinear`]
@@ -268,6 +278,27 @@ impl QuantizedLinear {
 
     /// Default bits
     pub const DEFAULT_BITS: i32 = 4;
+
+    /// Convert a linear layer to a quantized linear layer.
+    /// 
+    /// # Params
+    /// 
+    /// - `linear`: The linear layer to convert.
+    /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_GROUP_SIZE`]
+    /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_BITS`]
+    pub fn try_from_linear(linear: Linear, group_size: impl Into<Option<i32>>, bits: impl Into<Option<i32>>) -> Result<Self, Exception> {
+        let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
+        let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
+        build_quantized_linear_inner(linear.weight.value, linear.bias.value, group_size, bits)
+    }
+}
+
+impl TryFrom<Linear> for QuantizedLinear {
+    type Error = Exception;
+
+    fn try_from(linear: Linear) -> Result<Self, Self::Error> {
+        Self::try_from_linear(linear, None, None)
+    }
 }
 
 impl<'a> Module<'a> for QuantizedLinear {

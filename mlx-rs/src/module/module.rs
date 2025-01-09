@@ -49,12 +49,14 @@ pub trait Module<'a>: ModuleParameters + std::fmt::Debug {
 /// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
 /// reference to the input.
 pub trait UnaryModule<Err = Exception>: ModuleParameters {
-    /// Forward pass of the unary module. This is NOT intended to be called directly outs. Use
-    /// [`Module::forward`] instead.
+    /// Forward pass of the unary module. This is NOT intended to be called directly outside
+    /// the `Sequential` module or on `dyn Activation` trait objects. Use [`Module::forward`]
+    /// whenever possible.
     fn forward_unary(&mut self, x: &Array) -> Result<Array, Err>;
 
-    /// Set whether the module is in training mode. This is NOT intended to be called directly.
-    /// Use [`Module::training_mode`] instead.
+    /// Set whether the module is in training mode. This is NOT intended to be called directly
+    /// outside the `Sequential` module or on `dyn Activation` trait objects. Use
+    /// [`Module::training_mode`] whenever possible.
     fn training_mode_unary(&mut self, mode: bool);
 }
 

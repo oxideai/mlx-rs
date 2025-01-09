@@ -27,6 +27,22 @@ where
     Quantized(Q),
 }
 
+impl<'a, M, Q> QuantizableModule<'a> for Quantizable<M, Q>
+where 
+    for<'m> M: QuantizableModule<'m, Quantized = Q>,
+    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+{
+    type Quantized = Self;
+    type QuantizationError = <M as QuantizableModule<'a>>::QuantizationError;
+
+    fn quantize(self) -> Result<Self, Self::QuantizationError> {
+        match self {
+            Quantizable::Original(m) => m.quantize().map(Quantizable::Quantized),
+            Quantizable::Quantized(q) => Ok(Quantizable::Quantized(q)),
+        }
+    }
+}
+
 impl<M, Q> Quantizable<M, Q>
 where 
     for<'a> M: QuantizableModule<'a, Quantized = Q>,
@@ -35,14 +51,6 @@ where
     /// Create a new [`Quantizable`] from the original module.
     pub fn new(module: M) -> Self {
         Quantizable::Original(module)
-    }
-
-    /// Convert the module into a quantized version.
-    pub fn quantize<'a>(self) -> Result<Quantizable<M, Q>, <M as QuantizableModule<'a>>::QuantizationError> {
-        match self {
-            Quantizable::Original(m) => m.quantize().map(Quantizable::Quantized),
-            Quantizable::Quantized(q) => Ok(Quantizable::Quantized(q)),
-        }
     }
 
     /// Quantize the module with a custom quantization function.
@@ -147,7 +155,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::nn::Linear;
+    use crate::{nn::Linear, quantization::QuantizableModule};
 
     use super::Quantizable;
 

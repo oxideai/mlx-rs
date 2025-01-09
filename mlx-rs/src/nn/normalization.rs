@@ -94,11 +94,12 @@ impl InstanceNorm {
     pub const DEFAULT_AFFINE: bool = false;
 }
 
-impl Module<&Array> for InstanceNorm {
-    type Output = Array;
+impl Module for InstanceNorm {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
         let x = instance_norm(x, &reduction_axes, &self.eps)?;
@@ -188,11 +189,12 @@ impl LayerNorm {
     pub const DEFAULT_AFFINE: bool = true;
 }
 
-impl Module<&Array> for LayerNorm {
-    type Output = Array;
+impl Module for LayerNorm {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
         let bias = self.bias.as_ref();
         let eps = self.eps;
@@ -259,11 +261,12 @@ impl RmsNorm {
     pub const DEFAULT_EPS: f32 = 1e-5;
 }
 
-impl Module<&Array> for RmsNorm {
-    type Output = Array;
+impl Module for RmsNorm {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
         let eps = self.eps;
         crate::fast::rms_norm(x, weight, eps)
@@ -411,11 +414,12 @@ impl GroupNorm {
     }
 }
 
-impl Module<&Array> for GroupNorm {
-    type Output = Array;
+impl Module for GroupNorm {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let x = if self.pytorch_compatible {
             self.pytorch_group_norm(x)?
         } else {
@@ -564,11 +568,12 @@ impl BatchNorm {
     }
 }
 
-impl Module<&Array> for BatchNorm {
-    type Output = Array;
+impl Module for BatchNorm {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
         if !(2..=4).contains(&ndim) {
             return Err(Exception::custom(

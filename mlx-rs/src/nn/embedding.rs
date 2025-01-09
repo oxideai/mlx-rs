@@ -44,11 +44,12 @@ impl Embedding {
     }
 }
 
-impl Module<&Array> for Embedding {
+impl Module for Embedding {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         Ok(self.weight.index(x))
     }
 

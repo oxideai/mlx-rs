@@ -24,15 +24,18 @@ pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
-pub trait Module<Args>: ModuleParameters + std::fmt::Debug {
-    /// Error type for the module.
-    type Error: std::error::Error;
+pub trait Module: ModuleParameters + std::fmt::Debug {
+    /// Input type of the module.
+    type Args<'a>;
 
     /// Output type of the module.
     type Output;
 
+    /// Error type for the module.
+    type Error: std::error::Error;
+
     /// Forward pass of the module.
-    fn forward(&mut self, x: Args) -> Result<Self::Output, Self::Error>;
+    fn forward<'args>(&mut self, x: Self::Args<'args>) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -48,11 +51,15 @@ pub trait Module<Args>: ModuleParameters + std::fmt::Debug {
 /// reference to the input.
 pub trait UnaryModule
 where
-    for<'a> Self: Module<&'a Array, Output = Array>,
+    for<'a> Self: Module<Args<'a> = &'a Array, Output = Array>,
 {
 }
 
-impl<M> UnaryModule for M where for<'a> M: Module<&'a Array, Output = Array> {}
+fn foo(a: &dyn UnaryModule<Error = crate::error::Exception>) {
+    println!("{:?}", a);
+}
+
+impl<M> UnaryModule for M where for<'a> M: Module<Args<'a> = &'a Array, Output = Array> {}
 
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {

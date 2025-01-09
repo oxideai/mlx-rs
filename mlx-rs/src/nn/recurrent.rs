@@ -195,8 +195,9 @@ impl<'a, Input> Module<Input> for Rnn
 where
     Input: Into<RnnInput<'a>>,
 {
-    type Output = Array;
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, input: Input) -> Result<Array, Exception> {
         let input = input.into();
@@ -351,8 +352,9 @@ impl<'a, Input> Module<Input> for Gru
 where
     Input: Into<RnnInput<'a>>,
 {
-    type Output = Array;
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, input: Input) -> Result<Array, Exception> {
         let input = input.into();

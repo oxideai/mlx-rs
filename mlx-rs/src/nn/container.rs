@@ -27,11 +27,12 @@ pub struct Sequential<Err = Exception> {
     pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
 }
 
-impl Module<&Array> for Sequential {
+impl Module for Sequential {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);
 
         for layer in &mut self.layers {

@@ -107,11 +107,12 @@ impl Conv1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl Module<&Array> for Conv1d {
+impl Module for Conv1d {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let mut y = conv1d(
             x,
             self.weight.as_ref(),
@@ -232,11 +233,12 @@ impl Conv2d {
     pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
 }
 
-impl Module<&Array> for Conv2d {
+impl Module for Conv2d {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let mut y = conv2d(
             x,
             self.weight.as_ref(),
@@ -359,11 +361,12 @@ impl Conv3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl Module<&Array> for Conv3d {
+impl Module for Conv3d {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let mut y = crate::ops::conv3d(
             x,
             self.weight.as_ref(),

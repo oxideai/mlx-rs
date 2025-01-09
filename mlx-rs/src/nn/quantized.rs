@@ -126,11 +126,12 @@ impl QuantizedEmbedding {
     }
 }
 
-impl Module<&Array> for QuantizedEmbedding {
-    type Output = Array;
+impl Module for QuantizedEmbedding {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let s = x.shape();
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
@@ -264,11 +265,12 @@ impl QuantizedLinear {
     pub const DEFAULT_BITS: i32 = 4;
 }
 
-impl Module<&Array> for QuantizedLinear {
-    type Output = Array;
+impl Module for QuantizedLinear {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let mut x = quantized_matmul(
             x,
             &self.inner.weight,

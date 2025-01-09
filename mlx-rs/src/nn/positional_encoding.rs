@@ -229,12 +229,12 @@ fn build_sinpe(builder: SinpeBuilder) -> Result<SinusoidalPositionalEncoding, Ex
     })
 }
 
-impl Module<&Array> for Sinpe {
+impl Module for Sinpe {
     type Error = Exception;
 
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Self::Output, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Self::Output, Self::Error> {
         let mut y = x
             .expand_dims(&[-1])
             .and_then(|x| x.multiply(&self.sigmas))?;

@@ -78,11 +78,12 @@ impl Linear {
     }
 }
 
-impl Module<&Array> for Linear {
+impl Module for Linear {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => crate::ops::addmm(bias, x, self.weight.value.t(), None, None),
             None => crate::ops::matmul(x, self.weight.value.t()),
@@ -164,11 +165,12 @@ impl Bilinear {
     pub const DEFAULT_BIAS: bool = true;
 }
 
-impl Module<&Array> for Bilinear {
+impl Module for Bilinear {
+    type Args<'a> = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let shape = self.weights.shape();
         let (out, in2, in1) = (shape[0], shape[1], shape[2]);
         let x_shape = &x.shape()[..x.shape().len() - 1];

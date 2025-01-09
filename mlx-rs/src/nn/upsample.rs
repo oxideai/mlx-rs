@@ -69,12 +69,13 @@ impl Upsample {
     }
 }
 
-impl<'a> Module<&'a Array> for Upsample {
+impl Module for Upsample {
+    type Args<'a> = &'a Array;
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Self::Output, Self::Error> {
+
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Self::Output, Self::Error> {
         let dimensions = x.ndim() - 2;
 
         if dimensions == 0 {

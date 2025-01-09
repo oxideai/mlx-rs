@@ -76,11 +76,12 @@ impl Pool {
     }
 }
 
-impl Module<&Array> for Pool {
-    type Output = Array;
+impl Module for Pool {
+    type Args<'a> = &'a Array;
     type Error = Exception;
+    type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
         let shape = x.shape();
         let rest = &shape[1..shape.len() - 1];
 
@@ -127,11 +128,12 @@ impl Module<&Array> for Pool {
 
 macro_rules! impl_module {
     ($name:ident) => {
-        impl<'a> Module<&'a Array> for $name {
+        impl Module for $name {
+            type Args<'a> = &'a Array;
             type Output = Array;
             type Error = Exception;
 
-            fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+            fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
                 self.inner.forward(x)
             }
 

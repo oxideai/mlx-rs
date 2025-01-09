@@ -19,7 +19,7 @@ impl<'a> Module<'a> for M {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> {
         self.linear.forward(x)
     }
 

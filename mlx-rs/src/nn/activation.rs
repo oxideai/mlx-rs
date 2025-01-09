@@ -285,7 +285,8 @@ impl<'a> Module<'a> for Glu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -311,7 +312,8 @@ impl<'a> Module<'a> for Sigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         sigmoid(x)
     }
 
@@ -338,7 +340,8 @@ impl<'a> Module<'a> for Mish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         mish(x).map_err(Into::into)
     }
 
@@ -361,7 +364,8 @@ impl<'a> Module<'a> for Relu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         relu(x).map_err(Into::into)
     }
 
@@ -397,7 +401,8 @@ impl<'a> Module<'a> for LeakyRelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -420,7 +425,8 @@ impl<'a> Module<'a> for Relu6 {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         relu6(x).map_err(Into::into)
     }
 
@@ -456,7 +462,8 @@ impl<'a> Module<'a> for Softmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         crate::ops::softmax(x, &[self.axis], None)
     }
 
@@ -479,7 +486,8 @@ impl<'a> Module<'a> for Softplus {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         softplus(x).map_err(Into::into)
     }
 
@@ -502,7 +510,8 @@ impl<'a> Module<'a> for Softsign {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         softsign(x).map_err(Into::into)
     }
 
@@ -539,7 +548,8 @@ impl<'a> Module<'a> for Celu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -562,7 +572,8 @@ impl<'a> Module<'a> for Silu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         silu(x).map_err(Into::into)
     }
 
@@ -598,7 +609,8 @@ impl<'a> Module<'a> for LogSoftmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -621,7 +633,8 @@ impl<'a> Module<'a> for LogSigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -684,7 +697,8 @@ impl<'a> Module<'a> for Prelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -729,7 +743,8 @@ impl<'a> Module<'a> for Gelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -750,7 +765,8 @@ impl<'a> Module<'a> for Tanh {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         crate::ops::tanh(x)
     }
 
@@ -773,7 +789,8 @@ impl<'a> Module<'a> for HardSwish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         hard_swish(x).map_err(Into::into)
     }
 
@@ -812,7 +829,8 @@ impl<'a> Module<'a> for Step {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -835,7 +853,8 @@ impl<'a> Module<'a> for Selu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array> {
+        let x = x.into();
         selu(x).map_err(Into::into)
     }
 

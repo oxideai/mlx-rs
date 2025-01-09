@@ -7,11 +7,11 @@ use mlx_macros::ModuleParameters;
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
-pub trait SequentialModuleItem<Err>: UnaryModule<Error = Err> + std::fmt::Debug {}
+pub trait SequentialModuleItem<Err>: UnaryModule<Err> + std::fmt::Debug {}
 
 impl<T, Err> SequentialModuleItem<Err> for T
 where
-    T: UnaryModule<Error = Err> + std::fmt::Debug,
+    T: UnaryModule<Err> + std::fmt::Debug,
     Err: std::error::Error + 'static,
 {
 }
@@ -32,11 +32,12 @@ impl<'a> Module<'a> for Sequential {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+        let x = x.into();
         let mut x = Cow::Borrowed(x);
 
         for layer in &mut self.layers {
-            x = Cow::Owned(layer.forward(x.as_ref())?);
+            x = Cow::Owned(layer.forward_unary(x.as_ref())?);
         }
 
         match x {
@@ -48,7 +49,7 @@ impl<'a> Module<'a> for Sequential {
     fn training_mode(&mut self, mode: bool) {
         self.layers
             .iter_mut()
-            .for_each(|layer| layer.training_mode(mode));
+            .for_each(|layer| layer.training_mode_unary(mode));
     }
 }
 
@@ -67,7 +68,7 @@ impl<Err> Sequential<Err> {
     /// Appends a layer to the sequential module.
     pub fn append<M>(mut self, layer: M) -> Self
     where
-        M: UnaryModule<Error = Err> + std::fmt::Debug + 'static,
+        M: UnaryModule<Err> + std::fmt::Debug + 'static,
         Err: std::error::Error + 'static,
     {
         self.layers.push(Box::new(layer));

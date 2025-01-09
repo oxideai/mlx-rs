@@ -196,7 +196,7 @@ impl<'a> Module<'a> for Rnn {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
+    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Array, Exception> { let input = input.into();
         self.step(input.x, input.hidden)
     }
 
@@ -352,7 +352,7 @@ impl<'a> Module<'a> for Gru {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
+    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Array, Exception> { let input = input.into();
         self.step(input.x, input.hidden)
     }
 
@@ -541,7 +541,7 @@ impl<'a> Module<'a> for Lstm {
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> {
+    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<(Array, Array), Exception> { let input = input.into();
         self.step(input.x, input.hidden, input.cell)
     }
 
@@ -560,7 +560,7 @@ mod tests {
         let mut layer = Rnn::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward((&inp).into()).unwrap();
+        let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
@@ -570,15 +570,15 @@ mod tests {
             .build()
             .unwrap();
 
-        let h_out = layer.forward((&inp).into()).unwrap();
+        let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward((&inp).into()).unwrap();
+        let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
+        let h_out = layer.forward((&inp, &hidden)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -587,19 +587,19 @@ mod tests {
         let mut layer = Gru::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward((&inp).into()).unwrap();
+        let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let hidden = h_out.index((.., -1, ..));
-        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
+        let h_out = layer.forward((&inp, &hidden)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward((&inp).into()).unwrap();
+        let h_out = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
+        let h_out = layer.forward((&inp, &hidden)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -608,7 +608,7 @@ mod tests {
         let mut layer = Lstm::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let (h_out, c_out) = layer.forward((&inp).into()).unwrap();
+        let (h_out, c_out) = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
@@ -623,13 +623,13 @@ mod tests {
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let (h_out, c_out) = layer.forward((&inp).into()).unwrap();
+        let (h_out, c_out) = layer.forward(&inp).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
         let cell = c_out.index((-1, ..));
-        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell).into()).unwrap();
+        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
     }

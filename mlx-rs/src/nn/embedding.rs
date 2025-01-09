@@ -49,7 +49,7 @@ impl<'a> Module<'a> for Embedding {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: &'a Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
         Ok(self.weight.index(x))
     }
 

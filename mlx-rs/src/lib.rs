@@ -19,6 +19,7 @@ pub mod module;
 pub mod nested;
 pub mod ops;
 pub mod optimizers;
+pub mod quantization;
 pub mod random;
 mod stream;
 pub mod transforms;

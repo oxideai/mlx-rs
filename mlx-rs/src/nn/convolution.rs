@@ -1,18 +1,19 @@
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, Param};
-use mlx_rs::{
+use crate::module::{Module, Param};
+use crate::{
     error::Exception,
     ops::{conv1d, conv2d, zeros},
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::utils::{SingleOrPair, SingleOrTriple};
 
 /// Builder for the `Conv1d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv1d,
     err = Exception,
 )]
@@ -77,6 +78,8 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
 /// - `L` is the sequence length
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Conv1d {
     /// The weight of the convolution layer.
     #[param]
@@ -129,6 +132,7 @@ impl Module<&Array> for Conv1d {
 /// Builder for the `Conv2d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv2d,
     err = Exception,
 )]
@@ -199,6 +203,8 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Conv2d {
     /// The weight of the convolution layer.
     #[param]
@@ -251,6 +257,7 @@ impl Module<&Array> for Conv2d {
 /// Builder for the `Conv3d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv3d,
     err = Exception,
 )]
@@ -323,6 +330,8 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Conv3d {
     /// The weight of the convolution layer.
     #[param]
@@ -355,7 +364,7 @@ impl Module<&Array> for Conv3d {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
-        let mut y = mlx_rs::ops::conv3d(
+        let mut y = crate::ops::conv3d(
             x,
             self.weight.as_ref(),
             self.stride,
@@ -376,15 +385,15 @@ impl Module<&Array> for Conv3d {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
+    use crate::module::Module;
+    use crate::{random::uniform, Dtype};
     use float_eq::assert_float_eq;
-    use mlx_rs::module::Module;
-    use mlx_rs::{random::uniform, Dtype};
 
-    use crate::Conv1d;
+    use crate::nn::Conv1d;
 
     #[test]
     fn test_conv1d() {
-        mlx_rs::random::seed(819).unwrap();
+        crate::random::seed(819).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -415,7 +424,7 @@ mod tests {
 
     #[test]
     fn test_conv2d() {
-        mlx_rs::random::seed(62).unwrap();
+        crate::random::seed(62).unwrap();
         let a = uniform::<_, f32>(0.0, 1.0, &[2, 8, 8, 4], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 8, 4]);
         assert_eq!(a.dtype(), Dtype::Float32);
@@ -429,7 +438,7 @@ mod tests {
             267.522_2,
             abs <= 5.350_444
         );
-        let result = crate::Conv2d::new(4, 2, (8, 8))
+        let result = crate::nn::Conv2d::new(4, 2, (8, 8))
             .unwrap()
             .forward(&a)
             .unwrap();

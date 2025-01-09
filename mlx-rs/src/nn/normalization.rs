@@ -1,14 +1,14 @@
 use std::borrow::Cow;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
     ops::{ones, rsqrt, zeros},
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
@@ -24,6 +24,7 @@ fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exceptio
 /// Builder for [`InstanceNorm`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_instance_norm,
     err = Exception,
 )]
@@ -69,6 +70,8 @@ fn build_instance_norm(builder: InstanceNormBuilder) -> Result<InstanceNorm, Exc
 ///
 /// 1. [https://arxiv.org/abs/1607.08022](https://arxiv.org/abs/1607.08022)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct InstanceNorm {
     /// Number of features in the input
     pub dimensions: i32,
@@ -113,6 +116,7 @@ impl Module<&Array> for InstanceNorm {
 /// Builder for [`LayerNorm`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_layer_norm,
     err = Exception,
 )]
@@ -158,6 +162,8 @@ fn build_layer_norm(builder: LayerNormBuilder) -> Result<LayerNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1607.06450](https://arxiv.org/abs/1607.06450)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct LayerNorm {
     /// Number of features in the input
     pub dimensions: i32,
@@ -190,7 +196,7 @@ impl Module<&Array> for LayerNorm {
         let weight = self.weight.as_ref();
         let bias = self.bias.as_ref();
         let eps = self.eps;
-        mlx_rs::fast::layer_norm(x, weight, bias, eps)
+        crate::fast::layer_norm(x, weight, bias, eps)
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -199,6 +205,7 @@ impl Module<&Array> for LayerNorm {
 /// Builder for [`RmsNorm`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_rms_norm,
     err = Exception,
 )]
@@ -236,6 +243,8 @@ fn build_rms_norm(builder: RmsNormBuilder) -> Result<RmsNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1910.07467](https://arxiv.org/abs/1910.07467)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct RmsNorm {
     /// Weight
     #[param]
@@ -257,7 +266,7 @@ impl Module<&Array> for RmsNorm {
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
         let eps = self.eps;
-        mlx_rs::fast::rms_norm(x, weight, eps)
+        crate::fast::rms_norm(x, weight, eps)
     }
 
     fn training_mode(&mut self, _mode: bool) {}
@@ -266,6 +275,7 @@ impl Module<&Array> for RmsNorm {
 /// Builder for [`GroupNorm`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_group_norm,
     err = Exception,
 )]
@@ -322,6 +332,8 @@ fn build_group_norm(builder: GroupNormBuilder) -> Result<GroupNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1803.08494](https://arxiv.org/abs/1803.08494)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct GroupNorm {
     /// Number of groups to separate the features into
     pub group_count: i32,
@@ -367,7 +379,7 @@ impl GroupNorm {
             .reshape(&[batch, self.group_count, -1])?;
 
         // Normalize
-        let x = mlx_rs::fast::layer_norm(x, None, None, self.eps.item::<f32>())?;
+        let x = crate::fast::layer_norm(x, None, None, self.eps.item::<f32>())?;
 
         let x = x.reshape(&[batch, self.group_count, -1, group_size])?;
 
@@ -423,6 +435,7 @@ impl Module<&Array> for GroupNorm {
 /// Builder for [`BatchNorm`].
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_batch_norm,
     err = Exception,
 )]
@@ -493,6 +506,8 @@ fn build_batch_norm(builder: BatchNormBuilder) -> Result<BatchNorm, Exception> {
 ///
 /// 1. [https://arxiv.org/abs/1502.03167](https://arxiv.org/abs/1502.03167)
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct BatchNorm {
     /// Number of features in the input
     pub feature_count: i32,
@@ -603,18 +618,18 @@ impl Module<&Array> for BatchNorm {
 
 #[cfg(test)]
 mod tests {
-    use float_eq::assert_float_eq;
-    use mlx_rs::{
+    use crate::{
         prelude::{Ellipsis, IndexOp},
         Dtype,
     };
+    use float_eq::assert_float_eq;
 
     use super::*;
 
     #[test]
     fn test_instance_norm() {
-        mlx_rs::random::seed(435).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(435).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -649,8 +664,8 @@ mod tests {
 
     #[test]
     fn test_layer_norm() {
-        mlx_rs::random::seed(635).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(635).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -685,8 +700,8 @@ mod tests {
 
     #[test]
     fn test_rms_norm() {
-        mlx_rs::random::seed(103).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(103).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -717,8 +732,8 @@ mod tests {
 
     #[test]
     fn test_group_norm() {
-        mlx_rs::random::seed(855).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(855).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -753,8 +768,8 @@ mod tests {
 
     #[test]
     fn test_batch_norm() {
-        mlx_rs::random::seed(266).unwrap();
-        let a = mlx_rs::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        crate::random::seed(266).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(

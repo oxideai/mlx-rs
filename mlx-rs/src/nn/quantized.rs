@@ -1,8 +1,6 @@
 use std::iter::once;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, ModuleParameters, Param},
@@ -11,12 +9,15 @@ use mlx_rs::{
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
-use crate::{Embedding, Linear};
+use crate::nn::{Embedding, Linear};
 
 /// Builder for [`QuantizedEmbedding`]
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_quantized_embedding,
     err = Exception,
 )]
@@ -38,6 +39,8 @@ pub struct QuantizedEmbeddingBuilder {
 
 /// The same as ``Embedding`` but with a quantized weight matrix.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct QuantizedEmbedding {
     /// Quantization group size. Default to [`QuantizedEmbedding::DEFAULT_GROUP_SIZE`]
     pub group_size: i32,
@@ -94,8 +97,7 @@ fn build_quantized_embedding(
 
     let scale = array!(f32::sqrt(1.0 / (dims as f32)));
     // SAFETY: This is safe because the array scale is a single element array
-    let weight =
-        mlx_rs::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
+    let weight = crate::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
 
     builder.build_with_weight(weight)
 }
@@ -148,6 +150,7 @@ impl Module<&Array> for QuantizedEmbedding {
 /// Builder for [`QuantizedLinear`]
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_quantized_linear,
     err = Exception,
 )]
@@ -231,6 +234,8 @@ pub fn build_quantized_linear(
 /// QuantizedLinear also provides several useful static to convert linear
 /// layers to QuantizedLinear layers.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct QuantizedLinear {
     /// Quantization group size. Default to [`QuantizedLinear::DEFAULT_GROUP_SIZE`]
     pub group_size: i32,

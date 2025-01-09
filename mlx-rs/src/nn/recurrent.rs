@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
@@ -11,6 +9,8 @@ use mlx_rs::{
     random::uniform,
     Array, Stream,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
@@ -27,6 +27,8 @@ pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Rnn {
     /// non-linearity function to use
     pub non_linearity: Arc<NonLinearity>,
@@ -47,6 +49,7 @@ pub struct Rnn {
 /// Builder for the [`Rnn`] module.
 #[derive(Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_rnn,
     err = Exception,
 )]
@@ -215,6 +218,8 @@ where
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Gru {
     /// Dimension of the hidden state, `H`
     pub hidden_size: i32,
@@ -239,6 +244,7 @@ pub struct Gru {
 /// Builder for the [`Gru`] module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_gru,
     err = Exception,
 )]
@@ -358,6 +364,8 @@ where
 
 /// A long short-term memory (LSTM) RNN layer.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Lstm {
     /// Wx
     #[param]
@@ -375,6 +383,7 @@ pub struct Lstm {
 /// Builder for the [`Lstm`] module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_lstm,
     err = Exception,
 )]
@@ -548,7 +557,7 @@ where
 // The uint tests below are ported from the python codebase
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{ops::maximum_device, prelude::Builder, random::normal};
+    use crate::{ops::maximum_device, prelude::Builder, random::normal};
 
     use super::*;
 

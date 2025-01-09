@@ -8,4 +8,3 @@ authors.workspace = true
 
 [dev-dependencies]
 mlx-rs.workspace = true
-mlx-nn.workspace = true

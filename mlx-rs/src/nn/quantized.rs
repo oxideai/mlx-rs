@@ -79,13 +79,18 @@ impl QuantizedEmbeddingBuilder {
             weight: Param::new(quantized_weight),
         };
 
-        Ok(QuantizedEmbedding {
+        let mut qe = QuantizedEmbedding {
             group_size,
             bits,
             scales: Param::new(scales),
             biases: Param::new(biases),
             inner,
-        })
+        };
+
+        // Freeze all parameters
+        qe.freeze_parameters(true);
+
+        Ok(qe)
     }
 }
 
@@ -193,7 +198,7 @@ impl QuantizedLinearBuilder {
             bias: Param::new(bias),
         };
 
-        let mut linear = QuantizedLinear {
+        let mut ql = QuantizedLinear {
             group_size: self.group_size,
             bits: self.bits,
             scales: Param::new(scales),
@@ -202,9 +207,9 @@ impl QuantizedLinearBuilder {
         };
 
         // Freeze all parameters
-        linear.freeze_parameters(true);
+        ql.freeze_parameters(true);
 
-        Ok(linear)
+        Ok(ql)
     }
 }
 

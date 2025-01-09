@@ -191,16 +191,12 @@ impl<'a> From<(&'a Array, Option<&'a Array>)> for RnnInput<'a> {
     }
 }
 
-impl<'a, Input> Module<Input> for Rnn
-where
-    Input: Into<RnnInput<'a>>,
-{
-    type Args<'a> = &'a Array;
+impl<'a> Module<'a> for Rnn {
+    type Input = RnnInput<'a>;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
-        let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
         self.step(input.x, input.hidden)
     }
 
@@ -348,16 +344,15 @@ impl Gru {
     }
 }
 
-impl<'a, Input> Module<Input> for Gru
-where
-    Input: Into<RnnInput<'a>>,
-{
-    type Args<'a> = &'a Array;
+/// Type alias for the input of the GRU module.
+pub type GruInput<'a> = RnnInput<'a>;
+
+impl<'a> Module<'a> for Gru {
+    type Input = GruInput<'a>;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
-        let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
         self.step(input.x, input.hidden)
     }
 
@@ -541,15 +536,12 @@ impl Lstm {
     }
 }
 
-impl<'a, Input> Module<Input> for Lstm
-where
-    Input: Into<LstmInput<'a>>,
-{
+impl<'a> Module<'a> for Lstm {
+    type Input = LstmInput<'a>;
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: Input) -> Result<(Array, Array), Exception> {
-        let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> {
         self.step(input.x, input.hidden, input.cell)
     }
 
@@ -568,7 +560,7 @@ mod tests {
         let mut layer = Rnn::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
@@ -578,15 +570,15 @@ mod tests {
             .build()
             .unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -595,19 +587,19 @@ mod tests {
         let mut layer = Gru::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let hidden = h_out.index((.., -1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward((&inp, &hidden).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -616,7 +608,7 @@ mod tests {
         let mut layer = Lstm::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
@@ -631,13 +623,13 @@ mod tests {
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward((&inp).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
         let cell = c_out.index((-1, ..));
-        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell)).unwrap();
+        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell).into()).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
     }

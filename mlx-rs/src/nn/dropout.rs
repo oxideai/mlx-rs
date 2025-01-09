@@ -59,12 +59,12 @@ impl Dropout {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout {
-    type Args<'a> = &'a Array;
+impl<'a> Module<'a> for Dropout {
+    type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &'a Array) -> Result<Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
             return Ok(x.clone());
         }
@@ -144,12 +144,12 @@ impl Dropout2d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout2d {
-    type Args<'a> = &'a Array;
+impl<'a> Module<'a> for Dropout2d {
+    type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &'a Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
@@ -241,12 +241,12 @@ impl Dropout3d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl Module for Dropout3d {
-    type Args<'a> = &'a Array;
+impl<'a> Module<'a> for Dropout3d {
+    type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward<'args>(&mut self, x: &'args Array) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &'a Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {

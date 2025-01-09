@@ -14,7 +14,8 @@ impl M {
     }
 }
 
-impl Module<&Array> for M {
+impl<'a> Module<'a> for M {
+    type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 

@@ -106,15 +106,14 @@ impl<'a> From<(&'a Array, i32)> for RopeInput<'a> {
     }
 }
 
-impl<'a, Input> Module<Input> for RotaryPositionalEncoding
-where
-    Input: Into<RopeInput<'a>>,
-{
+impl<'a> Module<'a> for RotaryPositionalEncoding {
+    type Input = RopeInput<'a>;
+
     type Error = Exception;
 
     type Output = Array;
 
-    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let RopeInput { x, offset } = input.into();
         let shape = x.shape();
         let x = x.reshape(&[-1, x.dim(-2), x.dim(-1)])?;
@@ -229,12 +228,12 @@ fn build_sinpe(builder: SinpeBuilder) -> Result<SinusoidalPositionalEncoding, Ex
     })
 }
 
-impl Module for Sinpe {
+impl<'a> Module<'a> for Sinpe {
+    type Input = &'a Array;
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward<'args>(&mut self, x: &'args Array) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, x: &'a Array) -> Result<Self::Output, Self::Error> {
         let mut y = x
             .expand_dims(&[-1])
             .and_then(|x| x.multiply(&self.sigmas))?;
@@ -384,15 +383,12 @@ impl<'a> From<(&'a Array, i32, Option<&'a Array>)> for AlibiInput<'a> {
     }
 }
 
-impl<'a, T> Module<T> for Alibi
-where
-    T: Into<AlibiInput<'a>>,
-{
+impl<'a> Module<'a> for Alibi {
+    type Input = AlibiInput<'a>;
+    type Output = Array;
     type Error = Exception;
 
-    type Output = Array;
-
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let AlibiInput {
             attention_scores,
             offset,
@@ -446,7 +442,7 @@ mod tests {
         );
 
         let mut rope = Rope::new(8);
-        let result = rope.forward(&a).unwrap();
+        let result = rope.forward((&a).into()).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -503,12 +499,12 @@ mod tests {
         let mut alibi = crate::nn::Alibi;
         let shape = [1, 8, 20, 20];
         let x = uniform::<_, f32>(0, 1, &shape, None).unwrap();
-        let y = alibi.forward(&x).unwrap();
+        let y = alibi.forward((&x).into()).unwrap();
         assert_eq!(y.shape(), shape);
         assert_eq!(y.dtype(), Dtype::Float32);
 
         let x2 = x.as_dtype(Dtype::Float16).unwrap();
-        let y = alibi.forward(&x2).unwrap();
+        let y = alibi.forward((&x2).into()).unwrap();
         assert_eq!(y.dtype(), Dtype::Float16);
     }
 }

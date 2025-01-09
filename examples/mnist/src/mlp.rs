@@ -12,7 +12,8 @@ pub struct Mlp {
     pub layers: Sequential,
 }
 
-impl Module<&Array> for Mlp {
+impl<'a> Module<'a> for Mlp {
+    type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 

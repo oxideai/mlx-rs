@@ -112,7 +112,7 @@ impl<'a> Module<'a> for Conv1d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let mut y = conv1d(
             x,
             self.weight.as_ref(),
@@ -238,7 +238,7 @@ impl<'a> Module<'a> for Conv2d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let mut y = conv2d(
             x,
             self.weight.as_ref(),
@@ -366,7 +366,7 @@ impl<'a> Module<'a> for Conv3d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let mut y = crate::ops::conv3d(
             x,
             self.weight.as_ref(),

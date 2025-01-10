@@ -9,7 +9,7 @@ use crate::{
     random::uniform,
     Array, Stream,
 };
-use mlx_internal_macros::{Buildable, Builder, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
@@ -156,7 +156,7 @@ generate_builder! {
     pub struct RnnInput<'a> {
         /// Input tensor
         pub x: &'a Array,
-    
+
         /// Hidden state
         #[builder(optional, default = None)]
         pub hidden: Option<&'a Array>,
@@ -201,7 +201,7 @@ impl<'a> Module<'a> for Rnn {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
         self.step(input.x, input.hidden)
     }
 
@@ -360,7 +360,7 @@ impl<'a> Module<'a> for Gru {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
         self.step(input.x, input.hidden)
     }
 
@@ -555,7 +555,7 @@ impl<'a> Module<'a> for Lstm {
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> { 
+    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> {
         self.step(input.x, input.hidden, input.cell)
     }
 
@@ -643,7 +643,9 @@ mod tests {
 
         let hidden = h_out.index((-1, ..));
         let cell = c_out.index((-1, ..));
-        let (h_out, c_out) = layer.forward(LstmInput::from((&inp, &hidden, &cell))).unwrap();
+        let (h_out, c_out) = layer
+            .forward(LstmInput::from((&inp, &hidden, &cell)))
+            .unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
     }

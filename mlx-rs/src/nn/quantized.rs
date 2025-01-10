@@ -122,13 +122,17 @@ impl QuantizedEmbedding {
     pub const DEFAULT_BITS: i32 = 4;
 
     /// Convert an embedding layer to a quantized embedding layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `embedding`: The embedding layer to convert.
     /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_GROUP_SIZE`]
     /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_BITS`]
-    pub fn try_from_embedding(embedding: Embedding, group_size: impl Into<Option<i32>>, bits: impl Into<Option<i32>>) -> Result<Self, Exception> {
+    pub fn try_from_embedding(
+        embedding: Embedding,
+        group_size: impl Into<Option<i32>>,
+        bits: impl Into<Option<i32>>,
+    ) -> Result<Self, Exception> {
         let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
         let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
         build_quantized_embedding_inner(embedding.weight.value, group_size, bits)
@@ -164,7 +168,7 @@ impl<'a> Module<'a> for QuantizedEmbedding {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let s = x.shape();
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
@@ -307,13 +311,17 @@ impl QuantizedLinear {
     pub const DEFAULT_BITS: i32 = 4;
 
     /// Convert a linear layer to a quantized linear layer.
-    /// 
+    ///
     /// # Params
-    /// 
+    ///
     /// - `linear`: The linear layer to convert.
     /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_GROUP_SIZE`]
     /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_BITS`]
-    pub fn try_from_linear(linear: Linear, group_size: impl Into<Option<i32>>, bits: impl Into<Option<i32>>) -> Result<Self, Exception> {
+    pub fn try_from_linear(
+        linear: Linear,
+        group_size: impl Into<Option<i32>>,
+        bits: impl Into<Option<i32>>,
+    ) -> Result<Self, Exception> {
         let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
         let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
         build_quantized_linear_inner(linear.weight.value, linear.bias.value, group_size, bits)
@@ -333,7 +341,7 @@ impl<'a> Module<'a> for QuantizedLinear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let mut x = quantized_matmul(
             x,
             &self.inner.weight,

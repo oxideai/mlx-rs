@@ -8,7 +8,7 @@ use crate::{
     Array,
 };
 use dyn_clone::DynClone;
-use mlx_internal_macros::{Buildable, Builder, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
 use crate::{
@@ -17,13 +17,9 @@ use crate::{
 };
 
 /// A marker trait for activation functions used in transformers.
-pub trait Activation: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone{
-}
+pub trait Activation: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone {}
 
-impl<M> Activation for M where
-    M: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone,
-{
-}
+impl<M> Activation for M where M: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone {}
 
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
@@ -143,19 +139,18 @@ generate_builder! {
     pub struct MultiHeadAttentionInput<'a> {
         /// Queries
         pub queries: &'a Array,
-    
+
         /// Keys
         pub keys: &'a Array,
-    
+
         /// Values
         pub values: &'a Array,
-    
+
         /// Mask
         #[builder(optional, default = None)]
         pub mask: Option<&'a Array>,
     }
 }
-
 
 impl<'a> From<(&'a Array, &'a Array, &'a Array)> for MultiHeadAttentionInput<'a> {
     fn from((queries, keys, values): (&'a Array, &'a Array, &'a Array)) -> Self {
@@ -200,7 +195,7 @@ impl<'a> Module<'a> for MultiHeadAttention {
     type Output = Array;
 
     #[allow(non_snake_case)]
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let queries = self.query_proj.forward(input.queries)?;
         let keys = self.key_proj.forward(input.keys)?;
         let values = self.value_proj.forward(input.values)?;
@@ -387,7 +382,7 @@ impl<'a> Module<'a> for TransformerEncoderLayer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let x = input.x;
         let mask = input.mask;
 
@@ -425,10 +420,7 @@ impl<'a> Module<'a> for TransformerEncoderLayer {
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <MultiHeadAttention as Module<'a>>::training_mode(
-            &mut self.attention,
-            mode,
-        );
+        <MultiHeadAttention as Module<'a>>::training_mode(&mut self.attention, mode);
         self.ln1.training_mode(mode);
         self.ln2.training_mode(mode);
         self.linear1.training_mode(mode);
@@ -522,7 +514,7 @@ impl<'a> Module<'a> for TransformerEncoder {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let x = input.x;
         let mask = input.mask;
 
@@ -538,9 +530,7 @@ impl<'a> Module<'a> for TransformerEncoder {
 
     fn training_mode(&mut self, mode: bool) {
         self.layers.iter_mut().for_each(|layer| {
-            <TransformerEncoderLayer as Module<'a>>::training_mode(
-                layer, mode,
-            );
+            <TransformerEncoderLayer as Module<'a>>::training_mode(layer, mode);
         });
         self.ln.training_mode(mode);
     }
@@ -705,7 +695,7 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let x = input.x;
         let memory = input.memory;
         let x_mask = input.x_mask;
@@ -713,14 +703,21 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
 
         if self.norm_first {
             let mut y = self.ln1.forward(x)?;
-            y = self.self_attention.forward(MultiHeadAttentionInput::from((&y, &y, &y, x_mask)))?;
+            y = self
+                .self_attention
+                .forward(MultiHeadAttentionInput::from((&y, &y, &y, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let x = x.add(&y)?;
 
             y = self.ln2.forward(&x)?;
             y = self
                 .cross_attention
-                .forward(MultiHeadAttentionInput::from((&y, memory, memory, memory_mask)))?;
+                .forward(MultiHeadAttentionInput::from((
+                    &y,
+                    memory,
+                    memory,
+                    memory_mask,
+                )))?;
             y = self.dropout2.forward(&y)?;
             let x = x.add(&y)?;
 
@@ -731,14 +728,21 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
             y = self.linear2.forward(&y)?;
             x.add(&y)
         } else {
-            let mut y = self.self_attention.forward(MultiHeadAttentionInput::from((x, x, x, x_mask)))?;
+            let mut y = self
+                .self_attention
+                .forward(MultiHeadAttentionInput::from((x, x, x, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
 
             y = self
                 .cross_attention
-                .forward(MultiHeadAttentionInput::from((&y, memory, memory, memory_mask)))?;
+                .forward(MultiHeadAttentionInput::from((
+                    &y,
+                    memory,
+                    memory,
+                    memory_mask,
+                )))?;
             y = self.dropout2.forward(&y)?;
             x = x.add(&y)?;
             x = self.ln2.forward(&x)?; // TODO: https://github.com/ml-explore/mlx/issues/1636
@@ -753,14 +757,8 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <MultiHeadAttention as Module<'a>>::training_mode(
-            &mut self.self_attention,
-            mode,
-        );
-        <MultiHeadAttention as Module<'a>>::training_mode(
-            &mut self.cross_attention,
-            mode,
-        );
+        <MultiHeadAttention as Module<'a>>::training_mode(&mut self.self_attention, mode);
+        <MultiHeadAttention as Module<'a>>::training_mode(&mut self.cross_attention, mode);
         self.ln1.training_mode(mode);
         self.ln2.training_mode(mode);
         self.ln3.training_mode(mode);
@@ -857,7 +855,7 @@ impl<'a> Module<'a> for TransformerDecoder {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let x = input.x;
         let memory = input.memory;
         let x_mask = input.x_mask;
@@ -875,9 +873,7 @@ impl<'a> Module<'a> for TransformerDecoder {
 
     fn training_mode(&mut self, mode: bool) {
         self.layers.iter_mut().for_each(|layer| {
-            <TransformerDecoderLayer as Module<'a>>::training_mode(
-                layer, mode,
-            );
+            <TransformerDecoderLayer as Module<'a>>::training_mode(layer, mode);
         });
         self.ln.training_mode(mode);
     }
@@ -1057,26 +1053,26 @@ impl<'a> Module<'a> for Transformer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
         let source = input.source;
         let target = input.target;
         let source_mask = input.source_mask;
         let target_mask = input.target_mask;
         let memory_mask = input.memory_mask;
 
-        let memory = self.encoder.forward(TransformerEncoderInput::from((source, source_mask)))?;
-        self.decoder
-            .forward(TransformerDecoderInput::from((target, &memory, target_mask, memory_mask)))
+        let memory = self
+            .encoder
+            .forward(TransformerEncoderInput::from((source, source_mask)))?;
+        self.decoder.forward(TransformerDecoderInput::from((
+            target,
+            &memory,
+            target_mask,
+            memory_mask,
+        )))
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <TransformerEncoder as Module<'a>>::training_mode(
-            &mut self.encoder,
-            mode,
-        );
-        <TransformerDecoder as Module<'a>>::training_mode(
-            &mut self.decoder,
-            mode,
-        );
+        <TransformerEncoder as Module<'a>>::training_mode(&mut self.encoder, mode);
+        <TransformerDecoder as Module<'a>>::training_mode(&mut self.decoder, mode);
     }
 }

@@ -286,7 +286,6 @@ impl<'a> Module<'a> for Glu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -313,7 +312,6 @@ impl<'a> Module<'a> for Sigmoid {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         sigmoid(x)
     }
 
@@ -341,7 +339,6 @@ impl<'a> Module<'a> for Mish {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         mish(x).map_err(Into::into)
     }
 
@@ -365,7 +362,6 @@ impl<'a> Module<'a> for Relu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         relu(x).map_err(Into::into)
     }
 
@@ -402,7 +398,6 @@ impl<'a> Module<'a> for LeakyRelu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -426,7 +421,6 @@ impl<'a> Module<'a> for Relu6 {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         relu6(x).map_err(Into::into)
     }
 
@@ -463,7 +457,6 @@ impl<'a> Module<'a> for Softmax {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         crate::ops::softmax(x, &[self.axis], None)
     }
 
@@ -487,7 +480,6 @@ impl<'a> Module<'a> for Softplus {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         softplus(x).map_err(Into::into)
     }
 
@@ -511,7 +503,6 @@ impl<'a> Module<'a> for Softsign {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         softsign(x).map_err(Into::into)
     }
 
@@ -549,7 +540,6 @@ impl<'a> Module<'a> for Celu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -573,7 +563,6 @@ impl<'a> Module<'a> for Silu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         silu(x).map_err(Into::into)
     }
 
@@ -610,7 +599,6 @@ impl<'a> Module<'a> for LogSoftmax {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -634,7 +622,6 @@ impl<'a> Module<'a> for LogSigmoid {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -698,7 +685,6 @@ impl<'a> Module<'a> for Prelu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -744,7 +730,6 @@ impl<'a> Module<'a> for Gelu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -766,7 +751,6 @@ impl<'a> Module<'a> for Tanh {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         crate::ops::tanh(x)
     }
 
@@ -790,7 +774,6 @@ impl<'a> Module<'a> for HardSwish {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         hard_swish(x).map_err(Into::into)
     }
 
@@ -830,7 +813,6 @@ impl<'a> Module<'a> for Step {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -854,7 +836,6 @@ impl<'a> Module<'a> for Selu {
     type Output = Array;
 
     fn forward(&mut self, x: Self::Input) -> Result<Array> {
-        
         selu(x).map_err(Into::into)
     }
 

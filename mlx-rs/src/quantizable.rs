@@ -15,10 +15,15 @@ pub trait QuantizableModule<'a>: Module<'a> {
 
 /// A wrapper for a quantizable module.
 #[derive(Debug, Clone)]
-pub enum Quantizable<M, Q> 
-where 
+pub enum Quantizable<M, Q>
+where
     for<'a> M: QuantizableModule<'a, Quantized = Q>,
-    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+    for<'q> Q: Module<
+        'q,
+        Input = <M as Module<'q>>::Input,
+        Output = <M as Module<'q>>::Output,
+        Error = <M as Module<'q>>::Error,
+    >,
 {
     /// The original module.
     Original(M),
@@ -28,9 +33,14 @@ where
 }
 
 impl<'a, M, Q> QuantizableModule<'a> for Quantizable<M, Q>
-where 
+where
     for<'m> M: QuantizableModule<'m, Quantized = Q>,
-    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+    for<'q> Q: Module<
+        'q,
+        Input = <M as Module<'q>>::Input,
+        Output = <M as Module<'q>>::Output,
+        Error = <M as Module<'q>>::Error,
+    >,
 {
     type Quantized = Self;
     type QuantizationError = <M as QuantizableModule<'a>>::QuantizationError;
@@ -44,9 +54,14 @@ where
 }
 
 impl<M, Q> Quantizable<M, Q>
-where 
+where
     for<'a> M: QuantizableModule<'a, Quantized = Q>,
-    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+    for<'q> Q: Module<
+        'q,
+        Input = <M as Module<'q>>::Input,
+        Output = <M as Module<'q>>::Output,
+        Error = <M as Module<'q>>::Error,
+    >,
 {
     /// Create a new [`Quantizable`] from the original module.
     pub fn new(module: M) -> Self {
@@ -54,9 +69,12 @@ where
     }
 
     /// Quantize the module with a custom quantization function.
-    /// 
+    ///
     /// This is useful if one would like to quantize with a custom group size or bit width.
-    pub fn quantize_with<'a>(self, op: impl FnOnce(M) -> Result<Q, <M as QuantizableModule<'a>>::QuantizationError>) -> Result<Quantizable<M, Q>, <M as QuantizableModule<'a>>::QuantizationError> {
+    pub fn quantize_with<'a>(
+        self,
+        op: impl FnOnce(M) -> Result<Q, <M as QuantizableModule<'a>>::QuantizationError>,
+    ) -> Result<Quantizable<M, Q>, <M as QuantizableModule<'a>>::QuantizationError> {
         match self {
             Quantizable::Original(m) => op(m).map(Quantizable::Quantized),
             Quantizable::Quantized(q) => Ok(Quantizable::Quantized(q)),
@@ -72,10 +90,15 @@ where
     }
 }
 
-impl<M, Q> ModuleParameters for Quantizable<M, Q> 
-where 
+impl<M, Q> ModuleParameters for Quantizable<M, Q>
+where
     for<'m> M: QuantizableModule<'m, Quantized = Q>,
-    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+    for<'q> Q: Module<
+        'q,
+        Input = <M as Module<'q>>::Input,
+        Output = <M as Module<'q>>::Output,
+        Error = <M as Module<'q>>::Error,
+    >,
 {
     fn parameters(&self) -> crate::module::ModuleParamRef<'_> {
         match self {
@@ -127,10 +150,15 @@ where
     }
 }
 
-impl<'a, M, Q> Module<'a> for Quantizable<M, Q> 
-where 
+impl<'a, M, Q> Module<'a> for Quantizable<M, Q>
+where
     for<'m> M: QuantizableModule<'m, Quantized = Q>,
-    for<'q> Q: Module<'q, Input = <M as Module<'q>>::Input, Output = <M as Module<'q>>::Output, Error = <M as Module<'q>>::Error>,
+    for<'q> Q: Module<
+        'q,
+        Input = <M as Module<'q>>::Input,
+        Output = <M as Module<'q>>::Output,
+        Error = <M as Module<'q>>::Error,
+    >,
 {
     type Input = <M as Module<'a>>::Input;
 
@@ -155,7 +183,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{nn::{Embedding, Linear}, quantizable::QuantizableModule};
+    use crate::{
+        nn::{Embedding, Linear},
+        quantizable::QuantizableModule,
+    };
 
     use super::Quantizable;
 

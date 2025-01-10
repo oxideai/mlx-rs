@@ -9,11 +9,7 @@ use mlx_macros::ModuleParameters;
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
 pub trait SequentialModuleItem: UnaryModule + std::fmt::Debug {}
 
-impl<T> SequentialModuleItem for T
-where
-    T: UnaryModule + std::fmt::Debug,
-{
-}
+impl<T> SequentialModuleItem for T where T: UnaryModule + std::fmt::Debug {}
 
 /// A sequential layer.
 ///
@@ -31,8 +27,7 @@ impl<'a> Module<'a> for Sequential {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
-        
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let mut x = Cow::Borrowed(x);
 
         for layer in &mut self.layers {

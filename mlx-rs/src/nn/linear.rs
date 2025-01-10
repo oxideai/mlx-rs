@@ -85,7 +85,7 @@ impl<'a> Module<'a> for Linear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         match &self.bias.value {
             Some(bias) => crate::ops::addmm(bias, x, self.weight.value.t(), None, None),
             None => crate::ops::matmul(x, self.weight.value.t()),
@@ -98,7 +98,7 @@ impl<'a> Module<'a> for Linear {
 impl QuantizableModule<'_> for Linear {
     type Quantized = QuantizedLinear;
     type QuantizationError = Exception;
-    
+
     fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError> {
         QuantizedLinear::try_from_linear(self, None, None)
     }
@@ -181,7 +181,7 @@ impl<'a> Module<'a> for Bilinear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         let shape = self.weights.shape();
         let (out, in2, in1) = (shape[0], shape[1], shape[2]);
         let x_shape = &x.shape()[..x.shape().len() - 1];

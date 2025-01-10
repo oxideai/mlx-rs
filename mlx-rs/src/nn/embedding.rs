@@ -51,9 +51,13 @@ impl QuantizableModule<'_> for Embedding {
     type Quantized = QuantizedEmbedding;
 
     type QuantizationError = Exception;
-
-    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError> {
-        QuantizedEmbedding::try_from_embedding(self, None, None)
+    
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        QuantizedEmbedding::try_from_embedding(self, group_size, bits)
     }
 }
 

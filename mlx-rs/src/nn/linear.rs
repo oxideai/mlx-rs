@@ -98,10 +98,15 @@ impl<'a> Module<'a> for Linear {
 impl QuantizableModule<'_> for Linear {
     type Quantized = QuantizedLinear;
     type QuantizationError = Exception;
-
-    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError> {
-        QuantizedLinear::try_from_linear(self, None, None)
+    
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        QuantizedLinear::try_from_linear(self, group_size, bits)
     }
+
 }
 
 /// Builder for [`Bilinear`] module

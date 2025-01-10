@@ -4,13 +4,32 @@ use crate::module::{Module, ModuleParameters};
 
 /// Marker trait for a quantizable module.z
 pub trait QuantizableModule<'a>: Module<'a> {
+    /// The default group size for quantization.
+    const DEFAULT_GROUP_SIZE: i32 = 64;
+
+    /// The default number of bits for quantization.
+    const DEFAULT_BITS: i32 = 4;
+
     /// The quantized version of the module.
     type Quantized: Module<'a, Input = Self::Input, Output = Self::Output, Error = Self::Error>;
     /// The error associated with quantization.
     type QuantizationError: std::error::Error;
 
-    /// Convert the module into a quantized version.
-    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError>;
+    /// Quantize the module with the specified group size and number of bits.
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError>;
+
+    /// Quantize the module with the [`QuantizableModule::DEFAULT_GROUP_SIZE`]
+    /// and [`QuantizableModule::DEFAULT_BITS`].
+    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError> 
+    where 
+        Self: Sized,
+    {
+        Self::quantize_with_group_size_and_bits(self, Self::DEFAULT_GROUP_SIZE, Self::DEFAULT_BITS)
+    }
 }
 
 /// A wrapper for a quantizable module.
@@ -44,13 +63,21 @@ where
 {
     type Quantized = Self;
     type QuantizationError = <M as QuantizableModule<'a>>::QuantizationError;
-
-    fn quantize(self) -> Result<Self, Self::QuantizationError> {
+    
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self, Self::QuantizationError> {
         match self {
-            Quantizable::Original(m) => m.quantize().map(Quantizable::Quantized),
+            Quantizable::Original(m) => {
+                let quantized = m.quantize_with_group_size_and_bits(group_size, bits)?;
+                Ok(Quantizable::Quantized(quantized))
+            }
             Quantizable::Quantized(q) => Ok(Quantizable::Quantized(q)),
         }
     }
+
 }
 
 impl<M, Q> Quantizable<M, Q>

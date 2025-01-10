@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    error::Exception, nested::{NestedHashMap, NestedValue}, Array
+    nested::{NestedHashMap, NestedValue}, Array
 };
 
 /// Type alias for owned module parameters.

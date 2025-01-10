@@ -114,7 +114,7 @@ impl<'a> Module<'a> for RotaryPositionalEncoding {
     type Output = Array;
 
     fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
-        let RopeInput { x, offset } = input.into();
+        let RopeInput { x, offset } = input;
         let shape = x.shape();
         let x = x.reshape(&[-1, x.dim(-2), x.dim(-1)])?;
         let x = crate::fast::rope(
@@ -393,7 +393,7 @@ impl<'a> Module<'a> for Alibi {
             attention_scores,
             offset,
             mask,
-        } = input.into();
+        } = input;
 
         let key = AlibiKey {
             q_seq_len: attention_scores.dim(-2) + offset,

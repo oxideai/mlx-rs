@@ -9,7 +9,6 @@ use crate::{
     random::uniform,
     Array,
 };
-use libc::group;
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
@@ -238,8 +237,8 @@ fn build_quantized_linear_inner(
     };
 
     let mut ql = QuantizedLinear {
-        group_size: group_size,
-        bits: bits,
+        group_size,
+        bits,
         scales: Param::new(scales),
         biases: Param::new(biases),
         inner,

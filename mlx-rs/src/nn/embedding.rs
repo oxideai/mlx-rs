@@ -47,7 +47,7 @@ impl Embedding {
     }
 }
 
-impl<'a> QuantizableModule<'a> for Embedding {
+impl QuantizableModule<'_> for Embedding {
     type Quantized = QuantizedEmbedding;
 
     type QuantizationError = Exception;

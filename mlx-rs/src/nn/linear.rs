@@ -8,7 +8,7 @@ use crate::{
     module::{Module, Param},
 };
 
-use super::{QuantizedLinear, QuantizedLinearBuilder};
+use super::QuantizedLinear;
 
 /// Builder for [`Linear`] module
 #[derive(Debug, Clone, Builder)]
@@ -95,7 +95,7 @@ impl<'a> Module<'a> for Linear {
     fn training_mode(&mut self, _: bool) {}
 }
 
-impl<'a> QuantizableModule<'a> for Linear {
+impl QuantizableModule<'_> for Linear {
     type Quantized = QuantizedLinear;
     type QuantizationError = Exception;
     

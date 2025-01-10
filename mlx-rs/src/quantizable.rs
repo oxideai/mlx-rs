@@ -1,6 +1,6 @@
 //! Traits for quantization
 
-use crate::{error::Exception, module::{Module, ModuleParameters}};
+use crate::module::{Module, ModuleParameters};
 
 /// Marker trait for a quantizable module.z
 pub trait QuantizableModule<'a>: Module<'a> {

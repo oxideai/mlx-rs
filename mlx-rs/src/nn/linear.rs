@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use crate::{error::Exception, quantizable::QuantizableModule, Array};
+use crate::{error::Exception, quantizable::Quantizable, Array};
 use mlx_internal_macros::{Buildable, Builder};
 
 use crate::{
@@ -95,10 +95,10 @@ impl<'a> Module<'a> for Linear {
     fn training_mode(&mut self, _: bool) {}
 }
 
-impl QuantizableModule<'_> for Linear {
+impl Quantizable for Linear {
     type Quantized = QuantizedLinear;
     type QuantizationError = Exception;
-    
+
     fn quantize_with_group_size_and_bits(
         self,
         group_size: i32,
@@ -106,7 +106,6 @@ impl QuantizableModule<'_> for Linear {
     ) -> Result<Self::Quantized, Self::QuantizationError> {
         QuantizedLinear::try_from_linear(self, group_size, bits)
     }
-
 }
 
 /// Builder for [`Bilinear`] module

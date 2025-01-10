@@ -1,6 +1,8 @@
 use darling::FromDeriveInput;
 use syn::{DataStruct, DeriveInput, Generics, Ident};
 
+use crate::util::filter_fields_with_attr;
+
 #[derive(Debug, Clone, FromDeriveInput)]
 #[darling(attributes(module))]
 struct ModuleProperties {
@@ -30,26 +32,13 @@ fn expand_module_parameters_for_struct(
     data: &DataStruct,
     root: Option<syn::Path>,
 ) -> Result<proc_macro2::TokenStream, syn::Error> {
-    let fields = match &data.fields {
-        syn::Fields::Named(fields) => {
-            // filter out fields with #[param]
-            fields
-                .named
-                .iter()
-                .filter(|field| field.attrs.iter().any(|attr| attr.path().is_ident("param")))
-                .collect()
-        }
-        syn::Fields::Unit => vec![],
-        syn::Fields::Unnamed(_) => {
-            return Err(syn::Error::new_spanned(
-                ident,
-                "ModuleParameters cannot be derived for structs with unnamed fields",
-            ))
-        }
-    };
+    let fields = filter_fields_with_attr(&data.fields, "param")?;
 
     Ok(impl_module_parameters_for_struct(
-        ident, generics, fields, root,
+        ident,
+        generics,
+        fields.filtered,
+        root,
     ))
 }
 

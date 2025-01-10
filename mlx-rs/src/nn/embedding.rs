@@ -4,7 +4,7 @@ use crate::error::Exception;
 use crate::module::Module;
 use crate::module::Param;
 use crate::prelude::IndexOp;
-use crate::quantizable::QuantizableModule;
+use crate::quantizable::Quantizable;
 use crate::Array;
 use mlx_macros::ModuleParameters;
 
@@ -47,11 +47,11 @@ impl Embedding {
     }
 }
 
-impl QuantizableModule<'_> for Embedding {
+impl Quantizable for Embedding {
     type Quantized = QuantizedEmbedding;
 
     type QuantizationError = Exception;
-    
+
     fn quantize_with_group_size_and_bits(
         self,
         group_size: i32,

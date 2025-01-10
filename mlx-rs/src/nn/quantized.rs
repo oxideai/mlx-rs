@@ -163,12 +163,11 @@ impl TryFrom<Embedding> for QuantizedEmbedding {
     }
 }
 
-impl<'a> Module<'a> for QuantizedEmbedding {
-    type Input = &'a Array;
+impl Module<&Array> for QuantizedEmbedding {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let s = x.shape();
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
@@ -336,12 +335,11 @@ impl TryFrom<Linear> for QuantizedLinear {
     }
 }
 
-impl<'a> Module<'a> for QuantizedLinear {
-    type Input = &'a Array;
+impl Module<&Array> for QuantizedLinear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = quantized_matmul(
             x,
             &self.inner.weight,

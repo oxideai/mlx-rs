@@ -106,15 +106,16 @@ impl<'a> From<(&'a Array, i32)> for RopeInput<'a> {
     }
 }
 
-impl<'a> Module<'a> for RotaryPositionalEncoding {
-    type Input = RopeInput<'a>;
-
+impl<'a, Input> Module<Input> for RotaryPositionalEncoding
+where
+    Input: Into<RopeInput<'a>>,
+{
     type Error = Exception;
 
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
-        let RopeInput { x, offset } = input;
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
+        let RopeInput { x, offset } = input.into();
         let shape = x.shape();
         let x = x.reshape(&[-1, x.dim(-2), x.dim(-1)])?;
         let x = crate::fast::rope(
@@ -228,12 +229,11 @@ fn build_sinpe(builder: SinpeBuilder) -> Result<SinusoidalPositionalEncoding, Ex
     })
 }
 
-impl<'a> Module<'a> for Sinpe {
-    type Input = &'a Array;
+impl Module<&Array> for Sinpe {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Self::Output, Self::Error> {
         let mut y = x
             .expand_dims(&[-1])
             .and_then(|x| x.multiply(&self.sigmas))?;
@@ -383,17 +383,19 @@ impl<'a> From<(&'a Array, i32, Option<&'a Array>)> for AlibiInput<'a> {
     }
 }
 
-impl<'a> Module<'a> for Alibi {
-    type Input = AlibiInput<'a>;
+impl<'a, Input> Module<Input> for Alibi
+where
+    Input: Into<AlibiInput<'a>>,
+{
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let AlibiInput {
             attention_scores,
             offset,
             mask,
-        } = input;
+        } = input.into();
 
         let key = AlibiKey {
             q_seq_len: attention_scores.dim(-2) + offset,
@@ -417,12 +419,7 @@ impl<'a> Module<'a> for Alibi {
 #[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
-    use crate::{
-        module::Module,
-        nn::{AlibiInput, RopeInput},
-        random::uniform,
-        Dtype,
-    };
+    use crate::{module::Module, nn::AlibiInput, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use crate::nn::Rope;
@@ -447,8 +444,7 @@ mod tests {
         );
 
         let mut rope = Rope::new(8);
-        let input = RopeInput::from(&a);
-        let result = rope.forward(input).unwrap();
+        let result = rope.forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(

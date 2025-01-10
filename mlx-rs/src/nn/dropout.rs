@@ -59,12 +59,11 @@ impl Dropout {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<'a> for Dropout {
-    type Input = &'a Array;
+impl Module<&Array> for Dropout {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         if self.one_minus_p == 1.0 || !self.training {
             return Ok(x.clone());
         }
@@ -144,12 +143,11 @@ impl Dropout2d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<'a> for Dropout2d {
-    type Input = &'a Array;
+impl Module<&Array> for Dropout2d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 3 && ndim != 4 {
@@ -241,12 +239,11 @@ impl Dropout3d {
     pub const DEFAULT_TRAINING: bool = true;
 }
 
-impl<'a> Module<'a> for Dropout3d {
-    type Input = &'a Array;
+impl Module<&Array> for Dropout3d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();
 
         if ndim != 4 && ndim != 5 {

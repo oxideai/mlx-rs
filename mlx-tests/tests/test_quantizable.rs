@@ -13,14 +13,12 @@ struct QuantizableExample {
     pub ql: MaybeQuantized<Linear>,
 }
 
-impl<'a> Module<'a> for QuantizableExample {
-    type Input = &'a Array;
-
+impl Module<&Array> for QuantizableExample {
     type Output = Array;
 
     type Error = Exception;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Self::Output, Self::Error> {
         self.ql.forward(x)
     }
 

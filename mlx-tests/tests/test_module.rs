@@ -14,12 +14,11 @@ impl M {
     }
 }
 
-impl<'a> Module<'a> for M {
-    type Input = &'a Array;
+impl Module<&Array> for M {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         self.linear.forward(x)
     }
 

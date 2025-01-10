@@ -101,13 +101,8 @@ where
 
 impl<M> ModuleParameters for MaybeQuantized<M>
 where
-    for<'m> M: Quantizable + Module<'m>,
-    for<'q> M::Quantized: Module<
-        'q,
-        Input = <M as Module<'q>>::Input,
-        Output = <M as Module<'q>>::Output,
-        Error = <M as Module<'q>>::Error,
-    >,
+    M: Quantizable + ModuleParameters,
+    M::Quantized: ModuleParameters,
 {
     fn parameters(&self) -> crate::module::ModuleParamRef<'_> {
         match self {
@@ -159,23 +154,17 @@ where
     }
 }
 
-impl<'a, M> Module<'a> for MaybeQuantized<M>
+impl<M, Input> Module<Input> for MaybeQuantized<M>
 where
-    for<'m> M: Quantizable + Module<'m>,
-    for<'q> M::Quantized: Module<
-        'q,
-        Input = <M as Module<'q>>::Input,
-        Output = <M as Module<'q>>::Output,
-        Error = <M as Module<'q>>::Error,
-    >,
+    M: Quantizable + Module<Input>,
+    M::Quantized:
+        Module<Input, Output = <M as Module<Input>>::Output, Error = <M as Module<Input>>::Error>,
 {
-    type Input = <M as Module<'a>>::Input;
+    type Output = <M as Module<Input>>::Output;
 
-    type Output = <M as Module<'a>>::Output;
+    type Error = <M as Module<Input>>::Error;
 
-    type Error = <M as Module<'a>>::Error;
-
-    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, x: Input) -> Result<Self::Output, Self::Error> {
         match self {
             MaybeQuantized::Original(m) => m.forward(x),
             MaybeQuantized::Quantized(q) => q.forward(x),
@@ -190,32 +179,29 @@ where
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{
-//         nn::{Embedding, Linear},
-//         quantizable::QuantizableModule,
-//     };
+#[cfg(test)]
+mod tests {
+    use crate::nn::{Embedding, Linear};
 
-//     use super::MaybeQuantized;
+    use super::*;
 
-//     #[test]
-//     fn test_quantizable_linear() {
-//         let linear = Linear::new(64, 64).unwrap();
-//         let mut qlinear = MaybeQuantized::new(linear);
-//         assert!(!qlinear.is_quantized());
+    #[test]
+    fn test_quantizable_linear() {
+        let linear = Linear::new(64, 64).unwrap();
+        let mut qlinear = MaybeQuantized::new(linear);
+        assert!(!qlinear.is_quantized());
 
-//         qlinear = qlinear.quantize().unwrap();
-//         assert!(qlinear.is_quantized());
-//     }
+        qlinear = qlinear.quantize().unwrap();
+        assert!(qlinear.is_quantized());
+    }
 
-//     #[test]
-//     fn test_quantizable_embedding() {
-//         let embedding = Embedding::new(64, 64).unwrap();
-//         let mut qembedding = MaybeQuantized::new(embedding);
-//         assert!(!qembedding.is_quantized());
+    #[test]
+    fn test_quantizable_embedding() {
+        let embedding = Embedding::new(64, 64).unwrap();
+        let mut qembedding = MaybeQuantized::new(embedding);
+        assert!(!qembedding.is_quantized());
 
-//         qembedding = qembedding.quantize().unwrap();
-//         assert!(qembedding.is_quantized());
-//     }
-// }
+        qembedding = qembedding.quantize().unwrap();
+        assert!(qembedding.is_quantized());
+    }
+}

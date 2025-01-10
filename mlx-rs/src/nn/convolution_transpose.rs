@@ -108,12 +108,11 @@ impl ConvTranspose1d {
     pub const DEFAULT_STRIDE: i32 = 1;
 }
 
-impl<'a> Module<'a> for ConvTranspose1d {
-    type Input = &'a Array;
+impl Module<&Array> for ConvTranspose1d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose1d(
             x,
             self.weight.as_ref(),
@@ -235,12 +234,11 @@ impl ConvTranspose2d {
     pub const DEFAULT_STRIDE: SingleOrPair<i32> = SingleOrPair::Pair(1, 1);
 }
 
-impl<'a> Module<'a> for ConvTranspose2d {
-    type Input = &'a Array;
+impl Module<&Array> for ConvTranspose2d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose2d(
             x,
             self.weight.as_ref(),
@@ -364,12 +362,11 @@ impl ConvTranspose3d {
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
 }
 
-impl<'a> Module<'a> for ConvTranspose3d {
-    type Input = &'a Array;
+impl Module<&Array> for ConvTranspose3d {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose3d(
             x,
             self.weight.as_ref(),

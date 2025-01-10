@@ -12,12 +12,11 @@ pub struct Mlp {
     pub layers: Sequential,
 }
 
-impl<'a> Module<'a> for Mlp {
-    type Input = &'a Array;
+impl Module<&Array> for Mlp {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
+    fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         self.layers.forward(x)
     }
 

@@ -196,12 +196,15 @@ impl<'a> From<(&'a Array, Option<&'a Array>)> for RnnInput<'a> {
     }
 }
 
-impl<'a> Module<'a> for Rnn {
-    type Input = RnnInput<'a>;
+impl<'a, Input> Module<Input> for Rnn
+where
+    Input: Into<RnnInput<'a>>,
+{
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
+    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+        let input = input.into();
         self.step(input.x, input.hidden)
     }
 
@@ -355,12 +358,15 @@ pub type GruInput<'a> = RnnInput<'a>;
 /// Type alias for the builder of the input of the GRU module.
 pub type GruInputBuilder<'a> = RnnInputBuilder<'a>;
 
-impl<'a> Module<'a> for Gru {
-    type Input = GruInput<'a>;
+impl<'a, Input> Module<Input> for Gru
+where
+    Input: Into<GruInput<'a>>,
+{
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> {
+    fn forward(&mut self, input: Input) -> Result<Array, Exception> {
+        let input = input.into();
         self.step(input.x, input.hidden)
     }
 
@@ -550,12 +556,15 @@ impl Lstm {
     }
 }
 
-impl<'a> Module<'a> for Lstm {
-    type Input = LstmInput<'a>;
+impl<'a, Input> Module<Input> for Lstm
+where
+    Input: Into<LstmInput<'a>>,
+{
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> {
+    fn forward(&mut self, input: Input) -> Result<(Array, Array), Exception> {
+        let input = input.into();
         self.step(input.x, input.hidden, input.cell)
     }
 

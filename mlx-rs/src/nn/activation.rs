@@ -280,12 +280,11 @@ impl Glu {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<'a> for Glu {
-    type Input = &'a Array;
+impl Module<&Array> for Glu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         glu(x, self.axis).map_err(Into::into)
     }
 
@@ -306,12 +305,11 @@ impl<'a> Module<'a> for Glu {
 #[module(root = crate)]
 pub struct Sigmoid;
 
-impl<'a> Module<'a> for Sigmoid {
-    type Input = &'a Array;
+impl Module<&Array> for Sigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         sigmoid(x)
     }
 
@@ -333,12 +331,11 @@ impl<'a> Module<'a> for Sigmoid {
 #[module(root = crate)]
 pub struct Mish;
 
-impl<'a> Module<'a> for Mish {
-    type Input = &'a Array;
+impl Module<&Array> for Mish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         mish(x).map_err(Into::into)
     }
 
@@ -356,12 +353,11 @@ impl<'a> Module<'a> for Mish {
 #[module(root = crate)]
 pub struct Relu;
 
-impl<'a> Module<'a> for Relu {
-    type Input = &'a Array;
+impl Module<&Array> for Relu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu(x).map_err(Into::into)
     }
 
@@ -392,12 +388,11 @@ impl LeakyRelu {
     pub const DEFAULT_NEG_SLOPE: f32 = 0.01;
 }
 
-impl<'a> Module<'a> for LeakyRelu {
-    type Input = &'a Array;
+impl Module<&Array> for LeakyRelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         leaky_relu(x, self.neg_slope).map_err(Into::into)
     }
 
@@ -415,12 +410,11 @@ impl<'a> Module<'a> for LeakyRelu {
 #[module(root = crate)]
 pub struct Relu6;
 
-impl<'a> Module<'a> for Relu6 {
-    type Input = &'a Array;
+impl Module<&Array> for Relu6 {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         relu6(x).map_err(Into::into)
     }
 
@@ -451,12 +445,11 @@ impl Softmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<'a> for Softmax {
-    type Input = &'a Array;
+impl Module<&Array> for Softmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         crate::ops::softmax(x, &[self.axis], None)
     }
 
@@ -474,12 +467,11 @@ impl<'a> Module<'a> for Softmax {
 #[module(root = crate)]
 pub struct Softplus;
 
-impl<'a> Module<'a> for Softplus {
-    type Input = &'a Array;
+impl Module<&Array> for Softplus {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softplus(x).map_err(Into::into)
     }
 
@@ -497,12 +489,11 @@ impl<'a> Module<'a> for Softplus {
 #[module(root = crate)]
 pub struct Softsign;
 
-impl<'a> Module<'a> for Softsign {
-    type Input = &'a Array;
+impl Module<&Array> for Softsign {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         softsign(x).map_err(Into::into)
     }
 
@@ -534,12 +525,11 @@ impl Celu {
     pub const DEFAULT_ALPHA: f32 = 1.0;
 }
 
-impl<'a> Module<'a> for Celu {
-    type Input = &'a Array;
+impl Module<&Array> for Celu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         celu(x, self.alpha).map_err(Into::into)
     }
 
@@ -557,12 +547,11 @@ impl<'a> Module<'a> for Celu {
 #[module(root = crate)]
 pub struct Silu;
 
-impl<'a> Module<'a> for Silu {
-    type Input = &'a Array;
+impl Module<&Array> for Silu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         silu(x).map_err(Into::into)
     }
 
@@ -593,12 +582,11 @@ impl LogSoftmax {
     pub const DEFAULT_AXIS: i32 = -1;
 }
 
-impl<'a> Module<'a> for LogSoftmax {
-    type Input = &'a Array;
+impl Module<&Array> for LogSoftmax {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_softmax(x, self.axis).map_err(Into::into)
     }
 
@@ -616,12 +604,11 @@ impl<'a> Module<'a> for LogSoftmax {
 #[module(root = crate)]
 pub struct LogSigmoid;
 
-impl<'a> Module<'a> for LogSigmoid {
-    type Input = &'a Array;
+impl Module<&Array> for LogSigmoid {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         log_sigmoid(x).map_err(Into::into)
     }
 
@@ -679,12 +666,11 @@ impl Prelu {
     pub const DEFAULT_VALUE: f32 = 0.25;
 }
 
-impl<'a> Module<'a> for Prelu {
-    type Input = &'a Array;
+impl Module<&Array> for Prelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         prelu(x, &self.weight).map_err(Into::into)
     }
 
@@ -724,12 +710,11 @@ generate_builder! {
     }
 }
 
-impl<'a> Module<'a> for Gelu {
-    type Input = &'a Array;
+impl Module<&Array> for Gelu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         match self.approximate {
             GeluApprox::None => gelu(x).map_err(Into::into),
             GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
@@ -745,12 +730,11 @@ impl<'a> Module<'a> for Gelu {
 #[module(root = crate)]
 pub struct Tanh;
 
-impl<'a> Module<'a> for Tanh {
-    type Input = &'a Array;
+impl Module<&Array> for Tanh {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         crate::ops::tanh(x)
     }
 
@@ -768,12 +752,11 @@ impl<'a> Module<'a> for Tanh {
 #[module(root = crate)]
 pub struct HardSwish;
 
-impl<'a> Module<'a> for HardSwish {
-    type Input = &'a Array;
+impl Module<&Array> for HardSwish {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         hard_swish(x).map_err(Into::into)
     }
 
@@ -807,12 +790,11 @@ impl Step {
     pub const DEFAULT_THRESHOLD: f32 = 0.0;
 }
 
-impl<'a> Module<'a> for Step {
-    type Input = &'a Array;
+impl Module<&Array> for Step {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         step(x, self.threshold).map_err(Into::into)
     }
 
@@ -830,12 +812,11 @@ impl<'a> Module<'a> for Step {
 #[module(root = crate)]
 pub struct Selu;
 
-impl<'a> Module<'a> for Selu {
-    type Input = &'a Array;
+impl Module<&Array> for Selu {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: Self::Input) -> Result<Array> {
+    fn forward(&mut self, x: &Array) -> Result<Array> {
         selu(x).map_err(Into::into)
     }
 

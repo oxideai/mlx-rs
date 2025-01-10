@@ -99,7 +99,7 @@ impl<'a> Module<'a> for InstanceNorm {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
         let x = instance_norm(x, &reduction_axes, &self.eps)?;
@@ -194,7 +194,7 @@ impl<'a> Module<'a> for LayerNorm {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let weight = self.weight.as_ref();
         let bias = self.bias.as_ref();
         let eps = self.eps;
@@ -266,7 +266,7 @@ impl<'a> Module<'a> for RmsNorm {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let weight = self.weight.as_ref();
         let eps = self.eps;
         crate::fast::rms_norm(x, weight, eps)
@@ -419,7 +419,7 @@ impl<'a> Module<'a> for GroupNorm {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let x = if self.pytorch_compatible {
             self.pytorch_group_norm(x)?
         } else {
@@ -573,7 +573,7 @@ impl<'a> Module<'a> for BatchNorm {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let ndim = x.ndim();
         if !(2..=4).contains(&ndim) {
             return Err(Exception::custom(

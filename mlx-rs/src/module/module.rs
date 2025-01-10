@@ -34,7 +34,7 @@ pub trait Module<'a>: ModuleParameters + std::fmt::Debug {
     type Error: std::error::Error;
 
     /// Forward pass of the module.
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Self::Output, Self::Error>;
+    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -48,27 +48,9 @@ pub trait Module<'a>: ModuleParameters + std::fmt::Debug {
 ///
 /// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
 /// reference to the input.
-pub trait UnaryModule<Err = Exception>: ModuleParameters {
-    /// Forward pass of the unary module. This is NOT intended to be called directly outside
-    /// the `Sequential` module or on `dyn Activation` trait objects. Use [`Module::forward`]
-    /// whenever possible.
-    fn forward_unary(&mut self, x: &Array) -> Result<Array, Err>;
+pub trait UnaryModule: for<'a> Module<'a, Input = &'a Array, Output = Array> {}
 
-    /// Set whether the module is in training mode. This is NOT intended to be called directly
-    /// outside the `Sequential` module or on `dyn Activation` trait objects. Use
-    /// [`Module::training_mode`] whenever possible.
-    fn training_mode_unary(&mut self, mode: bool);
-}
-
-impl<M, Err> UnaryModule<Err> for M where for<'a> M: Module<'a, Input = &'a Array, Output = Array, Error = Err> {
-    fn forward_unary(&mut self, x: &Array) -> Result<Array, Err> {
-        Module::forward(self, x)
-    }
-
-    fn training_mode_unary(&mut self, mode: bool) {
-        Module::training_mode(self, mode);
-    }
-}
+impl<T> UnaryModule for T where T: for<'a> Module<'a, Input = &'a Array, Output = Array> {}
 
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {

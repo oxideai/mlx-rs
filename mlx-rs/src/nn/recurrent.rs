@@ -9,7 +9,7 @@ use crate::{
     random::uniform,
     Array, Stream,
 };
-use mlx_internal_macros::{Buildable, Builder};
+use mlx_internal_macros::{Buildable, Builder, generate_builder};
 use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
@@ -148,14 +148,19 @@ impl Rnn {
     }
 }
 
-/// Input for the RNN module.
-#[derive(Debug, Clone)]
-pub struct RnnInput<'a> {
-    /// Input tensor
-    pub x: &'a Array,
-
-    /// Hidden state
-    pub hidden: Option<&'a Array>,
+generate_builder! {
+    /// Input for the RNN module.
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct RnnInput<'a> {
+        /// Input tensor
+        pub x: &'a Array,
+    
+        /// Hidden state
+        #[builder(optional, default = None)]
+        pub hidden: Option<&'a Array>,
+    }
 }
 
 impl<'a> From<&'a Array> for RnnInput<'a> {
@@ -196,7 +201,7 @@ impl<'a> Module<'a> for Rnn {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Array, Exception> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> { 
         self.step(input.x, input.hidden)
     }
 
@@ -347,12 +352,15 @@ impl Gru {
 /// Type alias for the input of the GRU module.
 pub type GruInput<'a> = RnnInput<'a>;
 
+/// Type alias for the builder of the input of the GRU module.
+pub type GruInputBuilder<'a> = RnnInputBuilder<'a>;
+
 impl<'a> Module<'a> for Gru {
     type Input = GruInput<'a>;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Array, Exception> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Array, Exception> { 
         self.step(input.x, input.hidden)
     }
 
@@ -415,17 +423,23 @@ fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
     })
 }
 
-/// Input for the LSTM module.
-#[derive(Debug, Clone)]
-pub struct LstmInput<'a> {
-    /// Input tensor
-    pub x: &'a Array,
+generate_builder! {
+    /// Input for the LSTM module.
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct LstmInput<'a> {
+        /// Input tensor
+        pub x: &'a Array,
 
-    /// Hidden state
-    pub hidden: Option<&'a Array>,
+        /// Hidden state
+        #[builder(optional, default = None)]
+        pub hidden: Option<&'a Array>,
 
-    /// Cell state
-    pub cell: Option<&'a Array>,
+        /// Cell state
+        #[builder(optional, default = None)]
+        pub cell: Option<&'a Array>,
+    }
 }
 
 impl<'a> From<&'a Array> for LstmInput<'a> {
@@ -541,7 +555,7 @@ impl<'a> Module<'a> for Lstm {
     type Output = (Array, Array);
     type Error = Exception;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<(Array, Array), Exception> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<(Array, Array), Exception> { 
         self.step(input.x, input.hidden, input.cell)
     }
 
@@ -560,7 +574,7 @@ mod tests {
         let mut layer = Rnn::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
@@ -570,15 +584,15 @@ mod tests {
             .build()
             .unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(RnnInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -587,19 +601,19 @@ mod tests {
         let mut layer = Gru::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(GruInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let hidden = h_out.index((.., -1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(GruInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(GruInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(GruInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -608,7 +622,7 @@ mod tests {
         let mut layer = Lstm::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward(LstmInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
@@ -623,13 +637,13 @@ mod tests {
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward(LstmInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
         let cell = c_out.index((-1, ..));
-        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell)).unwrap();
+        let (h_out, c_out) = layer.forward(LstmInput::from((&inp, &hidden, &cell))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
     }

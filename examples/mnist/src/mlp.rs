@@ -17,8 +17,7 @@ impl<'a> Module<'a> for Mlp {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> {
-        let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         self.layers.forward(x)
     }
 

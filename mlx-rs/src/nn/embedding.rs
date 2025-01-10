@@ -4,8 +4,11 @@ use crate::error::Exception;
 use crate::module::Module;
 use crate::module::Param;
 use crate::prelude::IndexOp;
+use crate::quantizable::QuantizableModule;
 use crate::Array;
 use mlx_macros::ModuleParameters;
+
+use super::QuantizedEmbedding;
 
 /// Implements a simple lookup table that maps each input integer to a high-dimensional vector.
 ///
@@ -44,12 +47,22 @@ impl Embedding {
     }
 }
 
+impl<'a> QuantizableModule<'a> for Embedding {
+    type Quantized = QuantizedEmbedding;
+
+    type QuantizationError = Exception;
+
+    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError> {
+        QuantizedEmbedding::try_from_embedding(self, None, None)
+    }
+}
+
 impl<'a> Module<'a> for Embedding {
     type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         Ok(self.weight.index(x))
     }
 

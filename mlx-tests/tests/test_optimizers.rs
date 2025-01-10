@@ -40,8 +40,7 @@ impl<'a> Module<'a> for LinearFunctionModel {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> {
-        let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> {
         self.m.multiply(x)?.add(&self.b)
     }
 

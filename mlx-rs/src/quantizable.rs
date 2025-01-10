@@ -138,7 +138,7 @@ where
 
     type Error = <M as Module<'a>>::Error;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> {
         match self {
             Quantizable::Original(m) => m.forward(x),
             Quantizable::Quantized(q) => q.forward(x),
@@ -155,7 +155,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{nn::Linear, quantization::QuantizableModule};
+    use crate::{nn::{Embedding, Linear}, quantizable::QuantizableModule};
 
     use super::Quantizable;
 
@@ -167,5 +167,15 @@ mod tests {
 
         qlinear = qlinear.quantize().unwrap();
         assert!(qlinear.is_quantized());
+    }
+
+    #[test]
+    fn test_quantizable_embedding() {
+        let embedding = Embedding::new(64, 64).unwrap();
+        let mut qembedding = Quantizable::new(embedding);
+        assert!(!qembedding.is_quantized());
+
+        qembedding = qembedding.quantize().unwrap();
+        assert!(qembedding.is_quantized());
     }
 }

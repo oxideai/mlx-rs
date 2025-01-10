@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use crate::{error::Exception, quantization::QuantizableModule, Array};
+use crate::{error::Exception, quantizable::QuantizableModule, Array};
 use mlx_internal_macros::{Buildable, Builder};
 
 use crate::{
@@ -85,7 +85,7 @@ impl<'a> Module<'a> for Linear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         match &self.bias.value {
             Some(bias) => crate::ops::addmm(bias, x, self.weight.value.t(), None, None),
             None => crate::ops::matmul(x, self.weight.value.t()),
@@ -181,7 +181,7 @@ impl<'a> Module<'a> for Bilinear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let shape = self.weights.shape();
         let (out, in2, in1) = (shape[0], shape[1], shape[2]);
         let x_shape = &x.shape()[..x.shape().len() - 1];

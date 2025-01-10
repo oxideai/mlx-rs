@@ -113,7 +113,7 @@ impl<'a> Module<'a> for RotaryPositionalEncoding {
 
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let RopeInput { x, offset } = input.into();
         let shape = x.shape();
         let x = x.reshape(&[-1, x.dim(-2), x.dim(-1)])?;
@@ -233,7 +233,7 @@ impl<'a> Module<'a> for Sinpe {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> { 
         let mut y = x
             .expand_dims(&[-1])
             .and_then(|x| x.multiply(&self.sigmas))?;
@@ -388,7 +388,7 @@ impl<'a> Module<'a> for Alibi {
     type Output = Array;
     type Error = Exception;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let AlibiInput {
             attention_scores,
             offset,
@@ -417,7 +417,7 @@ impl<'a> Module<'a> for Alibi {
 #[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
-    use crate::{module::Module, random::uniform, Dtype};
+    use crate::{module::Module, nn::{AlibiInput, RopeInput}, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use crate::nn::Rope;
@@ -442,7 +442,8 @@ mod tests {
         );
 
         let mut rope = Rope::new(8);
-        let result = rope.forward(&a).unwrap();
+        let input = RopeInput::from(&a);
+        let result = rope.forward(input).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
@@ -499,12 +500,14 @@ mod tests {
         let mut alibi = crate::nn::Alibi;
         let shape = [1, 8, 20, 20];
         let x = uniform::<_, f32>(0, 1, &shape, None).unwrap();
-        let y = alibi.forward(&x).unwrap();
+        let input= AlibiInput::from(&x);
+        let y = alibi.forward(input).unwrap();
         assert_eq!(y.shape(), shape);
         assert_eq!(y.dtype(), Dtype::Float32);
 
         let x2 = x.as_dtype(Dtype::Float16).unwrap();
-        let y = alibi.forward(&x2).unwrap();
+        let input = AlibiInput::from(&x2);
+        let y = alibi.forward(input).unwrap();
         assert_eq!(y.dtype(), Dtype::Float16);
     }
 }

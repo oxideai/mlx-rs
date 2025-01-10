@@ -75,7 +75,7 @@ impl<'a> Module<'a> for Upsample {
     type Output = Array;
 
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Self::Output, Self::Error> { 
         let dimensions = x.ndim() - 2;
 
         if dimensions == 0 {

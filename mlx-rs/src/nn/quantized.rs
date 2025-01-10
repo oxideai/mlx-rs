@@ -73,26 +73,33 @@ impl QuantizedEmbeddingBuilder {
     pub fn build_with_weight(self, weight: Array) -> Result<QuantizedEmbedding, Exception> {
         let group_size = self.group_size;
         let bits = self.bits;
-
-        let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
-
-        let inner = Embedding {
-            weight: Param::new(quantized_weight),
-        };
-
-        let mut qe = QuantizedEmbedding {
-            group_size,
-            bits,
-            scales: Param::new(scales),
-            biases: Param::new(biases),
-            inner,
-        };
-
-        // Freeze all parameters
-        qe.freeze_parameters(true);
-
-        Ok(qe)
+        build_quantized_embedding_inner(weight, group_size, bits)
     }
+}
+
+fn build_quantized_embedding_inner(
+    weight: Array,
+    group_size: i32,
+    bits: i32,
+) -> Result<QuantizedEmbedding, Exception> {
+    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+
+    let inner = Embedding {
+        weight: Param::new(quantized_weight),
+    };
+
+    let mut qe = QuantizedEmbedding {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+
+    // Freeze all parameters
+    qe.freeze_parameters(true);
+
+    Ok(qe)
 }
 
 fn build_quantized_embedding(
@@ -115,6 +122,19 @@ impl QuantizedEmbedding {
     /// Default bits
     pub const DEFAULT_BITS: i32 = 4;
 
+    /// Convert an embedding layer to a quantized embedding layer.
+    /// 
+    /// # Params
+    /// 
+    /// - `embedding`: The embedding layer to convert.
+    /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_GROUP_SIZE`]
+    /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_BITS`]
+    pub fn try_from_embedding(embedding: Embedding, group_size: impl Into<Option<i32>>, bits: impl Into<Option<i32>>) -> Result<Self, Exception> {
+        let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
+        let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
+        build_quantized_embedding_inner(embedding.weight.value, group_size, bits)
+    }
+
     /// Call the embedding layer as a linear layer.
     ///
     /// Use this for example when input embedding and output projection
@@ -132,12 +152,20 @@ impl QuantizedEmbedding {
     }
 }
 
+impl TryFrom<Embedding> for QuantizedEmbedding {
+    type Error = Exception;
+
+    fn try_from(embedding: Embedding) -> Result<Self, Self::Error> {
+        Self::try_from_embedding(embedding, None, None)
+    }
+}
+
 impl<'a> Module<'a> for QuantizedEmbedding {
     type Input = &'a Array;
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let s = x.shape();
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
@@ -306,7 +334,7 @@ impl<'a> Module<'a> for QuantizedLinear {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
         let mut x = quantized_matmul(
             x,
             &self.inner.weight,

@@ -8,7 +8,7 @@ use crate::{
     Array,
 };
 use dyn_clone::DynClone;
-use mlx_internal_macros::{Buildable, Builder};
+use mlx_internal_macros::{Buildable, Builder, generate_builder};
 use mlx_macros::ModuleParameters;
 
 use crate::{
@@ -17,11 +17,11 @@ use crate::{
 };
 
 /// A marker trait for activation functions used in transformers.
-pub trait Activation: UnaryModule<Exception> + std::fmt::Debug + DynClone{
+pub trait Activation: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone{
 }
 
 impl<M> Activation for M where
-    M: UnaryModule<Exception> + std::fmt::Debug + DynClone,
+    M: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone,
 {
 }
 
@@ -135,21 +135,27 @@ impl MultiHeadAttention {
     pub const DEFAULT_BIAS: bool = false;
 }
 
-/// Input to the [`MultiHeadAttention`] module
-#[derive(Debug, Clone)]
-pub struct MultiHeadAttentionInput<'a> {
-    /// Queries
-    pub queries: &'a Array,
-
-    /// Keys
-    pub keys: &'a Array,
-
-    /// Values
-    pub values: &'a Array,
-
-    /// Mask
-    pub mask: Option<&'a Array>,
+generate_builder! {
+    /// Input to the [`MultiHeadAttention`] module
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct MultiHeadAttentionInput<'a> {
+        /// Queries
+        pub queries: &'a Array,
+    
+        /// Keys
+        pub keys: &'a Array,
+    
+        /// Values
+        pub values: &'a Array,
+    
+        /// Mask
+        #[builder(optional, default = None)]
+        pub mask: Option<&'a Array>,
+    }
 }
+
 
 impl<'a> From<(&'a Array, &'a Array, &'a Array)> for MultiHeadAttentionInput<'a> {
     fn from((queries, keys, values): (&'a Array, &'a Array, &'a Array)) -> Self {
@@ -194,7 +200,7 @@ impl<'a> Module<'a> for MultiHeadAttention {
     type Output = Array;
 
     #[allow(non_snake_case)]
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let queries = self.query_proj.forward(input.queries)?;
         let keys = self.key_proj.forward(input.keys)?;
         let values = self.value_proj.forward(input.values)?;
@@ -381,32 +387,34 @@ impl<'a> Module<'a> for TransformerEncoderLayer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let x = input.x;
         let mask = input.mask;
 
         if self.norm_first {
             let mut y = self.ln1.forward(x)?;
-            y = self.attention.forward((&y, &y, &y, mask))?;
+            let attention_input = MultiHeadAttentionInput::from((&y, &y, &y, mask));
+            y = self.attention.forward(attention_input)?;
             y = self.dropout1.forward(&y)?;
             let x = x.add(&y)?;
 
             y = self.ln2.forward(&x)?;
             y = self.linear1.forward(&y)?;
-            y = self.activation.forward_unary(&y)?;
+            y = self.activation.forward(&y)?;
             y = self.dropout2.forward(&y)?;
             y = self.linear2.forward(&y)?;
             y = x.add(&y)?;
 
             Ok(y)
         } else {
-            let mut y = self.attention.forward((x, x, x, mask))?;
+            let attention_input = MultiHeadAttentionInput::from((x, x, x, mask));
+            let mut y = self.attention.forward(attention_input)?;
             y = self.dropout1.forward(&y)?;
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
 
             y = self.linear1.forward(&x)?;
-            y = self.activation.forward_unary(&y)?;
+            y = self.activation.forward(&y)?;
             y = self.dropout2.forward(&y)?;
             y = self.linear2.forward(&y)?;
             y = x.add(&y)?;
@@ -427,7 +435,7 @@ impl<'a> Module<'a> for TransformerEncoderLayer {
         self.linear2.training_mode(mode);
         self.dropout1.training_mode(mode);
         self.dropout2.training_mode(mode);
-        self.activation.training_mode_unary(mode);
+        self.activation.training_mode(mode);
     }
 }
 
@@ -514,14 +522,15 @@ impl<'a> Module<'a> for TransformerEncoder {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let x = input.x;
         let mask = input.mask;
 
         let mut x = Cow::Borrowed(x);
 
         for l in &mut self.layers {
-            x = Cow::Owned(l.forward((&*x, mask))?);
+            let layer_input = TransformerEncoderInput::from((&*x, mask));
+            x = Cow::Owned(l.forward(layer_input)?);
         }
 
         self.ln.forward(&*x)
@@ -696,7 +705,7 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let x = input.x;
         let memory = input.memory;
         let x_mask = input.x_mask;
@@ -704,38 +713,38 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
 
         if self.norm_first {
             let mut y = self.ln1.forward(x)?;
-            y = self.self_attention.forward((&y, &y, &y, x_mask))?;
+            y = self.self_attention.forward(MultiHeadAttentionInput::from((&y, &y, &y, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let x = x.add(&y)?;
 
             y = self.ln2.forward(&x)?;
             y = self
                 .cross_attention
-                .forward((&y, memory, memory, memory_mask))?;
+                .forward(MultiHeadAttentionInput::from((&y, memory, memory, memory_mask)))?;
             y = self.dropout2.forward(&y)?;
             let x = x.add(&y)?;
 
             y = self.ln3.forward(&x)?;
             y = self.linear1.forward(&y)?;
-            y = self.activation.forward_unary(&y)?;
+            y = self.activation.forward(&y)?;
             y = self.dropout3.forward(&y)?;
             y = self.linear2.forward(&y)?;
             x.add(&y)
         } else {
-            let mut y = self.self_attention.forward((x, x, x, x_mask))?;
+            let mut y = self.self_attention.forward(MultiHeadAttentionInput::from((x, x, x, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
 
             y = self
                 .cross_attention
-                .forward((&y, memory, memory, memory_mask))?;
+                .forward(MultiHeadAttentionInput::from((&y, memory, memory, memory_mask)))?;
             y = self.dropout2.forward(&y)?;
             x = x.add(&y)?;
             x = self.ln2.forward(&x)?; // TODO: https://github.com/ml-explore/mlx/issues/1636
 
             y = self.linear1.forward(&x)?;
-            y = self.activation.forward_unary(&y)?;
+            y = self.activation.forward(&y)?;
             y = self.dropout3.forward(&y)?;
             y = self.linear2.forward(&y)?;
             y = x.add(&y)?;
@@ -760,7 +769,7 @@ impl<'a> Module<'a> for TransformerDecoderLayer {
         self.dropout1.training_mode(mode);
         self.dropout2.training_mode(mode);
         self.dropout3.training_mode(mode);
-        self.activation.training_mode_unary(mode);
+        self.activation.training_mode(mode);
     }
 }
 
@@ -848,7 +857,7 @@ impl<'a> Module<'a> for TransformerDecoder {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let x = input.x;
         let memory = input.memory;
         let x_mask = input.x_mask;
@@ -857,7 +866,8 @@ impl<'a> Module<'a> for TransformerDecoder {
         let mut x = Cow::Borrowed(x);
 
         for l in &mut self.layers {
-            x = Cow::Owned(l.forward((&*x, memory, x_mask, memory_mask))?);
+            let layer_input = TransformerDecoderInput::from((&*x, memory, x_mask, memory_mask));
+            x = Cow::Owned(l.forward(layer_input)?);
         }
 
         self.ln.forward(&*x)
@@ -1047,16 +1057,16 @@ impl<'a> Module<'a> for Transformer {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, input: impl Into<Self::Input>) -> Result<Self::Output, Self::Error> { let input = input.into();
+    fn forward(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> { 
         let source = input.source;
         let target = input.target;
         let source_mask = input.source_mask;
         let target_mask = input.target_mask;
         let memory_mask = input.memory_mask;
 
-        let memory = self.encoder.forward((source, source_mask))?;
+        let memory = self.encoder.forward(TransformerEncoderInput::from((source, source_mask)))?;
         self.decoder
-            .forward((target, &memory, target_mask, memory_mask))
+            .forward(TransformerDecoderInput::from((target, &memory, target_mask, memory_mask)))
     }
 
     fn training_mode(&mut self, mode: bool) {

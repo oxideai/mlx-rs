@@ -7,12 +7,11 @@ use mlx_macros::ModuleParameters;
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
-pub trait SequentialModuleItem<Err>: UnaryModule<Err> + std::fmt::Debug {}
+pub trait SequentialModuleItem: UnaryModule + std::fmt::Debug {}
 
-impl<T, Err> SequentialModuleItem<Err> for T
+impl<T> SequentialModuleItem for T
 where
-    T: UnaryModule<Err> + std::fmt::Debug,
-    Err: std::error::Error + 'static,
+    T: UnaryModule + std::fmt::Debug,
 {
 }
 
@@ -24,7 +23,7 @@ where
 pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
-    pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
+    pub layers: Vec<Box<dyn SequentialModuleItem<Error = Err>>>,
 }
 
 impl<'a> Module<'a> for Sequential {
@@ -32,12 +31,12 @@ impl<'a> Module<'a> for Sequential {
     type Error = Exception;
     type Output = Array;
 
-    fn forward(&mut self, x: impl Into<Self::Input>) -> Result<Array, Self::Error> { let x = x.into();
-        let x = x.into();
+    fn forward(&mut self, x: Self::Input) -> Result<Array, Self::Error> { 
+        
         let mut x = Cow::Borrowed(x);
 
         for layer in &mut self.layers {
-            x = Cow::Owned(layer.forward_unary(x.as_ref())?);
+            x = Cow::Owned(layer.forward(x.as_ref())?);
         }
 
         match x {
@@ -49,7 +48,7 @@ impl<'a> Module<'a> for Sequential {
     fn training_mode(&mut self, mode: bool) {
         self.layers
             .iter_mut()
-            .for_each(|layer| layer.training_mode_unary(mode));
+            .for_each(|layer| layer.training_mode(mode));
     }
 }
 
@@ -68,8 +67,7 @@ impl<Err> Sequential<Err> {
     /// Appends a layer to the sequential module.
     pub fn append<M>(mut self, layer: M) -> Self
     where
-        M: UnaryModule<Err> + std::fmt::Debug + 'static,
-        Err: std::error::Error + 'static,
+        M: UnaryModule<Error = Err> + std::fmt::Debug + 'static,
     {
         self.layers.push(Box::new(layer));
         self

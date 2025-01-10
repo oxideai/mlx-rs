@@ -5,11 +5,12 @@ use crate::{
     module::{Module, UnaryModule},
     ops::{matmul, softmax},
     prelude::Builder,
+    quantization::MaybeQuantized,
     Array,
 };
 use dyn_clone::DynClone;
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
-use mlx_macros::ModuleParameters;
+use mlx_macros::{ModuleParameters, Quantizable};
 
 use crate::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
@@ -94,36 +95,41 @@ fn build_multi_head_attention(
 
     Ok(MultiHeadAttention {
         num_heads,
-        query_proj,
-        key_proj,
-        value_proj,
-        output_proj,
+        query_proj: MaybeQuantized::new(query_proj),
+        key_proj: MaybeQuantized::new(key_proj),
+        value_proj: MaybeQuantized::new(value_proj),
+        output_proj: MaybeQuantized::new(output_proj),
     })
 }
 
 /// Implements the scaled dot product attention with multiple heads.
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 pub struct MultiHeadAttention {
     /// Number of attention heads
     pub num_heads: i32,
 
     /// Query projection layer
+    #[quantizable]
     #[param]
-    pub query_proj: Linear,
+    pub query_proj: MaybeQuantized<Linear>,
 
     /// Key projection layer
+    #[quantizable]
     #[param]
-    pub key_proj: Linear,
+    pub key_proj: MaybeQuantized<Linear>,
 
     /// Value projection layer
+    #[quantizable]
     #[param]
-    pub value_proj: Linear,
+    pub value_proj: MaybeQuantized<Linear>,
 
     /// Output projection layer
+    #[quantizable]
     #[param]
-    pub output_proj: Linear,
+    pub output_proj: MaybeQuantized<Linear>,
 }
 
 impl MultiHeadAttention {
@@ -303,8 +309,8 @@ fn build_transformer_encoder_layer(
         attention,
         ln1,
         ln2,
-        linear1,
-        linear2,
+        linear1: MaybeQuantized::new(linear1),
+        linear2: MaybeQuantized::new(linear2),
         dropout1,
         dropout2,
         activation,
@@ -313,8 +319,9 @@ fn build_transformer_encoder_layer(
 }
 
 /// Transformer encoder layer.
-#[derive(Debug, ModuleParameters, Buildable)]
+#[derive(Debug, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 struct TransformerEncoderLayer {
     /// Multi-head attention module
@@ -330,12 +337,14 @@ struct TransformerEncoderLayer {
     pub ln2: LayerNorm,
 
     /// First linear module
+    #[quantizable]
     #[param]
-    pub linear1: Linear,
+    pub linear1: MaybeQuantized<Linear>,
 
     /// Second linear module
+    #[quantizable]
     #[param]
-    pub linear2: Linear,
+    pub linear2: MaybeQuantized<Linear>,
 
     /// Dropout module for the first layer
     #[param]
@@ -507,10 +516,12 @@ fn build_transformer_encoder(
     Ok(TransformerEncoder { layers, ln })
 }
 
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 struct TransformerEncoder {
+    #[quantizable]
     #[param]
     pub layers: Vec<TransformerEncoderLayer>,
 
@@ -615,8 +626,8 @@ fn build_transformer_decoder_layer(
         ln1,
         ln2,
         ln3,
-        linear1,
-        linear2,
+        linear1: MaybeQuantized::new(linear1),
+        linear2: MaybeQuantized::new(linear2),
         dropout1,
         dropout2,
         dropout3,
@@ -625,8 +636,9 @@ fn build_transformer_decoder_layer(
     })
 }
 
-#[derive(Debug, ModuleParameters, Buildable)]
+#[derive(Debug, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 struct TransformerDecoderLayer {
     #[param]
@@ -644,11 +656,13 @@ struct TransformerDecoderLayer {
     #[param]
     pub ln3: LayerNorm,
 
+    #[quantizable]
     #[param]
-    pub linear1: Linear,
+    pub linear1: MaybeQuantized<Linear>,
 
+    #[quantizable]
     #[param]
-    pub linear2: Linear,
+    pub linear2: MaybeQuantized<Linear>,
 
     #[param]
     pub dropout1: Dropout,
@@ -862,10 +876,12 @@ fn build_transformer_decoder(
     Ok(TransformerDecoder { layers, ln })
 }
 
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 struct TransformerDecoder {
+    #[quantizable]
     #[param]
     pub layers: Vec<TransformerDecoderLayer>,
 
@@ -1004,15 +1020,18 @@ fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, Transfo
 /// processes the input sequence and the decoder generates the output sequence.
 /// The interaction between encoder and decoder happens through the attention
 /// mechanism.
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
 #[module(root = crate)]
+#[quantizable(root = crate)]
 #[buildable(root = crate)]
 pub struct Transformer {
     /// Encoder module
+    #[quantizable]
     #[param]
     encoder: TransformerEncoder, // TODO: visibility?
 
     /// Decoder module
+    #[quantizable]
     #[param]
     decoder: TransformerDecoder, // TODO: visibility?
 }

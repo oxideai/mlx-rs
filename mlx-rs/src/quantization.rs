@@ -33,6 +33,44 @@ pub trait Quantizable {
     }
 }
 
+impl<M> Quantizable for Vec<M>
+where
+    M: Quantizable,
+{
+    type Quantized = Vec<M::Quantized>;
+
+    type QuantizationError = M::QuantizationError;
+
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        self.into_iter()
+            .map(|m| m.quantize_with_group_size_and_bits(group_size, bits))
+            .collect()
+    }
+}
+
+impl<M> Quantizable for Box<M>
+where
+    M: Quantizable,
+{
+    type Quantized = Box<M::Quantized>;
+
+    type QuantizationError = M::QuantizationError;
+
+    fn quantize_with_group_size_and_bits(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        (*self)
+            .quantize_with_group_size_and_bits(group_size, bits)
+            .map(Box::new)
+    }
+}
+
 /// A wrapper for a quantizable module.
 #[derive(Debug, Clone)]
 pub enum MaybeQuantized<M>

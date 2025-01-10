@@ -4,7 +4,7 @@ use crate::error::Exception;
 use crate::module::Module;
 use crate::module::Param;
 use crate::prelude::IndexOp;
-use crate::quantizable::Quantizable;
+use crate::quantization::Quantizable;
 use crate::Array;
 use mlx_macros::ModuleParameters;
 

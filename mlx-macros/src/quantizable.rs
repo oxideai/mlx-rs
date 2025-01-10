@@ -69,7 +69,7 @@ fn impl_quantizable_module_for_struct(
     let token = quote::quote! {
         const _: () = {
             #extern_import
-            impl #impl_generics #root::quantizable::Quantizable for #ident #ty_generics #where_clause {
+            impl #impl_generics #root::quantization::Quantizable for #ident #ty_generics #where_clause {
                 type Quantized = Self; // Generating new struct is not supported yet
 
                 type QuantizationError = #root::error::Exception;
@@ -81,7 +81,7 @@ fn impl_quantizable_module_for_struct(
                 ) -> Result<Self::Quantized, Self::QuantizationError> {
                     Ok(Self {
                         #(
-                            #filtered_field_names: #root::quantizable::Quantizable
+                            #filtered_field_names: #root::quantization::Quantizable
                                 ::quantize_with_group_size_and_bits(self.#filtered_field_names, group_size, bits)?,
                         )*
                         #(

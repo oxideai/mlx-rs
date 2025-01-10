@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use crate::{error::Exception, quantizable::Quantizable, Array};
+use crate::{error::Exception, quantization::Quantizable, Array};
 use mlx_internal_macros::{Buildable, Builder};
 
 use crate::{

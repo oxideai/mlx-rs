@@ -3,7 +3,7 @@ use mlx_rs::{
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn::Linear,
-    quantizable::MaybeQuantized,
+    quantization::MaybeQuantized,
     Array,
 };
 

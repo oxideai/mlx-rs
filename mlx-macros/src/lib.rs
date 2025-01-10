@@ -52,7 +52,7 @@ pub fn derive_module_parameters(input: TokenStream) -> TokenStream {
 
 /// Derive the `Quantizable` trait for a struct. Mark a field with
 /// `#[quantizable]` attribute to include it in the quantization process.
-/// Only support `MaybeQuantized<M> where M: Quantizable` field.
+/// Only support types `M` that `M::Quantized = Self`
 ///
 /// See `mlx-rs/mlx-tests/tests/test_quantizable.rs` for example usage.
 ///

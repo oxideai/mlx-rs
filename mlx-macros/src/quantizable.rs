@@ -79,10 +79,10 @@ fn impl_quantizable_module_for_struct(
                     group_size: i32,
                     bits: i32,
                 ) -> Result<Self::Quantized, Self::QuantizationError> {
-                    use #root::quantizable::Quantizable;
                     Ok(Self {
                         #(
-                            #filtered_field_names: self.#filtered_field_names.quantize_with_group_size_and_bits(group_size, bits)?,
+                            #filtered_field_names: #root::quantizable::Quantizable
+                                ::quantize_with_group_size_and_bits(self.#filtered_field_names, group_size, bits)?,
                         )*
                         #(
                             #other_field_names: self.#other_field_names,

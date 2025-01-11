@@ -2,7 +2,7 @@
 
 use crate::module::{Module, ModuleParameters};
 
-/// Trait for quantization.
+/// Trait for quantization of modules.
 pub trait Quantizable {
     /// The default group size for quantization.
     const DEFAULT_GROUP_SIZE: i32 = 64;
@@ -25,7 +25,7 @@ pub trait Quantizable {
 }
 
 /// Quantize a module with the [`Quantizable::DEFAULT_GROUP_SIZE`] and [`Quantizable::DEFAULT_BITS`].
-pub fn quantize<M>(module: M) -> Result<M::Quantized, M::QuantizationError>
+pub fn quantize_module<M>(module: M) -> Result<M::Quantized, M::QuantizationError>
 where
     M: Quantizable,
 {
@@ -33,7 +33,7 @@ where
 }
 
 /// Quantize a module with specified group size and number of bits.
-pub fn quantize_with_group_size_and_bits<M>(
+pub fn quantize_module_with_group_size_and_bits<M>(
     module: M,
     group_size: i32,
     bits: i32,
@@ -76,9 +76,7 @@ where
         group_size: i32,
         bits: i32,
     ) -> Result<Self::Quantized, Self::QuantizationError> {
-        (*self)
-            .try_into_quantized(group_size, bits)
-            .map(Box::new)
+        (*self).try_into_quantized(group_size, bits).map(Box::new)
     }
 }
 
@@ -240,7 +238,7 @@ mod tests {
         let mut qlinear = MaybeQuantized::new(linear);
         assert!(!qlinear.is_quantized());
 
-        qlinear = quantize(qlinear).unwrap();
+        qlinear = quantize_module(qlinear).unwrap();
         assert!(qlinear.is_quantized());
     }
 
@@ -250,7 +248,7 @@ mod tests {
         let mut qembedding = MaybeQuantized::new(embedding);
         assert!(!qembedding.is_quantized());
 
-        qembedding = quantize(qembedding).unwrap();
+        qembedding = quantize_module(qembedding).unwrap();
         assert!(qembedding.is_quantized());
     }
 }

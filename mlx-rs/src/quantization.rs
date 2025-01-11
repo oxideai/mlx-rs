@@ -17,20 +17,31 @@ pub trait Quantizable {
     type QuantizationError;
 
     /// Quantize the module with the specified group size and number of bits.
-    fn quantize_with_group_size_and_bits(
+    fn try_into_quantized(
         self,
         group_size: i32,
         bits: i32,
     ) -> Result<Self::Quantized, Self::QuantizationError>;
+}
 
-    /// Quantize the module with the [`QuantizableModule::DEFAULT_GROUP_SIZE`]
-    /// and [`QuantizableModule::DEFAULT_BITS`].
-    fn quantize(self) -> Result<Self::Quantized, Self::QuantizationError>
-    where
-        Self: Sized,
-    {
-        Self::quantize_with_group_size_and_bits(self, Self::DEFAULT_GROUP_SIZE, Self::DEFAULT_BITS)
-    }
+/// Quantize a module with the [`Quantizable::DEFAULT_GROUP_SIZE`] and [`Quantizable::DEFAULT_BITS`].
+pub fn quantize<M>(module: M) -> Result<M::Quantized, M::QuantizationError>
+where
+    M: Quantizable,
+{
+    module.try_into_quantized(M::DEFAULT_GROUP_SIZE, M::DEFAULT_BITS)
+}
+
+/// Quantize a module with specified group size and number of bits.
+pub fn quantize_with_group_size_and_bits<M>(
+    module: M,
+    group_size: i32,
+    bits: i32,
+) -> Result<M::Quantized, M::QuantizationError>
+where
+    M: Quantizable,
+{
+    module.try_into_quantized(group_size, bits)
 }
 
 impl<M> Quantizable for Vec<M>
@@ -41,13 +52,13 @@ where
 
     type QuantizationError = M::QuantizationError;
 
-    fn quantize_with_group_size_and_bits(
+    fn try_into_quantized(
         self,
         group_size: i32,
         bits: i32,
     ) -> Result<Self::Quantized, Self::QuantizationError> {
         self.into_iter()
-            .map(|m| m.quantize_with_group_size_and_bits(group_size, bits))
+            .map(|m| m.try_into_quantized(group_size, bits))
             .collect()
     }
 }
@@ -60,13 +71,13 @@ where
 
     type QuantizationError = M::QuantizationError;
 
-    fn quantize_with_group_size_and_bits(
+    fn try_into_quantized(
         self,
         group_size: i32,
         bits: i32,
     ) -> Result<Self::Quantized, Self::QuantizationError> {
         (*self)
-            .quantize_with_group_size_and_bits(group_size, bits)
+            .try_into_quantized(group_size, bits)
             .map(Box::new)
     }
 }
@@ -91,14 +102,14 @@ where
     type Quantized = Self;
     type QuantizationError = <M as Quantizable>::QuantizationError;
 
-    fn quantize_with_group_size_and_bits(
+    fn try_into_quantized(
         self,
         group_size: i32,
         bits: i32,
     ) -> Result<Self, Self::QuantizationError> {
         match self {
             MaybeQuantized::Original(m) => {
-                let quantized = m.quantize_with_group_size_and_bits(group_size, bits)?;
+                let quantized = m.try_into_quantized(group_size, bits)?;
                 Ok(MaybeQuantized::Quantized(quantized))
             }
             MaybeQuantized::Quantized(q) => Ok(MaybeQuantized::Quantized(q)),
@@ -229,7 +240,7 @@ mod tests {
         let mut qlinear = MaybeQuantized::new(linear);
         assert!(!qlinear.is_quantized());
 
-        qlinear = qlinear.quantize().unwrap();
+        qlinear = quantize(qlinear).unwrap();
         assert!(qlinear.is_quantized());
     }
 
@@ -239,7 +250,7 @@ mod tests {
         let mut qembedding = MaybeQuantized::new(embedding);
         assert!(!qembedding.is_quantized());
 
-        qembedding = qembedding.quantize().unwrap();
+        qembedding = quantize(qembedding).unwrap();
         assert!(qembedding.is_quantized());
     }
 }

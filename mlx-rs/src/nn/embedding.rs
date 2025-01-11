@@ -52,7 +52,7 @@ impl Quantizable for Embedding {
 
     type QuantizationError = Exception;
 
-    fn quantize_with_group_size_and_bits(
+    fn try_into_quantized(
         self,
         group_size: i32,
         bits: i32,

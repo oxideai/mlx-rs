@@ -1,14 +1,7 @@
 [package]
 name = "mlx-internal-macros"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-repository.workspace = true
-keywords.workspace = true
-categories.workspace = true
-license.workspace = true
-documentation.workspace = true
-description = "Internal procedural macros for mlx-rs"
+version = "0.1.0"
+edition = "2021"
 
 [lib]
 proc-macro = true

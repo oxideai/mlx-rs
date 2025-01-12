@@ -1,14 +1,14 @@
 [package]
 name = "mlx-sys"
-version = "0.1.0" # mlx-sys version should follow that of mlx-c
-authors.workspace = true
-edition.workspace = true
+version = "0.1.0"
+authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
+edition = "2021"
 
 description = "Low-level interface and binding generation for the mlx library"
-repository.workspace = true
-keywords.workspace = true
-categories.workspace = true
-license.workspace = true
+repository = "https://github.com/oxideai/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT OR Apache-2.0"
 readme = "README.md"
 
 [package.metadata.docs.rs]

@@ -1,14 +1,11 @@
-use mlx_nn::{
-    losses::{CrossEntropyBuilder, LossReduction},
-    module_value_and_grad,
-};
 use mlx_rs::{
     builder::Builder,
     error::Exception,
+    losses::{CrossEntropyBuilder, LossReduction},
     module::{Module, ModuleParameters},
     ops::{eq, indexing::argmax, mean},
     optimizers::{Optimizer, Sgd},
-    transforms::eval_params,
+    transforms::{eval_params, module_value_and_grad},
     Array,
 };
 
@@ -53,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let now = std::time::Instant::now();
         for (x, y) in &loader {
             let (_loss, grad) = loss_and_grad_fn(&mut model, (x, y))?;
-            optimizer.apply(&mut model, grad).unwrap();
+            optimizer.update(&mut model, grad).unwrap();
             eval_params(model.parameters())?;
         }
 

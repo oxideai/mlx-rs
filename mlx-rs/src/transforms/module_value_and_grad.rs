@@ -1,6 +1,6 @@
-use mlx_rs::module::{update_flattened_parameters, ModuleParameters};
-use mlx_rs::transforms::keyed_value_and_grad;
-use mlx_rs::{error::Exception, Array};
+use crate::module::{update_flattened_parameters, ModuleParameters};
+use crate::transforms::keyed_value_and_grad;
+use crate::{error::Exception, Array};
 
 use crate::module::FlattenedModuleParam;
 
@@ -147,10 +147,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::module::Module;
-    use mlx_rs::{array, error::Exception, Array};
+    use crate::module::Module;
+    use crate::{array, error::Exception, Array};
 
-    use crate::Linear;
+    use crate::nn::Linear;
 
     use super::*;
 
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_module_value_and_grad() {
         let mut model = Linear::new(2, 2).unwrap();
-        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
+        let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Vec<Array> {
             vec![model.forward(x).unwrap().sum(None, None).unwrap()]
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn test_module_value_and_grad_with_unary_output() {
         let mut model = Linear::new(2, 2).unwrap();
-        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
+        let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Array {
             model.forward(x).unwrap().sum(None, None).unwrap()
@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn test_fallible_module_value_and_grad() {
         let mut model = Linear::new(2, 2).unwrap();
-        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
+        let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Result<Vec<Array>, Exception> {
             Ok(vec![model.forward(x)?.sum(None, None)?])
@@ -210,8 +210,8 @@ mod tests {
     #[test]
     fn test_module_value_and_grad_with_two_args() {
         let mut model = Linear::new(2, 2).unwrap();
-        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
-        let y = mlx_rs::ops::ones::<f32>(x.shape()).unwrap();
+        let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
+        let y = crate::ops::ones::<f32>(x.shape()).unwrap();
 
         let loss =
             |model: &mut Linear, (x, y): (&Array, &Array)| -> Result<Vec<Array>, Exception> {
@@ -235,7 +235,7 @@ mod tests {
     fn test_module_value_and_grad_with_error() {
         let mut model = Linear::new(2, 2).unwrap();
         // Use a shape that is not compatible with the model
-        let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[3, 3], None).unwrap();
+        let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[3, 3], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Result<Vec<Array>, Exception> {
             Ok(vec![model.forward(x)?.sum(None, None)?])

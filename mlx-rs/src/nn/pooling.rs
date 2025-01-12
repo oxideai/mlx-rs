@@ -1,8 +1,8 @@
 use std::iter::{once, zip};
 
+use crate::{error::Exception, module::Module, ops::as_strided, Array};
 use dyn_clone::DynClone;
 use mlx_macros::ModuleParameters;
-use mlx_rs::{error::Exception, module::Module, ops::as_strided, Array};
 
 use crate::utils::SingleOrPair;
 
@@ -24,6 +24,7 @@ impl<T> Pooling for T where T: Fn(&Array, &[i32]) -> Result<Array, Exception> + 
 /// - [`AvgPool1d`]
 /// - [`AvgPool2d`]
 #[derive(ModuleParameters)]
+#[module(root = crate)]
 pub struct Pool {
     /// Size of the pooling window
     kernel_size: Vec<i32>,
@@ -76,8 +77,8 @@ impl Pool {
 }
 
 impl Module<&Array> for Pool {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let shape = x.shape();
@@ -126,7 +127,7 @@ impl Module<&Array> for Pool {
 
 macro_rules! impl_module {
     ($name:ident) => {
-        impl<'a> Module<&'a Array> for $name {
+        impl Module<&Array> for $name {
             type Output = Array;
             type Error = Exception;
 
@@ -150,7 +151,9 @@ macro_rules! impl_module {
 /// docs](https://ml-explore.github.io/mlx/build/html/python/nn/_autosummary/mlx.nn.MaxPool1d.html)
 /// for more information.
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct MaxPool1d {
+    #[param]
     inner: Pool,
 }
 
@@ -179,7 +182,9 @@ impl_module!(MaxPool1d);
 /// docs](https://ml-explore.github.io/mlx/build/html/python/nn/_autosummary/mlx.nn.MaxPool2d.html)
 /// for more information.
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct MaxPool2d {
+    #[param]
     inner: Pool,
 }
 
@@ -216,7 +221,9 @@ impl_module!(MaxPool2d);
 /// docs](https://ml-explore.github.io/mlx/build/html/python/nn/_autosummary/mlx.nn.AvgPool2d.html)
 /// for more information.
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct AvgPool1d {
+    #[param]
     inner: Pool,
 }
 
@@ -245,7 +252,9 @@ impl_module!(AvgPool1d);
 /// docs](https://ml-explore.github.io/mlx/build/html/python/nn/_autosummary/mlx.nn.AvgPool2d.html)
 /// for more information.
 #[derive(Debug, Clone, ModuleParameters)]
+#[module(root = crate)]
 pub struct AvgPool2d {
+    #[param]
     inner: Pool,
 }
 
@@ -275,9 +284,16 @@ impl_module!(AvgPool2d);
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{array, assert_array_eq};
+    use crate::{array, assert_array_eq, module::ModuleParameters};
 
     use super::*;
+
+    #[test]
+    fn test_pool_has_no_learnable_params() {
+        let pool = MaxPool1d::new(2, 1);
+        let params = pool.parameters().flatten();
+        assert_eq!(params.len(), 0);
+    }
 
     #[test]
     fn test_max_pooling_1d_stride_1() {

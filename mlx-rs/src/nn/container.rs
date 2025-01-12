@@ -1,29 +1,25 @@
 use std::borrow::Cow;
 
+use crate::module::{Module, UnaryModule};
+use crate::{error::Exception, Array};
 use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, UnaryModule};
-use mlx_rs::{error::Exception, Array};
 
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
-pub trait SequentialModuleItem<Err>: UnaryModule<Error = Err> + std::fmt::Debug {}
+pub trait SequentialModuleItem: UnaryModule + std::fmt::Debug {}
 
-impl<T, Err> SequentialModuleItem<Err> for T
-where
-    T: UnaryModule<Error = Err> + std::fmt::Debug,
-    Err: std::error::Error + 'static,
-{
-}
+impl<T> SequentialModuleItem for T where T: UnaryModule + std::fmt::Debug {}
 
 /// A sequential layer.
 ///
 /// It calls each layer in sequence.
 #[derive(Debug, ModuleParameters)]
+#[module(root = crate)]
 pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
-    pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
+    pub layers: Vec<Box<dyn SequentialModuleItem<Error = Err>>>,
 }
 
 impl Module<&Array> for Sequential {
@@ -66,7 +62,6 @@ impl<Err> Sequential<Err> {
     pub fn append<M>(mut self, layer: M) -> Self
     where
         M: UnaryModule<Error = Err> + std::fmt::Debug + 'static,
-        Err: std::error::Error + 'static,
     {
         self.layers.push(Box::new(layer));
         self
@@ -75,20 +70,18 @@ impl<Err> Sequential<Err> {
 
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{
+    use crate::{
         array,
         module::ModuleParameters,
+        nn::Linear,
         ops::zeros,
         optimizers::{Optimizer, Sgd},
         prelude::Builder,
         random::uniform,
-        transforms::{eval, eval_params},
+        transforms::{eval, eval_params, module_value_and_grad},
     };
 
-    use crate::{
-        losses::{LossReduction, MseLossBuilder},
-        module_value_and_grad, Linear,
-    };
+    use crate::losses::{LossReduction, MseLossBuilder};
 
     use super::*;
 
@@ -181,7 +174,7 @@ mod tests {
 
             // Compute the loss and gradients and update the model
             let (loss, grads) = lg(&mut model, (&x, &y)).unwrap();
-            optimizer.apply(&mut model, grads).unwrap();
+            optimizer.update(&mut model, grads).unwrap();
 
             eval_params(model.parameters()).unwrap();
 

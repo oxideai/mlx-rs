@@ -174,7 +174,7 @@ mod tests {
 
             // Compute the loss and gradients and update the model
             let (loss, grads) = lg(&mut model, (&x, &y)).unwrap();
-            optimizer.apply(&mut model, grads).unwrap();
+            optimizer.update(&mut model, grads).unwrap();
 
             eval_params(model.parameters()).unwrap();
 

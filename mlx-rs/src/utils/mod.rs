@@ -4,6 +4,7 @@ use guard::Guarded;
 use mlx_sys::mlx_vector_array;
 
 use crate::error::set_closure_error;
+use crate::module::ModuleParameters;
 use crate::{complex64, error::Exception, Array, FromNested};
 use std::collections::HashMap;
 use std::{marker::PhantomData, rc::Rc};
@@ -359,6 +360,68 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
     }
 
     map.get_mut(key).unwrap()
+}
+
+/// Helper trait for compiling a function that takes a Module and/or an Optimizer.
+/// The implementation must ensure consistent ordering of the returned states.
+///
+/// This is automatically implemented for all types that implement ModuleParameters.
+pub trait Updatable {
+    /// Returns a list of references to the updatable states.
+    ///
+    /// The order of the states should be consistent across calls and should be the same as the
+    /// order of the states returned by [`Updatable::updatable_states_mut`].
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array>;
+
+    /// Returns a list of mutable references to the updatable states.
+    ///
+    /// The order of the states should be consistent across calls and should be the same as the
+    /// order of the states returned by [`Updatable::updatable_states`].
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array>;
+}
+
+impl<T> Updatable for T
+where
+    T: ModuleParameters,
+{
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        // TODO: should we change the parameter map to a BTreeMap because it is sorted?
+        self.parameters()
+            .flatten()
+            .into_iter()
+            .sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, v)| v)
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.parameters_mut()
+            .flatten()
+            .into_iter()
+            .sorted_by(|a, b| a.0.cmp(&b.0))
+            .map(|(_, v)| v)
+    }
+}
+
+impl<T1, T2> Updatable for (T1, T2)
+where
+    T1: Updatable,
+    T2: Updatable,
+{
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        let (a, b) = self;
+        let params = a.updatable_states();
+        params.into_iter().chain(b.updatable_states())
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        let (a, b) = self;
+        let params = a.updatable_states_mut();
+        params.into_iter().chain(b.updatable_states_mut())
+    }
 }
 
 /// Helper type to represent either a single value or a pair of values.

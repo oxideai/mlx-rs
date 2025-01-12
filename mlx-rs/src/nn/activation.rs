@@ -834,7 +834,7 @@ fn compiled_leaky_relu(x: &Array, neg_slope: &Array) -> Result<Array> {
         let a = multiply(neg_slope_, x_)?;
         maximum(&a, x_)
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled((x, neg_slope))
 }
 
@@ -843,21 +843,21 @@ fn compiled_elu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         which(&x_.gt(&array!(0.0))?, x_, alpha_ * (exp(x_)? - array!(1.0)))
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled((x, alpha))
 }
 
 #[inline]
 fn compiled_relu6(x: &Array) -> Result<Array> {
     let f = |x_: &Array| minimum(maximum(x_, &array!(0.0))?, &array!(6.0));
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
 #[inline]
 fn compiled_softsign(x: &Array) -> Result<Array> {
     let f = |x_: &Array| x_.divide(array!(1.0) + abs(x_)?);
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
@@ -867,21 +867,21 @@ fn compiled_celu(x: &Array, alpha: &Array) -> Result<Array> {
         maximum(x_, &array!(0.0))?
             .add(alpha_.multiply(exp(&(minimum(x_, &array!(0.0))? / alpha_))? - array!(1.0))?)
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled((x, alpha))
 }
 
 #[inline]
 fn compiled_silu(x: &Array) -> Result<Array> {
     let f = |x_: &Array| x_.multiply(sigmoid(x_)?);
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
 #[inline]
 fn compiled_log_sigmoid(x: &Array) -> Result<Array> {
     let f = |x_: &Array| Ok(-softplus(&(-x_))?);
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
@@ -892,7 +892,7 @@ fn compiled_gelu(x: &Array) -> Result<Array> {
         x_.multiply(array!(1) + erf(&(x_ / array!(2f32.sqrt())))?)?
             .divide(array!(2.0))
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
@@ -909,21 +909,21 @@ fn compiled_gelu_approximate(x: &Array) -> Result<Array> {
             )?)?,
         )
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
 #[inline]
 fn compiled_gelu_fast_approximate(x: &Array) -> Result<Array> {
     let f = |x_: &Array| x_.multiply(sigmoid(&(array!(1.773) * x_))?);
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
 #[inline]
 fn compiled_selu(x: &Array) -> Result<Array> {
     let f = |x_: &Array| elu(x_, 1.67326)?.multiply(array!(1.0507));
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
@@ -932,7 +932,7 @@ fn compiled_prelu(x: &Array, alpha: &Array) -> Result<Array> {
     let f = |(x_, alpha_): (&Array, &Array)| {
         maximum(&array!(0.0), x_)?.add(alpha_ * minimum(&array!(0.0), x_)?)
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled((x, alpha))
 }
 
@@ -941,7 +941,7 @@ fn compiled_mish(x: &Array) -> Result<Array> {
     use crate::ops::tanh;
 
     let f = |x_: &Array| x_.multiply(tanh(&softplus(x_)?)?);
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 
@@ -952,7 +952,7 @@ fn compiled_hard_swish(x: &Array) -> Result<Array> {
         x_.multiply(minimum(&max_x_plus_3, &array!(6.0))?)?
             .divide(&array!(6.0))
     };
-    let mut compiled = compile(f, Some(true), None, None);
+    let mut compiled = compile(f, true);
     compiled(x)
 }
 

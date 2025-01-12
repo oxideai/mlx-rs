@@ -40,4 +40,12 @@ smallvec = "1"
 strum = { version = "0.26", features = ["derive"] }
 libc = "0.2"
 parking_lot = "0.12"
-tempfile = "3.13.0"
+tempfile = "3"
+itertools = "0.14"
+syn = { version = "2", features = ["full"] }
+quote = "1"
+darling = "0.20"
+proc-macro2 = "1"
+bindgen = "0.70"
+cmake = "0.1"
+cc = "1"

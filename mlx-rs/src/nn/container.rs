@@ -7,14 +7,9 @@ use mlx_macros::ModuleParameters;
 /// Marker trait for items that can be used in a `Sequential` module.
 ///
 /// It is implemented for all types that implement [`Module`] and [`std::fmt::Debug`].
-pub trait SequentialModuleItem<Err>: UnaryModule<Error = Err> + std::fmt::Debug {}
+pub trait SequentialModuleItem: UnaryModule + std::fmt::Debug {}
 
-impl<T, Err> SequentialModuleItem<Err> for T
-where
-    T: UnaryModule<Error = Err> + std::fmt::Debug,
-    Err: std::error::Error + 'static,
-{
-}
+impl<T> SequentialModuleItem for T where T: UnaryModule + std::fmt::Debug {}
 
 /// A sequential layer.
 ///
@@ -24,7 +19,7 @@ where
 pub struct Sequential<Err = Exception> {
     /// The layers to be called in sequence.
     #[param]
-    pub layers: Vec<Box<dyn SequentialModuleItem<Err>>>,
+    pub layers: Vec<Box<dyn SequentialModuleItem<Error = Err>>>,
 }
 
 impl Module<&Array> for Sequential {
@@ -67,7 +62,6 @@ impl<Err> Sequential<Err> {
     pub fn append<M>(mut self, layer: M) -> Self
     where
         M: UnaryModule<Error = Err> + std::fmt::Debug + 'static,
-        Err: std::error::Error + 'static,
     {
         self.layers.push(Box::new(layer));
         self

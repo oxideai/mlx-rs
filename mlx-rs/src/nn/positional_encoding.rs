@@ -231,7 +231,6 @@ fn build_sinpe(builder: SinpeBuilder) -> Result<SinusoidalPositionalEncoding, Ex
 
 impl Module<&Array> for Sinpe {
     type Error = Exception;
-
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Self::Output, Self::Error> {
@@ -384,15 +383,14 @@ impl<'a> From<(&'a Array, i32, Option<&'a Array>)> for AlibiInput<'a> {
     }
 }
 
-impl<'a, T> Module<T> for Alibi
+impl<'a, Input> Module<Input> for Alibi
 where
-    T: Into<AlibiInput<'a>>,
+    Input: Into<AlibiInput<'a>>,
 {
+    type Output = Array;
     type Error = Exception;
 
-    type Output = Array;
-
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let AlibiInput {
             attention_scores,
             offset,
@@ -421,7 +419,7 @@ where
 #[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
-    use crate::{module::Module, random::uniform, Dtype};
+    use crate::{module::Module, nn::AlibiInput, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use crate::nn::Rope;
@@ -503,12 +501,14 @@ mod tests {
         let mut alibi = crate::nn::Alibi;
         let shape = [1, 8, 20, 20];
         let x = uniform::<_, f32>(0, 1, &shape, None).unwrap();
-        let y = alibi.forward(&x).unwrap();
+        let input = AlibiInput::from(&x);
+        let y = alibi.forward(input).unwrap();
         assert_eq!(y.shape(), shape);
         assert_eq!(y.dtype(), Dtype::Float32);
 
         let x2 = x.as_dtype(Dtype::Float16).unwrap();
-        let y = alibi.forward(&x2).unwrap();
+        let input = AlibiInput::from(&x2);
+        let y = alibi.forward(input).unwrap();
         assert_eq!(y.dtype(), Dtype::Float16);
     }
 }

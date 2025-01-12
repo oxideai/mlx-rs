@@ -95,8 +95,8 @@ impl InstanceNorm {
 }
 
 impl Module<&Array> for InstanceNorm {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let reduction_axes = (1..x.ndim() as i32 - 1).collect::<Vec<_>>();
@@ -189,8 +189,8 @@ impl LayerNorm {
 }
 
 impl Module<&Array> for LayerNorm {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
@@ -260,8 +260,8 @@ impl RmsNorm {
 }
 
 impl Module<&Array> for RmsNorm {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let weight = self.weight.as_ref();
@@ -412,8 +412,8 @@ impl GroupNorm {
 }
 
 impl Module<&Array> for GroupNorm {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let x = if self.pytorch_compatible {
@@ -565,8 +565,8 @@ impl BatchNorm {
 }
 
 impl Module<&Array> for BatchNorm {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let ndim = x.ndim();

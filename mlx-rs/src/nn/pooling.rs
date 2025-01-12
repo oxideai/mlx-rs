@@ -77,8 +77,8 @@ impl Pool {
 }
 
 impl Module<&Array> for Pool {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let shape = x.shape();
@@ -127,7 +127,7 @@ impl Module<&Array> for Pool {
 
 macro_rules! impl_module {
     ($name:ident) => {
-        impl<'a> Module<&'a Array> for $name {
+        impl Module<&Array> for $name {
             type Output = Array;
             type Error = Exception;
 

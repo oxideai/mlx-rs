@@ -4,8 +4,11 @@ use crate::error::Exception;
 use crate::module::Module;
 use crate::module::Param;
 use crate::prelude::IndexOp;
+use crate::quantization::Quantizable;
 use crate::Array;
 use mlx_macros::ModuleParameters;
+
+use super::QuantizedEmbedding;
 
 /// Implements a simple lookup table that maps each input integer to a high-dimensional vector.
 ///
@@ -41,6 +44,20 @@ impl Embedding {
     /// weights are tied.
     pub fn as_linear(&self, x: &Array) -> Result<Array, Exception> {
         crate::ops::matmul(x, self.weight.value.t())
+    }
+}
+
+impl Quantizable for Embedding {
+    type Quantized = QuantizedEmbedding;
+
+    type QuantizationError = Exception;
+
+    fn try_into_quantized(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        QuantizedEmbedding::try_from_embedding(self, group_size, bits)
     }
 }
 

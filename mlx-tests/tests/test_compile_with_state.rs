@@ -3,14 +3,13 @@
 mod common;
 
 use common::LinearFunctionModel;
-use mlx_nn::module_value_and_grad;
 use mlx_rs::{
     assert_array_eq,
     error::Exception,
     module::{Module, ModuleParameters},
     ops::ones,
     optimizers::{Optimizer, Sgd},
-    transforms::{compile::compile_with_state, eval_params},
+    transforms::{compile::compile_with_state, eval_params, module_value_and_grad},
     Array,
 };
 

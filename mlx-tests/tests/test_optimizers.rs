@@ -4,7 +4,6 @@
 use mlx_rs::{
     array, assert_array_eq,
     builder::Builder,
-    error::Exception,
     losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
@@ -18,6 +17,10 @@ use mlx_rs::{
     transforms::{eval, eval_params},
     Array, Dtype,
 };
+
+mod common;
+
+use common::*;
 
 /* -------------------------------------------------------------------------- */
 /*                              Convergence tests                             */

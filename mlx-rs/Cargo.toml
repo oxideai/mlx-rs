@@ -32,9 +32,9 @@ paste.workspace = true
 smallvec.workspace = true
 strum.workspace = true
 thiserror.workspace = true
-itertools = "0.13"
 libc.workspace = true
 parking_lot.workspace = true
+itertools.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true

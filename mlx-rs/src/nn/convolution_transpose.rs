@@ -1,18 +1,19 @@
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::module::{Module, Param};
-use mlx_rs::{
+use crate::module::{Module, Param};
+use crate::{
     error::Exception,
     ops::{conv_transpose1d, conv_transpose2d, conv_transpose3d, zeros},
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 use crate::utils::{SingleOrPair, SingleOrTriple};
 
 /// Builder for the `ConvTranspose1d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv_transpose_1d,
     err = Exception,
 )]
@@ -78,6 +79,8 @@ fn build_conv_transpose_1d(builder: ConvTranspose1dBuilder) -> Result<ConvTransp
 /// - `L` is the sequence length
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct ConvTranspose1d {
     /// The weight of the convolution layer.
     #[param]
@@ -106,8 +109,8 @@ impl ConvTranspose1d {
 }
 
 impl Module<&Array> for ConvTranspose1d {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose1d(
@@ -130,6 +133,7 @@ impl Module<&Array> for ConvTranspose1d {
 /// Builder for the `ConvTranspose2d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv_transpose_2d,
     err = Exception,
 )]
@@ -201,6 +205,8 @@ fn build_conv_transpose_2d(builder: ConvTranspose2dBuilder) -> Result<ConvTransp
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct ConvTranspose2d {
     /// The weight of the convolution layer.
     #[param]
@@ -229,8 +235,8 @@ impl ConvTranspose2d {
 }
 
 impl Module<&Array> for ConvTranspose2d {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose2d(
@@ -253,6 +259,7 @@ impl Module<&Array> for ConvTranspose2d {
 /// Builder for the `ConvTranspose3d` module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_conv_transpose_3d,
     err = Exception,
 )]
@@ -326,6 +333,8 @@ fn build_conv_transpose_3d(builder: ConvTranspose3dBuilder) -> Result<ConvTransp
 /// - `W` is the input image width
 /// - `C` is the number of input channels
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct ConvTranspose3d {
     /// The weight of the convolution layer.
     #[param]
@@ -354,8 +363,8 @@ impl ConvTranspose3d {
 }
 
 impl Module<&Array> for ConvTranspose3d {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut y = conv_transpose3d(

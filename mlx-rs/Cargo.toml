@@ -22,23 +22,24 @@ targets = [
 mlx-sys.workspace = true
 mlx-internal-macros.workspace = true
 mlx-macros.workspace = true
-half = "2"
-mach-sys = "0.5"
-num-complex = "0.4"
-num_enum = "0.7"
-num-traits = "0.2"
-paste = "1"
-smallvec = "1"
-strum = { version = "0.26", features = ["derive"] }
+dyn-clone.workspace = true
+half.workspace = true
+mach-sys.workspace = true
+num-complex.workspace = true
+num_enum.workspace = true
+num-traits.workspace = true
+paste.workspace = true
+smallvec.workspace = true
+strum.workspace = true
 thiserror.workspace = true
-libc = "0.2"
-parking_lot = "0.12"
 itertools = "0.13"
+libc.workspace = true
+parking_lot.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
 float_eq.workspace = true
-tempfile = "3.13.0"
+tempfile.workspace = true
 
 [features]
 default = ["accelerate", "metal", "io"]

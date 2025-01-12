@@ -1,8 +1,6 @@
 use std::iter::once;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, ModuleParameters, Param},
@@ -11,12 +9,15 @@ use mlx_rs::{
     random::uniform,
     Array,
 };
+use mlx_internal_macros::{Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
-use crate::{Embedding, Linear};
+use crate::nn::{Embedding, Linear};
 
 /// Builder for [`QuantizedEmbedding`]
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_quantized_embedding,
     err = Exception,
 )]
@@ -38,6 +39,8 @@ pub struct QuantizedEmbeddingBuilder {
 
 /// The same as ``Embedding`` but with a quantized weight matrix.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct QuantizedEmbedding {
     /// Quantization group size. Default to [`QuantizedEmbedding::DEFAULT_GROUP_SIZE`]
     pub group_size: i32,
@@ -69,21 +72,33 @@ impl QuantizedEmbeddingBuilder {
     pub fn build_with_weight(self, weight: Array) -> Result<QuantizedEmbedding, Exception> {
         let group_size = self.group_size;
         let bits = self.bits;
-
-        let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
-
-        let inner = Embedding {
-            weight: Param::new(quantized_weight),
-        };
-
-        Ok(QuantizedEmbedding {
-            group_size,
-            bits,
-            scales: Param::new(scales),
-            biases: Param::new(biases),
-            inner,
-        })
+        build_quantized_embedding_inner(weight, group_size, bits)
     }
+}
+
+fn build_quantized_embedding_inner(
+    weight: Array,
+    group_size: i32,
+    bits: i32,
+) -> Result<QuantizedEmbedding, Exception> {
+    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+
+    let inner = Embedding {
+        weight: Param::new(quantized_weight),
+    };
+
+    let mut qe = QuantizedEmbedding {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+
+    // Freeze all parameters
+    qe.freeze_parameters(true);
+
+    Ok(qe)
 }
 
 fn build_quantized_embedding(
@@ -94,8 +109,7 @@ fn build_quantized_embedding(
 
     let scale = array!(f32::sqrt(1.0 / (dims as f32)));
     // SAFETY: This is safe because the array scale is a single element array
-    let weight =
-        mlx_rs::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
+    let weight = crate::random::normal::<f32>(&[embedding_count, dims], None, None, None)? * &scale;
 
     builder.build_with_weight(weight)
 }
@@ -106,6 +120,23 @@ impl QuantizedEmbedding {
 
     /// Default bits
     pub const DEFAULT_BITS: i32 = 4;
+
+    /// Convert an embedding layer to a quantized embedding layer.
+    ///
+    /// # Params
+    ///
+    /// - `embedding`: The embedding layer to convert.
+    /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_GROUP_SIZE`]
+    /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedEmbedding::DEFAULT_BITS`]
+    pub fn try_from_embedding(
+        embedding: Embedding,
+        group_size: impl Into<Option<i32>>,
+        bits: impl Into<Option<i32>>,
+    ) -> Result<Self, Exception> {
+        let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
+        let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
+        build_quantized_embedding_inner(embedding.weight.value, group_size, bits)
+    }
 
     /// Call the embedding layer as a linear layer.
     ///
@@ -124,9 +155,17 @@ impl QuantizedEmbedding {
     }
 }
 
-impl Module<&Array> for QuantizedEmbedding {
-    type Output = Array;
+impl TryFrom<Embedding> for QuantizedEmbedding {
     type Error = Exception;
+
+    fn try_from(embedding: Embedding) -> Result<Self, Self::Error> {
+        Self::try_from_embedding(embedding, None, None)
+    }
+}
+
+impl Module<&Array> for QuantizedEmbedding {
+    type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let s = x.shape();
@@ -148,6 +187,7 @@ impl Module<&Array> for QuantizedEmbedding {
 /// Builder for [`QuantizedLinear`]
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_quantized_linear,
     err = Exception,
 )]
@@ -182,26 +222,35 @@ impl QuantizedLinearBuilder {
         weight: Array,
         bias: Option<Array>,
     ) -> Result<QuantizedLinear, Exception> {
-        let (quantized_weight, scales, biases) = quantize(&weight, self.group_size, self.bits)?;
-
-        let inner = Linear {
-            weight: Param::new(quantized_weight),
-            bias: Param::new(bias),
-        };
-
-        let mut linear = QuantizedLinear {
-            group_size: self.group_size,
-            bits: self.bits,
-            scales: Param::new(scales),
-            biases: Param::new(biases),
-            inner,
-        };
-
-        // Freeze all parameters
-        linear.freeze_parameters(true);
-
-        Ok(linear)
+        build_quantized_linear_inner(weight, bias, self.group_size, self.bits)
     }
+}
+
+fn build_quantized_linear_inner(
+    weight: Array,
+    bias: Option<Array>,
+    group_size: i32,
+    bits: i32,
+) -> Result<QuantizedLinear, Exception> {
+    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+
+    let inner = Linear {
+        weight: Param::new(quantized_weight),
+        bias: Param::new(bias),
+    };
+
+    let mut ql = QuantizedLinear {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+
+    // Freeze all parameters
+    ql.freeze_parameters(true);
+
+    Ok(ql)
 }
 
 /// Builds a new [`QuantizedLinear`]
@@ -231,6 +280,8 @@ pub fn build_quantized_linear(
 /// QuantizedLinear also provides several useful static to convert linear
 /// layers to QuantizedLinear layers.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct QuantizedLinear {
     /// Quantization group size. Default to [`QuantizedLinear::DEFAULT_GROUP_SIZE`]
     pub group_size: i32,
@@ -257,11 +308,36 @@ impl QuantizedLinear {
 
     /// Default bits
     pub const DEFAULT_BITS: i32 = 4;
+
+    /// Convert a linear layer to a quantized linear layer.
+    ///
+    /// # Params
+    ///
+    /// - `linear`: The linear layer to convert.
+    /// - `group_size`: The group size to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_GROUP_SIZE`]
+    /// - `bits`: The bit width to use for the quantized weight. Default to [`QuantizedLinear::DEFAULT_BITS`]
+    pub fn try_from_linear(
+        linear: Linear,
+        group_size: impl Into<Option<i32>>,
+        bits: impl Into<Option<i32>>,
+    ) -> Result<Self, Exception> {
+        let group_size = group_size.into().unwrap_or(Self::DEFAULT_GROUP_SIZE);
+        let bits = bits.into().unwrap_or(Self::DEFAULT_BITS);
+        build_quantized_linear_inner(linear.weight.value, linear.bias.value, group_size, bits)
+    }
+}
+
+impl TryFrom<Linear> for QuantizedLinear {
+    type Error = Exception;
+
+    fn try_from(linear: Linear) -> Result<Self, Self::Error> {
+        Self::try_from_linear(linear, None, None)
+    }
 }
 
 impl Module<&Array> for QuantizedLinear {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array, Self::Error> {
         let mut x = quantized_matmul(

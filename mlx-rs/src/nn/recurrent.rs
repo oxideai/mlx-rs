@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     array,
     error::Exception,
     module::{Module, Param},
@@ -11,6 +9,8 @@ use mlx_rs::{
     random::uniform,
     Array, Stream,
 };
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
+use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.
 pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
@@ -27,6 +27,8 @@ pub type NonLinearity = dyn Fn(&Array, &Stream) -> Result<Array, Exception>;
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Rnn {
     /// non-linearity function to use
     pub non_linearity: Arc<NonLinearity>,
@@ -47,6 +49,7 @@ pub struct Rnn {
 /// Builder for the [`Rnn`] module.
 #[derive(Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_rnn,
     err = Exception,
 )]
@@ -145,14 +148,19 @@ impl Rnn {
     }
 }
 
-/// Input for the RNN module.
-#[derive(Debug, Clone)]
-pub struct RnnInput<'a> {
-    /// Input tensor
-    pub x: &'a Array,
+generate_builder! {
+    /// Input for the RNN module.
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct RnnInput<'a> {
+        /// Input tensor
+        pub x: &'a Array,
 
-    /// Hidden state
-    pub hidden: Option<&'a Array>,
+        /// Hidden state
+        #[builder(optional, default = None)]
+        pub hidden: Option<&'a Array>,
+    }
 }
 
 impl<'a> From<&'a Array> for RnnInput<'a> {
@@ -192,8 +200,8 @@ impl<'a, Input> Module<Input> for Rnn
 where
     Input: Into<RnnInput<'a>>,
 {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, input: Input) -> Result<Array, Exception> {
         let input = input.into();
@@ -215,6 +223,8 @@ where
 /// whether the input is batched or not. Returns the hidden state at each
 /// time step, of shape `NLH` or `LH`.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Gru {
     /// Dimension of the hidden state, `H`
     pub hidden_size: i32,
@@ -239,6 +249,7 @@ pub struct Gru {
 /// Builder for the [`Gru`] module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_gru,
     err = Exception,
 )]
@@ -341,12 +352,18 @@ impl Gru {
     }
 }
 
+/// Type alias for the input of the GRU module.
+pub type GruInput<'a> = RnnInput<'a>;
+
+/// Type alias for the builder of the input of the GRU module.
+pub type GruInputBuilder<'a> = RnnInputBuilder<'a>;
+
 impl<'a, Input> Module<Input> for Gru
 where
-    Input: Into<RnnInput<'a>>,
+    Input: Into<GruInput<'a>>,
 {
-    type Output = Array;
     type Error = Exception;
+    type Output = Array;
 
     fn forward(&mut self, input: Input) -> Result<Array, Exception> {
         let input = input.into();
@@ -358,6 +375,8 @@ where
 
 /// A long short-term memory (LSTM) RNN layer.
 #[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[module(root = crate)]
+#[buildable(root = crate)]
 pub struct Lstm {
     /// Wx
     #[param]
@@ -375,6 +394,7 @@ pub struct Lstm {
 /// Builder for the [`Lstm`] module.
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_lstm,
     err = Exception,
 )]
@@ -409,17 +429,23 @@ fn build_lstm(builder: LstmBuilder) -> Result<Lstm, Exception> {
     })
 }
 
-/// Input for the LSTM module.
-#[derive(Debug, Clone)]
-pub struct LstmInput<'a> {
-    /// Input tensor
-    pub x: &'a Array,
+generate_builder! {
+    /// Input for the LSTM module.
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct LstmInput<'a> {
+        /// Input tensor
+        pub x: &'a Array,
 
-    /// Hidden state
-    pub hidden: Option<&'a Array>,
+        /// Hidden state
+        #[builder(optional, default = None)]
+        pub hidden: Option<&'a Array>,
 
-    /// Cell state
-    pub cell: Option<&'a Array>,
+        /// Cell state
+        #[builder(optional, default = None)]
+        pub cell: Option<&'a Array>,
+    }
 }
 
 impl<'a> From<&'a Array> for LstmInput<'a> {
@@ -548,7 +574,7 @@ where
 // The uint tests below are ported from the python codebase
 #[cfg(test)]
 mod tests {
-    use mlx_rs::{ops::maximum_device, prelude::Builder, random::normal};
+    use crate::{ops::maximum_device, prelude::Builder, random::normal};
 
     use super::*;
 
@@ -557,7 +583,7 @@ mod tests {
         let mut layer = Rnn::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let nonlinearity = |x: &Array, d: &Stream| maximum_device(x, array!(0.0), d);
@@ -567,15 +593,15 @@ mod tests {
             .build()
             .unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(RnnInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(RnnInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -584,19 +610,19 @@ mod tests {
         let mut layer = Gru::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(GruInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let hidden = h_out.index((.., -1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(GruInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let h_out = layer.forward(&inp).unwrap();
+        let h_out = layer.forward(GruInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
-        let h_out = layer.forward((&inp, &hidden)).unwrap();
+        let h_out = layer.forward(GruInput::from((&inp, &hidden))).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
     }
 
@@ -605,7 +631,7 @@ mod tests {
         let mut layer = Lstm::new(5, 12).unwrap();
         let inp = normal::<f32>(&[2, 25, 5], None, None, None).unwrap();
 
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward(LstmInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[2, 25, 12]);
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
@@ -620,13 +646,15 @@ mod tests {
         assert_eq!(c_out.shape(), &[2, 25, 12]);
 
         let inp = normal::<f32>(&[44, 5], None, None, None).unwrap();
-        let (h_out, c_out) = layer.forward(&inp).unwrap();
+        let (h_out, c_out) = layer.forward(LstmInput::from(&inp)).unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
 
         let hidden = h_out.index((-1, ..));
         let cell = c_out.index((-1, ..));
-        let (h_out, c_out) = layer.forward((&inp, &hidden, &cell)).unwrap();
+        let (h_out, c_out) = layer
+            .forward(LstmInput::from((&inp, &hidden, &cell)))
+            .unwrap();
         assert_eq!(h_out.shape(), &[44, 12]);
         assert_eq!(c_out.shape(), &[44, 12]);
     }

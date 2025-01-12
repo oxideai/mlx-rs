@@ -1,36 +1,31 @@
 use std::borrow::Cow;
 
-use dyn_clone::DynClone;
-use mlx_internal_macros::{Buildable, Builder};
-use mlx_macros::ModuleParameters;
-use mlx_rs::{
+use crate::{
     error::Exception,
-    module::Module,
+    module::{Module, UnaryModule},
     ops::{matmul, softmax},
     prelude::Builder,
+    quantization::MaybeQuantized,
     Array,
 };
+use dyn_clone::DynClone;
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
+use mlx_macros::{ModuleParameters, Quantizable};
 
 use crate::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
-    Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu,
+    nn::{Dropout, DropoutBuilder, LayerNorm, Linear, LinearBuilder, Relu},
 };
 
 /// A marker trait for activation functions used in transformers.
-pub trait Activation: std::fmt::Debug
-where
-    for<'a> Self: Module<&'a Array, Output = Array, Error = Exception> + DynClone,
-{
-}
+pub trait Activation: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone {}
 
-impl<M> Activation for M where
-    for<'a> M: Module<&'a Array, Output = Array, Error = Exception> + std::fmt::Debug + DynClone
-{
-}
+impl<M> Activation for M where M: UnaryModule<Error = Exception> + std::fmt::Debug + DynClone {}
 
 /// Builder for the [`MultiHeadAttention`] module
 #[derive(Debug, Clone, Builder)]
 #[builder(
+    root = crate,
     build_with = build_multi_head_attention,
     err = MultiHeadAttentionBuildError,
 )]
@@ -100,34 +95,41 @@ fn build_multi_head_attention(
 
     Ok(MultiHeadAttention {
         num_heads,
-        query_proj,
-        key_proj,
-        value_proj,
-        output_proj,
+        query_proj: MaybeQuantized::new(query_proj),
+        key_proj: MaybeQuantized::new(key_proj),
+        value_proj: MaybeQuantized::new(value_proj),
+        output_proj: MaybeQuantized::new(output_proj),
     })
 }
 
 /// Implements the scaled dot product attention with multiple heads.
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 pub struct MultiHeadAttention {
     /// Number of attention heads
     pub num_heads: i32,
 
     /// Query projection layer
+    #[quantizable]
     #[param]
-    pub query_proj: Linear,
+    pub query_proj: MaybeQuantized<Linear>,
 
     /// Key projection layer
+    #[quantizable]
     #[param]
-    pub key_proj: Linear,
+    pub key_proj: MaybeQuantized<Linear>,
 
     /// Value projection layer
+    #[quantizable]
     #[param]
-    pub value_proj: Linear,
+    pub value_proj: MaybeQuantized<Linear>,
 
     /// Output projection layer
+    #[quantizable]
     #[param]
-    pub output_proj: Linear,
+    pub output_proj: MaybeQuantized<Linear>,
 }
 
 impl MultiHeadAttention {
@@ -135,20 +137,25 @@ impl MultiHeadAttention {
     pub const DEFAULT_BIAS: bool = false;
 }
 
-/// Input to the [`MultiHeadAttention`] module
-#[derive(Debug, Clone)]
-pub struct MultiHeadAttentionInput<'a> {
-    /// Queries
-    pub queries: &'a Array,
+generate_builder! {
+    /// Input to the [`MultiHeadAttention`] module
+    #[derive(Debug, Clone, Buildable)]
+    #[buildable(root = crate)]
+    #[builder(root = crate)]
+    pub struct MultiHeadAttentionInput<'a> {
+        /// Queries
+        pub queries: &'a Array,
 
-    /// Keys
-    pub keys: &'a Array,
+        /// Keys
+        pub keys: &'a Array,
 
-    /// Values
-    pub values: &'a Array,
+        /// Values
+        pub values: &'a Array,
 
-    /// Mask
-    pub mask: Option<&'a Array>,
+        /// Mask
+        #[builder(optional, default = None)]
+        pub mask: Option<&'a Array>,
+    }
 }
 
 impl<'a> From<(&'a Array, &'a Array, &'a Array)> for MultiHeadAttentionInput<'a> {
@@ -193,13 +200,11 @@ where
     Input: Into<MultiHeadAttentionInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
     #[allow(non_snake_case)]
     fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
-
         let queries = self.query_proj.forward(input.queries)?;
         let keys = self.key_proj.forward(input.keys)?;
         let values = self.value_proj.forward(input.values)?;
@@ -242,6 +247,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_encoder_layer,
     err = TransformerBulidError,
 )]
@@ -303,8 +309,8 @@ fn build_transformer_encoder_layer(
         attention,
         ln1,
         ln2,
-        linear1,
-        linear2,
+        linear1: MaybeQuantized::new(linear1),
+        linear2: MaybeQuantized::new(linear2),
         dropout1,
         dropout2,
         activation,
@@ -313,7 +319,10 @@ fn build_transformer_encoder_layer(
 }
 
 /// Transformer encoder layer.
-#[derive(Debug, ModuleParameters, Buildable)]
+#[derive(Debug, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoderLayer {
     /// Multi-head attention module
     #[param]
@@ -328,12 +337,14 @@ struct TransformerEncoderLayer {
     pub ln2: LayerNorm,
 
     /// First linear module
+    #[quantizable]
     #[param]
-    pub linear1: Linear,
+    pub linear1: MaybeQuantized<Linear>,
 
     /// Second linear module
+    #[quantizable]
     #[param]
-    pub linear2: Linear,
+    pub linear2: MaybeQuantized<Linear>,
 
     /// Dropout module for the first layer
     #[param]
@@ -378,22 +389,22 @@ impl<'a> From<(&'a Array, &'a Array)> for TransformerEncoderInput<'a> {
     }
 }
 
-impl<'a, T> Module<T> for TransformerEncoderLayer
+impl<'a, Input> Module<Input> for TransformerEncoderLayer
 where
-    T: Into<TransformerEncoderInput<'a>>,
+    Input: Into<TransformerEncoderInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let mask = input.mask;
 
         if self.norm_first {
             let mut y = self.ln1.forward(x)?;
-            y = self.attention.forward((&y, &y, &y, mask))?;
+            let attention_input = MultiHeadAttentionInput::from((&y, &y, &y, mask));
+            y = self.attention.forward(attention_input)?;
             y = self.dropout1.forward(&y)?;
             let x = x.add(&y)?;
 
@@ -406,7 +417,8 @@ where
 
             Ok(y)
         } else {
-            let mut y = self.attention.forward((x, x, x, mask))?;
+            let attention_input = MultiHeadAttentionInput::from((x, x, x, mask));
+            let mut y = self.attention.forward(attention_input)?;
             y = self.dropout1.forward(&y)?;
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
@@ -423,7 +435,7 @@ where
     }
 
     fn training_mode(&mut self, mode: bool) {
-        <MultiHeadAttention as Module<MultiHeadAttentionInput<'a>>>::training_mode(
+        <MultiHeadAttention as Module<MultiHeadAttentionInput>>::training_mode(
             &mut self.attention,
             mode,
         );
@@ -439,6 +451,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_encoder,
     err = TransformerBulidError,
 )]
@@ -503,8 +516,12 @@ fn build_transformer_encoder(
     Ok(TransformerEncoder { layers, ln })
 }
 
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 struct TransformerEncoder {
+    #[quantizable]
     #[param]
     pub layers: Vec<TransformerEncoderLayer>,
 
@@ -512,15 +529,14 @@ struct TransformerEncoder {
     pub ln: LayerNorm,
 }
 
-impl<'a, T> Module<T> for TransformerEncoder
+impl<'a, Input> Module<Input> for TransformerEncoder
 where
-    T: Into<TransformerEncoderInput<'a>>,
+    Input: Into<TransformerEncoderInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let mask = input.mask;
@@ -528,7 +544,8 @@ where
         let mut x = Cow::Borrowed(x);
 
         for l in &mut self.layers {
-            x = Cow::Owned(l.forward((&*x, mask))?);
+            let layer_input = TransformerEncoderInput::from((&*x, mask));
+            x = Cow::Owned(l.forward(layer_input)?);
         }
 
         self.ln.forward(&*x)
@@ -546,6 +563,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_decoder_layer,
     err = TransformerBulidError,
 )]
@@ -608,8 +626,8 @@ fn build_transformer_decoder_layer(
         ln1,
         ln2,
         ln3,
-        linear1,
-        linear2,
+        linear1: MaybeQuantized::new(linear1),
+        linear2: MaybeQuantized::new(linear2),
         dropout1,
         dropout2,
         dropout3,
@@ -618,7 +636,10 @@ fn build_transformer_decoder_layer(
     })
 }
 
-#[derive(Debug, ModuleParameters, Buildable)]
+#[derive(Debug, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoderLayer {
     #[param]
     pub self_attention: MultiHeadAttention,
@@ -635,11 +656,13 @@ struct TransformerDecoderLayer {
     #[param]
     pub ln3: LayerNorm,
 
+    #[quantizable]
     #[param]
-    pub linear1: Linear,
+    pub linear1: MaybeQuantized<Linear>,
 
+    #[quantizable]
     #[param]
-    pub linear2: Linear,
+    pub linear2: MaybeQuantized<Linear>,
 
     #[param]
     pub dropout1: Dropout,
@@ -695,15 +718,14 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array)> for TransformerDecod
     }
 }
 
-impl<'a, T> Module<T> for TransformerDecoderLayer
+impl<'a, Input> Module<Input> for TransformerDecoderLayer
 where
-    T: Into<TransformerDecoderInput<'a>>,
+    Input: Into<TransformerDecoderInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let memory = input.memory;
@@ -712,14 +734,21 @@ where
 
         if self.norm_first {
             let mut y = self.ln1.forward(x)?;
-            y = self.self_attention.forward((&y, &y, &y, x_mask))?;
+            y = self
+                .self_attention
+                .forward(MultiHeadAttentionInput::from((&y, &y, &y, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let x = x.add(&y)?;
 
             y = self.ln2.forward(&x)?;
             y = self
                 .cross_attention
-                .forward((&y, memory, memory, memory_mask))?;
+                .forward(MultiHeadAttentionInput::from((
+                    &y,
+                    memory,
+                    memory,
+                    memory_mask,
+                )))?;
             y = self.dropout2.forward(&y)?;
             let x = x.add(&y)?;
 
@@ -730,14 +759,21 @@ where
             y = self.linear2.forward(&y)?;
             x.add(&y)
         } else {
-            let mut y = self.self_attention.forward((x, x, x, x_mask))?;
+            let mut y = self
+                .self_attention
+                .forward(MultiHeadAttentionInput::from((x, x, x, x_mask)))?;
             y = self.dropout1.forward(&y)?;
             let mut x = x.add(&y)?;
             x = self.ln1.forward(&x)?;
 
             y = self
                 .cross_attention
-                .forward((&y, memory, memory, memory_mask))?;
+                .forward(MultiHeadAttentionInput::from((
+                    &y,
+                    memory,
+                    memory,
+                    memory_mask,
+                )))?;
             y = self.dropout2.forward(&y)?;
             x = x.add(&y)?;
             x = self.ln2.forward(&x)?; // TODO: https://github.com/ml-explore/mlx/issues/1636
@@ -774,6 +810,7 @@ where
 
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer_decoder,
     err = TransformerBulidError,
 )]
@@ -839,8 +876,12 @@ fn build_transformer_decoder(
     Ok(TransformerDecoder { layers, ln })
 }
 
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 struct TransformerDecoder {
+    #[quantizable]
     #[param]
     pub layers: Vec<TransformerDecoderLayer>,
 
@@ -848,15 +889,14 @@ struct TransformerDecoder {
     pub ln: LayerNorm,
 }
 
-impl<'a, T> Module<T> for TransformerDecoder
+impl<'a, Input> Module<Input> for TransformerDecoder
 where
-    T: Into<TransformerDecoderInput<'a>>,
+    Input: Into<TransformerDecoderInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let x = input.x;
         let memory = input.memory;
@@ -866,7 +906,8 @@ where
         let mut x = Cow::Borrowed(x);
 
         for l in &mut self.layers {
-            x = Cow::Owned(l.forward((&*x, memory, x_mask, memory_mask))?);
+            let layer_input = TransformerDecoderInput::from((&*x, memory, x_mask, memory_mask));
+            x = Cow::Owned(l.forward(layer_input)?);
         }
 
         self.ln.forward(&*x)
@@ -885,6 +926,7 @@ where
 /// Builder for the [`Transformer`] module
 #[derive(Debug, Builder)]
 #[builder(
+    root = crate,
     build_with = build_transformer,
     err = TransformerBulidError,
 )]
@@ -978,13 +1020,18 @@ fn build_transformer(builder: TransformerBuilder) -> Result<Transformer, Transfo
 /// processes the input sequence and the decoder generates the output sequence.
 /// The interaction between encoder and decoder happens through the attention
 /// mechanism.
-#[derive(Debug, Clone, ModuleParameters, Buildable)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable, Buildable)]
+#[module(root = crate)]
+#[quantizable(root = crate)]
+#[buildable(root = crate)]
 pub struct Transformer {
     /// Encoder module
+    #[quantizable]
     #[param]
     encoder: TransformerEncoder, // TODO: visibility?
 
     /// Decoder module
+    #[quantizable]
     #[param]
     decoder: TransformerDecoder, // TODO: visibility?
 }
@@ -1048,15 +1095,14 @@ impl<'a> From<(&'a Array, &'a Array, &'a Array, &'a Array, &'a Array)> for Trans
     }
 }
 
-impl<'a, T> Module<T> for Transformer
+impl<'a, Input> Module<Input> for Transformer
 where
-    T: Into<TransformerInput<'a>>,
+    Input: Into<TransformerInput<'a>>,
 {
     type Error = Exception;
-
     type Output = Array;
 
-    fn forward(&mut self, input: T) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error> {
         let input = input.into();
         let source = input.source;
         let target = input.target;
@@ -1064,9 +1110,15 @@ where
         let target_mask = input.target_mask;
         let memory_mask = input.memory_mask;
 
-        let memory = self.encoder.forward((source, source_mask))?;
-        self.decoder
-            .forward((target, &memory, target_mask, memory_mask))
+        let memory = self
+            .encoder
+            .forward(TransformerEncoderInput::from((source, source_mask)))?;
+        self.decoder.forward(TransformerDecoderInput::from((
+            target,
+            &memory,
+            target_mask,
+            memory_mask,
+        )))
     }
 
     fn training_mode(&mut self, mode: bool) {

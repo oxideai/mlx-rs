@@ -7,7 +7,6 @@ authors.workspace = true
 [dependencies]
 # Local dependencies
 mlx-rs.workspace = true
-mlx-nn.workspace = true
 
 # External dependencies
 tokenizers = "0.21"

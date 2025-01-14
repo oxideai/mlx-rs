@@ -154,6 +154,18 @@ impl Array {
         Array { c_array }
     }
 
+    /// Create a new array from raw data buffer.
+    pub unsafe fn from_raw_parts(data: *const c_void, shape: &[i32], dtype: Dtype) -> Self {
+        let dim = if shape.len() > i32::MAX as usize {
+            panic!("Shape is too large")
+        } else {
+            shape.len() as i32
+        };
+
+        let c_array = mlx_sys::mlx_array_new_data(data, shape.as_ptr(), dim, dtype.into());
+        Array { c_array }
+    }
+
     /// New array from an iterator.
     ///
     /// This is a convenience method that is equivalent to

@@ -133,28 +133,18 @@ impl Array {
     /// - Panics if the product of the shape is not equal to the length of the data.
     /// - Panics if the shape is too large.
     pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32]) -> Self {
-        let dim = if shape.len() > i32::MAX as usize {
-            panic!("Shape is too large")
-        } else {
-            shape.len() as i32
-        };
-
         // Validate data size and shape
         assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
 
-        let c_array = unsafe {
-            mlx_sys::mlx_array_new_data(
-                data.as_ptr() as *const c_void,
-                shape.as_ptr(),
-                dim,
-                T::DTYPE.into(),
-            )
-        };
-
-        Array { c_array }
+        unsafe {
+            Self::from_raw_parts(data.as_ptr() as *const c_void, shape, T::DTYPE)
+        }
     }
 
     /// Create a new array from raw data buffer.
+    /// 
+    /// This is a convenience wrapper around [`mlx_sy::mlx_array_new_data`].
+    #[inline]
     pub unsafe fn from_raw_parts(data: *const c_void, shape: &[i32], dtype: Dtype) -> Self {
         let dim = if shape.len() > i32::MAX as usize {
             panic!("Shape is too large")

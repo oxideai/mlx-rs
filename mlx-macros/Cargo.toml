@@ -1,15 +1,15 @@
 [package]
 name = "mlx-macros"
-version = "0.1.0"
-authors = ["Minghua Wu <michael.wu1107@gmail.com>", "David Chavez <david@dcvz.io>"]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+documentation.workspace = true
 
-description = "Code generation crate for mlx-rs"
-repository = "https://github.com/oxideai/mlx-rs"
-keywords = ["mlx", "deep-learning", "machine-learning"]
-categories = ["science"]
-license = "MIT OR Apache-2.0"
-
+description = "Procedural macros for mlx-rs"
 
 [lib]
 proc-macro = true

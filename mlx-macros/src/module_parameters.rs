@@ -1,4 +1,4 @@
-use darling::FromDeriveInput;
+use darling::{FromDeriveInput, FromField};
 use syn::{DataStruct, DeriveInput, Generics, Ident};
 
 use crate::util::filter_fields_with_attr;
@@ -7,6 +7,12 @@ use crate::util::filter_fields_with_attr;
 #[darling(attributes(module))]
 struct ModuleProperties {
     root: Option<syn::Path>,
+}
+
+#[derive(Debug, Clone, FromField)]
+#[darling(attributes(param))]
+struct FieldParameters {
+    rename: Option<String>,
 }
 
 pub(crate) fn expand_module_parameters(
@@ -49,7 +55,19 @@ fn impl_module_parameters_for_struct(
     root: Option<syn::Path>,
 ) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let field_names: Vec<_> = fields.iter().map(|field| &field.ident).collect();
+    let field_idents: Vec<_> = fields.iter().map(|field| field.ident.as_ref().unwrap()).collect();
+    let field_names: Vec<_> = fields.iter()
+        .map(|field| {
+            let field_params = FieldParameters::from_field(field).unwrap();
+            match field_params.rename {
+                Some(rename) => {
+                    let span = field.ident.as_ref().expect("Expect named field").span();
+                    syn::Ident::new(&rename, span)
+                },
+                None => field.ident.as_ref().unwrap().clone(),
+            }
+        })
+        .collect();
 
     // Returns None if there are no fields
     let default_all_frozen = match field_names.len() {
@@ -77,30 +95,30 @@ fn impl_module_parameters_for_struct(
             impl #impl_generics #root::module::ModuleParameters for #ident #ty_generics #where_clause {
                 fn freeze_parameters(&mut self, recursive: bool) {
                     use #root::module::Parameter;
-                    #(self.#field_names.freeze(recursive);)*
+                    #(self.#field_idents.freeze(recursive);)*
                 }
 
                 fn unfreeze_parameters(&mut self, recursive: bool) {
                     use #root::module::Parameter;
-                    #(self.#field_names.unfreeze(recursive);)*
+                    #(self.#field_idents.unfreeze(recursive);)*
                 }
 
                 fn parameters(&self) -> #root::module::ModuleParamRef<'_> {
                     let mut parameters = #root::nested::NestedHashMap::new();
-                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value(&self.#field_names));)*
+                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value(&self.#field_idents));)*
                     parameters
                 }
 
                 fn parameters_mut(&mut self) -> #root::module::ModuleParamMut<'_> {
                     let mut parameters = #root::nested::NestedHashMap::new();
-                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value_mut(&mut self.#field_names));)*
+                    #(parameters.insert(std::rc::Rc::from(stringify!(#field_names)), #root::module::Parameter::as_nested_value_mut(&mut self.#field_idents));)*
                     parameters
                 }
 
                 fn trainable_parameters(&self) -> #root::module::ModuleParamRef<'_> {
                     let mut parameters = #root::nested::NestedHashMap::new();
                     #(
-                        if let Some(field) = #root::module::Parameter::as_trainable_nested_value(&self.#field_names) {
+                        if let Some(field) = #root::module::Parameter::as_trainable_nested_value(&self.#field_idents) {
                             parameters.insert(std::rc::Rc::from(stringify!(#field_names)), field);
                         }
                     )*
@@ -110,7 +128,7 @@ fn impl_module_parameters_for_struct(
                 fn all_frozen(&self) -> Option<bool> {
                     use #root::module::Parameter;
                     #(
-                        if matches!(self.#field_names.is_frozen(), Some(false)) {
+                        if matches!(self.#field_idents.is_frozen(), Some(false)) {
                             return Some(false);
                         }
                     )*
@@ -120,7 +138,7 @@ fn impl_module_parameters_for_struct(
                 fn any_frozen(&self) -> Option<bool> {
                     use #root::module::Parameter;
                     #(
-                        if matches!(self.#field_names.is_frozen(), Some(true)) {
+                        if matches!(self.#field_idents.is_frozen(), Some(true)) {
                             return Some(true);
                         }
                     )*

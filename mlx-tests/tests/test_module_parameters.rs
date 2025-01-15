@@ -13,7 +13,7 @@ pub struct StructModule {
     #[param]
     b: Param<Array>,
 
-    #[param]
+    #[param(rename = "c_renamed")]
     c: Param<Option<Array>>,
 }
 
@@ -55,7 +55,7 @@ fn test_module_parameters() {
     assert_eq!(flattened.len(), 3);
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
-    assert_eq!(flattened["c"], &array!(3.0));
+    assert_eq!(flattened["c_renamed"], &array!(3.0));
 }
 
 #[test]
@@ -81,7 +81,7 @@ fn test_module_parameters_mut() {
     assert_eq!(flattened.len(), 3);
     assert_eq!(flattened["a"], &mut array!(1.0));
     assert_eq!(flattened["b"], &mut array!(2.0));
-    assert_eq!(flattened["c"], &mut array!(3.0));
+    assert_eq!(flattened["c_renamed"], &mut array!(3.0));
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn test_module_trainable_parameters_all_trainable() {
     assert_eq!(flattened.len(), 3);
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
-    assert_eq!(flattened["c"], &array!(3.0));
+    assert_eq!(flattened["c_renamed"], &array!(3.0));
 }
 
 #[test]
@@ -155,7 +155,7 @@ fn test_module_trainable_parameters_partial_freeze() {
     assert_eq!(flattened.len(), 3);
     assert_eq!(flattened["a"], &array!(1.0));
     assert_eq!(flattened["b"], &array!(2.0));
-    assert_eq!(flattened["c"], &array!(3.0));
+    assert_eq!(flattened["c_renamed"], &array!(3.0));
 }
 
 #[test]

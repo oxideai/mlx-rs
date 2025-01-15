@@ -75,6 +75,33 @@ pub enum AsSliceError {
     Exception(#[from] Exception),
 }
 
+cfg_safetensors! {
+    /// Error associated with conversion between `safetensors::tensor::TensorView` and `Array`
+    /// when the data type is not supported.
+    #[derive(Debug, Error)]
+    pub enum ConversionError {
+        /// The safetensors data type that is not supported.
+        /// 
+        /// This is the error type for conversions from `safetensors::tensor::TensorView` to `Array`.
+        #[error("The safetensors data type {0:?} is not supported.")]
+        SafeTensorDtype(safetensors::tensor::Dtype),
+
+        /// The mlx data type that is not supported.
+        /// 
+        /// This is the error type for conversions from `Array` to `safetensors::tensor::TensorView`.
+        #[error("The mlx data type {0:?} is not supported.")]
+        MlxDtype(crate::Dtype),
+
+        /// Error casting the data buffer to `&[u8]`.
+        #[error(transparent)]
+        PodCastError(#[from] bytemuck::PodCastError),
+
+        /// Error with creating a `safetensors::tensor::TensorView`.
+        #[error(transparent)]
+        SafeTensorError(#[from] safetensors::tensor::SafeTensorError),
+    }
+}
+
 /// Exception. Most will come from the C API.
 #[derive(Debug, PartialEq, Error)]
 #[error("{what:?}")]

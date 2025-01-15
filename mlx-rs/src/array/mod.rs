@@ -16,6 +16,10 @@ use std::{
 mod element;
 mod operators;
 
+cfg_safetensors! {
+    mod safetensors;
+}
+
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>

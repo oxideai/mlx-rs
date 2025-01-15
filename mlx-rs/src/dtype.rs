@@ -169,3 +169,54 @@ impl TypePromotion for Dtype {
         }
     }
 }
+
+cfg_safetensors! {
+    impl TryFrom<safetensors::tensor::Dtype> for Dtype {
+        type Error = crate::error::ConversionError;
+
+        fn try_from(value: safetensors::tensor::Dtype) -> Result<Self, Self::Error> {
+            let out = match value {
+                safetensors::Dtype::BOOL => Dtype::Bool,
+                safetensors::Dtype::U8 => Dtype::Uint8,
+                safetensors::Dtype::I8 => Dtype::Int8,
+                safetensors::Dtype::F8_E5M2 => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
+                safetensors::Dtype::F8_E4M3 => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
+                safetensors::Dtype::I16 => Dtype::Int16,
+                safetensors::Dtype::U16 => Dtype::Uint16,
+                safetensors::Dtype::F16 => Dtype::Float16,
+                safetensors::Dtype::BF16 => Dtype::Bfloat16,
+                safetensors::Dtype::I32 => Dtype::Int32,
+                safetensors::Dtype::U32 => Dtype::Uint32,
+                safetensors::Dtype::F32 => Dtype::Float32,
+                safetensors::Dtype::F64 => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
+                safetensors::Dtype::I64 => Dtype::Int64,
+                safetensors::Dtype::U64 => Dtype::Uint64,
+                _ => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
+            };
+            Ok(out)
+        }
+    }
+
+    impl TryFrom<Dtype> for safetensors::tensor::Dtype {
+        type Error = crate::error::ConversionError;
+
+        fn try_from(value: Dtype) -> Result<Self, Self::Error> {
+            let out = match value {
+                Dtype::Bool => safetensors::Dtype::BOOL,
+                Dtype::Uint8 => safetensors::Dtype::U8,
+                Dtype::Int8 => safetensors::Dtype::I8,
+                Dtype::Int16 => safetensors::Dtype::I16,
+                Dtype::Uint16 => safetensors::Dtype::U16,
+                Dtype::Float16 => safetensors::Dtype::F16,
+                Dtype::Bfloat16 => safetensors::Dtype::BF16,
+                Dtype::Int32 => safetensors::Dtype::I32,
+                Dtype::Uint32 => safetensors::Dtype::U32,
+                Dtype::Float32 => safetensors::Dtype::F32,
+                Dtype::Int64 => safetensors::Dtype::I64,
+                Dtype::Uint64 => safetensors::Dtype::U64,
+                Dtype::Complex64 => return Err(crate::error::ConversionError::MlxDtype(value)),
+            };
+            Ok(out)
+        }
+    }
+}

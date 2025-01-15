@@ -44,7 +44,7 @@ pub struct Attention {
 }
 
 impl Attention {
-    pub fn new(args: ModelArgs) -> Result<Self, Exception> {
+    pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
         let n_heads = args.n_heads;
         let n_kv_heads = args.n_kv_heads;
         let repeats = n_heads / n_kv_heads;
@@ -147,5 +147,50 @@ impl Module<AttentionInput<'_>> for Attention {
         self.wk.training_mode(mode);
         self.wv.training_mode(mode);
         self.wo.training_mode(mode);
+    }
+}
+
+#[derive(Debug, Clone, ModuleParameters)]
+struct FeedForward {
+    #[param]
+    w1: nn::Linear,
+
+    #[param]
+    w2: nn::Linear,
+
+    #[param]
+    w3: nn::Linear,
+}
+
+impl FeedForward {
+    pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
+        let w1 = nn::LinearBuilder::new(args.dim, args.hidden_dim)
+            .bias(false)
+            .build()?;
+        let w2 = nn::LinearBuilder::new(args.hidden_dim, args.dim)
+            .bias(false)
+            .build()?;
+        let w3 = nn::LinearBuilder::new(args.dim, args.dim)
+            .bias(false)
+            .build()?;
+        Ok(Self { w1, w2, w3 })
+    }
+}
+
+impl Module<&Array> for FeedForward {
+    type Output = Array;
+
+    type Error = Exception;
+
+    fn forward(&mut self, x: &'_ Array) -> Result<Self::Output, Self::Error> {
+        let w2_input = nn::silu(self.w1.forward(x)?)?
+            .multiply(self.w3.forward(x)?)?;
+        self.w2.forward(&w2_input)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.w1.training_mode(mode);
+        self.w2.training_mode(mode);
+        self.w3.training_mode(mode);
     }
 }

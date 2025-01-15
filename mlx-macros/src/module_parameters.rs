@@ -55,15 +55,19 @@ fn impl_module_parameters_for_struct(
     root: Option<syn::Path>,
 ) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let field_idents: Vec<_> = fields.iter().map(|field| field.ident.as_ref().unwrap()).collect();
-    let field_names: Vec<_> = fields.iter()
+    let field_idents: Vec<_> = fields
+        .iter()
+        .map(|field| field.ident.as_ref().unwrap())
+        .collect();
+    let field_names: Vec<_> = fields
+        .iter()
         .map(|field| {
             let field_params = FieldParameters::from_field(field).unwrap();
             match field_params.rename {
                 Some(rename) => {
                     let span = field.ident.as_ref().expect("Expect named field").span();
                     syn::Ident::new(&rename, span)
-                },
+                }
                 None => field.ident.as_ref().unwrap().clone(),
             }
         })

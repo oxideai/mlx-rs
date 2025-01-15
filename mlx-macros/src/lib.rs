@@ -9,6 +9,9 @@ mod util;
 /// Derive the `ModuleParameters` trait for a struct. Mark a field with
 /// `#[param]` attribute to include it in the parameters. The field type must
 /// implement the `mlx_rs::module::Parameter` trait.
+/// 
+/// The `#[param]` attribute can also take an optional `rename` argument to
+/// specify the name of the parameter in the flattened map.
 ///
 /// # Example
 ///
@@ -35,6 +38,9 @@ mod util;
 ///
 ///     #[param]
 ///     trait_object_vec: Vec<Box<dyn Module>>,
+/// 
+///     #[param(rename = "renamed")]
+///     renamed: Param<Array>,
 /// }
 ///
 /// #[derive(ModuleParameters)]

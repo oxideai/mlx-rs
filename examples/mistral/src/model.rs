@@ -194,3 +194,77 @@ impl Module<&Array> for FeedForward {
         self.w3.training_mode(mode);
     }
 }
+
+#[derive(Debug, Clone, ModuleParameters)]
+struct TransformerBlock {
+    n_heads: i32,
+    dim: i32,
+
+    #[param]
+    attention: Attention,
+
+    #[param]
+    feed_forward: FeedForward,
+
+    #[param]
+    attention_norm: nn::RmsNorm,
+
+    #[param]
+    ffn_norm: nn::RmsNorm,
+}
+
+impl TransformerBlock {
+    pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
+        let n_heads = args.n_heads;
+        let dim = args.dim;
+
+        let attention = Attention::new(args)?;
+        let feed_forward = FeedForward::new(args)?;
+        let attention_norm = nn::RmsNormBuilder::new(dim)
+            .eps(args.norm_eps)
+            .build()?;
+        let ffn_norm = nn::RmsNormBuilder::new(dim)
+            .eps(args.norm_eps)
+            .build()?;
+        Ok(Self {
+            n_heads,
+            dim,
+            attention,
+            feed_forward,
+            attention_norm,
+            ffn_norm,
+        })
+    }
+}
+
+impl Module<AttentionInput<'_>> for TransformerBlock {
+    type Output = AttentionOutput;
+
+    type Error = Exception;
+
+    fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
+        let AttentionInput { x, mask, kv_cache } = input;
+        let x = self.attention_norm.forward(x)?;
+        let attention_input = AttentionInput { x: &x, mask, kv_cache };
+        let attention_output = self.attention.forward(attention_input)?;
+
+        let r = attention_output.output;
+        let kv_cache = attention_output.kv_cache;
+
+        let h = x.add(r)?;
+        let r = self.feed_forward.forward(&self.ffn_norm.forward(&h)?)?;
+        let output = h.add(r)?;
+
+        Ok(AttentionOutput {
+            output,
+            kv_cache,
+        })
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.attention.training_mode(mode);
+        self.feed_forward.training_mode(mode);
+        self.attention_norm.training_mode(mode);
+        self.ffn_norm.training_mode(mode);
+    }
+}

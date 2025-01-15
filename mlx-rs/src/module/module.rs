@@ -32,7 +32,7 @@ pub trait Module<Input>: ModuleParameters + std::fmt::Debug {
     type Error: std::error::Error;
 
     /// Forward pass of the module.
-    fn forward(&mut self, x: Input) -> Result<Self::Output, Self::Error>;
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///

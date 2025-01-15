@@ -172,7 +172,7 @@ impl Array {
     /// let mut array = Array::from_iter(data.clone(), &[5]);
     /// assert_eq!(array.as_slice::<i32>(), &data[..]);
     /// ```
-    pub fn from_iter<T: ArrayElement, I: IntoIterator<Item = T>>(iter: I, shape: &[i32]) -> Self {
+    pub fn from_iter<I: IntoIterator<Item = T>, T: ArrayElement>(iter: I, shape: &[i32]) -> Self {
         let data: Vec<T> = iter.into_iter().collect();
         Self::from_slice(&data, shape)
     }

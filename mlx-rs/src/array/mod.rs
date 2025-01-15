@@ -16,6 +16,10 @@ use std::{
 mod element;
 mod operators;
 
+cfg_safetensors! {
+    mod safetensors;
+}
+
 pub use element::ArrayElement;
 
 // Not using Complex64 because `num_complex::Complex64` is actually Complex<f64>
@@ -133,24 +137,29 @@ impl Array {
     /// - Panics if the product of the shape is not equal to the length of the data.
     /// - Panics if the shape is too large.
     pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32]) -> Self {
+        // Validate data size and shape
+        assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
+
+        unsafe { Self::from_raw_data(data.as_ptr() as *const c_void, shape, T::DTYPE) }
+    }
+
+    /// Create a new array from raw data buffer.
+    ///
+    /// This is a convenience wrapper around [`mlx_sy::mlx_array_new_data`].
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because the caller must ensure that the data buffer is valid and that the
+    /// shape is correct.
+    #[inline]
+    pub unsafe fn from_raw_data(data: *const c_void, shape: &[i32], dtype: Dtype) -> Self {
         let dim = if shape.len() > i32::MAX as usize {
             panic!("Shape is too large")
         } else {
             shape.len() as i32
         };
 
-        // Validate data size and shape
-        assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
-
-        let c_array = unsafe {
-            mlx_sys::mlx_array_new_data(
-                data.as_ptr() as *const c_void,
-                shape.as_ptr(),
-                dim,
-                T::DTYPE.into(),
-            )
-        };
-
+        let c_array = mlx_sys::mlx_array_new_data(data, shape.as_ptr(), dim, dtype.into());
         Array { c_array }
     }
 

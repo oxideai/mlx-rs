@@ -1,4 +1,9 @@
-use mlx_rs::{builder::Builder, error::Exception, fast::scaled_dot_product_attention, macros::ModuleParameters, module::Module, nn, ops::concatenate, Array};
+use std::borrow::Cow;
+
+use mlx_rs::{
+    builder::Builder, error::Exception, fast::scaled_dot_product_attention,
+    macros::ModuleParameters, module::Module, nn, ops::concatenate, Array,
+};
 
 pub struct RopeTheta(pub f32);
 
@@ -110,11 +115,14 @@ impl Module<AttentionInput<'_>> for Attention {
         let mut values = self.wv.forward(x)?;
 
         // Prepare the queries, keys, and values for the attention computation
-        queries = queries.reshape(&[B, L, self.n_heads, -1])?
+        queries = queries
+            .reshape(&[B, L, self.n_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
-        keys = keys.reshape(&[B, L, self.n_kv_heads, -1])?
+        keys = keys
+            .reshape(&[B, L, self.n_kv_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
-        values = values.reshape(&[B, L, self.n_kv_heads, -1])?
+        values = values
+            .reshape(&[B, L, self.n_kv_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
 
         match kv_cache {
@@ -124,7 +132,7 @@ impl Module<AttentionInput<'_>> for Attention {
                 keys = self.rope.forward((&keys, offset))?;
                 keys = concatenate(&[key_cache, &keys], 2)?;
                 values = concatenate(&[value_cache, &values], 2)?;
-            },
+            }
             None => {
                 queries = self.rope.forward(&queries)?;
                 keys = self.rope.forward(&keys)?;
@@ -132,8 +140,7 @@ impl Module<AttentionInput<'_>> for Attention {
         }
 
         let output = scaled_dot_product_attention(queries, &keys, &values, self.scale, mask, None)?;
-        let output = output.transpose(&[0, 2, 1, 3])?
-            .reshape(&[B, L, -1])?;
+        let output = output.transpose(&[0, 2, 1, 3])?.reshape(&[B, L, -1])?;
         let output = self.wo.forward(&output)?;
 
         Ok(AttentionOutput {
@@ -183,8 +190,7 @@ impl Module<&Array> for FeedForward {
     type Error = Exception;
 
     fn forward(&mut self, x: &'_ Array) -> Result<Self::Output, Self::Error> {
-        let w2_input = nn::silu(self.w1.forward(x)?)?
-            .multiply(self.w3.forward(x)?)?;
+        let w2_input = nn::silu(self.w1.forward(x)?)?.multiply(self.w3.forward(x)?)?;
         self.w2.forward(&w2_input)
     }
 
@@ -220,12 +226,8 @@ impl TransformerBlock {
 
         let attention = Attention::new(args)?;
         let feed_forward = FeedForward::new(args)?;
-        let attention_norm = nn::RmsNormBuilder::new(dim)
-            .eps(args.norm_eps)
-            .build()?;
-        let ffn_norm = nn::RmsNormBuilder::new(dim)
-            .eps(args.norm_eps)
-            .build()?;
+        let attention_norm = nn::RmsNormBuilder::new(dim).eps(args.norm_eps).build()?;
+        let ffn_norm = nn::RmsNormBuilder::new(dim).eps(args.norm_eps).build()?;
         Ok(Self {
             n_heads,
             dim,
@@ -245,7 +247,11 @@ impl Module<AttentionInput<'_>> for TransformerBlock {
     fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
         let AttentionInput { x, mask, kv_cache } = input;
         let x = self.attention_norm.forward(x)?;
-        let attention_input = AttentionInput { x: &x, mask, kv_cache };
+        let attention_input = AttentionInput {
+            x: &x,
+            mask,
+            kv_cache,
+        };
         let attention_output = self.attention.forward(attention_input)?;
 
         let r = attention_output.output;
@@ -255,10 +261,7 @@ impl Module<AttentionInput<'_>> for TransformerBlock {
         let r = self.feed_forward.forward(&self.ffn_norm.forward(&h)?)?;
         let output = h.add(r)?;
 
-        Ok(AttentionOutput {
-            output,
-            kv_cache,
-        })
+        Ok(AttentionOutput { output, kv_cache })
     }
 
     fn training_mode(&mut self, mode: bool) {
@@ -275,10 +278,7 @@ enum MistralError {
     InvalidVocabSize(i32),
 
     #[error("Invalid cache shape: {cache_len} != {n_layers}")]
-    InvalidCacheShape {
-        cache_len: usize,
-        n_layers: i32,
-    },
+    InvalidCacheShape { cache_len: usize, n_layers: i32 },
 
     #[error(transparent)]
     Exception(#[from] Exception),
@@ -291,13 +291,13 @@ struct Mistral {
 
     #[param]
     tok_embeddings: nn::Embedding,
-    
+
     #[param]
     layers: Vec<TransformerBlock>,
-    
+
     #[param]
     norm: nn::RmsNorm,
-    
+
     #[param]
     output: nn::Linear,
 }
@@ -335,12 +335,12 @@ impl Mistral {
 
 struct MistralInput<'a> {
     inputs: &'a Array,
-    cache: Vec<Option<(Array, Array)>>,
+    cache: &'a [Option<(Array, Array)>],
 }
 
 struct MistralOutput {
     output: Array,
-    cache: Vec<(Array, Array)>,
+    cache: Vec<Option<(Array, Array)>>,
 }
 
 impl Module<MistralInput<'_>> for Mistral {
@@ -349,7 +349,7 @@ impl Module<MistralInput<'_>> for Mistral {
     type Error = MistralError;
 
     fn forward(&mut self, input: MistralInput<'_>) -> Result<Self::Output, Self::Error> {
-        let MistralInput { inputs, mut cache } = input;
+        let MistralInput { inputs, cache } = input;
 
         let mut h = self.tok_embeddings.forward(inputs)?;
 
@@ -360,17 +360,9 @@ impl Module<MistralInput<'_>> for Mistral {
             mask = Some(mask_);
         }
 
-        if cache.is_empty() {
-            cache = vec![None; self.n_layers as usize];
-        } else if cache.len() != self.n_layers as usize {
-            return Err(MistralError::InvalidCacheShape {
-                cache_len: cache.len(),
-                n_layers: self.n_layers,
-            });
-        }
-
+        let mut out_cache = Vec::with_capacity(self.layers.len());
         for (i, layer) in self.layers.iter_mut().enumerate() {
-            let kv_cache = cache[i].as_ref().map(|(k, v)| (k, v));
+            let kv_cache = cache.get(i).and_then(Option::as_ref).map(|(k, v)| (k, v));
             let input = AttentionInput {
                 x: &h,
                 mask: mask.as_ref(),
@@ -378,20 +370,22 @@ impl Module<MistralInput<'_>> for Mistral {
             };
             let output = layer.forward(input)?;
             h = output.output;
-            cache[i] = Some(output.kv_cache);
+            out_cache.push(Some(output.kv_cache));
         }
 
         let output = self.output.forward(&self.norm.forward(&h)?)?;
-        // All caches should be Some
-        // TODO: is there a better way to do this?
-        let cache = cache.into_iter().map(Option::unwrap).collect(); 
-        
-        Ok(MistralOutput { output, cache })
+
+        Ok(MistralOutput {
+            output,
+            cache: out_cache,
+        })
     }
 
     fn training_mode(&mut self, mode: bool) {
         self.tok_embeddings.training_mode(mode);
-        self.layers.iter_mut().for_each(|layer| layer.training_mode(mode));
+        self.layers
+            .iter_mut()
+            .for_each(|layer| layer.training_mode(mode));
         self.norm.training_mode(mode);
         self.output.training_mode(mode);
     }

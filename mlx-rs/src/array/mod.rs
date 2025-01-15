@@ -140,16 +140,19 @@ impl Array {
         // Validate data size and shape
         assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
 
-        unsafe {
-            Self::from_raw_parts(data.as_ptr() as *const c_void, shape, T::DTYPE)
-        }
+        unsafe { Self::from_raw_data(data.as_ptr() as *const c_void, shape, T::DTYPE) }
     }
 
     /// Create a new array from raw data buffer.
-    /// 
+    ///
     /// This is a convenience wrapper around [`mlx_sy::mlx_array_new_data`].
+    ///
+    /// # Safety
+    ///
+    /// This is unsafe because the caller must ensure that the data buffer is valid and that the
+    /// shape is correct.
     #[inline]
-    pub unsafe fn from_raw_parts(data: *const c_void, shape: &[i32], dtype: Dtype) -> Self {
+    pub unsafe fn from_raw_data(data: *const c_void, shape: &[i32], dtype: Dtype) -> Self {
         let dim = if shape.len() > i32::MAX as usize {
             panic!("Shape is too large")
         } else {

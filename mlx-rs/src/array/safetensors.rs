@@ -24,7 +24,7 @@ impl<'data> TryFrom<TensorView<'data>> for Array {
         let data = value.data();
 
         unsafe {
-            Ok(Array::from_raw_parts(data.as_ptr() as *const c_void, &shape, dtype))
+            Ok(Array::from_raw_data(data.as_ptr() as *const c_void, &shape, dtype))
         }
     }
 }

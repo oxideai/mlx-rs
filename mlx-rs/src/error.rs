@@ -81,13 +81,13 @@ cfg_safetensors! {
     #[derive(Debug, Error)]
     pub enum ConversionError {
         /// The safetensors data type that is not supported.
-        /// 
+        ///
         /// This is the error type for conversions from `safetensors::tensor::TensorView` to `Array`.
         #[error("The safetensors data type {0:?} is not supported.")]
         SafeTensorDtype(safetensors::tensor::Dtype),
 
         /// The mlx data type that is not supported.
-        /// 
+        ///
         /// This is the error type for conversions from `Array` to `safetensors::tensor::TensorView`.
         #[error("The mlx data type {0:?} is not supported.")]
         MlxDtype(crate::Dtype),

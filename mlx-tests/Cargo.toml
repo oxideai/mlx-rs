@@ -7,4 +7,5 @@ authors.workspace = true
 [dependencies]
 
 [dev-dependencies]
+mlx-internal-macros.workspace = true
 mlx-rs.workspace = true

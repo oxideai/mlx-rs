@@ -13,7 +13,7 @@ use mlx_rs::{
         RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
-    transforms::module_value_and_grad,
+    nn,
     transforms::{eval, eval_params},
     Array, Dtype,
 };
@@ -47,7 +47,7 @@ where
     let m = array!(0.25);
     let b = array!(7.0);
 
-    let mut lg = module_value_and_grad(loss);
+    let mut lg = nn::value_and_grad(loss);
 
     let mut last_loss = None;
     for _ in 0..steps {

@@ -134,7 +134,7 @@ where
 
 /// Transform the passed function `f(model, args)` to a function that computes the gradients of `f`
 /// with regard to the model's trainable parameters and also its value.
-pub fn module_value_and_grad<'a, F, M, Args, Val, Err>(
+pub fn value_and_grad<'a, F, M, Args, Val, Err>(
     f: F,
 ) -> impl FnMut(&mut M, Args) -> Result<(Val, FlattenedModuleParam), Exception> + 'a
 where
@@ -150,7 +150,7 @@ mod tests {
     use crate::module::Module;
     use crate::{array, error::Exception, Array};
 
-    use crate::nn::Linear;
+    use crate::nn::{self, Linear};
 
     use super::*;
 
@@ -165,7 +165,7 @@ mod tests {
             vec![model.forward(x).unwrap().sum(None, None).unwrap()]
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -182,7 +182,7 @@ mod tests {
             model.forward(x).unwrap().sum(None, None).unwrap()
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v.sum(None, None).unwrap(), array!(0.0));
@@ -199,7 +199,7 @@ mod tests {
             Ok(vec![model.forward(x)?.sum(None, None)?])
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -223,7 +223,7 @@ mod tests {
                     .map(|v| vec![v])
             };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, (&x, &y)).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -241,7 +241,7 @@ mod tests {
             Ok(vec![model.forward(x)?.sum(None, None)?])
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let result = vg(&mut model, &x);
 
         assert!(result.is_err());

@@ -9,8 +9,9 @@ use mlx_rs::{
     module::{Module, ModuleParameters},
     ops::ones,
     optimizers::{Optimizer, Sgd},
-    transforms::{compile::compile_with_state, eval_params, module_value_and_grad},
+    transforms::{compile::compile_with_state, eval_params},
     Array,
+    nn,
 };
 
 #[test]
@@ -25,7 +26,7 @@ fn test_compile_module() {
     let x = vec![x];
 
     let step = move |model: &mut LinearFunctionModel, x: &[Array]| -> Vec<Array> {
-        let mut lg = module_value_and_grad(loss);
+        let mut lg = nn::value_and_grad(loss);
         let x = &x[0];
         let (loss, _grad) = lg(model, x).unwrap();
         vec![loss]
@@ -58,7 +59,7 @@ fn test_compile_module_and_optimizer() {
 
     let step =
         move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
-            let mut lg = module_value_and_grad(loss);
+            let mut lg = nn::value_and_grad(loss);
             let x = &x[0];
             let (loss, grad) = lg(model, x).unwrap();
             optimizer.update(model, grad).unwrap();
@@ -90,7 +91,7 @@ fn test_compile_module_with_error() {
 
     let step =
         move |model: &mut LinearFunctionModel, x: &[Array]| -> Result<Vec<Array>, Exception> {
-            let mut lg = module_value_and_grad(loss);
+            let mut lg = nn::value_and_grad(loss);
             let x = &x[0];
             let (loss, _grad) = lg(model, x)?;
             Ok(vec![loss])
@@ -139,7 +140,7 @@ fn test_compile_module_and_optimizer_with_error() {
     let step = move |(model, optimizer): &mut (LinearFunctionModel, Sgd),
                      x: &[Array]|
           -> Result<Vec<Array>, Exception> {
-        let mut lg = module_value_and_grad(loss);
+        let mut lg = nn::value_and_grad(loss);
         let x = &x[0];
         let (loss, grad) = lg(model, x)?;
         optimizer.update(model, grad)?;

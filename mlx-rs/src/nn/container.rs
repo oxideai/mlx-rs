@@ -73,12 +73,12 @@ mod tests {
     use crate::{
         array,
         module::ModuleParameters,
-        nn::Linear,
+        nn::{Linear, self},
         ops::zeros,
         optimizers::{Optimizer, Sgd},
         prelude::Builder,
         random::uniform,
-        transforms::{eval, eval_params, module_value_and_grad},
+        transforms::{eval, eval_params},
     };
 
     use crate::losses::{LossReduction, MseLossBuilder};
@@ -160,7 +160,7 @@ mod tests {
             loss.apply(&y_pred, y)
         };
 
-        let mut lg = module_value_and_grad(loss_fn);
+        let mut lg = nn::value_and_grad(loss_fn);
 
         let mut optimizer = Sgd::new(lr);
 

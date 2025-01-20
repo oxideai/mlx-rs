@@ -1,8 +1,15 @@
 use std::borrow::Cow;
 
 use mlx_rs::{
-    builder::Builder, error::Exception, fast::scaled_dot_product_attention,
-    macros::ModuleParameters, module::Module, nn, ops::concatenate, Array,
+    builder::Builder,
+    error::Exception,
+    fast::scaled_dot_product_attention,
+    macros::{ModuleParameters, Quantizable},
+    module::Module,
+    nn,
+    ops::concatenate,
+    quantization::MaybeQuantized,
+    Array,
 };
 
 pub struct RopeTheta(pub f32);
@@ -25,24 +32,28 @@ pub struct ModelArgs {
     pub rope_theta: RopeTheta,
 }
 
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
 pub struct Attention {
     n_heads: i32,
     n_kv_heads: i32,
     repeats: i32,
     scale: f32,
 
+    #[quantizable]
     #[param]
-    wq: nn::Linear,
+    wq: MaybeQuantized<nn::Linear>,
 
+    #[quantizable]
     #[param]
-    wk: nn::Linear,
+    wk: MaybeQuantized<nn::Linear>,
 
+    #[quantizable]
     #[param]
-    wv: nn::Linear,
+    wv: MaybeQuantized<nn::Linear>,
 
+    #[quantizable]
     #[param]
-    wo: nn::Linear,
+    wo: MaybeQuantized<nn::Linear>,
 
     #[param]
     rope: nn::Rope,
@@ -77,10 +88,10 @@ impl Attention {
             n_kv_heads,
             repeats,
             scale,
-            wq,
-            wk,
-            wv,
-            wo,
+            wq: MaybeQuantized::new(wq),
+            wk: MaybeQuantized::new(wk),
+            wv: MaybeQuantized::new(wv),
+            wo: MaybeQuantized::new(wo),
             rope,
         })
     }
@@ -157,16 +168,19 @@ impl Module<AttentionInput<'_>> for Attention {
     }
 }
 
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
 struct FeedForward {
+    #[quantizable]
     #[param]
-    w1: nn::Linear,
+    w1: MaybeQuantized<nn::Linear>,
 
+    #[quantizable]
     #[param]
-    w2: nn::Linear,
+    w2: MaybeQuantized<nn::Linear>,
 
+    #[quantizable]
     #[param]
-    w3: nn::Linear,
+    w3: MaybeQuantized<nn::Linear>,
 }
 
 impl FeedForward {
@@ -180,7 +194,11 @@ impl FeedForward {
         let w3 = nn::LinearBuilder::new(args.dim, args.dim)
             .bias(false)
             .build()?;
-        Ok(Self { w1, w2, w3 })
+        Ok(Self {
+            w1: MaybeQuantized::new(w1),
+            w2: MaybeQuantized::new(w2),
+            w3: MaybeQuantized::new(w3),
+        })
     }
 }
 
@@ -201,14 +219,16 @@ impl Module<&Array> for FeedForward {
     }
 }
 
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
 struct TransformerBlock {
     n_heads: i32,
     dim: i32,
 
+    #[quantizable]
     #[param]
     attention: Attention,
 
+    #[quantizable]
     #[param]
     feed_forward: FeedForward,
 
@@ -284,22 +304,25 @@ enum MistralError {
     Exception(#[from] Exception),
 }
 
-#[derive(Debug, Clone, ModuleParameters)]
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
 struct Mistral {
     vocab_size: i32,
     n_layers: i32,
 
+    #[quantizable]
     #[param]
-    tok_embeddings: nn::Embedding,
+    tok_embeddings: MaybeQuantized<nn::Embedding>,
 
+    #[quantizable]
     #[param]
     layers: Vec<TransformerBlock>,
 
     #[param]
     norm: nn::RmsNorm,
 
+    #[quantizable]
     #[param]
-    output: nn::Linear,
+    output: MaybeQuantized<nn::Linear>,
 }
 
 impl Mistral {
@@ -325,10 +348,10 @@ impl Mistral {
         Ok(Self {
             vocab_size,
             n_layers,
-            tok_embeddings,
+            tok_embeddings: MaybeQuantized::new(tok_embeddings),
             layers,
             norm,
-            output,
+            output: MaybeQuantized::new(output),
         })
     }
 }

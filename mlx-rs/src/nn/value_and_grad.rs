@@ -1,4 +1,4 @@
-use crate::module::{update_flattened_parameters, ModuleParameters};
+use crate::module::{update_parameters, ModuleParameters};
 use crate::transforms::keyed_value_and_grad;
 use crate::{error::Exception, Array};
 
@@ -40,7 +40,7 @@ where
             let trainable_parameters = trainable_params(model);
             let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
                 let flattened_parameters = parameters.into_iter();
-                update_flattened_parameters(model, flattened_parameters);
+                update_parameters(model, flattened_parameters);
 
                 self(model, arrays)
             };
@@ -67,7 +67,7 @@ where
             let inner =
                 |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
                     let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                    update_flattened_parameters(model, flattened_parameters);
+                    update_parameters(model, flattened_parameters);
 
                     self(model, arrays)
                 };
@@ -92,7 +92,7 @@ where
             let trainable_parameters = trainable_params(model);
             let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                update_flattened_parameters(model, flattened_parameters);
+                update_parameters(model, flattened_parameters);
 
                 vec![self(model, arrays)]
             };
@@ -119,7 +119,7 @@ where
             let inner =
                 |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
                     let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                    update_flattened_parameters(model, flattened_parameters);
+                    update_parameters(model, flattened_parameters);
 
                     self(model, arrays).map(|v| vec![v])
                 };

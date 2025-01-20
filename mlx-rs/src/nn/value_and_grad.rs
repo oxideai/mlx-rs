@@ -152,12 +152,10 @@ mod tests {
 
     use crate::nn::{self, Linear};
 
-    use super::*;
-
     // The unit test below is adapted from `test_compiled_optimizer` in
     // `mlx/python/tests/test_optimizers.py``
     #[test]
-    fn test_module_value_and_grad() {
+    fn test_value_and_grad() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
@@ -174,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_unary_output() {
+    fn test_value_and_grad_with_unary_output() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
@@ -208,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_two_args() {
+    fn test_value_and_grad_with_two_args() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
         let y = crate::ops::ones::<f32>(x.shape()).unwrap();
@@ -232,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_error() {
+    fn test_value_and_grad_with_error() {
         let mut model = Linear::new(2, 2).unwrap();
         // Use a shape that is not compatible with the model
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[3, 3], None).unwrap();

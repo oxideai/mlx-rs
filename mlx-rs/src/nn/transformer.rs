@@ -1,7 +1,13 @@
 use std::borrow::Cow;
 
 use crate::{
-    array, error::Exception, module::{Module, UnaryModule}, ops::{arange, expand_dims, matmul, softmax}, prelude::Builder, quantization::MaybeQuantized, Array, ArrayElement
+    array,
+    error::Exception,
+    module::{Module, UnaryModule},
+    ops::{arange, expand_dims, matmul, softmax},
+    prelude::Builder,
+    quantization::MaybeQuantized,
+    Array, ArrayElement,
 };
 use dyn_clone::DynClone;
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
@@ -137,7 +143,7 @@ impl MultiHeadAttention {
         let left = expand_dims(&indices, &[1])?;
         let right = expand_dims(&indices, &[0])?;
         let mask = left.lt(right)?;
-        let mask  = mask.as_type::<T>()?.multiply(array!(-1e9))?; // TODO: replace with f32::MIN?
+        let mask = mask.as_type::<T>()?.multiply(array!(-1e9))?; // TODO: replace with f32::MIN?
         Ok(mask)
     }
 }

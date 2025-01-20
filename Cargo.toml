@@ -1,9 +1,18 @@
 [workspace.package]
-version = "0.14.0"
+# All but mlx-sys should follow the same version. mlx-sys should follow 
+# the version of mlx-c.
+version = "0.21.0-rc.1"
+edition = "2021"
 authors = [
     "Minghua Wu <michael.wu1107@gmail.com>",
     "David Chavez <david@dcvz.io>",
 ]
+
+repository = "https://github.com/oxideai/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT OR Apache-2.0"
+documentation = "https://oxideai.github.io/mlx-rs/mlx_rs/"
 
 [workspace]
 members = [
@@ -19,11 +28,10 @@ resolver = "2"
 
 [workspace.dependencies]
 # workspace local dependencies
-mlx-sys = { version = "0.1.0", path = "mlx-sys" }
-mlx-macros = { version = "0.1.0", path = "mlx-macros" }
-mlx-internal-macros = { version = "0.1.0", path = "mlx-internal-macros" }
-mlx-rs = { version = "0.14.0", path = "mlx-rs" }
-mlx-nn = { version = "0.14.0", path = "mlx-nn" }
+mlx-sys = { version = "0.1.0-rc.1", path = "mlx-sys" }
+mlx-macros = { version = "0.21.0-rc.1", path = "mlx-macros" }
+mlx-internal-macros = { version = "0.21.0-rc.1", path = "mlx-internal-macros" }
+mlx-rs = { version = "0.21.0-rc.1", path = "mlx-rs" }
 
 # external dependencies
 thiserror = "1"
@@ -49,3 +57,5 @@ proc-macro2 = "1"
 bindgen = "0.70"
 cmake = "0.1"
 cc = "1"
+safetensors = "0.5"
+bytemuck = "1"

@@ -2,13 +2,13 @@
 name = "mlx-rs"
 version.workspace = true
 authors.workspace = true
-edition = "2021"
-
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+documentation.workspace = true
 description = "Unofficial rust wrapper for Apple's mlx machine learning library."
-repository = "https://github.com/oxideai/mlx-rs"
-keywords = ["mlx", "deep-learning", "machine-learning"]
-categories = ["science"]
-license = "MIT OR Apache-2.0"
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -36,14 +36,19 @@ libc.workspace = true
 parking_lot.workspace = true
 itertools.workspace = true
 
+# optional dependencies
+safetensors = { workspace = true, optional = true }
+bytemuck = { workspace = true, optional = true, features = ["extern_crate_std"] }
+
 [dev-dependencies]
 pretty_assertions.workspace = true
 float_eq.workspace = true
 tempfile.workspace = true
 
 [features]
-default = ["accelerate", "metal", "io"]
+default = ["accelerate", "metal", "io", "safetensors"]
 
 accelerate = ["mlx-sys/accelerate"]
 metal = ["mlx-sys/metal"]
 io = []
+safetensors = ["dep:safetensors", "dep:bytemuck"]

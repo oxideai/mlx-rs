@@ -7,3 +7,13 @@ macro_rules! assert_array_all_close {
         assert!(assert.item::<bool>());
     };
 }
+
+#[allow(unused_macros)]
+macro_rules! cfg_safetensors {
+    ($($item:item)*) => {
+        $(
+            #[cfg(feature = "safetensors")]
+            $item
+        )*
+    };
+}

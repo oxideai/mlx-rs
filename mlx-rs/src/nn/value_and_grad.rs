@@ -1,4 +1,4 @@
-use crate::module::{update_flattened_parameters, ModuleParameters};
+use crate::module::{update_parameters, ModuleParameters};
 use crate::transforms::keyed_value_and_grad;
 use crate::{error::Exception, Array};
 
@@ -40,7 +40,7 @@ where
             let trainable_parameters = trainable_params(model);
             let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
                 let flattened_parameters = parameters.into_iter();
-                update_flattened_parameters(model, flattened_parameters);
+                update_parameters(model, flattened_parameters);
 
                 self(model, arrays)
             };
@@ -67,7 +67,7 @@ where
             let inner =
                 |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
                     let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                    update_flattened_parameters(model, flattened_parameters);
+                    update_parameters(model, flattened_parameters);
 
                     self(model, arrays)
                 };
@@ -92,7 +92,7 @@ where
             let trainable_parameters = trainable_params(model);
             let inner = |parameters: FlattenedModuleParam, arrays: Args| -> Vec<Array> {
                 let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                update_flattened_parameters(model, flattened_parameters);
+                update_parameters(model, flattened_parameters);
 
                 vec![self(model, arrays)]
             };
@@ -119,7 +119,7 @@ where
             let inner =
                 |parameters: FlattenedModuleParam, arrays: Args| -> Result<Vec<Array>, Exception> {
                     let flattened_parameters = parameters.into_iter().map(|(k, v)| (k, v.clone()));
-                    update_flattened_parameters(model, flattened_parameters);
+                    update_parameters(model, flattened_parameters);
 
                     self(model, arrays).map(|v| vec![v])
                 };
@@ -134,7 +134,7 @@ where
 
 /// Transform the passed function `f(model, args)` to a function that computes the gradients of `f`
 /// with regard to the model's trainable parameters and also its value.
-pub fn module_value_and_grad<'a, F, M, Args, Val, Err>(
+pub fn value_and_grad<'a, F, M, Args, Val, Err>(
     f: F,
 ) -> impl FnMut(&mut M, Args) -> Result<(Val, FlattenedModuleParam), Exception> + 'a
 where
@@ -150,14 +150,12 @@ mod tests {
     use crate::module::Module;
     use crate::{array, error::Exception, Array};
 
-    use crate::nn::Linear;
-
-    use super::*;
+    use crate::nn::{self, Linear};
 
     // The unit test below is adapted from `test_compiled_optimizer` in
     // `mlx/python/tests/test_optimizers.py``
     #[test]
-    fn test_module_value_and_grad() {
+    fn test_value_and_grad() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
@@ -165,7 +163,7 @@ mod tests {
             vec![model.forward(x).unwrap().sum(None, None).unwrap()]
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -174,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_unary_output() {
+    fn test_value_and_grad_with_unary_output() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
@@ -182,7 +180,7 @@ mod tests {
             model.forward(x).unwrap().sum(None, None).unwrap()
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v.sum(None, None).unwrap(), array!(0.0));
@@ -199,7 +197,7 @@ mod tests {
             Ok(vec![model.forward(x)?.sum(None, None)?])
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -208,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_two_args() {
+    fn test_value_and_grad_with_two_args() {
         let mut model = Linear::new(2, 2).unwrap();
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
         let y = crate::ops::ones::<f32>(x.shape()).unwrap();
@@ -223,7 +221,7 @@ mod tests {
                     .map(|v| vec![v])
             };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, (&x, &y)).unwrap();
 
         assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
@@ -232,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn test_module_value_and_grad_with_error() {
+    fn test_value_and_grad_with_error() {
         let mut model = Linear::new(2, 2).unwrap();
         // Use a shape that is not compatible with the model
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[3, 3], None).unwrap();
@@ -241,7 +239,7 @@ mod tests {
             Ok(vec![model.forward(x)?.sum(None, None)?])
         };
 
-        let mut vg = module_value_and_grad(loss);
+        let mut vg = nn::value_and_grad(loss);
         let result = vg(&mut model, &x);
 
         assert!(result.is_err());

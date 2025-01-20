@@ -19,6 +19,7 @@ mod quantized;
 mod recurrent;
 mod transformer;
 mod upsample;
+mod value_and_grad;
 
 pub use activation::*;
 pub use container::*;
@@ -34,3 +35,4 @@ pub use quantized::*;
 pub use recurrent::*;
 pub use transformer::*;
 pub use upsample::*;
+pub use value_and_grad::*;

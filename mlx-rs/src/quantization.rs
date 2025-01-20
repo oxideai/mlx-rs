@@ -24,26 +24,6 @@ pub trait Quantizable {
     ) -> Result<Self::Quantized, Self::QuantizationError>;
 }
 
-/// Quantize a module with the [`Quantizable::DEFAULT_GROUP_SIZE`] and [`Quantizable::DEFAULT_BITS`].
-pub fn quantize_module<M>(module: M) -> Result<M::Quantized, M::QuantizationError>
-where
-    M: Quantizable,
-{
-    module.try_into_quantized(M::DEFAULT_GROUP_SIZE, M::DEFAULT_BITS)
-}
-
-/// Quantize a module with specified group size and number of bits.
-pub fn quantize_module_with_group_size_and_bits<M>(
-    module: M,
-    group_size: i32,
-    bits: i32,
-) -> Result<M::Quantized, M::QuantizationError>
-where
-    M: Quantizable,
-{
-    module.try_into_quantized(group_size, bits)
-}
-
 impl<M> Quantizable for Vec<M>
 where
     M: Quantizable,
@@ -228,7 +208,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::nn::{Embedding, Linear};
+    use crate::nn::{self, Embedding, Linear};
 
     use super::*;
 
@@ -238,7 +218,7 @@ mod tests {
         let mut qlinear = MaybeQuantized::new(linear);
         assert!(!qlinear.is_quantized());
 
-        qlinear = quantize_module(qlinear).unwrap();
+        qlinear = nn::quantize(qlinear, None, None).unwrap();
         assert!(qlinear.is_quantized());
     }
 
@@ -248,7 +228,7 @@ mod tests {
         let mut qembedding = MaybeQuantized::new(embedding);
         assert!(!qembedding.is_quantized());
 
-        qembedding = quantize_module(qembedding).unwrap();
+        qembedding = nn::quantize(qembedding, None, None).unwrap();
         assert!(qembedding.is_quantized());
     }
 }

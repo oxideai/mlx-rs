@@ -3,9 +3,10 @@ use mlx_rs::{
     error::Exception,
     losses::{CrossEntropyBuilder, LossReduction},
     module::{Module, ModuleParameters},
+    nn,
     ops::{eq, indexing::argmax, mean},
     optimizers::{Optimizer, Sgd},
-    transforms::{eval_params, module_value_and_grad},
+    transforms::eval_params,
     Array,
 };
 
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let y_pred = model.forward(x)?;
         cross_entropy.apply(y_pred, y)
     };
-    let mut loss_and_grad_fn = module_value_and_grad(loss_fn);
+    let mut loss_and_grad_fn = nn::value_and_grad(loss_fn);
 
     let mut optimizer = Sgd::new(learning_rate);
 

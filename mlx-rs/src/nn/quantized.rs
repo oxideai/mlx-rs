@@ -182,8 +182,9 @@ impl Module<&Array> for QuantizedEmbedding {
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
         let scales = self.scales.index(&x);
+        let biases = self.biases.index(&x);
 
-        let out = dequantize(&w, &scales, &self.biases, self.group_size, self.bits)?;
+        let out = dequantize(&w, &scales, &biases, self.group_size, self.bits)?;
 
         let ret_shape = s.iter().copied().chain(once(-1)).collect::<Vec<_>>();
         out.reshape(&ret_shape)

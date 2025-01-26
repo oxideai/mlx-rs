@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use hf_hub::{api::sync::{Api, ApiBuilder, ApiRepo}, Repo};
-use mlx_rs::{module::{Module, ModuleParameters}, ops::indexing::argmax, prelude::{IndexOp, NewAxis}, transforms::eval, Array};
+use mlx_rs::{module::{Module, ModuleParameters}, nn, ops::indexing::argmax, prelude::{IndexOp, NewAxis}, transforms::eval, Array};
 use safetensors::SafeTensors;
 use tokenizers::Tokenizer;
 
@@ -79,6 +79,8 @@ fn main() -> Result<()> {
     let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
+
+    model = nn::quantize(model, None, None)?;
 
     let prompt = "hello, world!";
     let encoding = tokenizer.encode(prompt, false)?;

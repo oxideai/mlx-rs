@@ -16,3 +16,4 @@ hf-hub = "0.4"
 dotenv = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+safetensors.workspace = true

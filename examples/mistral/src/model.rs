@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use mlx_rs::{
     builder::Builder,
     error::Exception,
@@ -11,8 +9,25 @@ use mlx_rs::{
     quantization::MaybeQuantized,
     Array,
 };
+use serde::Deserialize;
 
-use crate::model_args::ModelArgs;
+#[derive(Debug, Clone, Deserialize)]
+pub struct ModelArgs {
+    pub dim: i32,
+    pub n_layers: i32,
+    pub head_dim: i32,
+    pub hidden_dim: i32,
+    pub n_heads: i32,
+    pub n_kv_heads: i32,
+    pub norm_eps: f32,
+    pub vocab_size: i32,
+    pub rope_theta: Option<f32>,
+}
+
+impl ModelArgs {
+    pub const DEFAULT_ROPE_THETA: f32 = 10000.0;
+}
+
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
 pub struct Attention {
@@ -62,7 +77,7 @@ impl Attention {
             .build()?;
         let rope = nn::RopeBuilder::new(args.head_dim)
             .traditional(true)
-            .base(args.rope_theta.0)
+            .base(args.rope_theta.unwrap_or(ModelArgs::DEFAULT_ROPE_THETA))
             .build()?;
 
         Ok(Self {
@@ -275,19 +290,16 @@ impl Module<AttentionInput<'_>> for TransformerBlock {
 }
 
 #[derive(Debug, thiserror::Error)]
-enum MistralError {
+pub enum MistralError {
     #[error("Invalid vocab size: {0}")]
     InvalidVocabSize(i32),
-
-    #[error("Invalid cache shape: {cache_len} != {n_layers}")]
-    InvalidCacheShape { cache_len: usize, n_layers: i32 },
 
     #[error(transparent)]
     Exception(#[from] Exception),
 }
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
-struct Mistral {
+pub struct Mistral {
     vocab_size: i32,
     n_layers: i32,
 
@@ -338,12 +350,11 @@ impl Mistral {
     }
 }
 
-struct MistralInput<'a> {
+pub struct MistralInput<'a> {
     inputs: &'a Array,
     cache: &'a [Option<(Array, Array)>],
 }
-
-struct MistralOutput {
+pub struct MistralOutput {
     output: Array,
     cache: Vec<Option<(Array, Array)>>,
 }

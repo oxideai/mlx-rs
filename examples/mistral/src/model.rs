@@ -351,12 +351,12 @@ impl Mistral {
 }
 
 pub struct MistralInput<'a> {
-    inputs: &'a Array,
-    cache: &'a [Option<(Array, Array)>],
+    pub inputs: &'a Array,
+    pub cache: &'a [Option<(Array, Array)>],
 }
 pub struct MistralOutput {
-    output: Array,
-    cache: Vec<Option<(Array, Array)>>,
+    pub logits: Array,
+    pub cache: Vec<Option<(Array, Array)>>,
 }
 
 impl Module<MistralInput<'_>> for Mistral {
@@ -392,7 +392,7 @@ impl Module<MistralInput<'_>> for Mistral {
         let output = self.output.forward(&self.norm.forward(&h)?)?;
 
         Ok(MistralOutput {
-            output,
+            logits: output,
             cache: out_cache,
         })
     }

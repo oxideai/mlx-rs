@@ -1,13 +1,13 @@
 use std::io::Read;
 
 use hf_hub::{api::sync::{Api, ApiBuilder, ApiRepo}, Repo};
-use mlx_rs::{module::ModuleParameters, Array};
+use mlx_rs::{module::{Module, ModuleParameters}, ops::indexing::argmax, prelude::{IndexOp, NewAxis}, transforms::eval, Array};
 use safetensors::SafeTensors;
 use tokenizers::Tokenizer;
 
 mod model;
 
-use model::{Mistral, ModelArgs};
+use model::{Mistral, MistralInput, MistralOutput, ModelArgs};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T, E = Error> = std::result::Result<T, E>;
@@ -79,6 +79,30 @@ fn main() -> Result<()> {
     let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
+
+    let prompt = "hello, world!";
+    let encoding = tokenizer.encode(prompt, false)?;
+    let tokens = Array::from(encoding.get_ids()).index(NewAxis);
+    let initial_cache = Vec::with_capacity(0); // This won't allocate
+
+    let input = MistralInput {
+        inputs: &tokens,
+        cache: &initial_cache,
+    };
+
+    let MistralOutput {
+        logits,
+        cache: _,
+    } = model.forward(input)?;
+
+    println!("{:?}", logits.dtype());
+    println!("{:?}", logits.shape());
+
+    let y = argmax(logits.index((.., -1, ..)), -1, None)?;
+    y.eval()?;
+
+    println!("{:?}", y.dtype());
+    println!("{:?}", y.shape());
 
     Ok(())
 }

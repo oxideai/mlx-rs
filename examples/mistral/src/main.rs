@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use hf_hub::{api::sync::{Api, ApiBuilder, ApiRepo}, Repo};
-use mlx_rs::{module::{Module, ModuleParameters}, nn, ops::indexing::argmax, prelude::{IndexOp, NewAxis}, transforms::eval, Array};
+use mlx_rs::{array, module::{Module, ModuleParameters}, nn, ops::indexing::argmax, prelude::{IndexOp, NewAxis}, random::categorical, transforms::eval, Array};
 use safetensors::SafeTensors;
 use tokenizers::Tokenizer;
 
@@ -67,6 +67,138 @@ fn load_model(repo: &ApiRepo) -> Result<Mistral> {
     Ok(model)
 }
 
+fn sample(logits: &Array, temp: Option<f32>) -> Result<Array> {
+    match temp {
+        None | Some(0.0) => {
+            argmax(logits, -1, None).map_err(Into::into)
+        },
+        Some(temp) => {
+            let logits = logits.multiply(array!(1.0 / temp))?;
+            categorical(logits, None, None, None).map_err(Into::into)
+        }
+    }
+}
+
+/// Generate up to `max_tokens` tokens from the model given a prompt token
+fn generate(prompt_token: &Array, model: &mut Mistral, temp: Option<f32>, max_tokens: usize) -> Result<Vec<Array>> {
+    if max_tokens == 0 {
+        return Ok(Vec::new());
+    }
+
+    let mut output_tokens = Vec::with_capacity(max_tokens);
+    let initial_cache = Vec::with_capacity(0); // This won't allocate
+
+    let input = MistralInput {
+        inputs: prompt_token,
+        cache: &initial_cache,
+    };
+
+    let MistralOutput {
+        mut logits,
+        mut cache
+    } = model.forward(input)?;
+
+    let mut y = sample(&logits.index((.., -1, ..)), temp)?;
+
+    for _ in 1..max_tokens {
+        let next_token = y.index((.., NewAxis));
+        let input = MistralInput {
+            inputs: &next_token,
+            cache: &cache,
+        };
+
+        // Append the previous y to output_tokens to avoid cloning
+        output_tokens.push(y);
+
+        let output = model.forward(input)?;
+        logits = output.logits;
+        cache = output.cache;
+        y = sample(&logits.squeeze(&[1])?, temp)?;
+    }
+
+    output_tokens.push(y);
+
+    Ok(output_tokens)
+}
+
+macro_rules! tri {
+    ($expr:expr) => {
+        match $expr {
+            Ok(val) => val,
+            Err(e) => return Some(Err(e.into())),
+        }
+    };
+}
+
+struct Generate<'a> {
+    model: &'a mut Mistral,
+    temp: Option<f32>,
+    state: GenerateState<'a>,
+}
+
+enum GenerateState<'a> {
+    Start {
+        prompt_token: &'a Array,
+    },
+    Continue {
+        y: Array,
+        cache: Vec<Option<(Array, Array)>>,
+    },
+}
+
+impl<'a> Generate<'a> {
+    pub fn new(model: &'a mut Mistral, prompt_token: &'a Array, temp: Option<f32>) -> Self {
+        Self {
+            model,
+            temp,
+            state: GenerateState::Start { prompt_token },
+        }
+    }
+}
+
+impl<'a> Iterator for Generate<'a> {
+    type Item = Result<Array>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &self.state {
+            GenerateState::Start { prompt_token } => {
+                let initial_cache = Vec::with_capacity(0); // This won't allocate
+                let input = MistralInput {
+                    inputs: &*prompt_token,
+                    cache: &initial_cache,
+                };
+                let MistralOutput {
+                    logits,
+                    cache,
+                } = tri!(self.model.forward(input));
+                let y = tri!(sample(&logits.index((.., -1, ..)), self.temp));
+
+                self.state = GenerateState::Continue { y: y.clone(), cache };
+
+                Some(Ok(y))
+            },
+            GenerateState::Continue { y, cache } => {
+                let next_token = y.index((.., NewAxis));
+                let input = MistralInput {
+                    inputs: &next_token,
+                    cache: cache.as_slice(),
+                };
+                let MistralOutput {
+                    logits,
+                    cache: new_cache,
+                } = tri!(self.model.forward(input));
+
+                let logits = tri!(logits.squeeze(&[1]));
+                let y = tri!(sample(&logits, self.temp));
+
+                self.state = GenerateState::Continue { y: y.clone(), cache: new_cache };
+
+                Some(Ok(y))
+            },
+        }
+    }
+}
+
 fn main() -> Result<()> {
     // Put your huggingface access token in a .env file located at the root of
     // this example (ie. examples/mistral/.env)
@@ -80,7 +212,7 @@ fn main() -> Result<()> {
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
 
-    model = nn::quantize(model, None, None)?;
+    // model = nn::quantize(model, None, None)?;
 
     let prompt = "hello, world!";
     let encoding = tokenizer.encode(prompt, false)?;

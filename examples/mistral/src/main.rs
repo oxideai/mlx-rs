@@ -6,7 +6,7 @@ use hf_hub::{
 };
 use mlx_rs::{
     array,
-    module::{Module, ModuleParameters},
+    module::{self, Module, ModuleParameters},
     ops::indexing::argmax,
     prelude::{IndexOp, NewAxis},
     random::categorical,
@@ -57,30 +57,13 @@ fn get_model_args(repo: &ApiRepo) -> Result<ModelArgs> {
     Ok(model_args)
 }
 
-fn load_weights(repo: &ApiRepo, model: &mut Mistral) -> Result<()> {
-    let weights_filename = repo.get("weights.safetensors")?;
-    let mut file = std::fs::File::open(weights_filename)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    let safetensors = SafeTensors::deserialize(&buf)?;
-
-    load_weights_from_safetensors(model, safetensors)
-}
-
-fn load_weights_from_safetensors(model: &mut Mistral, weights: SafeTensors<'_>) -> Result<()> {
-    let params = model.parameters_mut().flatten();
-    for (key, value) in params {
-        let tensor = weights.tensor(&*key)?;
-        *value = Array::try_from(tensor)?;
-    }
-
-    Ok(())
-}
-
+// TODO: Loading take twice as long as the original example (even with mmap)
 fn load_model(repo: &ApiRepo) -> Result<Mistral> {
     let model_args = get_model_args(repo)?;
     let mut model = Mistral::new(&model_args)?;
-    load_weights(repo, &mut model)?;
+    let weights_filename = repo.get("weights.safetensors")?;
+    module::load_safetensors(&mut model, weights_filename)?;
+
     Ok(model)
 }
 
@@ -200,9 +183,9 @@ fn main() -> Result<()> {
     model = mlx_rs::nn::quantize(model, None, None)?;
 
     let prompt = "hello world";
-    let encoding = tokenizer.encode(prompt, false)?;
-    let encoding = tokenizer.post_process(encoding, None, true)?;
+    let encoding = tokenizer.encode(prompt, true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
+    println!("prompt tokens: {:?}", prompt_tokens);
 
     let generate = Generate::new(&mut model, &prompt_tokens, temp);
     let mut tokens = Vec::with_capacity(max_tokens);

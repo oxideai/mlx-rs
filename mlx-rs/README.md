@@ -35,6 +35,8 @@ _[Blaze](https://runblaze.dev) supports this project by providing ultra-fast App
 
 * `metal` - enables metal (GPU) usage in MLX
 * `accelerate` - enables using the accelerate framework in MLX
+* `io` - enables IO operations in MLX (loading and saving arrays)
+* `safetensors` - enables conversions from safetensors TensorView to Array
 
 ## Versioning
 
@@ -47,7 +49,7 @@ We try to be as welcoming as possible to everybody from any background. We're st
 
 ## Status
 
-mlx-rs is currently in active development, and is not yet complete.
+mlx-rs is currently in active development and can be used to run MLX models in Rust.
 
 ## MSRV
 
@@ -57,5 +59,6 @@ The MSRV is the minimum Rust version that can be used to compile each crate.
 
 ## License
 
-mlx-rs is distributed under the terms of the MIT license. See [LICENSE](./LICENSE) for details.
-Opening a pull request is assumed to signal agreement with these licensing terms.
+Burn is distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+See [LICENSE-APACHE](./LICENSE-APACHE) and [LICENSE-MIT](./LICENSE-MIT) for details. Opening a pull
+request is assumed to signal agreement with these licensing terms.

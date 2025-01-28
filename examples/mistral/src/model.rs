@@ -97,12 +97,12 @@ impl Attention {
 struct AttentionInput<'a> {
     x: &'a Array,
     mask: Option<&'a Array>,
-    kv_cache: Option<(&'a Array, &'a Array)>,
+    cache: Option<(&'a Array, &'a Array)>,
 }
 
 struct AttentionOutput {
     output: Array,
-    kv_cache: (Array, Array),
+    cache: (Array, Array),
 }
 
 impl Module<AttentionInput<'_>> for Attention {
@@ -112,7 +112,7 @@ impl Module<AttentionInput<'_>> for Attention {
 
     #[allow(non_snake_case)]
     fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
-        let AttentionInput { x, mask, kv_cache } = input;
+        let AttentionInput { x, mask, cache } = input;
 
         // NOTE: this will panic if the input shape is not correct
         let B = x.shape()[0];
@@ -133,7 +133,7 @@ impl Module<AttentionInput<'_>> for Attention {
             .reshape(&[B, L, self.n_kv_heads, -1])?
             .transpose(&[0, 2, 1, 3])?;
 
-        match kv_cache {
+        match cache {
             Some((key_cache, value_cache)) => {
                 let offset = key_cache.shape()[2];
                 queries = self.rope.forward((&queries, offset))?;
@@ -153,7 +153,7 @@ impl Module<AttentionInput<'_>> for Attention {
 
         Ok(AttentionOutput {
             output,
-            kv_cache: (keys, values),
+            cache: (keys, values),
         })
     }
 
@@ -262,23 +262,23 @@ impl Module<AttentionInput<'_>> for TransformerBlock {
     type Error = Exception;
 
     fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
-        let AttentionInput { x, mask, kv_cache } = input;
-        let x = self.attention_norm.forward(x)?;
+        let AttentionInput { x, mask, cache } = input;
+        let norm_x = self.attention_norm.forward(x)?;
         let attention_input = AttentionInput {
-            x: &x,
+            x: &norm_x,
             mask,
-            kv_cache,
+            cache,
         };
         let attention_output = self.attention.forward(attention_input)?;
 
         let r = attention_output.output;
-        let kv_cache = attention_output.kv_cache;
+        let cache = attention_output.cache;
 
         let h = x.add(r)?;
         let r = self.feed_forward.forward(&self.ffn_norm.forward(&h)?)?;
         let output = h.add(r)?;
 
-        Ok(AttentionOutput { output, kv_cache })
+        Ok(AttentionOutput { output, cache })
     }
 
     fn training_mode(&mut self, mode: bool) {
@@ -378,15 +378,15 @@ impl Module<MistralInput<'_>> for Mistral {
 
         let mut out_cache = Vec::with_capacity(self.layers.len());
         for (i, layer) in self.layers.iter_mut().enumerate() {
-            let kv_cache = cache.get(i).and_then(Option::as_ref).map(|(k, v)| (k, v));
+            let cache_entry = cache.get(i).and_then(Option::as_ref).map(|(k, v)| (k, v));
             let input = AttentionInput {
                 x: &h,
                 mask: mask.as_ref(),
-                kv_cache,
+                cache: cache_entry,
             };
             let output = layer.forward(input)?;
             h = output.output;
-            out_cache.push(Some(output.kv_cache));
+            out_cache.push(Some(output.cache));
         }
 
         let output = self.output.forward(&self.norm.forward(&h)?)?;

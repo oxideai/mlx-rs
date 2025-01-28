@@ -14,7 +14,7 @@ use mlx_rs::{
     Array,
 };
 use safetensors::SafeTensors;
-use tokenizers::Tokenizer;
+use tokenizers::{processors::template::TemplateProcessing, AddedToken, Tokenizer};
 
 mod model;
 
@@ -39,7 +39,14 @@ fn build_hf_api() -> Result<Api> {
 
 fn get_tokenizer(repo: &ApiRepo) -> Result<Tokenizer> {
     let tokenizer_filename = repo.get("tokenizer.json")?;
-    Tokenizer::from_file(tokenizer_filename)
+    let mut t = Tokenizer::from_file(tokenizer_filename)?;
+    t.add_special_tokens(&[AddedToken::from(String::from("<s>"), true)]);
+    let post_processor = TemplateProcessing::builder()
+        .try_single("[BOS] $A")?
+        .special_tokens(vec![("[BOS]", 1)])
+        .build()?;
+    t.with_post_processor(Some(post_processor));
+    Ok(t)
 }
 
 fn get_model_args(repo: &ApiRepo) -> Result<ModelArgs> {
@@ -175,9 +182,13 @@ fn main() -> Result<()> {
     let api = build_hf_api()?;
 
     // Parse args
+    // TODO: take args from command line with clap
     let temp = None;
-    let max_tokens = 100;
+    let max_tokens = 20;
     let tokens_per_eval = 10;
+    let seed = 13;
+
+    mlx_rs::random::seed(seed)?;
 
     // The model used in the original example is converted to safetensors and
     // uploaded to the huggingface hub
@@ -186,17 +197,17 @@ fn main() -> Result<()> {
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
 
-    // model = nn::quantize(model, None, None)?;
+    model = mlx_rs::nn::quantize(model, None, None)?;
 
-    let prompt = "hello, world!";
+    let prompt = "hello world";
     let encoding = tokenizer.encode(prompt, false)?;
+    let encoding = tokenizer.post_process(encoding, None, true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
 
     let generate = Generate::new(&mut model, &prompt_tokens, temp);
     let mut tokens = Vec::with_capacity(max_tokens);
     for (token, ntoks) in generate.zip(0..max_tokens) {
         let token = token?;
-        println!("{:?}", token);
         tokens.push(token);
 
         if ntoks == 0 {

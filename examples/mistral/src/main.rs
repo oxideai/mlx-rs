@@ -1,19 +1,16 @@
-use std::io::Read;
-
 use hf_hub::{
     api::sync::{Api, ApiBuilder, ApiRepo},
     Repo,
 };
 use mlx_rs::{
     array,
-    module::{self, Module, ModuleParameters},
+    module::{self, Module},
     ops::indexing::argmax,
     prelude::{IndexOp, NewAxis},
     random::categorical,
     transforms::eval,
     Array,
 };
-use safetensors::SafeTensors;
 use tokenizers::{processors::template::TemplateProcessing, AddedToken, Tokenizer};
 
 mod model;
@@ -184,6 +181,7 @@ fn main() -> Result<()> {
 
     let prompt = "hello world";
     let encoding = tokenizer.encode(prompt, true)?;
+    // let encoding = tokenizer.post_process(encoding, None, true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
     println!("prompt tokens: {:?}", prompt_tokens);
 
@@ -198,7 +196,7 @@ fn main() -> Result<()> {
             // TODO: timing
         }
 
-        if tokens.len() & tokens_per_eval == 0 {
+        if tokens.len() % tokens_per_eval == 0 {
             eval(&tokens)?;
             let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
             let s = tokenizer.decode(&slice, true)?;
@@ -214,4 +212,28 @@ fn main() -> Result<()> {
     println!("-------------------");
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: how to properly treat the newline (ie. <0x0A>) in the decoder?
+    // and there's probably other special tokens that need to be handled
+    #[test]
+    fn troubleshoot_decode() -> Result<()> {
+        // The token (length limited to 20) generated with seed 13 and prompt
+        // "hello world" is:
+        let tokens = [28808, 13, 13, 28771, 19218, 1791, 16694, 3764, 7634, 13770, 17058, 28804, 13, 13, 2000, 28771, 5078, 11666, 298, 813];
+
+        let api = build_hf_api()?;
+        let model_id = "minghuaw/Mistral-7B-v0.1".to_string();
+        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
+        let tokenizer = get_tokenizer(&repo)?;
+
+        let s = tokenizer.decode(&tokens, true)?;
+        println!("{}", s);
+
+        Ok(())
+    }
 }

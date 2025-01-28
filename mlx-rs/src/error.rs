@@ -100,6 +100,24 @@ cfg_safetensors! {
         #[error(transparent)]
         SafeTensorError(#[from] safetensors::tensor::SafeTensorError),
     }
+
+
+    /// Error with loading a module from a safetensors file
+    #[derive(Debug, Error)]
+    pub enum ModuleIoError {
+        /// Error with io operations
+        #[error(transparent)]
+        Io(#[from] std::io::Error),
+
+        /// Error with deserializing SafeTensors
+        #[error("Unable to deserialize SafeTensors: {0}")]
+        Deserialize(#[from] safetensors::SafeTensorError),
+
+        /// Error with conversion between [`safetensors::tensor::TensorView` and `Array`
+        #[error(transparent)]
+        Conversion(#[from] ConversionError),
+    }
+
 }
 
 /// Exception. Most will come from the C API.

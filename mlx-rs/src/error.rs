@@ -153,7 +153,8 @@ impl Exception {
     /// The location of the error.
     /// 
     /// The location is obtained from `std::panic::Location::caller()` and points
-    /// to the location in the code where the error was created.
+    /// to the location in the code where the error was created and not where it was
+    /// propagated.
     pub fn location(&self) -> &'static Location<'static> {
         self.location
     }

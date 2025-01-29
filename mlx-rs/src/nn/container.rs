@@ -73,7 +73,7 @@ mod tests {
     use crate::{
         array,
         module::ModuleParameters,
-        nn::{Linear, self},
+        nn::{self, Linear},
         ops::zeros,
         optimizers::{Optimizer, Sgd},
         prelude::Builder,

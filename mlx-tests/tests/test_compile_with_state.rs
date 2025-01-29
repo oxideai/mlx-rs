@@ -7,11 +7,11 @@ use mlx_rs::{
     assert_array_eq,
     error::Exception,
     module::{Module, ModuleParameters},
+    nn,
     ops::ones,
     optimizers::{Optimizer, Sgd},
     transforms::{compile::compile_with_state, eval_params},
     Array,
-    nn,
 };
 
 #[test]

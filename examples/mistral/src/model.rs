@@ -28,7 +28,6 @@ impl ModelArgs {
     pub const DEFAULT_ROPE_THETA: f32 = 10000.0;
 }
 
-
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
 pub struct Attention {
     n_heads: i32,

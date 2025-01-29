@@ -1,7 +1,14 @@
 use std::iter::once;
 
 use crate::{
-    array, error::Exception, module::{Module, ModuleParameters, Param}, ops::{self, dequantize, quantized_matmul, zeros}, prelude::IndexOp, quantization::Quantizable, random::uniform, Array
+    array,
+    error::Exception,
+    module::{Module, ModuleParameters, Param},
+    ops::{self, dequantize, quantized_matmul, zeros},
+    prelude::IndexOp,
+    quantization::Quantizable,
+    random::uniform,
+    Array,
 };
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
@@ -9,13 +16,17 @@ use mlx_macros::ModuleParameters;
 use crate::nn::{Embedding, Linear};
 
 /// Quantize a module.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `module`: The module to quantize.
 /// - `group_size`: The group size to use for the quantized weight. Default to [`Quantizable::DEFAULT_GROUP_SIZE`]
 /// - `bits`: The bit width to use for the quantized weight. Default to [`Quantizable::DEFAULT_BITS`]
-pub fn quantize<M>(module: M, group_size: impl Into<Option<i32>>, bits: impl Into<Option<i32>>) -> Result<M::Quantized, M::QuantizationError>
+pub fn quantize<M>(
+    module: M,
+    group_size: impl Into<Option<i32>>,
+    bits: impl Into<Option<i32>>,
+) -> Result<M::Quantized, M::QuantizationError>
 where
     M: Quantizable,
 {

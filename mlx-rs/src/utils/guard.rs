@@ -43,7 +43,7 @@ pub(crate) trait Guarded: Sized {
                     .what;
                 let location = std::panic::Location::caller();
                 Err(Exception { what, location })
-            },
+            }
         }
     }
 }

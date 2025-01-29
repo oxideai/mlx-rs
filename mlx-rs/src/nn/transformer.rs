@@ -139,8 +139,8 @@ impl MultiHeadAttention {
     pub const DEFAULT_BIAS: bool = false;
 
     /// Creates an attention mask for use with [`MultiHeadAttention`].
-    pub fn create_additive_causal_mask<T>(n: i32) -> Result<Array, Exception> 
-    where 
+    pub fn create_additive_causal_mask<T>(n: i32) -> Result<Array, Exception>
+    where
         T: ArrayElement + LowerBounded,
         Array: FromScalar<T>,
     {

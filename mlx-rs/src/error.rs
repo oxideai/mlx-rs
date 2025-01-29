@@ -151,7 +151,7 @@ impl Exception {
     }
 
     /// The location of the error.
-    /// 
+    ///
     /// The location is obtained from `std::panic::Location::caller()` and points
     /// to the location in the code where the error was created and not where it was
     /// propagated.
@@ -162,7 +162,10 @@ impl Exception {
     /// Creates a new exception with the given message.
     #[track_caller]
     pub fn custom(what: impl Into<String>) -> Self {
-        Self { what: what.into(), location: Location::caller() }
+        Self {
+            what: what.into(),
+            location: Location::caller(),
+        }
     }
 }
 
@@ -249,7 +252,7 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<RawException> {
         unsafe {
             libc::free(last_err_ptr as *mut libc::c_void);
         }
-        
+
         Some(RawException { what: last_err })
     })
 }

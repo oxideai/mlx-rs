@@ -121,7 +121,7 @@ impl<'a> Generate<'a> {
     }
 }
 
-impl<'a> Iterator for Generate<'a> {
+impl Iterator for Generate<'_> {
     type Item = Result<Array>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -129,7 +129,7 @@ impl<'a> Iterator for Generate<'a> {
             GenerateState::Start { prompt_token } => {
                 let initial_cache = Vec::with_capacity(0); // This won't allocate
                 let input = MistralInput {
-                    inputs: &*prompt_token,
+                    inputs: prompt_token,
                     cache: &initial_cache,
                 };
                 let MistralOutput { logits, cache } = tri!(self.model.forward(input));

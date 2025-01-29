@@ -7,13 +7,13 @@ use mlx_rs::{
     losses::{LossReduction, MseLossBuilder},
     macros::ModuleParameters,
     module::{FlattenedModuleParam, Module, ModuleParameters, Param},
+    nn,
     ops::{ones, zeros},
     optimizers::{
         AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
         RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
-    nn,
     transforms::{eval, eval_params},
     Array, Dtype,
 };

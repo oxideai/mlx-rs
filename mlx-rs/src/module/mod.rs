@@ -33,12 +33,12 @@ cfg_safetensors! {
             let tensor = st.tensor(&*key)?;
             *value = crate::Array::try_from(tensor)?;
         }
-    
+
         Ok(())
     }
 
     /// Save module parameters to a file in `safetensors` format.
-    pub fn save_safetensors<M, P>(module: &M, path: P) -> Result<(), ModuleIoError> 
+    pub fn save_safetensors<M, P>(module: &M, path: P) -> Result<(), ModuleIoError>
     where
         M: ModuleParameters,
         P: AsRef<std::path::Path>,

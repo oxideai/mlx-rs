@@ -11,7 +11,11 @@ use mlx_rs::{
     transforms::eval,
     Array,
 };
-use tokenizers::{processors::template::TemplateProcessing, AddedToken, Tokenizer};
+use tokenizers::{
+    decoders::{byte_fallback::ByteFallback, metaspace::Metaspace, sequence::Sequence},
+    processors::template::TemplateProcessing,
+    AddedToken, DecoderWrapper, Tokenizer,
+};
 
 mod model;
 
@@ -34,6 +38,7 @@ fn build_hf_api() -> Result<Api> {
     builder.build().map_err(Into::into)
 }
 
+// TODO: The way we are adding post_processor and decoder is kind of sketchy
 fn get_tokenizer(repo: &ApiRepo) -> Result<Tokenizer> {
     let tokenizer_filename = repo.get("tokenizer.json")?;
     let mut t = Tokenizer::from_file(tokenizer_filename)?;
@@ -43,6 +48,13 @@ fn get_tokenizer(repo: &ApiRepo) -> Result<Tokenizer> {
         .special_tokens(vec![("[BOS]", 1)])
         .build()?;
     t.with_post_processor(Some(post_processor));
+
+    let decoder = Sequence::new(vec![
+        DecoderWrapper::Metaspace(Metaspace::default()),
+        DecoderWrapper::ByteFallback(ByteFallback::default()),
+    ]);
+
+    t.with_decoder(Some(decoder));
     Ok(t)
 }
 
@@ -174,6 +186,7 @@ fn main() -> Result<()> {
     // uploaded to the huggingface hub
     let model_id = "minghuaw/Mistral-7B-v0.1".to_string();
     let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
+    print!("[INFO] Loading model... ");
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
 
@@ -181,9 +194,8 @@ fn main() -> Result<()> {
 
     let prompt = "hello world";
     let encoding = tokenizer.encode(prompt, true)?;
-    // let encoding = tokenizer.post_process(encoding, None, true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
-    println!("prompt tokens: {:?}", prompt_tokens);
+    print!("{}: ", prompt);
 
     let generate = Generate::new(&mut model, &prompt_tokens, temp);
     let mut tokens = Vec::with_capacity(max_tokens);
@@ -200,40 +212,16 @@ fn main() -> Result<()> {
             eval(&tokens)?;
             let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
             let s = tokenizer.decode(&slice, true)?;
-            print!("{:?}", s);
+            print!("{}", s);
         }
     }
 
     eval(&tokens)?;
     let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
     let s = tokenizer.decode(&slice, true)?;
-    println!("{:?}", s);
+    println!("{}", s);
 
     println!("------");
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // TODO: how to properly treat the newline (ie. <0x0A>) in the decoder?
-    // and there's probably other special tokens that need to be handled
-    #[test]
-    fn troubleshoot_decode() -> Result<()> {
-        // The token (length limited to 20) generated with seed 13 and prompt
-        // "hello world" is:
-        let tokens = [28808, 13, 13, 28771, 19218, 1791, 16694, 3764, 7634, 13770, 17058, 28804, 13, 13, 2000, 28771, 5078, 11666, 298, 813];
-
-        let api = build_hf_api()?;
-        let model_id = "minghuaw/Mistral-7B-v0.1".to_string();
-        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-        let tokenizer = get_tokenizer(&repo)?;
-
-        let s = tokenizer.decode(&tokens, true)?;
-        println!("{}", s);
-
-        Ok(())
-    }
 }

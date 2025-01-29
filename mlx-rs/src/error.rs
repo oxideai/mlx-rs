@@ -4,6 +4,7 @@ use crate::Dtype;
 use libc::strdup;
 use std::convert::Infallible;
 use std::ffi::NulError;
+use std::panic::Location;
 use std::sync::Once;
 use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
@@ -49,6 +50,17 @@ pub enum IoError {
     /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
+}
+
+impl From<RawException> for IoError {
+    #[track_caller]
+    fn from(e: RawException) -> Self {
+        let exception = Exception {
+            what: e.what,
+            location: Location::caller(),
+        };
+        Self::Exception(exception)
+    }
 }
 
 /// Error associated with `Array::try_as_slice()`
@@ -120,11 +132,16 @@ cfg_safetensors! {
 
 }
 
+pub(crate) struct RawException {
+    pub(crate) what: String,
+}
+
 /// Exception. Most will come from the C API.
 #[derive(Debug, PartialEq, Error)]
-#[error("{what:?}")]
+#[error("{what:?} at {location}")]
 pub struct Exception {
     pub(crate) what: String,
+    pub(crate) location: &'static Location<'static>,
 }
 
 impl Exception {
@@ -133,16 +150,37 @@ impl Exception {
         &self.what
     }
 
+    /// The location of the error.
+    /// 
+    /// The location is obtained from `std::panic::Location::caller()` and points
+    /// to the location in the code where the error was created.
+    pub fn location(&self) -> &'static Location<'static> {
+        self.location
+    }
+
     /// Creates a new exception with the given message.
+    #[track_caller]
     pub fn custom(what: impl Into<String>) -> Self {
-        Self { what: what.into() }
+        Self { what: what.into(), location: Location::caller() }
+    }
+}
+
+impl From<RawException> for Exception {
+    #[track_caller]
+    fn from(e: RawException) -> Self {
+        Self {
+            what: e.what,
+            location: Location::caller(),
+        }
     }
 }
 
 impl From<&str> for Exception {
+    #[track_caller]
     fn from(what: &str) -> Self {
         Self {
             what: what.to_string(),
+            location: Location::caller(),
         }
     }
 }
@@ -194,7 +232,8 @@ pub(crate) fn get_and_clear_closure_error() -> Option<Exception> {
     CLOSURE_ERROR.with(|closure_error| closure_error.replace(None))
 }
 
-pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
+#[track_caller]
+pub(crate) fn get_and_clear_last_mlx_error() -> Option<RawException> {
     LAST_MLX_ERROR.with(|last_error| {
         let last_err_ptr = last_error.replace(std::ptr::null());
         if last_err_ptr.is_null() {
@@ -209,7 +248,8 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
         unsafe {
             libc::free(last_err_ptr as *mut libc::c_void);
         }
-        Some(Exception { what: last_err })
+        
+        Some(RawException { what: last_err })
     })
 }
 

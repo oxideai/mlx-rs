@@ -195,7 +195,7 @@ fn main() -> Result<()> {
     let prompt = "hello world";
     let encoding = tokenizer.encode(prompt, true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
-    print!("{}: ", prompt);
+    print!("{}", prompt);
 
     let generate = Generate::new(&mut model, &prompt_tokens, temp);
     let mut tokens = Vec::with_capacity(max_tokens);

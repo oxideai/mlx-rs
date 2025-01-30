@@ -6,7 +6,7 @@ This is the rust version of the [mlx-examples/llms/mistral](https://github.com/m
 
 ## Usage
 
-This example loads the safetensors version of the model from a huggingface repo and thus require internet connection the first time it is run.
+This example loads the safetensors version of the model from a huggingface repo and thus requires internet connection the first time it is run.
 
 To run the example in release mode, execute the following command:
 

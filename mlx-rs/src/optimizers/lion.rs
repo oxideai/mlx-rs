@@ -65,6 +65,16 @@ impl Lion {
 }
 
 impl Optimizer for Lion {
+    type State = OptimizerState;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,

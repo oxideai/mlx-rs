@@ -73,6 +73,16 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
+    type State = OptimizerState;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &Rc<str>,

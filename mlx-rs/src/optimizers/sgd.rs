@@ -71,6 +71,16 @@ impl Sgd {
 }
 
 impl Optimizer for Sgd {
+    type State = OptimizerState;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
     fn update_single(

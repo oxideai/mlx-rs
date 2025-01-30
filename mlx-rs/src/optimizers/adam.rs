@@ -68,6 +68,16 @@ impl Adam {
 }
 
 impl Optimizer for Adam {
+    type State = OptimizerState<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &Rc<str>,

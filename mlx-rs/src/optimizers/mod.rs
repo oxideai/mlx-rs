@@ -57,6 +57,15 @@ use impl_updatable_for_mut_optimizer;
 type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
 /// Trait for optimizers.
 pub trait Optimizer: Updatable {
+    /// State of the optimizer.
+    type State;
+
+    /// Get the state of the optimizer.
+    fn state(&self) -> &Self::State;
+
+    /// Get the mutable state of the optimizer.
+    fn state_mut(&mut self) -> &mut Self::State;
+
     /// Update a single parameter with the given gradient.
     ///
     /// The implementation should look up the state for the parameter using the key and update the

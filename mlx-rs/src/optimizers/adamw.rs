@@ -81,6 +81,16 @@ impl AdamW {
 }
 
 impl Optimizer for AdamW {
+    type State = OptimizerState<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,

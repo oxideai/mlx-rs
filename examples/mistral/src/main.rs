@@ -20,11 +20,32 @@ use model::{Mistral, MistralInput, MistralOutput, ModelArgs};
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T, E = Error> = std::result::Result<T, E>;
 
+use clap::Parser;
+
+#[derive(Parser)]
+pub struct Cli {
+    /// The message to be processed by the model
+    #[clap(long, default_value = "In the begging the Unverse was created.")]
+    prompt: String,
+
+    /// Maximum number of tokens to generate
+    #[clap(long, default_value = "100")]
+    max_tokens: usize,
+
+    /// The sampling temperature
+    #[clap(long, default_value = "0.0")]
+    temp: f32,
+
+    /// The batch size of tokens to generate
+    #[clap(long, default_value = "10")]
+    tokens_per_eval: usize,
+
+    /// The PRNG seed
+    #[clap(long, default_value = "0")]
+    seed: u64,
+}
+
 fn build_hf_api() -> Result<Api> {
-    // If you want to manually set the cache directory, you can set the HF_CACHE_DIR
-    // environment variable or put it in a .env file located at the root of this example
-    // (ie. examples/mistral/.env)
-    dotenv::dotenv().ok();
     let cache_dir = std::env::var("HF_CACHE_DIR").ok();
 
     let mut builder = ApiBuilder::new();
@@ -59,10 +80,10 @@ fn load_model(repo: &ApiRepo) -> Result<Mistral> {
     Ok(model)
 }
 
-fn sample(logits: &Array, temp: Option<f32>) -> Result<Array> {
+fn sample(logits: &Array, temp: f32) -> Result<Array> {
     match temp {
-        None | Some(0.0) => argmax(logits, -1, None).map_err(Into::into),
-        Some(temp) => {
+        0.0 => argmax(logits, -1, None).map_err(Into::into),
+        _ => {
             let logits = logits.multiply(array!(1.0 / temp))?;
             categorical(logits, None, None, None).map_err(Into::into)
         }
@@ -80,7 +101,7 @@ macro_rules! tri {
 
 struct Generate<'a> {
     model: &'a mut Mistral,
-    temp: Option<f32>,
+    temp: f32,
     state: GenerateState<'a>,
 }
 
@@ -95,7 +116,7 @@ enum GenerateState<'a> {
 }
 
 impl<'a> Generate<'a> {
-    pub fn new(model: &'a mut Mistral, prompt_token: &'a Array, temp: Option<f32>) -> Self {
+    pub fn new(model: &'a mut Mistral, prompt_token: &'a Array, temp: f32) -> Self {
         Self {
             model,
             temp,
@@ -151,19 +172,16 @@ impl Iterator for Generate<'_> {
 }
 
 fn main() -> Result<()> {
-    // Put your huggingface access token in a .env file located at the root of
-    // this example (ie. examples/mistral/.env)
-    dotenv::dotenv().ok();
+    // If you want to manually set the cache directory, you can set the HF_CACHE_DIR
+    // environment variable or put it in a .env file located at the root of this example
+    // (ie. examples/mistral/.env)
+    let _ = dotenv::dotenv();
     let api = build_hf_api()?;
 
     // Parse args
-    // TODO: take args from command line with clap
-    let temp = None;
-    let max_tokens = 20;
-    let tokens_per_eval = 10;
-    let seed = 13;
+    let cli = Cli::parse();
 
-    mlx_rs::random::seed(seed)?;
+    mlx_rs::random::seed(cli.seed)?;
 
     // The model used in the original example is converted to safetensors and
     // uploaded to the huggingface hub
@@ -180,18 +198,17 @@ fn main() -> Result<()> {
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
     print!("{}", prompt);
 
-    let generate = Generate::new(&mut model, &prompt_tokens, temp);
-    let mut tokens = Vec::with_capacity(max_tokens);
-    for (token, ntoks) in generate.zip(0..max_tokens) {
+    let generate = Generate::new(&mut model, &prompt_tokens, cli.temp);
+    let mut tokens = Vec::with_capacity(cli.max_tokens);
+    for (token, ntoks) in generate.zip(0..cli.max_tokens) {
         let token = token?;
         tokens.push(token);
 
         if ntoks == 0 {
             eval(&tokens)?;
-            // TODO: timing
         }
 
-        if tokens.len() % tokens_per_eval == 0 {
+        if tokens.len() % cli.tokens_per_eval == 0 {
             eval(&tokens)?;
             let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
             let s = tokenizer.decode(&slice, true)?;

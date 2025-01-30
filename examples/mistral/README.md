@@ -18,7 +18,7 @@ cargo run --release
 
 The example accepts the following optional arguments:
 
-- `--prompt: str` - The message to be processed by the model. Default: "In the beginning the     Universe was created."
+- `--prompt: str` - The message to be processed by the model. Default: "In the beginning the Universe was created."
 - `--max-tokens: int` - The maximum number of tokens to generate. Default: 100
 - `--temp: float` - The sampling temperature. Default: 0.0
 - `--tokens-per-eval: int` - The batch size of tokens to generate. Default: 10

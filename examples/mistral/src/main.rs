@@ -74,7 +74,7 @@ fn get_model_args(repo: &ApiRepo) -> Result<ModelArgs> {
 fn load_model(repo: &ApiRepo) -> Result<Mistral> {
     let model_args = get_model_args(repo)?;
     let mut model = Mistral::new(&model_args)?;
-    let weights_filename = repo.get("weights.safetensors")?;    
+    let weights_filename = repo.get("weights.safetensors")?;
     model.load_safetensors(weights_filename)?;
 
     Ok(model)

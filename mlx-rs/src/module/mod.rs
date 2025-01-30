@@ -11,7 +11,10 @@ mod param;
 pub use module::*;
 pub use param::*;
 
-use crate::{error::{Exception, IoError}, Array};
+use crate::{
+    error::{Exception, IoError},
+    Array,
+};
 
 /// Extension trait for `ModuleParameters`. This is implemented for all types that implement
 /// `ModuleParameters`.
@@ -27,7 +30,7 @@ pub trait ModuleParametersExt: ModuleParameters {
         P: AsRef<std::path::Path>,
     {
         let weights = Array::load_safetensors(path)?;
-    
+
         // Load the parameters
         let mut params = self.parameters_mut().flatten();
         for (key, value) in weights {
@@ -35,13 +38,13 @@ pub trait ModuleParametersExt: ModuleParameters {
                 **param = value;
             }
         }
-    
+
         // Loading is lazy, eval after loading
         crate::transforms::eval_params(self.parameters())?;
-    
+
         Ok(())
     }
-    
+
     /// Save module parameters to a file in `safetensors` format.
     fn save_safetensors<M, P>(module: &M, path: P) -> Result<(), IoError>
     where
@@ -54,4 +57,4 @@ pub trait ModuleParametersExt: ModuleParameters {
     }
 }
 
-impl<T: ModuleParameters> ModuleParametersExt for T { }
+impl<T: ModuleParameters> ModuleParametersExt for T {}

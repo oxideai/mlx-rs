@@ -13,8 +13,8 @@ use std::{marker::PhantomData, rc::Rc};
 pub(crate) const SUCCESS: i32 = 0;
 pub(crate) const FAILURE: i32 = 1;
 
-pub(crate) mod io;
 pub(crate) mod guard;
+pub(crate) mod io;
 
 pub(crate) fn resolve_index_signed_unchecked(index: i32, len: i32) -> i32 {
     if index < 0 {

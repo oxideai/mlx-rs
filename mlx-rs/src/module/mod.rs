@@ -11,45 +11,47 @@ mod param;
 pub use module::*;
 pub use param::*;
 
-cfg_safetensors! {
-    use crate::error::ModuleIoError;
+use crate::{error::{Exception, IoError}, Array};
 
-    /// Load module parameters from a `safetensors` file.
-    pub fn load_safetensors<M, P>(module: &mut M, path: P) -> Result<(), ModuleIoError>
-    where
-        M: ModuleParameters,
-        P: AsRef<std::path::Path>,
-    {
-        let path = path.as_ref();
-        let file = std::fs::File::open(path)?;
-        let mmap = unsafe {
-            memmap2::Mmap::map(&file)?
-        };
-        let st = safetensors::SafeTensors::deserialize(&mmap[..])?;
-
-        // Load the parameters
-        let params = module.parameters_mut().flatten();
-        for (key, value) in params {
-            let tensor = st.tensor(&key)?;
-            *value = crate::Array::try_from(tensor)?;
-        }
-
-        Ok(())
+/// Extension trait for `ModuleParameters`. This is implemented for all types that implement
+/// `ModuleParameters`.
+pub trait ModuleParametersExt: ModuleParameters {
+    /// Evaluate the module parameters.
+    fn eval(&self) -> Result<(), Exception> {
+        crate::transforms::eval_params(self.parameters())
     }
 
+    /// Load module parameters from a `safetensors` file.
+    fn load_safetensors<P>(&mut self, path: P) -> Result<(), IoError>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let weights = Array::load_safetensors(path)?;
+    
+        // Load the parameters
+        let mut params = self.parameters_mut().flatten();
+        for (key, value) in weights {
+            if let Some(param) = params.get_mut(&*key) {
+                **param = value;
+            }
+        }
+    
+        // Loading is lazy, eval after loading
+        crate::transforms::eval_params(self.parameters())?;
+    
+        Ok(())
+    }
+    
     /// Save module parameters to a file in `safetensors` format.
-    pub fn save_safetensors<M, P>(module: &M, path: P) -> Result<(), ModuleIoError>
+    fn save_safetensors<M, P>(module: &M, path: P) -> Result<(), IoError>
     where
         M: ModuleParameters,
         P: AsRef<std::path::Path>,
     {
         let params = module.parameters().flatten();
-        let iter = params.into_iter().map(|(k, v)| {
-            let tensor = safetensors::tensor::TensorView::try_from(v)?;
-            Result::<_, crate::error::ConversionError>::Ok((k, tensor))
-        })
-            .collect::<Result<Vec<_>, _>>()?;
-        safetensors::tensor::serialize_to_file(iter, &None, path.as_ref())?;
+        Array::save_safetensors(params, None, path)?;
         Ok(())
     }
 }
+
+impl<T: ModuleParameters> ModuleParametersExt for T { }

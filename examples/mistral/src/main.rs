@@ -4,7 +4,7 @@ use hf_hub::{
 };
 use mlx_rs::{
     array,
-    module::{self, Module},
+    module::{Module, ModuleParametersExt},
     ops::indexing::argmax,
     prelude::{IndexOp, NewAxis},
     random::categorical,
@@ -71,12 +71,11 @@ fn get_model_args(repo: &ApiRepo) -> Result<ModelArgs> {
     Ok(model_args)
 }
 
-// TODO: Loading take twice as long as the original example (even with mmap)
 fn load_model(repo: &ApiRepo) -> Result<Mistral> {
     let model_args = get_model_args(repo)?;
     let mut model = Mistral::new(&model_args)?;
-    let weights_filename = repo.get("weights.safetensors")?;
-    module::load_safetensors(&mut model, weights_filename)?;
+    let weights_filename = repo.get("weights.safetensors")?;    
+    model.load_safetensors(weights_filename)?;
 
     Ok(model)
 }
@@ -194,10 +193,9 @@ fn main() -> Result<()> {
 
     model = mlx_rs::nn::quantize(model, None, None)?;
 
-    let prompt = "hello world";
-    let encoding = tokenizer.encode(prompt, true)?;
+    let encoding = tokenizer.encode(&cli.prompt[..], true)?;
     let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
-    print!("{}", prompt);
+    print!("{}", cli.prompt);
 
     let generate = Generate::new(&mut model, &prompt_tokens, cli.temp);
     let mut tokens = Vec::with_capacity(cli.max_tokens);

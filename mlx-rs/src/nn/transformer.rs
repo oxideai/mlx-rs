@@ -1,16 +1,18 @@
 use std::borrow::Cow;
 
 use crate::{
+    array,
     error::Exception,
     module::{Module, UnaryModule},
-    ops::{matmul, softmax},
+    ops::{arange, expand_dims, matmul, softmax},
     prelude::Builder,
     quantization::MaybeQuantized,
-    Array,
+    Array, ArrayElement, FromScalar,
 };
 use dyn_clone::DynClone;
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::{ModuleParameters, Quantizable};
+use num_traits::bounds::LowerBounded;
 
 use crate::{
     error::{MultiHeadAttentionBuildError, TransformerBulidError},
@@ -135,6 +137,20 @@ pub struct MultiHeadAttention {
 impl MultiHeadAttention {
     /// Default value for the `bias` field
     pub const DEFAULT_BIAS: bool = false;
+
+    /// Creates an attention mask for use with [`MultiHeadAttention`].
+    pub fn create_additive_causal_mask<T>(n: i32) -> Result<Array, Exception>
+    where
+        T: ArrayElement + LowerBounded,
+        Array: FromScalar<T>,
+    {
+        let indices = arange::<_, T>(0, n, 1)?;
+        let left = expand_dims(&indices, &[1])?;
+        let right = expand_dims(&indices, &[0])?;
+        let mask = left.lt(right)?;
+        let mask = mask.as_type::<T>()?.multiply(array!(T::min_value()))?; // TODO: replace with f32::MIN?
+        Ok(mask)
+    }
 }
 
 generate_builder! {

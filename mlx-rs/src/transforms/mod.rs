@@ -1,5 +1,7 @@
 //! Implementations of function transformations.
 
+use mlx_sys::mlx_closure_value_and_grad;
+
 use crate::{
     error::{get_and_clear_closure_error, Result},
     module::ModuleParamRef,
@@ -10,13 +12,10 @@ use crate::{
 pub mod compile;
 mod grad;
 mod keyed_value_and_grad;
-mod module_value_and_grad;
 mod value_and_grad;
 
 pub use grad::*;
 pub use keyed_value_and_grad::*;
-use mlx_sys::mlx_closure_value_and_grad;
-pub use module_value_and_grad::*;
 pub use value_and_grad::*;
 
 /// Evaluate an iterator of [`Array`]s.

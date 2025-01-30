@@ -39,6 +39,7 @@ itertools.workspace = true
 # optional dependencies
 safetensors = { workspace = true, optional = true }
 bytemuck = { workspace = true, optional = true, features = ["extern_crate_std"] }
+memmap2 = { workspace = true, optional = true }
 
 [dev-dependencies]
 pretty_assertions.workspace = true
@@ -51,4 +52,4 @@ default = ["accelerate", "metal", "io", "safetensors"]
 accelerate = ["mlx-sys/accelerate"]
 metal = ["mlx-sys/metal"]
 io = []
-safetensors = ["dep:safetensors", "dep:bytemuck"]
+safetensors = ["dep:safetensors", "dep:bytemuck", "dep:memmap2"]

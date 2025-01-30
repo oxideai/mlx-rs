@@ -4,6 +4,7 @@ use crate::Dtype;
 use libc::strdup;
 use std::convert::Infallible;
 use std::ffi::NulError;
+use std::panic::Location;
 use std::sync::Once;
 use std::{cell::Cell, ffi::c_char};
 use thiserror::Error;
@@ -49,6 +50,17 @@ pub enum IoError {
     /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
+}
+
+impl From<RawException> for IoError {
+    #[track_caller]
+    fn from(e: RawException) -> Self {
+        let exception = Exception {
+            what: e.what,
+            location: Location::caller(),
+        };
+        Self::Exception(exception)
+    }
 }
 
 /// Error associated with `Array::try_as_slice()`
@@ -100,13 +112,36 @@ cfg_safetensors! {
         #[error(transparent)]
         SafeTensorError(#[from] safetensors::tensor::SafeTensorError),
     }
+
+
+    /// Error with loading a module from a safetensors file
+    #[derive(Debug, Error)]
+    pub enum ModuleIoError {
+        /// Error with io operations
+        #[error(transparent)]
+        Io(#[from] std::io::Error),
+
+        /// Error with deserializing SafeTensors
+        #[error("Unable to deserialize SafeTensors: {0}")]
+        Deserialize(#[from] safetensors::SafeTensorError),
+
+        /// Error with conversion between [`safetensors::tensor::TensorView` and `Array`
+        #[error(transparent)]
+        Conversion(#[from] ConversionError),
+    }
+
+}
+
+pub(crate) struct RawException {
+    pub(crate) what: String,
 }
 
 /// Exception. Most will come from the C API.
 #[derive(Debug, PartialEq, Error)]
-#[error("{what:?}")]
+#[error("{what:?} at {location}")]
 pub struct Exception {
     pub(crate) what: String,
+    pub(crate) location: &'static Location<'static>,
 }
 
 impl Exception {
@@ -115,16 +150,41 @@ impl Exception {
         &self.what
     }
 
+    /// The location of the error.
+    ///
+    /// The location is obtained from `std::panic::Location::caller()` and points
+    /// to the location in the code where the error was created and not where it was
+    /// propagated.
+    pub fn location(&self) -> &'static Location<'static> {
+        self.location
+    }
+
     /// Creates a new exception with the given message.
+    #[track_caller]
     pub fn custom(what: impl Into<String>) -> Self {
-        Self { what: what.into() }
+        Self {
+            what: what.into(),
+            location: Location::caller(),
+        }
+    }
+}
+
+impl From<RawException> for Exception {
+    #[track_caller]
+    fn from(e: RawException) -> Self {
+        Self {
+            what: e.what,
+            location: Location::caller(),
+        }
     }
 }
 
 impl From<&str> for Exception {
+    #[track_caller]
     fn from(what: &str) -> Self {
         Self {
             what: what.to_string(),
+            location: Location::caller(),
         }
     }
 }
@@ -176,7 +236,8 @@ pub(crate) fn get_and_clear_closure_error() -> Option<Exception> {
     CLOSURE_ERROR.with(|closure_error| closure_error.replace(None))
 }
 
-pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
+#[track_caller]
+pub(crate) fn get_and_clear_last_mlx_error() -> Option<RawException> {
     LAST_MLX_ERROR.with(|last_error| {
         let last_err_ptr = last_error.replace(std::ptr::null());
         if last_err_ptr.is_null() {
@@ -191,7 +252,8 @@ pub(crate) fn get_and_clear_last_mlx_error() -> Option<Exception> {
         unsafe {
             libc::free(last_err_ptr as *mut libc::c_void);
         }
-        Some(Exception { what: last_err })
+
+        Some(RawException { what: last_err })
     })
 }
 

@@ -4,8 +4,9 @@ use crate::{
     array,
     error::Exception,
     module::{Module, ModuleParameters, Param},
-    ops::{dequantize, quantize, quantized_matmul, zeros},
+    ops::{self, dequantize, quantized_matmul, zeros},
     prelude::IndexOp,
+    quantization::Quantizable,
     random::uniform,
     Array,
 };
@@ -13,6 +14,26 @@ use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
 use crate::nn::{Embedding, Linear};
+
+/// Quantize a module.
+///
+/// # Params
+///
+/// - `module`: The module to quantize.
+/// - `group_size`: The group size to use for the quantized weight. Default to [`Quantizable::DEFAULT_GROUP_SIZE`]
+/// - `bits`: The bit width to use for the quantized weight. Default to [`Quantizable::DEFAULT_BITS`]
+pub fn quantize<M>(
+    module: M,
+    group_size: impl Into<Option<i32>>,
+    bits: impl Into<Option<i32>>,
+) -> Result<M::Quantized, M::QuantizationError>
+where
+    M: Quantizable,
+{
+    let group_size = group_size.into().unwrap_or(M::DEFAULT_GROUP_SIZE);
+    let bits = bits.into().unwrap_or(M::DEFAULT_BITS);
+    module.try_into_quantized(group_size, bits)
+}
 
 /// Builder for [`QuantizedEmbedding`]
 #[derive(Debug, Clone, Builder)]
@@ -81,7 +102,7 @@ fn build_quantized_embedding_inner(
     group_size: i32,
     bits: i32,
 ) -> Result<QuantizedEmbedding, Exception> {
-    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits)?;
 
     let inner = Embedding {
         weight: Param::new(quantized_weight),
@@ -172,8 +193,9 @@ impl Module<&Array> for QuantizedEmbedding {
         let x = x.flatten(None, None)?;
         let w = self.inner.weight.index(&x);
         let scales = self.scales.index(&x);
+        let biases = self.biases.index(&x);
 
-        let out = dequantize(&w, &scales, &self.biases, self.group_size, self.bits)?;
+        let out = dequantize(&w, &scales, &biases, self.group_size, self.bits)?;
 
         let ret_shape = s.iter().copied().chain(once(-1)).collect::<Vec<_>>();
         out.reshape(&ret_shape)
@@ -232,7 +254,7 @@ fn build_quantized_linear_inner(
     group_size: i32,
     bits: i32,
 ) -> Result<QuantizedLinear, Exception> {
-    let (quantized_weight, scales, biases) = quantize(&weight, group_size, bits)?;
+    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits)?;
 
     let inner = Linear {
         weight: Param::new(quantized_weight),

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, collections::HashMap, hash::Hash, rc::Rc};
 
 use crate::{
     nested::{NestedHashMap, NestedValue},
@@ -32,7 +32,7 @@ pub trait Module<Input>: ModuleParameters + std::fmt::Debug {
     type Error: std::error::Error;
 
     /// Forward pass of the module.
-    fn forward(&mut self, x: Input) -> Result<Self::Output, Self::Error>;
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -64,12 +64,12 @@ pub trait ModuleParameters {
     /// Update the module parameters.
     fn update(&mut self, parameters: ModuleParam) {
         let flattened_parameters = parameters.flatten();
-        update_flattened_parameters(self, flattened_parameters)
+        update_parameters(self, flattened_parameters)
     }
 
     /// Update the module parameters from a flattened representation.
     fn update_flattened(&mut self, flattened_parameters: FlattenedModuleParam) {
-        update_flattened_parameters(self, flattened_parameters)
+        update_parameters(self, flattened_parameters)
     }
 
     /// Freeze all parameters in the module.
@@ -85,15 +85,17 @@ pub trait ModuleParameters {
     fn any_frozen(&self) -> Option<bool>;
 }
 
-/// Update the module parameters from an iterator of flattened parameters.
-pub fn update_flattened_parameters<M, I>(module: &mut M, flattened_parameters: I)
+/// Update the module parameters from an iterator of (key, value) tuples.
+pub fn update_parameters<M, I, Q>(module: &mut M, parameters: I)
 where
     M: ModuleParameters + ?Sized,
-    I: IntoIterator<Item = (Rc<str>, Array)>,
+    I: IntoIterator<Item = (Q, Array)>,
+    Q: Hash + Eq,
+    Rc<str>: Borrow<Q>,
 {
     let mut flattened_self_parameters = module.parameters_mut().flatten();
 
-    for (key, value) in flattened_parameters {
+    for (key, value) in parameters {
         if let Some(self_value) = flattened_self_parameters.get_mut(&key) {
             **self_value = value;
         }

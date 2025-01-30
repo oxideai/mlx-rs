@@ -30,7 +30,7 @@ cfg_safetensors! {
         // Load the parameters
         let params = module.parameters_mut().flatten();
         for (key, value) in params {
-            let tensor = st.tensor(&*key)?;
+            let tensor = st.tensor(&key)?;
             *value = crate::Array::try_from(tensor)?;
         }
 

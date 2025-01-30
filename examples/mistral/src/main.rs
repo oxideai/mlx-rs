@@ -23,6 +23,7 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 use clap::Parser;
 
 #[derive(Parser)]
+#[command(about = "Mistral inference example")]
 pub struct Cli {
     /// The message to be processed by the model
     #[clap(long, default_value = "In the begging the Unverse was created.")]

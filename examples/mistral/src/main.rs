@@ -11,11 +11,7 @@ use mlx_rs::{
     transforms::eval,
     Array,
 };
-use tokenizers::{
-    decoders::{byte_fallback::ByteFallback, metaspace::Metaspace, sequence::Sequence},
-    processors::template::TemplateProcessing,
-    AddedToken, DecoderWrapper, Tokenizer,
-};
+use tokenizers::Tokenizer;
 
 mod model;
 
@@ -25,36 +21,23 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 type Result<T, E = Error> = std::result::Result<T, E>;
 
 fn build_hf_api() -> Result<Api> {
-    // Put your huggingface access token in a .env file located at the root of
-    // this example (ie. examples/mistral/.env)
+    // If you want to manually set the cache directory, you can set the HF_CACHE_DIR
+    // environment variable or put it in a .env file located at the root of this example
+    // (ie. examples/mistral/.env)
     dotenv::dotenv().ok();
-    let hf_token = std::env::var("HF_TOKEN").ok();
     let cache_dir = std::env::var("HF_CACHE_DIR").ok();
 
-    let mut builder = ApiBuilder::new().with_token(hf_token);
+    let mut builder = ApiBuilder::new();
     if let Some(cache_dir) = cache_dir {
         builder = builder.with_cache_dir(cache_dir.into());
     }
     builder.build().map_err(Into::into)
 }
 
-// TODO: The way we are adding post_processor and decoder is kind of sketchy
 fn get_tokenizer(repo: &ApiRepo) -> Result<Tokenizer> {
     let tokenizer_filename = repo.get("tokenizer.json")?;
-    let mut t = Tokenizer::from_file(tokenizer_filename)?;
-    t.add_special_tokens(&[AddedToken::from(String::from("<s>"), true)]);
-    let post_processor = TemplateProcessing::builder()
-        .try_single("[BOS] $A")?
-        .special_tokens(vec![("[BOS]", 1)])
-        .build()?;
-    t.with_post_processor(Some(post_processor));
+    let t = Tokenizer::from_file(tokenizer_filename)?;
 
-    let decoder = Sequence::new(vec![
-        DecoderWrapper::Metaspace(Metaspace::default()),
-        DecoderWrapper::ByteFallback(ByteFallback::default()),
-    ]);
-
-    t.with_decoder(Some(decoder));
     Ok(t)
 }
 
@@ -186,7 +169,7 @@ fn main() -> Result<()> {
     // uploaded to the huggingface hub
     let model_id = "minghuaw/Mistral-7B-v0.1".to_string();
     let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-    print!("[INFO] Loading model... ");
+    println!("[INFO] Loading model... ");
     let tokenizer = get_tokenizer(&repo)?;
     let mut model = load_model(&repo)?;
 

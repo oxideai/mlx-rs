@@ -3,11 +3,18 @@
 #![deny(missing_docs)]
 
 use std::{
-    borrow::{Borrow, Cow}, collections::HashMap, path::Path, rc::Rc
+    borrow::{Borrow, Cow},
+    collections::HashMap,
+    path::Path,
+    rc::Rc,
 };
 
 use crate::{
-    array, error::IoError, module::{FlattenedModuleParam, ModuleParameters}, utils::Updatable, Array
+    array,
+    error::IoError,
+    module::{FlattenedModuleParam, ModuleParameters},
+    utils::Updatable,
+    Array,
 };
 
 mod adadelta;
@@ -73,23 +80,25 @@ impl OptimizerState for State {
 
 impl OptimizerState for State<(Array, Array)> {
     fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
-        self.iter().map(|(k, (first, second))| {
-            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+        self.iter()
+            .map(|(k, (first, second))| {
+                let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+                let second_k: Rc<str> = Rc::from(format!("{}.1", k));
 
-            [(first_k, first), (second_k, second)]
-        })
-        .flatten()
+                [(first_k, first), (second_k, second)]
+            })
+            .flatten()
     }
 
     fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
-        self.iter_mut().map(|(k, (first, second))| {
-            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+        self.iter_mut()
+            .map(|(k, (first, second))| {
+                let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+                let second_k: Rc<str> = Rc::from(format!("{}.1", k));
 
-            [(first_k, first), (second_k, second)]
-        })
-        .flatten()
+                [(first_k, first), (second_k, second)]
+            })
+            .flatten()
     }
 }
 
@@ -142,12 +151,26 @@ pub trait Optimizer: Updatable {
 pub trait OptimizerExt: Optimizer {
     /// Save the optimizer state to a safetensors file.
     fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
-        todo!() // wait for PR #189
+        let state = self.state().flatten();
+        Array::save_safetensors(state, None, path)
     }
 
     /// Load the optimizer state from a safetensors file.
     fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
-        todo!() // wait for PR #189
+        let mut state = self
+            .state_mut()
+            .flatten_mut()
+            .into_iter()
+            .collect::<HashMap<_, _>>();
+        let loaded = Array::load_safetensors(path)?;
+
+        for (key, value) in loaded {
+            if let Some(param) = state.get_mut(&*key) {
+                **param = value;
+            }
+        }
+
+        Ok(())
     }
 }
 

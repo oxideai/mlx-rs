@@ -11,7 +11,7 @@ Rust bindings for Apple's mlx machine learning library.
 [![Rust Version](https://img.shields.io/badge/Rust-1.75.0+-blue)](https://releases.rs/docs/1.75.0)
 ![license](https://shields.io/badge/license-MIT-blue)
 
-> **⚠️ Project is still in development - contributors welcome!**
+> **⚠️ Project is in active development - contributors welcome!**
 
 ---
 
@@ -31,12 +31,36 @@ _[Blaze](https://runblaze.dev) supports this project by providing ultra-fast App
 
 </div>
 
+## Features
+
+MLX is an array framework for machine learning on Apple Silicon. mlx-rs provides Rust bindings for MLX, allowing you to use MLX in your Rust projects.
+
+Some key features of MLX and `mlx-rs` include:
+- **Performance**: MLX is optimized for Apple Silicon, providing fast performance for machine learning tasks.
+- **Lazy Evaluation**: MLX uses lazy evaluation to optimize performance and memory usage. Arrays are only materialized when needed.
+- **Dynamic Graphs**: Computation graphs in MLX are constructed dynamically, allowing for flexible and efficient computation. Changing the shapes of function arguments does not require recompilation.
+- **Mutli-Device Support**: MLX supports running computations on any of the supported devices (for now the CPU and GPU).
+- **Unified memory**: MLX provides a unified memory model, meaning arrays live in the same memory space, regardless of the device they are computed on. Operations can be performed on arrays on different devices without copying data between them.
+
+`mlx-rs` is designed to be a safe and idiomatic Rust interface to MLX, providing a seamless experience for Rust developers.
+
+## Examples
+The [examples](examples/) directory contains sample projects demonstrating different uses cases of our library.
+- [mnist](examples/mnist/): Train a basic neural network on the MNIST digit dataset
+- [mistral](examples/mistral/): Text generation using the pre-trained Mistral model
+
+## Installation
+
+Add this to your `Cargo.toml`:
+```toml
+[dependencies]
+mlx-rs = "0.21.0"
+```
+
 ## Feature Flags
 
 * `metal` - enables metal (GPU) usage in MLX
 * `accelerate` - enables using the accelerate framework in MLX
-* `io` - enables IO operations in MLX (loading and saving arrays)
-* `safetensors` - enables conversions from safetensors TensorView to Array
 
 ## Versioning
 

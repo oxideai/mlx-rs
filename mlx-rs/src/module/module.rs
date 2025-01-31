@@ -247,11 +247,11 @@ pub trait ModuleParametersExt: ModuleParameters {
 
     /// Load module parameters from a `safetensors` file.
     fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
-        let weights = Array::load_safetensors(path)?;
+        let loaded = Array::load_safetensors(path)?;
 
         // Load the parameters
         let mut params = self.parameters_mut().flatten();
-        for (key, value) in weights {
+        for (key, value) in loaded {
             if let Some(param) = params.get_mut(&*key) {
                 **param = value;
             }

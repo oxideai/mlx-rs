@@ -3,16 +3,11 @@
 #![deny(missing_docs)]
 
 use std::{
-    borrow::{Borrow, Cow},
-    collections::HashMap,
-    rc::Rc,
+    borrow::{Borrow, Cow}, collections::HashMap, path::Path, rc::Rc
 };
 
 use crate::{
-    array,
-    module::{FlattenedModuleParam, ModuleParameters},
-    utils::Updatable,
-    Array,
+    array, error::IoError, module::{FlattenedModuleParam, ModuleParameters}, utils::Updatable, Array
 };
 
 mod adadelta;
@@ -54,11 +49,54 @@ macro_rules! impl_updatable_for_mut_optimizer {
 }
 use impl_updatable_for_mut_optimizer;
 
-type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
+/// Type alias for common optimizer state.
+pub type State<T = Array> = HashMap<Rc<str>, T>;
+
+/// Trait for optimizer states.
+pub trait OptimizerState {
+    /// Flatten the optimizer state.
+    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)>;
+
+    /// Flatten the mutable optimizer state.
+    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)>;
+}
+
+impl OptimizerState for State {
+    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
+        self.iter().map(|(k, v)| (k.clone(), v))
+    }
+
+    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().map(|(k, v)| (k.clone(), v))
+    }
+}
+
+impl OptimizerState for State<(Array, Array)> {
+    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
+        self.iter().map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+
+            [(first_k, first), (second_k, second)]
+        })
+        .flatten()
+    }
+
+    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+
+            [(first_k, first), (second_k, second)]
+        })
+        .flatten()
+    }
+}
+
 /// Trait for optimizers.
 pub trait Optimizer: Updatable {
     /// State of the optimizer.
-    type State;
+    type State: OptimizerState;
 
     /// Get the state of the optimizer.
     fn state(&self) -> &Self::State;
@@ -97,6 +135,19 @@ pub trait Optimizer: Updatable {
         }
 
         Ok(())
+    }
+}
+
+/// Extension trait for optimizers.
+pub trait OptimizerExt: Optimizer {
+    /// Save the optimizer state to a safetensors file.
+    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        todo!() // wait for PR #189
+    }
+
+    /// Load the optimizer state from a safetensors file.
+    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        todo!() // wait for PR #189
     }
 }
 

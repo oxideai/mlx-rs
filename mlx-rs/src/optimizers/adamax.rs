@@ -39,7 +39,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -52,7 +52,7 @@ fn build_adamax(builder: AdamaxBuilder) -> Result<Adamax, Infallible> {
         lr: array!(lr),
         betas: (array!(betas.0), array!(betas.1)),
         eps: array!(eps),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -65,7 +65,7 @@ impl Adamax {
 }
 
 impl Optimizer for Adamax {
-    type State = OptimizerState<(Array, Array)>;
+    type State = State<(Array, Array)>;
 
     fn state(&self) -> &Self::State {
         &self.state

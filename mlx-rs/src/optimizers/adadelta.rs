@@ -42,7 +42,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -63,7 +63,7 @@ fn build_adadelta(builder: AdaDeltaBuilder) -> Result<AdaDelta, AdaDeltaBuildErr
         lr: array!(builder.lr),
         rho: array!(rho),
         eps: array!(eps),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -76,7 +76,7 @@ impl AdaDelta {
 }
 
 impl Optimizer for AdaDelta {
-    type State = OptimizerState<(Array, Array)>;
+    type State = State<(Array, Array)>;
 
     fn state(&self) -> &Self::State {
         &self.state

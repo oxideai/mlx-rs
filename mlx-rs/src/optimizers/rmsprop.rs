@@ -39,7 +39,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -60,7 +60,7 @@ fn build_rmdprop(builder: RmsPropBuilder) -> Result<RmsProp, RmsPropBuildError> 
         lr: array!(lr),
         alpha: array!(alpha),
         epsilon: array!(epsilon),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -73,7 +73,7 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    type State = OptimizerState;
+    type State = State;
 
     fn state(&self) -> &Self::State {
         &self.state

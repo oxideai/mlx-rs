@@ -38,6 +38,58 @@ pub struct AdafactorState {
     pub(crate) exp_avg: Option<Array>,
 }
 
+impl OptimizerState for State<AdafactorState> {
+    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
+        self.iter().map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &v.step)];
+
+            if let Some(exp_avg_sq_row) = &v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+        .flatten()
+    }
+
+    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &mut v.step)];
+
+            if let Some(exp_avg_sq_row) = &mut v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &mut v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &mut v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &mut v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+        .flatten()
+    }
+}
+
 impl AdafactorState {
     /// Default value for `step`
     pub const DEFAULT_STEP: i32 = 0;
@@ -148,7 +200,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<AdafactorState>,
+        pub state: State<AdafactorState>,
     }
 }
 
@@ -176,7 +228,7 @@ fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuil
         scale_parameter,
         relative_step,
         warmup_init,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -253,7 +305,7 @@ fn compute_lr(
 }
 
 impl Optimizer for Adafactor {
-    type State = OptimizerState<AdafactorState>;
+    type State = State<AdafactorState>;
 
     fn state(&self) -> &Self::State {
         &self.state

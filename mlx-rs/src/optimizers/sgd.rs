@@ -35,7 +35,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -52,7 +52,7 @@ fn build_sgd(builder: SgdBuilder) -> Result<Sgd, std::convert::Infallible> {
         weight_decay,
         dampening,
         nesterov,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -71,7 +71,7 @@ impl Sgd {
 }
 
 impl Optimizer for Sgd {
-    type State = OptimizerState;
+    type State = State;
 
     fn state(&self) -> &Self::State {
         &self.state

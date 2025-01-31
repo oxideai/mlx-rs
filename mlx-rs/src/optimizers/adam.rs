@@ -41,7 +41,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -55,7 +55,7 @@ fn build_adam(builder: AdamBuilder) -> Result<Adam, Infallible> {
         lr,
         betas: (array!(betas.0), array!(betas.1)),
         eps,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -68,7 +68,7 @@ impl Adam {
 }
 
 impl Optimizer for Adam {
-    type State = OptimizerState<(Array, Array)>;
+    type State = State<(Array, Array)>;
 
     fn state(&self) -> &Self::State {
         &self.state

@@ -23,10 +23,10 @@ impl Array {
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
     #[default_device]
-    pub fn load_numpy_device<P>(path: P, stream: impl AsRef<Stream>) -> Result<Array, IoError>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn load_numpy_device(
+        path: impl AsRef<Path>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array, IoError> {
         let path = path.as_ref();
         if !path.is_file() {
             return Err(IoError::NotFile);
@@ -48,13 +48,10 @@ impl Array {
     /// - stream: stream or device to evaluate on
     ///
     #[default_device]
-    pub fn load_safetensors_device<P>(
-        path: P,
+    pub fn load_safetensors_device(
+        path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
-    ) -> Result<HashMap<String, Array>, IoError>
-    where
-        P: AsRef<Path>,
-    {
+    ) -> Result<HashMap<String, Array>, IoError> {
         let safetensors = SafeTensors::load_device(path.as_ref(), stream)?;
         let data = safetensors.data()?;
         Ok(data)
@@ -68,13 +65,10 @@ impl Array {
     /// - stream: stream or device to evaluate on
     #[allow(clippy::type_complexity)]
     #[default_device]
-    pub fn load_safetensors_with_metadata_device<P>(
-        path: P,
+    pub fn load_safetensors_with_metadata_device(
+        path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
-    ) -> Result<(HashMap<String, Array>, HashMap<String, String>), IoError>
-    where
-        P: AsRef<Path>,
-    {
+    ) -> Result<(HashMap<String, Array>, HashMap<String, String>), IoError> {
         let safetensors = SafeTensors::load_device(path.as_ref(), stream)?;
         let data = safetensors.data()?;
         let metadata = safetensors.metadata()?;
@@ -88,10 +82,7 @@ impl Array {
     ///
     /// - array: array to save
     /// - url: URL of file to load
-    pub fn save_numpy<P>(&self, path: P) -> Result<(), IoError>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn save_numpy(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
         let path = path.as_ref();
         check_file_extension(path, "npy")?;
         let file_ptr = FilePtr::open(path, "w")?;
@@ -109,16 +100,15 @@ impl Array {
     /// - metadata: metadata to save
     /// - path: path of file to save
     /// - stream: stream or device to evaluate on
-    pub fn save_safetensors<'a, I, S, V, P>(
+    pub fn save_safetensors<'a, I, S, V>(
         arrays: I,
         metadata: impl Into<Option<&'a HashMap<String, String>>>,
-        path: P,
+        path: impl AsRef<Path>,
     ) -> Result<(), IoError>
     where
         I: IntoIterator<Item = (S, V)>,
         S: AsRef<str>,
         V: AsRef<Array>,
-        P: AsRef<Path>,
     {
         crate::error::INIT_ERR_HANDLER
             .with(|init| init.call_once(crate::error::setup_mlx_error_handler));

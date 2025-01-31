@@ -1,6 +1,7 @@
-use std::{borrow::Borrow, collections::HashMap, hash::Hash, rc::Rc};
+use std::{borrow::Borrow, collections::HashMap, hash::Hash, path::Path, rc::Rc};
 
 use crate::{
+    error::{Exception, IoError},
     nested::{NestedHashMap, NestedValue},
     Array,
 };
@@ -235,3 +236,39 @@ where
         result
     }
 }
+
+/// Extension trait for `ModuleParameters`. This is implemented for all types that implement
+/// `ModuleParameters`.
+pub trait ModuleParametersExt: ModuleParameters {
+    /// Evaluate the module parameters.
+    fn eval(&self) -> Result<(), Exception> {
+        crate::transforms::eval_params(self.parameters())
+    }
+
+    /// Load module parameters from a `safetensors` file.
+    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let weights = Array::load_safetensors(path)?;
+
+        // Load the parameters
+        let mut params = self.parameters_mut().flatten();
+        for (key, value) in weights {
+            if let Some(param) = params.get_mut(&*key) {
+                **param = value;
+            }
+        }
+
+        // Loading is lazy, eval after loading
+        self.eval()?;
+
+        Ok(())
+    }
+
+    /// Save module parameters to a file in `safetensors` format.
+    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let params = self.parameters().flatten();
+        Array::save_safetensors(params, None, path)?;
+        Ok(())
+    }
+}
+
+impl<T: ModuleParameters> ModuleParametersExt for T {}

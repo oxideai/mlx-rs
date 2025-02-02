@@ -11,7 +11,7 @@ use std::{
 
 use crate::{
     array,
-    error::IoError,
+    error::{IoError, OptimizerStateLoadError, UnflattenError},
     module::{FlattenedModuleParam, ModuleParameters},
     utils::Updatable,
     Array,
@@ -33,6 +33,7 @@ pub use adagrad::*;
 pub use adam::*;
 pub use adamax::*;
 pub use adamw::*;
+use itertools::Itertools;
 pub use lion::*;
 pub use rmsprop::*;
 pub use sgd::*;
@@ -60,26 +61,70 @@ use impl_updatable_for_mut_optimizer;
 pub type State<T = Array> = HashMap<Rc<str>, T>;
 
 /// Trait for optimizer states.
-pub trait OptimizerState {
+pub trait OptimizerState: Sized {
+    /// Error type for unflatten.
+    type UnflattenError: std::error::Error + Into<IoError>;
+
     /// Flatten the optimizer state.
-    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)>;
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)>;
 
     /// Flatten the mutable optimizer state.
-    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)>;
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)>;
+
+    /// Unflatten an iterator of key-value pairs into the optimizer state.
+    fn unflatten<I, K>(
+        input: I
+    ) -> Result<Self, Self::UnflattenError>
+    where
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>;
+
+    /// Save the optimizer state to a safetensors file.
+    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let state = self.flatten();
+        Array::save_safetensors(state, None, path)
+    }
+    
+    /// Load the optimizer state from a safetensors file.
+    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let loaded = Array::load_safetensors(path)?;
+        let unflattened = Self::unflatten(loaded).map_err(Into::into)?;
+    
+        *self = unflattened;
+    
+        Ok(())
+    }
 }
 
 impl OptimizerState for State {
-    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
+    type UnflattenError = std::convert::Infallible;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
         self.iter().map(|(k, v)| (k.clone(), v))
     }
 
-    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
         self.iter_mut().map(|(k, v)| (k.clone(), v))
+    }
+
+    fn unflatten<I, K>(
+        input: I
+    ) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        Ok(input.into_iter()
+            .map(|(k, v)| (k.into(), v))
+            .collect())
     }
 }
 
 impl OptimizerState for State<(Array, Array)> {
-    fn flatten(&self) -> impl IntoIterator<Item = (Rc<str>, &Array)> {
+    type UnflattenError = UnflattenError;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
         self.iter()
             .map(|(k, (first, second))| {
                 let first_k: Rc<str> = Rc::from(format!("{}.0", k));
@@ -90,7 +135,7 @@ impl OptimizerState for State<(Array, Array)> {
             .flatten()
     }
 
-    fn flatten_mut(&mut self) -> impl IntoIterator<Item = (Rc<str>, &mut Array)> {
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
         self.iter_mut()
             .map(|(k, (first, second))| {
                 let first_k: Rc<str> = Rc::from(format!("{}.0", k));
@@ -99,6 +144,40 @@ impl OptimizerState for State<(Array, Array)> {
                 [(first_k, first), (second_k, second)]
             })
             .flatten()
+    }
+
+    fn unflatten<I, K>(
+        input: I
+    ) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        let mut state = State::new();
+        let iter = input.into_iter()
+            .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()))
+            .chunks(2);
+        
+        for mut chunk in &iter {
+            let first = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
+            let second = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
+
+            // Check if the keys match up to the last dot and the suffix is 0 and 1 (should be already sorted)
+            let first_key = first.0.as_ref();
+            let second_key = second.0.as_ref();
+            if !first_key.ends_with(".0") || !second_key.ends_with(".1") {
+                return Err(UnflattenError::InvalidKey);
+            }
+            if &first_key[..first_key.len() - 2] != &second_key[..second_key.len() - 2] {
+                return Err(UnflattenError::InvalidKey);
+            }
+
+            let key = &first_key[..first_key.len() - 2];
+            let key: Rc<str> = Rc::from(key);
+            state.insert(key, (first.1, second.1));
+        }
+        Ok(state)
     }
 }
 
@@ -140,33 +219,6 @@ pub trait Optimizer: Updatable {
         for (key, gradient) in gradients.borrow().iter() {
             if let Some(parameter) = parameters.get_mut(key) {
                 self.update_single(key, gradient, parameter)?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-/// Extension trait for optimizers.
-pub trait OptimizerExt: Optimizer {
-    /// Save the optimizer state to a safetensors file.
-    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
-        let state = self.state().flatten();
-        Array::save_safetensors(state, None, path)
-    }
-
-    /// Load the optimizer state from a safetensors file.
-    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
-        let mut state = self
-            .state_mut()
-            .flatten_mut()
-            .into_iter()
-            .collect::<HashMap<_, _>>();
-        let loaded = Array::load_safetensors(path)?;
-
-        for (key, value) in loaded {
-            if let Some(param) = state.get_mut(&*key) {
-                **param = value;
             }
         }
 

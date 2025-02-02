@@ -9,3 +9,4 @@ authors.workspace = true
 [dev-dependencies]
 mlx-internal-macros.workspace = true
 mlx-rs.workspace = true
+tempfile.workspace = true

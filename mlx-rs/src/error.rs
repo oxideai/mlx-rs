@@ -47,9 +47,19 @@ pub enum IoError {
     #[error(transparent)]
     NulError(#[from] NulError),
 
+    /// Error with unfalttening the loaded optimizer state
+    #[error(transparent)]
+    Unflatten(#[from] UnflattenError),
+
     /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
+}
+
+impl From<Infallible> for IoError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 impl From<RawException> for IoError {
@@ -85,6 +95,36 @@ pub enum AsSliceError {
     /// Exception
     #[error(transparent)]
     Exception(#[from] Exception),
+}
+
+/// Error with unflattening a loaded optimizer state
+#[derive(Debug, PartialEq, Error)]
+pub enum UnflattenError {
+    /// Expecting next (key, value) pair, found none
+    #[error("Expecting next (key, value) pair, found none")]
+    ExpectingNextPair,
+
+    /// The key is not in a valid format
+    #[error("Invalid key")]
+    InvalidKey,
+}
+
+/// Error with loading an optimizer state
+#[derive(Debug, PartialEq, Error)]
+pub enum OptimizerStateLoadError {
+    /// Error with io operations
+    #[error(transparent)]
+    Io(#[from] IoError),
+
+    /// Error with unflattening the optimizer state
+    #[error(transparent)]
+    Unflatten(#[from] UnflattenError),
+}
+
+impl From<Infallible> for OptimizerStateLoadError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 cfg_safetensors! {

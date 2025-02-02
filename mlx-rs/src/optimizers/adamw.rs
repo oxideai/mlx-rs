@@ -49,7 +49,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -65,7 +65,7 @@ fn build_adamw(builder: AdamWBuilder) -> Result<AdamW, Infallible> {
         betas: (array!(betas.0), array!(betas.1)),
         eps: array!(eps),
         weight_decay: array!(weight_decay),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -81,6 +81,16 @@ impl AdamW {
 }
 
 impl Optimizer for AdamW {
+    type State = State<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,

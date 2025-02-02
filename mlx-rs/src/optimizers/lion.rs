@@ -39,7 +39,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -52,7 +52,7 @@ fn build_lion(builder: LionBuilder) -> Result<Lion, std::convert::Infallible> {
         lr,
         betas: (array!(betas.0), array!(betas.1)),
         weight_decay,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -65,6 +65,16 @@ impl Lion {
 }
 
 impl Optimizer for Lion {
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,

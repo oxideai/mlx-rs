@@ -1,6 +1,8 @@
 //! Tests for the optimizers. These tests are placed here because the models
 //! used for testing make use of `ModuleParameter` macro.
 
+use std::collections::HashMap;
+
 use mlx_rs::{
     array, assert_array_eq,
     builder::Builder,
@@ -11,7 +13,7 @@ use mlx_rs::{
     ops::{ones, zeros},
     optimizers::{
         AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
-        RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
+        OptimizerState, RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
     transforms::{eval, eval_params},
@@ -133,6 +135,29 @@ struct NestedModel {
 
 type GradsMap = FlattenedModuleParam;
 
+fn assert_save_and_load<O>(optimizer: O, new_optimizer: O) -> Result<(), Box<dyn std::error::Error>>
+where
+    O: Optimizer,
+{
+    use mlx_rs::optimizers::OptimizerState;
+
+    let tmp_dir = tempfile::tempdir()?;
+    let path = tmp_dir.path().join("optimizer.safetensors");
+
+    optimizer.state().save_safetensors(&path)?;
+
+    let mut loaded_optimizer = new_optimizer;
+    loaded_optimizer.state_mut().load_safetensors(&path)?;
+
+    let original_state: HashMap<_, _> = optimizer.state().flatten().collect();
+    let loaded_state: HashMap<_, _> = loaded_optimizer.state().flatten().collect();
+
+    assert!(!loaded_state.is_empty());
+    assert_eq!(original_state, loaded_state);
+
+    Ok(())
+}
+
 fn create_default_test_model_and_grads() -> (NestedModel, GradsMap) {
     let first = First {
         a: Param::new(zeros::<f32>(&[10]).unwrap()),
@@ -200,6 +225,7 @@ fn test_ada_delta() {
     let mut optimizer = AdaDelta::new(0.1).unwrap();
 
     optimizer.update(&mut a_model, a_grad_params).unwrap();
+
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
@@ -212,6 +238,8 @@ fn test_ada_delta() {
         array!(-4.181_308_7),
         0.08362617492675782
     );
+
+    assert_save_and_load(optimizer, AdaDelta::new(0.1).unwrap()).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testAdaGrad` in
@@ -252,6 +280,8 @@ fn test_adagrad() {
         array!(-0.750_119_8),
         ATOL
     );
+
+    assert_save_and_load(optimizer, AdaGrad::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testAdam` in
@@ -308,6 +338,8 @@ fn test_adam() {
         array!(1.347_513_3),
         0.026950266361236572
     );
+
+    assert_save_and_load(optimizer, Adam::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testAdamW` in
@@ -364,6 +396,8 @@ fn test_adamw() {
         array!(-5.621_251),
         0.11242502212524415
     );
+
+    assert_save_and_load(optimizer, AdamW::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_adamax` in
@@ -420,6 +454,8 @@ fn test_adamax() {
         array!(-3.647_083_3),
         0.07294166564941407
     );
+
+    assert_save_and_load(optimizer, Adamax::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_rmsprop` in
@@ -461,6 +497,8 @@ fn test_rmsprop() {
         expected_state_second,
         ATOL
     );
+
+    assert_save_and_load(optim, RmsPropBuilder::new(LR).alpha(ALPHA).build().unwrap()).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_sgd` in
@@ -551,6 +589,8 @@ fn test_lion() {
         array!(2.532_306_7),
         0.05064613342285156
     );
+
+    assert_save_and_load(optimizer, Lion::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testLion1` in
@@ -607,6 +647,12 @@ fn test_lion1() {
         array!(-2.193_174),
         0.04386347770690918
     );
+
+    assert_save_and_load(
+        optimizer,
+        LionBuilder::new(0.1).weight_decay(0.1).build().unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]
@@ -665,6 +711,8 @@ fn test_adafactor() {
         array!(-6.321_941_4),
         0.12643882751464844
     );
+
+    assert_save_and_load(optimizer, AdafactorBuilder::new().lr(0.1).build().unwrap()).unwrap();
 }
 
 #[test]

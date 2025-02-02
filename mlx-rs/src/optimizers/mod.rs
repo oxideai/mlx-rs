@@ -11,7 +11,7 @@ use std::{
 
 use crate::{
     array,
-    error::{IoError, OptimizerStateLoadError, UnflattenError},
+    error::{IoError, UnflattenError},
     module::{FlattenedModuleParam, ModuleParameters},
     utils::Updatable,
     Array,
@@ -72,9 +72,7 @@ pub trait OptimizerState: Sized {
     fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)>;
 
     /// Unflatten an iterator of key-value pairs into the optimizer state.
-    fn unflatten<I, K>(
-        input: I
-    ) -> Result<Self, Self::UnflattenError>
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
     where
         I: IntoIterator<Item = (K, Array)>,
         K: Ord + AsRef<str> + Into<Rc<str>>;
@@ -84,14 +82,14 @@ pub trait OptimizerState: Sized {
         let state = self.flatten();
         Array::save_safetensors(state, None, path)
     }
-    
+
     /// Load the optimizer state from a safetensors file.
     fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
         let loaded = Array::load_safetensors(path)?;
         let unflattened = Self::unflatten(loaded).map_err(Into::into)?;
-    
+
         *self = unflattened;
-    
+
         Ok(())
     }
 }
@@ -107,17 +105,13 @@ impl OptimizerState for State {
         self.iter_mut().map(|(k, v)| (k.clone(), v))
     }
 
-    fn unflatten<I, K>(
-        input: I
-    ) -> Result<Self, Self::UnflattenError>
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
     where
         Self: Sized,
         I: IntoIterator<Item = (K, Array)>,
         K: Ord + AsRef<str> + Into<Rc<str>>,
     {
-        Ok(input.into_iter()
-            .map(|(k, v)| (k.into(), v))
-            .collect())
+        Ok(input.into_iter().map(|(k, v)| (k.into(), v)).collect())
     }
 }
 
@@ -125,40 +119,35 @@ impl OptimizerState for State<(Array, Array)> {
     type UnflattenError = UnflattenError;
 
     fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
-        self.iter()
-            .map(|(k, (first, second))| {
-                let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-                let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+        self.iter().flat_map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
 
-                [(first_k, first), (second_k, second)]
-            })
-            .flatten()
+            [(first_k, first), (second_k, second)]
+        })
     }
 
     fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
-        self.iter_mut()
-            .map(|(k, (first, second))| {
-                let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-                let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+        self.iter_mut().flat_map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
 
-                [(first_k, first), (second_k, second)]
-            })
-            .flatten()
+            [(first_k, first), (second_k, second)]
+        })
     }
 
-    fn unflatten<I, K>(
-        input: I
-    ) -> Result<Self, Self::UnflattenError>
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
     where
         Self: Sized,
         I: IntoIterator<Item = (K, Array)>,
         K: Ord + AsRef<str> + Into<Rc<str>>,
     {
         let mut state = State::new();
-        let iter = input.into_iter()
+        let iter = input
+            .into_iter()
             .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()))
             .chunks(2);
-        
+
         for mut chunk in &iter {
             let first = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
             let second = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
@@ -169,7 +158,7 @@ impl OptimizerState for State<(Array, Array)> {
             if !first_key.ends_with(".0") || !second_key.ends_with(".1") {
                 return Err(UnflattenError::InvalidKey);
             }
-            if &first_key[..first_key.len() - 2] != &second_key[..second_key.len() - 2] {
+            if first_key[..first_key.len() - 2] != second_key[..second_key.len() - 2] {
                 return Err(UnflattenError::InvalidKey);
             }
 

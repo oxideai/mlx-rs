@@ -42,7 +42,7 @@ impl OptimizerState for State<AdafactorState> {
     type UnflattenError = UnflattenError;
 
     fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
-        self.iter().map(|(k, v)| {
+        self.iter().flat_map(|(k, v)| {
             let mut iter = vec![(Rc::from(format!("{}.step", k)), &v.step)];
 
             if let Some(exp_avg_sq_row) = &v.exp_avg_sq_row {
@@ -63,11 +63,10 @@ impl OptimizerState for State<AdafactorState> {
 
             iter
         })
-        .flatten()
     }
 
     fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
-        self.iter_mut().map(|(k, v)| {
+        self.iter_mut().flat_map(|(k, v)| {
             let mut iter = vec![(Rc::from(format!("{}.step", k)), &mut v.step)];
 
             if let Some(exp_avg_sq_row) = &mut v.exp_avg_sq_row {
@@ -88,19 +87,17 @@ impl OptimizerState for State<AdafactorState> {
 
             iter
         })
-        .flatten()
     }
-    
-    fn unflatten<I, K>(
-        input: I
-    ) -> Result<Self, Self::UnflattenError>
+
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
     where
         Self: Sized,
         I: IntoIterator<Item = (K, Array)>,
-        K: Ord + AsRef<str> + Into<Rc<str>> 
+        K: Ord + AsRef<str> + Into<Rc<str>>,
     {
         let mut state = State::new();
-        let iter = input.into_iter()
+        let iter = input
+            .into_iter()
             .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()));
 
         for (k, v) in iter {
@@ -110,15 +107,13 @@ impl OptimizerState for State<AdafactorState> {
             let prefix = parts.next().ok_or(UnflattenError::InvalidKey)?;
 
             let prefix = Rc::from(prefix);
-            let state = state
-                .entry(prefix)
-                .or_insert_with(|| AdafactorState {
-                    step: array!(AdafactorState::DEFAULT_STEP),
-                    exp_avg_sq_row: None,
-                    exp_avg_sq_col: None,
-                    exp_avg_sq: None,
-                    exp_avg: None,
-                });
+            let state = state.entry(prefix).or_insert_with(|| AdafactorState {
+                step: array!(AdafactorState::DEFAULT_STEP),
+                exp_avg_sq_row: None,
+                exp_avg_sq_col: None,
+                exp_avg_sq: None,
+                exp_avg: None,
+            });
 
             match suffix {
                 "step" => state.step = v,

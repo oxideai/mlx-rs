@@ -12,7 +12,8 @@ use mlx_rs::{
     nn,
     ops::{ones, zeros},
     optimizers::{
-        AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer, OptimizerState, RmsProp, RmsPropBuilder, Sgd, SgdBuilder
+        AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
+        OptimizerState, RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
     transforms::{eval, eval_params},
@@ -647,7 +648,11 @@ fn test_lion1() {
         0.04386347770690918
     );
 
-    assert_save_and_load(optimizer, LionBuilder::new(0.1).weight_decay(0.1).build().unwrap()).unwrap();
+    assert_save_and_load(
+        optimizer,
+        LionBuilder::new(0.1).weight_decay(0.1).build().unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]

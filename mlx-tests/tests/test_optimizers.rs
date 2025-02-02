@@ -279,6 +279,8 @@ fn test_adagrad() {
         array!(-0.750_119_8),
         ATOL
     );
+
+    assert_save_and_load(optimizer, AdaGrad::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testAdam` in
@@ -335,6 +337,8 @@ fn test_adam() {
         array!(1.347_513_3),
         0.026950266361236572
     );
+
+    assert_save_and_load(optimizer, Adam::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testAdamW` in
@@ -391,6 +395,8 @@ fn test_adamw() {
         array!(-5.621_251),
         0.11242502212524415
     );
+
+    assert_save_and_load(optimizer, AdamW::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_adamax` in
@@ -447,6 +453,8 @@ fn test_adamax() {
         array!(-3.647_083_3),
         0.07294166564941407
     );
+
+    assert_save_and_load(optimizer, Adamax::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_rmsprop` in
@@ -488,6 +496,8 @@ fn test_rmsprop() {
         expected_state_second,
         ATOL
     );
+
+    assert_save_and_load(optim, RmsPropBuilder::new(LR).alpha(ALPHA).build().unwrap()).unwrap();
 }
 
 // This unit test is adapted from the python unit test `test_sgd` in
@@ -578,6 +588,8 @@ fn test_lion() {
         array!(2.532_306_7),
         0.05064613342285156
     );
+
+    assert_save_and_load(optimizer, Lion::new(0.1)).unwrap();
 }
 
 // This unit test is adapted from the swift binding unit test `testLion1` in
@@ -634,6 +646,8 @@ fn test_lion1() {
         array!(-2.193_174),
         0.04386347770690918
     );
+
+    assert_save_and_load(optimizer, LionBuilder::new(0.1).weight_decay(0.1).build().unwrap()).unwrap();
 }
 
 #[test]
@@ -692,6 +706,8 @@ fn test_adafactor() {
         array!(-6.321_941_4),
         0.12643882751464844
     );
+
+    assert_save_and_load(optimizer, AdafactorBuilder::new().lr(0.1).build().unwrap()).unwrap();
 }
 
 #[test]

@@ -8,8 +8,8 @@ Rust bindings for Apple's mlx machine learning library.
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)]()
 [![Test Status](https://github.com/oxideai/mlx-rs/actions/workflows/validate.yml/badge.svg)](https://github.com/oxideai/mlx-rs/actions/workflows/validate.yml)
 [![Blaze](https://runblaze.dev/gh/307493885959233117281096297203102330146/badge.svg)](https://runblaze.dev)
-[![Rust Version](https://img.shields.io/badge/Rust-1.75.0+-blue)](https://releases.rs/docs/1.75.0)
-![license](https://shields.io/badge/license-MIT-blue)
+[![Rust Version](https://img.shields.io/badge/Rust-1.81.0+-blue)](https://releases.rs/docs/1.81.0)
+![license](https://shields.io/badge/license-MIT%2FApache--2.0-blue)
 
 > **⚠️ Project is in active development - contributors welcome!**
 

@@ -2,10 +2,10 @@ use std::borrow::Cow;
 
 use crate::{
     array,
+    builder::Builder,
     error::Exception,
     module::{Module, UnaryModule},
     ops::{arange, expand_dims, matmul, softmax},
-    builder::Builder,
     quantization::MaybeQuantized,
     Array, ArrayElement, FromScalar,
 };

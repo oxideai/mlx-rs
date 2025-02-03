@@ -5,7 +5,7 @@ use crate::{
     module::Module,
     ops::{
         abs, broadcast_to, ceil, clip, expand_dims, floor,
-        indexing::{ArrayIndex, ArrayIndexOp, TryIndexOp, Ellipsis, IndexOp, NewAxis},
+        indexing::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, TryIndexOp},
     },
     transforms::compile::compile,
     Array,

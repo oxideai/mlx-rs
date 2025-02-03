@@ -31,6 +31,10 @@ _[Blaze](https://runblaze.dev) supports this project by providing ultra-fast App
 
 </div>
 
+## Documentation
+
+Due to known limitation of docsrs, we are hosting the documentation on github pages [here](https://oxideai.github.io/mlx-rs/mlx_rs/).
+
 ## Features
 
 MLX is an array framework for machine learning on Apple Silicon. mlx-rs provides Rust bindings for MLX, allowing you to use MLX in your Rust projects.
@@ -64,7 +68,7 @@ mlx-rs = "0.21.0"
 
 ## Versioning
 
-For simplicity, the main crate `mls-rs` follows MLX’s versioning, allowing you to easily see which MLX version you’re using under the hood. The `mlx-sys` crate follows the versioning of `mlx-c`, as that is the version from which the API is generated. The `mlx-macros` crate uses its own versioning, as those macros are developed independently by us.
+For simplicity, the main crate `mls-rs` follows MLX’s versioning, allowing you to easily see which MLX version you’re using under the hood. The `mlx-sys` crate follows the versioning of `mlx-c`, as that is the version from which the API is generated.
 
 ## Community
 

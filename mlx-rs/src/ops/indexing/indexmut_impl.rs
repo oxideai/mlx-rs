@@ -1278,8 +1278,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        ops::indexing::{ArrayIndex, IndexOp},
-        prelude::*,
+        Array, ops::indexing::*,
     };
 
     #[test]

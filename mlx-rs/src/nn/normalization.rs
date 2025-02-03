@@ -619,7 +619,7 @@ impl Module<&Array> for BatchNorm {
 #[cfg(test)]
 mod tests {
     use crate::{
-        prelude::{Ellipsis, IndexOp},
+        ops::indexing::{Ellipsis, IndexOp},
         Dtype,
     };
     use float_eq::assert_float_eq;

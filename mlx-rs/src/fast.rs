@@ -151,8 +151,7 @@ pub fn layer_norm_device<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ops::indexing::ArrayIndexOp;
-    use crate::prelude::IndexOp;
+    use crate::ops::indexing::{ArrayIndexOp, IndexOp};
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
 

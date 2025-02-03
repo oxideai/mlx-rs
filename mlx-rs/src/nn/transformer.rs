@@ -5,7 +5,7 @@ use crate::{
     error::Exception,
     module::{Module, UnaryModule},
     ops::{arange, expand_dims, matmul, softmax},
-    prelude::Builder,
+    builder::Builder,
     quantization::MaybeQuantized,
     Array, ArrayElement, FromScalar,
 };

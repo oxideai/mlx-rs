@@ -13,7 +13,7 @@ use mlx_rs::{
     ops::{ones, zeros},
     optimizers::{
         AdaDelta, AdaGrad, AdafactorBuilder, Adam, AdamW, Adamax, Lion, LionBuilder, Optimizer,
-        OptimizerState, RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
+        RmsProp, RmsPropBuilder, Sgd, SgdBuilder,
     },
     random::uniform,
     transforms::{eval, eval_params},

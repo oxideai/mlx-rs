@@ -5,7 +5,7 @@ use crate::{
     error::Exception,
     module::{Module, Param},
     ops::{arange, concatenate, exp, indexing::TryIndexOp, log},
-    prelude::NewAxis,
+    ops::indexing::NewAxis,
     Array, Dtype,
 };
 use mlx_internal_macros::{generate_builder, Buildable, Builder};

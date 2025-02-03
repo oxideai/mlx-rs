@@ -5,7 +5,7 @@ use crate::{
     error::Exception,
     module::{Module, ModuleParameters, Param},
     ops::{self, dequantize, quantized_matmul, zeros},
-    prelude::IndexOp,
+    ops::indexing::IndexOp,
     quantization::Quantizable,
     random::uniform,
     Array,

@@ -76,7 +76,7 @@ mod tests {
         nn::{self, Linear},
         ops::zeros,
         optimizers::{Optimizer, Sgd},
-        prelude::Builder,
+        builder::Builder,
         random::uniform,
         transforms::{eval, eval_params},
     };

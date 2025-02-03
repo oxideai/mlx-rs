@@ -5,7 +5,7 @@ use crate::{
     error::Exception,
     module::{Module, Param},
     ops::{addmm, matmul, sigmoid, split_equal, stack, tanh, tanh_device},
-    prelude::{Ellipsis, IndexOp},
+    ops::indexing::{Ellipsis, IndexOp},
     random::uniform,
     Array, Stream,
 };
@@ -574,7 +574,7 @@ where
 // The uint tests below are ported from the python codebase
 #[cfg(test)]
 mod tests {
-    use crate::{ops::maximum_device, prelude::Builder, random::normal};
+    use crate::{ops::maximum_device, builder::Builder, random::normal};
 
     use super::*;
 

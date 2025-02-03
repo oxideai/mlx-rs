@@ -32,19 +32,6 @@ pub use device::*;
 pub use dtype::*;
 pub use stream::*;
 
-/// Prelude module that re-exports commonly used types and traits.
-pub mod prelude {
-    pub use crate::{
-        array::Array,
-        builder::{Buildable, Builder},
-        dtype::Dtype,
-        ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
-        stream::StreamOrDevice,
-    };
-
-    pub use num_traits::Pow;
-}
-
 pub(crate) mod constants {
     /// The default length of the stack-allocated vector in `SmallVec<[T; DEFAULT_STACK_VEC_LEN]>`
     pub(crate) const DEFAULT_STACK_VEC_LEN: usize = 4;

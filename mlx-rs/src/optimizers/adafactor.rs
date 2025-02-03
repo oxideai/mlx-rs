@@ -38,6 +38,97 @@ pub struct AdafactorState {
     pub(crate) exp_avg: Option<Array>,
 }
 
+impl OptimizerState for State<AdafactorState> {
+    type UnflattenError = UnflattenError;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
+        self.iter().flat_map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &v.step)];
+
+            if let Some(exp_avg_sq_row) = &v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+    }
+
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().flat_map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &mut v.step)];
+
+            if let Some(exp_avg_sq_row) = &mut v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &mut v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &mut v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &mut v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+    }
+
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        let mut state = State::new();
+        let iter = input
+            .into_iter()
+            .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()));
+
+        for (k, v) in iter {
+            let key = k.into();
+            let mut parts = key.rsplit('.');
+            let suffix = parts.next().ok_or(UnflattenError::InvalidKey)?;
+            let prefix = parts.next().ok_or(UnflattenError::InvalidKey)?;
+
+            let prefix = Rc::from(prefix);
+            let state = state.entry(prefix).or_insert_with(|| AdafactorState {
+                step: array!(AdafactorState::DEFAULT_STEP),
+                exp_avg_sq_row: None,
+                exp_avg_sq_col: None,
+                exp_avg_sq: None,
+                exp_avg: None,
+            });
+
+            match suffix {
+                "step" => state.step = v,
+                "exp_avg_sq_row" => state.exp_avg_sq_row = Some(v),
+                "exp_avg_sq_col" => state.exp_avg_sq_col = Some(v),
+                "exp_avg_sq" => state.exp_avg_sq = Some(v),
+                "exp_avg" => state.exp_avg = Some(v),
+                _ => return Err(UnflattenError::InvalidKey),
+            }
+        }
+
+        Ok(state)
+    }
+}
+
 impl AdafactorState {
     /// Default value for `step`
     pub const DEFAULT_STEP: i32 = 0;
@@ -148,7 +239,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<AdafactorState>,
+        pub state: State<AdafactorState>,
     }
 }
 
@@ -176,7 +267,7 @@ fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuil
         scale_parameter,
         relative_step,
         warmup_init,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -253,6 +344,16 @@ fn compute_lr(
 }
 
 impl Optimizer for Adafactor {
+    type State = State<AdafactorState>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,

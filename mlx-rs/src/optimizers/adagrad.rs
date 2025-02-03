@@ -32,7 +32,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -43,7 +43,7 @@ fn build_adagrad(builder: AdaGradBuilder) -> Result<AdaGrad, Infallible> {
     Ok(AdaGrad {
         lr: array!(builder.lr),
         eps,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -53,6 +53,16 @@ impl AdaGrad {
 }
 
 impl Optimizer for AdaGrad {
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     fn update_single(
         &mut self,
         key: &Rc<str>,

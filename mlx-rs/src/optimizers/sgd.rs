@@ -35,7 +35,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -52,7 +52,7 @@ fn build_sgd(builder: SgdBuilder) -> Result<Sgd, std::convert::Infallible> {
         weight_decay,
         dampening,
         nesterov,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -71,6 +71,16 @@ impl Sgd {
 }
 
 impl Optimizer for Sgd {
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
     fn update_single(

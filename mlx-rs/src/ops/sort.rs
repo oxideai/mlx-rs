@@ -14,7 +14,7 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
@@ -36,7 +36,7 @@ pub fn sort_device(a: impl AsRef<Array>, axis: i32, stream: impl AsRef<Stream>) 
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let result = sort_all(&a);
@@ -58,7 +58,7 @@ pub fn sort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Resu
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
@@ -85,7 +85,7 @@ pub fn argsort_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let result = argsort_all(&a);
@@ -113,7 +113,7 @@ pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
@@ -153,7 +153,7 @@ pub fn partition_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
@@ -186,7 +186,7 @@ pub fn partition_all_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
@@ -227,7 +227,7 @@ pub fn argpartition_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;

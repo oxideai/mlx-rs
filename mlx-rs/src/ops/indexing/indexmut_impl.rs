@@ -1277,10 +1277,7 @@ where
 /// The unit tests below are adapted from the Swift binding tests
 #[cfg(test)]
 mod tests {
-    use crate::{
-        ops::indexing::{ArrayIndex, IndexOp},
-        prelude::*,
-    };
+    use crate::{ops::indexing::*, Array};
 
     #[test]
     fn test_array_mutate_single_index() {

@@ -72,11 +72,11 @@ impl<Err> Sequential<Err> {
 mod tests {
     use crate::{
         array,
+        builder::Builder,
         module::ModuleParameters,
         nn::{self, Linear},
         ops::zeros,
         optimizers::{Optimizer, Sgd},
-        prelude::Builder,
         random::uniform,
         transforms::{eval, eval_params},
     };

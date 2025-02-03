@@ -960,7 +960,7 @@ fn compiled_hard_swish(x: &Array) -> Result<Array> {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use crate::{prelude::Builder, random::uniform, Dtype};
+    use crate::{builder::Builder, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use super::*;

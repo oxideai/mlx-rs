@@ -15,7 +15,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
     /// let mut result = array.abs().unwrap();
     ///
@@ -40,7 +40,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.add(&b).unwrap();
@@ -75,7 +75,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.subtract(&b).unwrap();
@@ -106,7 +106,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.negative().unwrap();
     ///
@@ -127,7 +127,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.multiply(&b).unwrap();
@@ -203,7 +203,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.divide(&b).unwrap();
@@ -238,7 +238,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[2.0, 3.0, 4.0], &[3]);
     /// let mut c = a.power(&b).unwrap();
@@ -273,7 +273,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[10.0, 11.0, 12.0], &[3]);
     /// let b = Array::from_slice(&[3.0, 4.0, 5.0], &[3]);
     /// let mut c = a.remainder(&b).unwrap();
@@ -302,7 +302,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 4.0, 9.0], &[3]);
     /// let mut b = a.sqrt().unwrap();
     ///
@@ -321,7 +321,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let mut b = a.cos().unwrap();
     ///
@@ -340,7 +340,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     ///
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
     /// let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
@@ -361,7 +361,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0.1, 1.9, 2.5], &[3]);
     /// let mut b = a.floor().unwrap();
     ///
@@ -390,7 +390,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let b = Array::from_slice(&[4.0, 5.0, 6.0], &[3]);
     /// let mut c = a.floor_divide(&b).unwrap();
@@ -474,7 +474,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.log().unwrap();
     ///
@@ -493,7 +493,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0, 8.0], &[4]);
     /// let mut b = a.log2().unwrap();
     ///
@@ -512,7 +512,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 10.0, 100.0], &[3]);
     /// let mut b = a.log10().unwrap();
     ///
@@ -531,7 +531,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
     /// let mut b = a.log1p().unwrap();
     ///
@@ -567,7 +567,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
     /// let b = Array::from_slice(&[-5.0, 37.5, 4., 7., 1., 0.], &[2, 3]);
     ///
@@ -595,7 +595,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[1.0, 2.0, 4.0], &[3]);
     /// let mut b = a.reciprocal().unwrap();
     ///
@@ -660,7 +660,7 @@ impl Array {
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops};
+/// use mlx_rs::{Array, ops};
 ///
 /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
 /// let result = ops::abs(&array).unwrap();
@@ -807,7 +807,7 @@ where
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::clip, array};
+/// use mlx_rs::{Array, ops::clip, array};
 ///
 /// let a = array!([1.0, 4.0, 3.0, 8.0, 5.0]);
 /// let expected = array!([2.0, 4.0, 3.0, 6.0, 5.0]);

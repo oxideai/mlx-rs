@@ -45,7 +45,7 @@
 //! ```rust
 //! // See the multi-dimensional example code for mlx python https://ml-explore.github.io/mlx/build/html/usage/indexing.html
 //!
-//! use mlx_rs::prelude::*;
+//! use mlx_rs::{Array, ops::indexing::*};
 //!
 //! let a = Array::from_iter(0..8, &[2, 2, 2]);
 //!
@@ -70,7 +70,7 @@
 //! ## Example
 //!
 //! ```rust
-//! use mlx_rs::prelude::*;
+//! use mlx_rs::{Array, ops::indexing::*};
 //!
 //! let mut a = Array::from_slice(&[1, 2, 3], &[3]);
 //! a.index_mut(2, Array::from_int(0));
@@ -80,7 +80,7 @@
 //! ```
 //!
 //! ```rust
-//! use mlx_rs::prelude::*;
+//! use mlx_rs::{Array, ops::indexing::*};
 //!
 //! let mut a = Array::from_iter(0i32..20, &[2, 2, 5]);
 //!

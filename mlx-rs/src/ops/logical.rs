@@ -272,7 +272,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// let a: Array = false.into();
     /// let mut b = a.logical_not_device(StreamOrDevice::default()).unwrap();
     ///

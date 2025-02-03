@@ -238,7 +238,7 @@ pub fn norm_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, linalg::*};
+/// use mlx_rs::{Array, StreamOrDevice, linalg::*};
 ///
 /// let a = Array::from_slice(&[2.0f32, 3.0, 1.0, 2.0], &[2, 2]);
 ///
@@ -273,7 +273,7 @@ pub fn qr_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Ar
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, linalg::*};
+/// use mlx_rs::{Array, StreamOrDevice, linalg::*};
 ///
 /// let a = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[2, 2]);
 /// let (u, s, vt) = svd_device(&a, StreamOrDevice::cpu()).unwrap();
@@ -316,7 +316,7 @@ pub fn svd_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, linalg::*};
+/// use mlx_rs::{Array, StreamOrDevice, linalg::*};
 ///
 /// let a = Array::from_slice(&[1.0f32, 2.0, 3.0, 4.0], &[2, 2]);
 /// let a_inv = inv_device(&a, StreamOrDevice::cpu()).unwrap();

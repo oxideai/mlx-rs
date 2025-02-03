@@ -193,7 +193,7 @@ pub fn broadcast_arrays_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_iter(0..10, &[10]);
 /// let y = as_strided(&x, &[3, 3], &[1, 1], 0);
@@ -235,7 +235,7 @@ pub fn as_strided_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_float(2.3);
 /// let result = broadcast_to(&x, &[1, 1]);
@@ -267,7 +267,7 @@ pub fn broadcast_to_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
@@ -296,7 +296,7 @@ pub fn concatenate_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = expand_dims(&x, &[0]);
@@ -333,7 +333,7 @@ pub fn expand_dims_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2, 2]).unwrap();
 /// let y = flatten(&x, None, None);
@@ -369,7 +369,7 @@ pub fn flatten_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = reshape(&x, &[4]);
@@ -401,7 +401,7 @@ pub fn reshape_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]).unwrap();
 /// let result = squeeze(&x, None);
@@ -434,7 +434,7 @@ pub fn squeeze_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_1d(&x);
@@ -455,7 +455,7 @@ pub fn at_least_1d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_2d(&x);
@@ -476,7 +476,7 @@ pub fn at_least_2d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_int(1);
 /// let out = at_least_3d(&x);
@@ -499,7 +499,7 @@ pub fn at_least_3d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
 /// let result = move_axis(&a, 0, 2);
@@ -527,7 +527,7 @@ pub fn move_axis_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split(&a, &[3, 7], 0);
@@ -564,7 +564,7 @@ pub fn split_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split_equal(&a, 2, 0);
@@ -675,7 +675,7 @@ impl PadMode {
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let result = pad(&a, 1, Array::from_int(0), None);
@@ -727,7 +727,7 @@ pub fn pad_device<'a>(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -754,7 +754,7 @@ pub fn stack_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
@@ -779,7 +779,7 @@ pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..6, &[2, 3]);
 /// let result = swap_axes(&a, 0, 1);
@@ -812,7 +812,7 @@ pub fn swap_axes_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3], &[3]);
 /// let y = tile(&x, &[2]);
@@ -845,7 +845,7 @@ pub fn tile_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
 /// let y1 = transpose(&x, &[0, 1]).unwrap();

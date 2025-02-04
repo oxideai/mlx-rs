@@ -99,14 +99,14 @@ let loss_fn = |inputs: &[Array]| -> Result<Array, Exception> {
 let argnums = &[0];  // Specify which argument to differentiate with respect to
 
 // Pass all required arrays in the inputs slice
-let mut inputs = vec![w.clone(), x.clone(), y.clone()];
+let mut inputs = vec![w, x, y];
 let grad = transforms::grad(loss_fn, argnums)(&inputs)?;
 ```
 
 When using gradients in training loops, remember to update the appropriate array in your inputs:
 
 ```rust
-let mut inputs = vec![w.clone(), x.clone(), y.clone()];
+let mut inputs = vec![w, x, y];
 
 for _ in 0..num_iterations {
     let grad = transforms::grad(loss_fn, argnums)(&inputs)?;

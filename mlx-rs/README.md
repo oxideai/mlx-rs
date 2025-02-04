@@ -66,6 +66,55 @@ mlx-rs = "0.21.0"
 * `metal` - enables metal (GPU) usage in MLX
 * `accelerate` - enables using the accelerate framework in MLX
 
+## Important Notes on Automatic Differentiation
+
+When using automatic differentiation in mlx-rs, there's an important difference in how closures work compared to Python's MLX. In Python, variables are implicitly captured and properly traced in the compute graph. However, in Rust, we need to be more explicit about which arrays should be traced.
+
+❌ This approach may cause segfaults:
+```rust
+// Don't do this
+let x = random::normal::<f32>(&[num_examples, num_features], None, None, None)?;
+let y = x.matmul(&w_star)? + eps;
+
+let loss_fn = |w: &Array| -> Result<Array, Exception> {
+    let y_pred = x.matmul(w)?;  // x and y are captured from outer scope
+    let loss = Array::from_float(0.5) * ops::mean(&ops::square(&(y_pred - &y))?, None, None)?;
+    Ok(loss)
+};
+
+let grad_fn = transforms::grad(loss_fn, &[0]);
+```
+
+✅ Instead, pass all required arrays as inputs to ensure proper tracing:
+```rust
+let loss_fn = |inputs: &[Array]| -> Result<Array, Exception> {
+    let w = &inputs[0];
+    let x = &inputs[1];
+    let y = &inputs[2];
+
+    let y_pred = x.matmul(w)?;
+    let loss = Array::from_float(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
+    Ok(loss)
+};
+let argnums = &[0];  // Specify which argument to differentiate with respect to
+
+// Pass all required arrays in the inputs slice
+let mut inputs = vec![w.clone(), x.clone(), y.clone()];
+let grad = transforms::grad(loss_fn, argnums)(&inputs)?;
+```
+
+When using gradients in training loops, remember to update the appropriate array in your inputs:
+
+```rust
+let mut inputs = vec![w.clone(), x.clone(), y.clone()];
+
+for _ in 0..num_iterations {
+    let grad = transforms::grad(loss_fn, argnums)(&inputs)?;
+    inputs[0] = &inputs[0] - Array::from_float(learning_rate) * grad;  // Update the weight array
+    inputs[0].eval()?;
+}
+```
+
 ## Versioning
 
 For simplicity, the main crate `mls-rs` follows MLX’s versioning, allowing you to easily see which MLX version you’re using under the hood. The `mlx-sys` crate follows the versioning of `mlx-c`, as that is the version from which the API is generated.

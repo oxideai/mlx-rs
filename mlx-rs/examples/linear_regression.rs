@@ -21,27 +21,31 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Initialize random weights
     let mut w = random::normal::<f32>(&[num_features], None, None, None)? * 1e-2;
 
-    let loss_fn = |w: &Array| -> Result<Array, Exception> {
+    let loss_fn = |inputs: &[Array]| -> Result<Array, Exception> {
+        let w = &inputs[0];
+        let x = &inputs[1];
+        let y = &inputs[2];
+
         let y_pred = x.matmul(w)?;
-        let loss = Array::from_float(0.5) * ops::mean(&ops::square(&(y_pred - &y))?, None, None)?;
+        let loss = Array::from_float(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
         Ok(loss)
     };
-    let argnums = &[0];
 
-    // let mut grad_fn = transforms::grad(loss_fn, argnums);
+    let mut grad_fn = transforms::grad(loss_fn, &[0]);
 
     let now = std::time::Instant::now();
+    let mut inputs = [w, x, y];
+
     for _ in 0..num_iterations {
-        let grad = transforms::grad(loss_fn, argnums)(&w)?;
-        // let grad = grad_fn(&w)?;
-        w = &w - Array::from_float(learning_rate) * grad;
-        w.eval()?;
+        let grad = grad_fn(&inputs)?;
+        inputs[0] = &inputs[0] - Array::from_float(learning_rate) * grad;
+        inputs[0].eval()?;
     }
 
     let elapsed = now.elapsed();
 
-    let loss = loss_fn(&w)?;
-    let error_norm = ops::sum(&ops::square(&(&w - &w_star))?, None, None)?.sqrt()?;
+    let loss = loss_fn(&inputs)?;
+    let error_norm = ops::sum(&ops::square(&(&inputs[0] - &w_star))?, None, None)?.sqrt()?;
     let throughput = num_iterations as f32 / elapsed.as_secs_f32();
 
     println!(

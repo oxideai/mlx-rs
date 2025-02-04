@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let y = x.matmul(&w_star)? + eps;
 
     // Initialize random weights
-    let mut w = random::normal::<f32>(&[num_features], None, None, None)? * 1e-2;
+    let w = random::normal::<f32>(&[num_features], None, None, None)? * 1e-2;
 
     let loss_fn = |inputs: &[Array]| -> Result<Array, Exception> {
         let w = &inputs[0];

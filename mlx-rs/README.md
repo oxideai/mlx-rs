@@ -4,7 +4,7 @@
 Rust bindings for Apple's mlx machine learning library.
 
 [![Discord](https://img.shields.io/discord/1176807732473495552.svg?color=7289da&&logo=discord)](https://discord.gg/jZvTsxDX49)
-[![Current Crates.io Version](https://img.shields.io/crates/v/mlx-sys.svg)](https://crates.io/crates/mlx-sys)
+[![Current Crates.io Version](https://img.shields.io/crates/v/mlx-rs.svg)](https://crates.io/crates/mlx-rs)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)]()
 [![Test Status](https://github.com/oxideai/mlx-rs/actions/workflows/validate.yml/badge.svg)](https://github.com/oxideai/mlx-rs/actions/workflows/validate.yml)
 [![Blaze](https://runblaze.dev/gh/307493885959233117281096297203102330146/badge.svg)](https://runblaze.dev)

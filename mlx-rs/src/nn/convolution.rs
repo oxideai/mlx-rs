@@ -32,13 +32,21 @@ pub struct Conv1dBuilder {
     #[builder(optional, default = Conv1d::DEFAULT_BIAS)]
     pub bias: bool,
 
+    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = Conv1d::DEFAULT_STRIDE)]
+    pub stride: i32,
+
     /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv1d::DEFAULT_PADDING)]
     pub padding: i32,
 
-    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv1d::DEFAULT_STRIDE)]
-    pub stride: i32,
+    /// Dilation. Default to [`Conv1d::DEFAULT_DILATION`] if not specified.
+    #[builder(optional, default = Conv1d::DEFAULT_DILATION)]
+    pub dilation: i32,
+
+    /// Groups. Default to [`Conv1d::DEFAULT_GROUPS`] if not specified.
+    #[builder(optional, default = Conv1d::DEFAULT_GROUPS)]
+    pub groups: i32,
 }
 
 fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
@@ -46,8 +54,6 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
     let output_channels = builder.output_channels;
     let kernel_size = builder.kernel_size;
     let with_bias = builder.bias;
-    let padding = builder.padding;
-    let stride = builder.stride;
 
     let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
     let weight = uniform::<_, f32>(
@@ -65,8 +71,10 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
     Ok(Conv1d {
         weight: Param::new(weight),
         bias: Param::new(bias),
-        padding,
-        stride,
+        stride: builder.stride,
+        padding: builder.padding,
+        dilation: builder.dilation,
+        groups: builder.groups,
     })
 }
 
@@ -89,22 +97,34 @@ pub struct Conv1d {
     #[param]
     pub bias: Param<Option<Array>>,
 
-    /// Padding. Default to 0 if not specified.
+    /// Stride. Default to [`Conv1d::DEFAULT_STRIDE`] if not specified.
+    pub stride: i32,
+
+    /// Padding. Default to [`Conv1d::DEFAULT_PADDING`] if not specified.
     pub padding: i32,
 
-    /// Stride. Default to 1 if not specified.
-    pub stride: i32,
+    /// Dilation. Default to [`Conv1d::DEFAULT_DILATION`] if not specified.
+    pub dilation: i32,
+
+    /// Groups. Default to [`Conv1d::DEFAULT_GROUPS`] if not specified.
+    pub groups: i32,
 }
 
 impl Conv1d {
     /// Default value for `with_bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: i32 = 1;
+
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: i32 = 0;
 
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: i32 = 1;
+    /// Default value for `dilation` if not specified.
+    pub const DEFAULT_DILATION: i32 = 1;
+
+    /// Default value for `groups` if not specified.
+    pub const DEFAULT_GROUPS: i32 = 1;
 }
 
 impl Module<&Array> for Conv1d {
@@ -117,8 +137,8 @@ impl Module<&Array> for Conv1d {
             self.weight.as_ref(),
             self.stride,
             self.padding,
-            None,
-            None,
+            self.dilation,
+            self.groups,
         )?;
         if let Some(bias) = &self.bias.value {
             y += bias;
@@ -151,13 +171,21 @@ pub struct Conv2dBuilder {
     #[builder(optional, default = Conv2d::DEFAULT_BIAS)]
     pub bias: bool,
 
+    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = Conv2d::DEFAULT_STRIDE)]
+    pub stride: SingleOrPair<i32>,
+
     /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv2d::DEFAULT_PADDING)]
     pub padding: SingleOrPair<i32>,
 
-    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv2d::DEFAULT_STRIDE)]
-    pub stride: SingleOrPair<i32>,
+    /// Dilation. Default to [`Conv2d::DEFAULT_DILATION`] if not specified.
+    #[builder(optional, default = Conv2d::DEFAULT_DILATION)]
+    pub dilation: SingleOrPair<i32>,
+
+    /// Groups. Default to [`Conv2d::DEFAULT_GROUPS`] if not specified.
+    #[builder(optional, default = Conv2d::DEFAULT_GROUPS)]
+    pub groups: i32,
 }
 
 fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
@@ -167,6 +195,7 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
     let with_bias = builder.bias;
     let padding = builder.padding.into();
     let stride = builder.stride.into();
+    let dilation = builder.dilation.into();
 
     let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
     let weight = uniform::<_, f32>(
@@ -189,8 +218,10 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
     Ok(Conv2d {
         weight: Param::new(weight),
         bias: Param::new(bias),
-        padding,
         stride,
+        padding,
+        dilation,
+        groups: builder.groups,
     })
 }
 
@@ -214,22 +245,34 @@ pub struct Conv2d {
     #[param]
     pub bias: Param<Option<Array>>,
 
-    /// Padding. Default to `(0, 0)` if not specified.
+    /// Stride. Default to [`Conv2d::DEFAULT_STRIDE`] if not specified.
+    pub stride: (i32, i32),
+
+    /// Padding. Default to [`Conv2d::DEFAULT_PADDING`] if not specified.
     pub padding: (i32, i32),
 
-    /// Stride. Default to `(1, 1)` if not specified.
-    pub stride: (i32, i32),
+    /// Dilation. Default to [`Conv2d::DEFAULT_DILATION`] if not specified.
+    pub dilation: (i32, i32),
+
+    /// Groups. Default to [`Conv2d::DEFAULT_GROUPS`] if not specified.
+    pub groups: i32,
 }
 
 impl Conv2d {
     /// Default value for `with_bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
+
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: SingleOrPair = SingleOrPair::Pair(0, 0);
 
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: SingleOrPair = SingleOrPair::Pair(1, 1);
+    /// Default value for `dilation` if not specified.
+    pub const DEFAULT_DILATION: SingleOrPair = SingleOrPair::Pair(1, 1);
+
+    /// Default value for `groups` if not specified.
+    pub const DEFAULT_GROUPS: i32 = 1;
 }
 
 impl Module<&Array> for Conv2d {
@@ -242,8 +285,8 @@ impl Module<&Array> for Conv2d {
             self.weight.as_ref(),
             self.stride,
             self.padding,
-            None,
-            None,
+            self.dilation,
+            self.groups,
         )?;
         if let Some(bias) = &self.bias.value {
             y += bias;
@@ -276,13 +319,21 @@ pub struct Conv3dBuilder {
     #[builder(optional, default = Conv3d::DEFAULT_BIAS)]
     pub bias: bool,
 
+    /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
+    #[builder(optional, default = Conv3d::DEFAULT_STRIDE)]
+    pub stride: SingleOrTriple<i32>,
+
     /// Padding. Default to [`Conv3d::DEFAULT_PADDING`] if not specified.
     #[builder(optional, default = Conv3d::DEFAULT_PADDING)]
     pub padding: SingleOrTriple<i32>,
 
-    /// Stride. Default to [`Conv3d::DEFAULT_STRIDE`] if not specified.
-    #[builder(optional, default = Conv3d::DEFAULT_STRIDE)]
-    pub stride: SingleOrTriple<i32>,
+    /// Dilation. Default to [`Conv3d::DEFAULT_DILATION`] if not specified.
+    #[builder(optional, default = Conv3d::DEFAULT_DILATION)]
+    pub dilation: SingleOrTriple<i32>,
+
+    /// Groups. Default to [`Conv3d::DEFAULT_GROUPS`] if not specified.
+    #[builder(optional, default = Conv3d::DEFAULT_GROUPS)]
+    pub groups: i32,
 }
 
 fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
@@ -292,6 +343,7 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
     let with_bias = builder.bias;
     let padding = builder.padding.into();
     let stride = builder.stride.into();
+    let dilation = builder.dilation.into();
 
     let scale =
         f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1 * kernel_size.2) as f32);
@@ -316,8 +368,10 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
     Ok(Conv3d {
         weight: Param::new(weight),
         bias: Param::new(bias),
-        padding,
         stride,
+        padding,
+        dilation,
+        groups: builder.groups,
     })
 }
 
@@ -341,22 +395,34 @@ pub struct Conv3d {
     #[param]
     pub bias: Param<Option<Array>>,
 
+    /// Stride. Default to `(1, 1, 1)` if not specified.
+    pub stride: (i32, i32, i32),
+
     /// Padding. Default to `(0, 0, 0)` if not specified.
     pub padding: (i32, i32, i32),
 
-    /// Stride. Default to `(1, 1, 1)` if not specified.
-    pub stride: (i32, i32, i32),
+    /// Dilation. Default to `(1, 1, 1)` if not specified.
+    pub dilation: (i32, i32, i32),
+
+    /// Groups. Default to 1 if not specified.
+    pub groups: i32,
 }
 
 impl Conv3d {
     /// Default value for `with_bias` if not specified.
     pub const DEFAULT_BIAS: bool = true;
 
+    /// Default value for `stride` if not specified.
+    pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
+
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: SingleOrTriple<i32> = SingleOrTriple::Triple(0, 0, 0);
 
-    /// Default value for `stride` if not specified.
-    pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
+    /// Default value for `dilation` if not specified.
+    pub const DEFAULT_DILATION: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
+
+    /// Default value for `groups` if not specified.
+    pub const DEFAULT_GROUPS: i32 = 1;
 }
 
 impl Module<&Array> for Conv3d {
@@ -369,8 +435,8 @@ impl Module<&Array> for Conv3d {
             self.weight.as_ref(),
             self.stride,
             self.padding,
-            None,
-            None,
+            self.dilation,
+            self.groups,
         )?;
         if let Some(bias) = &self.bias.value {
             y += bias;

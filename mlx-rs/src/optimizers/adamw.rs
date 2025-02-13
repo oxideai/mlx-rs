@@ -2,9 +2,13 @@ use std::convert::Infallible;
 
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, utils::get_mut_or_insert_with, Array};
+use crate::{
+    array,
+    utils::{get_mut_or_insert_with, Updatable},
+    Array,
+};
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The AdamW optimizer [1].
@@ -45,7 +49,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -61,7 +65,7 @@ fn build_adamw(builder: AdamWBuilder) -> Result<AdamW, Infallible> {
         betas: (array!(betas.0), array!(betas.1)),
         eps: array!(eps),
         weight_decay: array!(weight_decay),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -77,7 +81,17 @@ impl AdamW {
 }
 
 impl Optimizer for AdamW {
-    fn apply_single(
+    type State = State<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
@@ -105,3 +119,25 @@ impl Optimizer for AdamW {
         Ok(())
     }
 }
+
+impl Updatable for AdamW {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+}
+
+impl_updatable_for_mut_optimizer!(AdamW);

@@ -41,7 +41,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -55,7 +55,7 @@ fn build_adam(builder: AdamBuilder) -> Result<Adam, Infallible> {
         lr,
         betas: (array!(betas.0), array!(betas.1)),
         eps,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -68,7 +68,17 @@ impl Adam {
 }
 
 impl Optimizer for Adam {
-    fn apply_single(
+    type State = State<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -112,3 +122,25 @@ pub(super) fn adam_apply_single(
 
     Ok((new_parameter, (new_m, new_v)))
 }
+
+impl Updatable for Adam {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Adam);

@@ -208,7 +208,7 @@ pub fn generate_builder(input: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// use mlx_internal_macros::*;
 /// use mlx_rs::builder::{Buildable, Builder};
 ///

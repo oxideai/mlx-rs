@@ -6,10 +6,11 @@ use crate::{
     array,
     error::AdafactorBuildError,
     ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    utils::Updatable,
     Array,
 };
 
-use super::{Optimizer, OptimizerState};
+use super::*;
 
 fn rms(inputs: &Array) -> crate::error::Result<Array> {
     sqrt(&mean(&square(inputs)?, None, None)?)
@@ -35,6 +36,97 @@ pub struct AdafactorState {
     pub(crate) exp_avg_sq_col: Option<Array>,
     pub(crate) exp_avg_sq: Option<Array>,
     pub(crate) exp_avg: Option<Array>,
+}
+
+impl OptimizerState for State<AdafactorState> {
+    type UnflattenError = UnflattenError;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
+        self.iter().flat_map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &v.step)];
+
+            if let Some(exp_avg_sq_row) = &v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+    }
+
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().flat_map(|(k, v)| {
+            let mut iter = vec![(Rc::from(format!("{}.step", k)), &mut v.step)];
+
+            if let Some(exp_avg_sq_row) = &mut v.exp_avg_sq_row {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+            }
+
+            if let Some(exp_avg_sq_col) = &mut v.exp_avg_sq_col {
+                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+            }
+
+            if let Some(exp_avg_sq) = &mut v.exp_avg_sq {
+                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+            }
+
+            if let Some(exp_avg) = &mut v.exp_avg {
+                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+            }
+
+            iter
+        })
+    }
+
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        let mut state = State::new();
+        let iter = input
+            .into_iter()
+            .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()));
+
+        for (k, v) in iter {
+            let key = k.into();
+            let mut parts = key.rsplit('.');
+            let suffix = parts.next().ok_or(UnflattenError::InvalidKey)?;
+            let prefix = parts.next().ok_or(UnflattenError::InvalidKey)?;
+
+            let prefix = Rc::from(prefix);
+            let state = state.entry(prefix).or_insert_with(|| AdafactorState {
+                step: array!(AdafactorState::DEFAULT_STEP),
+                exp_avg_sq_row: None,
+                exp_avg_sq_col: None,
+                exp_avg_sq: None,
+                exp_avg: None,
+            });
+
+            match suffix {
+                "step" => state.step = v,
+                "exp_avg_sq_row" => state.exp_avg_sq_row = Some(v),
+                "exp_avg_sq_col" => state.exp_avg_sq_col = Some(v),
+                "exp_avg_sq" => state.exp_avg_sq = Some(v),
+                "exp_avg" => state.exp_avg = Some(v),
+                _ => return Err(UnflattenError::InvalidKey),
+            }
+        }
+
+        Ok(state)
+    }
 }
 
 impl AdafactorState {
@@ -105,8 +197,8 @@ generate_builder! {
     )]
     pub struct Adafactor {
         /// The learning rate.
-        #[builder(optional, ty_override = AdafactorBuilderLr, default = Adafactor::DEFAULT_LR)]
-        pub lr: AdafactorLr,
+        #[builder(optional, default = Adafactor::DEFAULT_LR)]
+        pub lr: Option<f32>,
 
         /// The first term is added to the square of the gradients to improve numerical stability.
         /// Default to [`Adafactor::DEFAULT_EPS`].
@@ -127,8 +219,8 @@ generate_builder! {
         pub beta1: AdafactorBeta1,
 
         /// The weight decay. Default to [`Adafactor::DEFAULT_WEIGHT_DECAY`].
-        #[builder(optional, ty_override = f32, default = Adafactor::DEFAULT_WEIGHT_DECAY)]
-        pub weight_decay: Array,
+        #[builder(optional, default = Adafactor::DEFAULT_WEIGHT_DECAY)]
+        pub weight_decay: f32,
 
         /// If `true` the `learningRate` will be scaled by `max(eps.0, RMS(parameter))`. Default to
         /// [`Adafactor::DEFAULT_SCALE_PARAMETER`].
@@ -147,7 +239,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<AdafactorState>,
+        pub state: State<AdafactorState>,
     }
 }
 
@@ -166,16 +258,16 @@ fn build_adafactor(builder: AdafactorBuilder) -> Result<Adafactor, AdafactorBuil
     }
 
     Ok(Adafactor {
-        lr: builder.lr.map(Array::from),
+        lr: builder.lr,
         eps: (array!(eps.0), array!(eps.1)),
         clip_threshold: array!(clip_threshold),
         decay_rate: array!(decay_rate),
         beta1: builder.beta1.map(Array::from),
-        weight_decay: array!(weight_decay),
+        weight_decay,
         scale_parameter,
         relative_step,
         warmup_init,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -223,7 +315,7 @@ fn get_mut_or_insert_with<'a, T, E>(
 fn compute_lr(
     relative_step: bool,
     warmup_init: bool,
-    lr: &Option<Array>,
+    lr: Option<f32>,
     scale_parameter: bool,
     eps: &(Array, Array),
     step: &Array,
@@ -237,13 +329,10 @@ fn compute_lr(
             array!(1e-2)
         };
         // SAFETY: `step` is a single-element array and won't panic.
-        Cow::Owned(minimum(min_step, array!(1.0) / sqrt(step)?)?)
+        minimum(min_step, array!(1.0) / sqrt(step)?)?
     } else {
         // SAFETY: This is already checked in the `build` stage.
-        Cow::Borrowed(
-            lr.as_ref()
-                .expect("The learning rate should be set if the relative step is not enabled"),
-        )
+        array!(lr.expect("The learning rate should be set if the relative step is not enabled"))
     };
 
     let mut parameter_scale = array!(1.0);
@@ -251,11 +340,21 @@ fn compute_lr(
         parameter_scale = maximum(&eps.1, parameter_rms)?;
     }
 
-    parameter_scale.multiply(&*relative_step_size)
+    parameter_scale.multiply(relative_step_size)
 }
 
 impl Optimizer for Adafactor {
-    fn apply_single(
+    type State = State<AdafactorState>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
@@ -276,7 +375,7 @@ impl Optimizer for Adafactor {
         let lr = compute_lr(
             self.relative_step,
             self.warmup_init,
-            &self.lr,
+            self.lr,
             self.scale_parameter,
             &self.eps,
             step,
@@ -329,8 +428,8 @@ impl Optimizer for Adafactor {
             update = Cow::Borrowed(&*exp_avg);
         }
 
-        if self.weight_decay.ne(&array!(0.0))?.item() {
-            let rhs = parameter.multiply(self.weight_decay.negative()?.multiply(&lr)?)?;
+        if self.weight_decay != 0.0 {
+            let rhs = parameter.multiply(array!(-self.weight_decay).multiply(lr)?)?;
             *parameter = parameter.add(rhs)?;
         }
 
@@ -339,3 +438,47 @@ impl Optimizer for Adafactor {
         Ok(())
     }
 }
+
+impl Updatable for Adafactor {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
+                // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+                [
+                    &v.exp_avg_sq_row,
+                    &v.exp_avg_sq_col,
+                    &v.exp_avg_sq,
+                    &v.exp_avg,
+                ]
+                .into_iter()
+                .filter_map(|v| v.as_ref())
+                .collect::<Vec<_>>()
+            })
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, v)| {
+                // [expAvgSqRow, expAvgSqCol, expAvgSq, expAvg]
+                [
+                    &mut v.exp_avg_sq_row,
+                    &mut v.exp_avg_sq_col,
+                    &mut v.exp_avg_sq,
+                    &mut v.exp_avg,
+                ]
+                .into_iter()
+                .filter_map(|v| v.as_mut())
+                .collect::<Vec<_>>()
+            })
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Adafactor);

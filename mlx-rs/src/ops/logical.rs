@@ -272,7 +272,7 @@ impl Array {
     /// # Example
     ///
     /// ```rust
-    /// use mlx_rs::prelude::*;
+    /// use mlx_rs::{Array, StreamOrDevice};
     /// let a: Array = false.into();
     /// let mut b = a.logical_not_device(StreamOrDevice::default()).unwrap();
     ///
@@ -350,7 +350,7 @@ impl Array {
     #[default_device]
     pub fn is_close_device(
         &self,
-        other: &Array,
+        other: impl AsRef<Array>,
         rtol: impl Into<Option<f64>>,
         atol: impl Into<Option<f64>>,
         equal_nan: impl Into<Option<bool>>,
@@ -360,7 +360,7 @@ impl Array {
             mlx_sys::mlx_isclose(
                 res,
                 self.as_ptr(),
-                other.as_ptr(),
+                other.as_ref().as_ptr(),
                 rtol.into().unwrap_or(1e-5),
                 atol.into().unwrap_or(1e-8),
                 equal_nan.into().unwrap_or(false),
@@ -453,12 +453,12 @@ impl Array {
 /// See [`Array::any`]
 #[default_device]
 pub fn any_device<'a>(
-    array: &Array,
+    array: impl AsRef<Array>,
     axes: impl IntoOption<&'a [i32]>,
     keep_dims: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.any_device(axes, keep_dims, stream)
+    array.as_ref().any_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::logical_and`]
@@ -475,8 +475,8 @@ pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<A
 
 /// See [`Array::logical_not`]
 #[default_device]
-pub fn logical_not_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
-    a.logical_not_device(stream)
+pub fn logical_not_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+    a.as_ref().logical_not_device(stream)
 }
 
 /// See [`Array::all_close`]
@@ -496,14 +496,14 @@ pub fn all_close_device(
 /// See [`Array::is_close`]
 #[default_device]
 pub fn is_close_device(
-    a: &Array,
-    b: &Array,
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
     rtol: impl Into<Option<f64>>,
     atol: impl Into<Option<f64>>,
     equal_nan: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.is_close_device(b, rtol, atol, equal_nan, stream)
+    a.as_ref().is_close_device(b, rtol, atol, equal_nan, stream)
 }
 
 /// See [`Array::array_eq`]
@@ -581,33 +581,33 @@ pub fn gt_device(
 
 /// Return a boolean array indicating which elements are NaN.
 #[default_device]
-pub fn is_nan_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_nan_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_isnan(res, array.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_isnan(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are +/- inifnity.
 #[default_device]
-pub fn is_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_isinf(res, array.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_isinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are positive infinity.
 #[default_device]
-pub fn is_pos_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_pos_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_isposinf(res, array.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_isposinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are negative infinity.
 #[default_device]
-pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_neg_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_isneginf(res, array.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_isneginf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -625,7 +625,7 @@ pub fn is_neg_inf_device(array: &Array, stream: impl AsRef<Stream>) -> Result<Ar
 /// - b: input selected from where condition is zero or `false`
 #[default_device]
 pub fn r#where_device(
-    condition: &Array,
+    condition: impl AsRef<Array>,
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,
@@ -633,7 +633,7 @@ pub fn r#where_device(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_where(
             res,
-            condition.as_ptr(),
+            condition.as_ref().as_ptr(),
             a.as_ref().as_ptr(),
             b.as_ref().as_ptr(),
             stream.as_ref().as_ptr(),
@@ -644,7 +644,7 @@ pub fn r#where_device(
 /// Alias for [`r#where`]
 #[default_device]
 pub fn which_device(
-    condition: &Array,
+    condition: impl AsRef<Array>,
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     stream: impl AsRef<Stream>,

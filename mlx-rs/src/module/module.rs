@@ -1,15 +1,19 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, collections::HashMap, hash::Hash, path::Path, rc::Rc};
 
-use crate::{nested::NestedHashMap, Array};
+use crate::{
+    error::{Exception, IoError},
+    nested::{NestedHashMap, NestedValue},
+    Array,
+};
 
 /// Type alias for owned module parameters.
-pub type ModuleParam = NestedHashMap<&'static str, Array>;
+pub type ModuleParam = NestedHashMap<Rc<str>, Array>;
 
 /// Type alias for borrowed module parameters.
-pub type ModuleParamRef<'a> = NestedHashMap<&'static str, &'a Array>;
+pub type ModuleParamRef<'a> = NestedHashMap<Rc<str>, &'a Array>;
 
 /// Type alias for mutably borrowed module parameters.
-pub type ModuleParamMut<'a> = NestedHashMap<&'static str, &'a mut Array>;
+pub type ModuleParamMut<'a> = NestedHashMap<Rc<str>, &'a mut Array>;
 
 /// Type alias for flattened module parameters.
 pub type FlattenedModuleParam = HashMap<Rc<str>, Array>;
@@ -21,15 +25,15 @@ pub type FlattenedModuleParamRef<'a> = HashMap<Rc<str>, &'a Array>;
 pub type FlattenedModuleParamMut<'a> = HashMap<Rc<str>, &'a mut Array>;
 
 /// Trait for a neural network module.
-pub trait Module<Args>: ModuleParameters {
-    /// Error type for the module.
-    type Error: std::error::Error;
-
+pub trait Module<Input>: ModuleParameters + std::fmt::Debug {
     /// Output type of the module.
     type Output;
 
+    /// Error type for the module.
+    type Error: std::error::Error;
+
     /// Forward pass of the module.
-    fn forward(&mut self, x: Args) -> Result<Self::Output, Self::Error>;
+    fn forward(&mut self, input: Input) -> Result<Self::Output, Self::Error>;
 
     /// Set whether the module is in training mode.
     ///
@@ -43,13 +47,9 @@ pub trait Module<Args>: ModuleParameters {
 ///
 /// This trait should not be implemented directly. Instead, implement [`Module`] with `Args` as a
 /// reference to the input.
-pub trait UnaryModule
-where
-    for<'a> Self: Module<&'a Array, Output = Array>,
-{
-}
+pub trait UnaryModule: for<'a> Module<&'a Array, Output = Array> {}
 
-impl<M> UnaryModule for M where for<'a> M: Module<&'a Array, Output = Array> {}
+impl<T> UnaryModule for T where T: for<'a> Module<&'a Array, Output = Array> {}
 
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {
@@ -65,12 +65,12 @@ pub trait ModuleParameters {
     /// Update the module parameters.
     fn update(&mut self, parameters: ModuleParam) {
         let flattened_parameters = parameters.flatten();
-        update_flattened_parameters(self, flattened_parameters)
+        update_parameters(self, flattened_parameters)
     }
 
     /// Update the module parameters from a flattened representation.
     fn update_flattened(&mut self, flattened_parameters: FlattenedModuleParam) {
-        update_flattened_parameters(self, flattened_parameters)
+        update_parameters(self, flattened_parameters)
     }
 
     /// Freeze all parameters in the module.
@@ -86,18 +86,53 @@ pub trait ModuleParameters {
     fn any_frozen(&self) -> Option<bool>;
 }
 
-/// Update the module parameters from an iterator of flattened parameters.
-pub fn update_flattened_parameters<M, I>(module: &mut M, flattened_parameters: I)
+/// Update the module parameters from an iterator of (key, value) tuples.
+pub fn update_parameters<M, I, Q>(module: &mut M, parameters: I)
 where
     M: ModuleParameters + ?Sized,
-    I: IntoIterator<Item = (Rc<str>, Array)>,
+    I: IntoIterator<Item = (Q, Array)>,
+    Q: Hash + Eq,
+    Rc<str>: Borrow<Q>,
 {
     let mut flattened_self_parameters = module.parameters_mut().flatten();
 
-    for (key, value) in flattened_parameters {
+    for (key, value) in parameters {
         if let Some(self_value) = flattened_self_parameters.get_mut(&key) {
             **self_value = value;
         }
+    }
+}
+
+impl<T> ModuleParameters for &'_ mut T
+where
+    T: ModuleParameters + ?Sized,
+{
+    fn parameters(&self) -> ModuleParamRef<'_> {
+        (**self).parameters()
+    }
+
+    fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
+        (**self).parameters_mut()
+    }
+
+    fn trainable_parameters(&self) -> ModuleParamRef<'_> {
+        (**self).trainable_parameters()
+    }
+
+    fn freeze_parameters(&mut self, recursive: bool) {
+        (**self).freeze_parameters(recursive);
+    }
+
+    fn unfreeze_parameters(&mut self, recursive: bool) {
+        (**self).unfreeze_parameters(recursive);
+    }
+
+    fn all_frozen(&self) -> Option<bool> {
+        (**self).all_frozen()
+    }
+
+    fn any_frozen(&self) -> Option<bool> {
+        (**self).any_frozen()
     }
 }
 
@@ -140,27 +175,27 @@ where
 {
     fn parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
 
     fn parameters_mut(&mut self) -> ModuleParamMut<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter_mut().for_each(|module| {
-            let module_parameters = module.parameters_mut();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter_mut().enumerate().for_each(|(i, module)| {
+            let value = module.parameters_mut();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
 
     fn trainable_parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
-        self.iter().for_each(|module| {
-            let module_parameters = module.trainable_parameters();
-            parameters.entries.extend(module_parameters.entries);
+        self.iter().enumerate().for_each(|(i, module)| {
+            let value = module.trainable_parameters();
+            parameters.insert(Rc::from(i.to_string()), NestedValue::Map(value.entries));
         });
         parameters
     }
@@ -201,3 +236,39 @@ where
         result
     }
 }
+
+/// Extension trait for `ModuleParameters`. This is implemented for all types that implement
+/// `ModuleParameters`.
+pub trait ModuleParametersExt: ModuleParameters {
+    /// Evaluate the module parameters.
+    fn eval(&self) -> Result<(), Exception> {
+        crate::transforms::eval_params(self.parameters())
+    }
+
+    /// Load module parameters from a `safetensors` file.
+    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let loaded = Array::load_safetensors(path)?;
+
+        // Load the parameters
+        let mut params = self.parameters_mut().flatten();
+        for (key, value) in loaded {
+            if let Some(param) = params.get_mut(&*key) {
+                **param = value;
+            }
+        }
+
+        // Loading is lazy, eval after loading
+        self.eval()?;
+
+        Ok(())
+    }
+
+    /// Save module parameters to a file in `safetensors` format.
+    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let params = self.parameters().flatten();
+        Array::save_safetensors(params, None, path)?;
+        Ok(())
+    }
+}
+
+impl<T: ModuleParameters> ModuleParametersExt for T {}

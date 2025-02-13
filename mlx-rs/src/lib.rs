@@ -1,4 +1,7 @@
-#![deny(unused_unsafe, missing_debug_implementations)]
+//! Unofficial rust bindings for the [MLX
+//! framework](https://github.com/ml-explore/mlx).
+
+#![deny(unused_unsafe, missing_debug_implementations, missing_docs)]
 #![cfg_attr(test, allow(clippy::approx_constant))]
 
 #[macro_use]
@@ -12,10 +15,13 @@ pub mod error;
 pub mod fast;
 pub mod fft;
 pub mod linalg;
+pub mod losses;
 pub mod module;
 pub mod nested;
+pub mod nn;
 pub mod ops;
 pub mod optimizers;
+pub mod quantization;
 pub mod random;
 mod stream;
 pub mod transforms;
@@ -25,19 +31,6 @@ pub use array::*;
 pub use device::*;
 pub use dtype::*;
 pub use stream::*;
-
-// TODO: what to put in the prelude?
-pub mod prelude {
-    pub use crate::{
-        array::Array,
-        builder::{Buildable, Builder},
-        dtype::Dtype,
-        ops::indexing::{Ellipsis, IndexMutOp, IndexOp, IntoStrideBy, NewAxis},
-        stream::StreamOrDevice,
-    };
-
-    pub use num_traits::Pow;
-}
 
 pub(crate) mod constants {
     /// The default length of the stack-allocated vector in `SmallVec<[T; DEFAULT_STACK_VEC_LEN]>`

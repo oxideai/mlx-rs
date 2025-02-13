@@ -35,7 +35,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cummax(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -48,7 +48,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cummax(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -90,7 +90,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cummin(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -103,7 +103,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cummin(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -145,7 +145,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cumprod(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -158,7 +158,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cumprod(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -200,7 +200,7 @@ impl Array {
             Some(axis) => Array::try_from_op(|res| unsafe {
                 mlx_sys::mlx_cumsum(
                     res,
-                    self.c_array,
+                    self.as_ptr(),
                     axis,
                     reverse.into().unwrap_or(false),
                     inclusive.into().unwrap_or(true),
@@ -213,7 +213,7 @@ impl Array {
                 Array::try_from_op(|res| unsafe {
                     mlx_sys::mlx_cumsum(
                         res,
-                        flat.c_array,
+                        flat.as_ptr(),
                         0,
                         reverse.into().unwrap_or(false),
                         inclusive.into().unwrap_or(true),
@@ -228,49 +228,49 @@ impl Array {
 /// See [`Array::cummax`]
 #[default_device]
 pub fn cummax_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cummax_device(axis, reverse, inclusive, stream)
+    a.as_ref().cummax_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cummin`]
 #[default_device]
 pub fn cummin_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cummin_device(axis, reverse, inclusive, stream)
+    a.as_ref().cummin_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumprod`]
 #[default_device]
 pub fn cumprod_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cumprod_device(axis, reverse, inclusive, stream)
+    a.as_ref().cumprod_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumsum`]
 #[default_device]
 pub fn cumsum_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     axis: impl Into<Option<i32>>,
     reverse: impl Into<Option<bool>>,
     inclusive: impl Into<Option<bool>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.cumsum_device(axis, reverse, inclusive, stream)
+    a.as_ref().cumsum_device(axis, reverse, inclusive, stream)
 }
 
 #[cfg(test)]

@@ -1,6 +1,11 @@
 use std::rc::Rc;
 
-use crate::{array, ops::sqrt, utils::get_mut_or_insert_with, Array};
+use crate::{
+    array,
+    ops::sqrt,
+    utils::{get_mut_or_insert_with, Updatable},
+    Array,
+};
 use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::error::AdaDeltaBuildError;
@@ -37,7 +42,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -58,7 +63,7 @@ fn build_adadelta(builder: AdaDeltaBuilder) -> Result<AdaDelta, AdaDeltaBuildErr
         lr: array!(builder.lr),
         rho: array!(rho),
         eps: array!(eps),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -71,7 +76,17 @@ impl AdaDelta {
 }
 
 impl Optimizer for AdaDelta {
-    fn apply_single(
+    type State = State<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -101,3 +116,25 @@ impl Optimizer for AdaDelta {
         Ok(())
     }
 }
+
+impl Updatable for AdaDelta {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+}
+
+impl_updatable_for_mut_optimizer!(AdaDelta);

@@ -1,8 +1,12 @@
 use mlx_internal_macros::{generate_builder, Buildable};
 
-use crate::{array, utils::get_mut_or_insert_with, Array};
+use crate::{
+    array,
+    utils::{get_mut_or_insert_with, Updatable},
+    Array,
+};
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The Lion optimizer [1].
@@ -22,8 +26,7 @@ generate_builder! {
     )]
     pub struct Lion {
         /// The learning rate.
-        #[builder(ty_override = f32)]
-        pub lr: Array,
+        pub lr: f32,
 
         /// The coefficients used for computing running averages of the gradient and its square.
         /// Default to [`Lion::DEFAULT_BETAS`].
@@ -31,12 +34,12 @@ generate_builder! {
         pub betas: (Array, Array),
 
         /// The weight decay. Default to [`Lion::DEFAULT_WEIGHT_DECAY`].
-        #[builder(optional, ty_override = f32, default = Lion::DEFAULT_WEIGHT_DECAY)]
-        pub weight_decay: Array,
+        #[builder(optional, default = Lion::DEFAULT_WEIGHT_DECAY)]
+        pub weight_decay: f32,
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -46,10 +49,10 @@ fn build_lion(builder: LionBuilder) -> Result<Lion, std::convert::Infallible> {
     let weight_decay = builder.weight_decay;
 
     Ok(Lion {
-        lr: array!(lr),
+        lr,
         betas: (array!(betas.0), array!(betas.1)),
-        weight_decay: array!(weight_decay),
-        state: OptimizerState::new(),
+        weight_decay,
+        state: State::new(),
     })
 }
 
@@ -62,7 +65,17 @@ impl Lion {
 }
 
 impl Optimizer for Lion {
-    fn apply_single(
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &std::rc::Rc<str>,
         gradient: &Array,
@@ -79,13 +92,36 @@ impl Optimizer for Lion {
         let c = b1.multiply(&m)?.add(&one_minus_b1.multiply(gradient)?)?;
         *m = b2.multiply(&m)?.add(&one_minus_b2.multiply(gradient)?)?;
 
-        if self.weight_decay.gt(array!(0.0))?.item() {
+        if self.weight_decay > 0.0 {
             // SAFETY: These coeffs are all single-element arrays and won't panic.
-            *parameter = (array!(1.0) - &self.lr * &self.weight_decay) * &*parameter;
+            *parameter = array!(1.0 - self.lr * self.weight_decay) * &*parameter;
         }
 
-        *parameter = parameter.subtract(self.lr.multiply(sign(&c)?)?)?;
+        let lr = array!(self.lr);
+        *parameter = parameter.subtract(lr.multiply(sign(&c)?)?)?;
 
         Ok(())
     }
 }
+
+impl Updatable for Lion {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Lion);

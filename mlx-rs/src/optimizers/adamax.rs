@@ -5,11 +5,11 @@ use mlx_internal_macros::{generate_builder, Buildable};
 use crate::{
     array,
     ops::{abs, maximum},
-    utils::get_mut_or_insert_with,
+    utils::{get_mut_or_insert_with, Updatable},
     Array,
 };
 
-use super::{Betas, Optimizer, OptimizerState};
+use super::*;
 
 generate_builder! {
     /// The Adamax optimizer, a variant of Adam based on the infinity norm [1].
@@ -39,7 +39,7 @@ generate_builder! {
 
         /// Inner state.
         #[builder(ignore)]
-        pub state: OptimizerState<(Array, Array)>,
+        pub state: State<(Array, Array)>,
     }
 }
 
@@ -52,7 +52,7 @@ fn build_adamax(builder: AdamaxBuilder) -> Result<Adamax, Infallible> {
         lr: array!(lr),
         betas: (array!(betas.0), array!(betas.1)),
         eps: array!(eps),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -65,7 +65,17 @@ impl Adamax {
 }
 
 impl Optimizer for Adamax {
-    fn apply_single(
+    type State = State<(Array, Array)>;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -88,3 +98,25 @@ impl Optimizer for Adamax {
         Ok(())
     }
 }
+
+impl Updatable for Adamax {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .flat_map(|(_, (v, u))| vec![v, u])
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Adamax);

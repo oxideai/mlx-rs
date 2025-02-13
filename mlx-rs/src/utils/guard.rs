@@ -20,6 +20,7 @@ pub trait Guard<T>: Default {
 pub(crate) trait Guarded: Sized {
     type Guard: Guard<Self>;
 
+    #[track_caller]
     fn try_from_op<F>(f: F) -> Result<Self, Exception>
     where
         F: FnOnce(<Self::Guard as Guard<Self>>::MutRawPtr) -> Status,
@@ -34,8 +35,15 @@ pub(crate) trait Guarded: Sized {
                 guard.set_init_success(true);
                 guard.try_into_guarded()
             }
-            _ => Err(crate::error::get_and_clear_last_mlx_error()
-                .expect("MLX operation failed but no error was set")),
+            _ => {
+                // Err(crate::error::get_and_clear_last_mlx_error()
+                // .expect("MLX operation failed but no error was set"))
+                let what = crate::error::get_and_clear_last_mlx_error()
+                    .expect("MLX operation failed but no error was set")
+                    .what;
+                let location = std::panic::Location::caller();
+                Err(Exception { what, location })
+            }
         }
     }
 }
@@ -85,7 +93,7 @@ impl Guard<Array> for MaybeUninitArray {
 
     fn try_into_guarded(self) -> Result<Array, Exception> {
         debug_assert!(self.init_success);
-        Ok(Array { c_array: self.ptr })
+        unsafe { Ok(Array::from_ptr(self.ptr)) }
     }
 }
 

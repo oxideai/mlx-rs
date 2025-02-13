@@ -1,16 +1,24 @@
 [workspace.package]
-version = "0.14.0"
+# All but mlx-sys should follow the same version. mlx-sys should follow 
+# the version of mlx-c.
+version = "0.21.0"
+edition = "2021"
 authors = [
     "Minghua Wu <michael.wu1107@gmail.com>",
     "David Chavez <david@dcvz.io>",
 ]
+
+repository = "https://github.com/oxideai/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning"]
+categories = ["science"]
+license = "MIT OR Apache-2.0"
+documentation = "https://oxideai.github.io/mlx-rs/mlx_rs/"
 
 [workspace]
 members = [
     "mlx-macros", 
     "mlx-sys", 
     "mlx-rs", 
-    "mlx-nn",
     "mlx-internal-macros",
     "mlx-tests",
     "examples/*", 
@@ -21,12 +29,34 @@ resolver = "2"
 [workspace.dependencies]
 # workspace local dependencies
 mlx-sys = { version = "0.1.0", path = "mlx-sys" }
-mlx-macros = { version = "0.1.0", path = "mlx-macros" }
-mlx-internal-macros = { version = "0.1.0", path = "mlx-internal-macros" }
-mlx-rs = { version = "0.14.0", path = "mlx-rs" }
-mlx-nn = { version = "0.14.0", path = "mlx-nn" }
+mlx-macros = { version = "0.21.0", path = "mlx-macros" }
+mlx-internal-macros = { version = "0.21.0", path = "mlx-internal-macros" }
+mlx-rs = { version = "0.21.0", path = "mlx-rs" }
 
 # external dependencies
 thiserror = "1"
 float_eq = "1"
 pretty_assertions = "1.4.0"
+dyn-clone = "1"
+half = "2"
+mach-sys = "0.5"
+num-complex = "0.4"
+num_enum = "0.7"
+num-traits = "0.2"
+paste = "1"
+smallvec = "1"
+strum = { version = "0.26", features = ["derive"] }
+libc = "0.2"
+parking_lot = "0.12"
+tempfile = "3"
+itertools = "0.14"
+syn = { version = "2", features = ["full"] }
+quote = "1"
+darling = "0.20"
+proc-macro2 = "1"
+bindgen = "0.70"
+cmake = "0.1"
+cc = "1"
+safetensors = "0.5"
+bytemuck = "1"
+memmap2 = "0.9"

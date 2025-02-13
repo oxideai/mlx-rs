@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 mlx-rs.workspace = true
-mlx-nn.workspace = true
+mnist = "0.6"

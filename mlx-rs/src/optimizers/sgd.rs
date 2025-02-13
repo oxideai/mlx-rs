@@ -15,20 +15,19 @@ generate_builder! {
     )]
     pub struct Sgd {
         /// Learning rate
-        #[builder(ty_override = f32)]
-        pub lr: Array,
+        pub lr: f32,
 
         /// Momentum strength. Default to [`Sgd::DEFAULT_MOMENTUM`] if not specified.
-        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_MOMENTUM)]
-        pub momentum: Array,
+        #[builder(optional, default = Sgd::DEFAULT_MOMENTUM)]
+        pub momentum: f32,
 
         /// Weight decay (L2 penalty). Default to [`Sgd::DEFAULT_WEIGHT_DECAY`] if not specified.
-        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_WEIGHT_DECAY)]
-        pub weight_decay: Array,
+        #[builder(optional, default = Sgd::DEFAULT_WEIGHT_DECAY)]
+        pub weight_decay: f32,
 
         /// Dampening for momentum. Default to [`Sgd::DEFAULT_DAMPENING`] if not specified.
-        #[builder(optional, ty_override = f32, default = Sgd::DEFAULT_DAMPENING)]
-        pub dampening: Array,
+        #[builder(optional, default = Sgd::DEFAULT_DAMPENING)]
+        pub dampening: f32,
 
         /// Enables nesterov momentum. Default to [`Sgd::DEFAULT_NESTEROV`] if not specified.
         #[builder(optional, ty_override = bool, default = Sgd::DEFAULT_NESTEROV)]
@@ -36,23 +35,24 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
 fn build_sgd(builder: SgdBuilder) -> Result<Sgd, std::convert::Infallible> {
-    let momentum = array!(builder.momentum);
-    let weight_decay = array!(builder.weight_decay);
-    let dampening = array!(builder.dampening);
+    let lr = builder.lr;
+    let momentum = builder.momentum;
+    let weight_decay = builder.weight_decay;
+    let dampening = builder.dampening;
     let nesterov = builder.nesterov;
 
     Ok(Sgd {
-        lr: array!(builder.lr),
+        lr,
         momentum,
         weight_decay,
         dampening,
         nesterov,
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -71,38 +71,43 @@ impl Sgd {
 }
 
 impl Optimizer for Sgd {
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
     /// Apply SGD to a single parameter. Returns the updated parameter and the updated state.
     #[inline]
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
         parameter: &mut Array,
     ) -> crate::error::Result<()> {
-        // Using these ops explicitly to avoid potential trait resolving conflict when PartialOrd
-        // is implemented for Array.
-        use crate::ops::{gt, le, ne};
-
         let state = get_mut_or_insert_with(&mut self.state, key, || array!(0.0));
-
-        let zero = array!(0.0);
-
         let mut gradient = Cow::Borrowed(gradient);
 
-        // Apply weight decay
-        if ne(&self.weight_decay, &zero)?.item::<bool>() {
-            gradient = Cow::Owned(self.weight_decay.multiply(&*parameter)?.add(&*gradient)?);
+        if self.weight_decay != 0.0 {
+            let weight_decay = array!(self.weight_decay);
+            gradient = Cow::Owned(weight_decay.multiply(&*parameter)?.add(&*gradient)?);
         }
 
-        // Apply momentum
-        if le(&self.momentum, &zero)?.item::<bool>() {
-            *parameter = parameter.subtract(self.lr.multiply(gradient)?)?;
+        if self.momentum <= 0.0 {
+            let lr = array!(self.lr);
+            *parameter = parameter.subtract(lr.multiply(gradient)?)?;
             return Ok(());
         }
 
-        let mut v = state.multiply(&self.momentum)?;
-        if gt(&self.dampening, &zero)?.item::<bool>() {
-            let one_minus_dampening = array!(1.0).subtract(&self.dampening)?;
+        let mut v = &*state * self.momentum;
+
+        if self.dampening > 0.0 {
+            let dampening = array!(self.dampening);
+            let one_minus_dampening = array!(1.0).subtract(dampening)?;
             v = v.add(&one_minus_dampening.multiply(&gradient)?)?;
         } else {
             v = v.add(&gradient)?;
@@ -110,13 +115,16 @@ impl Optimizer for Sgd {
 
         match self.nesterov {
             true => {
-                let update = gradient.add(&self.momentum.multiply(&v)?)?;
-                *parameter = parameter.subtract(self.lr.multiply(&update)?)?;
+                let momentum = array!(self.momentum);
+                let lr = array!(self.lr);
+                let update = gradient.add(momentum.multiply(&v)?)?;
+                *parameter = parameter.subtract(lr.multiply(&update)?)?;
                 *state = v;
             }
             false => {
                 let update = &v;
-                *parameter = parameter.subtract(self.lr.multiply(update)?)?;
+                let lr = array!(self.lr);
+                *parameter = parameter.subtract(lr.multiply(update)?)?;
                 *state = v;
             }
         }
@@ -124,3 +132,25 @@ impl Optimizer for Sgd {
         Ok(())
     }
 }
+
+impl Updatable for Sgd {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+}
+
+impl_updatable_for_mut_optimizer!(Sgd);

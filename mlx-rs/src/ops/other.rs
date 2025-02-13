@@ -28,7 +28,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_diag(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 k.into().unwrap_or(0),
                 stream.as_ref().as_ptr(),
             )
@@ -60,7 +60,7 @@ impl Array {
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_diagonal(
                 res,
-                self.c_array,
+                self.as_ptr(),
                 offset.into().unwrap_or(0),
                 axis1.into().unwrap_or(0),
                 axis2.into().unwrap_or(1),
@@ -90,7 +90,7 @@ impl Array {
         };
 
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_hadamard_transform(res, self.c_array, scale, stream.as_ref().as_ptr())
+            mlx_sys::mlx_hadamard_transform(res, self.as_ptr(), scale, stream.as_ref().as_ptr())
         })
     }
 }
@@ -98,23 +98,23 @@ impl Array {
 /// See [`Array::diag`]
 #[default_device]
 pub fn diag_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     k: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.diag_device(k, stream)
+    a.as_ref().diag_device(k, stream)
 }
 
 /// See [`Array::diagonal`]
 #[default_device]
 pub fn diagonal_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     offset: impl Into<Option<i32>>,
     axis1: impl Into<Option<i32>>,
     axis2: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    a.diagonal_device(offset, axis1, axis2, stream)
+    a.as_ref().diagonal_device(offset, axis1, axis2, stream)
 }
 
 /// Perform the Einstein summation convention on the operands.
@@ -185,7 +185,7 @@ mod tests {
         let out = diagonal(&x, 1, -1, 0).unwrap();
         assert_eq!(out, array!([[4, 9], [6, 11]]));
 
-        let x = reshape(&arange::<f32, _>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
+        let x = reshape(arange::<_, f32>(None, 16, None).unwrap(), &[2, 2, 2, 2]).unwrap();
         let out = diagonal(&x, 0, 0, 1).unwrap();
         assert_eq!(
             out,
@@ -201,8 +201,8 @@ mod tests {
     #[test]
     fn test_diag() {
         // Too few or too many dimensions
-        assert!(diag(&Array::from_float(0.0), None).is_err());
-        assert!(diag(&Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
+        assert!(diag(Array::from_float(0.0), None).is_err());
+        assert!(diag(Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array
         let x = array!([0, 1, 2, 3]);

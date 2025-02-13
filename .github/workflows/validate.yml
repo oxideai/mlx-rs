@@ -32,12 +32,12 @@ jobs:
     runs-on: blaze/macos-15
     strategy:
       matrix:
-        rust: [ stable, 1.75.0 ]
+        rust: [ stable, 1.81.0 ]
         include:
           - cache: stable
             rust: stable
-          - cache: 1-75-0
-            rust: 1.75.0
+          - cache: 1-81-0
+            rust: 1.81.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4

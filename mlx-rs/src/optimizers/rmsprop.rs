@@ -39,7 +39,7 @@ generate_builder! {
 
         /// Inner state
         #[builder(ignore)]
-        pub state: OptimizerState,
+        pub state: State,
     }
 }
 
@@ -60,7 +60,7 @@ fn build_rmdprop(builder: RmsPropBuilder) -> Result<RmsProp, RmsPropBuildError> 
         lr: array!(lr),
         alpha: array!(alpha),
         epsilon: array!(epsilon),
-        state: OptimizerState::new(),
+        state: State::new(),
     })
 }
 
@@ -73,7 +73,17 @@ impl RmsProp {
 }
 
 impl Optimizer for RmsProp {
-    fn apply_single(
+    type State = State;
+
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -100,3 +110,25 @@ impl Optimizer for RmsProp {
         Ok(())
     }
 }
+
+impl Updatable for RmsProp {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        use itertools::Itertools;
+
+        self.state
+            .iter_mut()
+            .sorted_by(|a, b| a.0.cmp(b.0))
+            .map(|(_, v)| v)
+    }
+}
+
+impl_updatable_for_mut_optimizer!(RmsProp);

@@ -5,12 +5,15 @@
 use std::{
     borrow::{Borrow, Cow},
     collections::HashMap,
+    path::Path,
     rc::Rc,
 };
 
 use crate::{
     array,
+    error::{IoError, UnflattenError},
     module::{FlattenedModuleParam, ModuleParameters},
+    utils::Updatable,
     Array,
 };
 
@@ -30,20 +33,160 @@ pub use adagrad::*;
 pub use adam::*;
 pub use adamax::*;
 pub use adamw::*;
+use itertools::Itertools;
 pub use lion::*;
 pub use rmsprop::*;
 pub use sgd::*;
 
-type OptimizerState<T = Array> = HashMap<Rc<str>, T>;
+// Unfortunate workaround to implement Updatable for mutable references of
+// optimizers This is needed because of the orphan rule and lack of negative
+// trait bound, otherwise we would need to implement Updatable for every
+// `Module`
+macro_rules! impl_updatable_for_mut_optimizer {
+    ($optimizer:ty) => {
+        impl Updatable for &'_ mut $optimizer {
+            fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+                <$optimizer as Updatable>::updatable_states(&**self)
+            }
+
+            fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+                <$optimizer as Updatable>::updatable_states_mut(&mut **self)
+            }
+        }
+    };
+}
+use impl_updatable_for_mut_optimizer;
+
+/// Type alias for common optimizer state.
+pub type State<T = Array> = HashMap<Rc<str>, T>;
+
+/// Trait for optimizer states.
+pub trait OptimizerState: Sized {
+    /// Error type for unflatten.
+    type UnflattenError: std::error::Error + Into<IoError>;
+
+    /// Flatten the optimizer state.
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)>;
+
+    /// Flatten the mutable optimizer state.
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)>;
+
+    /// Unflatten an iterator of key-value pairs into the optimizer state.
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
+    where
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>;
+
+    /// Save the optimizer state to a safetensors file.
+    fn save_safetensors(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let state = self.flatten();
+        Array::save_safetensors(state, None, path)
+    }
+
+    /// Load the optimizer state from a safetensors file.
+    fn load_safetensors(&mut self, path: impl AsRef<Path>) -> Result<(), IoError> {
+        let loaded = Array::load_safetensors(path)?;
+        let unflattened = Self::unflatten(loaded).map_err(Into::into)?;
+
+        *self = unflattened;
+
+        Ok(())
+    }
+}
+
+impl OptimizerState for State {
+    type UnflattenError = std::convert::Infallible;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
+        self.iter().map(|(k, v)| (k.clone(), v))
+    }
+
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().map(|(k, v)| (k.clone(), v))
+    }
+
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        Ok(input.into_iter().map(|(k, v)| (k.into(), v)).collect())
+    }
+}
+
+impl OptimizerState for State<(Array, Array)> {
+    type UnflattenError = UnflattenError;
+
+    fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
+        self.iter().flat_map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+
+            [(first_k, first), (second_k, second)]
+        })
+    }
+
+    fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
+        self.iter_mut().flat_map(|(k, (first, second))| {
+            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
+            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+
+            [(first_k, first), (second_k, second)]
+        })
+    }
+
+    fn unflatten<I, K>(input: I) -> Result<Self, Self::UnflattenError>
+    where
+        Self: Sized,
+        I: IntoIterator<Item = (K, Array)>,
+        K: Ord + AsRef<str> + Into<Rc<str>>,
+    {
+        let mut state = State::new();
+        let iter = input
+            .into_iter()
+            .sorted_by(|a, b| a.0.as_ref().cmp(b.0.as_ref()))
+            .chunks(2);
+
+        for mut chunk in &iter {
+            let first = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
+            let second = chunk.next().ok_or(UnflattenError::ExpectingNextPair)?;
+
+            // Check if the keys match up to the last dot and the suffix is 0 and 1 (should be already sorted)
+            let first_key = first.0.as_ref();
+            let second_key = second.0.as_ref();
+            if !first_key.ends_with(".0") || !second_key.ends_with(".1") {
+                return Err(UnflattenError::InvalidKey);
+            }
+            if first_key[..first_key.len() - 2] != second_key[..second_key.len() - 2] {
+                return Err(UnflattenError::InvalidKey);
+            }
+
+            let key = &first_key[..first_key.len() - 2];
+            let key: Rc<str> = Rc::from(key);
+            state.insert(key, (first.1, second.1));
+        }
+        Ok(state)
+    }
+}
 
 /// Trait for optimizers.
-pub trait Optimizer {
+pub trait Optimizer: Updatable {
+    /// State of the optimizer.
+    type State: OptimizerState;
+
+    /// Get the state of the optimizer.
+    fn state(&self) -> &Self::State;
+
+    /// Get the mutable state of the optimizer.
+    fn state_mut(&mut self) -> &mut Self::State;
+
     /// Update a single parameter with the given gradient.
     ///
     /// The implementation should look up the state for the parameter using the key and update the
     /// state and the parameter accordingly. The key is provided instead of the state because it
     /// would otherwise create a mutable borrow conflict with the rest of the optimizer fields.
-    fn apply_single(
+    fn update_single(
         &mut self,
         key: &Rc<str>,
         gradient: &Array,
@@ -52,7 +195,7 @@ pub trait Optimizer {
 
     /// Apply the gradients to the parameters of the model and update the model with the new
     /// parameters.
-    fn apply<M>(
+    fn update<M>(
         &mut self,
         model: &mut M,
         gradients: impl Borrow<FlattenedModuleParam>,
@@ -64,7 +207,7 @@ pub trait Optimizer {
 
         for (key, gradient) in gradients.borrow().iter() {
             if let Some(parameter) = parameters.get_mut(key) {
-                self.apply_single(key, gradient, parameter)?;
+                self.update_single(key, gradient, parameter)?;
             }
         }
 

@@ -14,16 +14,16 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
 /// let result = sort(&a, axis);
 /// ```
 #[default_device]
-pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sort_device(a: impl AsRef<Array>, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sort(res, a.as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_sort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -36,15 +36,15 @@ pub fn sort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<A
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let result = sort_all(&a);
 /// ```
 #[default_device]
-pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sort_all(res, a.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_sort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -58,16 +58,20 @@ pub fn sort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
 /// let result = argsort(&a, axis);
 /// ```
 #[default_device]
-pub fn argsort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argsort_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort(res, a.as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -81,15 +85,15 @@ pub fn argsort_device(a: &Array, axis: i32, stream: impl AsRef<Stream>) -> Resul
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let result = argsort_all(&a);
 /// ```
 #[default_device]
-pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort_all(res, a.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -109,7 +113,7 @@ pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
@@ -118,13 +122,19 @@ pub fn argsort_all_device(a: &Array, stream: impl AsRef<Stream>) -> Result<Array
 /// ```
 #[default_device]
 pub fn partition_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_partition(res, a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_partition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -143,16 +153,20 @@ pub fn partition_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let result = partition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn partition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn partition_all_device(
+    a: impl AsRef<Array>,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_partition_all(res, a.as_ptr(), kth, stream.as_ref().as_ptr())
+        mlx_sys::mlx_partition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
 }
 
@@ -172,7 +186,7 @@ pub fn partition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> 
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
@@ -181,13 +195,19 @@ pub fn partition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> 
 /// ```
 #[default_device]
 pub fn argpartition_device(
-    a: &Array,
+    a: impl AsRef<Array>,
     kth: i32,
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(res, a.as_ptr(), kth, axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition(
+            res,
+            a.as_ref().as_ptr(),
+            kth,
+            axis,
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 
@@ -207,16 +227,20 @@ pub fn argpartition_device(
 /// # Example
 ///
 /// ```rust
-/// use mlx_rs::{prelude::*, ops::*};
+/// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let result = argpartition_all(&a, kth);
 /// ```
 #[default_device]
-pub fn argpartition_all_device(a: &Array, kth: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argpartition_all_device(
+    a: impl AsRef<Array>,
+    kth: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition_all(res, a.as_ptr(), kth, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
 }
 

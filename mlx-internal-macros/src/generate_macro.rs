@@ -6,7 +6,7 @@ use syn::{Expr, FnArg, Ident, ItemFn, Meta};
 
 #[derive(Default, Debug)]
 struct AttrArgs {
-    root: Option<syn::Path>,
+    root: Option<syn::LitStr>,
 }
 
 impl FromMeta for AttrArgs {
@@ -15,16 +15,19 @@ impl FromMeta for AttrArgs {
             Meta::NameValue(meta_name_value) => {
                 if meta_name_value.path.is_ident("root") {
                     match &meta_name_value.value {
-                        Expr::Path(expr_path) => Some(expr_path.path.clone()),
-                        _ => {
-                            return Err(darling::Error::custom("expected a path").with_span(meta));
-                        }
+                        Expr::Lit(lit) => match &lit.lit {
+                            syn::Lit::Str(lit_str) => Some(lit_str.clone()),
+                            _ => {
+                                return Err(darling::Error::custom("expected a LitStr").with_span(lit))
+                            }
+                        },
+                        _ => return Err(darling::Error::custom("expected a LitStr").with_span(meta)),
                     }
                 } else {
-                    return Err(darling::Error::custom("key is not supported").with_span(meta));
+                    return Err(darling::Error::custom("Unsupported key").with_span(meta));
                 }
             },
-            _ => return Err(darling::Error::custom("expected a path").with_span(meta)),
+            _ => return Err(darling::Error::custom("expected a LitStr").with_span(meta)),
         };
         Ok(AttrArgs { root })
     }
@@ -76,7 +79,10 @@ pub fn expand_generate_macro(
 
     // The mod path where the function can be accessed publicly
     let fn_mod_path = match attr_args.root {
-        Some(root) => quote! { #root },
+        Some(lit_str) => {
+            let tokens: proc_macro2::TokenStream = lit_str.parse()?;
+            quote! { #tokens }
+        },
         None => quote! { $crate::ops },
     };
 
@@ -187,7 +193,13 @@ pub fn expand_generate_macro(
         }
     }
 
+    let macro_docs = format!(
+        "Macro generated for the function `{}::{}`. See the function documentation for more details.",
+        fn_mod_path, fn_ident
+    );
+
     let generated = quote! {
+        #[doc = #macro_docs]
         #[macro_export]
         macro_rules! #trimmed_fn_ident {
             #(

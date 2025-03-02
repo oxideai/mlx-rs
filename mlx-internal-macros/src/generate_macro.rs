@@ -1,7 +1,34 @@
+use darling::FromMeta;
 use itertools::Itertools;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{FnArg, Ident, ItemFn, Meta};
+use syn::{Expr, FnArg, Ident, ItemFn, Meta};
+
+#[derive(Default, Debug)]
+struct AttrArgs {
+    root: Option<syn::Path>,
+}
+
+impl FromMeta for AttrArgs {
+    fn from_meta(meta: &syn::Meta) -> darling::Result<Self> {
+        let root = match meta {
+            Meta::NameValue(meta_name_value) => {
+                if meta_name_value.path.is_ident("root") {
+                    match &meta_name_value.value {
+                        Expr::Path(expr_path) => Some(expr_path.path.clone()),
+                        _ => {
+                            return Err(darling::Error::custom("expected a path").with_span(meta));
+                        }
+                    }
+                } else {
+                    return Err(darling::Error::custom("key is not supported").with_span(meta));
+                }
+            },
+            _ => return Err(darling::Error::custom("expected a path").with_span(meta)),
+        };
+        Ok(AttrArgs { root })
+    }
+}
 
 fn contains_optional_attribute(attrs: &[syn::Attribute]) -> bool {
     for attr in attrs {
@@ -42,9 +69,16 @@ pub fn expand_generate_macro(
     attr: Option<Meta>,
     mut item: ItemFn, // The original function should be kept as is
 ) -> Result<TokenStream, syn::Error> {
-    if attr.is_some() {
-        return Err(syn::Error::new_spanned(&item, "unexpected attribute"));
-    }
+    let attr_args = match attr {
+        Some(attr) => AttrArgs::from_meta(&attr).map_err(|e| syn::Error::new_spanned(attr, e))?,
+        None => AttrArgs::default(),
+    };
+
+    // The mod path where the function can be accessed publicly
+    let fn_mod_path = match attr_args.root {
+        Some(root) => quote! { #root },
+        None => quote! { $crate::ops },
+    };
 
     let args = item
         .sig
@@ -106,13 +140,13 @@ pub fn expand_generate_macro(
         (
             #($#mandatory_arg_idents: expr),*
         ) => {
-            #trimmed_fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*)
+            #fn_mod_path::#trimmed_fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*)
         };
         (
             #($#mandatory_arg_idents: expr),*,
             stream=$stream:expr
         ) => {
-            #fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
+            #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
         };
     };
     let mut macro_variants = vec![mandatory_only_variant_body];
@@ -133,7 +167,7 @@ pub fn expand_generate_macro(
                         #selected_optional_arg_idents=$#selected_optional_arg_idents:expr
                     ),*
                 ) => {
-                    #trimmed_fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*)
+                    #fn_mod_path::#trimmed_fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*)
                 };
                 (
                     #($#mandatory_arg_idents: expr),*,
@@ -142,7 +176,7 @@ pub fn expand_generate_macro(
                     ),*,
                     stream=$stream:expr
                 ) => {
-                    #fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
+                    #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
                 };
             };
 

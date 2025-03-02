@@ -4,7 +4,7 @@ use mlx_internal_macros::{default_device, generate_macro};
 use mlx_rs::{Stream, StreamOrDevice};
 
 /// Test macro generation.
-#[generate_macro]
+#[generate_macro(root = crate)]
 #[default_device]
 fn foo_device(
     a: i32,                                 // Mandatory argument

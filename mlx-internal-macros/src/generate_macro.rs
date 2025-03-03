@@ -152,7 +152,7 @@ pub fn expand_generate_macro(
             #($#mandatory_arg_idents: expr),*,
             stream=$stream:expr
         ) => {
-            #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
+            #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input,)* $stream)
         };
     };
     let mut macro_variants = vec![mandatory_only_variant_body];
@@ -182,7 +182,7 @@ pub fn expand_generate_macro(
                     ),*,
                     stream=$stream:expr
                 ) => {
-                    #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input),*, $stream)
+                    #fn_mod_path::#fn_ident(#($#mandatory_arg_idents),*, #(#optional_arg_input,)* $stream)
                 };
             };
 

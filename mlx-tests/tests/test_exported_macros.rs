@@ -1,8 +1,12 @@
 //! This contains the tests for some of the exported macros.
-//! 
+//!
 //! This is mainly a sanity check to ensure that the exported macros are working as expected.
 
-use mlx_rs::{array, ops::{arange, reshape}, Array, StreamOrDevice};
+use mlx_rs::{
+    array,
+    ops::{arange, reshape},
+    Array, StreamOrDevice,
+};
 
 // Try two functions that don't have any optional arguments.
 
@@ -50,4 +54,29 @@ fn test_ops_arithmetic_tensordot() {
     let stream = StreamOrDevice::cpu();
     let z = mlx_rs::tensordot!(x, y, axes = axes, stream = stream).unwrap();
     assert_eq!(z, expected);
+}
+
+#[test]
+fn test_ops_convolution_conv1d() {
+    let input = array!(
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        shape = [1, 5, 2]
+    );
+    let weight = array!(
+        [0.5, 0.0, -0.5, 1.0, 0.0, 1.5, 2.0, 0.0, -2.0, 1.5, 0.0, 1.0],
+        shape = [2, 3, 2]
+    );
+
+    let result = mlx_rs::conv1d!(
+        &input,
+        &weight,
+        stride = 1,
+        padding = 0,
+        dilation = 1,
+        groups = 1
+    )
+    .unwrap();
+
+    let expected = array!([12.0, 8.0, 17.0, 13.0, 22.0, 18.0], shape = [1, 3, 2]);
+    assert_eq!(result, expected);
 }

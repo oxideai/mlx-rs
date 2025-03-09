@@ -3,9 +3,7 @@
 //! This is mainly a sanity check to ensure that the exported macros are working as expected.
 
 use mlx_rs::{
-    array,
-    ops::{arange, reshape},
-    Array, Dtype, StreamOrDevice,
+    array, complex64, ops::{arange, reshape}, Array, Dtype, StreamOrDevice
 };
 
 // Try two functions that don't have any optional arguments.
@@ -109,4 +107,27 @@ fn test_ops_factory_arange() {
     let data: &[f32] = array.as_slice();
     let expected: Vec<f32> = (1..50).step_by(2).map(|x| x as f32).collect();
     assert_eq!(data, expected.as_slice());
+}
+
+#[test]
+fn test_fft_fft() {
+    const FFT_EXPECTED: &[complex64; 4] = &[
+        complex64::new(10.0, 0.0),
+        complex64::new(-2.0, 2.0),
+        complex64::new(-2.0, 0.0),
+        complex64::new(-2.0, -2.0),
+    ];
+
+    let data = array!([1.0, 2.0, 3.0, 4.0]);
+    let fft = mlx_rs::fft!(&data).unwrap();
+
+    assert_eq!(fft.dtype(), Dtype::Complex64);
+    assert_eq!(fft.as_slice::<complex64>(), FFT_EXPECTED);
+}
+
+#[test]
+fn test_linalg_norm() {
+    let a = array!([1.0, 2.0, 3.0, 4.0]).reshape(&[2, 2]).unwrap();
+    let norm = mlx_rs::norm!(&a).unwrap();
+    assert_eq!(norm.item::<f32>(), 5.477225575051661);
 }

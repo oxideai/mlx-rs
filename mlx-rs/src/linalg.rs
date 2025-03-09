@@ -61,7 +61,7 @@ impl<'a> IntoOption<Ord<'a>> for f64 {
 }
 
 /// Compute p-norm of an [`Array`]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_p_device<'a>(
     array: impl AsRef<Array>,
@@ -99,7 +99,7 @@ pub fn norm_p_device<'a>(
 }
 
 /// Matrix or vector norm.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_ord_device<'a>(
     array: impl AsRef<Array>,
@@ -175,7 +175,7 @@ pub fn norm_ord_device<'a>(
 /// - `axes`: axes that hold 2d matrices
 /// - `keep_dims`: if `true` the axes which are normed over are left in the result as dimensions
 ///   with size one
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_device<'a>(
     array: impl AsRef<Array>,
@@ -253,7 +253,7 @@ pub fn norm_device<'a>(
 /// assert!(q.all_close(&q_expected, None, None, None).unwrap().item::<bool>());
 /// assert!(r.all_close(&r_expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn qr_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
     <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
@@ -288,7 +288,7 @@ pub fn qr_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -
 /// assert!(s.all_close(&s_expected, None, None, None).unwrap().item::<bool>());
 /// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn svd_device(
     array: impl AsRef<Array>,
@@ -328,7 +328,7 @@ pub fn svd_device(
 /// let expected = Array::from_slice(&[-2.0, 1.0, 1.5, -0.5], &[2, 2]);
 /// assert!(a_inv.all_close(&expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn inv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
@@ -349,7 +349,7 @@ pub fn inv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) 
 /// - `a`: input array
 /// - `upper`: If `true`, return the upper triangular Cholesky factor. If `false`, return the lower
 ///   triangular Cholesky factor. Default: `false`.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cholesky_device(
     a: impl AsRef<Array>,
@@ -365,7 +365,7 @@ pub fn cholesky_device(
 /// Compute the inverse of a real symmetric positive semi-definite matrix using it’s Cholesky decomposition.
 ///
 /// Please see the python documentation for more details.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cholesky_inv_device(
     a: impl AsRef<Array>,
@@ -382,7 +382,7 @@ pub fn cholesky_inv_device(
 ///
 /// The cross product is defined for arrays with size 2 or 3 in the specified axis. If the size is 2
 /// then the third value is assumed to be zero.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cross_device(
     a: impl AsRef<Array>,
@@ -407,7 +407,7 @@ pub fn cross_device(
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues and eigenvectors are computed for each matrix in the last two
 /// dimensions.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn eigh_device(
     a: impl AsRef<Array>,
@@ -433,7 +433,7 @@ pub fn eigh_device(
 ///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues are computed for each matrix in the last two dimensions.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn eigvalsh_device(
     a: impl AsRef<Array>,
@@ -449,7 +449,7 @@ pub fn eigvalsh_device(
 }
 
 /// Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn pinv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
@@ -461,7 +461,7 @@ pub fn pinv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 ///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the inverse is computed for each matrix in the last two dimensions of a.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn tri_inv_device(
     a: impl AsRef<Array>,

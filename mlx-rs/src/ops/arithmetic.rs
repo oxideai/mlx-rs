@@ -667,10 +667,7 @@ impl Array {
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn abs_device(
-    a: impl AsRef<Array>, 
-    #[optional] stream: impl AsRef<Stream>
-) -> Result<Array> {
+pub fn abs_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().abs_device(stream)
 }
 
@@ -880,7 +877,10 @@ pub fn cosh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// Convert angles from radians to degrees.
 #[generate_macro]
 #[default_device]
-pub fn degrees_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn degrees_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_degrees(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -937,7 +937,10 @@ pub fn erf_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) 
 /// Element-wise inverse error function.
 #[generate_macro]
 #[default_device]
-pub fn erfinv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn erfinv_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_erfinv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -1089,7 +1092,10 @@ pub fn multiply_device(
 /// See [`Array::negative`].
 #[generate_macro]
 #[default_device]
-pub fn negative_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn negative_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().negative_device(stream)
 }
 
@@ -1107,7 +1113,10 @@ pub fn power_device(
 /// Convert angles from degrees to radians.
 #[generate_macro]
 #[default_device]
-pub fn radians_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn radians_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_radians(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -1116,7 +1125,10 @@ pub fn radians_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Strea
 /// See [`Array::reciprocal`].
 #[generate_macro]
 #[default_device]
-pub fn reciprocal_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn reciprocal_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().reciprocal_device(stream)
 }
 
@@ -1156,7 +1168,10 @@ pub fn rsqrt_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>
 /// for more information
 #[generate_macro]
 #[default_device]
-pub fn sigmoid_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sigmoid_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sigmoid(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -1241,7 +1256,10 @@ pub fn sqrt_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// See [`Array::square`].
 #[generate_macro]
 #[default_device]
-pub fn square_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn square_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().square_device(stream)
 }
 

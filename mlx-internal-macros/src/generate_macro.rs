@@ -7,10 +7,7 @@ use syn::{FnArg, Ident, ItemFn, Meta};
 const CUSTOM_ATTRIBUTE_OPTIONAL: &str = "optional";
 const CUSTOM_ATTRIBUTE_NAMED: &str = "named";
 
-const CUSTOM_ATTRIBUTES: &[&str] = &[
-    CUSTOM_ATTRIBUTE_OPTIONAL,
-    CUSTOM_ATTRIBUTE_NAMED,
-];
+const CUSTOM_ATTRIBUTES: &[&str] = &[CUSTOM_ATTRIBUTE_OPTIONAL, CUSTOM_ATTRIBUTE_NAMED];
 
 #[derive(Default, Debug, FromMeta)]
 #[darling(default)]
@@ -27,13 +24,11 @@ fn arg_type(attrs: &[syn::Attribute]) -> ArgType {
             return ArgType::Named;
         }
     }
-    return ArgType::Positional;
+    ArgType::Positional
 }
 
 fn remove_attribute(attrs: &mut Vec<syn::Attribute>, targets: &[&str]) {
-    attrs.retain(|attr| {
-        !targets.iter().any(|target| !attr.path().is_ident(target))
-    });
+    attrs.retain(|attr| !targets.iter().any(|target| !attr.path().is_ident(target)));
 }
 
 pub fn expand_generate_macro(
@@ -50,11 +45,12 @@ pub fn expand_generate_macro(
         Some(lit_str) => {
             let tokens: proc_macro2::TokenStream = lit_str.parse()?;
             quote! { #tokens }
-        },
+        }
         None => quote! { $crate::ops },
     };
 
-    let (default_generics, dtype_generics) = handle_generic_args(&item.sig.generics, &customize.default_dtype);
+    let (default_generics, dtype_generics) =
+        handle_generic_args(&item.sig.generics, &customize.default_dtype);
 
     let args = item
         .sig
@@ -82,7 +78,7 @@ pub fn expand_generate_macro(
 
     // Remove "_device" suffix from the macro name if it exists
     let fn_ident = &item.sig.ident;
-    
+
     let generated = generate_macro(
         &fn_mod_path,
         fn_ident,
@@ -100,11 +96,14 @@ pub fn expand_generate_macro(
 }
 
 /// If there are generic arguments, the last argument is assumed to be `dtype`.
-/// 
+///
 /// Returns two `syn::Generics`:
 /// 1. With the last argument set to `f32`
 /// 2. With the last argument set to `$dtype`
-fn handle_generic_args(generic_args: &syn::Generics, default_dtype: &Option<syn::Path>) -> (proc_macro2::TokenStream, Option<proc_macro2::TokenStream>) {
+fn handle_generic_args(
+    generic_args: &syn::Generics,
+    default_dtype: &Option<syn::Path>,
+) -> (proc_macro2::TokenStream, Option<proc_macro2::TokenStream>) {
     // Count number of generic type arguments
     let count = generic_args
         .params
@@ -113,12 +112,12 @@ fn handle_generic_args(generic_args: &syn::Generics, default_dtype: &Option<syn:
         .count();
 
     if count == 0 {
-        return (quote!{}, None)
+        return (quote! {}, None);
     }
-    
+
     // All generics arguments except for the last one will be inferred
     let infer_tokens = vec![quote! { _ }; count - 1];
-    
+
     let default_generics = match default_dtype {
         Some(path) => quote! { ::<#(#infer_tokens,)* #path> },
         None => quote! { ::<#(#infer_tokens,)* f32> },
@@ -241,9 +240,7 @@ fn generate_macro_variants(
     for perms in 0..optional_indices.len() + 1 {
         // Select `perms` number of optional arguments
         for selected_indice in optional_indices.iter().permutations(perms) {
-            selected_indice
-                .iter()
-                .for_each(|&&i| selected[i] = true);
+            selected_indice.iter().for_each(|&&i| selected[i] = true);
 
             generate_macro_variants_for_selected_args(
                 fn_mod_path,
@@ -258,13 +255,12 @@ fn generate_macro_variants(
             );
 
             // Clear the selected flag for the next iteration
-            selected_indice
-                .iter()
-                .for_each(|&&i| selected[i] = false);
+            selected_indice.iter().for_each(|&&i| selected[i] = false);
         }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_macro_variants_for_selected_args(
     fn_mod_path: &proc_macro2::TokenStream,
     fn_ident: &Ident,
@@ -276,23 +272,26 @@ fn generate_macro_variants_for_selected_args(
     dtype_generics: &Option<proc_macro2::TokenStream>,
     macro_variants: &mut Vec<proc_macro2::TokenStream>,
 ) {
-    let macro_args: Vec<proc_macro2::TokenStream> = args_ident.iter().zip(args_type.iter()).zip(selected.iter())
-        .filter_map(|((ident, arg_type), &selected)| {
-            match selected {
-                true => {
-                    let token = match arg_type {
-                        ArgType::Positional => quote! { $#ident:expr },
-                        ArgType::Named => quote! { #ident=$#ident:expr },
-                        ArgType::NamedOptional => quote! { #ident=$#ident:expr },
-                    };
-                    Some(token)
-                },
-                false => None,
+    let macro_args: Vec<proc_macro2::TokenStream> = args_ident
+        .iter()
+        .zip(args_type.iter())
+        .zip(selected.iter())
+        .filter_map(|((ident, arg_type), &selected)| match selected {
+            true => {
+                let token = match arg_type {
+                    ArgType::Positional => quote! { $#ident:expr },
+                    ArgType::Named => quote! { #ident=$#ident:expr },
+                    ArgType::NamedOptional => quote! { #ident=$#ident:expr },
+                };
+                Some(token)
             }
+            false => None,
         })
         .collect();
 
-    let input: Vec<proc_macro2::TokenStream> = args_ident.iter().zip(selected.iter())
+    let input: Vec<proc_macro2::TokenStream> = args_ident
+        .iter()
+        .zip(selected.iter())
         .map(|(ident, &selected)| {
             if selected {
                 quote! { $#ident }
@@ -301,7 +300,7 @@ fn generate_macro_variants_for_selected_args(
             }
         })
         .collect();
-    
+
     let variant_body = quote! {
         (
             #(#macro_args),*

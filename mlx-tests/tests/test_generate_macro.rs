@@ -38,10 +38,10 @@ fn test_foo() {
 ))]
 #[default_device]
 fn bar_device<T: Into<i32>>(
-    a: T,                                  // Mandatory argument
-    b: T,                                  // Mandatory argument
-    #[optional] c: Option<T>,              // Optional argument
-    #[optional] d: impl Into<Option<T>>,   // Optional argument but impl Trait
+    a: T,                                   // Mandatory argument
+    b: T,                                   // Mandatory argument
+    #[optional] c: Option<T>,               // Optional argument
+    #[optional] d: impl Into<Option<T>>,    // Optional argument but impl Trait
     #[optional] stream: impl AsRef<Stream>, // stream always optional and placed at the end
 ) -> i32 {
     let a = a.into();
@@ -57,28 +57,28 @@ fn test_bar() {
 
     let result = bar!(1, 2);
     assert_eq!(result, 3);
-    
+
     let result = bar!(1, 2, c = Some(3));
     assert_eq!(result, 6);
-    
+
     let result = bar!(1, 2, d = Some(4));
     assert_eq!(result, 7);
-    
+
     let result = bar!(1, 2, c = Some(3), d = Some(4));
     assert_eq!(result, 10);
 
     // With dtype specified as i16.
 
-    let result = bar!(1, 2, dtype=i16);
+    let result = bar!(1, 2, dtype = i16);
     assert_eq!(result, 3);
 
-    let result = bar!(1, 2, c = Some(3), dtype=i16);
+    let result = bar!(1, 2, c = Some(3), dtype = i16);
     assert_eq!(result, 6);
 
-    let result = bar!(1, 2, d = Some(4), dtype=i16);
+    let result = bar!(1, 2, d = Some(4), dtype = i16);
     assert_eq!(result, 7);
 
-    let result = bar!(1, 2, c = Some(3), d = Some(4), dtype=i16);
+    let result = bar!(1, 2, c = Some(3), d = Some(4), dtype = i16);
     assert_eq!(result, 10);
 
     // With stream specified.
@@ -99,16 +99,23 @@ fn test_bar() {
 
     // With dtype and stream specified.
 
-    let result = bar!(1, 2, dtype=i16, stream = &stream);
+    let result = bar!(1, 2, dtype = i16, stream = &stream);
     assert_eq!(result, 3);
 
-    let result = bar!(1, 2, c = Some(3), dtype=i16, stream = &stream);
+    let result = bar!(1, 2, c = Some(3), dtype = i16, stream = &stream);
     assert_eq!(result, 6);
 
-    let result = bar!(1, 2, d = Some(4), dtype=i16, stream = &stream);
+    let result = bar!(1, 2, d = Some(4), dtype = i16, stream = &stream);
     assert_eq!(result, 7);
 
-    let result = bar!(1, 2, c = Some(3), d = Some(4), dtype=i16, stream = &stream);
+    let result = bar!(
+        1,
+        2,
+        c = Some(3),
+        d = Some(4),
+        dtype = i16,
+        stream = &stream
+    );
     assert_eq!(result, 10);
 }
 
@@ -116,10 +123,10 @@ fn test_bar() {
 #[generate_macro(customize(root = "$crate"))]
 #[default_device]
 fn baz_device(
-    #[optional] a: Option<i32>,                         // Optinal argument
-    #[named] b: i32,                                    // Mandatory argument
-    #[optional] c: Option<i32>,                         // Optional argument
-    #[optional] stream: impl AsRef<Stream>,             // stream always optional and placed at the end
+    #[optional] a: Option<i32>,             // Optinal argument
+    #[named] b: i32,                        // Mandatory argument
+    #[optional] c: Option<i32>,             // Optional argument
+    #[optional] stream: impl AsRef<Stream>, // stream always optional and placed at the end
 ) -> i32 {
     a.unwrap_or(0) + b + c.unwrap_or(0)
 }

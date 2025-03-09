@@ -3,7 +3,9 @@
 //! This is mainly a sanity check to ensure that the exported macros are working as expected.
 
 use mlx_rs::{
-    array, ops::{arange, reshape}, Array, Dtype, StreamOrDevice
+    array,
+    ops::{arange, reshape},
+    Array, Dtype, StreamOrDevice,
 };
 
 // Try two functions that don't have any optional arguments.

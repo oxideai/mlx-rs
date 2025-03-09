@@ -317,14 +317,20 @@ impl Array {
 /// See [`Array::zeros`]
 #[generate_macro]
 #[default_device]
-pub fn zeros_device<T: ArrayElement>(shape: &[i32], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn zeros_device<T: ArrayElement>(
+    shape: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::zeros_device::<T>(shape, stream)
 }
 
 /// An array of zeros like the input.
 #[generate_macro]
 #[default_device]
-pub fn zeros_like_device(input: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn zeros_like_device(
+    input: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -353,14 +359,20 @@ pub fn zeros_dtype_device(
 /// See [`Array::ones`]
 #[generate_macro]
 #[default_device]
-pub fn ones_device<T: ArrayElement>(shape: &[i32], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ones_device<T: ArrayElement>(
+    shape: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::ones_device::<T>(shape, stream)
 }
 
 /// An array of ones like the input.
 #[generate_macro]
 #[default_device]
-pub fn ones_like_device(input: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ones_like_device(
+    input: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -370,7 +382,11 @@ pub fn ones_like_device(input: impl AsRef<Array>, #[optional] stream: impl AsRef
 /// Similar to [`Array::ones`] but with a specified dtype.
 #[generate_macro]
 #[default_device]
-pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ones_dtype_device(
+    shape: &[i32],
+    dtype: Dtype,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_ones(
             res,
@@ -408,7 +424,10 @@ pub fn full_device<T: ArrayElement>(
 /// See [`Array::identity`]
 #[generate_macro]
 #[default_device]
-pub fn identity_device<T: ArrayElement>(n: i32, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn identity_device<T: ArrayElement>(
+    n: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::identity_device::<T>(n, stream)
 }
 

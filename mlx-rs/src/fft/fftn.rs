@@ -21,13 +21,13 @@ use super::{
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn fft_device(
     a: impl AsRef<Array>,
-    n: impl Into<Option<i32>>,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] n: impl Into<Option<i32>>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
 
@@ -45,7 +45,7 @@ pub fn fft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn fft2_device<'a>(
     a: impl AsRef<Array>,
@@ -86,7 +86,7 @@ pub fn fft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn fftn_device<'a>(
     a: impl AsRef<Array>,
@@ -123,7 +123,7 @@ pub fn fftn_device<'a>(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn ifft_device(
     a: impl AsRef<Array>,
@@ -147,7 +147,7 @@ pub fn ifft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn ifft2_device<'a>(
     a: impl AsRef<Array>,
@@ -188,7 +188,7 @@ pub fn ifft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn ifftn_device<'a>(
     a: impl AsRef<Array>,

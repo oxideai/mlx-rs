@@ -3,7 +3,9 @@
 //! This is mainly a sanity check to ensure that the exported macros are working as expected.
 
 use mlx_rs::{
-    array, complex64, ops::{arange, reshape}, Array, Dtype, StreamOrDevice
+    array, complex64,
+    ops::{arange, reshape},
+    Array, Dtype, StreamOrDevice,
 };
 
 // Try two functions that don't have any optional arguments.
@@ -135,21 +137,21 @@ fn test_fft_fft() {
 fn test_linalg_norm() {
     let a = array!([1.0, 2.0, 3.0, 4.0]).reshape(&[2, 2]).unwrap();
     let norm = mlx_rs::norm!(&a).unwrap();
-    assert_eq!(norm.item::<f32>(), 5.477225575051661);
+    assert_eq!(norm.item::<f32>(), 5.477_226);
 }
 
 // Test functions defined in `mlx_rs::random` module.
 
 #[test]
 fn test_random_uniform() {
-    let value = mlx_rs::uniform!(0.0, 1.0, shape=&[1]).unwrap();
+    let value = mlx_rs::uniform!(0.0, 1.0, shape = &[1]).unwrap();
     assert_eq!(value.shape(), &[1]);
     assert!(value.item::<f32>() >= 0.0 && value.item::<f32>() <= 1.0);
 }
 
 #[test]
 fn test_random_normal() {
-    let value = mlx_rs::normal!(shape=&[1]).unwrap();
+    let value = mlx_rs::normal!(shape = &[1]).unwrap();
     assert_eq!(value.shape(), &[1]);
     assert!(value.item::<f32>() >= -10.0 && value.item::<f32>() <= 10.0);
 }

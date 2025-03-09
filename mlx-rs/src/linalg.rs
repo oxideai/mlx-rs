@@ -255,7 +255,10 @@ pub fn norm_device<'a>(
 /// ```
 #[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
-pub fn qr_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
+pub fn qr_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<(Array, Array)> {
     <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_linalg_qr(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })

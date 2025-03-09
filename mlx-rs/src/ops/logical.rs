@@ -465,21 +465,32 @@ pub fn any_device<'a>(
 /// See [`Array::logical_and`]
 #[generate_macro]
 #[default_device]
-pub fn logical_and_device(a: impl AsRef<Array>, b: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn logical_and_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().logical_and_device(b, stream)
 }
 
 /// See [`Array::logical_or`]
 #[generate_macro]
 #[default_device]
-pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn logical_or_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().logical_or_device(b, stream)
 }
 
 /// See [`Array::logical_not`]
 #[generate_macro]
 #[default_device]
-pub fn logical_not_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn logical_not_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().logical_not_device(stream)
 }
 
@@ -595,7 +606,10 @@ pub fn gt_device(
 /// Return a boolean array indicating which elements are NaN.
 #[generate_macro]
 #[default_device]
-pub fn is_nan_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_nan_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isnan(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -604,7 +618,10 @@ pub fn is_nan_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<St
 /// Return a boolean array indicating which elements are +/- inifnity.
 #[generate_macro]
 #[default_device]
-pub fn is_inf_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -613,7 +630,10 @@ pub fn is_inf_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<St
 /// Return a boolean array indicating which elements are positive infinity.
 #[generate_macro]
 #[default_device]
-pub fn is_pos_inf_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_pos_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isposinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -622,7 +642,10 @@ pub fn is_pos_inf_device(array: impl AsRef<Array>, #[optional] stream: impl AsRe
 /// Return a boolean array indicating which elements are negative infinity.
 #[generate_macro]
 #[default_device]
-pub fn is_neg_inf_device(array: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_neg_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isneginf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })

@@ -22,7 +22,11 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn sort_device(a: impl AsRef<Array>, axis: i32, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sort_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
@@ -44,7 +48,10 @@ pub fn sort_device(a: impl AsRef<Array>, axis: i32, #[optional] stream: impl AsR
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn sort_all_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sort_all_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -95,7 +102,10 @@ pub fn argsort_device(
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn argsort_all_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn argsort_all_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_argsort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })

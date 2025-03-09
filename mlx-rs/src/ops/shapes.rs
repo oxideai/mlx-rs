@@ -449,7 +449,10 @@ pub fn squeeze_device<'a>(
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn at_least_1d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_1d_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_1d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -471,7 +474,10 @@ pub fn at_least_1d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<S
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn at_least_2d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_2d_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_2d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -493,7 +499,10 @@ pub fn at_least_2d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<S
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn at_least_3d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_3d_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_3d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -778,7 +787,10 @@ pub fn stack_device(
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn stack_all_device(arrays: &[impl AsRef<Array>], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn stack_all_device(
+    arrays: &[impl AsRef<Array>],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_stack_all(res, c_vec.as_ptr(), stream.as_ref().as_ptr())
@@ -895,7 +907,10 @@ pub fn transpose_device(
 /// Transpose with all axes reversed
 #[generate_macro]
 #[default_device]
-pub fn transpose_all_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn transpose_all_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })

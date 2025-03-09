@@ -100,4 +100,13 @@ fn test_ops_factory_arange() {
     let data: &[f32] = array.as_slice();
     let expected: Vec<f32> = (1..50).step_by(2).map(|x| x as f32).collect();
     assert_eq!(data, expected.as_slice());
+
+    let stream = StreamOrDevice::cpu();
+    let array = mlx_rs::arange!(start = 1.0, stop = 50.0, step = 2.0, stream = stream).unwrap();
+    assert_eq!(array.shape(), &[25]);
+    assert_eq!(array.dtype(), Dtype::Float32);
+
+    let data: &[f32] = array.as_slice();
+    let expected: Vec<f32> = (1..50).step_by(2).map(|x| x as f32).collect();
+    assert_eq!(data, expected.as_slice());
 }

@@ -303,6 +303,8 @@ pub fn derive_builder(input: TokenStream) -> TokenStream {
 }
 
 /// Generate a macro that expands to the given function for ergonomic purposes.
+/// 
+/// See `mlx-rs/mlx-tests/test_generate_macro.rs` for more usage examples.
 ///
 /// ```rust
 /// #![allow(unused_variables)]

@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::utils::guard::Guarded;
 use crate::utils::VectorArray;
@@ -96,23 +96,25 @@ impl Array {
 }
 
 /// See [`Array::diag`]
+#[generate_macro]
 #[default_device]
 pub fn diag_device(
     a: impl AsRef<Array>,
-    k: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] k: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().diag_device(k, stream)
 }
 
 /// See [`Array::diagonal`]
+#[generate_macro]
 #[default_device]
 pub fn diagonal_device(
     a: impl AsRef<Array>,
-    offset: impl Into<Option<i32>>,
-    axis1: impl Into<Option<i32>>,
-    axis2: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] offset: impl Into<Option<i32>>,
+    #[optional] axis1: impl Into<Option<i32>>,
+    #[optional] axis2: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().diagonal_device(offset, axis1, axis2, stream)
 }
@@ -124,11 +126,12 @@ pub fn diagonal_device(
 /// - subscripts: Einstein summation convention equation
 /// - operands: input arrays
 /// - stream: stream or device to evaluate on
+#[generate_macro]
 #[default_device]
 pub fn einsum_device<'a>(
     subscripts: &str,
     operands: impl IntoIterator<Item = &'a Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_subscripts =
         CString::new(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;

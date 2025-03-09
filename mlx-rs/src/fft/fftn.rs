@@ -1,4 +1,4 @@
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{
     array::Array,
@@ -21,6 +21,7 @@ use super::{
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n`. The default value is `a.shape[axis]`.
 /// - `axis`: Axis along which to perform the FFT. The default is -1.
+#[generate_macro]
 #[default_device]
 pub fn fft_device(
     a: impl AsRef<Array>,
@@ -44,12 +45,13 @@ pub fn fft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+#[generate_macro]
 #[default_device]
 pub fn fft2_device<'a>(
     a: impl AsRef<Array>,
-    s: impl IntoOption<&'a [i32]>,
-    axes: impl IntoOption<&'a [i32]>,
-    stream: impl AsRef<Stream>,
+    #[optional] s: impl IntoOption<&'a [i32]>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
@@ -84,12 +86,13 @@ pub fn fft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
+#[generate_macro]
 #[default_device]
 pub fn fftn_device<'a>(
     a: impl AsRef<Array>,
-    s: impl IntoOption<&'a [i32]>,
-    axes: impl IntoOption<&'a [i32]>,
-    stream: impl AsRef<Stream>,
+    #[optional] s: impl IntoOption<&'a [i32]>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());
@@ -120,12 +123,13 @@ pub fn fftn_device<'a>(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
+#[generate_macro]
 #[default_device]
 pub fn ifft_device(
     a: impl AsRef<Array>,
-    n: impl Into<Option<i32>>,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] n: impl Into<Option<i32>>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
@@ -143,12 +147,13 @@ pub fn ifft_device(
 /// - `s`: Size of the transformed axes. The corresponding axes in the input are truncated or padded
 /// with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
+#[generate_macro]
 #[default_device]
 pub fn ifft2_device<'a>(
     a: impl AsRef<Array>,
-    s: impl IntoOption<&'a [i32]>,
-    axes: impl IntoOption<&'a [i32]>,
-    stream: impl AsRef<Stream>,
+    #[optional] s: impl IntoOption<&'a [i32]>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
@@ -183,12 +188,13 @@ pub fn ifft2_device<'a>(
 /// if not specified.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 /// over the last `len(s)` axes are or all axes if `s` is also `None`.
+#[generate_macro]
 #[default_device]
 pub fn ifftn_device<'a>(
     a: impl AsRef<Array>,
-    s: impl IntoOption<&'a [i32]>,
-    axes: impl IntoOption<&'a [i32]>,
-    stream: impl AsRef<Stream>,
+    #[optional] s: impl IntoOption<&'a [i32]>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());

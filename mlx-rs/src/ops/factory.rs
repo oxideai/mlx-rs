@@ -434,7 +434,7 @@ where
 pub fn linspace_device<U, T>(
     start: U,
     stop: U,
-    count: impl Into<Option<i32>>,
+    #[optional] count: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array>
 where
@@ -472,8 +472,8 @@ pub fn repeat_all_device<T: ArrayElement>(
 #[default_device]
 pub fn tri_device<T: ArrayElement>(
     n: i32,
-    m: Option<i32>,
-    k: Option<i32>,
+    #[optional] m: Option<i32>,
+    #[optional] k: Option<i32>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::tri_device::<T>(n, m, k, stream)

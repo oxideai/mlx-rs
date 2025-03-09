@@ -54,6 +54,8 @@ fn test_ops_arithmetic_tensordot() {
     assert_eq!(z, expected);
 }
 
+// Test functions defined in `mlx_rs::ops` module.
+
 #[test]
 fn test_ops_convolution_conv1d() {
     let input = array!(
@@ -109,6 +111,8 @@ fn test_ops_factory_arange() {
     assert_eq!(data, expected.as_slice());
 }
 
+// Test functions defined in `mlx_rs::fft` module.
+
 #[test]
 fn test_fft_fft() {
     const FFT_EXPECTED: &[complex64; 4] = &[
@@ -125,12 +129,16 @@ fn test_fft_fft() {
     assert_eq!(fft.as_slice::<complex64>(), FFT_EXPECTED);
 }
 
+// Test functions defined in `mlx_rs::linalg` module.
+
 #[test]
 fn test_linalg_norm() {
     let a = array!([1.0, 2.0, 3.0, 4.0]).reshape(&[2, 2]).unwrap();
     let norm = mlx_rs::norm!(&a).unwrap();
     assert_eq!(norm.item::<f32>(), 5.477225575051661);
 }
+
+// Test functions defined in `mlx_rs::random` module.
 
 #[test]
 fn test_random_uniform() {

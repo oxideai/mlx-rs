@@ -131,3 +131,17 @@ fn test_linalg_norm() {
     let norm = mlx_rs::norm!(&a).unwrap();
     assert_eq!(norm.item::<f32>(), 5.477225575051661);
 }
+
+#[test]
+fn test_random_uniform() {
+    let value = mlx_rs::uniform!(0.0, 1.0, shape=&[1]).unwrap();
+    assert_eq!(value.shape(), &[1]);
+    assert!(value.item::<f32>() >= 0.0 && value.item::<f32>() <= 1.0);
+}
+
+#[test]
+fn test_random_normal() {
+    let value = mlx_rs::normal!(shape=&[1]).unwrap();
+    assert_eq!(value.shape(), &[1]);
+    assert!(value.item::<f32>() >= -10.0 && value.item::<f32>() <= 10.0);
+}

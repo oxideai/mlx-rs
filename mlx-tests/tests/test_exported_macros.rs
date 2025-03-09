@@ -3,9 +3,7 @@
 //! This is mainly a sanity check to ensure that the exported macros are working as expected.
 
 use mlx_rs::{
-    array,
-    ops::{arange, reshape},
-    Array, StreamOrDevice,
+    array, ops::{arange, reshape}, Array, Dtype, StreamOrDevice
 };
 
 // Try two functions that don't have any optional arguments.
@@ -79,4 +77,25 @@ fn test_ops_convolution_conv1d() {
 
     let expected = array!([12.0, 8.0, 17.0, 13.0, 22.0, 18.0], shape = [1, 3, 2]);
     assert_eq!(result, expected);
+}
+
+#[test]
+fn test_ops_factory_arange() {
+    // Without specifying start and step
+    let array = mlx_rs::arange!(stop = 50).unwrap();
+    assert_eq!(array.shape(), &[50]);
+    assert_eq!(array.dtype(), Dtype::Float32);
+
+    let data: &[f32] = array.as_slice();
+    let expected: Vec<f32> = (0..50).map(|x| x as f32).collect();
+    assert_eq!(data, expected.as_slice());
+
+    // With specifying start and step
+    let array = mlx_rs::arange!(start = 1.0, stop = 50.0, step = 2.0).unwrap();
+    assert_eq!(array.shape(), &[25]);
+    assert_eq!(array.dtype(), Dtype::Float32);
+
+    let data: &[f32] = array.as_slice();
+    let expected: Vec<f32> = (1..50).step_by(2).map(|x| x as f32).collect();
+    assert_eq!(data, expected.as_slice());
 }

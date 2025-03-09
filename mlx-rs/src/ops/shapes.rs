@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
 use crate::{
@@ -177,10 +177,11 @@ fn resolve_strides(
 /// # Params
 ///
 /// - `arrays`: The arrays to broadcast.
+#[generate_macro]
 #[default_device]
 pub fn broadcast_arrays_device(
     arrays: &[impl AsRef<Array>],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Vec::<Array>::try_from_op(|res| unsafe {
@@ -198,13 +199,14 @@ pub fn broadcast_arrays_device(
 /// let x = Array::from_iter(0..10, &[10]);
 /// let y = as_strided(&x, &[3, 3], &[1, 1], 0);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn as_strided_device<'a>(
     a: impl AsRef<Array>,
-    shape: impl IntoOption<&'a [i32]>,
-    strides: impl IntoOption<&'a [usize]>,
-    offset: impl Into<Option<usize>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] strides: impl IntoOption<&'a [usize]>,
+    #[optional] offset: impl Into<Option<usize>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let shape = shape.into_option().unwrap_or(a.shape());
@@ -240,11 +242,12 @@ pub fn as_strided_device<'a>(
 /// let x = Array::from_float(2.3);
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn broadcast_to_device(
     a: impl AsRef<Array>,
     shape: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_broadcast_to(
@@ -273,11 +276,12 @@ pub fn broadcast_to_device(
 /// let y = Array::from_iter(4..8, &[2, 2]);
 /// let result = concatenate(&[x, y], 0);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn concatenate_device(
     arrays: &[impl AsRef<Array>],
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(0);
     let c_arrays = VectorArray::try_from_iter(arrays.iter())?;
@@ -301,11 +305,12 @@ pub fn concatenate_device(
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = expand_dims(&x, &[0]);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn expand_dims_device(
     a: impl AsRef<Array>,
     axes: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_expand_dims(
@@ -338,12 +343,13 @@ pub fn expand_dims_device(
 /// let x = Array::zeros::<i32>(&[2, 2, 2]).unwrap();
 /// let y = flatten(&x, None, None);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn flatten_device(
     a: impl AsRef<Array>,
-    start_axis: impl Into<Option<i32>>,
-    end_axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] start_axis: impl Into<Option<i32>>,
+    #[optional] end_axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let start_axis = start_axis.into().unwrap_or(0);
     let end_axis = end_axis.into().unwrap_or(-1);
@@ -374,11 +380,12 @@ pub fn flatten_device(
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
 /// let result = reshape(&x, &[4]);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn reshape_device(
     a: impl AsRef<Array>,
     shape: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_reshape(
@@ -406,11 +413,12 @@ pub fn reshape_device(
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]).unwrap();
 /// let result = squeeze(&x, None);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn squeeze_device<'a>(
     a: impl AsRef<Array>,
-    axes: impl IntoOption<&'a [i32]>,
-    stream: impl AsRef<Stream>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
@@ -439,8 +447,9 @@ pub fn squeeze_device<'a>(
 /// let x = Array::from_int(1);
 /// let out = at_least_1d(&x);
 /// ```
+#[generate_macro]
 #[default_device]
-pub fn at_least_1d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_1d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_1d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -460,8 +469,9 @@ pub fn at_least_1d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// let x = Array::from_int(1);
 /// let out = at_least_2d(&x);
 /// ```
+#[generate_macro]
 #[default_device]
-pub fn at_least_2d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_2d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_2d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -481,8 +491,9 @@ pub fn at_least_2d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// let x = Array::from_int(1);
 /// let out = at_least_3d(&x);
 /// ```
+#[generate_macro]
 #[default_device]
-pub fn at_least_3d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn at_least_3d_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_atleast_3d(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -504,12 +515,13 @@ pub fn at_least_3d_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> R
 /// let a = Array::zeros::<i32>(&[2, 3, 4]).unwrap();
 /// let result = move_axis(&a, 0, 2);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn move_axis_device(
     a: impl AsRef<Array>,
     src: i32,
     dst: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_moveaxis(res, a.as_ref().as_ptr(), src, dst, stream.as_ref().as_ptr())
@@ -532,12 +544,13 @@ pub fn move_axis_device(
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split(&a, &[3, 7], 0);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn split_device(
     a: impl AsRef<Array>,
     indices: &[i32],
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
@@ -569,12 +582,13 @@ pub fn split_device(
 /// let a = Array::from_iter(0..10, &[10]);
 /// let result = split_equal(&a, 2, 0);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn split_equal_device(
     a: impl AsRef<Array>,
     num_parts: i32,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
@@ -680,13 +694,14 @@ impl PadMode {
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let result = pad(&a, 1, Array::from_int(0), None);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn pad_device<'a>(
     a: impl AsRef<Array>,
-    width: impl Into<PadWidth<'a>>,
-    value: impl Into<Option<Array>>,
-    mode: impl Into<Option<PadMode>>,
-    stream: impl AsRef<Stream>,
+    #[optional] width: impl Into<PadWidth<'a>>,
+    #[optional] value: impl Into<Option<Array>>,
+    #[optional] mode: impl Into<Option<PadMode>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let width = width.into();
@@ -733,11 +748,12 @@ pub fn pad_device<'a>(
 /// let b = Array::from_iter(4..8, &[2, 2]);
 /// let result = stack(&[&a, &b], 0);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn stack_device(
     arrays: &[impl AsRef<Array>],
     axis: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
@@ -760,8 +776,9 @@ pub fn stack_device(
 /// let b = Array::from_iter(4..8, &[2, 2]);
 /// let result = stack_all(&[&a, &b]);
 /// ```
+#[generate_macro]
 #[default_device]
-pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn stack_all_device(arrays: &[impl AsRef<Array>], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_stack_all(res, c_vec.as_ptr(), stream.as_ref().as_ptr())
@@ -784,12 +801,13 @@ pub fn stack_all_device(arrays: &[impl AsRef<Array>], stream: impl AsRef<Stream>
 /// let a = Array::from_iter(0..6, &[2, 3]);
 /// let result = swap_axes(&a, 0, 1);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn swap_axes_device(
     a: impl AsRef<Array>,
     axis1: i32,
     axis2: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_swapaxes(
@@ -817,11 +835,12 @@ pub fn swap_axes_device(
 /// let x = Array::from_slice(&[1, 2, 3], &[3]);
 /// let y = tile(&x, &[2]);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn tile_device(
     a: impl AsRef<Array>,
     reps: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tile(
@@ -855,11 +874,12 @@ pub fn tile_device(
 /// # See also
 ///
 /// - [`transpose_all`]
+#[generate_macro]
 #[default_device]
 pub fn transpose_device(
     a: impl AsRef<Array>,
     axes: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose(
@@ -873,8 +893,9 @@ pub fn transpose_device(
 }
 
 /// Transpose with all axes reversed
+#[generate_macro]
 #[default_device]
-pub fn transpose_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn transpose_all_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_transpose_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })

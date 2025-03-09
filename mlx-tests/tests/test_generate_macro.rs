@@ -111,3 +111,30 @@ fn test_bar() {
     let result = bar!(1, 2, c = Some(3), d = Some(4), dtype=i16, stream = &stream);
     assert_eq!(result, 10);
 }
+
+// Test named mandatory arguments.
+#[generate_macro(customize(root = "$crate"))]
+#[default_device]
+fn baz_device(
+    #[optional] a: Option<i32>,                         // Optinal argument
+    #[named] b: i32,                                    // Mandatory argument
+    #[optional] c: Option<i32>,                         // Optional argument
+    #[optional] stream: impl AsRef<Stream>,             // stream always optional and placed at the end
+) -> i32 {
+    a.unwrap_or(0) + b + c.unwrap_or(0)
+}
+
+#[test]
+fn test_baz() {
+    assert_eq!(baz!(b = 1), 1);
+    assert_eq!(baz!(a = Some(2), b = 1), 3);
+    assert_eq!(baz!(b = 1, c = Some(3)), 4);
+    assert_eq!(baz!(a = Some(2), b = 1, c = Some(3)), 6);
+
+    let stream = Stream::new();
+
+    assert_eq!(baz!(b = 1, stream = &stream), 1);
+    assert_eq!(baz!(a = Some(2), b = 1, stream = &stream), 3);
+    assert_eq!(baz!(b = 1, c = Some(3), stream = &stream), 4);
+    assert_eq!(baz!(a = Some(2), b = 1, c = Some(3), stream = &stream), 6);
+}

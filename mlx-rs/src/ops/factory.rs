@@ -3,7 +3,7 @@ use crate::error::Result;
 use crate::utils::guard::Guarded;
 use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 use num_traits::NumCast;
 
 impl Array {
@@ -315,14 +315,16 @@ impl Array {
 }
 
 /// See [`Array::zeros`]
+#[generate_macro]
 #[default_device]
-pub fn zeros_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn zeros_device<T: ArrayElement>(shape: &[i32], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::zeros_device::<T>(shape, stream)
 }
 
 /// An array of zeros like the input.
+#[generate_macro]
 #[default_device]
-pub fn zeros_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn zeros_like_device(input: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -330,11 +332,12 @@ pub fn zeros_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -
 }
 
 /// Similar to [`Array::zeros`] but with a specified dtype.
+#[generate_macro]
 #[default_device]
 pub fn zeros_dtype_device(
     shape: &[i32],
     dtype: Dtype,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_zeros(
@@ -348,14 +351,16 @@ pub fn zeros_dtype_device(
 }
 
 /// See [`Array::ones`]
+#[generate_macro]
 #[default_device]
-pub fn ones_device<T: ArrayElement>(shape: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ones_device<T: ArrayElement>(shape: &[i32], #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::ones_device::<T>(shape, stream)
 }
 
 /// An array of ones like the input.
+#[generate_macro]
 #[default_device]
-pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ones_like_device(input: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     let a = input.as_ref();
     let shape = a.shape();
     let dtype = a.dtype();
@@ -363,7 +368,9 @@ pub fn ones_like_device(input: impl AsRef<Array>, stream: impl AsRef<Stream>) ->
 }
 
 /// Similar to [`Array::ones`] but with a specified dtype.
-pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, stream: impl AsRef<Stream>) -> Result<Array> {
+#[generate_macro]
+#[default_device]
+pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_ones(
             res,
@@ -376,39 +383,43 @@ pub fn ones_dtype_device(shape: &[i32], dtype: Dtype, stream: impl AsRef<Stream>
 }
 
 /// See [`Array::eye`]
+#[generate_macro]
 #[default_device]
 pub fn eye_device<T: ArrayElement>(
     n: i32,
-    m: Option<i32>,
-    k: Option<i32>,
-    stream: impl AsRef<Stream>,
+    #[optional] m: Option<i32>,
+    #[optional] k: Option<i32>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::eye_device::<T>(n, m, k, stream)
 }
 
 /// See [`Array::full`]
+#[generate_macro]
 #[default_device]
 pub fn full_device<T: ArrayElement>(
     shape: &[i32],
     values: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::full_device::<T>(shape, values, stream)
 }
 
 /// See [`Array::identity`]
+#[generate_macro]
 #[default_device]
-pub fn identity_device<T: ArrayElement>(n: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn identity_device<T: ArrayElement>(n: i32, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::identity_device::<T>(n, stream)
 }
 
 /// See [`Array::arange`]
+#[generate_macro]
 #[default_device]
 pub fn arange_device<U, T>(
-    start: impl Into<Option<U>>,
-    stop: U,
-    step: impl Into<Option<U>>,
-    stream: impl AsRef<Stream>,
+    #[optional] start: impl Into<Option<U>>,
+    #[named] stop: U,
+    #[optional] step: impl Into<Option<U>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array>
 where
     U: NumCast,
@@ -418,12 +429,13 @@ where
 }
 
 /// See [`Array::linspace`]
+#[generate_macro]
 #[default_device]
 pub fn linspace_device<U, T>(
     start: U,
     stop: U,
     count: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array>
 where
     U: NumCast,
@@ -433,33 +445,36 @@ where
 }
 
 /// See [`Array::repeat`]
+#[generate_macro]
 #[default_device]
 pub fn repeat_device<T: ArrayElement>(
     array: Array,
     count: i32,
     axis: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::repeat_device::<T>(array, count, axis, stream)
 }
 
 /// See [`Array::repeat_all`]
+#[generate_macro]
 #[default_device]
 pub fn repeat_all_device<T: ArrayElement>(
     array: Array,
     count: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::repeat_all_device::<T>(array, count, stream)
 }
 
 /// See [`Array::tri`]
+#[generate_macro]
 #[default_device]
 pub fn tri_device<T: ArrayElement>(
     n: i32,
     m: Option<i32>,
     k: Option<i32>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::tri_device::<T>(n, m, k, stream)
 }

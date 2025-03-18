@@ -285,7 +285,7 @@ impl Module<&Array> for Glu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        glu(x, self.axis).map_err(Into::into)
+        glu(x, self.axis)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -336,7 +336,7 @@ impl Module<&Array> for Mish {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        mish(x).map_err(Into::into)
+        mish(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -358,7 +358,7 @@ impl Module<&Array> for Relu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        relu(x).map_err(Into::into)
+        relu(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -393,7 +393,7 @@ impl Module<&Array> for LeakyRelu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        leaky_relu(x, self.neg_slope).map_err(Into::into)
+        leaky_relu(x, self.neg_slope)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -415,7 +415,7 @@ impl Module<&Array> for Relu6 {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        relu6(x).map_err(Into::into)
+        relu6(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -472,7 +472,7 @@ impl Module<&Array> for Softplus {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        softplus(x).map_err(Into::into)
+        softplus(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -494,7 +494,7 @@ impl Module<&Array> for Softsign {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        softsign(x).map_err(Into::into)
+        softsign(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -530,7 +530,7 @@ impl Module<&Array> for Celu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        celu(x, self.alpha).map_err(Into::into)
+        celu(x, self.alpha)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -552,7 +552,7 @@ impl Module<&Array> for Silu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        silu(x).map_err(Into::into)
+        silu(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -587,7 +587,7 @@ impl Module<&Array> for LogSoftmax {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        log_softmax(x, self.axis).map_err(Into::into)
+        log_softmax(x, self.axis)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -609,7 +609,7 @@ impl Module<&Array> for LogSigmoid {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        log_sigmoid(x).map_err(Into::into)
+        log_sigmoid(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -671,7 +671,7 @@ impl Module<&Array> for Prelu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        prelu(x, &self.weight).map_err(Into::into)
+        prelu(x, &self.weight)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -716,9 +716,9 @@ impl Module<&Array> for Gelu {
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
         match self.approximate {
-            GeluApprox::None => gelu(x).map_err(Into::into),
-            GeluApprox::Precise => gelu_approximate(x).map_err(Into::into),
-            GeluApprox::Fast => gelu_fast_approximate(x).map_err(Into::into),
+            GeluApprox::None => gelu(x),
+            GeluApprox::Precise => gelu_approximate(x),
+            GeluApprox::Fast => gelu_fast_approximate(x),
         }
     }
 
@@ -757,7 +757,7 @@ impl Module<&Array> for HardSwish {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        hard_swish(x).map_err(Into::into)
+        hard_swish(x)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -795,7 +795,7 @@ impl Module<&Array> for Step {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        step(x, self.threshold).map_err(Into::into)
+        step(x, self.threshold)
     }
 
     fn training_mode(&mut self, _: bool) {}
@@ -817,7 +817,7 @@ impl Module<&Array> for Selu {
     type Output = Array;
 
     fn forward(&mut self, x: &Array) -> Result<Array> {
-        selu(x).map_err(Into::into)
+        selu(x)
     }
 
     fn training_mode(&mut self, _: bool) {}

@@ -306,14 +306,14 @@ pub fn derive_builder(input: TokenStream) -> TokenStream {
 ///
 /// See `mlx-rs/mlx-tests/test_generate_macro.rs` for more usage examples.
 ///
-/// ```rust
+/// ```rust,ignore
 /// #![allow(unused_variables)]
 ///
 /// use mlx_internal_macros::{default_device, generate_macro};
 /// use mlx_rs::{Stream, StreamOrDevice};
 ///
 /// /// Test macro generation.
-/// #[generate_macro]
+/// #[generate_macro(customize(root = "$crate"))] // Default is `$crate::ops`
 /// #[default_device]
 /// fn foo_device(
 ///     a: i32, // Mandatory argument

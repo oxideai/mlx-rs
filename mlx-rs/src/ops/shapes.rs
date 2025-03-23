@@ -929,24 +929,23 @@ mod tests {
     }
 
     #[test]
-    fn test_expand() {
+    fn test_expand_dims() {
         let a = Array::zeros::<i32>(&[2, 2]).unwrap();
         assert_eq!(expand_dims(&a, &[0][..]).unwrap().shape(), &[1, 2, 2]);
         assert_eq!(expand_dims(&a, &[-1][..]).unwrap().shape(), &[2, 2, 1]);
         assert_eq!(expand_dims(&a, &[1][..]).unwrap().shape(), &[2, 1, 2]);
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2][..]).unwrap().shape(),
+            expand_dims(&a, &[0, 1, 2]).unwrap().shape(),
             &[1, 1, 1, 2, 2]
         );
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2, 5, 6, 7][..]).unwrap().shape(),
+            expand_dims(&a, &[0, 1, 2, 5, 6, 7]).unwrap().shape(),
             &[1, 1, 1, 2, 2, 1, 1, 1]
         );
 
-        assert!(expand_dims(&a, &[3][..]).is_err());
-        assert!(expand_dims(&a, &[-4][..]).is_err());
-        assert!(expand_dims(&a, &[0, 1, 0][..]).is_err());
-        assert!(expand_dims(&a, &[0, 1, -4][..]).is_err());
+        assert!(expand_dims(&a, &[3]).is_err());
+        assert!(expand_dims(&a, &[0, 1, 0]).is_err());
+        assert!(expand_dims(&a, &[0, 1, -4]).is_err());
     }
 
     #[test]

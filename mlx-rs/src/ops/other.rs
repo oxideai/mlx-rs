@@ -144,6 +144,20 @@ pub fn einsum_device<'a>(
     })
 }
 
+/// Perform the Kronecker product of two arrays.
+/// 
+/// # Params
+/// 
+/// - `a`: first array
+/// - `b`: second array
+/// - `stream`: stream or device to evaluate on
+#[default_device]
+pub fn kron_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_kron(res, a.as_ref().as_ptr(), b.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -201,7 +215,7 @@ mod tests {
     #[test]
     fn test_diag() {
         // Too few or too many dimensions
-        assert!(diag(Array::from_float(0.0), None).is_err());
+        assert!(diag(Array::from_f32(0.0), None).is_err());
         assert!(diag(Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array

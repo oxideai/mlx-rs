@@ -49,7 +49,7 @@ impl Array {
     pub fn as_strided_device<'a>(
         &'a self,
         shape: impl IntoOption<&'a [i32]>,
-        strides: impl IntoOption<&'a [usize]>,
+        strides: impl IntoOption<&'a [i64]>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -152,8 +152,8 @@ fn axes_or_default_to_all_size_one_axes<'a>(
 
 fn resolve_strides(
     shape: &[i32],
-    strides: Option<&[usize]>,
-) -> SmallVec<[usize; DEFAULT_STACK_VEC_LEN]> {
+    strides: Option<&[i64]>,
+) -> SmallVec<[i64; DEFAULT_STACK_VEC_LEN]> {
     match strides {
         Some(strides) => SmallVec::from_slice(strides),
         None => {
@@ -162,10 +162,10 @@ fn resolve_strides(
                 .rev()
                 .scan(1, |acc, &dim| {
                     let result = *acc;
-                    *acc *= dim as usize;
+                    *acc *= dim as i64;
                     Some(result)
                 })
-                .collect::<SmallVec<[usize; DEFAULT_STACK_VEC_LEN]>>();
+                .collect::<SmallVec<[i64; DEFAULT_STACK_VEC_LEN]>>();
             result.into_iter().rev().collect()
         }
     }
@@ -202,7 +202,7 @@ pub fn broadcast_arrays_device(
 pub fn as_strided_device<'a>(
     a: impl AsRef<Array>,
     shape: impl IntoOption<&'a [i32]>,
-    strides: impl IntoOption<&'a [usize]>,
+    strides: impl IntoOption<&'a [i64]>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -354,6 +354,32 @@ pub fn flatten_device(
             a.as_ref().as_ptr(),
             start_axis,
             end_axis,
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Unflatten an axis of an array to a shape.
+/// 
+/// # Params
+/// 
+/// - `a`: input array
+/// - `axis`: axis to unflatten
+/// - `shape`: shape to unflatten into
+#[default_device]
+pub fn unflatten_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_unflatten(
+            res,
+            a.as_ref().as_ptr(),
+            axis,
+            shape.as_ptr(),
+            shape.len(),
             stream.as_ref().as_ptr(),
         )
     })

@@ -227,7 +227,7 @@ mod tests {
     // The unit tests below are adapted from the mlx c++ codebase
     #[test]
     fn test_grad() {
-        let x = &[Array::from_float(1.0)];
+        let x = &[Array::from_f32(1.0)];
         let fun = |argin: &[Array]| -> Vec<Array> { vec![&argin[0] + 1.0] };
         let argnums = &[0];
 

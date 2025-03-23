@@ -461,6 +461,48 @@ pub fn tri_inv_device(
     })
 }
 
+/// Compute the LU factorization of the given matrix A.
+/// 
+/// Note, unlike the default behavior of scipy.linalg.lu, the pivots are
+/// indices. To reconstruct the input use L[P, :] @ U for 2 dimensions or
+/// mx.take_along_axis(L, P[..., None], axis=-2) @ U for more than 2 dimensions.
+/// 
+/// To construct the full permuation matrix do:
+/// 
+/// ```rust,ignore
+/// // python
+/// // P = mx.put_along_axis(mx.zeros_like(L), p[..., None], mx.array(1.0), axis=-1) 
+/// let p = mlx_rs::ops::put_along_axis(
+///     mlx_rs::ops::zeros_like(&l),
+///     p.index((Ellipsis, NewAxis)),
+///     array!(1.0),
+///     -1,
+/// ).unwrap();
+/// ```
+/// 
+/// # Params
+/// 
+/// - `a`: input array
+/// - `stream`: stream to execute the operation
+/// 
+/// # Returns
+/// 
+/// The `p`, `L`, and `U` arrays, such that `A = L[P, :] @ U`
+#[default_device]
+pub fn lu_device(
+    a: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array, Array)> {
+    let v = Vec::<Array>::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_lu(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })?;
+    let mut iter = v.into_iter();
+    let p = iter.next().ok_or_else(|| Exception::custom("missing P"))?;
+    let l = iter.next().ok_or_else(|| Exception::custom("missing L"))?;
+    let u = iter.next().ok_or_else(|| Exception::custom("missing U"))?;
+    Ok((p, l, u))
+}
+
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
@@ -593,7 +635,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_float(0.0);
+        let a = Array::from_f32(0.0);
         assert!(svd_device(&a, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);
@@ -612,7 +654,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_float(0.0);
+        let a = Array::from_f32(0.0);
         assert!(inv_device(&a, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);
@@ -631,7 +673,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_float(0.0);
+        let a = Array::from_f32(0.0);
         assert!(cholesky_device(&a, None, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);

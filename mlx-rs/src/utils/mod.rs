@@ -166,7 +166,15 @@ impl ScalarOrArray<'static> for f32 {
     type Array = Array;
 
     fn into_owned_or_ref_array(self) -> Array {
-        Array::from_float(self)
+        Array::from_f32(self)
+    }
+}
+
+impl ScalarOrArray<'static> for f64 {
+    type Array = Array;
+
+    fn into_owned_or_ref_array(self) -> Array {
+        Array::from_f64(self)
     }
 }
 

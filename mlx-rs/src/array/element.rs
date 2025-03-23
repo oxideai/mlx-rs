@@ -15,6 +15,17 @@ pub trait ArrayElement: Sized + Sealed {
     fn array_data(array: &Array) -> *const Self;
 }
 
+/// A marker trait for array element types that can be constructed via the
+/// [`Array::from_slice`] method. This trait is implemented for all array
+/// element types except for [`f64`].
+/// 
+/// [`f64`] is treated specially because it is not supported on GPU devices, but
+/// rust defaults floating point literals to `f64`. With this trait, we can
+/// limit the default floating point literals to `f32` for constructors
+/// functions like [`Array::from_slice`] and [`Array::from_iter`], and macro
+/// [`crate::array!`].
+pub trait FromSliceElement: ArrayElement {}
+
 macro_rules! impl_array_element {
     ($type:ty, $dtype:expr, $ctype:ident) => {
         paste::paste! {
@@ -53,3 +64,23 @@ impl_array_element!(f32, Dtype::Float32, float32);
 impl_array_element!(f16, Dtype::Float16, float16);
 impl_array_element!(bf16, Dtype::Bfloat16, bfloat16);
 impl_array_element!(complex64, Dtype::Complex64, complex64);
+
+macro_rules! impl_from_slice_element {
+    ($type:ty) => {
+        impl FromSliceElement for $type {}
+    };
+}
+
+impl_from_slice_element!(bool);
+impl_from_slice_element!(u8);
+impl_from_slice_element!(u16);
+impl_from_slice_element!(u32);
+impl_from_slice_element!(u64);
+impl_from_slice_element!(i8);
+impl_from_slice_element!(i16);
+impl_from_slice_element!(i32);
+impl_from_slice_element!(i64);
+impl_from_slice_element!(f32);
+impl_from_slice_element!(f16);
+impl_from_slice_element!(bf16);
+impl_from_slice_element!(complex64);

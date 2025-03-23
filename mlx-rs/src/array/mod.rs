@@ -5,6 +5,7 @@ use crate::{
     utils::{guard::Guarded, SUCCESS},
     Stream, StreamOrDevice,
 };
+use element::FromSliceElement;
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
@@ -119,11 +120,12 @@ impl Array {
         Array { c_array }
     }
 
-    /// New array from a f64 scalar.
-    pub fn from_f64(val: f64) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_new_float64(val) };
-        Array { c_array }
-    }
+    // // TODO: This is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
+    // /// New array from a f64 scalar.
+    // pub fn from_f64(val: f64) -> Array {
+    //     let c_array = unsafe { mlx_sys::mlx_array_new_float64(val) };
+    //     Array { c_array }
+    // }
 
     /// New array from a complex scalar.
     pub fn from_complex(val: complex64) -> Array {
@@ -132,6 +134,9 @@ impl Array {
     }
 
     /// New array from existing buffer.
+    /// 
+    /// Please note that floating point literals are treated as f32 instead of
+    /// f64. Use [`Array::from_slice_f64`] for f64.
     ///
     /// # Parameters
     ///
@@ -140,13 +145,25 @@ impl Array {
     ///
     /// # Panic
     ///
-    /// - Panics if the product of the shape is not equal to the length of the data.
+    /// - Panics if the product of the shape is not equal to the length of the
+    ///   data.
     /// - Panics if the shape is too large.
-    pub fn from_slice<T: ArrayElement>(data: &[T], shape: &[i32]) -> Self {
+    pub fn from_slice<T: FromSliceElement>(data: &[T], shape: &[i32]) -> Self {
         // Validate data size and shape
         assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
 
         unsafe { Self::from_raw_data(data.as_ptr() as *const c_void, shape, T::DTYPE) }
+    }
+
+    /// New array from a slice of f64.
+    /// 
+    /// A separate method is provided for f64 because f64 is not supported on GPU
+    /// and rust defaults to f64 for floating point literals
+    pub fn from_slice_f64(data: &[f64], shape: &[i32]) -> Self {
+        // Validate data size and shape
+        assert_eq!(data.len(), shape.iter().product::<i32>() as usize);
+
+        unsafe { Self::from_raw_data(data.as_ptr() as *const c_void, shape, Dtype::Float64) }
     }
 
     /// Create a new array from raw data buffer.
@@ -170,6 +187,9 @@ impl Array {
     }
 
     /// New array from an iterator.
+    /// 
+    /// Please note that floating point literals are treated as f32 instead of
+    /// f64. Use [`Array::from_iter_f64`] for f64.
     ///
     /// This is a convenience method that is equivalent to
     ///
@@ -187,9 +207,18 @@ impl Array {
     /// let mut array = Array::from_iter(data.clone(), &[5]);
     /// assert_eq!(array.as_slice::<i32>(), &data[..]);
     /// ```
-    pub fn from_iter<I: IntoIterator<Item = T>, T: ArrayElement>(iter: I, shape: &[i32]) -> Self {
+    pub fn from_iter<I: IntoIterator<Item = T>, T: FromSliceElement>(iter: I, shape: &[i32]) -> Self {
         let data: Vec<T> = iter.into_iter().collect();
         Self::from_slice(&data, shape)
+    }
+
+    /// New array from an iterator of f64.
+    /// 
+    /// A separate method is provided for f64 because f64 is not supported on GPU
+    /// and rust defaults to f64 for floating point literals
+    pub fn from_iter_f64<I: IntoIterator<Item = f64>>(iter: I, shape: &[i32]) -> Self {
+        let data: Vec<f64> = iter.into_iter().collect();
+        Self::from_slice_f64(&data, shape)
     }
 
     /// The size of the array’s datatype in bytes.
@@ -474,12 +503,6 @@ impl From<f32> for Array {
     }
 }
 
-impl From<f64> for Array {
-    fn from(value: f64) -> Self {
-        Array::from_f64(value)
-    }
-}
-
 impl From<complex64> for Array {
     fn from(value: complex64) -> Self {
         Array::from_complex(value)
@@ -530,12 +553,6 @@ impl FromScalar<f32> for Array {
     }
 }
 
-impl FromScalar<f64> for Array {
-    fn from_scalar(val: f64) -> Array {
-        Array::from_f64(val)
-    }
-}
-
 impl FromScalar<complex64> for Array {
     fn from_scalar(val: complex64) -> Array {
         Array::from_complex(val)
@@ -555,25 +572,25 @@ pub trait FromNested<T> {
     fn from_nested(data: T) -> Array;
 }
 
-impl<T: ArrayElement> FromNested<&[T]> for Array {
+impl<T: FromSliceElement> FromNested<&[T]> for Array {
     fn from_nested(data: &[T]) -> Self {
         Array::from_slice(data, &[data.len() as i32])
     }
 }
 
-impl<T: ArrayElement, const N: usize> FromNested<[T; N]> for Array {
+impl<T: FromSliceElement, const N: usize> FromNested<[T; N]> for Array {
     fn from_nested(data: [T; N]) -> Self {
         Array::from_slice(&data, &[N as i32])
     }
 }
 
-impl<T: ArrayElement, const N: usize> FromNested<&[T; N]> for Array {
+impl<T: FromSliceElement, const N: usize> FromNested<&[T; N]> for Array {
     fn from_nested(data: &[T; N]) -> Self {
         Array::from_slice(data, &[N as i32])
     }
 }
 
-impl<T: ArrayElement + Copy> FromNested<&[&[T]]> for Array {
+impl<T: FromSliceElement + Copy> FromNested<&[&[T]]> for Array {
     fn from_nested(data: &[&[T]]) -> Self {
         // check that all rows have the same length
         let row_len = data[0].len();
@@ -592,7 +609,7 @@ impl<T: ArrayElement + Copy> FromNested<&[&[T]]> for Array {
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[T]; N]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<[&[T]; N]> for Array {
     fn from_nested(data: [&[T]; N]) -> Self {
         // check that all rows have the same length
         let row_len = data[0].len();
@@ -611,7 +628,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[T]; N]> for Array {
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[T; N]]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<&[[T; N]]> for Array {
     fn from_nested(data: &[[T; N]]) -> Self {
         let shape = [data.len() as i32, N as i32];
         let data = data
@@ -622,7 +639,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[T; N]]> for Array {
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[T; N]]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<&[&[T; N]]> for Array {
     fn from_nested(data: &[&[T; N]]) -> Self {
         let shape = [data.len() as i32, N as i32];
         let data = data
@@ -633,7 +650,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[T; N]]> for Array {
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[T; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[T; N]; M]> for Array {
     fn from_nested(data: [[T; N]; M]) -> Self {
         let shape = [M as i32, N as i32];
         let data = data
@@ -644,7 +661,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[T; N];
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]; M]> for Array {
     fn from_nested(data: &[[T; N]; M]) -> Self {
         let shape = [M as i32, N as i32];
         let data = data
@@ -655,7 +672,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N]; M]> for Array {
     fn from_nested(data: &[&[T; N]; M]) -> Self {
         let shape = [M as i32, N as i32];
         let data = data
@@ -666,7 +683,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N
     }
 }
 
-impl<T: ArrayElement + Copy> FromNested<&[&[&[T]]]> for Array {
+impl<T: FromSliceElement + Copy> FromNested<&[&[&[T]]]> for Array {
     fn from_nested(data: &[&[&[T]]]) -> Self {
         // check that 2nd dimension has the same length
         let len_2d = data[0].len();
@@ -691,7 +708,7 @@ impl<T: ArrayElement + Copy> FromNested<&[&[&[T]]]> for Array {
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[&[T]]; N]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<[&[&[T]]; N]> for Array {
     fn from_nested(data: [&[&[T]]; N]) -> Self {
         // check that 2nd dimension has the same length
         let len_2d = data[0].len();
@@ -716,7 +733,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<[&[&[T]]; N]> for Array 
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[&[T]; N]]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<&[[&[T]; N]]> for Array {
     fn from_nested(data: &[[&[T]; N]]) -> Self {
         // check that 3rd dimension has the same length
         let len_3d = data[0][0].len();
@@ -734,7 +751,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<&[[&[T]; N]]> for Array 
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[[T; N]]]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize> FromNested<&[&[[T; N]]]> for Array {
     fn from_nested(data: &[&[[T; N]]]) -> Self {
         // check that 2nd dimension has the same length
         let len_2d = data[0].len();
@@ -752,7 +769,7 @@ impl<T: ArrayElement + Copy, const N: usize> FromNested<&[&[[T; N]]]> for Array 
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; N]; M]> for Array {
     fn from_nested(data: [[&[T]; N]; M]) -> Self {
         // check that 3rd dimension has the same length
         let len_3d = data[0][0].len();
@@ -770,7 +787,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; 
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T]; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T]; N]; M]> for Array {
     fn from_nested(data: &[[&[T]; N]; M]) -> Self {
         // check that 3rd dimension has the same length
         let len_3d = data[0][0].len();
@@ -788,7 +805,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T];
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; N]]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; N]]; M]> for Array {
     fn from_nested(data: &[&[[T; N]]; M]) -> Self {
         // check that 2nd dimension has the same length
         let len_2d = data[0].len();
@@ -806,7 +823,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; 
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
     FromNested<[[[T; N]; M]; O]> for Array
 {
     fn from_nested(data: [[[T; N]; M]; O]) -> Self {
@@ -819,7 +836,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
     FromNested<&[[[T; N]; M]; O]> for Array
 {
     fn from_nested(data: &[[[T; N]; M]; O]) -> Self {
@@ -832,7 +849,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
     FromNested<&[&[[T; N]; M]; O]> for Array
 {
     fn from_nested(data: &[&[[T; N]; M]; O]) -> Self {
@@ -845,7 +862,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
     FromNested<&[[&[T; N]; M]; O]> for Array
 {
     fn from_nested(data: &[[&[T; N]; M]; O]) -> Self {
@@ -858,7 +875,7 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
     }
 }
 
-impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
     FromNested<&[&[&[T; N]; M]; O]> for Array
 {
     fn from_nested(data: &[&[&[T; N]; M]; O]) -> Self {
@@ -873,6 +890,8 @@ impl<T: ArrayElement + Copy, const N: usize, const M: usize, const O: usize>
 
 #[cfg(test)]
 mod tests {
+    use crate::Device;
+
     use super::*;
 
     #[test]
@@ -914,26 +933,36 @@ mod tests {
         assert_eq!(array.dtype(), Dtype::Float32);
     }
 
-    #[test]
-    fn new_scalar_array_from_f64() {
-        let array = Array::from_f64(3.14);
-        assert_eq!(array.item::<f64>(), 3.14);
-        assert_eq!(array.item_size(), 8);
-        assert_eq!(array.size(), 1);
-        assert!(array.strides().is_empty());
-        assert_eq!(array.nbytes(), 8);
-        assert_eq!(array.ndim(), 0);
-        assert!(array.shape().is_empty());
-        assert_eq!(array.dtype(), Dtype::Float64);
+    // TODO: this is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
+    // #[test]
+    // fn new_scalar_array_from_f64() {
+    //     // f64 is not supported on GPU
+    //     Device::set_default(&Device::cpu());
 
-        let array = crate::array!(3.14f64);
-        assert_eq!(array.item::<f64>(), 3.14);
+    //     let array = Array::from_f64(3.14).as_dtype(Dtype::Float64).unwrap();
+    //     float_eq::assert_float_eq!(array.item::<f64>(), 3.14, abs <= 1e-5);
+    //     assert_eq!(array.item_size(), 8);
+    //     assert_eq!(array.size(), 1);
+    //     assert!(array.strides().is_empty());
+    //     assert_eq!(array.nbytes(), 8);
+    //     assert_eq!(array.ndim(), 0);
+    //     assert!(array.shape().is_empty());
+    //     assert_eq!(array.dtype(), Dtype::Float64);
+    // }
+
+    #[test]
+    fn new_array_from_slice_f64() {
+        // f64 is not supported on GPU
+        Device::set_default(&Device::cpu());
+
+        let array = Array::from_slice_f64(&[1.0, 2.0, 3.0], &[3]);
         assert_eq!(array.item_size(), 8);
-        assert_eq!(array.size(), 1);
-        assert!(array.strides().is_empty());
-        assert_eq!(array.nbytes(), 8);
-        assert_eq!(array.ndim(), 0);
-        assert!(array.shape().is_empty());
+        assert_eq!(array.size(), 3);
+        assert_eq!(array.strides(), &[1]);
+        assert_eq!(array.nbytes(), 24);
+        assert_eq!(array.ndim(), 1);
+        assert_eq!(array.dim(0), 3);
+        assert_eq!(array.shape(), &[3]);
         assert_eq!(array.dtype(), Dtype::Float64);
     }
 

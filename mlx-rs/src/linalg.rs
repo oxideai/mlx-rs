@@ -462,16 +462,16 @@ pub fn tri_inv_device(
 }
 
 /// Compute the LU factorization of the given matrix A.
-/// 
+///
 /// Note, unlike the default behavior of scipy.linalg.lu, the pivots are
 /// indices. To reconstruct the input use L[P, :] @ U for 2 dimensions or
 /// mx.take_along_axis(L, P[..., None], axis=-2) @ U for more than 2 dimensions.
-/// 
+///
 /// To construct the full permuation matrix do:
-/// 
+///
 /// ```rust,ignore
 /// // python
-/// // P = mx.put_along_axis(mx.zeros_like(L), p[..., None], mx.array(1.0), axis=-1) 
+/// // P = mx.put_along_axis(mx.zeros_like(L), p[..., None], mx.array(1.0), axis=-1)
 /// let p = mlx_rs::ops::put_along_axis(
 ///     mlx_rs::ops::zeros_like(&l),
 ///     p.index((Ellipsis, NewAxis)),
@@ -479,14 +479,14 @@ pub fn tri_inv_device(
 ///     -1,
 /// ).unwrap();
 /// ```
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: input array
 /// - `stream`: stream to execute the operation
-/// 
+///
 /// # Returns
-/// 
+///
 /// The `p`, `L`, and `U` arrays, such that `A = L[P, :] @ U`
 #[default_device]
 pub fn lu_device(
@@ -501,6 +501,85 @@ pub fn lu_device(
     let l = iter.next().ok_or_else(|| Exception::custom("missing L"))?;
     let u = iter.next().ok_or_else(|| Exception::custom("missing U"))?;
     Ok((p, l, u))
+}
+
+/// Computes a compact representation of the LU factorization.
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `stream`: stream to execute the operation
+///
+/// # Returns
+///
+/// The `LU` matrix and `pivots` array.
+#[default_device]
+pub fn lu_factor_device(
+    a: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array)> {
+    <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_linalg_lu_factor(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
+/// Compute the solution to a system of linear equations `AX = B`
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `b`: input array
+/// - `stream`: stream to execute the operation
+///
+/// # Returns
+///
+/// The unique solution to the system `AX = B`
+#[default_device]
+pub fn solve_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_solve(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Computes the solution of a triangular system of linear equations `AX = B`
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `b`: input array
+/// - `upper`: whether the matrix is upper triangular. Default: `false`
+/// - `stream`: stream to execute the operation
+///
+/// # Returns
+///
+/// The unique solution to the system `AX = B`
+#[default_device]
+pub fn solve_triangular_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    upper: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let upper = upper.into().unwrap_or(false);
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_solve_triangular(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            upper,
+            stream.as_ref().as_ptr(),
+        )
+    })
 }
 
 #[cfg(test)]

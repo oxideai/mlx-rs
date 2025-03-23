@@ -586,6 +586,8 @@ pub fn solve_triangular_device(
 mod tests {
     use float_eq::assert_float_eq;
 
+    use crate::{array, ops::indexing::IndexOp};
+
     use super::*;
 
     // The tests below are adapted from the swift bindings tests
@@ -767,5 +769,19 @@ mod tests {
         assert!(cholesky_device(&a, None, &stream).is_err());
 
         // TODO: wait for random
+    }
+
+    // The unit test below is adapted from the python unit test `test_linalg.py/test_lu`
+    #[test]
+    fn test_lu() {
+        let scalar = array!(1.0);
+        let result = lu_device(&scalar, StreamOrDevice::cpu());
+        assert!(result.is_err());
+
+        // # Test 3x3 matrix
+        let a = array!([[3.0f32, 1.0, 2.0], [1.0, 8.0, 6.0], [9.0, 2.0, 5.0]]);
+        let (p, l, u) = lu_device(&a, StreamOrDevice::cpu()).unwrap();
+        let a_rec = l.index((p, ..)).matmul(u).unwrap();
+        assert_array_all_close!(a, a_rec);
     }
 }

@@ -586,7 +586,7 @@ pub fn solve_triangular_device(
 mod tests {
     use float_eq::assert_float_eq;
 
-    use crate::{array, ops::indexing::IndexOp};
+    use crate::{array, ops::{eye, indexing::IndexOp, tril, triu}};
 
     use super::*;
 
@@ -783,5 +783,31 @@ mod tests {
         let (p, l, u) = lu_device(&a, StreamOrDevice::cpu()).unwrap();
         let a_rec = l.index((p, ..)).matmul(u).unwrap();
         assert_array_all_close!(a, a_rec);
+    }
+
+    #[test]
+    fn test_lu_factor() {
+        crate::random::seed(7).unwrap();
+
+        // Test 3x3 matrix
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[5, 5], None).unwrap();
+        let (lu, pivots) = lu_factor_device(&a, StreamOrDevice::cpu()).unwrap();
+        let shape = a.shape();
+        let n = shape[shape.len() - 1];
+
+        let pivots: Vec<u32> = pivots.as_slice().to_vec();
+        let mut perm: Vec<u32> = (0..n as u32).collect();
+        for i in 0..pivots.len() {
+            let p = pivots[i] as usize;
+            perm.swap(i, p);
+        }
+
+        let l = tril(&lu, -1).and_then(|l| l.add(eye::<f32>(n, None, None)?)).unwrap();
+        let u = triu(&lu, None).unwrap();
+
+        let lhs = l.matmul(&u).unwrap();
+        let perm = Array::from_slice(&perm, &[n]);
+        let rhs = a.index((perm, ..));
+        assert_array_all_close!(lhs, rhs);
     }
 }

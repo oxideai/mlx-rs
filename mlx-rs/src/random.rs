@@ -182,7 +182,7 @@ pub fn normal_device<'a, T: ArrayElement>(
 /// - `covariance`: array  of shape `[..., n, n]`, the covariance matrix of the distribution. The batch shape `...` must be broadcast-compatible with that of `mean`.
 /// - `shape`: The output shape must be broadcast-compatible with `&mean.shape[..mean.shape.len()-1]` and `&covariance.shape[..covariance.shape.len()-2]`. If empty, the result shape is determined by broadcasting the batch shapes of `mean` and `covariance`.
 /// - `key`: PRNG key.
-#[default_device]
+#[default_device(device = "cpu")] // TODO: not supported on GPU yet
 pub fn multivariate_normal_device<'a, T: ArrayElement>(
     mean: impl AsRef<Array>,
     covariance: impl AsRef<Array>,

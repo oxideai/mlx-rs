@@ -170,13 +170,14 @@ impl ScalarOrArray<'static> for f32 {
     }
 }
 
-impl ScalarOrArray<'static> for f64 {
-    type Array = Array;
+// TODO: this is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
+// impl ScalarOrArray<'static> for f64 {
+//     type Array = Array;
 
-    fn into_owned_or_ref_array(self) -> Array {
-        Array::from_f64(self)
-    }
-}
+//     fn into_owned_or_ref_array(self) -> Array {
+//         Array::from_f64(self)
+//     }
+// }
 
 impl ScalarOrArray<'static> for complex64 {
     type Array = Array;

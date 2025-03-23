@@ -303,4 +303,23 @@ mod tests {
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
     }
+
+    // This test is adapted from the python unit test `mlx/test/test_ops.py` `test_kron`
+    #[test]
+    fn test_kron() {
+        // Basic vector test
+        let x = array!([1, 2]);
+        let y = array!([3, 4]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(z, array!([3, 4, 6, 8]));
+
+        // Basic matrix test
+        let x = array!([[1, 2], [3, 4]]);
+        let y = array!([[0, 5], [6, 7]]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(
+            z,
+            array!([[0, 5, 0, 10], [6, 7, 12, 14], [0, 15, 0, 20], [18, 21, 24, 28]])
+        );
+    }
 }

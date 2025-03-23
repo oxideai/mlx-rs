@@ -134,7 +134,7 @@ impl Array {
     }
 
     /// New array from existing buffer.
-    /// 
+    ///
     /// Please note that floating point literals are treated as f32 instead of
     /// f64. Use [`Array::from_slice_f64`] for f64.
     ///
@@ -156,7 +156,7 @@ impl Array {
     }
 
     /// New array from a slice of f64.
-    /// 
+    ///
     /// A separate method is provided for f64 because f64 is not supported on GPU
     /// and rust defaults to f64 for floating point literals
     pub fn from_slice_f64(data: &[f64], shape: &[i32]) -> Self {
@@ -187,7 +187,7 @@ impl Array {
     }
 
     /// New array from an iterator.
-    /// 
+    ///
     /// Please note that floating point literals are treated as f32 instead of
     /// f64. Use [`Array::from_iter_f64`] for f64.
     ///
@@ -207,13 +207,16 @@ impl Array {
     /// let mut array = Array::from_iter(data.clone(), &[5]);
     /// assert_eq!(array.as_slice::<i32>(), &data[..]);
     /// ```
-    pub fn from_iter<I: IntoIterator<Item = T>, T: FromSliceElement>(iter: I, shape: &[i32]) -> Self {
+    pub fn from_iter<I: IntoIterator<Item = T>, T: FromSliceElement>(
+        iter: I,
+        shape: &[i32],
+    ) -> Self {
         let data: Vec<T> = iter.into_iter().collect();
         Self::from_slice(&data, shape)
     }
 
     /// New array from an iterator of f64.
-    /// 
+    ///
     /// A separate method is provided for f64 because f64 is not supported on GPU
     /// and rust defaults to f64 for floating point literals
     pub fn from_iter_f64<I: IntoIterator<Item = f64>>(iter: I, shape: &[i32]) -> Self {
@@ -661,7 +664,9 @@ impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[T;
     }
 }
 
-impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[T; N]; M]>
+    for Array
+{
     fn from_nested(data: &[[T; N]; M]) -> Self {
         let shape = [M as i32, N as i32];
         let data = data
@@ -672,7 +677,9 @@ impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[T
     }
 }
 
-impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[T; N]; M]>
+    for Array
+{
     fn from_nested(data: &[&[T; N]; M]) -> Self {
         let shape = [M as i32, N as i32];
         let data = data
@@ -769,7 +776,9 @@ impl<T: FromSliceElement + Copy, const N: usize> FromNested<&[&[[T; N]]]> for Ar
     }
 }
 
-impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[&[T]; N]; M]>
+    for Array
+{
     fn from_nested(data: [[&[T]; N]; M]) -> Self {
         // check that 3rd dimension has the same length
         let len_3d = data[0][0].len();
@@ -787,7 +796,9 @@ impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<[[&[
     }
 }
 
-impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T]; N]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[&[T]; N]; M]>
+    for Array
+{
     fn from_nested(data: &[[&[T]; N]; M]) -> Self {
         // check that 3rd dimension has the same length
         let len_3d = data[0][0].len();
@@ -805,7 +816,9 @@ impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[[&
     }
 }
 
-impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; N]]; M]> for Array {
+impl<T: FromSliceElement + Copy, const N: usize, const M: usize> FromNested<&[&[[T; N]]; M]>
+    for Array
+{
     fn from_nested(data: &[&[[T; N]]; M]) -> Self {
         // check that 2nd dimension has the same length
         let len_2d = data[0].len();

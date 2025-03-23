@@ -18,7 +18,7 @@ pub trait ArrayElement: Sized + Sealed {
 /// A marker trait for array element types that can be constructed via the
 /// [`Array::from_slice`] method. This trait is implemented for all array
 /// element types except for [`f64`].
-/// 
+///
 /// [`f64`] is treated specially because it is not supported on GPU devices, but
 /// rust defaults floating point literals to `f64`. With this trait, we can
 /// limit the default floating point literals to `f32` for constructors

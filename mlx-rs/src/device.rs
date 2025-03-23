@@ -123,7 +123,6 @@ mod tests {
     fn test_fmt() {
         let device = Device::default();
         let description = format!("{}", device);
-        println!("{:?}", device);
         assert_eq!(description, "Device(gpu, 0)");
     }
 }

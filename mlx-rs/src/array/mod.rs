@@ -903,8 +903,6 @@ impl<T: FromSliceElement + Copy, const N: usize, const M: usize, const O: usize>
 
 #[cfg(test)]
 mod tests {
-    use crate::Device;
-
     use super::*;
 
     #[test]
@@ -949,9 +947,6 @@ mod tests {
     // TODO: this is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
     // #[test]
     // fn new_scalar_array_from_f64() {
-    //     // f64 is not supported on GPU
-    //     Device::set_default(&Device::cpu());
-
     //     let array = Array::from_f64(3.14).as_dtype(Dtype::Float64).unwrap();
     //     float_eq::assert_float_eq!(array.item::<f64>(), 3.14, abs <= 1e-5);
     //     assert_eq!(array.item_size(), 8);
@@ -965,9 +960,6 @@ mod tests {
 
     #[test]
     fn new_array_from_slice_f64() {
-        // f64 is not supported on GPU
-        Device::set_default(&Device::cpu());
-
         let array = Array::from_slice_f64(&[1.0, 2.0, 3.0], &[3]);
         assert_eq!(array.item_size(), 8);
         assert_eq!(array.size(), 3);

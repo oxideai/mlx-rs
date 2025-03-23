@@ -48,6 +48,7 @@ impl_array_element!(i8, Dtype::Int8, int8);
 impl_array_element!(i16, Dtype::Int16, int16);
 impl_array_element!(i32, Dtype::Int32, int32);
 impl_array_element!(i64, Dtype::Int64, int64);
+impl_array_element!(f64, Dtype::Float64, float64);
 impl_array_element!(f32, Dtype::Float32, float32);
 impl_array_element!(f16, Dtype::Float16, float16);
 impl_array_element!(bf16, Dtype::Bfloat16, bfloat16);

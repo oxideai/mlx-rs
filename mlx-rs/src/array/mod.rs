@@ -113,9 +113,15 @@ impl Array {
         Array { c_array }
     }
 
-    /// New array from a float scalar.
-    pub fn from_float(val: f32) -> Array {
-        let c_array = unsafe { mlx_sys::mlx_array_new_float(val) };
+    /// New array from a f32 scalar.
+    pub fn from_f32(val: f32) -> Array {
+        let c_array = unsafe { mlx_sys::mlx_array_new_float32(val) };
+        Array { c_array }
+    }
+
+    /// New array from a f64 scalar.
+    pub fn from_f64(val: f64) -> Array {
+        let c_array = unsafe { mlx_sys::mlx_array_new_float64(val) };
         Array { c_array }
     }
 
@@ -407,6 +413,7 @@ impl Array {
                 Dtype::Int64 => mlx_sys::mlx_array_data_int64(self.as_ptr()) as *const c_void,
                 Dtype::Float16 => mlx_sys::mlx_array_data_float16(self.as_ptr()) as *const c_void,
                 Dtype::Float32 => mlx_sys::mlx_array_data_float32(self.as_ptr()) as *const c_void,
+                Dtype::Float64 => mlx_sys::mlx_array_data_float64(self.as_ptr()) as *const c_void,
                 Dtype::Bfloat16 => mlx_sys::mlx_array_data_bfloat16(self.as_ptr()) as *const c_void,
                 Dtype::Complex64 => {
                     mlx_sys::mlx_array_data_complex64(self.as_ptr()) as *const c_void
@@ -463,7 +470,13 @@ impl From<i32> for Array {
 
 impl From<f32> for Array {
     fn from(value: f32) -> Self {
-        Array::from_float(value)
+        Array::from_f32(value)
+    }
+}
+
+impl From<f64> for Array {
+    fn from(value: f64) -> Self {
+        Array::from_f64(value)
     }
 }
 
@@ -513,7 +526,13 @@ impl FromScalar<i32> for Array {
 
 impl FromScalar<f32> for Array {
     fn from_scalar(val: f32) -> Array {
-        Array::from_float(val)
+        Array::from_f32(val)
+    }
+}
+
+impl FromScalar<f64> for Array {
+    fn from_scalar(val: f64) -> Array {
+        Array::from_f64(val)
     }
 }
 
@@ -883,8 +902,8 @@ mod tests {
     }
 
     #[test]
-    fn new_scalar_array_from_float() {
-        let array = Array::from_float(3.14);
+    fn new_scalar_array_from_f32() {
+        let array = Array::from_f32(3.14);
         assert_eq!(array.item::<f32>(), 3.14);
         assert_eq!(array.item_size(), 4);
         assert_eq!(array.size(), 1);
@@ -893,6 +912,29 @@ mod tests {
         assert_eq!(array.ndim(), 0);
         assert!(array.shape().is_empty());
         assert_eq!(array.dtype(), Dtype::Float32);
+    }
+
+    #[test]
+    fn new_scalar_array_from_f64() {
+        let array = Array::from_f64(3.14);
+        assert_eq!(array.item::<f64>(), 3.14);
+        assert_eq!(array.item_size(), 8);
+        assert_eq!(array.size(), 1);
+        assert!(array.strides().is_empty());
+        assert_eq!(array.nbytes(), 8);
+        assert_eq!(array.ndim(), 0);
+        assert!(array.shape().is_empty());
+        assert_eq!(array.dtype(), Dtype::Float64);
+
+        let array = crate::array!(3.14f64);
+        assert_eq!(array.item::<f64>(), 3.14);
+        assert_eq!(array.item_size(), 8);
+        assert_eq!(array.size(), 1);
+        assert!(array.strides().is_empty());
+        assert_eq!(array.nbytes(), 8);
+        assert_eq!(array.ndim(), 0);
+        assert!(array.shape().is_empty());
+        assert_eq!(array.dtype(), Dtype::Float64);
     }
 
     #[test]
@@ -997,7 +1039,7 @@ mod tests {
 
     #[test]
     fn test_item_type_conversion() {
-        let array = Array::from_float(1.0);
+        let array = Array::from_f32(1.0);
         assert_eq!(array.item::<i32>(), 1);
         assert_eq!(array.item::<complex64>(), complex64::new(1.0, 0.0));
         assert_eq!(array.item::<u8>(), 1);

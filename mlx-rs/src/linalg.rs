@@ -785,6 +785,7 @@ mod tests {
         assert_array_all_close!(a, a_rec);
     }
 
+    // The unit test below is adapted from the python unit test `test_linalg.py/test_lu_factor`
     #[test]
     fn test_lu_factor() {
         crate::random::seed(7).unwrap();
@@ -809,5 +810,29 @@ mod tests {
         let perm = Array::from_slice(&perm, &[n]);
         let rhs = a.index((perm, ..));
         assert_array_all_close!(lhs, rhs);
+    }
+
+    // The unit test below is adapted from the python unit test `test_linalg.py/test_solve`
+    #[test]
+    fn test_solve() {
+        crate::random::seed(7).unwrap();
+
+        // Test 3x3 matrix with 1D rhs
+        let a = array!([[3.0f32, 1.0, 2.0], [1.0, 8.0, 6.0], [9.0, 2.0, 5.0]]);
+        let b = array!([11.0f32, 35.0, 28.0]);
+
+        let result = solve_device(&a, &b, StreamOrDevice::cpu()).unwrap();
+        let expected = array!([1.0f32, 2.0, 3.0]);
+        assert_array_all_close!(result, expected);
+    }
+
+    #[test]
+    fn test_solve_triangular() {
+        let a = array!([[4.0f32, 0.0, 0.0], [2.0, 3.0, 0.0], [1.0, -2.0, 5.0]]);
+        let b = array!([8.0f32, 14.0, 3.0]);
+
+        let result = solve_triangular_device(&a, &b, false, StreamOrDevice::cpu()).unwrap();
+        let expected = array!([2.0f32, 3.333333333, 1.53333333]);
+        assert_array_all_close!(result, expected);
     }
 }

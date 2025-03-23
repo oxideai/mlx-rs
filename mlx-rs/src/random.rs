@@ -65,14 +65,13 @@ pub fn key(seed: u64) -> Result<Array> {
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
-pub fn split_device(key: impl AsRef<Array>, num: i32, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
+pub fn split_device(
+    key: impl AsRef<Array>,
+    num: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array)> {
     let keys = Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_random_split_num(
-            res,
-            key.as_ref().as_ptr(),
-            num,
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_random_split_num(res, key.as_ref().as_ptr(), num, stream.as_ref().as_ptr())
     })?;
 
     Ok((keys.try_index(0)?, keys.try_index(1)?))

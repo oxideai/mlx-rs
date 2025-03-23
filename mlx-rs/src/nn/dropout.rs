@@ -70,7 +70,7 @@ impl Module<&Array> for Dropout {
 
         let p1 = array!(self.one_minus_p);
         let mask = bernoulli(&p1, x.shape(), None)?;
-        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x).map_err(Into::into)
+        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x)
     }
 
     fn training_mode(&mut self, mode: bool) {
@@ -170,7 +170,7 @@ impl Module<&Array> for Dropout2d {
         let p1 = array!(self.one_minus_p);
         let mask = bernoulli(&p1, &mask_shape, None)?;
 
-        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x).map_err(Into::into)
+        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x)
     }
 
     fn training_mode(&mut self, mode: bool) {
@@ -267,7 +267,7 @@ impl Module<&Array> for Dropout3d {
         let p1 = array!(self.one_minus_p);
         let mask = bernoulli(&p1, &mask_shape, None)?;
 
-        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x).map_err(Into::into)
+        multiply(multiply(array!(1.0 / self.one_minus_p), mask)?, x)
     }
 
     fn training_mode(&mut self, mode: bool) {

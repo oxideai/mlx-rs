@@ -360,9 +360,9 @@ pub fn flatten_device(
 }
 
 /// Unflatten an axis of an array to a shape.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: input array
 /// - `axis`: axis to unflatten
 /// - `shape`: shape to unflatten into

@@ -145,16 +145,25 @@ pub fn einsum_device<'a>(
 }
 
 /// Perform the Kronecker product of two arrays.
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: first array
 /// - `b`: second array
 /// - `stream`: stream or device to evaluate on
 #[default_device]
-pub fn kron_device(a: impl AsRef<Array>, b: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn kron_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_kron(res, a.as_ref().as_ptr(), b.as_ref().as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_kron(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
     })
 }
 

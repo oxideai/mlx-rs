@@ -23,9 +23,7 @@ pub struct Device {
 
 impl PartialEq for Device {
     fn eq(&self, other: &Self) -> bool {
-        unsafe {
-            mlx_sys::mlx_device_equal(self.c_device, other.c_device) 
-        }
+        unsafe { mlx_sys::mlx_device_equal(self.c_device, other.c_device) }
     }
 }
 
@@ -53,16 +51,12 @@ impl Device {
 
     /// Get the device index
     pub fn get_index(&self) -> Result<i32> {
-        i32::try_from_op(|res| unsafe {
-            mlx_sys::mlx_device_get_index(res, self.c_device)
-        })
+        i32::try_from_op(|res| unsafe { mlx_sys::mlx_device_get_index(res, self.c_device) })
     }
 
     /// Get the device type
     pub fn get_type(&self) -> Result<DeviceType> {
-        DeviceType::try_from_op(|res| unsafe {
-            mlx_sys::mlx_device_get_type(res, self.c_device)
-        })
+        DeviceType::try_from_op(|res| unsafe { mlx_sys::mlx_device_get_type(res, self.c_device) })
     }
 
     /// Set the default device.

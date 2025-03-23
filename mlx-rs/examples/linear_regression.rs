@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let y = &inputs[2];
 
         let y_pred = x.matmul(w)?;
-        let loss = Array::from_float(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
+        let loss = Array::from_f32(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
         Ok(loss)
     };
 
@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for _ in 0..num_iterations {
         let grad = grad_fn(&inputs)?;
-        inputs[0] = &inputs[0] - Array::from_float(learning_rate) * grad;
+        inputs[0] = &inputs[0] - Array::from_f32(learning_rate) * grad;
         inputs[0].eval()?;
     }
 

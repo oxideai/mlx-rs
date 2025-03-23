@@ -910,7 +910,7 @@ pub fn transpose_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) ->
 // https://github.com/ml-explore/mlx/blob/main/tests/ops_tests.cpp
 #[cfg(test)]
 mod tests {
-    use crate::{Array, Dtype};
+    use crate::{array, Array, Dtype};
 
     use super::*;
 
@@ -971,6 +971,14 @@ mod tests {
         let x = Array::from_int(1);
         assert_eq!(flatten(&x, -3, -1).unwrap().shape(), &[1]);
         assert_eq!(flatten(&x, 0, 0).unwrap().shape(), &[1]);
+    }
+
+    #[test]
+    fn test_unflatten() {
+        let a = array!([1, 2, 3, 4]);
+        let b = unflatten(&a, 0, &[2, -1]).unwrap();
+        let expected = array!([[1, 2], [3, 4]]);
+        assert_eq!(b, expected);
     }
 
     #[test]

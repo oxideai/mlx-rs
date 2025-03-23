@@ -586,7 +586,10 @@ pub fn solve_triangular_device(
 mod tests {
     use float_eq::assert_float_eq;
 
-    use crate::{array, ops::{eye, indexing::IndexOp, tril, triu}};
+    use crate::{
+        array,
+        ops::{eye, indexing::IndexOp, tril, triu},
+    };
 
     use super::*;
 
@@ -798,12 +801,13 @@ mod tests {
 
         let pivots: Vec<u32> = pivots.as_slice().to_vec();
         let mut perm: Vec<u32> = (0..n as u32).collect();
-        for i in 0..pivots.len() {
-            let p = pivots[i] as usize;
-            perm.swap(i, p);
+        for (i, p) in pivots.iter().enumerate() {
+            perm.swap(i, *p as usize);
         }
 
-        let l = tril(&lu, -1).and_then(|l| l.add(eye::<f32>(n, None, None)?)).unwrap();
+        let l = tril(&lu, -1)
+            .and_then(|l| l.add(eye::<f32>(n, None, None)?))
+            .unwrap();
         let u = triu(&lu, None).unwrap();
 
         let lhs = l.matmul(&u).unwrap();
@@ -832,7 +836,7 @@ mod tests {
         let b = array!([8.0f32, 14.0, 3.0]);
 
         let result = solve_triangular_device(&a, &b, false, StreamOrDevice::cpu()).unwrap();
-        let expected = array!([2.0f32, 3.333333333, 1.53333333]);
+        let expected = array!([2.0f32, 3.333_333_3, 1.533_333_3]);
         assert_array_all_close!(result, expected);
     }
 }

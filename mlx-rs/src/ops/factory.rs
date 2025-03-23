@@ -465,9 +465,9 @@ pub fn tri_device<T: ArrayElement>(
 }
 
 /// Zeros the array above the given diagonal
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: input array
 /// - `k`: diagonal of the 2D array. Default to `0`
 /// - `stream`: stream to execute on
@@ -485,9 +485,9 @@ pub fn tril_device(
 }
 
 /// Zeros the array below the given diagonal
-/// 
+///
 /// # Params
-/// 
+///
 /// - `a`: input array
 /// - `k`: diagonal of the 2D array. Default to `0`
 /// - `stream`: stream to execute on

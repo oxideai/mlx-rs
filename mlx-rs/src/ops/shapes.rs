@@ -237,7 +237,7 @@ pub fn as_strided_device<'a>(
 /// ```rust
 /// use mlx_rs::{Array, ops::*};
 ///
-/// let x = Array::from_float(2.3);
+/// let x = Array::from_f32(2.3);
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]

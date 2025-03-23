@@ -9,10 +9,10 @@ authors.workspace = true
 mlx-rs.workspace = true
 
 # External dependencies
-tokenizers = "0.21"
+tokenizers = "=0.21.0" # 0.21.1 uses features that went stable in 1.82 while our MSRV is 1.81
 thiserror = "1.0"
 anyhow = "1.0"
-hf-hub = "0.4"
+hf-hub = "=0.4.1" # 0.4.1 use features that went stable in 1.82 while our MSRV is 1.81
 dotenv = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

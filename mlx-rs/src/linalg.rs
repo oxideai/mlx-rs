@@ -504,10 +504,11 @@ pub fn tri_inv_device(
 /// # Returns
 ///
 /// The `p`, `L`, and `U` arrays, such that `A = L[P, :] @ U`
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn lu_device(
     a: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array, Array)> {
     let v = Vec::<Array>::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_lu(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
@@ -529,10 +530,11 @@ pub fn lu_device(
 /// # Returns
 ///
 /// The `LU` matrix and `pivots` array.
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn lu_factor_device(
     a: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array)> {
     <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_linalg_lu_factor(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
@@ -550,11 +552,12 @@ pub fn lu_factor_device(
 /// # Returns
 ///
 /// The unique solution to the system `AX = B`
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn solve_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_solve(
@@ -578,12 +581,13 @@ pub fn solve_device(
 /// # Returns
 ///
 /// The unique solution to the system `AX = B`
+#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn solve_triangular_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    upper: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] upper: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.into().unwrap_or(false);
 

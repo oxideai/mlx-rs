@@ -372,12 +372,13 @@ pub fn flatten_device(
 /// - `a`: input array
 /// - `axis`: axis to unflatten
 /// - `shape`: shape to unflatten into
+#[generate_macro]
 #[default_device]
 pub fn unflatten_device(
     a: impl AsRef<Array>,
     axis: i32,
     shape: &[i32],
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_unflatten(

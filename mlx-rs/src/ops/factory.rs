@@ -505,11 +505,12 @@ pub fn tri_device<T: ArrayElement>(
 /// - `a`: input array
 /// - `k`: diagonal of the 2D array. Default to `0`
 /// - `stream`: stream to execute on
+#[generate_macro]
 #[default_device]
 pub fn tril_device(
     a: impl AsRef<Array>,
-    k: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] k: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let k = k.into().unwrap_or(0);
@@ -524,12 +525,12 @@ pub fn tril_device(
 ///
 /// - `a`: input array
 /// - `k`: diagonal of the 2D array. Default to `0`
-/// - `stream`: stream to execute on
+#[generate_macro]
 #[default_device]
 pub fn triu_device(
     a: impl AsRef<Array>,
-    k: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] k: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let k = k.into().unwrap_or(0);

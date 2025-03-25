@@ -464,6 +464,46 @@ pub fn tri_device<T: ArrayElement>(
     Array::tri_device::<T>(n, m, k, stream)
 }
 
+/// Zeros the array above the given diagonal
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `k`: diagonal of the 2D array. Default to `0`
+/// - `stream`: stream to execute on
+#[default_device]
+pub fn tril_device(
+    a: impl AsRef<Array>,
+    k: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let k = k.into().unwrap_or(0);
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_tril(res, a.as_ptr(), k, stream.as_ref().as_ptr())
+    })
+}
+
+/// Zeros the array below the given diagonal
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `k`: diagonal of the 2D array. Default to `0`
+/// - `stream`: stream to execute on
+#[default_device]
+pub fn triu_device(
+    a: impl AsRef<Array>,
+    k: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let k = k.into().unwrap_or(0);
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_triu(res, a.as_ptr(), k, stream.as_ref().as_ptr())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

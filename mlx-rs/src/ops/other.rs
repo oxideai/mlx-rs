@@ -144,6 +144,29 @@ pub fn einsum_device<'a>(
     })
 }
 
+/// Perform the Kronecker product of two arrays.
+///
+/// # Params
+///
+/// - `a`: first array
+/// - `b`: second array
+/// - `stream`: stream or device to evaluate on
+#[default_device]
+pub fn kron_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_kron(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -201,7 +224,7 @@ mod tests {
     #[test]
     fn test_diag() {
         // Too few or too many dimensions
-        assert!(diag(Array::from_float(0.0), None).is_err());
+        assert!(diag(Array::from_f32(0.0), None).is_err());
         assert!(diag(Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array
@@ -279,5 +302,29 @@ mod tests {
         let c = result.all_close(&expected, 1e-5, 1e-5, None).unwrap();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
+    }
+
+    // This test is adapted from the python unit test `mlx/test/test_ops.py` `test_kron`
+    #[test]
+    fn test_kron() {
+        // Basic vector test
+        let x = array!([1, 2]);
+        let y = array!([3, 4]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(z, array!([3, 4, 6, 8]));
+
+        // Basic matrix test
+        let x = array!([[1, 2], [3, 4]]);
+        let y = array!([[0, 5], [6, 7]]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(
+            z,
+            array!([
+                [0, 5, 0, 10],
+                [6, 7, 12, 14],
+                [0, 15, 0, 20],
+                [18, 21, 24, 28]
+            ])
+        );
     }
 }

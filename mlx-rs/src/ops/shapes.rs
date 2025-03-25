@@ -49,7 +49,7 @@ impl Array {
     pub fn as_strided_device<'a>(
         &'a self,
         shape: impl IntoOption<&'a [i32]>,
-        strides: impl IntoOption<&'a [usize]>,
+        strides: impl IntoOption<&'a [i64]>,
         offset: impl Into<Option<usize>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -152,8 +152,8 @@ fn axes_or_default_to_all_size_one_axes<'a>(
 
 fn resolve_strides(
     shape: &[i32],
-    strides: Option<&[usize]>,
-) -> SmallVec<[usize; DEFAULT_STACK_VEC_LEN]> {
+    strides: Option<&[i64]>,
+) -> SmallVec<[i64; DEFAULT_STACK_VEC_LEN]> {
     match strides {
         Some(strides) => SmallVec::from_slice(strides),
         None => {
@@ -162,10 +162,10 @@ fn resolve_strides(
                 .rev()
                 .scan(1, |acc, &dim| {
                     let result = *acc;
-                    *acc *= dim as usize;
+                    *acc *= dim as i64;
                     Some(result)
                 })
-                .collect::<SmallVec<[usize; DEFAULT_STACK_VEC_LEN]>>();
+                .collect::<SmallVec<[i64; DEFAULT_STACK_VEC_LEN]>>();
             result.into_iter().rev().collect()
         }
     }
@@ -202,7 +202,7 @@ pub fn broadcast_arrays_device(
 pub fn as_strided_device<'a>(
     a: impl AsRef<Array>,
     shape: impl IntoOption<&'a [i32]>,
-    strides: impl IntoOption<&'a [usize]>,
+    strides: impl IntoOption<&'a [i64]>,
     offset: impl Into<Option<usize>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -237,7 +237,7 @@ pub fn as_strided_device<'a>(
 /// ```rust
 /// use mlx_rs::{Array, ops::*};
 ///
-/// let x = Array::from_float(2.3);
+/// let x = Array::from_f32(2.3);
 /// let result = broadcast_to(&x, &[1, 1]);
 /// ```
 #[default_device]
@@ -354,6 +354,32 @@ pub fn flatten_device(
             a.as_ref().as_ptr(),
             start_axis,
             end_axis,
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Unflatten an axis of an array to a shape.
+///
+/// # Params
+///
+/// - `a`: input array
+/// - `axis`: axis to unflatten
+/// - `shape`: shape to unflatten into
+#[default_device]
+pub fn unflatten_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    shape: &[i32],
+    stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_unflatten(
+            res,
+            a.as_ref().as_ptr(),
+            axis,
+            shape.as_ptr(),
+            shape.len(),
             stream.as_ref().as_ptr(),
         )
     })
@@ -884,7 +910,7 @@ pub fn transpose_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) ->
 // https://github.com/ml-explore/mlx/blob/main/tests/ops_tests.cpp
 #[cfg(test)]
 mod tests {
-    use crate::{Array, Dtype};
+    use crate::{array, Array, Dtype};
 
     use super::*;
 
@@ -903,24 +929,23 @@ mod tests {
     }
 
     #[test]
-    fn test_expand() {
+    fn test_expand_dims() {
         let a = Array::zeros::<i32>(&[2, 2]).unwrap();
         assert_eq!(expand_dims(&a, &[0][..]).unwrap().shape(), &[1, 2, 2]);
         assert_eq!(expand_dims(&a, &[-1][..]).unwrap().shape(), &[2, 2, 1]);
         assert_eq!(expand_dims(&a, &[1][..]).unwrap().shape(), &[2, 1, 2]);
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2][..]).unwrap().shape(),
+            expand_dims(&a, &[0, 1, 2]).unwrap().shape(),
             &[1, 1, 1, 2, 2]
         );
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2, 5, 6, 7][..]).unwrap().shape(),
+            expand_dims(&a, &[0, 1, 2, 5, 6, 7]).unwrap().shape(),
             &[1, 1, 1, 2, 2, 1, 1, 1]
         );
 
-        assert!(expand_dims(&a, &[3][..]).is_err());
-        assert!(expand_dims(&a, &[-4][..]).is_err());
-        assert!(expand_dims(&a, &[0, 1, 0][..]).is_err());
-        assert!(expand_dims(&a, &[0, 1, -4][..]).is_err());
+        assert!(expand_dims(&a, &[3]).is_err());
+        assert!(expand_dims(&a, &[0, 1, 0]).is_err());
+        assert!(expand_dims(&a, &[0, 1, -4]).is_err());
     }
 
     #[test]
@@ -945,6 +970,14 @@ mod tests {
         let x = Array::from_int(1);
         assert_eq!(flatten(&x, -3, -1).unwrap().shape(), &[1]);
         assert_eq!(flatten(&x, 0, 0).unwrap().shape(), &[1]);
+    }
+
+    #[test]
+    fn test_unflatten() {
+        let a = array!([1, 2, 3, 4]);
+        let b = unflatten(&a, 0, &[2, -1]).unwrap();
+        let expected = array!([[1, 2], [3, 4]]);
+        assert_eq!(b, expected);
     }
 
     #[test]

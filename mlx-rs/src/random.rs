@@ -21,7 +21,7 @@ impl RandomState {
     }
 
     fn next(&mut self) -> Result<Array> {
-        let next = split(&self.state)?;
+        let next = split(&self.state, 2)?;
         self.state = next.0;
         Ok(next.1)
     }
@@ -65,14 +65,13 @@ pub fn key(seed: u64) -> Result<Array> {
 
 /// Split a PRNG key into two keys and return a tuple.
 #[default_device]
-pub fn split_device(key: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
+pub fn split_device(
+    key: impl AsRef<Array>,
+    num: i32,
+    stream: impl AsRef<Stream>,
+) -> Result<(Array, Array)> {
     let keys = Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_random_split_equal_parts(
-            res,
-            key.as_ref().as_ptr(),
-            2,
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_random_split_num(res, key.as_ref().as_ptr(), num, stream.as_ref().as_ptr())
     })?;
 
     Ok((keys.try_index(0)?, keys.try_index(1)?))
@@ -186,7 +185,7 @@ pub fn normal_device<'a, T: ArrayElement>(
 /// - `shape`: The output shape must be broadcast-compatible with `&mean.shape[..mean.shape.len()-1]` and `&covariance.shape[..covariance.shape.len()-2]`. If empty, the result shape is determined by broadcasting the batch shapes of `mean` and `covariance`.
 /// - `key`: PRNG key.
 #[generate_macro(customize(root = "$crate::random"))]
-#[default_device]
+#[default_device(device = "cpu")] // TODO: not supported on GPU yet
 pub fn multivariate_normal_device<'a, T: ArrayElement>(
     mean: impl AsRef<Array>,
     covariance: impl AsRef<Array>,
@@ -282,7 +281,7 @@ pub fn bernoulli_device<'a>(
     #[optional] key: impl Into<Option<&'a Array>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let default_array = Array::from_float(0.5);
+    let default_array = Array::from_f32(0.5);
     let p = p.into().unwrap_or(&default_array);
 
     let shape = shape.into_option().unwrap_or(p.shape());
@@ -496,10 +495,10 @@ mod tests {
     fn test_split() {
         let key = key(0).unwrap();
 
-        let (k1, k2) = split(&key).unwrap();
+        let (k1, k2) = split(&key, 2).unwrap();
         assert!(k1 != k2);
 
-        let (r1, r2) = split(&key).unwrap();
+        let (r1, r2) = split(&key, 2).unwrap();
         assert!(r1 == k1);
         assert!(r2 == k2);
     }
@@ -629,7 +628,7 @@ mod tests {
     fn test_truncated_normal_single() {
         let key = key(0).unwrap();
         let value = truncated_normal::<_, f32>(0, 10, None, &key).unwrap();
-        assert_array_eq!(value, Array::from_float(0.55), 0.01);
+        assert_array_eq!(value, Array::from_f32(0.55), 0.01);
     }
 
     #[test]
@@ -655,7 +654,7 @@ mod tests {
     fn test_gumbel() {
         let key = key(0).unwrap();
         let value = gumbel::<f32>(None, &key).unwrap();
-        assert_array_eq!(value, Array::from_float(0.13), 0.01);
+        assert_array_eq!(value, Array::from_f32(0.13), 0.01);
     }
 
     #[test]

@@ -2796,7 +2796,7 @@ mod tests {
         assert_eq!(z, expected);
 
         let x = eye::<f32>(2, None, None).unwrap();
-        let y = Array::from_float(7.0);
+        let y = Array::from_f32(7.0);
         let z = inner(&x, &y).unwrap();
         let expected = Array::from_slice(&[7.0, 0.0, 0.0, 7.0], &[2, 2]);
         assert_eq!(z, expected);

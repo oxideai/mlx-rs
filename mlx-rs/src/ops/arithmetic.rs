@@ -6,7 +6,7 @@ use crate::stream::StreamOrDevice;
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
 use crate::Stream;
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
 impl Array {
@@ -665,72 +665,81 @@ impl Array {
 /// let array = Array::from_slice(&[1i32, 2, -3, -4, -5], &[5]);
 /// let result = ops::abs(&array).unwrap();
 /// ```
+#[generate_macro]
 #[default_device]
-pub fn abs_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn abs_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().abs_device(stream)
 }
 
 /// Element-wise inverse cosine.
+#[generate_macro]
 #[default_device]
-pub fn acos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn acos_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arccos(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise inverse hyperbolic cosine.
+#[generate_macro]
 #[default_device]
-pub fn acosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn acosh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arccosh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::add`].
+#[generate_macro]
 #[default_device]
 pub fn add_device(
     lhs: impl AsRef<Array>,
     rhs: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     lhs.as_ref().add_device(rhs, stream)
 }
 
 /// Element-wise inverse sine.
+#[generate_macro]
 #[default_device]
-pub fn asin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn asin_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arcsin(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise inverse hyperbolic sine.
+#[generate_macro]
 #[default_device]
-pub fn asinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn asinh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arcsinh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise inverse tangent.
+#[generate_macro]
 #[default_device]
-pub fn atan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn atan_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arctan(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise inverse hyperbolic tangent.
+#[generate_macro]
 #[default_device]
-pub fn atanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn atanh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_arctanh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise ceiling.
+#[generate_macro]
 #[default_device]
-pub fn ceil_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn ceil_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_ceil(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -814,11 +823,12 @@ where
 /// let clipped = clip(&a, (2.0, 6.0)).unwrap();
 /// assert_eq!(clipped, expected);
 /// ```
+#[generate_macro]
 #[default_device]
 pub fn clip_device<'min, 'max>(
     a: impl AsRef<Array>,
     bound: impl ClipBound<'min, 'max>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let (a_min, a_max) = bound.into_min_max();
 
@@ -849,33 +859,40 @@ pub fn clip_device<'min, 'max>(
 }
 
 /// Element-wise cosine.
+#[generate_macro]
 #[default_device]
-pub fn cos_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn cos_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().cos_device(stream)
 }
 
 /// Element-wise hyperbolic cosine.
+#[generate_macro]
 #[default_device]
-pub fn cosh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn cosh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_cosh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Convert angles from radians to degrees.
+#[generate_macro]
 #[default_device]
-pub fn degrees_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn degrees_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_degrees(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::divide`].
+#[generate_macro]
 #[default_device]
 pub fn divide_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().divide_device(b, stream)
 }
@@ -886,11 +903,12 @@ pub fn divide_device(
 /// numpy-style broadcasting semantics. Either or both input arrays can also be scalars.
 ///
 /// Returns Ok((quotient, remainder)) if the operation was successful.
+#[generate_macro]
 #[default_device]
 pub fn divmod_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array)> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -908,72 +926,85 @@ pub fn divmod_device(
 }
 
 /// Element-wise error function.
+#[generate_macro]
 #[default_device]
-pub fn erf_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn erf_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_erf(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise inverse error function.
+#[generate_macro]
 #[default_device]
-pub fn erfinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn erfinv_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_erfinv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::exp`].
+#[generate_macro]
 #[default_device]
-pub fn exp_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn exp_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().exp_device(stream)
 }
 
 /// Element-wise exponential minus 1.
+#[generate_macro]
 #[default_device]
-pub fn expm1_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn expm1_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_expm1(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::floor`].
+#[generate_macro]
 #[default_device]
-pub fn floor_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn floor_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().floor_device(stream)
 }
 
 /// See [`Array::floor_divide`].
+#[generate_macro]
 #[default_device]
 pub fn floor_divide_device(
     a: impl AsRef<Array>,
     other: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().floor_divide_device(other, stream)
 }
 
 /// See [`Array::log`].
+#[generate_macro]
 #[default_device]
-pub fn log_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn log_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log_device(stream)
 }
 
 /// See [`Array::log10`].
+#[generate_macro]
 #[default_device]
-pub fn log10_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn log10_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log10_device(stream)
 }
 
 /// See [`Array::log1p`].
+#[generate_macro]
 #[default_device]
-pub fn log1p_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn log1p_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log1p_device(stream)
 }
 
 /// See [`Array::log2`].
+#[generate_macro]
 #[default_device]
-pub fn log2_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn log2_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().log2_device(stream)
 }
 
@@ -983,11 +1014,12 @@ pub fn log2_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 /// Either or both input arrays can also be scalars.
 ///
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
+#[generate_macro]
 #[default_device]
 pub fn log_add_exp_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -998,11 +1030,12 @@ pub fn log_add_exp_device(
 }
 
 /// See [`Array::matmul`].
+#[generate_macro]
 #[default_device]
 pub fn matmul_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().matmul_device(b, stream)
 }
@@ -1011,11 +1044,12 @@ pub fn matmul_device(
 ///
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
+#[generate_macro]
 #[default_device]
 pub fn maximum_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -1029,11 +1063,12 @@ pub fn maximum_device(
 ///
 /// Take the element-wise min of two arrays with numpy-style broadcasting semantics. Either or both
 /// input arrays can also be scalars.
+#[generate_macro]
 #[default_device]
 pub fn minimum_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -1044,68 +1079,85 @@ pub fn minimum_device(
 }
 
 /// See [`Array::multiply`].
+#[generate_macro]
 #[default_device]
 pub fn multiply_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().multiply_device(b, stream)
 }
 
 /// See [`Array::negative`].
+#[generate_macro]
 #[default_device]
-pub fn negative_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn negative_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().negative_device(stream)
 }
 
 /// See [`Array::power`].
+#[generate_macro]
 #[default_device]
 pub fn power_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().power_device(b, stream)
 }
 
 /// Convert angles from degrees to radians.
+#[generate_macro]
 #[default_device]
-pub fn radians_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn radians_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_radians(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::reciprocal`].
+#[generate_macro]
 #[default_device]
-pub fn reciprocal_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn reciprocal_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().reciprocal_device(stream)
 }
 
 /// See [`Array::remainder`].
+#[generate_macro]
 #[default_device]
 pub fn remainder_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().remainder_device(b, stream)
 }
 
 /// See [`Array::round`].
+#[generate_macro]
 #[default_device]
 pub fn round_device(
     a: impl AsRef<Array>,
     decimals: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().round_device(decimals, stream)
 }
 
 /// See [`Array::rsqrt`].
+#[generate_macro]
 #[default_device]
-pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn rsqrt_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().rsqrt_device(stream)
 }
 
@@ -1114,30 +1166,37 @@ pub fn rsqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<
 /// See the [python API
 /// docs](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.sigmoid.html#mlx.core.sigmoid)
 /// for more information
+#[generate_macro]
 #[default_device]
-pub fn sigmoid_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sigmoid_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sigmoid(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise sign.
+#[generate_macro]
 #[default_device]
-pub fn sign_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sign_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sign(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::sin`].
+#[generate_macro]
 #[default_device]
-pub fn sin_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sin_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().sin_device(stream)
 }
 
 /// Element-wise hyperbolic sine.
+#[generate_macro]
 #[default_device]
-pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sinh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_sinh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -1148,12 +1207,13 @@ pub fn sinh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 /// See the [python API
 /// docs](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.softmax.html#mlx.core.softmax)
 /// for more information.
+#[generate_macro]
 #[default_device]
 pub fn softmax_device(
     a: impl AsRef<Array>,
     axes: &[i32],
     precise: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
@@ -1171,11 +1231,12 @@ pub fn softmax_device(
 }
 
 /// Perform the softmax along all axes.
+#[generate_macro]
 #[default_device]
 pub fn softmax_all_device(
     a: impl AsRef<Array>,
-    precise: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] precise: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
@@ -1186,38 +1247,46 @@ pub fn softmax_all_device(
 }
 
 /// See [`Array::sqrt`].
+#[generate_macro]
 #[default_device]
-pub fn sqrt_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn sqrt_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     a.as_ref().sqrt_device(stream)
 }
 
 /// See [`Array::square`].
+#[generate_macro]
 #[default_device]
-pub fn square_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn square_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().square_device(stream)
 }
 
 /// See [`Array::subtract`].
+#[generate_macro]
 #[default_device]
 pub fn subtract_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().subtract_device(b, stream)
 }
 
 /// See [`Array::tan`].
+#[generate_macro]
 #[default_device]
-pub fn tan_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn tan_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tan(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Element-wise hyperbolic tangent.
+#[generate_macro]
 #[default_device]
-pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn tanh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tanh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -1228,15 +1297,16 @@ pub fn tanh_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<A
 /// See the [python API docs](
 /// https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.block_masked_mm.html#mlx.core.block_masked_mm
 /// ) for more information.
+#[generate_macro]
 #[default_device]
 pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    block_size: impl Into<Option<i32>>,
-    mask_out: impl Into<Option<&'mo Array>>,
-    mask_lhs: impl Into<Option<&'lhs Array>>,
-    mask_rhs: impl Into<Option<&'rhs Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] block_size: impl Into<Option<i32>>,
+    #[optional] mask_out: impl Into<Option<&'mo Array>>,
+    #[optional] mask_lhs: impl Into<Option<&'lhs Array>>,
+    #[optional] mask_rhs: impl Into<Option<&'rhs Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a_ptr = a.as_ref().as_ptr();
     let b_ptr = b.as_ref().as_ptr();
@@ -1281,14 +1351,15 @@ pub fn block_masked_mm_device<'mo, 'lhs, 'rhs>(
 /// - `b`: input array,
 /// - `alpha`: Scaling factor for the matrix product of `a` and `b` (default: `1`)
 /// - `beta`: Scaling factor for `c` (default: `1`)
+#[generate_macro]
 #[default_device]
 pub fn addmm_device(
     c: impl AsRef<Array>,
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    alpha: impl Into<Option<f32>>,
-    beta: impl Into<Option<f32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] alpha: impl Into<Option<f32>>,
+    #[optional] beta: impl Into<Option<f32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_ptr = c.as_ref().as_ptr();
     let a_ptr = a.as_ref().as_ptr();
@@ -1311,11 +1382,12 @@ pub fn addmm_device(
 
 /// Ordinary inner product of vectors for 1-D arrays, in higher dimensions a sum product over the
 /// last axes.
+#[generate_macro]
 #[default_device]
 pub fn inner_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
@@ -1326,11 +1398,12 @@ pub fn inner_device(
 
 /// Compute the outer product of two 1-D arrays, if the array’s passed are not 1-D a flatten op will
 /// be run beforehand.
+#[generate_macro]
 #[default_device]
 pub fn outer_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
@@ -1376,12 +1449,13 @@ impl<'a, const M: usize, const N: usize> From<(&'a [i32; M], &'a [i32; N])> for 
 /// - `axes`: The number of dimensions to sum over. If an integer is provided, then sum over
 ///   the last axes dimensions of a and the first axes dimensions of b. If a tuple of lists is
 ///   provided, then sum over the corresponding dimensions of a and b. (default: 2)
+#[generate_macro]
 #[default_device]
 pub fn tensordot_device<'a>(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    axes: impl Into<TensorDotDims<'a>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axes: impl Into<TensorDotDims<'a>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();

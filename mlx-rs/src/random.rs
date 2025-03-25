@@ -5,7 +5,7 @@ use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
 use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
 use mach_sys::mach_time;
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 use parking_lot::Mutex;
 use std::borrow::Cow;
 use std::sync::OnceLock;
@@ -97,13 +97,14 @@ pub fn split_device(
 /// // same, but in range [0.5, 1)
 /// let array = mlx_rs::random::uniform::<_, f32>(0.5f32, 1f32, &[50], &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     lower: E,
     upper: E,
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
@@ -147,13 +148,14 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
 /// // generate an array of f32 with normal distribution in shape [10, 5]
 /// let array = mlx_rs::random::normal::<f32>(&[10, 5], None, None, &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn normal_device<'a, T: ArrayElement>(
-    shape: impl IntoOption<&'a [i32]>,
-    loc: impl Into<Option<f32>>,
-    scale: impl Into<Option<f32>>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] loc: impl Into<Option<f32>>,
+    #[optional] scale: impl Into<Option<f32>>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key)?;
@@ -182,13 +184,14 @@ pub fn normal_device<'a, T: ArrayElement>(
 /// - `covariance`: array  of shape `[..., n, n]`, the covariance matrix of the distribution. The batch shape `...` must be broadcast-compatible with that of `mean`.
 /// - `shape`: The output shape must be broadcast-compatible with `&mean.shape[..mean.shape.len()-1]` and `&covariance.shape[..covariance.shape.len()-2]`. If empty, the result shape is determined by broadcasting the batch shapes of `mean` and `covariance`.
 /// - `key`: PRNG key.
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device(device = "cpu")] // TODO: not supported on GPU yet
 pub fn multivariate_normal_device<'a, T: ArrayElement>(
     mean: impl AsRef<Array>,
     covariance: impl AsRef<Array>,
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key)?;
@@ -221,13 +224,14 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
 /// // generate an array of Int values, one in the range [0, 20) and one in the range [10, 100)
 /// let array = random::randint::<_, i32>(array!([0, 20]), array!([10, 100]), None, &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
     lower: E,
     upper: E,
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
@@ -269,12 +273,13 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
 /// // generate an array of [3] Bool with the given p values
 /// let array = random::bernoulli(&array!([0.1, 0.5, 0.8]), None, &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn bernoulli_device<'a>(
-    p: impl Into<Option<&'a Array>>,
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] p: impl Into<Option<&'a Array>>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let default_array = Array::from_f32(0.5);
     let p = p.into().unwrap_or(&default_array);
@@ -309,13 +314,14 @@ pub fn bernoulli_device<'a>(
 /// // and one in the range 10 ..< 100
 /// let value = random::truncated_normal::<_, f32>(array!([0, 10]), array!([10, 100]), None, &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
     lower: E,
     upper: E,
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let lb: Array = lower.into();
     let ub: Array = upper.into();
@@ -350,11 +356,12 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
 /// // generate an array of Float with Gumbel distribution in shape [10, 5]
 /// let array = mlx_rs::random::gumbel::<f32>(&[10, 5], &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn gumbel_device<'a, T: ArrayElement>(
-    shape: impl IntoOption<&'a [i32]>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] shape: impl IntoOption<&'a [i32]>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
     let key = key_or_next(key)?;
@@ -408,13 +415,14 @@ pub enum ShapeOrCount<'a> {
 /// // produces Array of u32 shape &[5]
 /// let result = mlx_rs::random::categorical(&logits, None, None, &key);
 /// ```
+#[generate_macro(customize(root = "$crate::random"))]
 #[default_device]
 pub fn categorical_device<'a>(
     logits: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    shape_or_count: impl Into<Option<ShapeOrCount<'a>>>,
-    key: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] shape_or_count: impl Into<Option<ShapeOrCount<'a>>>,
+    #[optional] key: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
     let key = key_or_next(key)?;

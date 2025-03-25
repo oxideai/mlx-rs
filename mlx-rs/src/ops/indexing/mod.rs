@@ -687,7 +687,11 @@ pub fn topk_device(
 /// Returns the `k` largest elements from the flattened input array.
 #[generate_macro]
 #[default_device]
-pub fn topk_all_device(a: impl AsRef<Array>, k: i32, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn topk_all_device(
+    a: impl AsRef<Array>,
+    k: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_topk_all(res, a.as_ref().as_ptr(), k, stream.as_ref().as_ptr())
     })

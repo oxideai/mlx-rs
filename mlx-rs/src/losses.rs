@@ -523,13 +523,12 @@ impl SmoothL1Loss {
         let reduction = self.reduction;
 
         check_shape(predictions, targets, "predictions", "targets")?;
-        let diff = predictions.subtract(targets)?;
+        let diff = predictions.subtract(targets)?.abs()?;
+        let beta = array!(beta);
         let loss = r#where(
-            &diff.lt(array!(beta))?,
-            array!(0.5)
-                .multiply(square(&diff)?)?
-                .divide(&array!(beta))?,
-            abs(&diff)?.subtract(array!(0.5).multiply(array!(beta))?)?,
+            &diff.lt(&beta)?,
+            array!(0.5).multiply(square(&diff)?)?.divide(&beta)?,
+            diff.subtract(array!(0.5).multiply(beta)?)?,
         )?;
         reduction.reduce(loss)
     }

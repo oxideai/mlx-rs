@@ -527,9 +527,7 @@ impl SmoothL1Loss {
         let beta = array!(beta);
         let loss = r#where(
             &diff.lt(&beta)?,
-            array!(0.5)
-                .multiply(square(&diff)?)?
-                .divide(&beta)?,
+            array!(0.5).multiply(square(&diff)?)?.divide(&beta)?,
             diff.subtract(array!(0.5).multiply(beta)?)?,
         )?;
         reduction.reduce(loss)

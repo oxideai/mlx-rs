@@ -1,10 +1,6 @@
 //! Unofficial rust bindings for the [MLX
 //! framework](https://github.com/ml-explore/mlx).
 //! 
-//! **Note**: The following documentation is adapted from the MLX framework's
-//! [python
-//! documentation](https://ml-explore.github.io/mlx/build/html/index.html).
-//! 
 //! # Table of Contents
 //! 
 //! - [Quick Start](#quick-start)

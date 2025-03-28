@@ -31,6 +31,11 @@ fn remove_attribute(attrs: &mut Vec<syn::Attribute>, targets: &[&str]) {
     attrs.retain(|attr| !targets.iter().any(|target| !attr.path().is_ident(target)));
 }
 
+/// Remove "$" prefix from the string
+fn remove_prefix_from_str(s: &str) -> String {
+    s.trim_start_matches("$").to_string()
+}
+
 pub fn expand_generate_macro(
     attr: Option<Meta>,
     mut item: ItemFn, // The original function should be kept as is
@@ -41,12 +46,13 @@ pub fn expand_generate_macro(
     };
 
     // The mod path where the function can be accessed publicly
-    let fn_mod_path = match customize.root {
+    let (fn_mod_path, doc_mod_path) = match customize.root {
         Some(lit_str) => {
             let tokens: proc_macro2::TokenStream = lit_str.parse()?;
-            quote! { #tokens }
+            let s = remove_prefix_from_str(&lit_str.value());
+            (quote! { #tokens }, s)
         }
-        None => quote! { $crate::ops },
+        None => (quote! { $crate::ops }, "crate::ops".into()),
     };
 
     let (default_generics, dtype_generics) =
@@ -81,6 +87,7 @@ pub fn expand_generate_macro(
 
     let generated = generate_macro(
         &fn_mod_path,
+        &doc_mod_path,
         fn_ident,
         &parsed_args,
         &default_generics,
@@ -168,6 +175,7 @@ fn parse_args(args: Vec<&mut syn::PatType>) -> Vec<Arg> {
 
 fn generate_macro(
     fn_mod_path: &proc_macro2::TokenStream,
+    doc_mod_path: &str,
     fn_ident: &Ident,
     args: &[Arg],
     default_generics: &proc_macro2::TokenStream,
@@ -192,8 +200,8 @@ fn generate_macro(
     );
 
     let macro_docs = format!(
-        "Macro generated for the function `{}::{}`. See the function documentation for more details.",
-        fn_mod_path, fn_ident
+        "Macro generated for the function [`{}::{}`]. See the function documentation for more details.",
+        doc_mod_path, trimmed_fn_ident
     );
 
     let generated = quote! {

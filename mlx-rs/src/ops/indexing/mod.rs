@@ -508,7 +508,7 @@ impl Array {
 /// - `a`: The input array.
 /// - `axis`: Axis to reduce over
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmax_device(
     a: impl AsRef<Array>,
@@ -535,7 +535,7 @@ pub fn argmax_device(
 ///
 /// - `a`: The input array.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmax_all_device(
     a: impl AsRef<Array>,
@@ -563,7 +563,7 @@ pub fn argmax_all_device(
 /// - `a`: The input array.
 /// - `axis`: Axis to reduce over.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmin_device(
     a: impl AsRef<Array>,
@@ -590,7 +590,7 @@ pub fn argmin_device(
 ///
 /// - `a`: The input array.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmin_all_device(
     a: impl AsRef<Array>,
@@ -610,7 +610,7 @@ pub fn argmin_all_device(
 }
 
 /// See [`Array::take_along_axis`]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_along_axis_device(
     a: impl AsRef<Array>,
@@ -622,7 +622,7 @@ pub fn take_along_axis_device(
 }
 
 /// See [`Array::put_along_axis`]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn put_along_axis_device(
     a: impl AsRef<Array>,
@@ -636,7 +636,7 @@ pub fn put_along_axis_device(
 }
 
 /// See [`Array::take`]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_device(
     a: impl AsRef<Array>,
@@ -648,7 +648,7 @@ pub fn take_device(
 }
 
 /// See [`Array::take_all`]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_all_device(
     a: impl AsRef<Array>,
@@ -669,7 +669,7 @@ pub fn take_all_device(
 /// - `a`: The input array.
 /// - `k`: The number of elements to return.
 /// - `axis`: Axis to sort over. Default to `-1` if not specified.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn topk_device(
     a: impl AsRef<Array>,
@@ -685,7 +685,7 @@ pub fn topk_device(
 }
 
 /// Returns the `k` largest elements from the flattened input array.
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn topk_all_device(
     a: impl AsRef<Array>,

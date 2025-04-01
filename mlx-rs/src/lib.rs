@@ -236,6 +236,13 @@
 //! to parallelize operations without worrying about racing conditions. We
 //! should check if this is true given that we've already observed data racing
 //! when executing unit tests in parallel.
+//! 
+//! # Indexing Arrays
+//! 
+//! See also [MLX python
+//! documentation](https://ml-explore.github.io/mlx/build/html/usage/indexing.html)
+//! 
+//! Please refer to the indexing modules for more details [`crate::ops::indexing`].
 
 
 #![deny(unused_unsafe, missing_debug_implementations, missing_docs)]

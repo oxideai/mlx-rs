@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Ok(loss)
     };
 
-    let mut grad_fn = transforms::grad(loss_fn, &[0]);
+    let mut grad_fn = transforms::grad(loss_fn);
 
     let now = std::time::Instant::now();
     let mut inputs = [w, x, y];

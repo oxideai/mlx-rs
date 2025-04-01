@@ -243,6 +243,22 @@
 //! documentation](https://ml-explore.github.io/mlx/build/html/usage/indexing.html)
 //! 
 //! Please refer to the indexing modules for more details [`crate::ops::indexing`].
+//! 
+//! # Saving and Loading
+//! 
+//! See also [MLX python
+//! documentation](https://ml-explore.github.io/mlx/build/html/usage/saving_and_loading.html)
+//! 
+//! `mlx-rs` supports loading from `.npy` and `.safetensors` files and saving to
+//! `.safetensors` files. Module parameters and optimizer states can also be saved
+//! and loaded from `.safetensors` files.
+//! 
+//! | type | load function | save function |
+//! |------|---------------|----------------|
+//! | [`Array`] | [`Array::load_numpy`] | [`Array::save_numpy`] |
+//! | `HashMap<String, Array>` | [`Array::load_safetensors`] | [`Array::save_safetensors`] |
+//! | [`module::Module`] | [`module::ModuleParametersExt::load_safetensors`] | [`module::ModuleParametersExt::save_safetensors`] |
+//! | [`optimizers::Optimizer`] | [`optimizers::OptimizerState::load_safetensors`] | [`optimizers::OptimizerState::save_safetensors`] |
 
 
 #![deny(unused_unsafe, missing_debug_implementations, missing_docs)]

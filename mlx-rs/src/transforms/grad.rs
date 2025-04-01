@@ -13,12 +13,7 @@ fn build_gradient_inner<'a>(
 ) -> impl FnMut(&[Array]) -> Result<Vec<Array>> + 'a {
     move |arrays: &[Array]| -> Result<Vec<Array>> {
         let cvg = ClosureValueAndGrad::try_from_op(|res| unsafe {
-            mlx_sys::mlx_value_and_grad(
-                res,
-                closure.as_ptr(),
-                argnums.as_ptr(),
-                argnums.len(),
-            )
+            mlx_sys::mlx_value_and_grad(res, closure.as_ptr(), argnums.as_ptr(), argnums.len())
         })?;
         let result = value_and_gradient(cvg.as_ptr(), arrays.iter())?;
         Ok(result.1)
@@ -207,12 +202,10 @@ where
 
 /// Returns a function which computes the gradient of `f` with the default
 /// argument numbers `&[0]`.
-/// 
+///
 /// See also [`grad_with_arg_nums`] for a version that allows specifying the
 /// argument numbers
-pub fn grad<'a, F, Args, Output, Err>(
-    f: F
-) -> impl FnMut(Args) -> Result<Output> + 'a
+pub fn grad<'a, F, Args, Output, Err>(f: F) -> impl FnMut(Args) -> Result<Output> + 'a
 where
     F: IntoGrad<'a, Args, Output, Err>,
 {
@@ -220,7 +213,7 @@ where
 }
 
 /// Returns a function which computes the gradient of `f`.
-/// 
+///
 /// See also [`grad`] for a version that uses the default argument numbers
 /// `&[0]`.
 pub fn grad_with_argnums<'a, F, Args, Output, Err>(
@@ -249,7 +242,8 @@ mod tests {
         let argnums = &[0];
 
         // TODO: how to make this more "functional"?
-        let grad_fn = move |args: &[Array]| -> Vec<Array> { grad_with_argnums(fun, argnums)(args).unwrap() };
+        let grad_fn =
+            move |args: &[Array]| -> Vec<Array> { grad_with_argnums(fun, argnums)(args).unwrap() };
         let (z, d2fdx2) = value_and_grad_with_argnums(grad_fn, argnums)(x).unwrap();
 
         assert_eq!(z[0].item::<f32>(), 1.0);

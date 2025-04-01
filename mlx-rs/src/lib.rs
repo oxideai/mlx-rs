@@ -6,6 +6,8 @@
 //! - [Quick Start](#quick-start)
 //! - [Lazy Evaluation](#lazy-evaluation)
 //! - [Unified Memory](#unified-memory)
+//! - [Indexing Arrays](#indexing-arrays)
+//! - [Saving and Loading](#saving-and-loading)
 //! 
 //! # Quick Start
 //! 
@@ -242,7 +244,7 @@
 //! See also [MLX python
 //! documentation](https://ml-explore.github.io/mlx/build/html/usage/indexing.html)
 //! 
-//! Please refer to the indexing modules for more details [`crate::ops::indexing`].
+//! Please refer to the indexing modules ([`ops::indexing`]) for more details.
 //! 
 //! # Saving and Loading
 //! 
@@ -259,6 +261,15 @@
 //! | `HashMap<String, Array>` | [`Array::load_safetensors`] | [`Array::save_safetensors`] |
 //! | [`module::Module`] | [`module::ModuleParametersExt::load_safetensors`] | [`module::ModuleParametersExt::save_safetensors`] |
 //! | [`optimizers::Optimizer`] | [`optimizers::OptimizerState::load_safetensors`] | [`optimizers::OptimizerState::save_safetensors`] |
+//! 
+//! # Function Transforms
+//! 
+//! See also [MLX python
+//! //! documentation](https://ml-explore.github.io/mlx/build/html/usage/function_transforms.html)
+//! 
+//! Please refer to the transforms module ([`transforms`]) for more details.
+//! 
+//! # Compilation
 
 
 #![deny(unused_unsafe, missing_debug_implementations, missing_docs)]

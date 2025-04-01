@@ -1,4 +1,6 @@
-//! Implementations of function transformations.
+//! Function transforms
+//! 
+//! 
 
 use mlx_sys::mlx_closure_value_and_grad;
 

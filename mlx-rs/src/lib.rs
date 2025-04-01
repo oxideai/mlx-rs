@@ -5,6 +5,7 @@
 //! 
 //! - [Quick Start](#quick-start)
 //! - [Lazy Evaluation](#lazy-evaluation)
+//! - [Unified Memory](#unified-memory)
 //! 
 //! # Quick Start
 //! 
@@ -194,6 +195,48 @@
 //! Using arrays for control flow should be done with care. The above example
 //! works and can even be used with gradient transformations. However, this can
 //! be very inefficient if evaluations are done too frequently.
+//! 
+//! # Unified Memory
+//! 
+//! See also [MLX python
+//! documentation](https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html)
+//! 
+//! Apple silicon has a unified memory architecture. The CPU and GPU have direct
+//! access to the same memory pool. MLX is designed to take advantage of that.
+//! 
+//! Concretely, when you make an array in MLX you don’t have to specify its
+//! location:
+//! 
+//! ```rust
+//! // let a = mlx_rs::random::normal(&[100], None, None, None, None).unwrap();
+//! // let b = mlx_rs::random::normal(&[100], None, None, None, None).unwrap();
+//! 
+//! let a = mlx_rs::normal!(shape=&[100]).unwrap();
+//! let b = mlx_rs::normal!(shape=&[100]).unwrap();
+//! ```
+//! 
+//! Both `a` and `b` live in unified memory.
+//! 
+//! In MLX, rather than moving arrays to devices, you specify the device when
+//! you run the operation. Any device can perform any operation on `a` and `b`
+//! without needing to move them from one memory location to another. For
+//! example:
+//! 
+//! ```rust,ignore
+//! // mlx_rs::ops::add_device(&a, &b, StreamOrDevice::cpu()).unwrap();
+//! // mlx_rs::ops::add_device(&a, &b, StreamOrDevice::gpu()).unwrap();
+//! 
+//! mlx_rs::add!(&a, &b, stream=StreamOrDevice::cpu()).unwrap();
+//! mlx_rs::add!(&a, &b, stream=StreamOrDevice::gpu()).unwrap();
+//! ```
+//! 
+//! In the above, both the CPU and the GPU will perform the same add operation.
+//! 
+//! TODO: The remaining python documentations states that the stream can be used
+//! to parallelize operations without worrying about racing conditions. We
+//! should check if this is true given that we've already observed data racing
+//! when executing unit tests in parallel.
+
 
 #![deny(unused_unsafe, missing_debug_implementations, missing_docs)]
 #![cfg_attr(test, allow(clippy::approx_constant))]

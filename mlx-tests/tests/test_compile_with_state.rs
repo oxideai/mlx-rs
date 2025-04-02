@@ -70,13 +70,13 @@ fn test_compile_module_and_optimizer() {
     let mut compiled = compile_with_state(step, None);
 
     // Check that the original function works
-    let original = step(x.as_slice(), &mut model);
+    let original = step(x.as_slice(), &mut state);
 
     // Make sure the compiled function produces the same result
-    let result = compiled(x.as_slice(), &mut model).unwrap();
+    let result = compiled(x.as_slice(), &mut state).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
-    let result = compiled(x.as_slice(), &mut model).unwrap();
+    let result = compiled(x.as_slice(), &mut state).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
 }

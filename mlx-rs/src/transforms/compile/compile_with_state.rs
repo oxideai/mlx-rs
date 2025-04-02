@@ -432,7 +432,7 @@ impl<F> CompiledState<F> {
         state: &mut U,
     ) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&mut U, &[Array]) -> Vec<Array>,
+        F: FnMut(&[Array], &mut U) -> Vec<Array>,
         U: Updatable,
     {
         self.call_mut_with_state(args, state).or_else(|_e| {
@@ -452,7 +452,7 @@ impl<F> CompiledState<F> {
         state: &mut U,
     ) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&mut U, &[Array]) -> Result<Vec<Array>, Exception>,
+        F: FnMut(&[Array], &mut U) -> Result<Vec<Array>, Exception>,
         U: Updatable,
     {
         self.fallible_call_mut_with_state(args, state)
@@ -473,7 +473,7 @@ impl<F> CompiledState<F> {
         state: &mut U,
     ) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&mut U, &[Array]) -> Vec<Array>,
+        F: FnMut(&[Array], &mut U) -> Vec<Array>,
         U: Updatable,
     {
         let args_len = args.len();
@@ -543,7 +543,7 @@ impl<F> CompiledState<F> {
         state: &mut U,
     ) -> Result<Vec<Array>, Exception>
     where
-        F: FnMut(&mut U, &[Array]) -> Result<Vec<Array>, Exception>,
+        F: FnMut(&[Array], &mut U) -> Result<Vec<Array>, Exception>,
         U: Updatable,
     {
         let args_len = args.len();

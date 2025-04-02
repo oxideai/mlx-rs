@@ -25,7 +25,7 @@ fn test_compile_module() {
     let x = ones::<f32>(&[10, 1]).unwrap();
     let x = vec![x];
 
-    let step = move |model: &mut LinearFunctionModel, x: &[Array]| -> Vec<Array> {
+    let step = move |x: &[Array], model: &mut LinearFunctionModel| -> Vec<Array> {
         let mut lg = nn::value_and_grad(loss);
         let x = &x[0];
         let (loss, _grad) = lg(model, x).unwrap();
@@ -33,19 +33,19 @@ fn test_compile_module() {
     };
 
     // Check that the original function works
-    let original = step(&mut model, x.as_slice());
+    let original = step(x.as_slice(), &mut model);
 
     // Make sure the compiled function produces the same result
     let mut compiled = compile_with_state(step, None);
-    let result = compiled(&mut model, x.as_slice()).unwrap();
+    let result = compiled(x.as_slice(), &mut model).unwrap();
     assert_eq!(&original, &result);
-    let result = compiled(&mut model, x.as_slice()).unwrap();
+    let result = compiled(x.as_slice(), &mut model).unwrap();
     assert_eq!(&original, &result);
 }
 
 #[test]
 fn test_compile_module_and_optimizer() {
-    let loss = |model: &mut LinearFunctionModel, x: &Array| -> Array {
+    let loss = |x: &Array, model: &mut LinearFunctionModel| -> Array {
         let y = model.forward(x).unwrap();
         y.square().unwrap().sum(None, None).unwrap()
     };
@@ -58,7 +58,7 @@ fn test_compile_module_and_optimizer() {
     let x = vec![x];
 
     let step =
-        move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
+        move |x: &[Array], (model, optimizer): &mut (LinearFunctionModel, Sgd)| -> Vec<Array> {
             let mut lg = nn::value_and_grad(loss);
             let x = &x[0];
             let (loss, grad) = lg(model, x).unwrap();
@@ -70,13 +70,13 @@ fn test_compile_module_and_optimizer() {
     let mut compiled = compile_with_state(step, None);
 
     // Check that the original function works
-    let original = step(&mut state, x.as_slice());
+    let original = step(x.as_slice(), &mut model);
 
     // Make sure the compiled function produces the same result
-    let result = compiled(&mut state, x.as_slice()).unwrap();
+    let result = compiled(x.as_slice(), &mut model).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
-    let result = compiled(&mut state, x.as_slice()).unwrap();
+    let result = compiled(x.as_slice(), &mut model).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
 }
@@ -90,7 +90,7 @@ fn test_compile_module_with_error() {
     let mut model = LinearFunctionModel::new(&[10]).unwrap();
 
     let step =
-        move |model: &mut LinearFunctionModel, x: &[Array]| -> Result<Vec<Array>, Exception> {
+        move |x: &[Array], model: &mut LinearFunctionModel| -> Result<Vec<Array>, Exception> {
             let mut lg = nn::value_and_grad(loss);
             let x = &x[0];
             let (loss, _grad) = lg(model, x)?;
@@ -109,11 +109,11 @@ fn test_compile_module_with_error() {
 
     // Success case
     // Check that the original function works
-    let original = step(&mut model, x_ok.as_slice()).unwrap();
+    let original = step(x_ok.as_slice(), &mut model).unwrap();
 
-    let result = compiled(&mut model, x_ok.as_slice()).unwrap();
+    let result = compiled(x_ok.as_slice(), &mut model).unwrap();
     assert_eq!(&original, &result);
-    let result = compiled(&mut model, x_ok.as_slice()).unwrap();
+    let result = compiled(x_ok.as_slice(), &mut model).unwrap();
     assert_eq!(&original, &result);
 
     // Error case
@@ -137,8 +137,8 @@ fn test_compile_module_and_optimizer_with_error() {
     // and we can check that the compiled function produces the same result
     let optimizer = Sgd::new(0.0);
 
-    let step = move |(model, optimizer): &mut (LinearFunctionModel, Sgd),
-                     x: &[Array]|
+    let step = move |x: &[Array],
+                     (model, optimizer): &mut (LinearFunctionModel, Sgd)|
           -> Result<Vec<Array>, Exception> {
         let mut lg = nn::value_and_grad(loss);
         let x = &x[0];
@@ -159,12 +159,12 @@ fn test_compile_module_and_optimizer_with_error() {
 
     // Success case
     // Check that the original function works
-    let original = step(&mut state, x_ok.as_slice()).unwrap();
+    let original = step(x_ok.as_slice(), &mut state).unwrap();
 
-    let result = compiled(&mut state, x_ok.as_slice()).unwrap();
+    let result = compiled(x_ok.as_slice(), &mut state).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
-    let result = compiled(&mut state, x_ok.as_slice()).unwrap();
+    let result = compiled(x_ok.as_slice(), &mut state).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
 

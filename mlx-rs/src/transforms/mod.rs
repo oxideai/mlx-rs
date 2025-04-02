@@ -3,6 +3,11 @@
 //! This mod provides functions for automatic differentiation and other
 //! transformations on functions.
 //! 
+//! **WARN**: Because function transforms including compilation works on
+//! the computation graph, the user must ensure that all `Array`s are passed
+//! as inputs to the function/closure. Closures with captured `Array`s may
+//! not work as expected and may lead to undefined behavior.
+//! 
 //! # Automatic Differentiation
 //! 
 //! Automatic differentiation in MLX works on functions rather than on implicit

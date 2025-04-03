@@ -29,13 +29,13 @@
 //! let y = array!(2.0);
 //! 
 //! // Regular call, no compilation
-//! let result = fun((&x, &y))?;
+//! let result = fun((&x, &y)).unwrap();
 //! // Prints: array(2.36788, dtype=float32)
 //! println!("{:?}", result);
 //! 
 //! // Compile the function
 //! let compiled_fun = compile(fun, None);
-//! let result = compiled_fun((&x, &y))?;
+//! let result = compiled_fun((&x, &y)).unwrap();
 //! // Prints: array(2.36788, dtype=float32)
 //! println!("{:?}", result);
 //! ```
@@ -62,10 +62,10 @@
 //! let compiled_fun = compile(fun, None);
 //! 
 //! // Compiled here
-//! let result = compiled_fun((&x, &y))?;
+//! let result = compiled_fun((&x, &y)).unwrap();
 //! 
 //! // Not compiled again
-//! let result = compiled_fun((&x, &y))?;
+//! let result = compiled_fun((&x, &y)).unwrap();
 //! 
 //! // Not compiled again
 //! let compiled_fun2 = compile(fun, None);
@@ -109,7 +109,7 @@
 //! let y = array!(2.0);
 //! 
 //! // This will crash or lead to undefined behavior
-//! let result = compiled((&x, &y))?; 
+//! let result = compiled((&x, &y)).unwrap(); 
 //! println!("{:?}", result);
 //! ```
 //! 

@@ -38,13 +38,13 @@
 //! let a = array!([1, 2, 3, 4]);
 //! let b = array!([1.0, 2.0, 3.0, 4.0]);
 //! 
-//! let c = a + b; // c is not evaluated
+//! let c = &a + &b; // c is not evaluated
 //! c.eval().unwrap(); // evaluates c
 //! 
-//! let d = a + b;
+//! let d = &a + &b;
 //! println!("{:?}", d); // evaluates d
 //! 
-//! let e = a + b;
+//! let e = &a + &b;
 //! let e_slice: &[f32] = e.as_slice(); // evaluates e
 //! ```
 //! 

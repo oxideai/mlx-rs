@@ -113,11 +113,30 @@
 //! println!("{:?}", result);
 //! ```
 //! 
-//! Use [`compile_with_state()`] to compile functions that have side effects
-//! and pass the state as an mutable reference.
+//! Use [`compile_with_state()`] to compile functions that have side effects and
+//! pass the state as an mutable reference.
 //! 
-//! TODO: `compile_with_state` example
-
+//! ```rust
+//! let mut state = vec![];
+//! 
+//! let fun = |state: &mut Vec<Array>, (x, y): (&Array, &Array)| {
+//!     let z = x + y;
+//!     state.push(z);
+//!     mlx_rs::exp!(z)
+//! };
+//! 
+//! let compiled = compile_with_state(fun, None);
+//! let result = compiled(&mut state, (&x, &y)).unwrap();
+//! println!("{:?}", result);
+//! println!("{:?}", state);
+//! ```
+//! 
+//! This is particularly useful for compiling a function which includes an
+//! update to a container of arrays, as is commonly done when training the
+//! parameters of a [`crate::module::Module`].
+//! 
+//! See mlx-rs/mlx-tests/tests/test_compile_with_state.rs for more examples.
+//! 
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};

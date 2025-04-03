@@ -34,7 +34,7 @@
 //! println!("{:?}", result);
 //!
 //! // Compile the function
-//! let compiled_fun = compile(fun, None);
+//! let mut compiled_fun = compile(fun, None);
 //! let result = compiled_fun((&x, &y)).unwrap();
 //! // Prints: array(2.36788, dtype=float32)
 //! println!("{:?}", result);
@@ -59,7 +59,7 @@
 //! let x = array!(1.0);
 //! let y = array!(2.0);
 //!
-//! let compiled_fun = compile(fun, None);
+//! let mut compiled_fun = compile(fun, None);
 //!
 //! // Compiled here
 //! let result = compiled_fun((&x, &y)).unwrap();
@@ -92,23 +92,22 @@
 //! Compiled functions are intended to be pure; that is they should not have
 //! side effects. For example:
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use mlx_rs::{Array, array, transforms::compile::compile};
 //!
-//! let mut state = vec![];
+//! let mut c = array!(0.5);
 //!
 //! let fun = |(x, y): (&Array, &Array)| {
-//!     let z = x + y;
-//!     state.push(z);
+//!     let z = (x + y) * c;
 //!     mlx_rs::exp!(z)
 //! };
 //!
-//! let compiled = compile(fun, None);
+//! let mut compiled = compile(fun, None);
 //!
 //! let x = array!(1.0);
 //! let y = array!(2.0);
 //!
-//! // This will crash or lead to undefined behavior
+//! // This may lead to undefined behavior
 //! let result = compiled((&x, &y)).unwrap();
 //! println!("{:?}", result);
 //! ```
@@ -117,6 +116,7 @@
 //! pass the state as an mutable reference.
 //!
 //! ```rust
+//! use mlx_rs::{Array, array, transforms::compile::compile_with_state};
 //! let mut state = vec![];
 //!
 //! let fun = |state: &mut Vec<Array>, (x, y): (&Array, &Array)| {
@@ -125,7 +125,10 @@
 //!     mlx_rs::exp!(z)
 //! };
 //!
-//! let compiled = compile_with_state(fun, None);
+//! let x = array!(1.0);
+//! let y = array!(2.0);
+//! 
+//! let mut compiled = compile_with_state(fun, None);
 //! let result = compiled(&mut state, (&x, &y)).unwrap();
 //! println!("{:?}", result);
 //! println!("{:?}", state);

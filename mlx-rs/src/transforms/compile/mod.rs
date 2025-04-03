@@ -19,9 +19,9 @@
 //! # Basic usage
 //! 
 //! ```rust
-//! use mlx_rs::{Array, array, transforms::compile::compile};
+//! use mlx_rs::{Array, array, transforms::compile::compile, error::Exception};
 //! 
-//! let fun = |(x, y): (&Array, &Array)| {
+//! let fun = |(x, y): (&Array, &Array)| -> Result<Array, Exception> {
 //!    mlx_rs::exp!(x.negative()?)?.add(y)
 //! };
 //! 

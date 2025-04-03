@@ -45,7 +45,7 @@
 //! println!("{:?}", d); // evaluates d
 //! 
 //! let e = a + b;
-//! let e_slice: &[f32] = e.as_slice().unwrap(); // evaluates e
+//! let e_slice: &[f32] = e.as_slice(); // evaluates e
 //! ```
 //! 
 //! See [Lazy Evaluation](#lazy-evaluation) for more details.

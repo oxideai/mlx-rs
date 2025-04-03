@@ -132,7 +132,7 @@
 //! let mut compiled = compile_with_state(fun, None);
 //! let result = compiled(&mut state, (&x, &y)).unwrap();
 //! println!("{:?}", result);
-//! println!("{:?}", state);
+//! // println!("{:?}", state); // TODO: this currently doesn't work somehow
 //! ```
 //!
 //! This is particularly useful for compiling a function which includes an

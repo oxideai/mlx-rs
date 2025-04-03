@@ -507,7 +507,7 @@ impl<F> CompiledState<F> {
             }
 
             // call the function with the tracer arguments and the state holding tracers
-            let mut result = (f)(*state_clone.borrow_mut(), tracer_args);
+            let mut result = (f)(tracer_args, *state_clone.borrow_mut());
 
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone
@@ -534,7 +534,7 @@ impl<F> CompiledState<F> {
         };
 
         let inner_closure = Closure::new(inner);
-        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, state, args)
+        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, args, state)
     }
 
     fn fallible_call_mut_with_state<U>(
@@ -577,7 +577,7 @@ impl<F> CompiledState<F> {
             }
 
             // call the function with the tracer arguments and the state holding tracers
-            let mut result = (f)(*state_clone.borrow_mut(), tracer_args)?;
+            let mut result = (f)(tracer_args, *state_clone.borrow_mut())?;
 
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone

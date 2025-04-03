@@ -121,8 +121,9 @@
 //!
 //! let fun = |state: &mut Vec<Array>, (x, y): (&Array, &Array)| {
 //!     let z = x + y;
+//!     let result = mlx_rs::exp!(&z);
 //!     state.push(z);
-//!     mlx_rs::exp!(z)
+//!     result
 //! };
 //!
 //! let x = array!(1.0);

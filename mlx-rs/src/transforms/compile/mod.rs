@@ -127,7 +127,7 @@
 //!
 //! let x = array!(1.0);
 //! let y = array!(2.0);
-//! 
+//!
 //! let mut compiled = compile_with_state(fun, None);
 //! let result = compiled(&mut state, (&x, &y)).unwrap();
 //! println!("{:?}", result);

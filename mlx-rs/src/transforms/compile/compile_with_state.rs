@@ -162,7 +162,7 @@ where
     fn compile<'args>(
         self,
         shapeless: bool,
-    ) -> impl CallMutWithState<U, Self::Args<'args>, Vec<Array>, Exception> {
+    ) -> impl CallMutWithState<Self::Args<'args>, U, Vec<Array>, Exception> {
         let id = type_id_to_usize(&self);
         let state = CompiledState {
             f: self,
@@ -186,7 +186,7 @@ where
     fn compile<'args>(
         mut self,
         shapeless: bool,
-    ) -> impl CallMutWithState<U, Self::Args<'args>, Array, Exception> {
+    ) -> impl CallMutWithState<Self::Args<'args>, U, Array, Exception> {
         let id = type_id_to_usize(&self);
         let f = move |args: &[Array], state: &mut U| -> Result<Vec<Array>, Exception> {
             let result = (self)(&args[0], state)?;
@@ -210,7 +210,7 @@ where
     fn compile<'args>(
         mut self,
         shapeless: bool,
-    ) -> impl CallMutWithState<U, Self::Args<'args>, Array, Exception> {
+    ) -> impl CallMutWithState<Self::Args<'args>, U, Array, Exception> {
         let id = type_id_to_usize(&self);
         let f = move |args: &[Array], state: &mut U| -> Result<Vec<Array>, Exception> {
             let result = (self)((&args[0], &args[1]), state)?;
@@ -332,7 +332,7 @@ where
     }
 }
 
-impl<U, F, G> CallMutWithState<U, (&Array, &Array), Array, Exception> for Compiled<F, G>
+impl<U, F, G> CallMutWithState<(&Array, &Array), U, Array, Exception> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array), &mut U) -> Result<Array, Exception>,
     G: FnMut(&[Array], &mut U) -> Result<Vec<Array>, Exception>,
@@ -345,7 +345,7 @@ where
     }
 }
 
-impl<U, F, G> CallMutWithState<U, (&Array, &Array, &Array), Array, Exception> for Compiled<F, G>
+impl<U, F, G> CallMutWithState<(&Array, &Array, &Array), U, Array, Exception> for Compiled<F, G>
 where
     F: FnMut((&Array, &Array, &Array), &mut U) -> Result<Array, Exception>,
     G: FnMut(&[Array], &mut U) -> Result<Vec<Array>, Exception>,

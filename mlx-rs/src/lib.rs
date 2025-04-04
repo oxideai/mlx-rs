@@ -265,7 +265,7 @@
 //! # Function Transforms
 //!
 //! See also [MLX python
-//! //! documentation](https://ml-explore.github.io/mlx/build/html/usage/function_transforms.html)
+//! documentation](https://ml-explore.github.io/mlx/build/html/usage/function_transforms.html)
 //!
 //! Please refer to the transforms module ([`transforms`]) for more details.
 //!

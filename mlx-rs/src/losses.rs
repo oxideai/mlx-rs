@@ -1189,6 +1189,18 @@ mod tests {
     }
 
     #[test]
+    fn test_smooth_l1_loss_negative_diff() {
+        let a = array!([1.5, 2.5, 0.5, 2.5]);
+        let b = array!([1.0, 2.0, 0.5, 3.5]);
+
+        let loss = SmoothL1Loss::new();
+
+        let ab = loss.apply(&a, &b).unwrap();
+        let ba = loss.apply(&b, &a).unwrap();
+        assert_array_eq!(ab, ba);
+    }
+
+    #[test]
     fn test_nll_loss() {
         let logits = array!([[0.0, f32::NEG_INFINITY], [f32::NEG_INFINITY, 0.0]]);
         let targets = array!([0, 1]);

@@ -1190,7 +1190,7 @@ mod tests {
 
     #[test]
     fn test_smooth_l1_loss_negative_diff() {
-        let a = array!([1.5, 2.5, 0.5, 2.5]);
+        let a = array!([1.5, 6.0, 0.5, 2.5]);
         let b = array!([1.0, 2.0, 0.5, 3.5]);
 
         let loss = SmoothL1Loss::new();

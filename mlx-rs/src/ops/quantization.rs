@@ -1,8 +1,4 @@
-// quantized(_:groupSize:bits:stream:)
-// quantizedMatmul(_:_:scales:biases:transpose:groupSize:bits:stream:)
-// dequantized(_:scales:biases:groupSize:bits:stream:)
-
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
@@ -23,12 +19,13 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 /// - `group_size`: The size of the group in `w` that shares a scale and bias. (default: `64`)
 /// - `bits`: The number of bits occupied by each element of w in the returned quantized matrix.
 ///   (default: 4)
+#[generate_macro]
 #[default_device]
 pub fn quantize_device(
     w: impl AsRef<Array>,
-    group_size: impl Into<Option<i32>>,
-    bits: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] group_size: impl Into<Option<i32>>,
+    #[optional] bits: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array, Array)> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
@@ -50,16 +47,17 @@ pub fn quantize_device(
 /// floating point scale and bias per `group_size` of elements. Each element in `w` takes `bits`
 /// bits and is packed in an unsigned 32 bit integer.
 #[allow(clippy::too_many_arguments)]
+#[generate_macro]
 #[default_device]
 pub fn quantized_matmul_device(
     x: impl AsRef<Array>,
     w: impl AsRef<Array>,
     scales: impl AsRef<Array>,
     biases: impl AsRef<Array>,
-    transpose: impl Into<Option<bool>>,
-    group_size: impl Into<Option<i32>>,
-    bits: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] transpose: impl Into<Option<bool>>,
+    #[optional] group_size: impl Into<Option<i32>>,
+    #[optional] bits: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let transpose = transpose.into().unwrap_or(false);
     let group_size = group_size.into().unwrap_or(64);
@@ -85,14 +83,15 @@ pub fn quantized_matmul_device(
 ///
 /// For details, please see [this
 /// documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.dequantize.html)
+#[generate_macro]
 #[default_device]
 pub fn dequantize_device(
     w: impl AsRef<Array>,
     scales: impl AsRef<Array>,
     biases: impl AsRef<Array>,
-    group_size: impl Into<Option<i32>>,
-    bits: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] group_size: impl Into<Option<i32>>,
+    #[optional] bits: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);

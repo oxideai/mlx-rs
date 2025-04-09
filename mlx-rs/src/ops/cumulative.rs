@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::utils::guard::Guarded;
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 impl Array {
     /// Return the cumulative maximum of the elements along the given axis returning an error if the inputs are invalid.
@@ -226,49 +226,53 @@ impl Array {
 }
 
 /// See [`Array::cummax`]
+#[generate_macro]
 #[default_device]
 pub fn cummax_device(
     a: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    reverse: impl Into<Option<bool>>,
-    inclusive: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] reverse: impl Into<Option<bool>>,
+    #[optional] inclusive: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().cummax_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cummin`]
+#[generate_macro]
 #[default_device]
 pub fn cummin_device(
     a: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    reverse: impl Into<Option<bool>>,
-    inclusive: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] reverse: impl Into<Option<bool>>,
+    #[optional] inclusive: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().cummin_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumprod`]
+#[generate_macro]
 #[default_device]
 pub fn cumprod_device(
     a: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    reverse: impl Into<Option<bool>>,
-    inclusive: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] reverse: impl Into<Option<bool>>,
+    #[optional] inclusive: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().cumprod_device(axis, reverse, inclusive, stream)
 }
 
 /// See [`Array::cumsum`]
+#[generate_macro]
 #[default_device]
 pub fn cumsum_device(
     a: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    reverse: impl Into<Option<bool>>,
-    inclusive: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] reverse: impl Into<Option<bool>>,
+    #[optional] inclusive: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().cumsum_device(axis, reverse, inclusive, stream)
 }

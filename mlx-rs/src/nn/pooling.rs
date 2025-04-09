@@ -30,7 +30,7 @@ pub struct Pool {
     kernel_size: Vec<i32>,
 
     /// Stride of the pooling window
-    stride: Vec<i64>,
+    stride: Vec<usize>,
 
     /// Axes to pool over
     axes: Vec<i32>,
@@ -64,7 +64,7 @@ impl std::fmt::Debug for Pool {
 
 impl Pool {
     /// Create a new abstract pooling layer.
-    pub fn new(kernel_size: Vec<i32>, stride: Vec<i64>, op: impl Pooling + 'static) -> Self {
+    pub fn new(kernel_size: Vec<i32>, stride: Vec<usize>, op: impl Pooling + 'static) -> Self {
         let start = -(kernel_size.len() as i32) - 1;
         let axes: Vec<_> = (start..-1).collect();
         Self {
@@ -95,7 +95,7 @@ impl Module<&Array> for Pool {
 
         let strides = shape
             .iter()
-            .map(|s| *s as i64)
+            .map(|s| *s as usize)
             .chain(once(1))
             .rev()
             .fold(vec![], |mut acc, a| {
@@ -164,7 +164,7 @@ impl MaxPool1d {
     ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
-    pub fn new(kernel_size: i32, stride: i64) -> Self {
+    pub fn new(kernel_size: i32, stride: usize) -> Self {
         let op = |x: &Array, axes: &[i32]| x.max(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
@@ -197,7 +197,7 @@ impl MaxPool2d {
     /// - `stride`: The stride of the pooling window.
     pub fn new(
         kernel_size: impl Into<SingleOrPair<i32>>,
-        stride: impl Into<SingleOrPair<i64>>,
+        stride: impl Into<SingleOrPair<usize>>,
     ) -> Self {
         let kernel_size = kernel_size.into();
         let kernel_size = vec![kernel_size.first(), kernel_size.second()];
@@ -234,7 +234,7 @@ impl AvgPool1d {
     ///
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
-    pub fn new(kernel_size: i32, stride: i64) -> Self {
+    pub fn new(kernel_size: i32, stride: usize) -> Self {
         let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
@@ -267,7 +267,7 @@ impl AvgPool2d {
     /// - `stride`: The stride of the pooling window.
     pub fn new(
         kernel_size: impl Into<SingleOrPair<i32>>,
-        stride: impl Into<SingleOrPair<i64>>,
+        stride: impl Into<SingleOrPair<usize>>,
     ) -> Self {
         let kernel_size = kernel_size.into();
         let kernel_size = vec![kernel_size.first(), kernel_size.second()];

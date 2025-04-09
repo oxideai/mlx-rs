@@ -305,31 +305,6 @@ impl Guard<crate::Device> for MaybeUninitDevice {
     }
 }
 
-impl Guarded for crate::DeviceType {
-    type Guard = mlx_sys::mlx_device_type;
-}
-
-impl Guard<crate::DeviceType> for mlx_sys::mlx_device_type {
-    type MutRawPtr = *mut mlx_sys::mlx_device_type;
-
-    fn as_mut_raw_ptr(&mut self) -> Self::MutRawPtr {
-        self
-    }
-
-    fn set_init_success(&mut self, _: bool) {}
-
-    fn try_into_guarded(self) -> Result<crate::DeviceType, Exception> {
-        match self {
-            mlx_sys::mlx_device_type__MLX_CPU => Ok(crate::DeviceType::Cpu),
-            mlx_sys::mlx_device_type__MLX_GPU => Ok(crate::DeviceType::Gpu),
-            _ => Err(Exception {
-                what: "Unknown device type".to_string(),
-                location: std::panic::Location::caller(),
-            }),
-        }
-    }
-}
-
 impl Guarded for crate::Device {
     type Guard = MaybeUninitDevice;
 }
@@ -586,7 +561,7 @@ macro_rules! impl_guarded_for_primitive {
     };
 }
 
-impl_guarded_for_primitive!(bool, u8, u16, u32, u64, i8, i16, i32, i64, f32, f64, ());
+impl_guarded_for_primitive!(bool, u8, u16, u32, u64, i8, i16, i32, i64, f32, ());
 
 impl Guarded for f16 {
     type Guard = float16_t;

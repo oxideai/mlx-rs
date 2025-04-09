@@ -4,7 +4,7 @@ use crate::stream::StreamOrDevice;
 use crate::utils::guard::Guarded;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
-use mlx_internal_macros::{default_device, generate_macro};
+use mlx_internal_macros::default_device;
 
 impl Array {
     /// An `and` reduction over the given axes returning an error if the axes are invalid.
@@ -283,37 +283,34 @@ impl Array {
 }
 
 /// See [`Array::all`]
-#[generate_macro]
 #[default_device]
 pub fn all_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().all_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::prod`]
-#[generate_macro]
 #[default_device]
 pub fn prod_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().prod_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::max`]
-#[generate_macro]
 #[default_device]
 pub fn max_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().max_device(axes, keep_dims, stream)
 }
@@ -327,14 +324,13 @@ pub fn max_device<'a>(
 ///   the entire array.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
 /// - `ddof`: The divisor to compute the variance is `N - ddof`, defaults to `0`.
-#[generate_macro]
 #[default_device]
 pub fn std_device<'a>(
     a: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] ddof: impl Into<Option<i32>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    ddof: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let axes = axes_or_default_to_all(axes, a.ndim() as i32);
@@ -354,50 +350,46 @@ pub fn std_device<'a>(
 }
 
 /// See [`Array::sum`]
-#[generate_macro]
 #[default_device]
 pub fn sum_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().sum_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::mean`]
-#[generate_macro]
 #[default_device]
 pub fn mean_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().mean_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::min`]
-#[generate_macro]
 #[default_device]
 pub fn min_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().min_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::variance`]
-#[generate_macro]
 #[default_device]
 pub fn variance_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] ddof: impl Into<Option<i32>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    ddof: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array
         .as_ref()
@@ -405,13 +397,12 @@ pub fn variance_device<'a>(
 }
 
 /// See [`Array::log_sum_exp`]
-#[generate_macro]
 #[default_device]
 pub fn log_sum_exp_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().log_sum_exp_device(axes, keep_dims, stream)
 }

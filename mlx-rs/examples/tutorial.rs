@@ -80,7 +80,7 @@ fn automatic_differentiation() {
     }
 
     fn calculate_grad(func: impl Fn(&Array) -> Result<Array>, arg: &Array) -> Result<Array> {
-        grad(&func)(arg)
+        grad(&func, &[0])(arg)
     }
 
     let x = Array::from(1.5);

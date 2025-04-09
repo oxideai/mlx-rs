@@ -4,7 +4,7 @@ use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream, StreamOrDevice};
-use mlx_internal_macros::{default_device, generate_macro};
+use mlx_internal_macros::default_device;
 use smallvec::SmallVec;
 use std::f64;
 use std::ffi::CString;
@@ -61,14 +61,13 @@ impl<'a> IntoOption<Ord<'a>> for f64 {
 }
 
 /// Compute p-norm of an [`Array`]
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_p_device<'a>(
     array: impl AsRef<Array>,
     ord: f64,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
@@ -99,14 +98,13 @@ pub fn norm_p_device<'a>(
 }
 
 /// Matrix or vector norm.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_ord_device<'a>(
     array: impl AsRef<Array>,
     ord: &'a str,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let ord = CString::new(ord).map_err(|e| Exception::custom(format!("{}", e)))?;
     let keep_dims = keep_dims.into().unwrap_or(false);
@@ -175,14 +173,13 @@ pub fn norm_ord_device<'a>(
 /// - `axes`: axes that hold 2d matrices
 /// - `keep_dims`: if `true` the axes which are normed over are left in the result as dimensions
 ///   with size one
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] ord: impl IntoOption<Ord<'a>>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] keep_dims: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
+    ord: impl IntoOption<Ord<'a>>,
+    axes: impl IntoOption<&'a [i32]>,
+    keep_dims: impl Into<Option<bool>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let ord = ord.into_option();
     let axes = axes.into_option();
@@ -253,12 +250,8 @@ pub fn norm_device<'a>(
 /// assert!(q.all_close(&q_expected, None, None, None).unwrap().item::<bool>());
 /// assert!(r.all_close(&r_expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
-pub fn qr_device(
-    a: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<(Array, Array)> {
+pub fn qr_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<(Array, Array)> {
     <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_linalg_qr(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -291,11 +284,10 @@ pub fn qr_device(
 /// assert!(s.all_close(&s_expected, None, None, None).unwrap().item::<bool>());
 /// assert!(vt.all_close(&vt_expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn svd_device(
     array: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
+    stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array, Array)> {
     let v = VectorArray::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_svd(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
@@ -331,9 +323,8 @@ pub fn svd_device(
 /// let expected = Array::from_slice(&[-2.0, 1.0, 1.5, -0.5], &[2, 2]);
 /// assert!(a_inv.all_close(&expected, None, None, None).unwrap().item::<bool>());
 /// ```
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
-pub fn inv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn inv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_inv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -352,12 +343,11 @@ pub fn inv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) 
 /// - `a`: input array
 /// - `upper`: If `true`, return the upper triangular Cholesky factor. If `false`, return the lower
 ///   triangular Cholesky factor. Default: `false`.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cholesky_device(
     a: impl AsRef<Array>,
-    #[optional] upper: Option<bool>,
-    #[optional] stream: impl AsRef<Stream>,
+    upper: Option<bool>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
     Array::try_from_op(|res| unsafe {
@@ -368,12 +358,11 @@ pub fn cholesky_device(
 /// Compute the inverse of a real symmetric positive semi-definite matrix using it’s Cholesky decomposition.
 ///
 /// Please see the python documentation for more details.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cholesky_inv_device(
     a: impl AsRef<Array>,
-    #[optional] upper: Option<bool>,
-    #[optional] stream: impl AsRef<Stream>,
+    upper: Option<bool>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
     Array::try_from_op(|res| unsafe {
@@ -385,13 +374,12 @@ pub fn cholesky_inv_device(
 ///
 /// The cross product is defined for arrays with size 2 or 3 in the specified axis. If the size is 2
 /// then the third value is assumed to be zero.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn cross_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    #[optional] axis: Option<i32>,
-    #[optional] stream: impl AsRef<Stream>,
+    axis: Option<i32>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.unwrap_or(-1);
     Array::try_from_op(|res| unsafe {
@@ -410,12 +398,11 @@ pub fn cross_device(
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues and eigenvectors are computed for each matrix in the last two
 /// dimensions.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn eigh_device(
     a: impl AsRef<Array>,
-    #[optional] uplo: Option<&str>,
-    #[optional] stream: impl AsRef<Stream>,
+    uplo: Option<&str>,
+    stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array)> {
     let a = a.as_ref();
     let uplo =
@@ -436,12 +423,11 @@ pub fn eigh_device(
 ///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the eigenvalues are computed for each matrix in the last two dimensions.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn eigvalsh_device(
     a: impl AsRef<Array>,
-    #[optional] uplo: Option<&str>,
-    #[optional] stream: impl AsRef<Stream>,
+    uplo: Option<&str>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let uplo =
@@ -452,9 +438,8 @@ pub fn eigvalsh_device(
 }
 
 /// Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
-pub fn pinv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn pinv_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_pinv(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -464,12 +449,11 @@ pub fn pinv_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 ///
 /// This function supports arrays with at least 2 dimensions. When the input has more than two
 /// dimensions, the inverse is computed for each matrix in the last two dimensions of a.
-#[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn tri_inv_device(
     a: impl AsRef<Array>,
-    #[optional] upper: Option<bool>,
-    #[optional] stream: impl AsRef<Stream>,
+    upper: Option<bool>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let upper = upper.unwrap_or(false);
     Array::try_from_op(|res| unsafe {
@@ -477,139 +461,9 @@ pub fn tri_inv_device(
     })
 }
 
-/// Compute the LU factorization of the given matrix A.
-///
-/// Note, unlike the default behavior of scipy.linalg.lu, the pivots are
-/// indices. To reconstruct the input use L[P, :] @ U for 2 dimensions or
-/// mx.take_along_axis(L, P[..., None], axis=-2) @ U for more than 2 dimensions.
-///
-/// To construct the full permuation matrix do:
-///
-/// ```rust,ignore
-/// // python
-/// // P = mx.put_along_axis(mx.zeros_like(L), p[..., None], mx.array(1.0), axis=-1)
-/// let p = mlx_rs::ops::put_along_axis(
-///     mlx_rs::ops::zeros_like(&l),
-///     p.index((Ellipsis, NewAxis)),
-///     array!(1.0),
-///     -1,
-/// ).unwrap();
-/// ```
-///
-/// # Params
-///
-/// - `a`: input array
-/// - `stream`: stream to execute the operation
-///
-/// # Returns
-///
-/// The `p`, `L`, and `U` arrays, such that `A = L[P, :] @ U`
-#[generate_macro(customize(root = "$crate::linalg"))]
-#[default_device]
-pub fn lu_device(
-    a: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<(Array, Array, Array)> {
-    let v = Vec::<Array>::try_from_op(|res| unsafe {
-        mlx_sys::mlx_linalg_lu(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
-    })?;
-    let mut iter = v.into_iter();
-    let p = iter.next().ok_or_else(|| Exception::custom("missing P"))?;
-    let l = iter.next().ok_or_else(|| Exception::custom("missing L"))?;
-    let u = iter.next().ok_or_else(|| Exception::custom("missing U"))?;
-    Ok((p, l, u))
-}
-
-/// Computes a compact representation of the LU factorization.
-///
-/// # Params
-///
-/// - `a`: input array
-/// - `stream`: stream to execute the operation
-///
-/// # Returns
-///
-/// The `LU` matrix and `pivots` array.
-#[generate_macro(customize(root = "$crate::linalg"))]
-#[default_device]
-pub fn lu_factor_device(
-    a: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<(Array, Array)> {
-    <(Array, Array)>::try_from_op(|(res_0, res_1)| unsafe {
-        mlx_sys::mlx_linalg_lu_factor(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
-    })
-}
-
-/// Compute the solution to a system of linear equations `AX = B`
-///
-/// # Params
-///
-/// - `a`: input array
-/// - `b`: input array
-/// - `stream`: stream to execute the operation
-///
-/// # Returns
-///
-/// The unique solution to the system `AX = B`
-#[generate_macro(customize(root = "$crate::linalg"))]
-#[default_device]
-pub fn solve_device(
-    a: impl AsRef<Array>,
-    b: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_linalg_solve(
-            res,
-            a.as_ref().as_ptr(),
-            b.as_ref().as_ptr(),
-            stream.as_ref().as_ptr(),
-        )
-    })
-}
-
-/// Computes the solution of a triangular system of linear equations `AX = B`
-///
-/// # Params
-///
-/// - `a`: input array
-/// - `b`: input array
-/// - `upper`: whether the matrix is upper triangular. Default: `false`
-/// - `stream`: stream to execute the operation
-///
-/// # Returns
-///
-/// The unique solution to the system `AX = B`
-#[generate_macro(customize(root = "$crate::linalg"))]
-#[default_device]
-pub fn solve_triangular_device(
-    a: impl AsRef<Array>,
-    b: impl AsRef<Array>,
-    #[optional] upper: impl Into<Option<bool>>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    let upper = upper.into().unwrap_or(false);
-
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_linalg_solve_triangular(
-            res,
-            a.as_ref().as_ptr(),
-            b.as_ref().as_ptr(),
-            upper,
-            stream.as_ref().as_ptr(),
-        )
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-
-    use crate::{
-        array,
-        ops::{eye, indexing::IndexOp, tril, triu},
-    };
 
     use super::*;
 
@@ -739,7 +593,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_f32(0.0);
+        let a = Array::from_float(0.0);
         assert!(svd_device(&a, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);
@@ -758,7 +612,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_f32(0.0);
+        let a = Array::from_float(0.0);
         assert!(inv_device(&a, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);
@@ -777,7 +631,7 @@ mod tests {
         let stream = StreamOrDevice::cpu();
 
         // 0D and 1D returns error
-        let a = Array::from_f32(0.0);
+        let a = Array::from_float(0.0);
         assert!(cholesky_device(&a, None, &stream).is_err());
 
         let a = Array::from_slice(&[0.0, 1.0], &[2]);
@@ -792,71 +646,5 @@ mod tests {
         assert!(cholesky_device(&a, None, &stream).is_err());
 
         // TODO: wait for random
-    }
-
-    // The unit test below is adapted from the python unit test `test_linalg.py/test_lu`
-    #[test]
-    fn test_lu() {
-        let scalar = array!(1.0);
-        let result = lu_device(&scalar, StreamOrDevice::cpu());
-        assert!(result.is_err());
-
-        // # Test 3x3 matrix
-        let a = array!([[3.0f32, 1.0, 2.0], [1.0, 8.0, 6.0], [9.0, 2.0, 5.0]]);
-        let (p, l, u) = lu_device(&a, StreamOrDevice::cpu()).unwrap();
-        let a_rec = l.index((p, ..)).matmul(u).unwrap();
-        assert_array_all_close!(a, a_rec);
-    }
-
-    // The unit test below is adapted from the python unit test `test_linalg.py/test_lu_factor`
-    #[test]
-    fn test_lu_factor() {
-        crate::random::seed(7).unwrap();
-
-        // Test 3x3 matrix
-        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[5, 5], None).unwrap();
-        let (lu, pivots) = lu_factor_device(&a, StreamOrDevice::cpu()).unwrap();
-        let shape = a.shape();
-        let n = shape[shape.len() - 1];
-
-        let pivots: Vec<u32> = pivots.as_slice().to_vec();
-        let mut perm: Vec<u32> = (0..n as u32).collect();
-        for (i, p) in pivots.iter().enumerate() {
-            perm.swap(i, *p as usize);
-        }
-
-        let l = tril(&lu, -1)
-            .and_then(|l| l.add(eye::<f32>(n, None, None)?))
-            .unwrap();
-        let u = triu(&lu, None).unwrap();
-
-        let lhs = l.matmul(&u).unwrap();
-        let perm = Array::from_slice(&perm, &[n]);
-        let rhs = a.index((perm, ..));
-        assert_array_all_close!(lhs, rhs);
-    }
-
-    // The unit test below is adapted from the python unit test `test_linalg.py/test_solve`
-    #[test]
-    fn test_solve() {
-        crate::random::seed(7).unwrap();
-
-        // Test 3x3 matrix with 1D rhs
-        let a = array!([[3.0f32, 1.0, 2.0], [1.0, 8.0, 6.0], [9.0, 2.0, 5.0]]);
-        let b = array!([11.0f32, 35.0, 28.0]);
-
-        let result = solve_device(&a, &b, StreamOrDevice::cpu()).unwrap();
-        let expected = array!([1.0f32, 2.0, 3.0]);
-        assert_array_all_close!(result, expected);
-    }
-
-    #[test]
-    fn test_solve_triangular() {
-        let a = array!([[4.0f32, 0.0, 0.0], [2.0, 3.0, 0.0], [1.0, -2.0, 5.0]]);
-        let b = array!([8.0f32, 14.0, 3.0]);
-
-        let result = solve_triangular_device(&a, &b, false, StreamOrDevice::cpu()).unwrap();
-        let expected = array!([2.0f32, 3.333_333_3, 1.533_333_3]);
-        assert_array_all_close!(result, expected);
     }
 }

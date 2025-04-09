@@ -49,9 +49,6 @@ generate_test_cases! {
         /// f32
         Float32 = mlx_sys::mlx_dtype__MLX_FLOAT32,
 
-        /// f64
-        Float64 = mlx_sys::mlx_dtype__MLX_FLOAT64,
-
         /// bfloat16
         Bfloat16 = mlx_sys::mlx_dtype__MLX_BFLOAT16,
 
@@ -161,9 +158,6 @@ impl TypePromotion for Dtype {
             // Complex type
             (Complex64, _) | (_, Complex64) => Complex64,
 
-            // Float64 promotions
-            (Float64, _) | (_, Float64) => Float64,
-
             // Float32 promotions
             (Float32, _) | (_, Float32) => Float32,
 
@@ -194,7 +188,7 @@ cfg_safetensors! {
                 safetensors::Dtype::I32 => Dtype::Int32,
                 safetensors::Dtype::U32 => Dtype::Uint32,
                 safetensors::Dtype::F32 => Dtype::Float32,
-                safetensors::Dtype::F64 => Dtype::Float64,
+                safetensors::Dtype::F64 => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
                 safetensors::Dtype::I64 => Dtype::Int64,
                 safetensors::Dtype::U64 => Dtype::Uint64,
                 _ => return Err(crate::error::ConversionError::SafeTensorDtype(value)),
@@ -218,7 +212,6 @@ cfg_safetensors! {
                 Dtype::Int32 => safetensors::Dtype::I32,
                 Dtype::Uint32 => safetensors::Dtype::U32,
                 Dtype::Float32 => safetensors::Dtype::F32,
-                Dtype::Float64 => safetensors::Dtype::F64,
                 Dtype::Int64 => safetensors::Dtype::I64,
                 Dtype::Uint64 => safetensors::Dtype::U64,
                 Dtype::Complex64 => return Err(crate::error::ConversionError::MlxDtype(value)),

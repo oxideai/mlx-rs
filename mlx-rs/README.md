@@ -78,7 +78,7 @@ let y = x.matmul(&w_star)? + eps;
 
 let loss_fn = |w: &Array| -> Result<Array, Exception> {
     let y_pred = x.matmul(w)?;  // x and y are captured from outer scope
-    let loss = Array::from_f32(0.5) * ops::mean(&ops::square(&(y_pred - &y))?, None, None)?;
+    let loss = Array::from_float(0.5) * ops::mean(&ops::square(&(y_pred - &y))?, None, None)?;
     Ok(loss)
 };
 
@@ -93,7 +93,7 @@ let loss_fn = |inputs: &[Array]| -> Result<Array, Exception> {
     let y = &inputs[2];
 
     let y_pred = x.matmul(w)?;
-    let loss = Array::from_f32(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
+    let loss = Array::from_float(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
     Ok(loss)
 };
 let argnums = &[0];  // Specify which argument to differentiate with respect to
@@ -110,7 +110,7 @@ let mut inputs = vec![w, x, y];
 
 for _ in 0..num_iterations {
     let grad = transforms::grad(loss_fn, argnums)(&inputs)?;
-    inputs[0] = &inputs[0] - Array::from_f32(learning_rate) * grad;  // Update the weight array
+    inputs[0] = &inputs[0] - Array::from_float(learning_rate) * grad;  // Update the weight array
     inputs[0].eval()?;
 }
 ```

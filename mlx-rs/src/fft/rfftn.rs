@@ -1,4 +1,4 @@
-use mlx_internal_macros::{default_device, generate_macro};
+use mlx_internal_macros::default_device;
 
 use crate::{
     error::Result,
@@ -22,13 +22,12 @@ use super::{
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///  with zeros to match `n`. The default value is `a.shape[axis]` if not specified.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1` if not specified.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn rfft_device(
     a: impl AsRef<Array>,
-    #[optional] n: impl Into<Option<i32>>,
-    #[optional] axis: impl Into<Option<i32>>,
-    #[optional] stream: impl AsRef<Stream>,
+    n: impl Into<Option<i32>>,
+    axis: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (n, axis) = resolve_size_and_axis_unchecked(&a, n.into(), axis.into());
@@ -49,13 +48,12 @@ pub fn rfft_device(
 /// - `s`: Sizes of the transformed axes. The corresponding axes in the input are truncated or
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn rfft2_device<'a>(
     a: impl AsRef<Array>,
-    #[optional] s: impl IntoOption<&'a [i32]>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] stream: impl AsRef<Stream>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let axes = axes.into_option().unwrap_or(&[-2, -1]);
@@ -93,13 +91,12 @@ pub fn rfft2_device<'a>(
 /// padded with zeros to match `s`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is over
 ///   the last `len(s)` axes or all axes if `s` is also `None`.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn rfftn_device<'a>(
     a: impl AsRef<Array>,
-    #[optional] s: impl IntoOption<&'a [i32]>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] stream: impl AsRef<Stream>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let (s, axes) = resolve_sizes_and_axes_unchecked(&a, s.into_option(), axes.into_option());
@@ -133,13 +130,12 @@ pub fn rfftn_device<'a>(
 /// - `n`: Size of the transformed axis. The corresponding axis in the input is truncated or padded
 ///   with zeros to match `n // 2 + 1`. The default value is `a.shape[axis] // 2 + 1`.
 /// - `axis`: Axis along which to perform the FFT. The default is `-1`.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn irfft_device(
     a: impl AsRef<Array>,
-    #[optional] n: impl Into<Option<i32>>,
-    #[optional] axis: impl Into<Option<i32>>,
-    #[optional] stream: impl AsRef<Stream>,
+    n: impl Into<Option<i32>>,
+    axis: impl Into<Option<i32>>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let n = n.into();
@@ -168,13 +164,12 @@ pub fn irfft_device(
 ///   padded with zeros to match the sizes in `s` except for the last axis which has size
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `[-2, -1]`.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn irfft2_device<'a>(
     a: impl AsRef<Array>,
-    #[optional] s: impl IntoOption<&'a [i32]>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] stream: impl AsRef<Stream>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let s = s.into_option();
@@ -220,13 +215,12 @@ pub fn irfft2_device<'a>(
 ///   `s[s.len()-1] // 2 + 1`. The default value is the sizes of `a` along `axes`.
 /// - `axes`: Axes along which to perform the FFT. The default is `None` in which case the FFT is
 ///  over the last `len(s)` axes or all axes if `s` is also `None`.
-#[generate_macro(customize(root = "$crate::fft"))]
 #[default_device]
 pub fn irfftn_device<'a>(
     a: impl AsRef<Array>,
-    #[optional] s: impl IntoOption<&'a [i32]>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
-    #[optional] stream: impl AsRef<Stream>,
+    s: impl IntoOption<&'a [i32]>,
+    axes: impl IntoOption<&'a [i32]>,
+    stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = as_complex64(a.as_ref())?;
     let s = s.into_option();

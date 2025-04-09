@@ -431,6 +431,16 @@ where
     }
 }
 
+impl Updatable for Vec<Array> {
+    fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
+        self.iter()
+    }
+
+    fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
+        self.iter_mut()
+    }
+}
+
 /// Helper type to represent either a single value or a pair of values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SingleOrPair<T = i32> {

@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::utils::guard::Guarded;
 use crate::utils::VectorArray;
@@ -96,23 +96,25 @@ impl Array {
 }
 
 /// See [`Array::diag`]
+#[generate_macro]
 #[default_device]
 pub fn diag_device(
     a: impl AsRef<Array>,
-    k: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] k: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().diag_device(k, stream)
 }
 
 /// See [`Array::diagonal`]
+#[generate_macro]
 #[default_device]
 pub fn diagonal_device(
     a: impl AsRef<Array>,
-    offset: impl Into<Option<i32>>,
-    axis1: impl Into<Option<i32>>,
-    axis2: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] offset: impl Into<Option<i32>>,
+    #[optional] axis1: impl Into<Option<i32>>,
+    #[optional] axis2: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().diagonal_device(offset, axis1, axis2, stream)
 }
@@ -124,11 +126,12 @@ pub fn diagonal_device(
 /// - subscripts: Einstein summation convention equation
 /// - operands: input arrays
 /// - stream: stream or device to evaluate on
+#[generate_macro]
 #[default_device]
 pub fn einsum_device<'a>(
     subscripts: &str,
     operands: impl IntoIterator<Item = &'a Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_subscripts =
         CString::new(subscripts).map_err(|_| Exception::from("Invalid subscripts"))?;
@@ -139,6 +142,30 @@ pub fn einsum_device<'a>(
             res,
             c_subscripts.as_ptr(),
             c_operands.as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Perform the Kronecker product of two arrays.
+///
+/// # Params
+///
+/// - `a`: first array
+/// - `b`: second array
+/// - `stream`: stream or device to evaluate on
+#[generate_macro]
+#[default_device]
+pub fn kron_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_kron(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
             stream.as_ref().as_ptr(),
         )
     })
@@ -201,7 +228,7 @@ mod tests {
     #[test]
     fn test_diag() {
         // Too few or too many dimensions
-        assert!(diag(Array::from_float(0.0), None).is_err());
+        assert!(diag(Array::from_f32(0.0), None).is_err());
         assert!(diag(Array::from_slice(&[0.0], &[1, 1, 1]), None).is_err());
 
         // Test with 1D array
@@ -279,5 +306,29 @@ mod tests {
         let c = result.all_close(&expected, 1e-5, 1e-5, None).unwrap();
         let c_data: &[bool] = c.as_slice();
         assert_eq!(c_data, [true]);
+    }
+
+    // This test is adapted from the python unit test `mlx/test/test_ops.py` `test_kron`
+    #[test]
+    fn test_kron() {
+        // Basic vector test
+        let x = array!([1, 2]);
+        let y = array!([3, 4]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(z, array!([3, 4, 6, 8]));
+
+        // Basic matrix test
+        let x = array!([[1, 2], [3, 4]]);
+        let y = array!([[0, 5], [6, 7]]);
+        let z = super::kron(&x, &y).unwrap();
+        assert_eq!(
+            z,
+            array!([
+                [0, 5, 0, 10],
+                [6, 7, 12, 14],
+                [0, 15, 0, 20],
+                [18, 21, 24, 28]
+            ])
+        );
     }
 }

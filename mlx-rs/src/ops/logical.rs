@@ -4,7 +4,7 @@ use crate::stream::StreamOrDevice;
 use crate::utils::guard::Guarded;
 use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 impl Array {
     /// Element-wise equality returning an error if the arrays are not broadcastable.
@@ -451,128 +451,152 @@ impl Array {
 }
 
 /// See [`Array::any`]
+#[generate_macro]
 #[default_device]
 pub fn any_device<'a>(
     array: impl AsRef<Array>,
-    axes: impl IntoOption<&'a [i32]>,
-    keep_dims: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array.as_ref().any_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::logical_and`]
+#[generate_macro]
 #[default_device]
-pub fn logical_and_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array> {
-    a.as_ref().logical_and_device(b, StreamOrDevice::default())
+pub fn logical_and_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    a.as_ref().logical_and_device(b, stream)
 }
 
 /// See [`Array::logical_or`]
+#[generate_macro]
 #[default_device]
-pub fn logical_or_device(a: impl AsRef<Array>, b: impl AsRef<Array>) -> Result<Array> {
-    a.as_ref().logical_or_device(b, StreamOrDevice::default())
+pub fn logical_or_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    a.as_ref().logical_or_device(b, stream)
 }
 
 /// See [`Array::logical_not`]
+#[generate_macro]
 #[default_device]
-pub fn logical_not_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn logical_not_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     a.as_ref().logical_not_device(stream)
 }
 
 /// See [`Array::all_close`]
+#[generate_macro]
 #[default_device]
 pub fn all_close_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    rtol: impl Into<Option<f64>>,
-    atol: impl Into<Option<f64>>,
-    equal_nan: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] rtol: impl Into<Option<f64>>,
+    #[optional] atol: impl Into<Option<f64>>,
+    #[optional] equal_nan: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref()
         .all_close_device(b, rtol, atol, equal_nan, stream)
 }
 
 /// See [`Array::is_close`]
+#[generate_macro]
 #[default_device]
 pub fn is_close_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    rtol: impl Into<Option<f64>>,
-    atol: impl Into<Option<f64>>,
-    equal_nan: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] rtol: impl Into<Option<f64>>,
+    #[optional] atol: impl Into<Option<f64>>,
+    #[optional] equal_nan: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().is_close_device(b, rtol, atol, equal_nan, stream)
 }
 
 /// See [`Array::array_eq`]
+#[generate_macro]
 #[default_device]
 pub fn array_eq_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    equal_nan: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] equal_nan: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().array_eq_device(b, equal_nan, stream)
 }
 
 /// See [`Array::eq`]
+#[generate_macro]
 #[default_device]
 pub fn eq_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().eq_device(b, stream)
 }
 
 /// See [`Array::le`]
+#[generate_macro]
 #[default_device]
 pub fn le_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().le_device(b, stream)
 }
 
 /// See [`Array::ge`]
+#[generate_macro]
 #[default_device]
 pub fn ge_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().ge_device(b, stream)
 }
 
 /// See [`Array::ne`]
+#[generate_macro]
 #[default_device]
 pub fn ne_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().ne_device(b, stream)
 }
 
 /// See [`Array::lt`]
+#[generate_macro]
 #[default_device]
 pub fn lt_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().lt_device(b, stream)
 }
 
 /// See [`Array::gt`]
+#[generate_macro]
 #[default_device]
 pub fn gt_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().gt_device(b, stream)
 }
@@ -580,32 +604,48 @@ pub fn gt_device(
 // TODO: check if the functions below could throw an exception.
 
 /// Return a boolean array indicating which elements are NaN.
+#[generate_macro]
 #[default_device]
-pub fn is_nan_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_nan_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isnan(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are +/- inifnity.
+#[generate_macro]
 #[default_device]
-pub fn is_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are positive infinity.
+#[generate_macro]
 #[default_device]
-pub fn is_pos_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_pos_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isposinf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
 /// Return a boolean array indicating which elements are negative infinity.
+#[generate_macro]
 #[default_device]
-pub fn is_neg_inf_device(array: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn is_neg_inf_device(
+    array: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_isneginf(res, array.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
@@ -642,12 +682,13 @@ pub fn r#where_device(
 }
 
 /// Alias for [`r#where`]
+#[generate_macro]
 #[default_device]
 pub fn which_device(
     condition: impl AsRef<Array>,
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     r#where_device(condition, a, b, stream)
 }

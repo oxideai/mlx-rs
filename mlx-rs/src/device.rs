@@ -21,6 +21,12 @@ pub struct Device {
     pub(crate) c_device: mlx_sys::mlx_device,
 }
 
+impl PartialEq for Device {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { mlx_sys::mlx_device_equal(self.c_device, other.c_device) }
+    }
+}
+
 impl Device {
     /// Create a new [`Device`]
     pub fn new(device_type: DeviceType, index: i32) -> Device {
@@ -41,6 +47,16 @@ impl Device {
     /// Create a default GPU device.
     pub fn gpu() -> Device {
         Device::new(DeviceType::Gpu, 0)
+    }
+
+    /// Get the device index
+    pub fn get_index(&self) -> Result<i32> {
+        i32::try_from_op(|res| unsafe { mlx_sys::mlx_device_get_index(res, self.c_device) })
+    }
+
+    /// Get the device type
+    pub fn get_type(&self) -> Result<DeviceType> {
+        DeviceType::try_from_op(|res| unsafe { mlx_sys::mlx_device_get_type(res, self.c_device) })
     }
 
     /// Set the default device.
@@ -107,7 +123,6 @@ mod tests {
     fn test_fmt() {
         let device = Device::default();
         let description = format!("{}", device);
-        println!("{:?}", device);
         assert_eq!(description, "Device(gpu, 0)");
     }
 }

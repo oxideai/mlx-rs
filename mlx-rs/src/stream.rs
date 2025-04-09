@@ -139,6 +139,11 @@ impl Stream {
         }
     }
 
+    /// Get the index of the stream.
+    pub fn get_index(&self) -> Result<i32> {
+        i32::try_from_op(|res| unsafe { mlx_sys::mlx_stream_get_index(res, self.c_stream) })
+    }
+
     fn describe(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         unsafe {
             let mut mlx_str = mlx_sys::mlx_string_new();

@@ -98,7 +98,7 @@
 
 use std::{borrow::Cow, ops::Bound, rc::Rc};
 
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
@@ -508,12 +508,13 @@ impl Array {
 /// - `a`: The input array.
 /// - `axis`: Axis to reduce over
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmax_device(
     a: impl AsRef<Array>,
     axis: i32,
-    keep_dims: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
@@ -534,11 +535,12 @@ pub fn argmax_device(
 ///
 /// - `a`: The input array.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmax_all_device(
     a: impl AsRef<Array>,
-    keep_dims: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
@@ -561,12 +563,13 @@ pub fn argmax_all_device(
 /// - `a`: The input array.
 /// - `axis`: Axis to reduce over.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmin_device(
     a: impl AsRef<Array>,
     axis: i32,
-    keep_dims: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
@@ -587,11 +590,12 @@ pub fn argmin_device(
 ///
 /// - `a`: The input array.
 /// - `keep_dims`: Keep reduced axes as singleton dimensions, defaults to False.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn argmin_all_device(
     a: impl AsRef<Array>,
-    keep_dims: impl Into<Option<bool>>,
-    stream: impl AsRef<Stream>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let keep_dims = keep_dims.into().unwrap_or(false);
 
@@ -605,128 +609,51 @@ pub fn argmin_all_device(
     })
 }
 
-/// Returns the indices that partition the array.
-///
-/// The ordering of the elements within a partition in given by the indices is undefined.
-///
-/// See [`argpartition_all`] for the flattened array.
-///
-/// # Params
-///
-/// - `a`: The input array.
-/// - `kth`: Element index at the `kth` position in the output will give the sorted position. All
-///   indices before the `kth` position will be of elements less or equal to the element at the
-///   `kth` index and all indices after will be of elements greater or equal to the element at the
-///   `kth` index.
-/// - `axis`: Axis to partition over
-#[default_device]
-pub fn argpartition_device(
-    a: impl AsRef<Array>,
-    kth: i32,
-    axis: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(
-            res,
-            a.as_ref().as_ptr(),
-            kth,
-            axis,
-            stream.as_ref().as_ptr(),
-        )
-    })
-}
-
-/// Returns the indices that partition the flattened array.
-///
-/// The ordering of the elements within a partition in given by the indices is undefined.
-///
-/// # Params
-///
-/// - `a`: The input array.
-/// - `kth`: Element index at the `kth` position in the output will give the sorted position.  All
-///   indices before the`kth` position will be of elements less than or equal to the element at the
-///   `kth` index and all indices after will be elemenents greater than or equal to the element at
-///   the `kth` position.
-#[default_device]
-pub fn argpartition_all_device(
-    a: impl AsRef<Array>,
-    kth: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
-    })
-}
-
-/// Returns the indices that sort the array.
-///
-/// See [`argsort_all`] for the flattened array.
-///
-/// # Params
-///
-/// - `a`: The input array.
-/// - `axis`: Axis to sort over.
-#[default_device]
-pub fn argsort_device(
-    a: impl AsRef<Array>,
-    axis: i32,
-    stream: impl AsRef<Stream>,
-) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
-    })
-}
-
-/// Returns the indices that sort the flattened array.
-#[default_device]
-pub fn argsort_all_device(a: impl AsRef<Array>, stream: impl AsRef<Stream>) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
-    })
-}
-
 /// See [`Array::take_along_axis`]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_along_axis_device(
     a: impl AsRef<Array>,
     indices: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().take_along_axis_device(indices, axis, stream)
 }
 
 /// See [`Array::put_along_axis`]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn put_along_axis_device(
     a: impl AsRef<Array>,
     indices: impl AsRef<Array>,
     values: impl AsRef<Array>,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref()
         .put_along_axis_device(indices, values, axis, stream)
 }
 
 /// See [`Array::take`]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_device(
     a: impl AsRef<Array>,
     indices: impl AsRef<Array>,
     axis: i32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().take_device(indices, axis, stream)
 }
 
 /// See [`Array::take_all`]
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn take_all_device(
     a: impl AsRef<Array>,
     indices: impl AsRef<Array>,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     a.as_ref().take_all_device(indices, stream)
 }
@@ -742,12 +669,13 @@ pub fn take_all_device(
 /// - `a`: The input array.
 /// - `k`: The number of elements to return.
 /// - `axis`: Axis to sort over. Default to `-1` if not specified.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
 pub fn topk_device(
     a: impl AsRef<Array>,
     k: i32,
-    axis: impl Into<Option<i32>>,
-    stream: impl AsRef<Stream>,
+    #[optional] axis: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
 
@@ -757,8 +685,13 @@ pub fn topk_device(
 }
 
 /// Returns the `k` largest elements from the flattened input array.
+#[generate_macro(customize(root = "$crate::ops::indexing"))]
 #[default_device]
-pub fn topk_all_device(a: impl AsRef<Array>, k: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+pub fn topk_all_device(
+    a: impl AsRef<Array>,
+    k: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_topk_all(res, a.as_ref().as_ptr(), k, stream.as_ref().as_ptr())
     })

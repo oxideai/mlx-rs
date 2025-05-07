@@ -929,21 +929,21 @@ mod tests {
     fn test_all() {
         let array = Array::from_slice(&[true, false, true, false], &[2, 2]);
 
-        assert_eq!(array.all(None, None).unwrap().item::<bool>(), false);
-        assert_eq!(array.all(None, true).unwrap().shape(), &[1, 1]);
-        assert_eq!(array.all(&[0, 1][..], None).unwrap().item::<bool>(), false);
+        assert_eq!(array.all(None).unwrap().item::<bool>(), false);
+        assert_eq!(array.all(true).unwrap().shape(), &[1, 1]);
+        assert_eq!(array.all_axes(&[0, 1], None).unwrap().item::<bool>(), false);
 
-        let result = array.all(&[0][..], None).unwrap();
+        let result = array.all_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<bool>(), &[true, false]);
 
-        let result = array.all(&[1][..], None).unwrap();
+        let result = array.all_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<bool>(), &[false, false]);
     }
 
     #[test]
     fn test_all_empty_axes() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let all = array.all(&[][..], None).unwrap();
+        let all = array.all_axes(&[], None).unwrap();
 
         let results: &[bool] = all.as_slice();
         assert_eq!(
@@ -955,23 +955,23 @@ mod tests {
     #[test]
     fn test_prod() {
         let x = Array::from_slice(&[1, 2, 3, 3], &[2, 2]);
-        assert_eq!(x.prod(None, None).unwrap().item::<i32>(), 18);
+        assert_eq!(x.prod(None).unwrap().item::<i32>(), 18);
 
-        let y = x.prod(None, true).unwrap();
+        let y = x.prod(true).unwrap();
         assert_eq!(y.item::<i32>(), 18);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.prod(&[0][..], None).unwrap();
+        let result = x.prod_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[3, 6]);
 
-        let result = x.prod(&[1][..], None).unwrap();
+        let result = x.prod_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[2, 9])
     }
 
     #[test]
     fn test_prod_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.prod(&[][..], None).unwrap();
+        let result = array.prod_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -980,22 +980,22 @@ mod tests {
     #[test]
     fn test_max() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.max(None, None).unwrap().item::<i32>(), 4);
-        let y = x.max(None, true).unwrap();
+        assert_eq!(x.max(None).unwrap().item::<i32>(), 4);
+        let y = x.max(true).unwrap();
         assert_eq!(y.item::<i32>(), 4);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.max(&[0][..], None).unwrap();
+        let result = x.max_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[3, 4]);
 
-        let result = x.max(&[1][..], None).unwrap();
+        let result = x.max_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[2, 4]);
     }
 
     #[test]
     fn test_max_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.max(&[][..], None).unwrap();
+        let result = array.max_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -1004,7 +1004,7 @@ mod tests {
     #[test]
     fn test_sum() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.sum(&[0][..], None).unwrap();
+        let result = array.sum_axis(0, None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[9, 17]);
@@ -1013,7 +1013,7 @@ mod tests {
     #[test]
     fn test_sum_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.sum(&[][..], None).unwrap();
+        let result = array.sum_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -1022,22 +1022,22 @@ mod tests {
     #[test]
     fn test_mean() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.mean(None, None).unwrap().item::<f32>(), 2.5);
-        let y = x.mean(None, true).unwrap();
+        assert_eq!(x.mean(None).unwrap().item::<f32>(), 2.5);
+        let y = x.mean(true).unwrap();
         assert_eq!(y.item::<f32>(), 2.5);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.mean(&[0][..], None).unwrap();
+        let result = x.mean_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[2.0, 3.0]);
 
-        let result = x.mean(&[1][..], None).unwrap();
+        let result = x.mean_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[1.5, 3.5]);
     }
 
     #[test]
     fn test_mean_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.mean(&[][..], None).unwrap();
+        let result = array.mean_axes(&[], None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.0, 8.0, 4.0, 9.0]);
@@ -1046,29 +1046,29 @@ mod tests {
     #[test]
     fn test_mean_out_of_bounds() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.mean(&[2][..], None);
+        let result = array.mean_axis(2, None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_min() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.min(None, None).unwrap().item::<i32>(), 1);
-        let y = x.min(None, true).unwrap();
+        assert_eq!(x.min(None).unwrap().item::<i32>(), 1);
+        let y = x.min(true).unwrap();
         assert_eq!(y.item::<i32>(), 1);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.min(&[0][..], None).unwrap();
+        let result = x.min_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[1, 2]);
 
-        let result = x.min(&[1][..], None).unwrap();
+        let result = x.min_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[1, 3]);
     }
 
     #[test]
     fn test_min_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.min(&[][..], None).unwrap();
+        let result = array.min_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -1077,26 +1077,26 @@ mod tests {
     #[test]
     fn test_var() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.variance(None, None, None).unwrap().item::<f32>(), 1.25);
-        let y = x.variance(None, true, None).unwrap();
+        assert_eq!(x.var(None, None).unwrap().item::<f32>(), 1.25);
+        let y = x.var(true, None).unwrap();
         assert_eq!(y.item::<f32>(), 1.25);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.variance(&[0][..], None, None).unwrap();
+        let result = x.var_axis(0, None, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[1.0, 1.0]);
 
-        let result = x.variance(&[1][..], None, None).unwrap();
+        let result = x.var_axis(1, None, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[0.25, 0.25]);
 
         let x = Array::from_slice(&[1.0, 2.0], &[2]);
-        let out = x.variance(None, None, Some(3)).unwrap();
+        let out = x.var(None, Some(3)).unwrap();
         assert_eq!(out.item::<f32>(), f32::INFINITY);
     }
 
     #[test]
     fn test_var_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.variance(&[][..], None, 0).unwrap();
+        let result = array.var_axes(&[], None, 0).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[0.0, 0.0, 0.0, 0.0]);
@@ -1105,7 +1105,7 @@ mod tests {
     #[test]
     fn test_log_sum_exp() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.log_sum_exp(&[0][..], None).unwrap();
+        let result = array.logsumexp_axis(0, None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.3132615, 9.313262]);
@@ -1114,7 +1114,7 @@ mod tests {
     #[test]
     fn test_log_sum_exp_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.log_sum_exp(&[][..], None).unwrap();
+        let result = array.logsumexp_axes(&[], None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.0, 8.0, 4.0, 9.0]);

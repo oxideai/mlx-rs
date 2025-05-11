@@ -429,20 +429,52 @@ impl Array {
     /// let all_rows = array.any(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn any_device<'a>(
+    pub fn any_axes_device<'a>(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &'a [i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
-
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_any(
+            mlx_sys::mlx_any_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    #[default_device]
+    pub fn any_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_any_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    #[default_device]
+    pub fn any_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_any(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -453,13 +485,34 @@ impl Array {
 /// See [`Array::any`]
 #[generate_macro]
 #[default_device]
-pub fn any_device<'a>(
+pub fn any_axes_device<'a>(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axes: &'a [i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().any_device(axes, keep_dims, stream)
+    array.as_ref().any_axes_device(axes, keep_dims, stream)
+}
+
+#[generate_macro]
+#[default_device]
+pub fn any_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().any_axis_device(axis, keep_dims, stream)
+}
+
+#[generate_macro]
+#[default_device]
+pub fn any_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().any_device(keep_dims, stream)
 }
 
 /// See [`Array::logical_and`]
@@ -960,7 +1013,7 @@ mod tests {
     #[test]
     fn test_any() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let all = array.any(&[0][..], None).unwrap();
+        let all = array.any_axes(&[0][..], None).unwrap();
 
         let results: &[bool] = all.as_slice();
         assert_eq!(results, &[true, true, true, true]);
@@ -969,7 +1022,7 @@ mod tests {
     #[test]
     fn test_any_empty_axes() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let all = array.any(&[][..], None).unwrap();
+        let all = array.any_axes(&[][..], None).unwrap();
 
         let results: &[bool] = all.as_slice();
         assert_eq!(
@@ -981,14 +1034,14 @@ mod tests {
     #[test]
     fn test_any_out_of_bounds() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[12]);
-        let result = array.any(&[1][..], None);
+        let result = array.any_axes(&[1][..], None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_any_duplicate_axes() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let result = array.any(&[0, 0][..], None);
+        let result = array.any_axes(&[0, 0][..], None);
         assert!(result.is_err());
     }
 

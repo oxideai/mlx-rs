@@ -130,7 +130,7 @@ mod tests {
             assert_eq!(biases.shape(), [128, 4]);
 
             let x_hat = dequantize(&x_q, &scales, &biases, 128, *i).unwrap();
-            let max_diff = ((&x - &x_hat).abs().unwrap().max(None, None).unwrap()).item::<f32>();
+            let max_diff = ((&x - &x_hat).abs().unwrap().max(None).unwrap()).item::<f32>();
             assert!(max_diff <= 127.0 / (1 << i) as f32);
         }
     }

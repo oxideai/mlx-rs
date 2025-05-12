@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::array::Array;
 use crate::error::Result;
 use crate::sealed::Sealed;
@@ -1209,7 +1211,7 @@ pub fn sinh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// for more information.
 #[generate_macro]
 #[default_device]
-pub fn softmax_device(
+pub fn softmax_axes_device(
     a: impl AsRef<Array>,
     axes: &[i32],
     precise: impl Into<Option<bool>>,
@@ -1219,7 +1221,7 @@ pub fn softmax_device(
     let s = stream.as_ref().as_ptr();
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax(
+        mlx_sys::mlx_softmax_axes(
             res,
             a.as_ref().as_ptr(),
             axes.as_ptr(),
@@ -1230,19 +1232,34 @@ pub fn softmax_device(
     })
 }
 
-/// Perform the softmax along all axes.
 #[generate_macro]
 #[default_device]
-pub fn softmax_all_device(
+pub fn softmax_axis_device(
     a: impl AsRef<Array>,
-    #[optional] precise: impl Into<Option<bool>>,
+    axis: i32,
+    precise: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax_all(res, a.as_ref().as_ptr(), precise, s)
+        mlx_sys::mlx_softmax_axis(res, a.as_ref().as_ptr(), axis, precise, s)
+    })
+}
+
+#[generate_macro]
+#[default_device]
+pub fn softmax_device(
+    a: impl AsRef<Array>,
+    precise: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let precise = precise.into().unwrap_or(false);
+    let s = stream.as_ref().as_ptr();
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_softmax(res, a.as_ref().as_ptr(), precise, s)
     })
 }
 
@@ -1461,7 +1478,7 @@ pub fn tensordot_device<'a>(
     let b = b.as_ref();
     match axes.into() {
         TensorDotDims::Int(dim) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot_along_axis(
+            mlx_sys::mlx_tensordot_axis(
                 res,
                 a.as_ptr(),
                 b.as_ptr(),

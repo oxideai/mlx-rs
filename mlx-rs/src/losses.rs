@@ -4,7 +4,7 @@ use crate::{
     array,
     error::{CrossEntropyBuildError, Exception},
     ops::{
-        abs, clip, exp, indexing::take_along_axis, log, log_add_exp, log_sum_exp, maximum, minimum,
+        abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp, maximum, minimum,
         multiply, power, r#where, sqrt, square, sum,
     },
     Array,
@@ -218,7 +218,7 @@ impl<'a> BinaryCrossEntropy<'a> {
         let reduction = self.reduction;
 
         let mut loss = if inputs_are_logits {
-            log_add_exp(array!(0.0), logits)?.subtract(targets.multiply(logits)?)?
+            logaddexp(array!(0.0), logits)?.subtract(targets.multiply(logits)?)?
         } else {
             let log_inputs_clip = clip(log(logits)?, (-100.0, ()))?;
             let log_inputs_inverse_clip = clip(log(&array!(1.0).subtract(logits)?)?, (-100.0, ()))?;
@@ -747,7 +747,7 @@ impl LogCoshLoss {
 
         let errors = inputs.subtract(targets)?;
         let neg_errors = errors.negative()?;
-        let loss = log_add_exp(errors, neg_errors)?.subtract(log(&array!(2.0))?)?;
+        let loss = logaddexp(errors, neg_errors)?.subtract(log(&array!(2.0))?)?;
         reduction.reduce(loss)
     }
 }

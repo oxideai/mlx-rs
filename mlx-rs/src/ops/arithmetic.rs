@@ -1018,7 +1018,7 @@ pub fn log2_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
 #[generate_macro]
 #[default_device]
-pub fn log_add_exp_device(
+pub fn logaddexp_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     #[optional] stream: impl AsRef<Stream>,
@@ -2667,37 +2667,37 @@ mod tests {
         let x = array![0.0];
         let y = array![0.0];
         assert_float_eq! {
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            logaddexp(&x, &y).unwrap().item::<f32>(),
             2.0f32.ln(),
             abs <= 1e-5
         };
 
         let x = array!([0u32]);
         let y = array!([10000u32]);
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 10000.0);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), 10000.0);
 
         let x = array![f32::INFINITY];
         let y = array![3.0];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![3.0];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 3.0);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), 3.0);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::NEG_INFINITY];
         assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            logaddexp(&x, &y).unwrap().item::<f32>(),
             f32::NEG_INFINITY
         );
 
         let x = array![f32::INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
     }
 
     #[test]

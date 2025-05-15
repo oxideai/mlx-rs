@@ -100,10 +100,10 @@ pub fn relu6(x: impl AsRef<Array>) -> Result<Array> {
 /// This is:
 ///
 /// ```rust, ignore
-/// log_add_exp(x, 0)
+/// logaddexp(x, 0)
 /// ```
 pub fn softplus(x: impl AsRef<Array>) -> Result<Array> {
-    crate::ops::log_add_exp(x.as_ref(), &array!(0))
+    crate::ops::logaddexp(x.as_ref(), &array!(0))
 }
 
 /// Applies the Softsign function.
@@ -461,7 +461,7 @@ impl Module<&Array> for Softmax {
 /// This is:
 ///
 /// ```rust, ignore
-/// log_add_exp(x, 0)
+/// logaddexp(x, 0)
 /// ```
 #[derive(Debug, Clone, ModuleParameters)]
 #[module(root = crate)]

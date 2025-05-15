@@ -13,8 +13,17 @@ use crate::{
 impl Array {
     /// See [`expand_dims`].
     #[default_device]
-    pub fn expand_dims_device(&self, axes: i32, stream: impl AsRef<Stream>) -> Result<Array> {
-        expand_dims_device(self, axes, stream)
+    pub fn expand_dims_device(&self, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+        expand_dims_device(self, axis, stream)
+    }
+
+    #[default_device]
+    pub fn expand_dims_axes_device(
+        &self,
+        axes: &[i32],
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        expand_dims_axes_device(self, axes, stream)
     }
 
     /// See [`flatten`].

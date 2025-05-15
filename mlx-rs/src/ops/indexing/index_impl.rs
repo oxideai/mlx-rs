@@ -896,7 +896,7 @@ fn gather_nd<'a>(
 #[inline]
 fn get_item_index(src: &Array, index: i32, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
     let index = resolve_index_unchecked(index, src.dim(axis) as usize) as i32;
-    src.take_device(array!(index), axis, stream)
+    src.take_axis_device(array!(index), axis, stream)
 }
 
 #[inline]
@@ -906,7 +906,7 @@ fn get_item_array(
     axis: i32,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    src.take_device(indices, axis, stream)
+    src.take_axis_device(indices, axis, stream)
 }
 
 #[inline]
@@ -939,7 +939,7 @@ fn get_item<'a>(
         TakeArray { indices } => get_item_array(src, &indices, 0, stream),
         TakeArrayRef { indices } => get_item_array(src, indices, 0, stream),
         Slice(range) => get_item_slice(src, range, stream),
-        ExpandDims => src.expand_dims_device(&[0], stream),
+        ExpandDims => src.expand_dims_device(0, stream),
     }
 }
 
@@ -1381,7 +1381,7 @@ mod tests {
         let result = result.as_ref();
         assert_eq!(result.shape(), shape);
 
-        let sum = result.sum(None, None).unwrap();
+        let sum = result.sum(None).unwrap();
 
         assert_eq!(sum.item::<i32>(), expected_sum);
     }

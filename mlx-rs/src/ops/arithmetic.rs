@@ -1508,7 +1508,7 @@ mod tests {
     use super::*;
     use crate::{
         array, complex64,
-        ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal},
+        ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split},
         transforms::eval,
         Dtype,
     };
@@ -2160,7 +2160,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.exp(), 2.0f32.exp()], &[2, 1]);
         assert!(all_close(exp(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2225,7 +2225,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.sin(), 2.0f32.sin()], &[2, 1]);
         assert!(all_close(sin(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2268,7 +2268,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.cos(), 2.0f32.cos()], &[2, 1]);
         assert!(all_close(cos(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2299,7 +2299,7 @@ mod tests {
             .item::<bool>());
 
         let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
-        let x = split_equal(&angles, 2, 1).unwrap();
+        let x = split(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, 180.0], &[2, 1]);
         assert!(
             all_close(degrees(&x[0]).unwrap(), &expected, None, None, None)
@@ -2338,7 +2338,7 @@ mod tests {
             .item::<bool>());
 
         let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
-        let x = split_equal(&angles, 2, 1).unwrap();
+        let x = split(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, PI], &[2, 1]);
         assert!(
             all_close(radians(&x[0]).unwrap(), &expected, None, None, None)
@@ -2369,7 +2369,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln(), 3.0f32.ln()], &[2, 1]);
         assert!(all_close(log(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2434,7 +2434,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln_1p(), 3.0f32.ln_1p()], &[2, 1]);
         assert!(
             all_close(log1p(&x[0]).unwrap(), &expected, None, None, None)

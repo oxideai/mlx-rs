@@ -242,14 +242,14 @@ impl Array {
     /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn repeat_device<T: ArrayElement>(
+    pub fn repeat_axis_device<T: ArrayElement>(
         array: Array,
         count: i32,
         axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat_axis(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
         })
     }
 
@@ -269,13 +269,13 @@ impl Array {
     /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default()).unwrap();
     /// ```
     #[default_device]
-    pub fn repeat_all_device<T: ArrayElement>(
+    pub fn repeat_device<T: ArrayElement>(
         array: Array,
         count: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat_all(res, array.as_ptr(), count, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat(res, array.as_ptr(), count, stream.as_ref().as_ptr())
         })
     }
 
@@ -466,24 +466,24 @@ where
 /// See [`Array::repeat`]
 #[generate_macro]
 #[default_device]
-pub fn repeat_device<T: ArrayElement>(
+pub fn repeat_axis_device<T: ArrayElement>(
     array: Array,
     count: i32,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::repeat_device::<T>(array, count, axis, stream)
+    Array::repeat_axis_device::<T>(array, count, axis, stream)
 }
 
-/// See [`Array::repeat_all`]
+/// See [`Array::repeat`]
 #[generate_macro]
 #[default_device]
-pub fn repeat_all_device<T: ArrayElement>(
+pub fn repeat_device<T: ArrayElement>(
     array: Array,
     count: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::repeat_all_device::<T>(array, count, stream)
+    Array::repeat_device::<T>(array, count, stream)
 }
 
 /// See [`Array::tri`]
@@ -700,7 +700,7 @@ mod tests {
     #[test]
     fn test_repeat() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, 4, 1).unwrap();
+        let array = Array::repeat_axis::<i32>(source, 4, 1).unwrap();
         assert_eq!(array.shape(), &[2, 8]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -711,18 +711,18 @@ mod tests {
     #[test]
     fn test_repeat_try() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, 4, 1);
+        let array = Array::repeat_axis::<i32>(source, 4, 1);
         assert!(array.is_ok());
 
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, -1, 1);
+        let array = Array::repeat_axis::<i32>(source, -1, 1);
         assert!(array.is_err());
     }
 
     #[test]
     fn test_repeat_all() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, 4).unwrap();
+        let array = Array::repeat::<i32>(source, 4).unwrap();
         assert_eq!(array.shape(), &[16]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -733,11 +733,11 @@ mod tests {
     #[test]
     fn test_repeat_all_try() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, 4);
+        let array = Array::repeat::<i32>(source, 4);
         assert!(array.is_ok());
 
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, -1);
+        let array = Array::repeat::<i32>(source, -1);
         assert!(array.is_err());
     }
 

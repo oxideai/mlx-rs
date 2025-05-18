@@ -136,7 +136,7 @@ fn test_fft_fft() {
 #[test]
 fn test_linalg_norm() {
     let a = array!([1.0, 2.0, 3.0, 4.0]).reshape(&[2, 2]).unwrap();
-    let norm = mlx_rs::norm!(&a).unwrap();
+    let norm = mlx_rs::norm_l2!(&a).unwrap();
     assert_eq!(norm.item::<f32>(), 5.477_226);
 }
 

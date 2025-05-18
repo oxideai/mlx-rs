@@ -5,7 +5,7 @@ use hf_hub::{
 use mlx_rs::{
     array,
     module::{Module, ModuleParametersExt},
-    ops::indexing::{argmax, IndexOp, NewAxis},
+    ops::indexing::{argmax, argmax_axis, IndexOp, NewAxis},
     random::categorical,
     transforms::eval,
     Array,
@@ -81,7 +81,7 @@ fn load_model(repo: &ApiRepo) -> Result<Mistral> {
 
 fn sample(logits: &Array, temp: f32) -> Result<Array> {
     match temp {
-        0.0 => argmax(logits, -1, None).map_err(Into::into),
+        0.0 => argmax_axis(logits, -1, None).map_err(Into::into),
         _ => {
             let logits = logits.multiply(array!(1.0 / temp))?;
             categorical(logits, None, None, None).map_err(Into::into)
@@ -156,7 +156,7 @@ impl Iterator for Generate<'_> {
                     cache: new_cache,
                 } = tri!(self.model.forward(input));
 
-                let logits = tri!(logits.squeeze(&[1]));
+                let logits = tri!(logits.squeeze_axes(&[1]));
                 let y = tri!(sample(&logits, self.temp));
 
                 self.state = GenerateState::Continue {

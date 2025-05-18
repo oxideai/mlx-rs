@@ -433,12 +433,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.5082664489746094,
             abs <= 0.010165328979492188
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             130.1162109375,
             abs <= 2.60232421875
         );
@@ -448,12 +448,12 @@ mod tests {
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.4562537670135498,
             abs <= 0.009125075340270997
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             116.80096435546875,
             abs <= 2.3360192871093752
         );
@@ -468,12 +468,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.5026599168777466,
             abs <= 0.010053198337554931
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             128.68093872070312,
             abs <= 2.5736187744140624
         );
@@ -483,12 +483,12 @@ mod tests {
         assert_eq!(result.shape(), &[2, 8, 16, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.2705308198928833,
             abs <= 0.005410616397857666
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             554.047119140625,
             abs <= 11.0809423828125
         );

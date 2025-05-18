@@ -4,8 +4,7 @@ use crate::{
     array,
     error::{CrossEntropyBuildError, Exception},
     ops::{
-        abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp, maximum, minimum,
-        multiply, power, r#where, sqrt, square, sum,
+        abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp, logsumexp_axes, maximum, minimum, multiply, power, sqrt, square, sum, sum_axes, sum_axis, r#where
     },
     Array,
 };
@@ -46,8 +45,8 @@ impl LossReduction {
     pub fn reduce(&self, loss: Array) -> Result<Array, Exception> {
         match self {
             LossReduction::None => Ok(loss),
-            LossReduction::Sum => Ok(loss.sum(None, None)?),
-            LossReduction::Mean => Ok(loss.mean(None, None)?),
+            LossReduction::Sum => Ok(loss.sum(None)?),
+            LossReduction::Mean => Ok(loss.mean(None)?),
         }
     }
 }
@@ -133,18 +132,18 @@ impl<'a> CrossEntropy<'a> {
         let target_as_probs = targets.ndim() == logits.ndim();
 
         let score = if target_as_probs {
-            sum(&logits.multiply(targets)?, &[self.axis], None)?
+            sum_axes(&logits.multiply(targets)?, &[self.axis], None)?
         } else {
-            take_along_axis(logits, &targets.expand_dims(&[-1])?, self.axis)?.squeeze(&[-1])?
+            take_along_axis(logits, &targets.expand_dims_axes(&[-1])?, self.axis)?.squeeze(&[-1])?
         };
-        let log_sum_exp_logits = log_sum_exp(logits, &[self.axis], None)?;
+        let log_sum_exp_logits = logsumexp_axes(logits, &[self.axis], None)?;
 
         let mut loss = if self.label_smoothing > 0.0 {
             // adjust the true class score with label smoothing
             let adjusted_score = multiply(array!(1.0 - self.label_smoothing), score)?;
 
             // calculate the mean logit across the classes for smoothed loss
-            let mean_logits = logits.mean(&[self.axis], None)?;
+            let mean_logits = logits.mean_axis(self.axis, None)?;
             let smoothed_loss = -multiply(mean_logits, array!(self.label_smoothing))?;
 
             // combine the adjusted score and smoothed loss with the logsumexp logits
@@ -351,7 +350,7 @@ impl NllLoss {
         let axis = self.axis;
         let reduction = self.reduction;
 
-        let loss = -take_along_axis(inputs, &targets.expand_dims(&[-1])?, axis)?.squeeze(&[-1])?;
+        let loss = -take_along_axis(inputs, &targets.expand_dims_axes(&[-1])?, axis)?.squeeze(&[-1])?;
         reduction.reduce(loss)
     }
 }
@@ -469,9 +468,9 @@ impl KlDivLoss {
         let axis = self.axis;
         let reduction = self.reduction;
 
-        let loss = sum(
+        let loss = sum_axis(
             &exp(targets)?.multiply(targets.subtract(inputs)?)?,
-            &[axis],
+            axis,
             None,
         )?;
         reduction.reduce(loss)
@@ -608,12 +607,12 @@ impl TripletLoss {
 
         let pos = sqrt(
             &power(&anchors.subtract(positives)?, &p)?
-                .sum(&[axis], None)?
+                .sum_axis(axis, None)?
                 .add(&eps)?,
         )?;
         let neg = sqrt(
             &power(&anchors.subtract(negatives)?, &p)?
-                .sum(&[axis], None)?
+                .sum_axis(axis, None)?
                 .add(&eps)?,
         )?;
         let loss = maximum(pos.subtract(neg)?.add(margin)?, array!(0.0))?;
@@ -798,16 +797,16 @@ impl CosineSimilarityLoss {
 
         fn l2_loss(a: &Array, axis: i32) -> Result<Array, Exception> {
             if a.dtype().is_complex() {
-                Ok(sqrt(&sum(&abs(a)?.square()?, &[axis], None)?)?)
+                Ok(sqrt(&sum_axis(&abs(a)?.square()?, axis, None)?)?)
             } else {
-                Ok(sqrt(&sum(&a.square()?, &[axis], None)?)?)
+                Ok(sqrt(&sum_axis(&a.square()?, axis, None)?)?)
             }
         }
 
         let x1_norm = l2_loss(x1, axis)?;
         let x2_norm = l2_loss(x2, axis)?;
 
-        let num = sum(&x1.multiply(x2)?, &[axis], None)?;
+        let num = sum_axis(&x1.multiply(x2)?, axis, None)?;
         let den = maximum(x1_norm.multiply(x2_norm)?, array!(eps))?;
         let loss = num.divide(&den)?;
 
@@ -902,7 +901,7 @@ mod tests {
         let loss = cross_entropy.apply(logits, probs).unwrap();
         assert!(is_nan(&loss)
             .unwrap()
-            .all(None, None)
+            .all(None)
             .unwrap()
             .item::<bool>());
 
@@ -994,7 +993,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean = binary_cross_entropy.apply(&logits, &targets).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1003,7 +1002,7 @@ mod tests {
             .build()
             .unwrap();
         let loss = binary_cross_entropy.apply(&logits, &targets).unwrap();
-        let expected = expected_none.sum(None, None).unwrap();
+        let expected = expected_none.sum(None).unwrap();
         assert_array_eq!(loss, expected);
 
         // With weights, no label smoothing
@@ -1040,7 +1039,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean = binary_cross_entropy.apply(&probs, &targets).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1050,7 +1049,7 @@ mod tests {
             .build()
             .unwrap();
         let loss = binary_cross_entropy.apply(&probs, &targets).unwrap();
-        let expected = expected_none.sum(None, None).unwrap();
+        let expected = expected_none.sum(None).unwrap();
         assert_array_eq!(loss, expected);
     }
 
@@ -1077,7 +1076,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean = binary_cross_entropy.apply(&probs, &targets).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1087,7 +1086,7 @@ mod tests {
             .build()
             .unwrap();
         let loss = binary_cross_entropy.apply(&probs, &targets).unwrap();
-        let expected = expected_none.sum(None, None).unwrap();
+        let expected = expected_none.sum(None).unwrap();
         assert_array_eq!(loss, expected);
     }
 
@@ -1097,8 +1096,8 @@ mod tests {
         let targets = array!([0.5, 0.2, 0.9, 0.0]);
 
         let expected_none = array!([0.0, 0.0, 0.0, 0.0]);
-        let expected_sum = expected_none.sum(None, None).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
 
         let l1_loss = L1LossBuilder::new()
             .reduction(LossReduction::None)
@@ -1128,8 +1127,8 @@ mod tests {
         let targets = array!([0.7, 0.1, 0.8, 0.2]);
 
         let expected_none = array!([0.04, 0.01, 0.01, 0.04]);
-        let expected_mean = expected_none.mean(None, None).unwrap();
-        let expected_sum = expected_none.sum(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
 
         let mse_loss = MseLossBuilder::new()
             .reduction(LossReduction::None)
@@ -1160,8 +1159,8 @@ mod tests {
         let beta = 1.0;
 
         let expected_none = array!([0.125, 0.125, 0.0, 0.5]);
-        let expected_sum = expected_none.sum(None, None).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
 
         let smooth_l1_loss = SmoothL1LossBuilder::new()
             .beta(beta)
@@ -1206,8 +1205,8 @@ mod tests {
         let targets = array!([0, 1]);
 
         let expected_none = array!([0.0, 0.0]);
-        let expected_sum = expected_none.sum(None, None).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
 
         let nll_loss = NllLossBuilder::new()
             .reduction(LossReduction::None)
@@ -1254,7 +1253,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean = gaussian_nll_loss.apply(&inputs, &targets, &vars).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum', full=False
@@ -1264,7 +1263,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_sum = gaussian_nll_loss.apply(&inputs, &targets, &vars).unwrap();
-        let expected_sum = expected_none.sum(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
 
         // Test with reduction='none', full=True
@@ -1284,7 +1283,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean_full = gaussian_nll_loss.apply(&inputs, &targets, &vars).unwrap();
-        let expected_mean_full = expected_none_full.mean(None, None).unwrap();
+        let expected_mean_full = expected_none_full.mean(None).unwrap();
         assert_array_eq!(loss_mean_full, expected_mean_full);
 
         // Test with reduction='sum', full=True
@@ -1294,7 +1293,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_sum_full = gaussian_nll_loss.apply(&inputs, &targets, &vars).unwrap();
-        let expected_sum_full = expected_none_full.sum(None, None).unwrap();
+        let expected_sum_full = expected_none_full.sum(None).unwrap();
         assert_array_eq!(loss_sum_full, expected_sum_full);
     }
 
@@ -1318,7 +1317,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_mean = kl_div_loss.apply(&p_logits, &q_logits).unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1327,7 +1326,7 @@ mod tests {
             .build()
             .unwrap();
         let loss_sum = kl_div_loss.apply(&p_logits, &q_logits).unwrap();
-        let expected_sum = expected_none.sum(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
     }
 
@@ -1356,7 +1355,7 @@ mod tests {
         let loss_mean = triplet_loss
             .apply(&anchors, &positives, &negatives)
             .unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1367,7 +1366,7 @@ mod tests {
         let loss_sum = triplet_loss
             .apply(&anchors, &positives, &negatives)
             .unwrap();
-        let expected_sum = expected_none.sum(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
     }
 
@@ -1431,7 +1430,7 @@ mod tests {
         let loss_mean = cosine_similarity_loss
             .apply(&embeddings1, &embeddings2)
             .unwrap();
-        let expected_mean = expected_none.mean(None, None).unwrap();
+        let expected_mean = expected_none.mean(None).unwrap();
         assert_array_eq!(loss_mean, expected_mean);
 
         // Test with reduction 'sum'
@@ -1442,7 +1441,7 @@ mod tests {
         let loss_sum = cosine_similarity_loss
             .apply(&embeddings1, &embeddings2)
             .unwrap();
-        let expected_sum = expected_none.sum(None, None).unwrap();
+        let expected_sum = expected_none.sum(None).unwrap();
         assert_array_eq!(loss_sum, expected_sum);
     }
 

@@ -12,8 +12,8 @@ use mlx_macros::ModuleParameters;
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
-    let mean = x.mean(axes, true)?;
-    let variance = x.variance(axes, true, None)?;
+    let mean = x.mean_axes(axes, true)?;
+    let variance = x.var_axes(axes, true, None)?;
 
     // Normalize
     let x = x.subtract(&mean)?.multiply(rsqrt(&variance.add(eps)?)?)?;
@@ -375,7 +375,7 @@ impl GroupNorm {
         // Split into groups
         let x = x.reshape(&[batch, -1, self.group_count, group_size])?;
         let x = x
-            .transpose(&[0, 2, 1, 3])?
+            .transpose_axes(&[0, 2, 1, 3])?
             .reshape(&[batch, self.group_count, -1])?;
 
         // Normalize
@@ -388,7 +388,7 @@ impl GroupNorm {
             .chain(rest.iter().copied())
             .chain([dims])
             .collect();
-        x.transpose(&[0, 2, 1, 3])?.reshape(&new_shape[..])
+        x.transpose_axes(&[0, 2, 1, 3])?.reshape(&new_shape[..])
     }
 
     fn group_norm(&self, x: &Array) -> Result<Array, Exception> {
@@ -557,8 +557,8 @@ impl BatchNorm {
     fn stats(x: &Array) -> Result<(Array, Array), Exception> {
         let reduction_axes = (0..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
-        let mean = x.mean(&reduction_axes, None)?;
-        let variance = x.variance(&reduction_axes, None, None)?;
+        let mean = x.mean_axes(&reduction_axes, None)?;
+        let variance = x.var_axes(&reduction_axes, None, None)?;
 
         Ok((mean, variance))
     }

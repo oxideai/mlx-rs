@@ -36,6 +36,10 @@ pub struct ConvTranspose1dBuilder {
     #[builder(optional, default = ConvTranspose1d::DEFAULT_PADDING)]
     pub padding: i32,
 
+    /// Output padding. Default to [`ConvTranspose1d::DEFAULT_OUTPUT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose1d::DEFAULT_OUTPUT_PADDING)]
+    pub output_padding: i32,
+
     /// Stride. Default to [`ConvTranspose1d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = ConvTranspose1d::DEFAULT_STRIDE)]
     pub stride: i32,
@@ -48,6 +52,7 @@ fn build_conv_transpose_1d(builder: ConvTranspose1dBuilder) -> Result<ConvTransp
 
     let bias = builder.bias;
     let padding = builder.padding;
+    let output_padding = builder.output_padding;
     let stride = builder.stride;
 
     let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
@@ -67,6 +72,7 @@ fn build_conv_transpose_1d(builder: ConvTranspose1dBuilder) -> Result<ConvTransp
         weight: Param::new(weight),
         bias: Param::new(bias),
         padding,
+        output_padding,
         stride,
     })
 }
@@ -93,6 +99,8 @@ pub struct ConvTranspose1d {
     /// Padding. Default to 0 if not specified.
     pub padding: i32,
 
+    pub output_padding: i32,
+
     /// Stride. Default to 1 if not specified.
     pub stride: i32,
 }
@@ -103,6 +111,8 @@ impl ConvTranspose1d {
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: i32 = 0;
+
+    pub const DEFAULT_OUTPUT_PADDING: i32 = 0;
 
     /// Default value for `stride` if not specified.
     pub const DEFAULT_STRIDE: i32 = 1;
@@ -119,6 +129,7 @@ impl Module<&Array> for ConvTranspose1d {
             self.stride,
             self.padding,
             None,
+            self.output_padding,
             None,
         )?;
         if let Some(bias) = &self.bias.value {
@@ -156,6 +167,10 @@ pub struct ConvTranspose2dBuilder {
     #[builder(optional, default = ConvTranspose2d::DEFAULT_PADDING)]
     padding: SingleOrPair<i32>,
 
+    /// Output padding. Default to [`ConvTranspose2d::DEFAULT_OUTPUT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose2d::DEFAULT_OUTPUT_PADDING)]
+    output_padding: SingleOrPair<i32>,
+
     /// Stride. Default to [`ConvTranspose2d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = ConvTranspose2d::DEFAULT_STRIDE)]
     stride: SingleOrPair<i32>,
@@ -168,6 +183,7 @@ fn build_conv_transpose_2d(builder: ConvTranspose2dBuilder) -> Result<ConvTransp
 
     let bias = builder.bias;
     let padding = builder.padding.into();
+    let output_padding = builder.output_padding.into();
     let stride = builder.stride.into();
 
     let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
@@ -192,6 +208,7 @@ fn build_conv_transpose_2d(builder: ConvTranspose2dBuilder) -> Result<ConvTransp
         weight: Param::new(weight),
         bias: Param::new(bias),
         padding,
+        output_padding,
         stride,
     })
 }
@@ -219,6 +236,9 @@ pub struct ConvTranspose2d {
     /// Padding. Default to `(0, 0)` if not specified.
     pub padding: (i32, i32),
 
+    /// Output padding. Default to `(0, 0)` if not specified.
+    pub output_padding: (i32, i32),
+
     /// Stride. Default to `(1, 1)` if not specified.
     pub stride: (i32, i32),
 }
@@ -229,6 +249,9 @@ impl ConvTranspose2d {
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: SingleOrPair<i32> = SingleOrPair::Pair(0, 0);
+
+    /// Default value for `output_padding` if not specified.
+    pub const DEFAULT_OUTPUT_PADDING: SingleOrPair<i32> = SingleOrPair::Pair(0, 0);
 
     /// Default value for `stride` if not specified.
     pub const DEFAULT_STRIDE: SingleOrPair<i32> = SingleOrPair::Pair(1, 1);
@@ -245,6 +268,7 @@ impl Module<&Array> for ConvTranspose2d {
             self.stride,
             self.padding,
             None,
+            self.output_padding,
             None,
         )?;
         if let Some(bias) = &self.bias.value {
@@ -282,6 +306,10 @@ pub struct ConvTranspose3dBuilder {
     #[builder(optional, default = ConvTranspose3d::DEFAULT_PADDING)]
     pub padding: SingleOrTriple<i32>,
 
+    /// Output padding. Default to [`ConvTranspose3d::DEFAULT_OUTPUT_PADDING`] if not specified.
+    #[builder(optional, default = ConvTranspose3d::DEFAULT_OUTPUT_PADDING)]
+    pub output_padding: SingleOrTriple<i32>,
+
     /// Stride. Default to [`ConvTranspose3d::DEFAULT_STRIDE`] if not specified.
     #[builder(optional, default = ConvTranspose3d::DEFAULT_STRIDE)]
     pub stride: SingleOrTriple<i32>,
@@ -294,6 +322,7 @@ fn build_conv_transpose_3d(builder: ConvTranspose3dBuilder) -> Result<ConvTransp
 
     let bias = builder.bias;
     let padding = builder.padding.into();
+    let output_padding = builder.output_padding.into();
     let stride = builder.stride.into();
 
     let scale =
@@ -320,6 +349,7 @@ fn build_conv_transpose_3d(builder: ConvTranspose3dBuilder) -> Result<ConvTransp
         weight: Param::new(weight),
         bias: Param::new(bias),
         padding,
+        output_padding,
         stride,
     })
 }
@@ -347,6 +377,9 @@ pub struct ConvTranspose3d {
     /// Padding. Default to `(0, 0, 0)` if not specified.
     pub padding: (i32, i32, i32),
 
+    /// Output padding. Default to `(0, 0, 0)` if not specified.
+    pub output_padding: (i32, i32, i32),
+
     /// Stride. Default to `(1, 1, 1)` if not specified.
     pub stride: (i32, i32, i32),
 }
@@ -357,6 +390,9 @@ impl ConvTranspose3d {
 
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: SingleOrTriple<i32> = SingleOrTriple::Triple(0, 0, 0);
+
+    /// Default value for `output_padding` if not specified.
+    pub const DEFAULT_OUTPUT_PADDING: SingleOrTriple<i32> = SingleOrTriple::Triple(0, 0, 0);
 
     /// Default value for `stride` if not specified.
     pub const DEFAULT_STRIDE: SingleOrTriple<i32> = SingleOrTriple::Triple(1, 1, 1);
@@ -373,6 +409,7 @@ impl Module<&Array> for ConvTranspose3d {
             self.stride,
             self.padding,
             None,
+            self.output_padding,
             None,
         )?;
         if let Some(bias) = &self.bias.value {

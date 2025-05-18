@@ -5,7 +5,7 @@ use crate::{
     builder::Builder,
     error::Exception,
     module::{Module, UnaryModule},
-    ops::{arange, expand_dims, matmul, softmax},
+    ops::{arange, expand_dims, matmul, softmax, softmax_axis},
     quantization::MaybeQuantized,
     Array, ArrayElement, FromScalar,
 };
@@ -145,8 +145,8 @@ impl MultiHeadAttention {
         Array: FromScalar<T>,
     {
         let indices = arange::<_, T>(0, n, 1)?;
-        let left = expand_dims(&indices, &[1])?;
-        let right = expand_dims(&indices, &[0])?;
+        let left = expand_dims(&indices, 1)?;
+        let right = expand_dims(&indices, 0)?;
         let mask = left.lt(right)?;
         let mask = mask.as_type::<T>()?.multiply(array!(T::min_value()))?; // TODO: replace with f32::MIN?
         Ok(mask)
@@ -231,13 +231,13 @@ where
 
         let queries = queries
             .reshape(&[B, L, self.num_heads, -1])?
-            .transpose(&[0, 2, 1, 3])?;
+            .transpose_axes(&[0, 2, 1, 3])?;
         let keys = keys
             .reshape(&[B, S, self.num_heads, -1])?
-            .transpose(&[0, 2, 3, 1])?;
+            .transpose_axes(&[0, 2, 3, 1])?;
         let values = values
             .reshape(&[B, S, self.num_heads, -1])?
-            .transpose(&[0, 2, 1, 3])?;
+            .transpose_axes(&[0, 2, 1, 3])?;
 
         // Dimensions are [batch x num_heads x sequence x hidden_dim]
         let scale = f32::sqrt(1.0 / queries.dim(-1) as f32);
@@ -245,9 +245,9 @@ where
         if let Some(mask) = input.mask {
             scores = scores.add(mask.as_dtype(scores.dtype())?)?;
         }
-        scores = softmax(&scores, &[-1], None)?;
+        scores = softmax_axis(&scores, -1, None)?;
         let value_hat = matmul(&scores, &values)?
-            .transpose(&[0, 2, 1, 3])?
+            .transpose_axes(&[0, 2, 1, 3])?
             .reshape(&[B, L, -1])?;
 
         self.output_proj.forward(&value_hat)

@@ -4,8 +4,7 @@ use crate::{
     array,
     error::Exception,
     module::{Module, Param},
-    ops::indexing::NewAxis,
-    ops::{arange, concatenate, exp, indexing::TryIndexOp, log},
+    ops::{arange, concatenate, concatenate_axis, exp, indexing::{NewAxis, TryIndexOp}, log},
     Array, Dtype,
 };
 use mlx_internal_macros::{generate_builder, Buildable, Builder};
@@ -235,16 +234,16 @@ impl Module<&Array> for Sinpe {
 
     fn forward(&mut self, x: &Array) -> Result<Self::Output, Self::Error> {
         let mut y = x
-            .expand_dims(&[-1])
+            .expand_dims_axes(&[-1])
             .and_then(|x| x.multiply(&self.sigmas))?;
 
         let cosy = y.cos()?;
         let siny = y.sin()?;
 
         if self.cosine_first {
-            y = concatenate(&[cosy, siny], -1)?;
+            y = concatenate_axis(&[cosy, siny], -1)?;
         } else {
-            y = concatenate(&[siny, cosy], -1)?;
+            y = concatenate_axis(&[siny, cosy], -1)?;
         }
 
         if self.scale != 1.0 {
@@ -281,7 +280,7 @@ impl Alibi {
         let x = 2.0_f32.powi(8).powf(1.0 / num_heads as f32);
         array!(x)
             .power(&arange::<_, f32>(1, num_heads + 1, None)?)?
-            .expand_dims(&[-1, -2])
+            .expand_dims_axes(&[-1, -2])
     }
 
     fn matrix(key: AlibiKey) -> Result<Array, Exception> {
@@ -294,7 +293,7 @@ impl Alibi {
         let distance_matrix = x1
             .try_index((.., NewAxis))?
             .subtract(x2.try_index((NewAxis, ..))?)?
-            .expand_dims(&[0, 1])?
+            .expand_dims_axes(&[0, 1])?
             .abs()?
             .negative()?;
 

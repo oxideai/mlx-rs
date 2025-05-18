@@ -195,7 +195,7 @@ impl Module<&Array> for Bilinear {
         let mut y = crate::ops::matmul(&x1, w.t())?;
         y = y.reshape(&[-1, out, in2])?.swap_axes(-2, -1)?;
         y = crate::ops::matmul(&x2, &y)?;
-        y = y.squeeze(&[1])?;
+        y = y.squeeze_axes(&[1])?;
 
         // reset the shape
         let new_shape = x_shape.iter().cloned().chain(once(out)).collect::<Vec<_>>();

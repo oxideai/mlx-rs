@@ -45,12 +45,17 @@ impl Array {
 
     /// See [`squeeze`].
     #[default_device]
-    pub fn squeeze_device(
+    pub fn squeeze_axes_device(
         &self,
         axes: &[i32],
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         squeeze_axes_device(self, axes, stream)
+    }
+
+    #[default_device]
+    pub fn squeeze_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
+        squeeze_device(self, stream)
     }
 
     /// See [`as_strided`]

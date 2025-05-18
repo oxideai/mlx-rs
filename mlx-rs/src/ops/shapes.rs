@@ -11,12 +11,13 @@ use crate::{
 };
 
 impl Array {
-    /// See [`expand_dims`].
+    /// See [`expand_dims()`].
     #[default_device]
     pub fn expand_dims_device(&self, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
         expand_dims_device(self, axis, stream)
     }
 
+    /// See [`expand_dims_axes()`].
     #[default_device]
     pub fn expand_dims_axes_device(
         &self,
@@ -43,7 +44,7 @@ impl Array {
         reshape_device(self, shape, stream)
     }
 
-    /// See [`squeeze`].
+    /// See [`squeeze_axes()`].
     #[default_device]
     pub fn squeeze_axes_device(
         &self,
@@ -53,6 +54,7 @@ impl Array {
         squeeze_axes_device(self, axes, stream)
     }
 
+    /// See [`squeeze()`].
     #[default_device]
     pub fn squeeze_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
         squeeze_device(self, stream)
@@ -303,6 +305,7 @@ pub fn concatenate_axis_device(
     })
 }
 
+/// Concatenate the arrays along the first axis. Returns an error if the shapes are invalid.
 #[generate_macro]
 #[default_device]
 pub fn concatenate_device(
@@ -348,6 +351,7 @@ pub fn expand_dims_axes_device(
     })
 }
 
+/// Similar to [`expand_dims_axes`], but only takes a single axis.
 #[generate_macro]
 #[default_device]
 pub fn expand_dims_device(
@@ -501,6 +505,7 @@ pub fn squeeze_axes_device(
     })
 }
 
+/// Similar to [`squeeze_axes`], but removes all length one axes.
 #[generate_macro]
 #[default_device]
 pub fn squeeze_device(

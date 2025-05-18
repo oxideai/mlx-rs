@@ -1232,6 +1232,7 @@ pub fn softmax_axes_device(
     })
 }
 
+/// Similar to [`softmax_axes`] but with a single axis.
 #[generate_macro]
 #[default_device]
 pub fn softmax_axis_device(
@@ -1248,6 +1249,7 @@ pub fn softmax_axis_device(
     })
 }
 
+/// Similar to [`softmax_axes`] but with no axis specified.
 #[generate_macro]
 #[default_device]
 pub fn softmax_device(

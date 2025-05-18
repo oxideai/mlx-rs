@@ -45,6 +45,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::all_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn all_axis_device(
         &self,
@@ -63,6 +64,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::all_axes`] but reduces over all axes.
     #[default_device]
     pub fn all_device(
         &self,
@@ -114,6 +116,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::prod_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn prod_axis_device(
         &self,
@@ -132,6 +135,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::prod_axes`] but reduces over all axes.
     #[default_device]
     pub fn prod_device(
         &self,
@@ -183,6 +187,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::max_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn max_axis_device(
         &self,
@@ -201,6 +206,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::max_axes`] but reduces over all axes.
     #[default_device]
     pub fn max_device(
         &self,
@@ -252,6 +258,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::sum_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn sum_axis_device(
         &self,
@@ -270,6 +277,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::sum_axes`] but reduces over all axes.
     #[default_device]
     pub fn sum_device(
         &self,
@@ -322,6 +330,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::mean_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn mean_axis_device(
         &self,
@@ -340,6 +349,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::mean_axes`] but reduces over all axes.
     #[default_device]
     pub fn mean_device(
         &self,
@@ -391,6 +401,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::min_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn min_axis_device(
         &self,
@@ -409,6 +420,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::min_axes`] but reduces over all axes.
     #[default_device]
     pub fn min_device(
         &self,
@@ -453,6 +465,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::var_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn var_axis_device(
         &self,
@@ -473,6 +486,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::var_axes`] but reduces over all axes.
     #[default_device]
     pub fn var_device(
         &self,
@@ -518,6 +532,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::logsumexp_axes`] but only reduces over a single axis.
     #[default_device]
     pub fn logsumexp_axis_device(
         &self,
@@ -536,6 +551,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`Array::logsumexp_axes`] but reduces over all axes.
     #[default_device]
     pub fn logsumexp_device(
         &self,
@@ -692,6 +708,7 @@ pub fn std_axes_device<'a>(
     })
 }
 
+/// Similar to [`std_axes`] but only reduces over a single axis.
 #[generate_macro]
 #[default_device]
 pub fn std_axis_device(
@@ -716,6 +733,7 @@ pub fn std_axis_device(
     })
 }
 
+/// Similar to [`std_axes`] but reduces over all axes.
 #[generate_macro]
 #[default_device]
 pub fn std_device(

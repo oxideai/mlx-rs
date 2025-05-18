@@ -137,6 +137,7 @@ pub fn norm_matrix_device<'a>(
     }
 }
 
+/// Compute the L2 norm of an [`Array`]
 #[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
 pub fn norm_l2_device<'a>(

@@ -447,6 +447,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`any_axes`] but defaults to all axes.
     #[default_device]
     pub fn any_axis_device(
         &self,
@@ -465,6 +466,7 @@ impl Array {
         })
     }
 
+    /// Similar to [`any_axes`] but defaults to all axes.
     #[default_device]
     pub fn any_device(
         &self,
@@ -494,6 +496,7 @@ pub fn any_axes_device<'a>(
     array.as_ref().any_axes_device(axes, keep_dims, stream)
 }
 
+/// See [`Array::any`]
 #[generate_macro]
 #[default_device]
 pub fn any_axis_device(
@@ -505,6 +508,7 @@ pub fn any_axis_device(
     array.as_ref().any_axis_device(axis, keep_dims, stream)
 }
 
+/// See [`Array::any`]
 #[generate_macro]
 #[default_device]
 pub fn any_device(

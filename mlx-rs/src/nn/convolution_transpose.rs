@@ -99,6 +99,7 @@ pub struct ConvTranspose1d {
     /// Padding. Default to 0 if not specified.
     pub padding: i32,
 
+    /// Output padding. Default to 0 if not specified.
     pub output_padding: i32,
 
     /// Stride. Default to 1 if not specified.
@@ -112,6 +113,7 @@ impl ConvTranspose1d {
     /// Default value for `padding` if not specified.
     pub const DEFAULT_PADDING: i32 = 0;
 
+    /// Default value for `output_padding` if not specified.
     pub const DEFAULT_OUTPUT_PADDING: i32 = 0;
 
     /// Default value for `stride` if not specified.

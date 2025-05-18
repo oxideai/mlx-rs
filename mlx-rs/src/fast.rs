@@ -1,7 +1,10 @@
 //! Fast implementations of commonly used multi-op functions.
 
-use crate::error::Result;
+use std::ffi::CString;
+
+use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
+use crate::utils::VectorArray;
 use crate::{Array, Stream, StreamOrDevice};
 use mlx_internal_macros::default_device;
 
@@ -57,13 +60,17 @@ pub fn scaled_dot_product_attention_device<'a>(
     values: impl AsRef<Array>,
     scale: f32,
     mask: impl Into<Option<&'a Array>>,
-    memory_efficient_threshold: impl Into<Option<i32>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let memory_efficient_threshold = memory_efficient_threshold.into();
-    let memory_efficient_threshold = mlx_sys::mlx_optional_int {
-        value: memory_efficient_threshold.unwrap_or(0),
-        has_value: memory_efficient_threshold.is_some(),
+    let mask_mode = CString::new("")
+        .map_err(|e| Exception::custom(format!("{}", e)))?;
+    let masks = match mask.into() {
+        Some(m) => {
+            VectorArray::try_from_iter([m].iter())?
+        },
+        None => unsafe {
+            VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+        }
     };
 
     Array::try_from_op(|res| unsafe {
@@ -73,10 +80,8 @@ pub fn scaled_dot_product_attention_device<'a>(
             keys.as_ref().as_ptr(),
             values.as_ref().as_ptr(),
             scale,
-            mask.into()
-                .map(|a| a.as_ptr())
-                .unwrap_or(mlx_sys::mlx_array_new()),
-            memory_efficient_threshold,
+            mask_mode.as_ptr(),
+            masks.as_ptr(),
             stream.as_ref().as_ptr(),
         )
     })
@@ -166,12 +171,12 @@ mod tests {
         assert_eq!(result.shape(), [2, 8, 16]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.456_253_77,
             abs <= 0.009_125_075
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             116.800_964,
             abs <= 2.336_019_3
         );
@@ -189,12 +194,12 @@ mod tests {
         assert_eq!(result.shape(), [2, 8, 16]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.872_938_75,
             abs <= 0.017_458_774
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             223.472_32,
             abs <= 4.469_446
         );
@@ -214,12 +219,12 @@ mod tests {
         assert_eq!(result.shape(), [2, 8]);
         assert_eq!(result.dtype(), crate::Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.290_990_38,
             abs <= 0.005_819_807_8
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             4.655_846,
             abs <= 0.093_116_924
         );

@@ -134,7 +134,7 @@ impl<'a> CrossEntropy<'a> {
         let score = if target_as_probs {
             sum_axes(&logits.multiply(targets)?, &[self.axis], None)?
         } else {
-            take_along_axis(logits, &targets.expand_dims_axes(&[-1])?, self.axis)?.squeeze(&[-1])?
+            take_along_axis(logits, &targets.expand_dims_axes(&[-1])?, self.axis)?.squeeze_axes(&[-1])?
         };
         let log_sum_exp_logits = logsumexp_axes(logits, &[self.axis], None)?;
 
@@ -350,7 +350,7 @@ impl NllLoss {
         let axis = self.axis;
         let reduction = self.reduction;
 
-        let loss = -take_along_axis(inputs, &targets.expand_dims_axes(&[-1])?, axis)?.squeeze(&[-1])?;
+        let loss = -take_along_axis(inputs, &targets.expand_dims_axes(&[-1])?, axis)?.squeeze_axes(&[-1])?;
         reduction.reduce(loss)
     }
 }

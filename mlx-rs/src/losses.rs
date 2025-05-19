@@ -4,7 +4,8 @@ use crate::{
     array,
     error::{CrossEntropyBuildError, Exception},
     ops::{
-        abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp, logsumexp_axes, maximum, minimum, multiply, power, sqrt, square, sum, sum_axes, sum_axis, r#where
+        abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp_axes, maximum,
+        minimum, multiply, power, r#where, sqrt, square, sum_axes, sum_axis,
     },
     Array,
 };
@@ -134,7 +135,8 @@ impl<'a> CrossEntropy<'a> {
         let score = if target_as_probs {
             sum_axes(&logits.multiply(targets)?, &[self.axis], None)?
         } else {
-            take_along_axis(logits, &targets.expand_dims_axes(&[-1])?, self.axis)?.squeeze_axes(&[-1])?
+            take_along_axis(logits, &targets.expand_dims_axes(&[-1])?, self.axis)?
+                .squeeze_axes(&[-1])?
         };
         let log_sum_exp_logits = logsumexp_axes(logits, &[self.axis], None)?;
 
@@ -350,7 +352,8 @@ impl NllLoss {
         let axis = self.axis;
         let reduction = self.reduction;
 
-        let loss = -take_along_axis(inputs, &targets.expand_dims_axes(&[-1])?, axis)?.squeeze_axes(&[-1])?;
+        let loss = -take_along_axis(inputs, &targets.expand_dims_axes(&[-1])?, axis)?
+            .squeeze_axes(&[-1])?;
         reduction.reduce(loss)
     }
 }
@@ -899,11 +902,7 @@ mod tests {
             .build()
             .unwrap();
         let loss = cross_entropy.apply(logits, probs).unwrap();
-        assert!(is_nan(&loss)
-            .unwrap()
-            .all(None)
-            .unwrap()
-            .item::<bool>());
+        assert!(is_nan(&loss).unwrap().all(None).unwrap().item::<bool>());
 
         // With weights, no label smoothing
         let logits = array!([[2.0, -1.0], [-1.0, 2.0]]);

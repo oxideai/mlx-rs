@@ -4,7 +4,7 @@ use mlx_rs::{
     losses::{CrossEntropyBuilder, LossReduction},
     module::{Module, ModuleParameters},
     nn,
-    ops::{eq, indexing::{argmax, argmax_axis}, mean},
+    ops::{eq, indexing::argmax_axis, mean},
     optimizers::{Optimizer, Sgd},
     transforms::eval_params,
     Array,

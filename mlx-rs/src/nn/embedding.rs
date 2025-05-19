@@ -89,11 +89,7 @@ mod tests {
             4.605_468_8,
             abs <= 0.092_109_375
         );
-        float_eq!(
-            a.sum(None).unwrap().item::<f32>(),
-            2358.0,
-            abs <= 47.16
-        );
+        float_eq!(a.sum(None).unwrap().item::<f32>(), 2358.0, abs <= 47.16);
 
         let result = Embedding::new(10, 8).unwrap().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 8, 4, 8]);

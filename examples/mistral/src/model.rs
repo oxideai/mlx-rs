@@ -5,7 +5,7 @@ use mlx_rs::{
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn,
-    ops::{concatenate, concatenate_axis},
+    ops::concatenate_axis,
     quantization::MaybeQuantized,
     Array,
 };

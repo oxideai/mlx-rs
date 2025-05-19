@@ -1,5 +1,3 @@
-use std::default;
-
 use crate::array::Array;
 use crate::error::Result;
 use crate::sealed::Sealed;
@@ -1260,9 +1258,7 @@ pub fn softmax_device(
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
 
-    Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax(res, a.as_ref().as_ptr(), precise, s)
-    })
+    Array::try_from_op(|res| unsafe { mlx_sys::mlx_softmax(res, a.as_ref().as_ptr(), precise, s) })
 }
 
 /// See [`Array::sqrt`].
@@ -1480,13 +1476,7 @@ pub fn tensordot_device<'a>(
     let b = b.as_ref();
     match axes.into() {
         TensorDotDims::Int(dim) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot_axis(
-                res,
-                a.as_ptr(),
-                b.as_ptr(),
-                dim,
-                stream.as_ref().as_ptr(),
-            )
+            mlx_sys::mlx_tensordot_axis(res, a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr())
         }),
         TensorDotDims::List((lhs, rhs)) => Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_tensordot(
@@ -2688,10 +2678,7 @@ mod tests {
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::NEG_INFINITY];
-        assert_eq!(
-            logaddexp(&x, &y).unwrap().item::<f32>(),
-            f32::NEG_INFINITY
-        );
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::NEG_INFINITY);
 
         let x = array![f32::INFINITY];
         let y = array![f32::INFINITY];

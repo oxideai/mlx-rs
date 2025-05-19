@@ -2,7 +2,6 @@ use crate::array::Array;
 use crate::error::Result;
 use crate::stream::StreamOrDevice;
 use crate::utils::guard::Guarded;
-use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -429,9 +428,9 @@ impl Array {
     /// let all_rows = array.any(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn any_axes_device<'a>(
+    pub fn any_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -487,9 +486,9 @@ impl Array {
 /// See [`Array::any`]
 #[generate_macro]
 #[default_device]
-pub fn any_axes_device<'a>(
+pub fn any_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {

@@ -270,16 +270,8 @@ fn test_adagrad() {
     optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
-    assert_array_eq!(
-        a_model.a.mean(None).unwrap(),
-        array!(-0.062_509_984),
-        ATOL
-    );
-    assert_array_eq!(
-        a_model.a.sum(None).unwrap(),
-        array!(-0.750_119_8),
-        ATOL
-    );
+    assert_array_eq!(a_model.a.mean(None).unwrap(), array!(-0.062_509_984), ATOL);
+    assert_array_eq!(a_model.a.sum(None).unwrap(), array!(-0.750_119_8), ATOL);
 
     assert_save_and_load(optimizer, AdaGrad::new(0.1)).unwrap();
 }
@@ -726,11 +718,7 @@ fn test_adafactor1() {
         array!(0.400_818_17),
         0.008016363382339478
     );
-    assert_array_eq!(
-        a.sum(None).unwrap(),
-        array!(4.809_818),
-        0.09619635581970215
-    );
+    assert_array_eq!(a.sum(None).unwrap(), array!(4.809_818), 0.09619635581970215);
 
     let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a_grad.shape(), &[4, 3]);

@@ -5,7 +5,7 @@ use crate::{
     builder::Builder,
     error::Exception,
     module::{Module, UnaryModule},
-    ops::{arange, expand_dims, matmul, softmax, softmax_axis},
+    ops::{arange, expand_dims, matmul, softmax_axis},
     quantization::MaybeQuantized,
     Array, ArrayElement, FromScalar,
 };

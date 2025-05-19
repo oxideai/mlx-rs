@@ -150,11 +150,25 @@ pub fn norm_l2_device<'a>(
 
     match axes.into_option() {
         Some(axis) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_linalg_norm_l2(res, array.as_ref().as_ptr(), axis.as_ptr(), axis.len(), keep_dims, stream.as_ref().as_ptr())
+            mlx_sys::mlx_linalg_norm_l2(
+                res,
+                array.as_ref().as_ptr(),
+                axis.as_ptr(),
+                axis.len(),
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
         }),
         None => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_linalg_norm_l2(res, array.as_ref().as_ptr(), std::ptr::null(), 0, keep_dims, stream.as_ref().as_ptr())
-        })
+            mlx_sys::mlx_linalg_norm_l2(
+                res,
+                array.as_ref().as_ptr(),
+                std::ptr::null(),
+                0,
+                keep_dims,
+                stream.as_ref().as_ptr(),
+            )
+        }),
     }
 }
 

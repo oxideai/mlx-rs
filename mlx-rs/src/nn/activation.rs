@@ -5,7 +5,7 @@ use crate::ops::logsumexp_axes;
 use crate::{
     array,
     error::{Exception, Result},
-    ops::{abs, exp, logsumexp, maximum, minimum, multiply, which},
+    ops::{abs, exp, maximum, minimum, multiply, which},
     transforms::compile::compile,
     Array,
 };
@@ -1523,16 +1523,8 @@ mod tests {
         let result = Step::new().forward(&a).unwrap();
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Int32);
-        assert_float_eq!(
-            result.mean(None).unwrap().item::<f32>(),
-            1.0,
-            abs <= 0.02
-        );
-        assert_float_eq!(
-            result.sum(None).unwrap().item::<f32>(),
-            256.0,
-            abs <= 5.12
-        );
+        assert_float_eq!(result.mean(None).unwrap().item::<f32>(), 1.0, abs <= 0.02);
+        assert_float_eq!(result.sum(None).unwrap().item::<f32>(), 256.0, abs <= 5.12);
     }
 
     #[test]

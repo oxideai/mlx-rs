@@ -62,15 +62,10 @@ pub fn scaled_dot_product_attention_device<'a>(
     mask: impl Into<Option<&'a Array>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let mask_mode = CString::new("")
-        .map_err(|e| Exception::custom(format!("{}", e)))?;
+    let mask_mode = CString::new("").map_err(|e| Exception::custom(format!("{}", e)))?;
     let masks = match mask.into() {
-        Some(m) => {
-            VectorArray::try_from_iter([m].iter())?
-        },
-        None => unsafe {
-            VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
-        }
+        Some(m) => VectorArray::try_from_iter([m].iter())?,
+        None => unsafe { VectorArray::from_ptr(mlx_sys::mlx_vector_array_new()) },
     };
 
     Array::try_from_op(|res| unsafe {

@@ -5,7 +5,7 @@ use hf_hub::{
 use mlx_rs::{
     array,
     module::{Module, ModuleParametersExt},
-    ops::indexing::{argmax, argmax_axis, IndexOp, NewAxis},
+    ops::indexing::{argmax_axis, IndexOp, NewAxis},
     random::categorical,
     transforms::eval,
     Array,

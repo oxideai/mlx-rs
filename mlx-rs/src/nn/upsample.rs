@@ -4,7 +4,8 @@ use crate::{
     macros::ModuleParameters,
     module::Module,
     ops::{
-        abs, broadcast_to, ceil, clip, expand_dims, expand_dims_axes, floor, indexing::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, TryIndexOp}
+        abs, broadcast_to, ceil, clip, expand_dims_axes, floor,
+        indexing::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, TryIndexOp},
     },
     transforms::compile::compile,
     Array,

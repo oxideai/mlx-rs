@@ -4,7 +4,11 @@ use crate::{
     array,
     error::Exception,
     module::{Module, Param},
-    ops::{addmm, indexing::{Ellipsis, IndexOp}, matmul, sigmoid, split, stack, stack_axis, tanh, tanh_device},
+    ops::{
+        addmm,
+        indexing::{Ellipsis, IndexOp},
+        matmul, sigmoid, split, stack_axis, tanh, tanh_device,
+    },
     random::uniform,
     Array, Stream,
 };
@@ -551,7 +555,10 @@ impl Lstm {
             all_cell.push(cell);
         }
 
-        Ok((stack_axis(&all_hidden[..], -2)?, stack_axis(&all_cell[..], -2)?))
+        Ok((
+            stack_axis(&all_hidden[..], -2)?,
+            stack_axis(&all_cell[..], -2)?,
+        ))
     }
 }
 

@@ -203,6 +203,7 @@ pub fn conv3d_device(
 /// - dilation: kernel dilation. Default to 1 if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose1d_device(
@@ -250,6 +251,7 @@ pub fn conv_transpose1d_device(
 /// - dilation: kernel dilation. Default to (1, 1) if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose2d_device(
@@ -301,6 +303,7 @@ pub fn conv_transpose2d_device(
 /// - dilation: kernel dilation. Default to (1, 1, 1) if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose3d_device(
@@ -385,7 +388,7 @@ mod tests {
             Some(1), // stride
             Some(0), // padding
             Some(1), // dilation
-            None, // output padding
+            None,    // output padding
             Some(1), // groups
         )
         .unwrap();
@@ -436,7 +439,7 @@ mod tests {
             Some((1, 1)), // stride
             Some((0, 0)), // padding
             Some((1, 1)), // dilation
-            None, // output padding
+            None,         // output padding
             Some(1),      // groups
         )
         .unwrap();
@@ -495,7 +498,7 @@ mod tests {
             Some((1, 1, 1)), // stride
             Some((0, 0, 0)), // padding
             Some((1, 1, 1)), // dilation
-            None, // output padding
+            None,            // output padding
             Some(1),         // groups
         )
         .unwrap();

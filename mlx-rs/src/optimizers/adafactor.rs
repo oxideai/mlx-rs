@@ -5,7 +5,9 @@ use mlx_internal_macros::{generate_builder, Buildable};
 use crate::{
     array,
     error::AdafactorBuildError,
-    ops::{matmul, maximum, mean, mean_axes, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    ops::{
+        matmul, maximum, mean, mean_axes, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like,
+    },
     utils::Updatable,
     Array,
 };

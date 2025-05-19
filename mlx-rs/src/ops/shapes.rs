@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
@@ -46,11 +44,7 @@ impl Array {
 
     /// See [`squeeze_axes()`].
     #[default_device]
-    pub fn squeeze_axes_device(
-        &self,
-        axes: &[i32],
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
+    pub fn squeeze_axes_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
         squeeze_axes_device(self, axes, stream)
     }
 
@@ -149,20 +143,6 @@ impl Array {
     /// [`transpose_axes`] and unwrap the result.
     pub fn t(&self) -> Array {
         self.transpose().unwrap()
-    }
-}
-
-fn axes_or_default_to_all_size_one_axes<'a>(
-    axes: impl IntoOption<&'a [i32]>,
-    shape: &[i32],
-) -> Cow<'a, [i32]> {
-    match axes.into_option() {
-        Some(axes) => Cow::Borrowed(axes),
-        None => shape
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &dim)| if dim == 1 { Some(i as i32) } else { None })
-            .collect(),
     }
 }
 
@@ -360,12 +340,7 @@ pub fn expand_dims_device(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_expand_dims(
-            res,
-            a.as_ref().as_ptr(),
-            axis,
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_expand_dims(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -514,11 +489,7 @@ pub fn squeeze_device(
 ) -> Result<Array> {
     let a = a.as_ref();
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_squeeze(
-            res,
-            a.as_ptr(),
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_squeeze(res, a.as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -1016,10 +987,22 @@ mod tests {
     #[test]
     fn test_squeeze() {
         let a = Array::zeros::<i32>(&[2, 1, 2, 1, 2, 1]).unwrap();
-        assert_eq!(squeeze_axes(&a, &[1, 3, 5][..]).unwrap().shape(), &[2, 2, 2]);
-        assert_eq!(squeeze_axes(&a, &[-1, -3, -5][..]).unwrap().shape(), &[2, 2, 2]);
-        assert_eq!(squeeze_axes(&a, &[1][..]).unwrap().shape(), &[2, 2, 1, 2, 1]);
-        assert_eq!(squeeze_axes(&a, &[-1][..]).unwrap().shape(), &[2, 1, 2, 1, 2]);
+        assert_eq!(
+            squeeze_axes(&a, &[1, 3, 5][..]).unwrap().shape(),
+            &[2, 2, 2]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[-1, -3, -5][..]).unwrap().shape(),
+            &[2, 2, 2]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[1][..]).unwrap().shape(),
+            &[2, 2, 1, 2, 1]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[-1][..]).unwrap().shape(),
+            &[2, 1, 2, 1, 2]
+        );
 
         assert!(squeeze_axes(&a, &[0][..]).is_err());
         assert!(squeeze_axes(&a, &[2][..]).is_err());

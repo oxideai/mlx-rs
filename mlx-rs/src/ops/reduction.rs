@@ -1,10 +1,8 @@
-use std::default;
-
 use crate::array::Array;
 use crate::error::Result;
 use crate::stream::StreamOrDevice;
+use crate::utils::axes_or_default_to_all;
 use crate::utils::guard::Guarded;
-use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -27,9 +25,9 @@ impl Array {
     /// // results == [false, true, true, true]
     /// ```
     #[default_device]
-    pub fn all_axes_device<'a>(
+    pub fn all_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -169,9 +167,9 @@ impl Array {
     /// let result = array.max(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn max_axes_device<'a>(
+    pub fn max_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -240,9 +238,9 @@ impl Array {
     /// let result = array.sum(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn sum_axes_device<'a>(
+    pub fn sum_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -311,9 +309,9 @@ impl Array {
     /// let result = array.mean(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn mean_axes_device<'a>(
+    pub fn mean_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -383,9 +381,9 @@ impl Array {
     /// let result = array.min(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn min_axes_device<'a>(
+    pub fn min_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -445,9 +443,9 @@ impl Array {
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     /// - ddof: the divisor to compute the variance is `N - ddof`
     #[default_device]
-    pub fn var_axes_device<'a>(
+    pub fn var_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
@@ -514,9 +512,9 @@ impl Array {
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
-    pub fn logsumexp_axes_device<'a>(
+    pub fn logsumexp_axes_device(
         &self,
-        axes: &'a [i32],
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
@@ -572,9 +570,9 @@ impl Array {
 /// See [`Array::all_axes`]
 #[generate_macro]
 #[default_device]
-pub fn all_axes_device<'a>(
+pub fn all_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -607,9 +605,9 @@ pub fn all_device(
 /// See [`Array::prod_axes`]
 #[generate_macro]
 #[default_device]
-pub fn prod_axes_device<'a>(
+pub fn prod_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -642,9 +640,9 @@ pub fn prod_device(
 /// See [`Array::max_axes`]
 #[generate_macro]
 #[default_device]
-pub fn max_axes_device<'a>(
+pub fn max_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -685,9 +683,9 @@ pub fn max_device(
 /// - `ddof`: The divisor to compute the variance is `N - ddof`, defaults to `0`.
 #[generate_macro]
 #[default_device]
-pub fn std_axes_device<'a>(
+pub fn std_axes_device(
     a: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] ddof: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
@@ -746,22 +744,16 @@ pub fn std_device(
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_std(
-            res,
-            a.as_ptr(),
-            keep_dims,
-            ddof,
-            stream.as_ref().as_ptr(),
-        )
+        mlx_sys::mlx_std(res, a.as_ptr(), keep_dims, ddof, stream.as_ref().as_ptr())
     })
 }
 
 /// See [`Array::sum_axes`]
 #[generate_macro]
 #[default_device]
-pub fn sum_axes_device<'a>(
+pub fn sum_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -794,9 +786,9 @@ pub fn sum_device(
 /// See [`Array::mean_axes`]
 #[generate_macro]
 #[default_device]
-pub fn mean_axes_device<'a>(
+pub fn mean_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -829,9 +821,9 @@ pub fn mean_device(
 /// See [`Array::min`]
 #[generate_macro]
 #[default_device]
-pub fn min_axes_device<'a>(
+pub fn min_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
@@ -864,9 +856,9 @@ pub fn min_device(
 /// See [`Array::var_axes`]
 #[generate_macro]
 #[default_device]
-pub fn var_axes_device<'a>(
+pub fn var_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] ddof: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
@@ -906,13 +898,15 @@ pub fn var_device(
 /// See [`Array::logsumexp_axes`]
 #[generate_macro]
 #[default_device]
-pub fn logsumexp_axes_device<'a>(
+pub fn logsumexp_axes_device(
     array: impl AsRef<Array>,
-    axes: &'a [i32],
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().logsumexp_axes_device(axes, keep_dims, stream)
+    array
+        .as_ref()
+        .logsumexp_axes_device(axes, keep_dims, stream)
 }
 
 /// See [`Array::logsumexp_axis`]
@@ -924,7 +918,9 @@ pub fn logsumexp_axis_device(
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().logsumexp_axis_device(axis, keep_dims, stream)
+    array
+        .as_ref()
+        .logsumexp_axis_device(axis, keep_dims, stream)
 }
 
 /// See [`Array::logsumexp`]

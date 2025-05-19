@@ -4,7 +4,11 @@ use crate::{
     array,
     error::Exception,
     module::{Module, Param},
-    ops::{arange, concatenate, concatenate_axis, exp, indexing::{NewAxis, TryIndexOp}, log},
+    ops::{
+        arange, concatenate_axis, exp,
+        indexing::{NewAxis, TryIndexOp},
+        log,
+    },
     Array, Dtype,
 };
 use mlx_internal_macros::{generate_builder, Buildable, Builder};

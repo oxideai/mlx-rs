@@ -239,7 +239,7 @@ impl Array {
     /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-    /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default()).unwrap();
+    /// let r = Array::repeat_axis::<i32>(source, 4, 1).unwrap();
     /// ```
     #[default_device]
     pub fn repeat_axis_device<T: ArrayElement>(
@@ -266,7 +266,7 @@ impl Array {
     /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-    /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default()).unwrap();
+    /// let r = Array::repeat::<i32>(source, 4).unwrap();
     /// ```
     #[default_device]
     pub fn repeat_device<T: ArrayElement>(

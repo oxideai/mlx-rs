@@ -422,10 +422,10 @@ impl Array {
     /// let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
     ///
     /// // will produce a scalar Array with true -- some of the values are non-zero
-    /// let all = array.any(None, None).unwrap();
+    /// let all = array.any(None).unwrap();
     ///
     /// // produces an Array([true, true, true, true]) -- all rows have non-zeros
-    /// let all_rows = array.any(&[0], None).unwrap();
+    /// let all_rows = array.any_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn any_axes_device(

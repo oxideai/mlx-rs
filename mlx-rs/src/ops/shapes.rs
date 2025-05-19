@@ -270,7 +270,7 @@ pub fn broadcast_to_device(
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
-/// let result = concatenate(&[x, y], 0);
+/// let result = concatenate_axis(&[x, y], 0);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -311,7 +311,7 @@ pub fn concatenate_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
-/// let result = expand_dims(&x, &[0]);
+/// let result = expand_dims_axes(&x, &[0]);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -459,7 +459,7 @@ pub fn reshape_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]).unwrap();
-/// let result = squeeze(&x, None);
+/// let result = squeeze(&x);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -843,7 +843,7 @@ pub fn stack_axis_device(
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
-/// let result = stack_all(&[&a, &b]);
+/// let result = stack(&[&a, &b]);
 /// ```
 #[generate_macro]
 #[default_device]

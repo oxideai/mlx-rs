@@ -19,7 +19,7 @@ impl Array {
     /// ```rust
     /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-    /// let mut b = a.all(&[0], None).unwrap();
+    /// let mut b = a.all_axes(&[0], None).unwrap();
     ///
     /// let results: &[bool] = b.as_slice();
     /// // results == [false, true, true, true]
@@ -93,7 +93,7 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
-    /// let result = array.prod(&[0], None).unwrap();
+    /// let result = array.prod_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn prod_axes_device(
@@ -164,7 +164,7 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [5, 9]
-    /// let result = array.max(&[0], None).unwrap();
+    /// let result = array.max_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn max_axes_device(
@@ -235,7 +235,7 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
-    /// let result = array.sum(&[0], None).unwrap();
+    /// let result = array.sum_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn sum_axes_device(
@@ -306,7 +306,7 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
-    /// let result = array.mean(&[0], None).unwrap();
+    /// let result = array.mean_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn mean_axes_device(
@@ -378,7 +378,7 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]
-    /// let result = array.min(&[0], None).unwrap();
+    /// let result = array.min_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
     pub fn min_axes_device(

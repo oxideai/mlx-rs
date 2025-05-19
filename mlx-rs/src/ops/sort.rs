@@ -18,7 +18,7 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
-/// let result = sort(&a, axis);
+/// let result = sort_axis(&a, axis);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -44,7 +44,7 @@ pub fn sort_axis_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
-/// let result = sort_all(&a);
+/// let result = sort(&a);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -68,7 +68,7 @@ pub fn sort_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
-/// let result = argsort(&a, axis);
+/// let result = argsort_axis(&a, axis);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -95,7 +95,7 @@ pub fn argsort_axis_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
-/// let result = argsort_all(&a);
+/// let result = argsort(&a);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -129,7 +129,7 @@ pub fn argsort_device(
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let axis = 0;
-/// let result = partition(&a, kth, axis);
+/// let result = partition_axis(&a, kth, axis);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -169,7 +169,7 @@ pub fn partition_axis_device(
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
-/// let result = partition_all(&a, kth);
+/// let result = partition(&a, kth);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -204,7 +204,7 @@ pub fn partition_device(
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let axis = 0;
-/// let result = argpartition(&a, kth, axis);
+/// let result = argpartition_axis(&a, kth, axis);
 /// ```
 #[generate_macro]
 #[default_device]
@@ -245,7 +245,7 @@ pub fn argpartition_axis_device(
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
-/// let result = argpartition_all(&a, kth);
+/// let result = argpartition(&a, kth);
 /// ```
 #[generate_macro]
 #[default_device]

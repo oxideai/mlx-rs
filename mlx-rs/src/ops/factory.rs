@@ -672,9 +672,10 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        let data: &[f32] = array.as_slice();
-        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
-        assert_eq!(data, expected.as_slice());
+        let expected_data: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        let expected = Array::from_slice(&expected_data, &[50]).unwrap();
+        assert_eq!(array.shape(), expected.shape());
+        assert_array_all_close!(array, expected);
     }
 
     #[test]
@@ -683,9 +684,10 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        let data: &[f32] = array.as_slice();
-        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
-        assert_eq!(data, expected.as_slice());
+        let expected_data: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        let expected = Array::from_slice(&expected_data, &[50]).unwrap();
+        assert_eq!(array.shape(), expected.shape());
+        assert_array_all_close!(array, expected);
     }
 
     #[test]

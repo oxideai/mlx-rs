@@ -187,7 +187,7 @@ impl Array {
 
 #[cfg(test)]
 mod tests {
-    use crate::Array;
+    use crate::{Array, StreamOrDevice};
 
     #[test]
     fn test_save_arrays() {
@@ -200,7 +200,7 @@ mod tests {
 
         Array::save_safetensors(&arrays, None, &path).unwrap();
 
-        let loaded_arrays = Array::load_safetensors(&path).unwrap();
+        let loaded_arrays = Array::load_safetensors_device(&path, StreamOrDevice::cpu()).unwrap();
 
         // compare values
         let mut loaded_keys: Vec<_> = loaded_arrays.keys().cloned().collect();
@@ -227,7 +227,7 @@ mod tests {
         let a = Array::ones::<i32>(&[2, 4]).unwrap();
         a.save_numpy(&path).unwrap();
 
-        let b = Array::load_numpy(&path).unwrap();
+        let b = Array::load_numpy_device(&path, StreamOrDevice::cpu()).unwrap();
         assert!(a.all_close(&b, None, None, None).unwrap().item::<bool>());
     }
 }

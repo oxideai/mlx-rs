@@ -17,7 +17,7 @@ use mlx_rs::{
     },
     random::uniform,
     transforms::{eval, eval_params},
-    Array, Dtype,
+    Array, Dtype, StreamOrDevice,
 };
 
 mod common;
@@ -147,7 +147,7 @@ where
     optimizer.state().save_safetensors(&path)?;
 
     let mut loaded_optimizer = new_optimizer;
-    loaded_optimizer.state_mut().load_safetensors(&path)?;
+    loaded_optimizer.state_mut().load_safetensors_device(&path, StreamOrDevice::cpu())?;
 
     let original_state: HashMap<_, _> = optimizer.state().flatten().collect();
     let loaded_state: HashMap<_, _> = loaded_optimizer.state().flatten().collect();

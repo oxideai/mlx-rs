@@ -1498,7 +1498,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64,
+        array, complex64, StreamOrDevice,
         ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split},
         transforms::eval,
         Dtype,

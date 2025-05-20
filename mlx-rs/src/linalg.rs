@@ -643,7 +643,7 @@ mod tests {
     use float_eq::assert_float_eq;
 
     use crate::{
-        array,
+        array, StreamOrDevice,
         ops::{eye, indexing::IndexOp, tril, triu},
     };
 

@@ -5,7 +5,7 @@ use std::ffi::CString;
 use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
 use crate::utils::VectorArray;
-use crate::{Array, Stream, StreamOrDevice};
+use crate::{Array, Stream};
 use mlx_internal_macros::default_device;
 
 /// Optimized implementation of `NN.RoPE`.

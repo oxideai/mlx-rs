@@ -1,7 +1,7 @@
+use crate::array::Array;
 use crate::array::ArrayElement;
 use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 use num_traits::NumCast;

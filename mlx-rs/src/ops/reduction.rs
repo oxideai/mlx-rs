@@ -1,6 +1,5 @@
 use crate::array::Array;
 use crate::error::Result;
-use crate::stream::StreamOrDevice;
 use crate::utils::axes_or_default_to_all;
 use crate::utils::guard::Guarded;
 use crate::Stream;

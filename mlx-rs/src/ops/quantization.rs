@@ -1,6 +1,6 @@
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///

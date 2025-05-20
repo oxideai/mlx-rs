@@ -3,7 +3,7 @@
 use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, VectorArray};
-use crate::{Array, Stream, StreamOrDevice};
+use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 use std::f64;

@@ -5,7 +5,7 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Result,
     utils::{guard::Guarded, IntoOption, VectorArray},
-    Array, Stream, StreamOrDevice,
+    Array, Stream,
 };
 
 impl Array {

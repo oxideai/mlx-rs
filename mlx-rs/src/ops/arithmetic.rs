@@ -1,7 +1,6 @@
 use crate::array::Array;
 use crate::error::Result;
 use crate::sealed::Sealed;
-use crate::stream::StreamOrDevice;
 
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};

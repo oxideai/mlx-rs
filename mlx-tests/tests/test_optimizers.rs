@@ -17,7 +17,7 @@ use mlx_rs::{
     },
     random::uniform,
     transforms::{eval, eval_params},
-    Array, Dtype, StreamOrDevice,
+    Array, Dtype,
 };
 
 mod common;

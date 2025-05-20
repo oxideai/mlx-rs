@@ -1,6 +1,5 @@
 use crate::array::Array;
 use crate::error::Result;
-use crate::stream::StreamOrDevice;
 use crate::utils::guard::Guarded;
 use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};

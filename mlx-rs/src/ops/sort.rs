@@ -2,7 +2,7 @@
 
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream};
 
 /// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
 ///

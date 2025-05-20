@@ -2,7 +2,7 @@ use crate::error::IoError;
 use crate::utils::guard::Guarded;
 use crate::utils::io::SafeTensors;
 use crate::utils::SUCCESS;
-use crate::{Array, Stream, StreamOrDevice};
+use crate::{Array, Stream};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -22,7 +22,7 @@ impl Array {
     ///
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_numpy_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -47,7 +47,7 @@ impl Array {
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
     ///
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_safetensors_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -64,7 +64,7 @@ impl Array {
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
     #[allow(clippy::type_complexity)]
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_safetensors_with_metadata_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -187,7 +187,7 @@ impl Array {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Array, StreamOrDevice};
+    use crate::Array;
 
     #[test]
     fn test_save_arrays() {
@@ -200,7 +200,7 @@ mod tests {
 
         Array::save_safetensors(&arrays, None, &path).unwrap();
 
-        let loaded_arrays = Array::load_safetensors_device(&path, StreamOrDevice::cpu()).unwrap();
+        let loaded_arrays = Array::load_safetensors(&path).unwrap();
 
         // compare values
         let mut loaded_keys: Vec<_> = loaded_arrays.keys().cloned().collect();
@@ -227,7 +227,7 @@ mod tests {
         let a = Array::ones::<i32>(&[2, 4]).unwrap();
         a.save_numpy(&path).unwrap();
 
-        let b = Array::load_numpy_device(&path, StreamOrDevice::cpu()).unwrap();
+        let b = Array::load_numpy(&path).unwrap();
         assert!(a.all_close(&b, None, None, None).unwrap().item::<bool>());
     }
 }

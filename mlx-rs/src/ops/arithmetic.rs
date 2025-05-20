@@ -1498,10 +1498,10 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64, StreamOrDevice,
+        array, complex64,
         ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split},
         transforms::eval,
-        Dtype,
+        Dtype, StreamOrDevice,
     };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;

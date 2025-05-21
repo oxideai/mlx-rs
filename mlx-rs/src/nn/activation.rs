@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use crate::module::{Module, Param};
-use crate::ops::logsumexp_axes;
+use crate::ops::logsumexp_axis;
 use crate::{
     array,
     error::{Exception, Result},
@@ -58,12 +58,12 @@ pub fn leaky_relu(x: impl AsRef<Array>, neg_slope: impl Into<Option<f32>>) -> Re
 /// This is:
 ///
 /// ```rust, ignore
-/// x - logsumexp(x, axis, true)
+/// x - logsumexp_axis(x, axis, true)
 /// ```
 pub fn log_softmax(x: impl AsRef<Array>, axis: impl Into<Option<i32>>) -> Result<Array> {
     let x = x.as_ref();
     let axis = axis.into().unwrap_or(-1);
-    x.subtract(logsumexp_axes(x, &[axis], true)?)
+    x.subtract(logsumexp_axis(x, axis, true)?)
 }
 
 /// Applies the Exponential Linear Unit.

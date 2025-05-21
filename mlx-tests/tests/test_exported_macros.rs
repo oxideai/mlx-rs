@@ -43,8 +43,9 @@ fn test_ops_arithmetic_add() {
 fn test_ops_arithmetic_tensordot() {
     let x = reshape(arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
     let y = reshape(arange::<_, f32>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
-    let axes = (&[1, 0], &[0, 1]);
-    let z = mlx_rs::tensordot!(&x, &y, axes = axes).unwrap();
+    let axes_x = [1, 0];
+    let axes_y = [0, 1];
+    let z = mlx_rs::tensordot_axes!(&x, &y, &axes_x, &axes_y).unwrap();
     let expected = Array::from_slice(
         &[4400, 4730, 4532, 4874, 4664, 5018, 4796, 5162, 4928, 5306],
         &[5, 2],
@@ -52,7 +53,7 @@ fn test_ops_arithmetic_tensordot() {
     assert_eq!(z, expected);
 
     let stream = StreamOrDevice::cpu();
-    let z = mlx_rs::tensordot!(x, y, axes = axes, stream = stream).unwrap();
+    let z = mlx_rs::tensordot_axes!(&x, &y, &axes_x, &axes_y, stream = stream).unwrap();
     assert_eq!(z, expected);
 }
 

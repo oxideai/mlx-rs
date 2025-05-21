@@ -1426,70 +1426,46 @@ pub fn outer_device(
     })
 }
 
-/// The number of dimensions to sum over
-#[derive(Debug)]
-pub enum TensorDotDims<'a> {
-    /// Sum over the last axes dimensions of a and the first axes dimensions of b.
-    Int(i32),
-
-    /// Sum over the corresponding dimensions of a and b.
-    List((&'a [i32], &'a [i32])),
-}
-
-impl From<i32> for TensorDotDims<'_> {
-    fn from(i: i32) -> Self {
-        TensorDotDims::Int(i)
-    }
-}
-
-impl<'a> From<(&'a [i32], &'a [i32])> for TensorDotDims<'a> {
-    fn from((lhs, rhs): (&'a [i32], &'a [i32])) -> Self {
-        TensorDotDims::List((lhs, rhs))
-    }
-}
-
-impl<'a, const M: usize, const N: usize> From<(&'a [i32; M], &'a [i32; N])> for TensorDotDims<'a> {
-    fn from((lhs, rhs): (&'a [i32; M], &'a [i32; N])) -> Self {
-        TensorDotDims::List((lhs, rhs))
-    }
-}
-
 /// Compute the tensor dot product along the specified axes.
-///
-/// # Params
-///
-/// - `a`: input array,
-/// - `b`: input array,
-/// - `axes`: The number of dimensions to sum over. If an integer is provided, then sum over
-///   the last axes dimensions of a and the first axes dimensions of b. If a tuple of lists is
-///   provided, then sum over the corresponding dimensions of a and b. (default: 2)
 #[generate_macro]
 #[default_device]
-pub fn tensordot_device<'a>(
+pub fn tensordot_axes_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    #[optional] axes: impl Into<TensorDotDims<'a>>,
+    axes_a: &[i32],
+    axes_b: &[i32],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
-    match axes.into() {
-        TensorDotDims::Int(dim) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot_axis(res, a.as_ptr(), b.as_ptr(), dim, stream.as_ref().as_ptr())
-        }),
-        TensorDotDims::List((lhs, rhs)) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot(
-                res,
-                a.as_ptr(),
-                b.as_ptr(),
-                lhs.as_ptr(),
-                lhs.len(),
-                rhs.as_ptr(),
-                rhs.len(),
-                stream.as_ref().as_ptr(),
-            )
-        }),
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_tensordot(
+            res,
+            a.as_ptr(),
+            b.as_ptr(),
+            axes_a.as_ptr(),
+            axes_a.len(),
+            axes_b.as_ptr(),
+            axes_b.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Similar to [`tensordot_axes`] but with a single axis.
+#[generate_macro]
+#[default_device]
+pub fn tensordot_axis_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    axis: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let b = b.as_ref();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_tensordot_axis(res, a.as_ptr(), b.as_ptr(), axis, stream.as_ref().as_ptr())
+    })
 }
 
 #[cfg(test)]
@@ -2728,7 +2704,7 @@ mod tests {
     fn test_tensordot() {
         let x = reshape(arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
         let y = reshape(arange::<_, f32>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
-        let z = tensordot(&x, &y, (&[1i32, 0], &[0i32, 1])).unwrap();
+        let z = tensordot_axes(&x, &y, &[1i32, 0], &[0i32, 1]).unwrap();
         let expected = Array::from_slice(
             &[4400, 4730, 4532, 4874, 4664, 5018, 4796, 5162, 4928, 5306],
             &[5, 2],
@@ -2737,12 +2713,12 @@ mod tests {
 
         let x = reshape(arange::<_, f32>(None, 360.0, None).unwrap(), &[3, 4, 5, 6]).unwrap();
         let y = reshape(arange::<_, f32>(None, 360.0, None).unwrap(), &[6, 4, 5, 3]).unwrap();
-        assert!(tensordot(&x, &y, (&[2, 1, 3], &[1, 2, 0])).is_err());
+        assert!(tensordot_axes(&x, &y, &[2, 1, 3], &[1, 2, 0]).is_err());
 
         let x = reshape(arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
         let y = reshape(arange::<_, f32>(None, 120.0, None).unwrap(), &[4, 5, 6]).unwrap();
 
-        let z = tensordot(&x, &y, 2).unwrap();
+        let z = tensordot_axis(&x, &y, 2).unwrap();
         let expected = Array::from_slice(
             &[
                 14820.0, 15010.0, 15200.0, 15390.0, 15580.0, 15770.0, 37620.0, 38210.0, 38800.0,

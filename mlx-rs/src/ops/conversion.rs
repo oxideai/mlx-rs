@@ -1,8 +1,6 @@
 use mlx_internal_macros::default_device;
 
-use crate::{
-    error::Result, utils::guard::Guarded, Array, ArrayElement, Dtype, Stream, StreamOrDevice,
-};
+use crate::{error::Result, utils::guard::Guarded, Array, ArrayElement, Dtype, Stream};
 
 impl Array {
     /// Create a new array with the contents converted to the given [ArrayElement] type.

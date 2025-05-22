@@ -1,8 +1,7 @@
 use crate::array::Array;
 use crate::error::Result;
-use crate::stream::StreamOrDevice;
+use crate::utils::axes_or_default_to_all;
 use crate::utils::guard::Guarded;
-use crate::utils::{axes_or_default_to_all, IntoOption};
 use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -19,25 +18,60 @@ impl Array {
     /// ```rust
     /// use mlx_rs::Array;
     /// let a = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-    /// let mut b = a.all(&[0], None).unwrap();
+    /// let mut b = a.all_axes(&[0], None).unwrap();
     ///
     /// let results: &[bool] = b.as_slice();
     /// // results == [false, true, true, true]
     /// ```
     #[default_device]
-    pub fn all_device<'a>(
+    pub fn all_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
             mlx_sys::mlx_all_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::all_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn all_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_all_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::all_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn all_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_all(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -58,22 +92,57 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [20, 72]
-    /// let result = array.prod(&[0], None).unwrap();
+    /// let result = array.prod_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn prod_device<'a>(
+    pub fn prod_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_prod(
+            mlx_sys::mlx_prod_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::prod_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn prod_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_prod_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::prod_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn prod_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_prod(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -94,22 +163,57 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [5, 9]
-    /// let result = array.max(&[0], None).unwrap();
+    /// let result = array.max_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn max_device<'a>(
+    pub fn max_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_max(
+            mlx_sys::mlx_max_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::max_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn max_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_max_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::max_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn max_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_max(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -130,22 +234,57 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [9, 17]
-    /// let result = array.sum(&[0], None).unwrap();
+    /// let result = array.sum_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn sum_device<'a>(
+    pub fn sum_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_sum(
+            mlx_sys::mlx_sum_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::sum_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn sum_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_sum_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::sum_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn sum_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_sum(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -166,22 +305,58 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4.5, 8.5]
-    /// let result = array.mean(&[0], None).unwrap();
+    /// let result = array.mean_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn mean_device<'a>(
+    pub fn mean_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_mean(
+            mlx_sys::mlx_mean_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::mean_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn mean_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_mean_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::mean_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn mean_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_mean(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -202,22 +377,57 @@ impl Array {
     /// let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
     ///
     /// // result is [4, 8]
-    /// let result = array.min(&[0], None).unwrap();
+    /// let result = array.min_axes(&[0], None).unwrap();
     /// ```
     #[default_device]
-    pub fn min_device<'a>(
+    pub fn min_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_min(
+            mlx_sys::mlx_min_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::min_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn min_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_min_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::min_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn min_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_min(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 stream.as_ref().as_ptr(),
             )
@@ -232,20 +442,59 @@ impl Array {
     /// - keep_dims: if `true`, keep the reduces axes as singleton dimensions
     /// - ddof: the divisor to compute the variance is `N - ddof`
     #[default_device]
-    pub fn variance_device<'a>(
+    pub fn var_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         ddof: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_var(
+            mlx_sys::mlx_var_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
                 axes.len(),
+                keep_dims.into().unwrap_or(false),
+                ddof.into().unwrap_or(0),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::var_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn var_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        ddof: impl Into<Option<i32>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_var_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                ddof.into().unwrap_or(0),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::var_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn var_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        ddof: impl Into<Option<i32>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_var(
+                res,
+                self.as_ptr(),
                 keep_dims.into().unwrap_or(false),
                 ddof.into().unwrap_or(0),
                 stream.as_ref().as_ptr(),
@@ -262,15 +511,14 @@ impl Array {
     /// - axes: axes to reduce over
     /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
     #[default_device]
-    pub fn log_sum_exp_device<'a>(
+    pub fn logsumexp_axes_device(
         &self,
-        axes: impl IntoOption<&'a [i32]>,
+        axes: &[i32],
         keep_dims: impl Into<Option<bool>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
-        let axes = axes_or_default_to_all(axes, self.ndim() as i32);
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_logsumexp(
+            mlx_sys::mlx_logsumexp_axes(
                 res,
                 self.as_ptr(),
                 axes.as_ptr(),
@@ -280,42 +528,147 @@ impl Array {
             )
         })
     }
+
+    /// Similar to [`Array::logsumexp_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn logsumexp_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_logsumexp_axis(
+                res,
+                self.as_ptr(),
+                axis,
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::logsumexp_axes`] but reduces over all axes.
+    #[default_device]
+    pub fn logsumexp_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_logsumexp(
+                res,
+                self.as_ptr(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+}
+
+/// See [`Array::all_axes`]
+#[generate_macro]
+#[default_device]
+pub fn all_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().all_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::all_axis`]
+#[generate_macro]
+#[default_device]
+pub fn all_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().all_axis_device(axis, keep_dims, stream)
 }
 
 /// See [`Array::all`]
 #[generate_macro]
 #[default_device]
-pub fn all_device<'a>(
+pub fn all_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().all_device(axes, keep_dims, stream)
+    array.as_ref().all_device(keep_dims, stream)
+}
+
+/// See [`Array::prod_axes`]
+#[generate_macro]
+#[default_device]
+pub fn prod_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().prod_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::prod_axis`]
+#[generate_macro]
+#[default_device]
+pub fn prod_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().prod_axis_device(axis, keep_dims, stream)
 }
 
 /// See [`Array::prod`]
 #[generate_macro]
 #[default_device]
-pub fn prod_device<'a>(
+pub fn prod_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().prod_device(axes, keep_dims, stream)
+    array.as_ref().prod_device(keep_dims, stream)
+}
+
+/// See [`Array::max_axes`]
+#[generate_macro]
+#[default_device]
+pub fn max_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().max_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::max_axis`]
+#[generate_macro]
+#[default_device]
+pub fn max_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().max_axis_device(axis, keep_dims, stream)
 }
 
 /// See [`Array::max`]
 #[generate_macro]
 #[default_device]
-pub fn max_device<'a>(
+pub fn max_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().max_device(axes, keep_dims, stream)
+    array.as_ref().max_device(keep_dims, stream)
 }
 
 /// Compute the standard deviation(s) over the given axes.
@@ -329,19 +682,18 @@ pub fn max_device<'a>(
 /// - `ddof`: The divisor to compute the variance is `N - ddof`, defaults to `0`.
 #[generate_macro]
 #[default_device]
-pub fn std_device<'a>(
+pub fn std_axes_device(
     a: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] ddof: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
-    let axes = axes_or_default_to_all(axes, a.ndim() as i32);
     let keep_dims = keep_dims.into().unwrap_or(false);
     let ddof = ddof.into().unwrap_or(0);
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_std(
+        mlx_sys::mlx_std_axes(
             res,
             a.as_ptr(),
             axes.as_ptr(),
@@ -353,67 +705,232 @@ pub fn std_device<'a>(
     })
 }
 
-/// See [`Array::sum`]
+/// Similar to [`std_axes`] but only reduces over a single axis.
 #[generate_macro]
 #[default_device]
-pub fn sum_device<'a>(
+pub fn std_axis_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] ddof: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let keep_dims = keep_dims.into().unwrap_or(false);
+    let ddof = ddof.into().unwrap_or(0);
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_std_axis(
+            res,
+            a.as_ptr(),
+            axis,
+            keep_dims,
+            ddof,
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Similar to [`std_axes`] but reduces over all axes.
+#[generate_macro]
+#[default_device]
+pub fn std_device(
+    a: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] ddof: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let keep_dims = keep_dims.into().unwrap_or(false);
+    let ddof = ddof.into().unwrap_or(0);
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_std(res, a.as_ptr(), keep_dims, ddof, stream.as_ref().as_ptr())
+    })
+}
+
+/// See [`Array::sum_axes`]
+#[generate_macro]
+#[default_device]
+pub fn sum_axes_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().sum_device(axes, keep_dims, stream)
+    array.as_ref().sum_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::sum_axis`]
+#[generate_macro]
+#[default_device]
+pub fn sum_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().sum_axis_device(axis, keep_dims, stream)
+}
+
+/// See [`Array::sum`]
+#[generate_macro]
+#[default_device]
+pub fn sum_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().sum_device(keep_dims, stream)
+}
+
+/// See [`Array::mean_axes`]
+#[generate_macro]
+#[default_device]
+pub fn mean_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().mean_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::mean_axis`]
+#[generate_macro]
+#[default_device]
+pub fn mean_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().mean_axis_device(axis, keep_dims, stream)
 }
 
 /// See [`Array::mean`]
 #[generate_macro]
 #[default_device]
-pub fn mean_device<'a>(
+pub fn mean_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().mean_device(axes, keep_dims, stream)
+    array.as_ref().mean_device(keep_dims, stream)
 }
 
 /// See [`Array::min`]
 #[generate_macro]
 #[default_device]
-pub fn min_device<'a>(
+pub fn min_axes_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().min_device(axes, keep_dims, stream)
+    array.as_ref().min_axes_device(axes, keep_dims, stream)
 }
 
-/// See [`Array::variance`]
+/// See [`Array::min_axis`]
 #[generate_macro]
 #[default_device]
-pub fn variance_device<'a>(
+pub fn min_axis_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().min_axis_device(axis, keep_dims, stream)
+}
+
+/// See [`Array::min`]
+#[generate_macro]
+#[default_device]
+pub fn min_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().min_device(keep_dims, stream)
+}
+
+/// See [`Array::var_axes`]
+#[generate_macro]
+#[default_device]
+pub fn var_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] ddof: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     array
         .as_ref()
-        .variance_device(axes, keep_dims, ddof, stream)
+        .var_axes_device(axes, keep_dims, ddof, stream)
 }
 
-/// See [`Array::log_sum_exp`]
+/// See [`Array::var_axis`]
 #[generate_macro]
 #[default_device]
-pub fn log_sum_exp_device<'a>(
+pub fn var_axis_device(
     array: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] ddof: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array
+        .as_ref()
+        .var_axis_device(axis, keep_dims, ddof, stream)
+}
+
+/// See [`Array::var`]
+#[generate_macro]
+#[default_device]
+pub fn var_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] ddof: impl Into<Option<i32>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().var_device(keep_dims, ddof, stream)
+}
+
+/// See [`Array::logsumexp_axes`]
+#[generate_macro]
+#[default_device]
+pub fn logsumexp_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    array.as_ref().log_sum_exp_device(axes, keep_dims, stream)
+    array
+        .as_ref()
+        .logsumexp_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::logsumexp_axis`]
+#[generate_macro]
+#[default_device]
+pub fn logsumexp_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array
+        .as_ref()
+        .logsumexp_axis_device(axis, keep_dims, stream)
+}
+
+/// See [`Array::logsumexp`]
+#[generate_macro]
+#[default_device]
+pub fn logsumexp_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().logsumexp_device(keep_dims, stream)
 }
 
 #[cfg(test)]
@@ -425,21 +942,21 @@ mod tests {
     fn test_all() {
         let array = Array::from_slice(&[true, false, true, false], &[2, 2]);
 
-        assert_eq!(array.all(None, None).unwrap().item::<bool>(), false);
-        assert_eq!(array.all(None, true).unwrap().shape(), &[1, 1]);
-        assert_eq!(array.all(&[0, 1][..], None).unwrap().item::<bool>(), false);
+        assert_eq!(array.all(None).unwrap().item::<bool>(), false);
+        assert_eq!(array.all(true).unwrap().shape(), &[1, 1]);
+        assert_eq!(array.all_axes(&[0, 1], None).unwrap().item::<bool>(), false);
 
-        let result = array.all(&[0][..], None).unwrap();
+        let result = array.all_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<bool>(), &[true, false]);
 
-        let result = array.all(&[1][..], None).unwrap();
+        let result = array.all_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<bool>(), &[false, false]);
     }
 
     #[test]
     fn test_all_empty_axes() {
         let array = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], &[3, 4]);
-        let all = array.all(&[][..], None).unwrap();
+        let all = array.all_axes(&[], None).unwrap();
 
         let results: &[bool] = all.as_slice();
         assert_eq!(
@@ -451,23 +968,23 @@ mod tests {
     #[test]
     fn test_prod() {
         let x = Array::from_slice(&[1, 2, 3, 3], &[2, 2]);
-        assert_eq!(x.prod(None, None).unwrap().item::<i32>(), 18);
+        assert_eq!(x.prod(None).unwrap().item::<i32>(), 18);
 
-        let y = x.prod(None, true).unwrap();
+        let y = x.prod(true).unwrap();
         assert_eq!(y.item::<i32>(), 18);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.prod(&[0][..], None).unwrap();
+        let result = x.prod_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[3, 6]);
 
-        let result = x.prod(&[1][..], None).unwrap();
+        let result = x.prod_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[2, 9])
     }
 
     #[test]
     fn test_prod_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.prod(&[][..], None).unwrap();
+        let result = array.prod_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -476,22 +993,22 @@ mod tests {
     #[test]
     fn test_max() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.max(None, None).unwrap().item::<i32>(), 4);
-        let y = x.max(None, true).unwrap();
+        assert_eq!(x.max(None).unwrap().item::<i32>(), 4);
+        let y = x.max(true).unwrap();
         assert_eq!(y.item::<i32>(), 4);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.max(&[0][..], None).unwrap();
+        let result = x.max_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[3, 4]);
 
-        let result = x.max(&[1][..], None).unwrap();
+        let result = x.max_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[2, 4]);
     }
 
     #[test]
     fn test_max_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.max(&[][..], None).unwrap();
+        let result = array.max_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -500,7 +1017,7 @@ mod tests {
     #[test]
     fn test_sum() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.sum(&[0][..], None).unwrap();
+        let result = array.sum_axis(0, None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[9, 17]);
@@ -509,7 +1026,7 @@ mod tests {
     #[test]
     fn test_sum_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.sum(&[][..], None).unwrap();
+        let result = array.sum_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -518,22 +1035,22 @@ mod tests {
     #[test]
     fn test_mean() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.mean(None, None).unwrap().item::<f32>(), 2.5);
-        let y = x.mean(None, true).unwrap();
+        assert_eq!(x.mean(None).unwrap().item::<f32>(), 2.5);
+        let y = x.mean(true).unwrap();
         assert_eq!(y.item::<f32>(), 2.5);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.mean(&[0][..], None).unwrap();
+        let result = x.mean_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[2.0, 3.0]);
 
-        let result = x.mean(&[1][..], None).unwrap();
+        let result = x.mean_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[1.5, 3.5]);
     }
 
     #[test]
     fn test_mean_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.mean(&[][..], None).unwrap();
+        let result = array.mean_axes(&[], None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.0, 8.0, 4.0, 9.0]);
@@ -542,29 +1059,29 @@ mod tests {
     #[test]
     fn test_mean_out_of_bounds() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.mean(&[2][..], None);
+        let result = array.mean_axis(2, None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_min() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.min(None, None).unwrap().item::<i32>(), 1);
-        let y = x.min(None, true).unwrap();
+        assert_eq!(x.min(None).unwrap().item::<i32>(), 1);
+        let y = x.min(true).unwrap();
         assert_eq!(y.item::<i32>(), 1);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.min(&[0][..], None).unwrap();
+        let result = x.min_axis(0, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[1, 2]);
 
-        let result = x.min(&[1][..], None).unwrap();
+        let result = x.min_axis(1, None).unwrap();
         assert_eq!(result.as_slice::<i32>(), &[1, 3]);
     }
 
     #[test]
     fn test_min_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.min(&[][..], None).unwrap();
+        let result = array.min_axes(&[], None).unwrap();
 
         let results: &[i32] = result.as_slice();
         assert_eq!(results, &[5, 8, 4, 9]);
@@ -573,26 +1090,26 @@ mod tests {
     #[test]
     fn test_var() {
         let x = Array::from_slice(&[1, 2, 3, 4], &[2, 2]);
-        assert_eq!(x.variance(None, None, None).unwrap().item::<f32>(), 1.25);
-        let y = x.variance(None, true, None).unwrap();
+        assert_eq!(x.var(None, None).unwrap().item::<f32>(), 1.25);
+        let y = x.var(true, None).unwrap();
         assert_eq!(y.item::<f32>(), 1.25);
         assert_eq!(y.shape(), &[1, 1]);
 
-        let result = x.variance(&[0][..], None, None).unwrap();
+        let result = x.var_axis(0, None, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[1.0, 1.0]);
 
-        let result = x.variance(&[1][..], None, None).unwrap();
+        let result = x.var_axis(1, None, None).unwrap();
         assert_eq!(result.as_slice::<f32>(), &[0.25, 0.25]);
 
         let x = Array::from_slice(&[1.0, 2.0], &[2]);
-        let out = x.variance(None, None, Some(3)).unwrap();
+        let out = x.var(None, Some(3)).unwrap();
         assert_eq!(out.item::<f32>(), f32::INFINITY);
     }
 
     #[test]
     fn test_var_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.variance(&[][..], None, 0).unwrap();
+        let result = array.var_axes(&[], None, 0).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[0.0, 0.0, 0.0, 0.0]);
@@ -601,7 +1118,7 @@ mod tests {
     #[test]
     fn test_log_sum_exp() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.log_sum_exp(&[0][..], None).unwrap();
+        let result = array.logsumexp_axis(0, None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.3132615, 9.313262]);
@@ -610,7 +1127,7 @@ mod tests {
     #[test]
     fn test_log_sum_exp_empty_axes() {
         let array = Array::from_slice(&[5, 8, 4, 9], &[2, 2]);
-        let result = array.log_sum_exp(&[][..], None).unwrap();
+        let result = array.logsumexp_axes(&[], None).unwrap();
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.0, 8.0, 4.0, 9.0]);

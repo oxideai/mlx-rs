@@ -3,7 +3,7 @@ use crate::{
     error::AsSliceError,
     sealed::Sealed,
     utils::{guard::Guarded, SUCCESS},
-    Stream, StreamOrDevice,
+    Stream,
 };
 use element::FromSliceElement;
 use mlx_internal_macros::default_device;

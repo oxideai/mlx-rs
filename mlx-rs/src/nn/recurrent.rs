@@ -4,8 +4,11 @@ use crate::{
     array,
     error::Exception,
     module::{Module, Param},
-    ops::indexing::{Ellipsis, IndexOp},
-    ops::{addmm, matmul, sigmoid, split_equal, stack, tanh, tanh_device},
+    ops::{
+        addmm,
+        indexing::{Ellipsis, IndexOp},
+        matmul, sigmoid, split, stack_axis, tanh, tanh_device,
+    },
     random::uniform,
     Array, Stream,
 };
@@ -144,7 +147,7 @@ impl Rnn {
             all_hidden.push(hidden);
         }
 
-        stack(&all_hidden[..], -2)
+        stack_axis(&all_hidden[..], -2)
     }
 }
 
@@ -326,7 +329,7 @@ impl Gru {
 
             rz = sigmoid(&rz)?;
 
-            let parts = split_equal(&rz, 2, -1)?;
+            let parts = split(&rz, 2, -1)?;
             let r = &parts[0];
             let z = &parts[1];
 
@@ -348,7 +351,7 @@ impl Gru {
             all_hidden.push(hidden);
         }
 
-        stack(&all_hidden[..], -2)
+        stack_axis(&all_hidden[..], -2)
     }
 }
 
@@ -534,7 +537,7 @@ impl Lstm {
                 ifgo = addmm(&ifgo, hidden, self.wh.t(), None, None)?;
             }
 
-            let pieces = split_equal(&ifgo, 4, -1)?;
+            let pieces = split(&ifgo, 4, -1)?;
 
             let i = sigmoid(&pieces[0])?;
             let f = sigmoid(&pieces[1])?;
@@ -552,7 +555,10 @@ impl Lstm {
             all_cell.push(cell);
         }
 
-        Ok((stack(&all_hidden[..], -2)?, stack(&all_cell[..], -2)?))
+        Ok((
+            stack_axis(&all_hidden[..], -2)?,
+            stack_axis(&all_cell[..], -2)?,
+        ))
     }
 }
 

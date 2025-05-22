@@ -127,7 +127,7 @@ fn update_slice(
     }
 
     if !update_expand_dims.is_empty() {
-        update = Cow::Owned(update.expand_dims_device(&update_expand_dims, &stream)?);
+        update = Cow::Owned(update.expand_dims_axes_device(&update_expand_dims, &stream)?);
     }
 
     Ok(Some(src.slice_update_device(
@@ -1350,7 +1350,7 @@ mod tests {
             let mut a = Array::from_iter(0..60, &[3, 4, 5]);
 
             a.index_mut(index, Array::from_int(1));
-            let sum = a.sum(None, None).unwrap().item::<i32>();
+            let sum = a.sum(None).unwrap().item::<i32>();
             assert_eq!(sum, expected_sum);
         }
 
@@ -1381,7 +1381,7 @@ mod tests {
                     let mut a = Array::from_iter(0..360, &[2, 3, 4, 5, 3]);
 
                     a.index_mut(($($i),*), Array::from_int(1));
-                    let sum = a.sum(None, None).unwrap().item::<i32>();
+                    let sum = a.sum(None).unwrap().item::<i32>();
                     assert_eq!(sum, $sum);
                 }
             };
@@ -1429,7 +1429,7 @@ mod tests {
                     let mut a = Array::from_iter(0..540, &[3, 3, 4, 5, 3]);
 
                     a.index_mut(($($i),*), Array::from_int(1));
-                    let sum = a.sum(None, None).unwrap().item::<i32>();
+                    let sum = a.sum(None).unwrap().item::<i32>();
                     assert_eq!(sum, $sum);
                 }
             };

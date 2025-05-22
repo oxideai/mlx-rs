@@ -160,15 +160,15 @@ mod tests {
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Vec<Array> {
-            vec![model.forward(x).unwrap().sum(None, None).unwrap()]
+            vec![model.forward(x).unwrap().sum(None).unwrap()]
         };
 
         let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
-        assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["weight"].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["bias"].sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(v[0].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["weight"].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["bias"].sum(None).unwrap(), array!(0.0));
     }
 
     #[test]
@@ -177,15 +177,15 @@ mod tests {
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Array {
-            model.forward(x).unwrap().sum(None, None).unwrap()
+            model.forward(x).unwrap().sum(None).unwrap()
         };
 
         let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
-        assert_ne!(v.sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["weight"].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["bias"].sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(v.sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["weight"].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["bias"].sum(None).unwrap(), array!(0.0));
     }
 
     #[test]
@@ -194,15 +194,15 @@ mod tests {
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[2, 2], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Result<Vec<Array>, Exception> {
-            Ok(vec![model.forward(x)?.sum(None, None)?])
+            Ok(vec![model.forward(x)?.sum(None)?])
         };
 
         let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, &x).unwrap();
 
-        assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["weight"].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["bias"].sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(v[0].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["weight"].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["bias"].sum(None).unwrap(), array!(0.0));
     }
 
     #[test]
@@ -217,16 +217,16 @@ mod tests {
                     .forward(x)?
                     .subtract(y)?
                     .square()?
-                    .sum(None, None)
+                    .sum(None)
                     .map(|v| vec![v])
             };
 
         let mut vg = nn::value_and_grad(loss);
         let (v, g) = vg(&mut model, (&x, &y)).unwrap();
 
-        assert_ne!(v[0].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["weight"].sum(None, None).unwrap(), array!(0.0));
-        assert_ne!(g["bias"].sum(None, None).unwrap(), array!(0.0));
+        assert_ne!(v[0].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["weight"].sum(None).unwrap(), array!(0.0));
+        assert_ne!(g["bias"].sum(None).unwrap(), array!(0.0));
     }
 
     #[test]
@@ -236,7 +236,7 @@ mod tests {
         let x = crate::random::uniform::<_, f32>(1.0, 2.0, &[3, 3], None).unwrap();
 
         let loss = |model: &mut Linear, x: &Array| -> Result<Vec<Array>, Exception> {
-            Ok(vec![model.forward(x)?.sum(None, None)?])
+            Ok(vec![model.forward(x)?.sum(None)?])
         };
 
         let mut vg = nn::value_and_grad(loss);

@@ -12,8 +12,8 @@ use mlx_macros::ModuleParameters;
 
 fn instance_norm(x: &Array, axes: &[i32], eps: &Array) -> Result<Array, Exception> {
     // Compute stats
-    let mean = x.mean(axes, true)?;
-    let variance = x.variance(axes, true, None)?;
+    let mean = x.mean_axes(axes, true)?;
+    let variance = x.var_axes(axes, true, None)?;
 
     // Normalize
     let x = x.subtract(&mean)?.multiply(rsqrt(&variance.add(eps)?)?)?;
@@ -375,7 +375,7 @@ impl GroupNorm {
         // Split into groups
         let x = x.reshape(&[batch, -1, self.group_count, group_size])?;
         let x = x
-            .transpose(&[0, 2, 1, 3])?
+            .transpose_axes(&[0, 2, 1, 3])?
             .reshape(&[batch, self.group_count, -1])?;
 
         // Normalize
@@ -388,7 +388,7 @@ impl GroupNorm {
             .chain(rest.iter().copied())
             .chain([dims])
             .collect();
-        x.transpose(&[0, 2, 1, 3])?.reshape(&new_shape[..])
+        x.transpose_axes(&[0, 2, 1, 3])?.reshape(&new_shape[..])
     }
 
     fn group_norm(&self, x: &Array) -> Result<Array, Exception> {
@@ -557,8 +557,8 @@ impl BatchNorm {
     fn stats(x: &Array) -> Result<(Array, Array), Exception> {
         let reduction_axes = (0..x.ndim() as i32 - 1).collect::<Vec<_>>();
 
-        let mean = x.mean(&reduction_axes, None)?;
-        let variance = x.variance(&reduction_axes, None, None)?;
+        let mean = x.mean_axes(&reduction_axes, None)?;
+        let variance = x.var_axes(&reduction_axes, None, None)?;
 
         Ok((mean, variance))
     }
@@ -633,12 +633,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.500_064_6,
             abs <= 0.010_001_292
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             128.016_54,
             abs <= 2.560_330_9
         );
@@ -651,12 +651,12 @@ mod tests {
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.106_454_11,
             abs <= 0.002_129_082_3
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             1.703_265_8,
             abs <= 0.034_065_317
         );
@@ -669,12 +669,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.492_690_32,
             abs <= 0.009_853_806
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             126.128_72,
             abs <= 2.522_574_4
         );
@@ -687,12 +687,12 @@ mod tests {
         assert_eq!(result.shape(), &[2, 8]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.290_990_38,
             abs <= 0.005_819_807_8
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             4.655_846,
             abs <= 0.093_116_924
         );
@@ -705,12 +705,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.505_476_36,
             abs <= 0.010_109_527
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             129.401_95,
             abs <= 2.588_039
         );
@@ -719,12 +719,12 @@ mod tests {
         assert_eq!(result.shape(), &[2, 8, 16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.872_938_75,
             abs <= 0.017_458_774
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             223.472_32,
             abs <= 4.469_446
         );
@@ -737,12 +737,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.486_665_87,
             abs <= 0.009_733_317
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             124.586_464,
             abs <= 2.491_729_3
         );
@@ -755,12 +755,12 @@ mod tests {
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             -0.054_606_52,
             abs <= 0.001_092_130_4
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             -0.873_704_3,
             abs <= 0.017_474_087
         );
@@ -773,12 +773,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.505_814_7,
             abs <= 0.010_116_293
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             129.488_56,
             abs <= 2.589_771
         );
@@ -791,12 +791,12 @@ mod tests {
         assert_eq!(result.shape(), &[16]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.439_785_24,
             abs <= 0.008_795_705
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             7.036_564,
             abs <= 0.140_731_28
         );

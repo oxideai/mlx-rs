@@ -54,7 +54,7 @@ impl<T> UnaryModule for T where T: for<'a> Module<&'a Array, Output = Array> {}
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {
     /// Get the total number of parameters in the module.
-    /// 
+    ///
     /// Returns the total number of parameters in the module without counting
     /// the parameters iterator. `module.parameters().flatten().len()`
     fn num_parameters(&self) -> usize;

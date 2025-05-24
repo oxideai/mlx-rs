@@ -379,9 +379,9 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 /// This is automatically implemented for all types that implement ModuleParameters.
 pub trait Updatable {
     /// Returns the number of updatable states.
-    /// 
+    ///
     /// The number should be the same as calling `self.updatable_states().len()` but
-    /// this method should be more efficient in general. The implementation should 
+    /// this method should be more efficient in general. The implementation should
     /// avoid iterating over the states if possible.
     fn updatable_states_len(&self) -> usize;
 

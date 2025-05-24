@@ -53,6 +53,12 @@ impl<T> UnaryModule for T where T: for<'a> Module<&'a Array, Output = Array> {}
 
 /// Trait for accessing and updating module parameters.
 pub trait ModuleParameters {
+    /// Get the total number of parameters in the module.
+    /// 
+    /// Returns the total number of parameters in the module without counting
+    /// the parameters iterator. `module.parameters().flatten().len()`
+    fn num_parameters(&self) -> usize;
+
     /// Get references to the module parameters.
     fn parameters(&self) -> ModuleParamRef<'_>;
 
@@ -107,6 +113,10 @@ impl<T> ModuleParameters for &'_ mut T
 where
     T: ModuleParameters + ?Sized,
 {
+    fn num_parameters(&self) -> usize {
+        (**self).num_parameters()
+    }
+
     fn parameters(&self) -> ModuleParamRef<'_> {
         (**self).parameters()
     }
@@ -140,6 +150,10 @@ impl<T> ModuleParameters for Box<T>
 where
     T: ModuleParameters + ?Sized,
 {
+    fn num_parameters(&self) -> usize {
+        self.as_ref().num_parameters()
+    }
+
     fn parameters(&self) -> ModuleParamRef<'_> {
         self.as_ref().parameters()
     }
@@ -173,6 +187,10 @@ impl<T> ModuleParameters for Vec<T>
 where
     T: ModuleParameters,
 {
+    fn num_parameters(&self) -> usize {
+        self.iter().map(|module| module.num_parameters()).sum()
+    }
+
     fn parameters(&self) -> ModuleParamRef<'_> {
         let mut parameters = NestedHashMap::new();
         self.iter().enumerate().for_each(|(i, module)| {

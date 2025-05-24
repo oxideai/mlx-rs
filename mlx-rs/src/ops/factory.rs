@@ -1,7 +1,7 @@
+use crate::array::Array;
 use crate::array::ArrayElement;
 use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::{array::Array, stream::StreamOrDevice};
 use crate::{Dtype, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 use num_traits::NumCast;
@@ -239,17 +239,17 @@ impl Array {
     /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a [2, 2] array 4 times along axis 1
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-    /// let r = Array::repeat_device::<i32>(source, 4, 1, StreamOrDevice::default()).unwrap();
+    /// let r = Array::repeat_axis::<i32>(source, 4, 1).unwrap();
     /// ```
     #[default_device]
-    pub fn repeat_device<T: ArrayElement>(
+    pub fn repeat_axis_device<T: ArrayElement>(
         array: Array,
         count: i32,
         axis: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat_axis(res, array.as_ptr(), count, axis, stream.as_ref().as_ptr())
         })
     }
 
@@ -266,16 +266,16 @@ impl Array {
     /// use mlx_rs::{Array, StreamOrDevice};
     /// // repeat a 4 element array 4 times along axis 0
     /// let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-    /// let r = Array::repeat_all_device::<i32>(source, 4, StreamOrDevice::default()).unwrap();
+    /// let r = Array::repeat::<i32>(source, 4).unwrap();
     /// ```
     #[default_device]
-    pub fn repeat_all_device<T: ArrayElement>(
+    pub fn repeat_device<T: ArrayElement>(
         array: Array,
         count: i32,
         stream: impl AsRef<Stream>,
     ) -> Result<Array> {
         Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_repeat_all(res, array.as_ptr(), count, stream.as_ref().as_ptr())
+            mlx_sys::mlx_repeat(res, array.as_ptr(), count, stream.as_ref().as_ptr())
         })
     }
 
@@ -466,24 +466,24 @@ where
 /// See [`Array::repeat`]
 #[generate_macro]
 #[default_device]
-pub fn repeat_device<T: ArrayElement>(
+pub fn repeat_axis_device<T: ArrayElement>(
     array: Array,
     count: i32,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::repeat_device::<T>(array, count, axis, stream)
+    Array::repeat_axis_device::<T>(array, count, axis, stream)
 }
 
-/// See [`Array::repeat_all`]
+/// See [`Array::repeat`]
 #[generate_macro]
 #[default_device]
-pub fn repeat_all_device<T: ArrayElement>(
+pub fn repeat_device<T: ArrayElement>(
     array: Array,
     count: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::repeat_all_device::<T>(array, count, stream)
+    Array::repeat_device::<T>(array, count, stream)
 }
 
 /// See [`Array::tri`]
@@ -542,7 +542,7 @@ pub fn triu_device(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{array, dtype::Dtype};
+    use crate::{array, dtype::Dtype, StreamOrDevice};
     use half::f16;
 
     #[test]
@@ -672,9 +672,10 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        let data: &[f32] = array.as_slice();
-        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
-        assert_eq!(data, expected.as_slice());
+        let expected_data: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        let expected = Array::from_slice(&expected_data, &[50]);
+        assert_eq!(array.shape(), expected.shape());
+        assert_array_all_close!(array, expected);
     }
 
     #[test]
@@ -683,9 +684,10 @@ mod tests {
         assert_eq!(array.shape(), &[50]);
         assert_eq!(array.dtype(), Dtype::Float32);
 
-        let data: &[f32] = array.as_slice();
-        let expected: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
-        assert_eq!(data, expected.as_slice());
+        let expected_data: Vec<f32> = (0..50).map(|x| x as f32 * (50.0 / 49.0)).collect();
+        let expected = Array::from_slice(&expected_data, &[50]);
+        assert_eq!(array.shape(), expected.shape());
+        assert_array_all_close!(array, expected);
     }
 
     #[test]
@@ -700,7 +702,7 @@ mod tests {
     #[test]
     fn test_repeat() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, 4, 1).unwrap();
+        let array = Array::repeat_axis::<i32>(source, 4, 1).unwrap();
         assert_eq!(array.shape(), &[2, 8]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -711,18 +713,18 @@ mod tests {
     #[test]
     fn test_repeat_try() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, 4, 1);
+        let array = Array::repeat_axis::<i32>(source, 4, 1);
         assert!(array.is_ok());
 
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat::<i32>(source, -1, 1);
+        let array = Array::repeat_axis::<i32>(source, -1, 1);
         assert!(array.is_err());
     }
 
     #[test]
     fn test_repeat_all() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, 4).unwrap();
+        let array = Array::repeat::<i32>(source, 4).unwrap();
         assert_eq!(array.shape(), &[16]);
         assert_eq!(array.dtype(), Dtype::Int32);
 
@@ -733,11 +735,11 @@ mod tests {
     #[test]
     fn test_repeat_all_try() {
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, 4);
+        let array = Array::repeat::<i32>(source, 4);
         assert!(array.is_ok());
 
         let source = Array::from_slice(&[0, 1, 2, 3], &[2, 2]);
-        let array = Array::repeat_all::<i32>(source, -1);
+        let array = Array::repeat::<i32>(source, -1);
         assert!(array.is_err());
     }
 

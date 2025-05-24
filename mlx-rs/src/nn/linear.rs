@@ -195,7 +195,7 @@ impl Module<&Array> for Bilinear {
         let mut y = crate::ops::matmul(&x1, w.t())?;
         y = y.reshape(&[-1, out, in2])?.swap_axes(-2, -1)?;
         y = crate::ops::matmul(&x2, &y)?;
-        y = y.squeeze(&[1])?;
+        y = y.squeeze_axes(&[1])?;
 
         // reset the shape
         let new_shape = x_shape.iter().cloned().chain(once(out)).collect::<Vec<_>>();
@@ -227,12 +227,12 @@ mod tests {
         assert_eq!(a.shape(), &[2, 8, 16]);
         assert_eq!(a.dtype(), Dtype::Float32);
         assert_float_eq!(
-            a.mean(None, None).unwrap().item::<f32>(),
+            a.mean(None).unwrap().item::<f32>(),
             0.508_688_57,
             abs <= 0.010_173_771_5
         );
         assert_float_eq!(
-            a.sum(None, None).unwrap().item::<f32>(),
+            a.sum(None).unwrap().item::<f32>(),
             130.224_27,
             abs <= 2.604_485_5
         );
@@ -240,12 +240,12 @@ mod tests {
         assert_eq!(result.shape(), &[2, 8, 5]);
         assert_eq!(result.dtype(), Dtype::Float32);
         assert_float_eq!(
-            result.mean(None, None).unwrap().item::<f32>(),
+            result.mean(None).unwrap().item::<f32>(),
             0.104_193_09,
             abs <= 0.002_083_861_7
         );
         assert_float_eq!(
-            result.sum(None, None).unwrap().item::<f32>(),
+            result.sum(None).unwrap().item::<f32>(),
             8.335_447,
             abs <= 0.166_708_95
         );

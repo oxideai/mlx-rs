@@ -4,7 +4,7 @@ use crate::{
     macros::ModuleParameters,
     module::Module,
     ops::{
-        abs, broadcast_to, ceil, clip, expand_dims, floor,
+        abs, broadcast_to, ceil, clip, expand_dims_axes, floor,
         indexing::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, TryIndexOp},
     },
     transforms::compile::compile,
@@ -245,7 +245,7 @@ fn linear_indices(
     indices = clip(&indices, (0, dimension - 1))?;
     let indices_left = floor(&indices)?;
     let indices_right = ceil(&indices)?;
-    let weight = expand_dims(&indices.subtract(&indices_left)?, &[-1])?;
+    let weight = expand_dims_axes(&indices.subtract(&indices_left)?, &[-1])?;
 
     let indices_left = indices_left.as_type::<i32>()?;
     let indices_right = indices_right.as_type::<i32>()?;
@@ -356,7 +356,7 @@ mod tests {
         let input = array!([1, 2, 3, 4], shape = [1, 2, 2, 1]);
 
         let mut up = Upsample::new(2.0, UpsampleMode::Nearest);
-        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+        let result = up.forward(&input).and_then(|r| r.squeeze()).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
 
@@ -385,7 +385,7 @@ mod tests {
                 align_corners: false,
             },
         );
-        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+        let result = up.forward(&input).and_then(|r| r.squeeze()).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
 
@@ -417,7 +417,7 @@ mod tests {
                 align_corners: false,
             },
         );
-        let result = up.forward(&input).and_then(|r| r.squeeze(None)).unwrap();
+        let result = up.forward(&input).and_then(|r| r.squeeze()).unwrap();
 
         assert_eq!(result.shape(), &[4, 4]);
 

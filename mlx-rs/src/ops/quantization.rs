@@ -1,6 +1,6 @@
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream};
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn test_quantize_dequantize() {
         let x1 = Array::ones::<f32>(&[128, 1]).unwrap();
-        let x2 = expand_dims(Array::arange::<_, f32>(0, 512, None).unwrap(), &[0]).unwrap();
+        let x2 = expand_dims(Array::arange::<_, f32>(0, 512, None).unwrap(), 0).unwrap();
         let x = x1 * x2;
 
         for i in [2, 4, 8].iter() {
@@ -130,7 +130,7 @@ mod tests {
             assert_eq!(biases.shape(), [128, 4]);
 
             let x_hat = dequantize(&x_q, &scales, &biases, 128, *i).unwrap();
-            let max_diff = ((&x - &x_hat).abs().unwrap().max(None, None).unwrap()).item::<f32>();
+            let max_diff = ((&x - &x_hat).abs().unwrap().max(None).unwrap()).item::<f32>();
             assert!(max_diff <= 127.0 / (1 << i) as f32);
         }
     }

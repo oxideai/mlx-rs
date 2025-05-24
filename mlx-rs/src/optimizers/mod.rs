@@ -229,9 +229,7 @@ pub fn clip_grad_norm(
 ) -> crate::error::Result<(MaybeClippedGrads, f32)> {
     let total_norm: f32 = gradients
         .values()
-        .try_fold(array!(0.0), |acc, grad| {
-            acc.add(&grad.square()?.sum(None, None)?)
-        })?
+        .try_fold(array!(0.0), |acc, grad| acc.add(&grad.square()?.sum(None)?))?
         .sqrt()?
         .item();
     let normalizer = array!(max_norm / (total_norm + 1e-6));
@@ -285,7 +283,7 @@ mod tests {
         let clipped_values: Vec<_> = clipped_grads.values().map(|v| v.as_ref()).collect();
         let norm_of_clipped = clipped_values
             .into_iter()
-            .map(|g| g.square().unwrap().sum(None, None).unwrap())
+            .map(|g| g.square().unwrap().sum(None).unwrap())
             .sum::<Array>()
             .sqrt()
             .unwrap();

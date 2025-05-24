@@ -18,7 +18,7 @@ use mlx_rs::{
 fn test_compile_module() {
     let loss = |model: &mut LinearFunctionModel, x: &Array| -> Array {
         let y = model.forward(x).unwrap();
-        y.square().unwrap().sum(None, None).unwrap()
+        y.square().unwrap().sum(None).unwrap()
     };
     let mut model = LinearFunctionModel::new(None).unwrap();
 
@@ -47,7 +47,7 @@ fn test_compile_module() {
 fn test_compile_module_and_optimizer() {
     let loss = |model: &mut LinearFunctionModel, x: &Array| -> Array {
         let y = model.forward(x).unwrap();
-        y.square().unwrap().sum(None, None).unwrap()
+        y.square().unwrap().sum(None).unwrap()
     };
     let model = LinearFunctionModel::new(None).unwrap();
     // Use a learning rate of 0.0 so that the parameters don't change
@@ -85,7 +85,7 @@ fn test_compile_module_and_optimizer() {
 fn test_compile_module_with_error() {
     let loss = |model: &mut LinearFunctionModel, x: &Array| -> Result<Array, Exception> {
         let y = model.forward(x)?;
-        y.square()?.sum(None, None)
+        y.square()?.sum(None)
     };
     let mut model = LinearFunctionModel::new(&[10]).unwrap();
 
@@ -130,7 +130,7 @@ fn test_compile_module_with_error() {
 fn test_compile_module_and_optimizer_with_error() {
     let loss = |model: &mut LinearFunctionModel, x: &Array| -> Result<Array, Exception> {
         let y = model.forward(x)?;
-        y.square()?.sum(None, None)
+        y.square()?.sum(None)
     };
     let model = LinearFunctionModel::new(&[10]).unwrap();
     // Use a learning rate of 0.0 so that the parameters don't change

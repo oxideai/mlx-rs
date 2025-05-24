@@ -6,7 +6,7 @@ use crate::utils::guard::Guarded;
 use crate::utils::VectorArray;
 use crate::{
     error::{Exception, Result},
-    Array, Stream, StreamOrDevice,
+    Array, Stream,
 };
 
 impl Array {

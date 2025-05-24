@@ -1,40 +1,12 @@
 use crate::error::{Exception, IoError};
 use crate::utils::SUCCESS;
 use crate::{Array, Stream};
-use mlx_sys::FILE;
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::path::Path;
-use std::ptr::{null_mut, NonNull};
+use std::ptr::null_mut;
 
 use super::Guarded;
-
-pub(crate) struct FilePtr(NonNull<FILE>);
-
-impl Drop for FilePtr {
-    fn drop(&mut self) {
-        unsafe {
-            mlx_sys::fclose(self.0.as_ptr());
-        }
-    }
-}
-
-impl FilePtr {
-    pub(crate) fn as_ptr(&self) -> *mut FILE {
-        self.0.as_ptr()
-    }
-
-    pub(crate) fn open(path: &Path, mode: &str) -> Result<Self, IoError> {
-        let path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)?;
-        let mode = CString::new(mode)?;
-
-        unsafe {
-            NonNull::new(mlx_sys::fopen(path.as_ptr(), mode.as_ptr()))
-                .map(Self)
-                .ok_or(IoError::UnableToOpenFile)
-        }
-    }
-}
 
 pub(crate) struct SafeTensors {
     pub(crate) c_data: mlx_sys::mlx_map_string_to_array,

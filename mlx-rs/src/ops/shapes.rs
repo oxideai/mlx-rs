@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
@@ -7,14 +5,24 @@ use crate::{
     constants::DEFAULT_STACK_VEC_LEN,
     error::Result,
     utils::{guard::Guarded, IntoOption, VectorArray},
-    Array, Stream, StreamOrDevice,
+    Array, Stream,
 };
 
 impl Array {
-    /// See [`expand_dims`].
+    /// See [`expand_dims()`].
     #[default_device]
-    pub fn expand_dims_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
-        expand_dims_device(self, axes, stream)
+    pub fn expand_dims_device(&self, axis: i32, stream: impl AsRef<Stream>) -> Result<Array> {
+        expand_dims_device(self, axis, stream)
+    }
+
+    /// See [`expand_dims_axes()`].
+    #[default_device]
+    pub fn expand_dims_axes_device(
+        &self,
+        axes: &[i32],
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        expand_dims_axes_device(self, axes, stream)
     }
 
     /// See [`flatten`].
@@ -34,14 +42,16 @@ impl Array {
         reshape_device(self, shape, stream)
     }
 
-    /// See [`squeeze`].
+    /// See [`squeeze_axes()`].
     #[default_device]
-    pub fn squeeze_device<'a>(
-        &'a self,
-        axes: impl IntoOption<&'a [i32]>,
-        stream: impl AsRef<Stream>,
-    ) -> Result<Array> {
-        squeeze_device(self, axes, stream)
+    pub fn squeeze_axes_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+        squeeze_axes_device(self, axes, stream)
+    }
+
+    /// See [`squeeze()`].
+    #[default_device]
+    pub fn squeeze_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
+        squeeze_device(self, stream)
     }
 
     /// See [`as_strided`]
@@ -87,24 +97,24 @@ impl Array {
 
     /// See [`split`]
     #[default_device]
-    pub fn split_device(
+    pub fn split_axis_device(
         &self,
         indices: &[i32],
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Vec<Array>> {
-        split_device(self, indices, axis, stream)
+        split_sections_device(self, indices, axis, stream)
     }
 
-    /// See [`split_equal`]
+    /// See [`split`]
     #[default_device]
-    pub fn split_equal_device(
+    pub fn split_device(
         &self,
         num_parts: i32,
         axis: impl Into<Option<i32>>,
         stream: impl AsRef<Stream>,
     ) -> Result<Vec<Array>> {
-        split_equal_device(self, num_parts, axis, stream)
+        split_device(self, num_parts, axis, stream)
     }
 
     /// See [`swap_axes`]
@@ -118,35 +128,21 @@ impl Array {
         swap_axes_device(self, axis1, axis2, stream)
     }
 
+    /// See [`transpose_axes`]
+    #[default_device]
+    pub fn transpose_axes_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
+        transpose_axes_device(self, axes, stream)
+    }
+
     /// See [`transpose`]
     #[default_device]
-    pub fn transpose_device(&self, axes: &[i32], stream: impl AsRef<Stream>) -> Result<Array> {
-        transpose_device(self, axes, stream)
+    pub fn transpose_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
+        transpose_device(self, stream)
     }
 
-    /// See [`transpose_all`]
-    #[default_device]
-    pub fn transpose_all_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
-        transpose_all_device(self, stream)
-    }
-
-    /// [`transpose`] and unwrap the result.
+    /// [`transpose_axes`] and unwrap the result.
     pub fn t(&self) -> Array {
-        self.transpose_all().unwrap()
-    }
-}
-
-fn axes_or_default_to_all_size_one_axes<'a>(
-    axes: impl IntoOption<&'a [i32]>,
-    shape: &[i32],
-) -> Cow<'a, [i32]> {
-    match axes.into_option() {
-        Some(axes) => Cow::Borrowed(axes),
-        None => shape
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &dim)| if dim == 1 { Some(i as i32) } else { None })
-            .collect(),
+        self.transpose().unwrap()
     }
 }
 
@@ -274,19 +270,31 @@ pub fn broadcast_to_device(
 ///
 /// let x = Array::from_iter(0..4, &[2, 2]);
 /// let y = Array::from_iter(4..8, &[2, 2]);
-/// let result = concatenate(&[x, y], 0);
+/// let result = concatenate_axis(&[x, y], 0);
 /// ```
+#[generate_macro]
+#[default_device]
+pub fn concatenate_axis_device(
+    arrays: &[impl AsRef<Array>],
+    axis: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_arrays = VectorArray::try_from_iter(arrays.iter())?;
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_concatenate_axis(res, c_arrays.as_ptr(), axis, stream.as_ref().as_ptr())
+    })
+}
+
+/// Concatenate the arrays along the first axis. Returns an error if the shapes are invalid.
 #[generate_macro]
 #[default_device]
 pub fn concatenate_device(
     arrays: &[impl AsRef<Array>],
-    #[optional] axis: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let axis = axis.into().unwrap_or(0);
     let c_arrays = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_concatenate(res, c_arrays.as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_concatenate(res, c_arrays.as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -303,23 +311,36 @@ pub fn concatenate_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[2, 2]).unwrap();
-/// let result = expand_dims(&x, &[0]);
+/// let result = expand_dims_axes(&x, &[0]);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn expand_dims_device(
+pub fn expand_dims_axes_device(
     a: impl AsRef<Array>,
     axes: &[i32],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_expand_dims(
+        mlx_sys::mlx_expand_dims_axes(
             res,
             a.as_ref().as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
         )
+    })
+}
+
+/// Similar to [`expand_dims_axes`], but only takes a single axis.
+#[generate_macro]
+#[default_device]
+pub fn expand_dims_device(
+    a: impl AsRef<Array>,
+    axis: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_expand_dims(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -438,25 +459,37 @@ pub fn reshape_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::zeros::<i32>(&[1, 2, 1, 3]).unwrap();
-/// let result = squeeze(&x, None);
+/// let result = squeeze(&x);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn squeeze_device<'a>(
+pub fn squeeze_axes_device(
     a: impl AsRef<Array>,
-    #[optional] axes: impl IntoOption<&'a [i32]>,
+    axes: &[i32],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
-    let axes = axes_or_default_to_all_size_one_axes(axes, a.shape());
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_squeeze(
+        mlx_sys::mlx_squeeze_axes(
             res,
             a.as_ptr(),
             axes.as_ptr(),
             axes.len(),
             stream.as_ref().as_ptr(),
         )
+    })
+}
+
+/// Similar to [`squeeze_axes`], but removes all length one axes.
+#[generate_macro]
+#[default_device]
+pub fn squeeze_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_squeeze(res, a.as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -578,11 +611,11 @@ pub fn move_axis_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
-/// let result = split(&a, &[3, 7], 0);
+/// let result = split_sections(&a, &[3, 7], 0);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn split_device(
+pub fn split_sections_device(
     a: impl AsRef<Array>,
     indices: &[i32],
     #[optional] axis: impl Into<Option<i32>>,
@@ -590,7 +623,7 @@ pub fn split_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
-        mlx_sys::mlx_split(
+        mlx_sys::mlx_split_sections(
             res,
             a.as_ref().as_ptr(),
             indices.as_ptr(),
@@ -616,11 +649,11 @@ pub fn split_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_iter(0..10, &[10]);
-/// let result = split_equal(&a, 2, 0);
+/// let result = split(&a, 2, 0);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn split_equal_device(
+pub fn split_device(
     a: impl AsRef<Array>,
     num_parts: i32,
     #[optional] axis: impl Into<Option<i32>>,
@@ -628,7 +661,7 @@ pub fn split_equal_device(
 ) -> Result<Vec<Array>> {
     let axis = axis.into().unwrap_or(0);
     Vec::<Array>::try_from_op(|res| unsafe {
-        mlx_sys::mlx_split_equal_parts(
+        mlx_sys::mlx_split(
             res,
             a.as_ref().as_ptr(),
             num_parts,
@@ -782,18 +815,18 @@ pub fn pad_device<'a>(
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
-/// let result = stack(&[&a, &b], 0);
+/// let result = stack_axis(&[&a, &b], 0);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn stack_device(
+pub fn stack_axis_device(
     arrays: &[impl AsRef<Array>],
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_stack(res, c_vec.as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_stack_axis(res, c_vec.as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -810,17 +843,17 @@ pub fn stack_device(
 ///
 /// let a = Array::from_iter(0..4, &[2, 2]);
 /// let b = Array::from_iter(4..8, &[2, 2]);
-/// let result = stack_all(&[&a, &b]);
+/// let result = stack(&[&a, &b]);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn stack_all_device(
+pub fn stack_device(
     arrays: &[impl AsRef<Array>],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let c_vec = VectorArray::try_from_iter(arrays.iter())?;
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_stack_all(res, c_vec.as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_stack(res, c_vec.as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -906,22 +939,22 @@ pub fn tile_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
-/// let y1 = transpose(&x, &[0, 1]).unwrap();
-/// let y2 = transpose_all(&x).unwrap();
+/// let y1 = transpose_axes(&x, &[0, 1]).unwrap();
+/// let y2 = transpose(&x).unwrap();
 /// ```
 ///
 /// # See also
 ///
-/// - [`transpose_all`]
+/// - [`transpose`]
 #[generate_macro]
 #[default_device]
-pub fn transpose_device(
+pub fn transpose_axes_device(
     a: impl AsRef<Array>,
     axes: &[i32],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_transpose(
+        mlx_sys::mlx_transpose_axes(
             res,
             a.as_ref().as_ptr(),
             axes.as_ptr(),
@@ -934,12 +967,12 @@ pub fn transpose_device(
 /// Transpose with all axes reversed
 #[generate_macro]
 #[default_device]
-pub fn transpose_all_device(
+pub fn transpose_device(
     a: impl AsRef<Array>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_transpose_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_transpose(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -954,35 +987,47 @@ mod tests {
     #[test]
     fn test_squeeze() {
         let a = Array::zeros::<i32>(&[2, 1, 2, 1, 2, 1]).unwrap();
-        assert_eq!(squeeze(&a, &[1, 3, 5][..]).unwrap().shape(), &[2, 2, 2]);
-        assert_eq!(squeeze(&a, &[-1, -3, -5][..]).unwrap().shape(), &[2, 2, 2]);
-        assert_eq!(squeeze(&a, &[1][..]).unwrap().shape(), &[2, 2, 1, 2, 1]);
-        assert_eq!(squeeze(&a, &[-1][..]).unwrap().shape(), &[2, 1, 2, 1, 2]);
+        assert_eq!(
+            squeeze_axes(&a, &[1, 3, 5][..]).unwrap().shape(),
+            &[2, 2, 2]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[-1, -3, -5][..]).unwrap().shape(),
+            &[2, 2, 2]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[1][..]).unwrap().shape(),
+            &[2, 2, 1, 2, 1]
+        );
+        assert_eq!(
+            squeeze_axes(&a, &[-1][..]).unwrap().shape(),
+            &[2, 1, 2, 1, 2]
+        );
 
-        assert!(squeeze(&a, &[0][..]).is_err());
-        assert!(squeeze(&a, &[2][..]).is_err());
-        assert!(squeeze(&a, &[1, 3, 1][..]).is_err());
-        assert!(squeeze(&a, &[1, 3, -3][..]).is_err());
+        assert!(squeeze_axes(&a, &[0][..]).is_err());
+        assert!(squeeze_axes(&a, &[2][..]).is_err());
+        assert!(squeeze_axes(&a, &[1, 3, 1][..]).is_err());
+        assert!(squeeze_axes(&a, &[1, 3, -3][..]).is_err());
     }
 
     #[test]
     fn test_expand_dims() {
         let a = Array::zeros::<i32>(&[2, 2]).unwrap();
-        assert_eq!(expand_dims(&a, &[0][..]).unwrap().shape(), &[1, 2, 2]);
-        assert_eq!(expand_dims(&a, &[-1][..]).unwrap().shape(), &[2, 2, 1]);
-        assert_eq!(expand_dims(&a, &[1][..]).unwrap().shape(), &[2, 1, 2]);
+        assert_eq!(expand_dims_axes(&a, &[0][..]).unwrap().shape(), &[1, 2, 2]);
+        assert_eq!(expand_dims_axes(&a, &[-1][..]).unwrap().shape(), &[2, 2, 1]);
+        assert_eq!(expand_dims_axes(&a, &[1][..]).unwrap().shape(), &[2, 1, 2]);
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2]).unwrap().shape(),
+            expand_dims_axes(&a, &[0, 1, 2]).unwrap().shape(),
             &[1, 1, 1, 2, 2]
         );
         assert_eq!(
-            expand_dims(&a, &[0, 1, 2, 5, 6, 7]).unwrap().shape(),
+            expand_dims_axes(&a, &[0, 1, 2, 5, 6, 7]).unwrap().shape(),
             &[1, 1, 1, 2, 2, 1, 1, 1]
         );
 
-        assert!(expand_dims(&a, &[3]).is_err());
-        assert!(expand_dims(&a, &[0, 1, 0]).is_err());
-        assert!(expand_dims(&a, &[0, 1, -4]).is_err());
+        assert!(expand_dims_axes(&a, &[3]).is_err());
+        assert!(expand_dims_axes(&a, &[0, 1, 0]).is_err());
+        assert!(expand_dims_axes(&a, &[0, 1, -4]).is_err());
     }
 
     #[test]
@@ -1064,7 +1109,7 @@ mod tests {
         assert_eq!(y, expected);
 
         let x = x.reshape(&[2, 5]).unwrap();
-        let x = x.transpose(&[1, 0][..]).unwrap();
+        let x = x.transpose_axes(&[1, 0][..]).unwrap();
         let y = as_strided(&x, &[3, 3][..], &[2, 1][..], 1).unwrap();
         let expected = Array::from_slice(&[5, 1, 6, 6, 2, 7, 7, 3, 8], &[3, 3]);
         assert_eq!(y, expected);
@@ -1148,16 +1193,16 @@ mod tests {
     #[test]
     fn test_split_equal() {
         let x = Array::from_int(3);
-        assert!(split_equal(&x, 0, 0).is_err());
+        assert!(split(&x, 0, 0).is_err());
 
         let x = Array::from_slice(&[0, 1, 2], &[3]);
-        assert!(split_equal(&x, 3, 1).is_err());
-        assert!(split_equal(&x, -2, 1).is_err());
+        assert!(split(&x, 3, 1).is_err());
+        assert!(split(&x, -2, 1).is_err());
 
-        let out = split_equal(&x, 3, 0).unwrap();
+        let out = split(&x, 3, 0).unwrap();
         assert_eq!(out.len(), 3);
 
-        let mut out = split_equal(&x, 3, -1).unwrap();
+        let mut out = split(&x, 3, -1).unwrap();
         assert_eq!(out.len(), 3);
         for (i, a) in out.iter_mut().enumerate() {
             assert_eq!(a.shape(), &[1]);
@@ -1166,22 +1211,22 @@ mod tests {
         }
 
         let x = Array::from_slice(&[0, 1, 2, 3, 4, 5], &[2, 3]);
-        let out = split_equal(&x, 2, None).unwrap();
+        let out = split(&x, 2, None).unwrap();
         assert_eq!(out[0], Array::from_slice(&[0, 1, 2], &[1, 3]));
         assert_eq!(out[1], Array::from_slice(&[3, 4, 5], &[1, 3]));
 
-        let out = split_equal(&x, 3, 1).unwrap();
+        let out = split(&x, 3, 1).unwrap();
         assert_eq!(out[0], Array::from_slice(&[0, 3], &[2, 1]));
         assert_eq!(out[1], Array::from_slice(&[1, 4], &[2, 1]));
         assert_eq!(out[2], Array::from_slice(&[2, 5], &[2, 1]));
 
         let x = Array::zeros::<i32>(&[8, 12]).unwrap();
-        let out = split_equal(&x, 2, None).unwrap();
+        let out = split(&x, 2, None).unwrap();
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].shape(), &[4, 12]);
         assert_eq!(out[1].shape(), &[4, 12]);
 
-        let out = split_equal(&x, 3, 1).unwrap();
+        let out = split(&x, 3, 1).unwrap();
         assert_eq!(out.len(), 3);
         assert_eq!(out[0].shape(), &[8, 4]);
         assert_eq!(out[1].shape(), &[8, 4]);
@@ -1192,32 +1237,32 @@ mod tests {
     fn test_split() {
         let x = Array::zeros::<i32>(&[8, 12]).unwrap();
 
-        let out = split(&x, &[], None).unwrap();
+        let out = split_sections(&x, &[], None).unwrap();
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].shape(), x.shape());
 
-        let out = split(&x, &[3, 7], None).unwrap();
+        let out = split_sections(&x, &[3, 7], None).unwrap();
         assert_eq!(out.len(), 3);
         assert_eq!(out[0].shape(), &[3, 12]);
         assert_eq!(out[1].shape(), &[4, 12]);
         assert_eq!(out[2].shape(), &[1, 12]);
 
-        let out = split(&x, &[20], None).unwrap();
+        let out = split_sections(&x, &[20], None).unwrap();
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].shape(), &[8, 12]);
         assert_eq!(out[1].shape(), &[0, 12]);
 
-        let out = split(&x, &[-5], None).unwrap();
+        let out = split_sections(&x, &[-5], None).unwrap();
         assert_eq!(out[0].shape(), &[3, 12]);
         assert_eq!(out[1].shape(), &[5, 12]);
 
-        let out = split(&x, &[2, 8], Some(1)).unwrap();
+        let out = split_sections(&x, &[2, 8], Some(1)).unwrap();
         assert_eq!(out[0].shape(), &[8, 2]);
         assert_eq!(out[1].shape(), &[8, 6]);
         assert_eq!(out[2].shape(), &[8, 4]);
 
         let x = Array::from_iter(0i32..5, &[5]);
-        let out = split(&x, &[2, 1, 2], None).unwrap();
+        let out = split_sections(&x, &[2, 1, 2], None).unwrap();
         assert_eq!(out[0], Array::from_slice(&[0, 1], &[2]));
         assert_eq!(out[1], Array::from_slice::<i32>(&[], &[0]));
         assert_eq!(out[2], Array::from_slice(&[1], &[1]));
@@ -1241,24 +1286,24 @@ mod tests {
     fn test_stack() {
         let x = Array::from_slice::<f32>(&[], &[0]);
         let x = vec![x];
-        assert_eq!(stack(&x, 0).unwrap().shape(), &[1, 0]);
-        assert_eq!(stack(&x, 1).unwrap().shape(), &[0, 1]);
+        assert_eq!(stack_axis(&x, 0).unwrap().shape(), &[1, 0]);
+        assert_eq!(stack_axis(&x, 1).unwrap().shape(), &[0, 1]);
 
         let x = Array::from_slice(&[1, 2, 3], &[3]);
         let x = vec![x];
-        assert_eq!(stack(&x, 0).unwrap().shape(), &[1, 3]);
-        assert_eq!(stack(&x, 1).unwrap().shape(), &[3, 1]);
+        assert_eq!(stack_axis(&x, 0).unwrap().shape(), &[1, 3]);
+        assert_eq!(stack_axis(&x, 1).unwrap().shape(), &[3, 1]);
 
         let y = Array::from_slice(&[4, 5, 6], &[3]);
         let mut z = x;
         z.push(y);
-        assert_eq!(stack_all(&z).unwrap().shape(), &[2, 3]);
-        assert_eq!(stack(&z, 1).unwrap().shape(), &[3, 2]);
-        assert_eq!(stack(&z, -1).unwrap().shape(), &[3, 2]);
-        assert_eq!(stack(&z, -2).unwrap().shape(), &[2, 3]);
+        assert_eq!(stack(&z).unwrap().shape(), &[2, 3]);
+        assert_eq!(stack_axis(&z, 1).unwrap().shape(), &[3, 2]);
+        assert_eq!(stack_axis(&z, -1).unwrap().shape(), &[3, 2]);
+        assert_eq!(stack_axis(&z, -2).unwrap().shape(), &[2, 3]);
 
         let empty: Vec<Array> = Vec::new();
-        assert!(stack(&empty, 0).is_err());
+        assert!(stack_axis(&empty, 0).is_err());
 
         let x = Array::from_slice(&[1, 2, 3], &[3])
             .as_dtype(Dtype::Float16)
@@ -1266,7 +1311,7 @@ mod tests {
         let y = Array::from_slice(&[4, 5, 6], &[3])
             .as_dtype(Dtype::Int32)
             .unwrap();
-        assert_eq!(stack(&[x, y], 0).unwrap().dtype(), Dtype::Float16);
+        assert_eq!(stack_axis(&[x, y], 0).unwrap().dtype(), Dtype::Float16);
 
         let x = Array::from_slice(&[1, 2, 3], &[3])
             .as_dtype(Dtype::Int32)
@@ -1274,7 +1319,7 @@ mod tests {
         let y = Array::from_slice(&[4, 5, 6, 7], &[4])
             .as_dtype(Dtype::Int32)
             .unwrap();
-        assert!(stack(&[x, y], 0).is_err());
+        assert!(stack_axis(&[x, y], 0).is_err());
     }
 
     #[test]
@@ -1336,82 +1381,82 @@ mod tests {
     #[test]
     fn test_transpose() {
         let x = Array::from_int(1);
-        let y = transpose_all(&x).unwrap();
+        let y = transpose(&x).unwrap();
         assert!(y.shape().is_empty());
         assert_eq!(y.item::<i32>(), 1);
-        assert!(transpose(&x, &[0][..]).is_err());
-        assert!(transpose(&x, &[1][..]).is_err());
+        assert!(transpose_axes(&x, &[0][..]).is_err());
+        assert!(transpose_axes(&x, &[1][..]).is_err());
 
         let x = Array::from_slice(&[1], &[1]);
-        let y = transpose_all(&x).unwrap();
+        let y = transpose(&x).unwrap();
         assert_eq!(y.shape(), &[1]);
         assert_eq!(y.item::<i32>(), 1);
 
-        let y = transpose(&x, &[-1][..]).unwrap();
+        let y = transpose_axes(&x, &[-1][..]).unwrap();
         assert_eq!(y.shape(), &[1]);
         assert_eq!(y.item::<i32>(), 1);
 
-        assert!(transpose(&x, &[1][..]).is_err());
-        assert!(transpose(&x, &[0, 0][..]).is_err());
+        assert!(transpose_axes(&x, &[1][..]).is_err());
+        assert!(transpose_axes(&x, &[0, 0][..]).is_err());
 
         let x = Array::from_slice::<i32>(&[], &[0]);
-        let y = transpose_all(&x).unwrap();
+        let y = transpose(&x).unwrap();
         assert_eq!(y.shape(), &[0]);
         y.eval().unwrap();
         assert_eq!(y.size(), 0);
 
         let x = Array::from_slice(&[1, 2, 3, 4, 5, 6], &[2, 3]);
-        let mut y = transpose_all(&x).unwrap();
+        let mut y = transpose(&x).unwrap();
         assert_eq!(y.shape(), &[3, 2]);
-        y = transpose(&x, &[-1, 0][..]).unwrap();
+        y = transpose_axes(&x, &[-1, 0][..]).unwrap();
         assert_eq!(y.shape(), &[3, 2]);
-        y = transpose(&x, &[-1, -2][..]).unwrap();
+        y = transpose_axes(&x, &[-1, -2][..]).unwrap();
         assert_eq!(y.shape(), &[3, 2]);
         y.eval().unwrap();
         assert_eq!(y, Array::from_slice(&[1, 4, 2, 5, 3, 6], &[3, 2]));
 
-        let y = transpose(&x, &[0, 1][..]).unwrap();
+        let y = transpose_axes(&x, &[0, 1][..]).unwrap();
         assert_eq!(y.shape(), &[2, 3]);
         assert_eq!(y, x);
 
-        let y = transpose(&x, &[0, -1][..]).unwrap();
+        let y = transpose_axes(&x, &[0, -1][..]).unwrap();
         assert_eq!(y.shape(), &[2, 3]);
         assert_eq!(y, x);
 
-        assert!(transpose(&x, &[][..]).is_err());
-        assert!(transpose(&x, &[0][..]).is_err());
-        assert!(transpose(&x, &[0, 0][..]).is_err());
-        assert!(transpose(&x, &[0, 0, 0][..]).is_err());
-        assert!(transpose(&x, &[0, 1, 1][..]).is_err());
+        assert!(transpose_axes(&x, &[][..]).is_err());
+        assert!(transpose_axes(&x, &[0][..]).is_err());
+        assert!(transpose_axes(&x, &[0, 0][..]).is_err());
+        assert!(transpose_axes(&x, &[0, 0, 0][..]).is_err());
+        assert!(transpose_axes(&x, &[0, 1, 1][..]).is_err());
 
         let x = Array::from_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &[2, 3, 2]);
-        let y = transpose_all(&x).unwrap();
+        let y = transpose(&x).unwrap();
         assert_eq!(y.shape(), &[2, 3, 2]);
         let expected = Array::from_slice(&[1, 7, 3, 9, 5, 11, 2, 8, 4, 10, 6, 12], &[2, 3, 2]);
         assert_eq!(y, expected);
 
-        let y = transpose(&x, &[0, 1, 2][..]).unwrap();
+        let y = transpose_axes(&x, &[0, 1, 2][..]).unwrap();
         assert_eq!(y.shape(), &[2, 3, 2]);
         assert_eq!(y, x);
 
-        let y = transpose(&x, &[1, 0, 2][..]).unwrap();
+        let y = transpose_axes(&x, &[1, 0, 2][..]).unwrap();
         assert_eq!(y.shape(), &[3, 2, 2]);
         let expected = Array::from_slice(&[1, 2, 7, 8, 3, 4, 9, 10, 5, 6, 11, 12], &[3, 2, 2]);
         assert_eq!(y, expected);
 
-        let y = transpose(&x, &[0, 2, 1][..]).unwrap();
+        let y = transpose_axes(&x, &[0, 2, 1][..]).unwrap();
         assert_eq!(y.shape(), &[2, 2, 3]);
         let expected = Array::from_slice(&[1, 3, 5, 2, 4, 6, 7, 9, 11, 8, 10, 12], &[2, 2, 3]);
         assert_eq!(y, expected);
 
         let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[4, 2]);
-        x = reshape(transpose_all(&x).unwrap(), &[2, 2, 2]).unwrap();
+        x = reshape(transpose(&x).unwrap(), &[2, 2, 2]).unwrap();
         let expected = Array::from_slice(&[0, 2, 4, 6, 1, 3, 5, 7], &[2, 2, 2]);
         assert_eq!(x, expected);
 
         let mut x = Array::from_slice(&[0, 1, 2, 3, 4, 5, 6, 7], &[1, 4, 1, 2]);
         // assert!(x.flags().row_contiguous);
-        x = transpose(&x, &[2, 1, 0, 3][..]).unwrap();
+        x = transpose_axes(&x, &[2, 1, 0, 3][..]).unwrap();
         x.eval().unwrap();
         // assert!(x.flags().row_contiguous);
     }

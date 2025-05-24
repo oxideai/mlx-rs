@@ -3,7 +3,7 @@ use mlx_internal_macros::{default_device, generate_macro};
 use crate::{
     error::Result,
     utils::{guard::Guarded, IntoOption},
-    Array, Stream, StreamOrDevice,
+    Array, Stream,
 };
 
 use super::{

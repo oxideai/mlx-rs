@@ -30,5 +30,5 @@ fn test_nested_module() {
     let mut m = M::new();
     let x = mlx_rs::random::uniform::<_, f32>(1.0, 2.0, &[1, 5], None).unwrap();
     let y = m.forward(&x).unwrap();
-    assert_ne!(y.sum(None, None).unwrap(), mlx_rs::array!(0.0));
+    assert_ne!(y.sum(None).unwrap(), mlx_rs::array!(0.0));
 }

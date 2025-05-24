@@ -411,7 +411,7 @@ where
     // push the stateOutput into the state
     let result_plus_state_output_len = result_plus_state_output.len();
     let suffix_start = result_plus_state_output_len - state_params_len;
-  
+
     for (s, new_values) in state
         .borrow_mut()
         .updatable_states_mut()

@@ -378,6 +378,13 @@ pub(crate) fn get_mut_or_insert_with<'a, T>(
 ///
 /// This is automatically implemented for all types that implement ModuleParameters.
 pub trait Updatable {
+    /// Returns the number of updatable states.
+    ///
+    /// The number should be the same as calling `self.updatable_states().len()` but
+    /// this method should be more efficient in general. The implementation should
+    /// avoid iterating over the states if possible.
+    fn updatable_states_len(&self) -> usize;
+
     /// Returns a list of references to the updatable states.
     ///
     /// The order of the states should be consistent across calls and should be the same as the
@@ -395,6 +402,10 @@ impl<T> Updatable for T
 where
     T: ModuleParameters,
 {
+    fn updatable_states_len(&self) -> usize {
+        self.num_parameters()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 
@@ -422,6 +433,11 @@ where
     T1: Updatable,
     T2: Updatable,
 {
+    fn updatable_states_len(&self) -> usize {
+        let (a, b) = self;
+        a.updatable_states_len() + b.updatable_states_len()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         let (a, b) = self;
         let params = a.updatable_states();
@@ -436,6 +452,10 @@ where
 }
 
 impl Updatable for Vec<Array> {
+    fn updatable_states_len(&self) -> usize {
+        self.len()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         self.iter()
     }

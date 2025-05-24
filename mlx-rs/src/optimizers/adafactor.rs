@@ -442,6 +442,10 @@ impl Optimizer for Adafactor {
 }
 
 impl Updatable for Adafactor {
+    fn updatable_states_len(&self) -> usize {
+        self.updatable_states().into_iter().count()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

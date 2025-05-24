@@ -1709,12 +1709,12 @@ mod tests {
         let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let b = a.cos().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[1.0, 0.54030234, -0.41614687]);
+        let b_expected = array!([1.0, 0.54030234, -0.41614687]);
+        assert_array_all_close!(b, b_expected);
 
         // check a is not modified
-        let a_data: &[f32] = a.as_slice();
-        assert_eq!(a_data, &[0.0, 1.0, 2.0]);
+        let a_expected = array!([0.0, 1.0, 2.0]);
+        assert_array_all_close!(a, a_expected);
     }
 
     #[test]
@@ -1722,12 +1722,12 @@ mod tests {
         let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let b = a.exp().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[1.0, 2.7182817, 7.389056]);
+        let b_expected = array!([1.0, 2.7182817, 7.389056]);
+        assert_array_all_close!(b, b_expected);
 
         // check a is not modified
-        let a_data: &[f32] = a.as_slice();
-        assert_eq!(a_data, &[0.0, 1.0, 2.0]);
+        let a_expected = array!([0.0, 1.0, 2.0]);
+        assert_array_all_close!(a, a_expected);
     }
 
     #[test]

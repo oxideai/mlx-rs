@@ -100,6 +100,10 @@ impl Optimizer for Adamax {
 }
 
 impl Updatable for Adamax {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len() * 2
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

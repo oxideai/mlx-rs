@@ -4,14 +4,7 @@ mod common;
 
 use common::LinearFunctionModel;
 use mlx_rs::{
-    assert_array_eq,
-    error::Exception,
-    module::{Module, ModuleParameters},
-    nn,
-    ops::ones,
-    optimizers::{Optimizer, Sgd},
-    transforms::{compile::compile_with_state, eval_params},
-    Array,
+    assert_array_eq, builder::Builder, error::Exception, module::{Module, ModuleParameters}, nn, ops::ones, optimizers::{Optimizer, Sgd}, transforms::{compile::compile_with_state, eval_params}, Array
 };
 
 #[test]
@@ -43,22 +36,18 @@ fn test_compile_module() {
     assert_eq!(&original, &result);
 }
 
-#[test]
-fn test_compile_module_and_optimizer() {
+fn test_compile_module_and_optimizer_consistency<O: Optimizer>(optimizer: O) {
     let loss = |model: &mut LinearFunctionModel, x: &Array| -> Array {
         let y = model.forward(x).unwrap();
         y.square().unwrap().sum(None).unwrap()
     };
     let model = LinearFunctionModel::new(None).unwrap();
-    // Use a learning rate of 0.0 so that the parameters don't change
-    // and we can check that the compiled function produces the same result
-    let optimizer = Sgd::new(0.0);
 
     let x = ones::<f32>(&[10, 1]).unwrap();
     let x = vec![x];
 
     let step =
-        move |(model, optimizer): &mut (LinearFunctionModel, Sgd), x: &[Array]| -> Vec<Array> {
+        move |(model, optimizer): &mut (LinearFunctionModel, O), x: &[Array]| -> Vec<Array> {
             let mut lg = nn::value_and_grad(loss);
             let x = &x[0];
             let (loss, grad) = lg(model, x).unwrap();
@@ -79,6 +68,81 @@ fn test_compile_module_and_optimizer() {
     let result = compiled(&mut state, x.as_slice()).unwrap();
     assert_array_eq!(&original[0], &result[0]);
     eval_params(state.0.parameters()).unwrap();
+}
+
+#[test]
+fn test_compile_module_and_sgd_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = Sgd::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adam_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::Adam::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_rmsprop_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::RmsProp::new(0.0).unwrap();
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adagrad_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::AdaGrad::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adadelta_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::AdaDelta::new(0.0).unwrap();
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adamw_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::AdamW::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adamax_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::Adamax::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_lion_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::Lion::new(0.0);
+    test_compile_module_and_optimizer_consistency(optimizer);
+}
+
+#[test]
+fn test_compile_module_and_adafactor_consistency() {
+    // Use a learning rate of 0.0 so that the parameters don't change
+    // and we can check that the compiled function produces the same result
+    let optimizer = mlx_rs::optimizers::AdafactorBuilder::new()
+        .lr(0.0)
+        .build()
+        .unwrap();
+    test_compile_module_and_optimizer_consistency(optimizer);
 }
 
 #[test]

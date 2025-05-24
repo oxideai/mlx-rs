@@ -404,16 +404,16 @@ where
     })?;
 
     // number of states may change during the call
-    let mut state_mut = state.borrow_mut();
-    let state_params_mut: Vec<_> = state_mut.updatable_states_mut().into_iter().collect();
-    let state_params_len = state_params_mut.len();
+    let state_params_len = state.borrow().updatable_states_len();
 
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
     // push the stateOutput into the state
     let result_plus_state_output_len = result_plus_state_output.len();
     let suffix_start = result_plus_state_output_len - state_params_len;
-    for (s, new_values) in state_params_mut
+    for (s, new_values) in state
+        .borrow_mut()
+        .updatable_states_mut()
         .into_iter()
         .zip(result_plus_state_output[suffix_start..].iter())
     {

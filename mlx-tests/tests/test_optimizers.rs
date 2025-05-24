@@ -192,12 +192,12 @@ fn test_ada_delta() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(-0.348_337_02),
         0.006966740489006043
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(-4.180_044),
         0.08360088348388672
     );
@@ -206,12 +206,12 @@ fn test_ada_delta() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.522_678_4),
         0.010453567504882813
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(6.272_14),
         0.12544280052185058
     );
@@ -229,12 +229,12 @@ fn test_ada_delta() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), mlx_rs::Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(-0.348_442_4),
         0.348442405462265
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(-4.181_308_7),
         0.08362617492675782
     );
@@ -250,14 +250,14 @@ fn test_adagrad() {
     let a = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
-    assert_array_eq!(a.mean(None, None).unwrap(), array!(-0.045_843_333), ATOL);
-    assert_array_eq!(a.sum(None, None).unwrap(), array!(-0.550_12), ATOL);
+    assert_array_eq!(a.mean(None).unwrap(), array!(-0.045_843_333), ATOL);
+    assert_array_eq!(a.sum(None).unwrap(), array!(-0.550_12), ATOL);
 
     let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
-    assert_array_eq!(a_grad.mean(None, None).unwrap(), array!(0.232_503_94), ATOL);
-    assert_array_eq!(a_grad.sum(None, None).unwrap(), array!(2.790_047_2), ATOL);
+    assert_array_eq!(a_grad.mean(None).unwrap(), array!(0.232_503_94), ATOL);
+    assert_array_eq!(a_grad.sum(None).unwrap(), array!(2.790_047_2), ATOL);
 
     let mut a_model = SimpleModel {
         a: Param::new(a.clone()),
@@ -270,16 +270,8 @@ fn test_adagrad() {
     optimizer.update(&mut a_model, a_grad_params).unwrap();
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
-    assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
-        array!(-0.062_509_984),
-        ATOL
-    );
-    assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
-        array!(-0.750_119_8),
-        ATOL
-    );
+    assert_array_eq!(a_model.a.mean(None).unwrap(), array!(-0.062_509_984), ATOL);
+    assert_array_eq!(a_model.a.sum(None).unwrap(), array!(-0.750_119_8), ATOL);
 
     assert_save_and_load(optimizer, AdaGrad::new(0.1)).unwrap();
 }
@@ -293,12 +285,12 @@ fn test_adam() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(0.112_293_06),
         0.002245861142873764
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(1.347_516_7),
         0.02695033311843872
     );
@@ -307,12 +299,12 @@ fn test_adam() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.305_597_72),
         0.0061119544506073
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(3.667_172_7),
         0.0733434534072876
     );
@@ -329,12 +321,12 @@ fn test_adam() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(0.112_292_78),
         0.0022458556294441224
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(1.347_513_3),
         0.026950266361236572
     );
@@ -351,12 +343,12 @@ fn test_adamw() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(-0.363_391_88),
         0.007267837524414063
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(-4.360_702_5),
         0.08721405029296875
     );
@@ -365,12 +357,12 @@ fn test_adamw() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.221_754_48),
         0.0044350895285606385
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(2.661_053_7),
         0.05322107315063477
     );
@@ -387,12 +379,12 @@ fn test_adamw() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(-0.468_437_6),
         0.009368752241134645
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(-5.621_251),
         0.11242502212524415
     );
@@ -409,12 +401,12 @@ fn test_adamax() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(-0.303_923_6),
         0.006078472137451172
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(-3.647_083_3),
         0.07294166564941407
     );
@@ -423,12 +415,12 @@ fn test_adamax() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(-0.242_717_24),
         0.004854344725608826
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(-2.912_606_7),
         0.05825213432312012
     );
@@ -445,12 +437,12 @@ fn test_adamax() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(-0.303_923_6),
         0.006078472137451172
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(-3.647_083_3),
         0.07294166564941407
     );
@@ -544,12 +536,12 @@ fn test_lion() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(0.177_692_23),
         0.003553844690322876
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(2.132_306_8),
         0.042646136283874515
     );
@@ -558,12 +550,12 @@ fn test_lion() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(-0.021_187_237),
         0.00042374473065137863
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(-0.254_246_83),
         0.005084936618804932
     );
@@ -580,12 +572,12 @@ fn test_lion() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(0.211_025_57),
         0.004220511317253113
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(2.532_306_7),
         0.05064613342285156
     );
@@ -602,12 +594,12 @@ fn test_lion1() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(-0.184_610_6),
         0.0036922121047973633
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(-2.215_327_3),
         0.04430654525756836
     );
@@ -616,12 +608,12 @@ fn test_lion1() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(-0.036_004_007),
         0.0007200801372528076
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(-0.432_048_08),
         0.008640961647033691
     );
@@ -638,12 +630,12 @@ fn test_lion1() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(-0.182_764_5),
         0.003655290007591248
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(-2.193_174),
         0.04386347770690918
     );
@@ -662,12 +654,12 @@ fn test_adafactor() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(-0.520_713_7),
         0.010414273738861083
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(-6.248_564),
         0.12497127532958985
     );
@@ -676,12 +668,12 @@ fn test_adafactor() {
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.433_303_65),
         0.008666073083877564
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(5.199_643_6),
         0.10399287223815919
     );
@@ -698,16 +690,16 @@ fn test_adafactor() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     println!(
-        "a_model.a.mean(None, None).unwrap(): {:?}",
-        a_model.a.mean(None, None).unwrap()
+        "a_model.a.mean(None).unwrap(): {:?}",
+        a_model.a.mean(None).unwrap()
     );
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(-0.526_828_47),
         0.010536569356918336
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(-6.321_941_4),
         0.12643882751464844
     );
@@ -722,26 +714,22 @@ fn test_adafactor1() {
     assert_eq!(a.shape(), &[4, 3]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(0.400_818_17),
         0.008016363382339478
     );
-    assert_array_eq!(
-        a.sum(None, None).unwrap(),
-        array!(4.809_818),
-        0.09619635581970215
-    );
+    assert_array_eq!(a.sum(None).unwrap(), array!(4.809_818), 0.09619635581970215);
 
     let a_grad = mlx_rs::random::normal::<f32>(&[4, 3], None, None, None).unwrap();
     assert_eq!(a_grad.shape(), &[4, 3]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.214_474_72),
         0.004289494454860688
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(2.573_696_6),
         0.05147393226623535
     );
@@ -758,12 +746,12 @@ fn test_adafactor1() {
     assert_eq!(a_model.a.shape(), &[4, 3]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(0.399_430_7),
         0.007988613843917847
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(4.793_168),
         0.09586336135864258
     );
@@ -776,12 +764,12 @@ fn test_adafactor2() {
     assert_eq!(a.shape(), &[10]);
     assert_eq!(a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a.mean(None, None).unwrap(),
+        a.mean(None).unwrap(),
         array!(0.489_024_55),
         0.00978049099445343
     );
     assert_array_eq!(
-        a.sum(None, None).unwrap(),
+        a.sum(None).unwrap(),
         array!(4.890_245_4),
         0.09780490875244141
     );
@@ -790,12 +778,12 @@ fn test_adafactor2() {
     assert_eq!(a_grad.shape(), &[10]);
     assert_eq!(a_grad.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_grad.mean(None, None).unwrap(),
+        a_grad.mean(None).unwrap(),
         array!(0.681_890_2),
         0.013637803792953491
     );
     assert_array_eq!(
-        a_grad.sum(None, None).unwrap(),
+        a_grad.sum(None).unwrap(),
         array!(6.818_902),
         0.1363780403137207
     );
@@ -812,12 +800,12 @@ fn test_adafactor2() {
     assert_eq!(a_model.a.shape(), &[10]);
     assert_eq!(a_model.a.dtype(), Dtype::Float32);
     assert_array_eq!(
-        a_model.a.mean(None, None).unwrap(),
+        a_model.a.mean(None).unwrap(),
         array!(0.483_533_05),
         0.009670661091804504
     );
     assert_array_eq!(
-        a_model.a.sum(None, None).unwrap(),
+        a_model.a.sum(None).unwrap(),
         array!(4.835_330_5),
         0.09670660972595214
     );

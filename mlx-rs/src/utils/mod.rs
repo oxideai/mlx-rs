@@ -52,6 +52,10 @@ impl VectorArray {
         self.c_vec
     }
 
+    pub(crate) unsafe fn from_ptr(c_vec: mlx_sys::mlx_vector_array) -> Self {
+        Self { c_vec }
+    }
+
     pub(crate) fn try_from_iter(
         iter: impl Iterator<Item = impl AsRef<Array>>,
     ) -> Result<Self, Exception> {

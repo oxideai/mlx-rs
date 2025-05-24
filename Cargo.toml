@@ -28,7 +28,7 @@ resolver = "2"
 
 [workspace.dependencies]
 # workspace local dependencies
-mlx-sys = { version = "=0.1.2-release", path = "mlx-sys" }
+mlx-sys = { version = "=0.2.0-alpha", path = "mlx-sys" }
 mlx-macros = { version = "0.23", path = "mlx-macros" }
 mlx-internal-macros = { version = "0.23", path = "mlx-internal-macros" }
 mlx-rs = { version = "0.23", path = "mlx-rs" }

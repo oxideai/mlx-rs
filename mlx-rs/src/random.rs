@@ -3,7 +3,7 @@
 use crate::ops::indexing::TryIndexOp;
 use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
-use crate::{error::Result, Array, ArrayElement, Stream, StreamOrDevice};
+use crate::{error::Result, Array, ArrayElement, Stream};
 use mach_sys::mach_time;
 use mlx_internal_macros::{default_device, generate_macro};
 use parking_lot::Mutex;

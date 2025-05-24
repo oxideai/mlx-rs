@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
-use crate::{Array, Stream, StreamOrDevice};
+use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 
 /// General convolution over an input with several channels returning an error if the inputs are invalid.
@@ -203,6 +203,7 @@ pub fn conv3d_device(
 /// - dilation: kernel dilation. Default to 1 if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose1d_device(
@@ -211,12 +212,14 @@ pub fn conv_transpose1d_device(
     #[optional] stride: impl Into<Option<i32>>,
     #[optional] padding: impl Into<Option<i32>>,
     #[optional] dilation: impl Into<Option<i32>>,
+    #[optional] output_padding: impl Into<Option<i32>>,
     #[optional] groups: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let stride = stride.into().unwrap_or(1);
     let padding = padding.into().unwrap_or(0);
     let dilation = dilation.into().unwrap_or(1);
+    let output_padding = output_padding.into().unwrap_or(0);
     let groups = groups.into().unwrap_or(1);
 
     Array::try_from_op(|res| unsafe {
@@ -227,6 +230,7 @@ pub fn conv_transpose1d_device(
             stride,
             padding,
             dilation,
+            output_padding,
             groups,
             stream.as_ref().as_ptr(),
         )
@@ -247,6 +251,7 @@ pub fn conv_transpose1d_device(
 /// - dilation: kernel dilation. Default to (1, 1) if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose2d_device(
@@ -255,12 +260,14 @@ pub fn conv_transpose2d_device(
     #[optional] stride: impl Into<Option<(i32, i32)>>,
     #[optional] padding: impl Into<Option<(i32, i32)>>,
     #[optional] dilation: impl Into<Option<(i32, i32)>>,
+    #[optional] output_padding: impl Into<Option<(i32, i32)>>,
     #[optional] groups: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1));
     let padding = padding.into().unwrap_or((0, 0));
     let dilation = dilation.into().unwrap_or((1, 1));
+    let output_padding = output_padding.into().unwrap_or((0, 0));
     let groups = groups.into().unwrap_or(1);
 
     Array::try_from_op(|res| unsafe {
@@ -274,6 +281,8 @@ pub fn conv_transpose2d_device(
             padding.1,
             dilation.0,
             dilation.1,
+            output_padding.0,
+            output_padding.1,
             groups,
             stream.as_ref().as_ptr(),
         )
@@ -294,6 +303,7 @@ pub fn conv_transpose2d_device(
 /// - dilation: kernel dilation. Default to (1, 1, 1) if not specified.
 /// - groups: input feature groups. Default to 1 if not specified.
 /// - stream: stream or device to evaluate on.
+#[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
 pub fn conv_transpose3d_device(
@@ -302,12 +312,14 @@ pub fn conv_transpose3d_device(
     #[optional] stride: impl Into<Option<(i32, i32, i32)>>,
     #[optional] padding: impl Into<Option<(i32, i32, i32)>>,
     #[optional] dilation: impl Into<Option<(i32, i32, i32)>>,
+    #[optional] output_padding: impl Into<Option<(i32, i32, i32)>>,
     #[optional] groups: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let stride = stride.into().unwrap_or((1, 1, 1));
     let padding = padding.into().unwrap_or((0, 0, 0));
     let dilation = dilation.into().unwrap_or((1, 1, 1));
+    let output_padding = output_padding.into().unwrap_or((0, 0, 0));
     let groups = groups.into().unwrap_or(1);
 
     Array::try_from_op(|res| unsafe {
@@ -324,6 +336,9 @@ pub fn conv_transpose3d_device(
             dilation.0,
             dilation.1,
             dilation.2,
+            output_padding.0,
+            output_padding.1,
+            output_padding.2,
             groups,
             stream.as_ref().as_ptr(),
         )
@@ -373,6 +388,7 @@ mod tests {
             Some(1), // stride
             Some(0), // padding
             Some(1), // dilation
+            None,    // output padding
             Some(1), // groups
         )
         .unwrap();
@@ -423,6 +439,7 @@ mod tests {
             Some((1, 1)), // stride
             Some((0, 0)), // padding
             Some((1, 1)), // dilation
+            None,         // output padding
             Some(1),      // groups
         )
         .unwrap();
@@ -481,6 +498,7 @@ mod tests {
             Some((1, 1, 1)), // stride
             Some((0, 0, 0)), // padding
             Some((1, 1, 1)), // dilation
+            None,            // output padding
             Some(1),         // groups
         )
         .unwrap();

@@ -116,7 +116,7 @@ mod tests {
             params["layers.0.weight"]
                 .abs()
                 .unwrap()
-                .sum(None, None)
+                .sum(None)
                 .unwrap()
                 .item::<f32>()
                 - 0.0
@@ -133,7 +133,7 @@ mod tests {
         let first_layer = &model.layers[0];
         let linear_params = first_layer.parameters().flatten();
         let weight = linear_params["weight"];
-        assert!(weight.abs().unwrap().sum(None, None).unwrap().item::<f32>() - 0.0 < 1e-6);
+        assert!(weight.abs().unwrap().sum(None).unwrap().item::<f32>() - 0.0 < 1e-6);
     }
 
     #[test]

@@ -105,6 +105,10 @@ impl Optimizer for Lion {
 }
 
 impl Updatable for Lion {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

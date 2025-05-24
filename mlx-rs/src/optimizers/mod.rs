@@ -45,6 +45,10 @@ pub use sgd::*;
 macro_rules! impl_updatable_for_mut_optimizer {
     ($optimizer:ty) => {
         impl Updatable for &'_ mut $optimizer {
+            fn updatable_states_len(&self) -> usize {
+                <$optimizer as Updatable>::updatable_states_len(&**self)
+            }
+
             fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
                 <$optimizer as Updatable>::updatable_states(&**self)
             }

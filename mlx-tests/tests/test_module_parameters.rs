@@ -29,7 +29,26 @@ struct NestedStructModule {
     nested: StructModule,
 
     #[param]
-    neste_no_param: UnitStructModule,
+    nested_no_param: UnitStructModule,
+}
+
+#[test]
+fn test_module_num_parameters() {
+    let m = StructModule {
+        a: Param::new(array!(1.0)),
+        b: Param::new(array!(2.0)),
+        c: Param::new(None),
+    };
+
+    assert_eq!(m.num_parameters(), 2);
+
+    let m = StructModule {
+        a: Param::new(array!(1.0)),
+        b: Param::new(array!(2.0)),
+        c: Param::new(Some(array!(3.0))),
+    };
+
+    assert_eq!(m.num_parameters(), 3);
 }
 
 #[test]
@@ -159,6 +178,13 @@ fn test_module_trainable_parameters_partial_freeze() {
 }
 
 #[test]
+fn test_unit_struct_module_num_parameters() {
+    let m = UnitStructModule;
+
+    assert_eq!(m.num_parameters(), 0);
+}
+
+#[test]
 fn test_unit_struct_module_parameters() {
     let m = UnitStructModule;
 
@@ -203,6 +229,31 @@ fn test_unit_struct_module_unfreeze_parameters() {
 }
 
 #[test]
+fn test_nested_module_num_parameters() {
+    let m = NestedStructModule {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(None),
+        },
+        nested_no_param: UnitStructModule,
+    };
+    assert_eq!(m.num_parameters(), 3);
+
+    let m = NestedStructModule {
+        a: Param::new(array!(1.0)),
+        nested: StructModule {
+            a: Param::new(array!(2.0)),
+            b: Param::new(array!(3.0)),
+            c: Param::new(Some(array!(4.0))),
+        },
+        nested_no_param: UnitStructModule,
+    };
+    assert_eq!(m.num_parameters(), 4);
+}
+
+#[test]
 fn test_nested_module_parameters() {
     let m = NestedStructModule {
         a: Param::new(array!(1.0)),
@@ -211,7 +262,7 @@ fn test_nested_module_parameters() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     let flattened = m.parameters().flatten();
@@ -230,7 +281,7 @@ fn test_nested_module_parameters_mut() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     let flattened = m.parameters_mut().flatten();
@@ -249,7 +300,7 @@ fn test_nested_module_recursive_freeze() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     m.freeze_parameters(true);
@@ -268,7 +319,7 @@ fn test_nested_module_freeze_submodule() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     m.nested.freeze_parameters(true);
@@ -290,7 +341,7 @@ fn test_nested_module_unfreeze_submodule() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     m.nested.freeze_parameters(true);
@@ -314,7 +365,7 @@ fn test_nested_module_recursive_unfreeze() {
             b: Param::new(array!(3.0)),
             c: Param::new(None),
         },
-        neste_no_param: UnitStructModule,
+        nested_no_param: UnitStructModule,
     };
 
     m.freeze_parameters(true);

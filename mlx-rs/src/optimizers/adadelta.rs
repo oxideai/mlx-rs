@@ -118,13 +118,17 @@ impl Optimizer for AdaDelta {
 }
 
 impl Updatable for AdaDelta {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len() * 2
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 
         self.state
             .iter()
             .sorted_by(|a, b| a.0.cmp(b.0))
-            .flat_map(|(_, (v, u))| vec![v, u])
+            .flat_map(|(_, (v, u))| [v, u])
     }
 
     fn updatable_states_mut(&mut self) -> impl IntoIterator<Item = &mut Array> {
@@ -133,7 +137,7 @@ impl Updatable for AdaDelta {
         self.state
             .iter_mut()
             .sorted_by(|a, b| a.0.cmp(b.0))
-            .flat_map(|(_, (v, u))| vec![v, u])
+            .flat_map(|(_, (v, u))| [v, u])
     }
 }
 

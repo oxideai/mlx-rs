@@ -85,6 +85,10 @@ impl Optimizer for AdaGrad {
 }
 
 impl Updatable for AdaGrad {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

@@ -1,7 +1,7 @@
 [workspace.package]
 # All but mlx-sys should follow the same version. mlx-sys should follow 
 # the version of mlx-c.
-version = "0.25.0-alpha"
+version = "0.25.0-alpha.1"
 edition = "2021"
 authors = [
     "Minghua Wu <michael.wu1107@gmail.com>",

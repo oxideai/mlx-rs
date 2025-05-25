@@ -6,7 +6,7 @@
   match the new API
 - Update `thiserror` to version "2"
 - Fix wrong states number in `compile_with_state`
-- Remove unnecesary evaluation in fft ops
+- Remove unnecessary evaluation in fft ops
 
 ## 0.23.0
 

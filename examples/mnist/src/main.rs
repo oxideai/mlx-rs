@@ -4,7 +4,7 @@ use mlx_rs::{
     losses::{CrossEntropyBuilder, LossReduction},
     module::{Module, ModuleParameters},
     nn,
-    ops::{eq, indexing::argmax, mean},
+    ops::{eq, indexing::argmax_axis, mean},
     optimizers::{Optimizer, Sgd},
     transforms::eval_params,
     Array,
@@ -18,7 +18,7 @@ mod data;
 
 fn eval_fn(model: &mut mlp::Mlp, (x, y): (&Array, &Array)) -> Result<Array, Exception> {
     let y_pred = model.forward(x)?;
-    let accuracy = mean(&eq(&argmax(&y_pred, 1, None)?, y)?, None, None)?;
+    let accuracy = mean(&eq(&argmax_axis(&y_pred, 1, None)?, y)?, None)?;
     Ok(accuracy)
 }
 

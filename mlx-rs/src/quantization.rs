@@ -131,6 +131,13 @@ where
     M: Quantizable + ModuleParameters,
     M::Quantized: ModuleParameters,
 {
+    fn num_parameters(&self) -> usize {
+        match self {
+            MaybeQuantized::Original(m) => m.num_parameters(),
+            MaybeQuantized::Quantized(q) => q.num_parameters(),
+        }
+    }
+
     fn parameters(&self) -> crate::module::ModuleParamRef<'_> {
         match self {
             MaybeQuantized::Original(m) => m.parameters(),

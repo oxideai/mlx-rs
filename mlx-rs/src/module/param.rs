@@ -10,6 +10,9 @@ use super::ModuleParameters;
 
 /// Trait for a module parameter.
 pub trait Parameter {
+    /// Total number of parameters in this module/parameter.
+    fn count(&self) -> usize;
+
     /// Freeze the parameter.
     fn freeze(&mut self, recursive: bool);
 
@@ -85,6 +88,10 @@ impl<T> AsMut<T> for Param<T> {
 }
 
 impl Parameter for Param<Array> {
+    fn count(&self) -> usize {
+        1
+    }
+
     fn freeze(&mut self, _recursive: bool) {
         self.is_frozen = true;
     }
@@ -114,6 +121,10 @@ impl Parameter for Param<Array> {
 }
 
 impl Parameter for Param<Option<Array>> {
+    fn count(&self) -> usize {
+        self.value.as_ref().map_or(0, |_| 1)
+    }
+
     fn freeze(&mut self, _recursive: bool) {
         self.is_frozen = true;
     }
@@ -154,6 +165,10 @@ impl<T> Parameter for T
 where
     T: ModuleParameters,
 {
+    fn count(&self) -> usize {
+        self.num_parameters()
+    }
+
     fn freeze(&mut self, recursive: bool) {
         self.freeze_parameters(recursive);
     }

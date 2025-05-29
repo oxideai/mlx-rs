@@ -388,16 +388,13 @@ where
         )
     })?;
 
-    let (state_params_len, inner_inputs_vector) = {
+    let inner_inputs_vector = {
         let borrow = state.borrow();
-        let state_params: Vec<_> = borrow.updatable_states().into_iter().collect();
-        let state_params_len = state_params.len();
-        let inner_inputs_vector = VectorArray::try_from_iter(
+        VectorArray::try_from_iter(
             args.iter()
                 .map(AsRef::as_ref)
-                .chain(state_params.into_iter()),
-        )?;
-        (state_params_len, inner_inputs_vector)
+                .chain(borrow.updatable_states()),
+        )?
     };
 
     // will compile the function (if needed) and evaluate the
@@ -405,16 +402,21 @@ where
     let result_vector = VectorArray::try_from_op(|res| unsafe {
         mlx_sys::mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
     })?;
+
+    // number of states may change during the call
+    let state_params_len = state.borrow().updatable_states_len();
+
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
     // push the stateOutput into the state
     let result_plus_state_output_len = result_plus_state_output.len();
-    let suffix_len = result_plus_state_output_len - state_params_len;
+    let suffix_start = result_plus_state_output_len - state_params_len;
+
     for (s, new_values) in state
         .borrow_mut()
         .updatable_states_mut()
         .into_iter()
-        .zip(result_plus_state_output[suffix_len..].iter())
+        .zip(result_plus_state_output[suffix_start..].iter())
     {
         update_by_replace_with_ref_to_new_array(s, new_values);
     }

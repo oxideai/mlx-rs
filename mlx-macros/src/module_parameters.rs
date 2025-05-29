@@ -75,6 +75,15 @@ fn impl_module_parameters_for_struct(
         const _: () = {
             #extern_import
             impl #impl_generics #root::module::ModuleParameters for #ident #ty_generics #where_clause {
+                fn num_parameters(&self) -> usize {
+                    use #root::module::Parameter;
+                    let mut count = 0;
+                    #(
+                        count += self.#field_names.count();
+                    )*
+                    count
+                }
+
                 fn freeze_parameters(&mut self, recursive: bool) {
                     use #root::module::Parameter;
                     #(self.#field_names.freeze(recursive);)*

@@ -5,7 +5,7 @@ use mlx_rs::{
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn,
-    ops::concatenate,
+    ops::concatenate_axis,
     quantization::MaybeQuantized,
     Array,
 };
@@ -124,21 +124,21 @@ impl Module<AttentionInput<'_>> for Attention {
         // Prepare the queries, keys, and values for the attention computation
         queries = queries
             .reshape(&[B, L, self.n_heads, -1])?
-            .transpose(&[0, 2, 1, 3])?;
+            .transpose_axes(&[0, 2, 1, 3])?;
         keys = keys
             .reshape(&[B, L, self.n_kv_heads, -1])?
-            .transpose(&[0, 2, 1, 3])?;
+            .transpose_axes(&[0, 2, 1, 3])?;
         values = values
             .reshape(&[B, L, self.n_kv_heads, -1])?
-            .transpose(&[0, 2, 1, 3])?;
+            .transpose_axes(&[0, 2, 1, 3])?;
 
         match cache {
             Some((key_cache, value_cache)) => {
                 let offset = key_cache.shape()[2];
                 queries = self.rope.forward((&queries, offset))?;
                 keys = self.rope.forward((&keys, offset))?;
-                keys = concatenate(&[key_cache, &keys], 2)?;
-                values = concatenate(&[value_cache, &values], 2)?;
+                keys = concatenate_axis(&[key_cache, &keys], 2)?;
+                values = concatenate_axis(&[value_cache, &values], 2)?;
             }
             None => {
                 queries = self.rope.forward(&queries)?;
@@ -146,8 +146,8 @@ impl Module<AttentionInput<'_>> for Attention {
             }
         }
 
-        let output = scaled_dot_product_attention(queries, &keys, &values, self.scale, mask, None)?;
-        let output = output.transpose(&[0, 2, 1, 3])?.reshape(&[B, L, -1])?;
+        let output = scaled_dot_product_attention(queries, &keys, &values, self.scale, mask)?;
+        let output = output.transpose_axes(&[0, 2, 1, 3])?.reshape(&[B, L, -1])?;
         let output = self.wo.forward(&output)?;
 
         Ok(AttentionOutput {

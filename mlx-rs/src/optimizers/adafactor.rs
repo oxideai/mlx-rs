@@ -5,7 +5,9 @@ use mlx_internal_macros::{generate_builder, Buildable};
 use crate::{
     array,
     error::AdafactorBuildError,
-    ops::{matmul, maximum, mean, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like},
+    ops::{
+        matmul, maximum, mean, mean_axes, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like,
+    },
     utils::Updatable,
     Array,
 };
@@ -13,16 +15,16 @@ use crate::{
 use super::*;
 
 fn rms(inputs: &Array) -> crate::error::Result<Array> {
-    sqrt(&mean(&square(inputs)?, None, None)?)
+    sqrt(&mean(&square(inputs)?, None)?)
 }
 
 fn approvate_exp_moving_avg(
     exp_avg_sq_row: &Array,
     exp_avg_sq_col: &Array,
 ) -> crate::error::Result<Array> {
-    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean(exp_avg_sq_row, &[-1], true)?)?)?;
+    let rfactor = rsqrt(&exp_avg_sq_row.divide(&mean_axes(exp_avg_sq_row, &[-1], true)?)?)?;
     let cfactor = rsqrt(exp_avg_sq_col)?;
-    matmul(&rfactor.expand_dims(&[-1])?, &cfactor.expand_dims(&[0])?)
+    matmul(&rfactor.expand_dims(-1)?, &cfactor.expand_dims(0)?)
 }
 
 /// Type alias for the epsilon values used in Adafactor builder
@@ -393,10 +395,10 @@ impl Optimizer for Adafactor {
 
             *exp_avg_sq_row = beta2
                 .multiply(&*exp_avg_sq_row)?
-                .add(&one_minus_beta2.multiply(&update.mean(&[-1], None)?)?)?;
+                .add(&one_minus_beta2.multiply(&update.mean_axes(&[-1], None)?)?)?;
             *exp_avg_sq_col = beta2
                 .multiply(&*exp_avg_sq_col)?
-                .add(&one_minus_beta2.multiply(&update.mean(&[-2], None)?)?)?;
+                .add(&one_minus_beta2.multiply(&update.mean_axes(&[-2], None)?)?)?;
 
             update = Cow::Owned(approvate_exp_moving_avg(
                 &*exp_avg_sq_row,
@@ -440,6 +442,10 @@ impl Optimizer for Adafactor {
 }
 
 impl Updatable for Adafactor {
+    fn updatable_states_len(&self) -> usize {
+        self.updatable_states().into_iter().count()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

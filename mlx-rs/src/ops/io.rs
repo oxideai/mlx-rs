@@ -1,8 +1,8 @@
 use crate::error::IoError;
 use crate::utils::guard::Guarded;
-use crate::utils::io::{FilePtr, SafeTensors};
+use crate::utils::io::SafeTensors;
 use crate::utils::SUCCESS;
-use crate::{Array, Stream, StreamOrDevice};
+use crate::{Array, Stream};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -22,7 +22,7 @@ impl Array {
     ///
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_numpy_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -47,7 +47,7 @@ impl Array {
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
     ///
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_safetensors_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -64,7 +64,7 @@ impl Array {
     /// - path: path of file to load
     /// - stream: stream or device to evaluate on
     #[allow(clippy::type_complexity)]
-    #[default_device]
+    #[default_device(device = "cpu")]
     pub fn load_safetensors_with_metadata_device(
         path: impl AsRef<Path>,
         stream: impl AsRef<Stream>,
@@ -85,9 +85,9 @@ impl Array {
     pub fn save_numpy(&self, path: impl AsRef<Path>) -> Result<(), IoError> {
         let path = path.as_ref();
         check_file_extension(path, "npy")?;
-        let file_ptr = FilePtr::open(path, "w")?;
+        let c_path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)?;
 
-        unsafe { mlx_sys::mlx_save_file(file_ptr.as_ptr(), self.as_ptr()) };
+        unsafe { mlx_sys::mlx_save(c_path.as_ptr(), self.as_ptr()) };
 
         Ok(())
     }
@@ -160,10 +160,10 @@ impl Array {
             data
         };
 
-        let file_ptr = FilePtr::open(path, "w")?;
+        let c_path = CString::new(path.to_str().ok_or(IoError::InvalidUtf8)?)?;
 
         unsafe {
-            let status = mlx_sys::mlx_save_safetensors_file(file_ptr.as_ptr(), arrays, metadata);
+            let status = mlx_sys::mlx_save_safetensors(c_path.as_ptr(), arrays, metadata);
 
             let last_error = match status {
                 SUCCESS => None,

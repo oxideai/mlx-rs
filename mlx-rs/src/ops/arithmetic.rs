@@ -1,7 +1,6 @@
 use crate::array::Array;
 use crate::error::Result;
 use crate::sealed::Sealed;
-use crate::stream::StreamOrDevice;
 
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
@@ -1016,7 +1015,7 @@ pub fn log2_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// The computation is is a numerically stable version of `log(exp(a) + exp(b))`.
 #[generate_macro]
 #[default_device]
-pub fn log_add_exp_device(
+pub fn logaddexp_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
     #[optional] stream: impl AsRef<Stream>,
@@ -1209,7 +1208,7 @@ pub fn sinh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
 /// for more information.
 #[generate_macro]
 #[default_device]
-pub fn softmax_device(
+pub fn softmax_axes_device(
     a: impl AsRef<Array>,
     axes: &[i32],
     precise: impl Into<Option<bool>>,
@@ -1219,7 +1218,7 @@ pub fn softmax_device(
     let s = stream.as_ref().as_ptr();
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax(
+        mlx_sys::mlx_softmax_axes(
             res,
             a.as_ref().as_ptr(),
             axes.as_ptr(),
@@ -1230,20 +1229,35 @@ pub fn softmax_device(
     })
 }
 
-/// Perform the softmax along all axes.
+/// Similar to [`softmax_axes`] but with a single axis.
 #[generate_macro]
 #[default_device]
-pub fn softmax_all_device(
+pub fn softmax_axis_device(
     a: impl AsRef<Array>,
-    #[optional] precise: impl Into<Option<bool>>,
+    axis: i32,
+    precise: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let precise = precise.into().unwrap_or(false);
     let s = stream.as_ref().as_ptr();
 
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_softmax_all(res, a.as_ref().as_ptr(), precise, s)
+        mlx_sys::mlx_softmax_axis(res, a.as_ref().as_ptr(), axis, precise, s)
     })
+}
+
+/// Similar to [`softmax_axes`] but with no axis specified.
+#[generate_macro]
+#[default_device]
+pub fn softmax_device(
+    a: impl AsRef<Array>,
+    precise: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let precise = precise.into().unwrap_or(false);
+    let s = stream.as_ref().as_ptr();
+
+    Array::try_from_op(|res| unsafe { mlx_sys::mlx_softmax(res, a.as_ref().as_ptr(), precise, s) })
 }
 
 /// See [`Array::sqrt`].
@@ -1412,76 +1426,46 @@ pub fn outer_device(
     })
 }
 
-/// The number of dimensions to sum over
-#[derive(Debug)]
-pub enum TensorDotDims<'a> {
-    /// Sum over the last axes dimensions of a and the first axes dimensions of b.
-    Int(i32),
-
-    /// Sum over the corresponding dimensions of a and b.
-    List((&'a [i32], &'a [i32])),
-}
-
-impl From<i32> for TensorDotDims<'_> {
-    fn from(i: i32) -> Self {
-        TensorDotDims::Int(i)
-    }
-}
-
-impl<'a> From<(&'a [i32], &'a [i32])> for TensorDotDims<'a> {
-    fn from((lhs, rhs): (&'a [i32], &'a [i32])) -> Self {
-        TensorDotDims::List((lhs, rhs))
-    }
-}
-
-impl<'a, const M: usize, const N: usize> From<(&'a [i32; M], &'a [i32; N])> for TensorDotDims<'a> {
-    fn from((lhs, rhs): (&'a [i32; M], &'a [i32; N])) -> Self {
-        TensorDotDims::List((lhs, rhs))
-    }
-}
-
 /// Compute the tensor dot product along the specified axes.
-///
-/// # Params
-///
-/// - `a`: input array,
-/// - `b`: input array,
-/// - `axes`: The number of dimensions to sum over. If an integer is provided, then sum over
-///   the last axes dimensions of a and the first axes dimensions of b. If a tuple of lists is
-///   provided, then sum over the corresponding dimensions of a and b. (default: 2)
 #[generate_macro]
 #[default_device]
-pub fn tensordot_device<'a>(
+pub fn tensordot_axes_device(
     a: impl AsRef<Array>,
     b: impl AsRef<Array>,
-    #[optional] axes: impl Into<TensorDotDims<'a>>,
+    axes_a: &[i32],
+    axes_b: &[i32],
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
     let b = b.as_ref();
-    match axes.into() {
-        TensorDotDims::Int(dim) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot_along_axis(
-                res,
-                a.as_ptr(),
-                b.as_ptr(),
-                dim,
-                stream.as_ref().as_ptr(),
-            )
-        }),
-        TensorDotDims::List((lhs, rhs)) => Array::try_from_op(|res| unsafe {
-            mlx_sys::mlx_tensordot(
-                res,
-                a.as_ptr(),
-                b.as_ptr(),
-                lhs.as_ptr(),
-                lhs.len(),
-                rhs.as_ptr(),
-                rhs.len(),
-                stream.as_ref().as_ptr(),
-            )
-        }),
-    }
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_tensordot(
+            res,
+            a.as_ptr(),
+            b.as_ptr(),
+            axes_a.as_ptr(),
+            axes_a.len(),
+            axes_b.as_ptr(),
+            axes_b.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Similar to [`tensordot_axes`] but with a single axis.
+#[generate_macro]
+#[default_device]
+pub fn tensordot_axis_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    axis: i32,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let b = b.as_ref();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_tensordot_axis(res, a.as_ptr(), b.as_ptr(), axis, stream.as_ref().as_ptr())
+    })
 }
 
 #[cfg(test)]
@@ -1491,9 +1475,9 @@ mod tests {
     use super::*;
     use crate::{
         array, complex64,
-        ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split_equal},
+        ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split},
         transforms::eval,
-        Dtype,
+        Dtype, StreamOrDevice,
     };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
@@ -1725,12 +1709,12 @@ mod tests {
         let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let b = a.cos().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[1.0, 0.54030234, -0.41614687]);
+        let b_expected = array!([1.0, 0.54030234, -0.41614687]);
+        assert_array_all_close!(b, b_expected);
 
         // check a is not modified
-        let a_data: &[f32] = a.as_slice();
-        assert_eq!(a_data, &[0.0, 1.0, 2.0]);
+        let a_expected = array!([0.0, 1.0, 2.0]);
+        assert_array_all_close!(a, a_expected);
     }
 
     #[test]
@@ -1738,12 +1722,12 @@ mod tests {
         let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let b = a.exp().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[1.0, 2.7182817, 7.389056]);
+        let b_expected = array!([1.0, 2.7182817, 7.389056]);
+        assert_array_all_close!(b, b_expected);
 
         // check a is not modified
-        let a_data: &[f32] = a.as_slice();
-        assert_eq!(a_data, &[0.0, 1.0, 2.0]);
+        let a_expected = array!([0.0, 1.0, 2.0]);
+        assert_array_all_close!(a, a_expected);
     }
 
     #[test]
@@ -2143,7 +2127,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.exp(), 2.0f32.exp()], &[2, 1]);
         assert!(all_close(exp(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2208,7 +2192,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.sin(), 2.0f32.sin()], &[2, 1]);
         assert!(all_close(sin(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2251,7 +2235,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.cos(), 2.0f32.cos()], &[2, 1]);
         assert!(all_close(cos(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2282,7 +2266,7 @@ mod tests {
             .item::<bool>());
 
         let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
-        let x = split_equal(&angles, 2, 1).unwrap();
+        let x = split(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, 180.0], &[2, 1]);
         assert!(
             all_close(degrees(&x[0]).unwrap(), &expected, None, None, None)
@@ -2321,7 +2305,7 @@ mod tests {
             .item::<bool>());
 
         let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
-        let x = split_equal(&angles, 2, 1).unwrap();
+        let x = split(&angles, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0, PI], &[2, 1]);
         assert!(
             all_close(radians(&x[0]).unwrap(), &expected, None, None, None)
@@ -2352,7 +2336,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln(), 3.0f32.ln()], &[2, 1]);
         assert!(all_close(log(&x[0]).unwrap(), &expected, None, None, None)
             .unwrap()
@@ -2417,7 +2401,7 @@ mod tests {
             .item::<bool>());
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
-        let x = split_equal(&data, 2, 1).unwrap();
+        let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln_1p(), 3.0f32.ln_1p()], &[2, 1]);
         assert!(
             all_close(log1p(&x[0]).unwrap(), &expected, None, None, None)
@@ -2650,37 +2634,34 @@ mod tests {
         let x = array![0.0];
         let y = array![0.0];
         assert_float_eq! {
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
+            logaddexp(&x, &y).unwrap().item::<f32>(),
             2.0f32.ln(),
             abs <= 1e-5
         };
 
         let x = array!([0u32]);
         let y = array!([10000u32]);
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 10000.0);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), 10000.0);
 
         let x = array![f32::INFINITY];
         let y = array![3.0];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![3.0];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), 3.0);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), 3.0);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::NEG_INFINITY];
-        assert_eq!(
-            log_add_exp(&x, &y).unwrap().item::<f32>(),
-            f32::NEG_INFINITY
-        );
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::NEG_INFINITY);
 
         let x = array![f32::INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
 
         let x = array![f32::NEG_INFINITY];
         let y = array![f32::INFINITY];
-        assert_eq!(log_add_exp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
+        assert_eq!(logaddexp(&x, &y).unwrap().item::<f32>(), f32::INFINITY);
     }
 
     #[test]
@@ -2723,7 +2704,7 @@ mod tests {
     fn test_tensordot() {
         let x = reshape(arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
         let y = reshape(arange::<_, f32>(None, 24.0, None).unwrap(), &[4, 3, 2]).unwrap();
-        let z = tensordot(&x, &y, (&[1i32, 0], &[0i32, 1])).unwrap();
+        let z = tensordot_axes(&x, &y, &[1i32, 0], &[0i32, 1]).unwrap();
         let expected = Array::from_slice(
             &[4400, 4730, 4532, 4874, 4664, 5018, 4796, 5162, 4928, 5306],
             &[5, 2],
@@ -2732,12 +2713,12 @@ mod tests {
 
         let x = reshape(arange::<_, f32>(None, 360.0, None).unwrap(), &[3, 4, 5, 6]).unwrap();
         let y = reshape(arange::<_, f32>(None, 360.0, None).unwrap(), &[6, 4, 5, 3]).unwrap();
-        assert!(tensordot(&x, &y, (&[2, 1, 3], &[1, 2, 0])).is_err());
+        assert!(tensordot_axes(&x, &y, &[2, 1, 3], &[1, 2, 0]).is_err());
 
         let x = reshape(arange::<_, f32>(None, 60.0, None).unwrap(), &[3, 4, 5]).unwrap();
         let y = reshape(arange::<_, f32>(None, 120.0, None).unwrap(), &[4, 5, 6]).unwrap();
 
-        let z = tensordot(&x, &y, 2).unwrap();
+        let z = tensordot_axis(&x, &y, 2).unwrap();
         let expected = Array::from_slice(
             &[
                 14820.0, 15010.0, 15200.0, 15390.0, 15580.0, 15770.0, 37620.0, 38210.0, 38800.0,

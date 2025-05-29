@@ -165,7 +165,7 @@ impl MaxPool1d {
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: i32, stride: i64) -> Self {
-        let op = |x: &Array, axes: &[i32]| x.max(axes, None);
+        let op = |x: &Array, axes: &[i32]| x.max_axes(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
     }
@@ -204,7 +204,7 @@ impl MaxPool2d {
         let stride = stride.into();
         let stride = vec![stride.first(), stride.second()];
 
-        let op = |x: &Array, axes: &[i32]| x.max(axes, None);
+        let op = |x: &Array, axes: &[i32]| x.max_axes(axes, None);
         let inner = Pool::new(kernel_size, stride, op);
         Self { inner }
     }
@@ -235,7 +235,7 @@ impl AvgPool1d {
     /// - `kernel_size`: The size of the pooling window.
     /// - `stride`: The stride of the pooling window.
     pub fn new(kernel_size: i32, stride: i64) -> Self {
-        let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
+        let op = |x: &Array, axes: &[i32]| x.mean_axes(axes, None);
         let inner = Pool::new(vec![kernel_size], vec![stride], op);
         Self { inner }
     }
@@ -274,7 +274,7 @@ impl AvgPool2d {
         let stride = stride.into();
         let stride = vec![stride.first(), stride.second()];
 
-        let op = |x: &Array, axes: &[i32]| x.mean(axes, None);
+        let op = |x: &Array, axes: &[i32]| x.mean_axes(axes, None);
         let inner = Pool::new(kernel_size, stride, op);
         Self { inner }
     }

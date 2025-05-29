@@ -121,6 +121,10 @@ impl Optimizer for AdamW {
 }
 
 impl Updatable for AdamW {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len() * 2
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

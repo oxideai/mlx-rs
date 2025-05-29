@@ -112,6 +112,10 @@ impl Optimizer for RmsProp {
 }
 
 impl Updatable for RmsProp {
+    fn updatable_states_len(&self) -> usize {
+        self.state.len()
+    }
+
     fn updatable_states(&self) -> impl IntoIterator<Item = &Array> {
         use itertools::Itertools;
 

@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let y = &inputs[2];
 
         let y_pred = x.matmul(w)?;
-        let loss = Array::from_f32(0.5) * ops::mean(&ops::square(y_pred - y)?, None, None)?;
+        let loss = Array::from_f32(0.5) * ops::mean(&ops::square(y_pred - y)?, None)?;
         Ok(loss)
     };
 
@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let elapsed = now.elapsed();
 
     let loss = loss_fn(&inputs)?;
-    let error_norm = ops::sum(&ops::square(&(&inputs[0] - &w_star))?, None, None)?.sqrt()?;
+    let error_norm = ops::sum(&ops::square(&(&inputs[0] - &w_star))?, None)?.sqrt()?;
     let throughput = num_iterations as f32 / elapsed.as_secs_f32();
 
     println!(

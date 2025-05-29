@@ -2,7 +2,7 @@
 
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream};
 
 /// Returns a sorted copy of the array. Returns an error if the arguments are invalid.
 ///
@@ -18,17 +18,17 @@ use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice}
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
-/// let result = sort(&a, axis);
+/// let result = sort_axis(&a, axis);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn sort_device(
+pub fn sort_axis_device(
     a: impl AsRef<Array>,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_sort_axis(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -44,16 +44,13 @@ pub fn sort_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
-/// let result = sort_all(&a);
+/// let result = sort(&a);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn sort_all_device(
-    a: impl AsRef<Array>,
-    #[optional] stream: impl AsRef<Stream>,
-) -> Result<Array> {
+pub fn sort_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_sort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_sort(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -71,17 +68,17 @@ pub fn sort_all_device(
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let axis = 0;
-/// let result = argsort(&a, axis);
+/// let result = argsort_axis(&a, axis);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn argsort_device(
+pub fn argsort_axis_device(
     a: impl AsRef<Array>,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort_axis(res, a.as_ref().as_ptr(), axis, stream.as_ref().as_ptr())
     })
 }
 
@@ -98,16 +95,16 @@ pub fn argsort_device(
 /// use mlx_rs::{Array, ops::*};
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
-/// let result = argsort_all(&a);
+/// let result = argsort(&a);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn argsort_all_device(
+pub fn argsort_device(
     a: impl AsRef<Array>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argsort_all(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+        mlx_sys::mlx_argsort(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -132,18 +129,18 @@ pub fn argsort_all_device(
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let axis = 0;
-/// let result = partition(&a, kth, axis);
+/// let result = partition_axis(&a, kth, axis);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn partition_device(
+pub fn partition_axis_device(
     a: impl AsRef<Array>,
     kth: i32,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_partition(
+        mlx_sys::mlx_partition_axis(
             res,
             a.as_ref().as_ptr(),
             kth,
@@ -172,17 +169,17 @@ pub fn partition_device(
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
-/// let result = partition_all(&a, kth);
+/// let result = partition(&a, kth);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn partition_all_device(
+pub fn partition_device(
     a: impl AsRef<Array>,
     kth: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_partition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
+        mlx_sys::mlx_partition(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
 }
 
@@ -207,18 +204,18 @@ pub fn partition_all_device(
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
 /// let axis = 0;
-/// let result = argpartition(&a, kth, axis);
+/// let result = argpartition_axis(&a, kth, axis);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn argpartition_device(
+pub fn argpartition_axis_device(
     a: impl AsRef<Array>,
     kth: i32,
     axis: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition(
+        mlx_sys::mlx_argpartition_axis(
             res,
             a.as_ref().as_ptr(),
             kth,
@@ -248,17 +245,17 @@ pub fn argpartition_device(
 ///
 /// let a = Array::from_slice(&[3, 2, 1], &[3]);
 /// let kth = 1;
-/// let result = argpartition_all(&a, kth);
+/// let result = argpartition(&a, kth);
 /// ```
 #[generate_macro]
 #[default_device]
-pub fn argpartition_all_device(
+pub fn argpartition_device(
     a: impl AsRef<Array>,
     kth: i32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
-        mlx_sys::mlx_argpartition_all(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
+        mlx_sys::mlx_argpartition(res, a.as_ref().as_ptr(), kth, stream.as_ref().as_ptr())
     })
 }
 
@@ -270,7 +267,7 @@ mod tests {
     fn test_sort_with_invalid_axis() {
         let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
         let axis = 1;
-        let result = super::sort(&a, axis);
+        let result = super::sort_axis(&a, axis);
         assert!(result.is_err());
     }
 
@@ -279,7 +276,7 @@ mod tests {
         let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
         let kth = 2;
         let axis = 1;
-        let result = super::partition(&a, kth, axis);
+        let result = super::partition_axis(&a, kth, axis);
         assert!(result.is_err());
     }
 
@@ -288,7 +285,7 @@ mod tests {
         let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
         let kth = 5;
         let axis = 0;
-        let result = super::partition(&a, kth, axis);
+        let result = super::partition_axis(&a, kth, axis);
         assert!(result.is_err());
     }
 
@@ -296,7 +293,7 @@ mod tests {
     fn test_partition_all_with_invalid_kth() {
         let a = Array::from_slice(&[1, 2, 3, 4, 5], &[5]);
         let kth = 5;
-        let result = super::partition_all(&a, kth);
+        let result = super::partition(&a, kth);
         assert!(result.is_err());
     }
 }

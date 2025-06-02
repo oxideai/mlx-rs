@@ -270,6 +270,12 @@
 //! Please refer to the transforms module ([`transforms`]) for more details.
 //!
 //! # Compilation
+//!
+//! See also [MLX python
+//! documentation](https://ml-explore.github.io/mlx/build/html/usage/compile.html)
+//!
+//! Please refer to the compilation module ([`transforms::compile`]) for more
+//! details.
 
 #![deny(unused_unsafe, missing_debug_implementations, missing_docs)]
 #![cfg_attr(test, allow(clippy::approx_constant))]

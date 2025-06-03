@@ -1,10 +1,10 @@
 //! Fast implementations of commonly used multi-op functions.
 
-use std::ffi::CString;
+use std::ffi::CStr;
 
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::utils::VectorArray;
+use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream};
 use mlx_internal_macros::default_device;
 
@@ -44,6 +44,52 @@ pub fn rope_device<'a>(
     })
 }
 
+const DEFAULT_MASK_MODE: &CStr = c"";
+const CAUSAL_MASK_MODE: &CStr = c"causal";
+
+/// Mask modes for scaled dot product attention.
+#[derive(Debug)]
+pub enum ScaledDotProductAttentionMaskMode<'a> {
+    /// Array
+    Array(&'a Array),
+
+    /// Arrays
+    Arrays(&'a [Array]),
+    
+    /// Causal
+    Causal,
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a Array {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
+        Some(ScaledDotProductAttentionMaskMode::Array(self))
+    }
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a [Array] {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
+        Some(ScaledDotProductAttentionMaskMode::Arrays(self))
+    }
+}
+
+impl ScaledDotProductAttentionMaskMode<'_> {
+    fn as_mode_and_masks(&self) -> (&'static CStr, VectorArray) {
+        match self {
+            ScaledDotProductAttentionMaskMode::Array(mask) => (
+                DEFAULT_MASK_MODE,
+                VectorArray::try_from_iter([mask].iter()).unwrap(),
+            ),
+            ScaledDotProductAttentionMaskMode::Arrays(masks) => (
+                DEFAULT_MASK_MODE,
+                VectorArray::try_from_iter(masks.iter()).unwrap(),
+            ),
+            ScaledDotProductAttentionMaskMode::Causal => (CAUSAL_MASK_MODE, unsafe {
+                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+            }),
+        }
+    }
+}
+
 /// A fast implementation of multi-head attention: `O = softmax(Q @ K.T, dim=-1) @ V`
 ///
 /// Supports [Multi-Head Attention](https://arxiv.org/abs/1706.03762), [Grouped Query Attention](https://arxiv.org/abs/2305.13245), and [Multi-Query Attention](https://arxiv.org/abs/1911.02150).
@@ -59,14 +105,13 @@ pub fn scaled_dot_product_attention_device<'a>(
     keys: impl AsRef<Array>,
     values: impl AsRef<Array>,
     scale: f32,
-    mask: impl Into<Option<&'a Array>>,
+    mode: impl IntoOption<ScaledDotProductAttentionMaskMode<'a>>,
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let mask_mode = CString::new("").map_err(|e| Exception::custom(format!("{}", e)))?;
-    let masks = match mask.into() {
-        Some(m) => VectorArray::try_from_iter([m].iter())?,
-        None => unsafe { VectorArray::from_ptr(mlx_sys::mlx_vector_array_new()) },
-    };
+    let (mask_mode, masks) = mode.into_option().map_or_else(
+        || (DEFAULT_MASK_MODE, unsafe { VectorArray::from_ptr(mlx_sys::mlx_vector_array_new()) }),
+        |mode| mode.as_mode_and_masks(),
+    );
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_scaled_dot_product_attention(

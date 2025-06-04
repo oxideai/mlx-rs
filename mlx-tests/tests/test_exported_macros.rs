@@ -158,6 +158,8 @@ fn test_random_normal() {
     assert!(value.item::<f32>() >= -10.0 && value.item::<f32>() <= 10.0);
 }
 
+// Test functions defined in `mlx_rs::fast` module.
+
 #[test]
 #[allow(non_snake_case)]
 fn test_fast_sdpa_using_macros() -> Result<(), Exception> {

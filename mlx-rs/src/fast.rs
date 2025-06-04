@@ -6,20 +6,21 @@ use crate::error::Result;
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream};
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 /// Optimized implementation of `NN.RoPE`.
 #[allow(clippy::too_many_arguments)]
+#[generate_macro]
 #[default_device]
 pub fn rope_device<'a>(
-    array: impl AsRef<Array>,
-    dimensions: i32,
-    traditional: bool,
-    base: impl Into<Option<f32>>,
-    scale: f32,
-    offset: i32,
-    freqs: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[named] array: impl AsRef<Array>,
+    #[named] dimensions: i32,
+    #[named] traditional: bool,
+    #[optional] base: impl Into<Option<f32>>,
+    #[named] scale: f32,
+    #[named] offset: i32,
+    #[optional] freqs: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let base = base.into();
     let base = mlx_sys::mlx_optional_float {
@@ -55,7 +56,7 @@ pub enum ScaledDotProductAttentionMaskMode<'a> {
 
     /// Arrays
     Arrays(&'a [Array]),
-    
+
     /// Causal
     Causal,
 }
@@ -69,6 +70,18 @@ impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a Array {
 impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a [Array] {
     fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
         Some(ScaledDotProductAttentionMaskMode::Arrays(self))
+    }
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for Option<&'a Array> {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
+        self.map(ScaledDotProductAttentionMaskMode::Array)
+    }
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for Option<&'a [Array]> {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
+        self.map(ScaledDotProductAttentionMaskMode::Arrays)
     }
 }
 
@@ -109,7 +122,11 @@ pub fn scaled_dot_product_attention_device<'a>(
     stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let (mask_mode, masks) = mode.into_option().map_or_else(
-        || (DEFAULT_MASK_MODE, unsafe { VectorArray::from_ptr(mlx_sys::mlx_vector_array_new()) }),
+        || {
+            (DEFAULT_MASK_MODE, unsafe {
+                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+            })
+        },
         |mode| mode.as_mode_and_masks(),
     );
 

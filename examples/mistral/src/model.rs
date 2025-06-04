@@ -1,7 +1,7 @@
 use mlx_rs::{
     builder::Builder,
     error::Exception,
-    fast::scaled_dot_product_attention,
+    fast::{scaled_dot_product_attention, ScaledDotProductAttentionMaskMode},
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn,
@@ -95,7 +95,7 @@ impl Attention {
 
 struct AttentionInput<'a> {
     x: &'a Array,
-    mask: Option<&'a Array>,
+    mask: Option<ScaledDotProductAttentionMaskMode<'a>>,
     cache: Option<(&'a Array, &'a Array)>,
 }
 
@@ -380,7 +380,7 @@ impl Module<MistralInput<'_>> for Mistral {
             let cache_entry = cache.get(i).and_then(Option::as_ref).map(|(k, v)| (k, v));
             let input = AttentionInput {
                 x: &h,
-                mask: mask.as_ref(),
+                mask: mask.as_ref().map(Into::into),
                 cache: cache_entry,
             };
             let output = layer.forward(input)?;

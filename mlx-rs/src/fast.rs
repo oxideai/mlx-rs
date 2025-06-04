@@ -10,7 +10,7 @@ use mlx_internal_macros::{default_device, generate_macro};
 
 /// Optimized implementation of `NN.RoPE`.
 #[allow(clippy::too_many_arguments)]
-#[generate_macro]
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn rope_device<'a>(
     #[named] array: impl AsRef<Array>,
@@ -61,6 +61,18 @@ pub enum ScaledDotProductAttentionMaskMode<'a> {
     Causal,
 }
 
+impl<'a> From<&'a Array> for ScaledDotProductAttentionMaskMode<'a> {
+    fn from(mask: &'a Array) -> Self {
+        ScaledDotProductAttentionMaskMode::Array(mask)
+    }
+}
+
+impl<'a> From<&'a [Array]> for ScaledDotProductAttentionMaskMode<'a> {
+    fn from(masks: &'a [Array]) -> Self {
+        ScaledDotProductAttentionMaskMode::Arrays(masks)
+    }
+}
+
 impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a Array {
     fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
         Some(ScaledDotProductAttentionMaskMode::Array(self))
@@ -70,18 +82,6 @@ impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a Array {
 impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for &'a [Array] {
     fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
         Some(ScaledDotProductAttentionMaskMode::Arrays(self))
-    }
-}
-
-impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for Option<&'a Array> {
-    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
-        self.map(ScaledDotProductAttentionMaskMode::Array)
-    }
-}
-
-impl<'a> IntoOption<ScaledDotProductAttentionMaskMode<'a>> for Option<&'a [Array]> {
-    fn into_option(self) -> Option<ScaledDotProductAttentionMaskMode<'a>> {
-        self.map(ScaledDotProductAttentionMaskMode::Arrays)
     }
 }
 
@@ -112,14 +112,15 @@ impl ScaledDotProductAttentionMaskMode<'_> {
 /// > Note: The softmax operation is performed in float32 precision regardless of input precision (float16 or float32).
 ///
 /// > Note: For Grouped Query Attention and Multi-Query Attention, the input arrays for `key` and `value` should not be pre-tiled to match the `query` array.
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn scaled_dot_product_attention_device<'a>(
     queries: impl AsRef<Array>,
     keys: impl AsRef<Array>,
     values: impl AsRef<Array>,
     scale: f32,
-    mode: impl IntoOption<ScaledDotProductAttentionMaskMode<'a>>,
-    stream: impl AsRef<Stream>,
+    #[optional] mode: impl IntoOption<ScaledDotProductAttentionMaskMode<'a>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let (mask_mode, masks) = mode.into_option().map_or_else(
         || {
@@ -154,12 +155,13 @@ pub fn scaled_dot_product_attention_device<'a>(
 /// - weight: A multiplicative weight to scale the result by. The `weight` should be one-dimensional with the same size as the last axis of `x`.
 /// - eps: A small additive constant for numerical stability
 /// - stream: stream or device to evaluate on
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn rms_norm_device(
     x: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     eps: f32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_rms_norm(
@@ -185,13 +187,14 @@ pub fn rms_norm_device(
 ///   with the same size as the last axis of `x`.  It not given no offset will occur.
 /// - eps: A small additive constant for numerical stability
 /// - stream: stream or device to evaluate on
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn layer_norm_device<'a>(
-    x: impl AsRef<Array>,
-    weight: impl Into<Option<&'a Array>>,
-    bias: impl Into<Option<&'a Array>>,
-    eps: f32,
-    stream: impl AsRef<Stream>,
+    #[named] x: impl AsRef<Array>,
+    #[optional] weight: impl Into<Option<&'a Array>>,
+    #[optional] bias: impl Into<Option<&'a Array>>,
+    #[named] eps: f32,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_layer_norm(
@@ -213,7 +216,10 @@ pub fn layer_norm_device<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ops::indexing::{ArrayIndexOp, IndexOp};
+    use crate::{
+        ops::indexing::{ArrayIndexOp, IndexOp},
+        random::normal,
+    };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
 
@@ -285,5 +291,37 @@ mod tests {
             4.655_846,
             abs <= 0.093_116_924
         );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_fast_sdpa() {
+        // This test just makes sure that `scaled_dot_product_attention` is callable
+        // in the various cases, based on the Python test `test_fast_sdpa`.
+
+        let Dk = 64;
+        let scale = 1.0 / (Dk as f32).sqrt();
+        for seq_len in [63, 129, 400] {
+            for dtype in [crate::Dtype::Float32, crate::Dtype::Float16] {
+                let B = 2;
+                let H = 24;
+                let q = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+                let k = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+                let v = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+
+                let result = scaled_dot_product_attention(q, k, v, scale, None).unwrap();
+                assert_eq!(result.shape(), [B, H, seq_len, Dk]);
+                assert_eq!(result.dtype(), dtype);
+            }
+        }
     }
 }

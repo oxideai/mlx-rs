@@ -1,7 +1,7 @@
 use mlx_rs::{
     builder::Builder,
     error::Exception,
-    fast::{scaled_dot_product_attention, ScaledDotProductAttentionMaskMode},
+    fast::{scaled_dot_product_attention, ScaledDotProductAttentionMask},
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn,
@@ -95,7 +95,7 @@ impl Attention {
 
 struct AttentionInput<'a> {
     x: &'a Array,
-    mask: Option<ScaledDotProductAttentionMaskMode<'a>>,
+    mask: Option<ScaledDotProductAttentionMask<'a>>,
     cache: Option<(&'a Array, &'a Array)>,
 }
 

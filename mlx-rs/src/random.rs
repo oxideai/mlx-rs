@@ -14,7 +14,7 @@ use std::sync::OnceLock;
 static GLOBAL_STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
 
 thread_local! {
-    static TASK_LOCAL_STATE: RefCell<Option<RandomState>> = RefCell::new(None);
+    static TASK_LOCAL_STATE: RefCell<Option<RandomState>> = const { RefCell::new(None) };
 }
 
 /// Random state factory
@@ -28,7 +28,7 @@ impl RandomState {
         let now = unsafe { mach_time::mach_approximate_time() };
         Ok(Self { state: key(now)? })
     }
-    
+
     fn next(&mut self) -> Result<Array> {
         let next = split(&self.state, 2)?;
         self.state = next.0;
@@ -48,9 +48,7 @@ fn global_state() -> &'static Mutex<RandomState> {
 /// Returns a key from the task-local state if it exists, otherwise
 /// returns `None`
 fn resolve_task_local_key() -> Option<Result<Array>> {
-    TASK_LOCAL_STATE.with_borrow_mut(|state| {
-        state.as_mut().map(|s| s.next())
-    })
+    TASK_LOCAL_STATE.with_borrow_mut(|state| state.as_mut().map(|s| s.next()))
 }
 
 fn resolve_global_key() -> Result<Array> {
@@ -72,12 +70,10 @@ fn resolve<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
 
 /// Use the given random state for the scope of `f`
 pub fn with_random_state<F, T>(state: RandomState, f: F) -> T
-where 
+where
     F: FnOnce() -> T,
 {
-    let prev_state = TASK_LOCAL_STATE.with_borrow_mut(|s| {
-        s.replace(state)
-    });
+    let prev_state = TASK_LOCAL_STATE.with_borrow_mut(|s| s.replace(state));
 
     let result = f();
 
@@ -728,7 +724,8 @@ mod tests {
         let mut results = Vec::new();
         let f = || {
             uniform::<_, f32>(0.0, 1.0, &[10, 10], None)?
-                .sum(None)?.try_item::<f32>()
+                .sum(None)?
+                .try_item::<f32>()
         };
         for _ in 0..10 {
             let mut state = RandomState::new().unwrap();
@@ -740,7 +737,10 @@ mod tests {
         // Check that all results are the same within a small tolerance
         let first = results[0];
         for result in &results[1..] {
-            assert_float_eq!(first, *result, abs <= 0.01,
+            assert_float_eq!(
+                first,
+                *result,
+                abs <= 0.01,
                 "Results should be equal for the same seed"
             );
         }

@@ -8,9 +8,18 @@ use mach_sys::mach_time;
 use mlx_internal_macros::{default_device, generate_macro};
 use parking_lot::Mutex;
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::sync::OnceLock;
 
-struct RandomState {
+static GLOBAL_STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
+
+thread_local! {
+    static TASK_LOCAL_STATE: RefCell<Option<RandomState>> = RefCell::new(None);
+}
+
+/// Random state factory
+#[derive(Debug, Clone)]
+pub struct RandomState {
     state: Array,
 }
 
@@ -19,7 +28,7 @@ impl RandomState {
         let now = unsafe { mach_time::mach_approximate_time() };
         Ok(Self { state: key(now)? })
     }
-
+    
     fn next(&mut self) -> Result<Array> {
         let next = split(&self.state, 2)?;
         self.state = next.0;
@@ -32,25 +41,56 @@ impl RandomState {
     }
 }
 
-fn state() -> &'static Mutex<RandomState> {
-    static STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
-    STATE.get_or_init(|| Mutex::new(RandomState::new().unwrap()))
+fn global_state() -> &'static Mutex<RandomState> {
+    GLOBAL_STATE.get_or_init(|| Mutex::new(RandomState::new().unwrap()))
+}
+
+/// Returns a key from the task-local state if it exists, otherwise
+/// returns `None`
+fn resolve_task_local_key() -> Option<Result<Array>> {
+    TASK_LOCAL_STATE.with_borrow_mut(|state| {
+        state.as_mut().map(|s| s.next())
+    })
+}
+
+fn resolve_global_key() -> Result<Array> {
+    let mut state = global_state().lock();
+    state.next()
 }
 
 /// Use given key or generate a new one if `None`.
-fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
+fn resolve<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
     key.into().map_or_else(
         || {
-            let mut state = state().lock();
-            state.next().map(Cow::Owned)
+            resolve_task_local_key()
+                .unwrap_or_else(resolve_global_key)
+                .map(Cow::Owned)
         },
         |k| Ok(Cow::Borrowed(k)),
     )
 }
 
+/// Use the given random state for the scope of `f`
+pub fn with_random_state<F, T>(state: RandomState, f: F) -> T
+where 
+    F: FnOnce() -> T,
+{
+    let prev_state = TASK_LOCAL_STATE.with_borrow_mut(|s| {
+        s.replace(state)
+    });
+
+    let result = f();
+
+    TASK_LOCAL_STATE.with_borrow_mut(|s| {
+        *s = prev_state;
+    });
+
+    result
+}
+
 /// Seed the random number generator.
 pub fn seed(seed: u64) -> Result<()> {
-    let mut state = state().lock();
+    let mut state = global_state().lock();
     state.seed(seed)
 }
 
@@ -109,7 +149,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_uniform(
@@ -158,7 +198,7 @@ pub fn normal_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_normal(
@@ -194,7 +234,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_multivariate_normal(
@@ -236,7 +276,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_randint(
@@ -285,7 +325,7 @@ pub fn bernoulli_device<'a>(
     let p = p.into().unwrap_or(&default_array);
 
     let shape = shape.into_option().unwrap_or(p.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_bernoulli(
@@ -326,7 +366,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_truncated_normal(
@@ -364,7 +404,7 @@ pub fn gumbel_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_gumbel(
@@ -425,7 +465,7 @@ pub fn categorical_device<'a>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     match shape_or_count.into() {
         Some(ShapeOrCount::Shape(shape)) => Array::try_from_op(|res| unsafe {

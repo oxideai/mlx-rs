@@ -1,25 +1,26 @@
 //! Fast implementations of commonly used multi-op functions.
 
-use std::ffi::CString;
+use std::ffi::CStr;
 
-use crate::error::{Exception, Result};
+use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::utils::VectorArray;
+use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream};
-use mlx_internal_macros::default_device;
+use mlx_internal_macros::{default_device, generate_macro};
 
 /// Optimized implementation of `NN.RoPE`.
 #[allow(clippy::too_many_arguments)]
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn rope_device<'a>(
-    array: impl AsRef<Array>,
-    dimensions: i32,
-    traditional: bool,
-    base: impl Into<Option<f32>>,
-    scale: f32,
-    offset: i32,
-    freqs: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[named] array: impl AsRef<Array>,
+    #[named] dimensions: i32,
+    #[named] traditional: bool,
+    #[optional] base: impl Into<Option<f32>>,
+    #[named] scale: f32,
+    #[named] offset: i32,
+    #[optional] freqs: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let base = base.into();
     let base = mlx_sys::mlx_optional_float {
@@ -44,6 +45,64 @@ pub fn rope_device<'a>(
     })
 }
 
+const DEFAULT_MASK_MODE: &CStr = c"";
+const CAUSAL_MASK_MODE: &CStr = c"causal";
+
+/// Mask modes for scaled dot product attention.
+#[derive(Debug)]
+pub enum ScaledDotProductAttentionMask<'a> {
+    /// Array
+    Array(&'a Array),
+
+    /// Arrays
+    Arrays(&'a [Array]),
+
+    /// Causal
+    Causal,
+}
+
+impl<'a> From<&'a Array> for ScaledDotProductAttentionMask<'a> {
+    fn from(mask: &'a Array) -> Self {
+        ScaledDotProductAttentionMask::Array(mask)
+    }
+}
+
+impl<'a> From<&'a [Array]> for ScaledDotProductAttentionMask<'a> {
+    fn from(masks: &'a [Array]) -> Self {
+        ScaledDotProductAttentionMask::Arrays(masks)
+    }
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a Array {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
+        Some(ScaledDotProductAttentionMask::Array(self))
+    }
+}
+
+impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a [Array] {
+    fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
+        Some(ScaledDotProductAttentionMask::Arrays(self))
+    }
+}
+
+impl ScaledDotProductAttentionMask<'_> {
+    fn as_mode_and_masks(&self) -> (&'static CStr, VectorArray) {
+        match self {
+            ScaledDotProductAttentionMask::Array(mask) => (
+                DEFAULT_MASK_MODE,
+                VectorArray::try_from_iter([mask].iter()).unwrap(),
+            ),
+            ScaledDotProductAttentionMask::Arrays(masks) => (
+                DEFAULT_MASK_MODE,
+                VectorArray::try_from_iter(masks.iter()).unwrap(),
+            ),
+            ScaledDotProductAttentionMask::Causal => (CAUSAL_MASK_MODE, unsafe {
+                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+            }),
+        }
+    }
+}
+
 /// A fast implementation of multi-head attention: `O = softmax(Q @ K.T, dim=-1) @ V`
 ///
 /// Supports [Multi-Head Attention](https://arxiv.org/abs/1706.03762), [Grouped Query Attention](https://arxiv.org/abs/2305.13245), and [Multi-Query Attention](https://arxiv.org/abs/1911.02150).
@@ -53,20 +112,24 @@ pub fn rope_device<'a>(
 /// > Note: The softmax operation is performed in float32 precision regardless of input precision (float16 or float32).
 ///
 /// > Note: For Grouped Query Attention and Multi-Query Attention, the input arrays for `key` and `value` should not be pre-tiled to match the `query` array.
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn scaled_dot_product_attention_device<'a>(
     queries: impl AsRef<Array>,
     keys: impl AsRef<Array>,
     values: impl AsRef<Array>,
     scale: f32,
-    mask: impl Into<Option<&'a Array>>,
-    stream: impl AsRef<Stream>,
+    #[optional] mask: impl IntoOption<ScaledDotProductAttentionMask<'a>>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let mask_mode = CString::new("").map_err(|e| Exception::custom(format!("{}", e)))?;
-    let masks = match mask.into() {
-        Some(m) => VectorArray::try_from_iter([m].iter())?,
-        None => unsafe { VectorArray::from_ptr(mlx_sys::mlx_vector_array_new()) },
-    };
+    let (mask_mode, masks) = mask.into_option().map_or_else(
+        || {
+            (DEFAULT_MASK_MODE, unsafe {
+                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+            })
+        },
+        |m| m.as_mode_and_masks(),
+    );
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_scaled_dot_product_attention(
@@ -92,12 +155,13 @@ pub fn scaled_dot_product_attention_device<'a>(
 /// - weight: A multiplicative weight to scale the result by. The `weight` should be one-dimensional with the same size as the last axis of `x`.
 /// - eps: A small additive constant for numerical stability
 /// - stream: stream or device to evaluate on
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn rms_norm_device(
     x: impl AsRef<Array>,
     weight: impl AsRef<Array>,
     eps: f32,
-    stream: impl AsRef<Stream>,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_rms_norm(
@@ -123,13 +187,14 @@ pub fn rms_norm_device(
 ///   with the same size as the last axis of `x`.  It not given no offset will occur.
 /// - eps: A small additive constant for numerical stability
 /// - stream: stream or device to evaluate on
+#[generate_macro(customize(root = "$crate::fast"))]
 #[default_device]
 pub fn layer_norm_device<'a>(
-    x: impl AsRef<Array>,
-    weight: impl Into<Option<&'a Array>>,
-    bias: impl Into<Option<&'a Array>>,
-    eps: f32,
-    stream: impl AsRef<Stream>,
+    #[named] x: impl AsRef<Array>,
+    #[optional] weight: impl Into<Option<&'a Array>>,
+    #[optional] bias: impl Into<Option<&'a Array>>,
+    #[named] eps: f32,
+    #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_layer_norm(
@@ -151,7 +216,10 @@ pub fn layer_norm_device<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ops::indexing::{ArrayIndexOp, IndexOp};
+    use crate::{
+        ops::indexing::{ArrayIndexOp, IndexOp},
+        random::normal,
+    };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
 
@@ -223,5 +291,37 @@ mod tests {
             4.655_846,
             abs <= 0.093_116_924
         );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_fast_sdpa() {
+        // This test just makes sure that `scaled_dot_product_attention` is callable
+        // in the various cases, based on the Python test `test_fast_sdpa`.
+
+        let Dk = 64;
+        let scale = 1.0 / (Dk as f32).sqrt();
+        for seq_len in [63, 129, 400] {
+            for dtype in [crate::Dtype::Float32, crate::Dtype::Float16] {
+                let B = 2;
+                let H = 24;
+                let q = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+                let k = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+                let v = normal::<f32>(&[B, H, seq_len, Dk], None, None, None)
+                    .unwrap()
+                    .as_dtype(dtype)
+                    .unwrap();
+
+                let result = scaled_dot_product_attention(q, k, v, scale, None).unwrap();
+                assert_eq!(result.shape(), [B, H, seq_len, Dk]);
+                assert_eq!(result.dtype(), dtype);
+            }
+        }
     }
 }

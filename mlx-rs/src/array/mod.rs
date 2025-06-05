@@ -120,12 +120,11 @@ impl Array {
         Array { c_array }
     }
 
-    // // TODO: This is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
-    // /// New array from a f64 scalar.
-    // pub fn from_f64(val: f64) -> Array {
-    //     let c_array = unsafe { mlx_sys::mlx_array_new_float64(val) };
-    //     Array { c_array }
-    // }
+    /// New array from a f64 scalar.
+    pub fn from_f64(val: f64) -> Array {
+        let c_array = unsafe { mlx_sys::mlx_array_new_float64(val) };
+        Array { c_array }
+    }
 
     /// New array from a complex scalar.
     pub fn from_complex(val: complex64) -> Array {
@@ -298,7 +297,6 @@ impl Array {
         Dtype::try_from(dtype).unwrap()
     }
 
-    // TODO: document that mlx is lazy
     /// Evaluate the array.
     pub fn eval(&self) -> crate::error::Result<()> {
         <() as Guarded>::try_from_op(|_| unsafe { mlx_sys::mlx_array_eval(self.as_ptr()) })
@@ -944,19 +942,18 @@ mod tests {
         assert_eq!(array.dtype(), Dtype::Float32);
     }
 
-    // TODO: this is bugged right now. See https://github.com/ml-explore/mlx/issues/1994
-    // #[test]
-    // fn new_scalar_array_from_f64() {
-    //     let array = Array::from_f64(3.14).as_dtype(Dtype::Float64).unwrap();
-    //     float_eq::assert_float_eq!(array.item::<f64>(), 3.14, abs <= 1e-5);
-    //     assert_eq!(array.item_size(), 8);
-    //     assert_eq!(array.size(), 1);
-    //     assert!(array.strides().is_empty());
-    //     assert_eq!(array.nbytes(), 8);
-    //     assert_eq!(array.ndim(), 0);
-    //     assert!(array.shape().is_empty());
-    //     assert_eq!(array.dtype(), Dtype::Float64);
-    // }
+    #[test]
+    fn new_scalar_array_from_f64() {
+        let array = Array::from_f64(3.14).as_dtype(Dtype::Float64).unwrap();
+        float_eq::assert_float_eq!(array.item::<f64>(), 3.14, abs <= 1e-5);
+        assert_eq!(array.item_size(), 8);
+        assert_eq!(array.size(), 1);
+        assert!(array.strides().is_empty());
+        assert_eq!(array.nbytes(), 8);
+        assert_eq!(array.ndim(), 0);
+        assert!(array.shape().is_empty());
+        assert_eq!(array.dtype(), Dtype::Float64);
+    }
 
     #[test]
     fn new_array_from_slice_f64() {

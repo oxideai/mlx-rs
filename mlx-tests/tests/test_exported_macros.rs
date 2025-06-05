@@ -4,6 +4,7 @@
 
 use mlx_rs::{
     array, complex64,
+    error::Exception,
     ops::{arange, reshape},
     Array, Dtype, StreamOrDevice,
 };
@@ -155,4 +156,31 @@ fn test_random_normal() {
     let value = mlx_rs::normal!(shape = &[1]).unwrap();
     assert_eq!(value.shape(), &[1]);
     assert!(value.item::<f32>() >= -10.0 && value.item::<f32>() <= 10.0);
+}
+
+// Test functions defined in `mlx_rs::fast` module.
+
+#[test]
+#[allow(non_snake_case)]
+fn test_fast_sdpa_using_macros() -> Result<(), Exception> {
+    // This test just makes sure that `scaled_dot_product_attention` is callable
+    // in the various cases, based on the Python test `test_fast_sdpa`.
+
+    let Dk = 64;
+    let scale = 1.0 / (Dk as f32).sqrt();
+    for seq_len in [63, 129, 400] {
+        for dtype in [crate::Dtype::Float32, crate::Dtype::Float16] {
+            let B = 2;
+            let H = 24;
+            let q = mlx_rs::normal!(shape = &[B, H, seq_len, Dk])?.as_dtype(dtype)?;
+            let k = mlx_rs::normal!(shape = &[B, H, seq_len, Dk])?.as_dtype(dtype)?;
+            let v = mlx_rs::normal!(shape = &[B, H, seq_len, Dk])?.as_dtype(dtype)?;
+
+            let result = mlx_rs::scaled_dot_product_attention!(q, k, v, scale)?;
+            assert_eq!(result.shape(), [B, H, seq_len, Dk]);
+            assert_eq!(result.dtype(), dtype);
+        }
+    }
+
+    Ok(())
 }

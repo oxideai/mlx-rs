@@ -505,7 +505,7 @@ pub fn categorical_device<'a>(
 mod tests {
     use super::*;
     use crate::{array, assert_array_eq};
-    use float_eq::float_eq;
+    use float_eq::{assert_float_eq, float_eq};
 
     #[test]
     fn test_global_rng() {
@@ -719,5 +719,30 @@ mod tests {
 
         let expected = Array::from_slice(&[16, 3, 14, 10, 17, 7, 6, 8, 12, 8], &[5, 2]);
         assert_array_eq!(result, expected, 0.01);
+    }
+
+    #[test]
+    fn test_random_seed_same() {
+        // Same random seed should produce the same results
+        let seed = 23;
+        let mut results = Vec::new();
+        let f = || {
+            uniform::<_, f32>(0.0, 1.0, &[10, 10], None)?
+                .sum(None)?.try_item::<f32>()
+        };
+        for _ in 0..10 {
+            let mut state = RandomState::new().unwrap();
+            state.seed(seed).unwrap();
+            let result = with_random_state(state, f).unwrap();
+            results.push(result);
+        }
+
+        // Check that all results are the same within a small tolerance
+        let first = results[0];
+        for result in &results[1..] {
+            assert_float_eq!(first, *result, abs <= 0.01,
+                "Results should be equal for the same seed"
+            );
+        }
     }
 }

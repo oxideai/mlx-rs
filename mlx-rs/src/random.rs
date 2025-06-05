@@ -8,9 +8,18 @@ use mach_sys::mach_time;
 use mlx_internal_macros::{default_device, generate_macro};
 use parking_lot::Mutex;
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::sync::OnceLock;
 
-struct RandomState {
+static GLOBAL_STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
+
+thread_local! {
+    static TASK_LOCAL_STATE: RefCell<Option<RandomState>> = const { RefCell::new(None) };
+}
+
+/// Random state factory
+#[derive(Debug, Clone)]
+pub struct RandomState {
     state: Array,
 }
 
@@ -32,25 +41,52 @@ impl RandomState {
     }
 }
 
-fn state() -> &'static Mutex<RandomState> {
-    static STATE: OnceLock<Mutex<RandomState>> = OnceLock::new();
-    STATE.get_or_init(|| Mutex::new(RandomState::new().unwrap()))
+fn global_state() -> &'static Mutex<RandomState> {
+    GLOBAL_STATE.get_or_init(|| Mutex::new(RandomState::new().unwrap()))
+}
+
+/// Returns a key from the task-local state if it exists, otherwise
+/// returns `None`
+fn resolve_task_local_key() -> Option<Result<Array>> {
+    TASK_LOCAL_STATE.with_borrow_mut(|state| state.as_mut().map(|s| s.next()))
+}
+
+fn resolve_global_key() -> Result<Array> {
+    let mut state = global_state().lock();
+    state.next()
 }
 
 /// Use given key or generate a new one if `None`.
-fn key_or_next<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
+fn resolve<'a>(key: impl Into<Option<&'a Array>>) -> Result<Cow<'a, Array>> {
     key.into().map_or_else(
         || {
-            let mut state = state().lock();
-            state.next().map(Cow::Owned)
+            resolve_task_local_key()
+                .unwrap_or_else(resolve_global_key)
+                .map(Cow::Owned)
         },
         |k| Ok(Cow::Borrowed(k)),
     )
 }
 
+/// Use the given random state for the scope of `f`
+pub fn with_random_state<F, T>(state: RandomState, f: F) -> T
+where
+    F: FnOnce() -> T,
+{
+    let prev_state = TASK_LOCAL_STATE.with_borrow_mut(|s| s.replace(state));
+
+    let result = f();
+
+    TASK_LOCAL_STATE.with_borrow_mut(|s| {
+        *s = prev_state;
+    });
+
+    result
+}
+
 /// Seed the random number generator.
 pub fn seed(seed: u64) -> Result<()> {
-    let mut state = state().lock();
+    let mut state = global_state().lock();
     state.seed(seed)
 }
 
@@ -109,7 +145,7 @@ pub fn uniform_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_uniform(
@@ -158,7 +194,7 @@ pub fn normal_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_normal(
@@ -194,7 +230,7 @@ pub fn multivariate_normal_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_multivariate_normal(
@@ -236,7 +272,7 @@ pub fn randint_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_randint(
@@ -285,7 +321,7 @@ pub fn bernoulli_device<'a>(
     let p = p.into().unwrap_or(&default_array);
 
     let shape = shape.into_option().unwrap_or(p.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_bernoulli(
@@ -326,7 +362,7 @@ pub fn truncated_normal_device<'a, E: Into<Array>, T: ArrayElement>(
     let lb: Array = lower.into();
     let ub: Array = upper.into();
     let shape = shape.into_option().unwrap_or(lb.shape());
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_truncated_normal(
@@ -364,7 +400,7 @@ pub fn gumbel_device<'a, T: ArrayElement>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let shape = shape.into_option().unwrap_or(&[]);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_random_gumbel(
@@ -425,7 +461,7 @@ pub fn categorical_device<'a>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let axis = axis.into().unwrap_or(-1);
-    let key = key_or_next(key)?;
+    let key = resolve(key)?;
 
     match shape_or_count.into() {
         Some(ShapeOrCount::Shape(shape)) => Array::try_from_op(|res| unsafe {
@@ -465,7 +501,7 @@ pub fn categorical_device<'a>(
 mod tests {
     use super::*;
     use crate::{array, assert_array_eq};
-    use float_eq::float_eq;
+    use float_eq::{assert_float_eq, float_eq};
 
     #[test]
     fn test_global_rng() {
@@ -679,5 +715,34 @@ mod tests {
 
         let expected = Array::from_slice(&[16, 3, 14, 10, 17, 7, 6, 8, 12, 8], &[5, 2]);
         assert_array_eq!(result, expected, 0.01);
+    }
+
+    #[test]
+    fn test_random_seed_same() {
+        // Same random seed should produce the same results
+        let seed = 23;
+        let mut results = Vec::new();
+        let f = || {
+            uniform::<_, f32>(0.0, 1.0, &[10, 10], None)?
+                .sum(None)?
+                .try_item::<f32>()
+        };
+        for _ in 0..10 {
+            let mut state = RandomState::new().unwrap();
+            state.seed(seed).unwrap();
+            let result = with_random_state(state, f).unwrap();
+            results.push(result);
+        }
+
+        // Check that all results are the same within a small tolerance
+        let first = results[0];
+        for result in &results[1..] {
+            assert_float_eq!(
+                first,
+                *result,
+                abs <= 0.01,
+                "Results should be equal for the same seed"
+            );
+        }
     }
 }

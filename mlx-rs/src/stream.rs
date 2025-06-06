@@ -251,4 +251,18 @@ mod tests {
             assert_eq!(default0, default1);
         })
     }
+
+    #[test]
+    fn test_stream_clone() {
+        let stream = Stream::new();
+        let cloned_stream = stream.clone();
+        assert_eq!(stream, cloned_stream);
+    }
+
+    #[test]
+    fn test_two_new_streams_not_equal() {
+        let stream1 = Stream::new();
+        let stream2 = Stream::new();
+        assert_ne!(stream1, stream2);
+    }
 }

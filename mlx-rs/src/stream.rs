@@ -124,12 +124,29 @@ impl Clone for Stream {
 }
 
 impl Stream {
+    /// Create a new stream on the default device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_default() -> Self {
+        task_local_default_stream()
+            .unwrap_or_else(|| Stream::new())
+    }
+
+    /// Create a new stream on the default cpu device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_cpu() -> Self {
+        task_local_default_stream()
+            .unwrap_or_else(|| Stream::cpu())
+    }
+
+    /// Create a new stream on the default gpu device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_gpu() -> Self {
+        task_local_default_stream()
+            .unwrap_or_else(|| Stream::gpu())
+    }
+
     /// Create a new stream on the default device. Panics if fails.
     pub fn new() -> Stream {
-        if let Some(task_local) = task_local_default_stream() {
-            return task_local;
-        }
-
         unsafe {
             let mut dev = mlx_sys::mlx_device_new();
             // SAFETY: mlx_get_default_device internally never throws an error
@@ -164,10 +181,6 @@ impl Stream {
 
     /// Current default CPU stream.
     pub fn cpu() -> Self {
-        if let Some(task_local) = task_local_default_stream() {
-            return task_local;
-        }
-
         unsafe {
             let c_stream = mlx_sys::mlx_default_cpu_stream_new();
             Stream { c_stream }
@@ -176,10 +189,6 @@ impl Stream {
 
     /// Current default GPU stream.
     pub fn gpu() -> Self {
-        if let Some(task_local) = task_local_default_stream() {
-            return task_local;
-        }
-
         unsafe {
             let c_stream = mlx_sys::mlx_default_gpu_stream_new();
             Stream { c_stream }
@@ -244,12 +253,18 @@ mod tests {
 
     #[test]
     fn test_scoped_default_stream() {
-        let default_stream = Stream::cpu();
-        with_new_default_stream(default_stream, || {
-            let default0 = Stream::new();
-            let default1 = Stream::new();
-            assert_eq!(default0, default1);
-        })
+        // First set default stream to CPU
+        let cpu_device = Device::cpu();
+        Device::set_default(&cpu_device);
+        let cpu_stream = Stream::default();
+
+        let task_default_stream = Stream::gpu();
+        with_new_default_stream(task_default_stream, || {
+            let task_local_stream_0 = Stream::task_local_or_default();
+            let task_local_stream_1 = Stream::task_local_or_default();
+            assert_eq!(task_local_stream_0, task_local_stream_1);
+            assert_ne!(task_local_stream_0, cpu_stream);
+        });
     }
 
     #[test]
@@ -260,9 +275,19 @@ mod tests {
     }
 
     #[test]
-    fn test_two_new_streams_not_equal() {
-        let stream1 = Stream::new();
-        let stream2 = Stream::new();
-        assert_ne!(stream1, stream2);
+    fn test_cpu_gpu_stream_not_equal() {
+        let cpu_device = Device::cpu();
+        let gpu_device = Device::gpu();
+
+        // First set default stream to CPU
+        Device::set_default(&cpu_device);
+        let cpu_stream = Stream::default();
+
+        // Then set default stream to GPU
+        Device::set_default(&gpu_device);
+        let gpu_stream = Stream::default();
+
+        // Assert that CPU and GPU streams are not equal
+        assert_ne!(cpu_stream, gpu_stream);
     }
 }

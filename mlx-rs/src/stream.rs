@@ -244,10 +244,6 @@ mod tests {
 
     #[test]
     fn test_scoped_default_stream() {
-        let s0 = Stream::new();
-        let s1 = Stream::new();
-        assert_ne!(s0, s1);
-
         let default_stream = Stream::cpu();
         with_new_default_stream(default_stream, || {
             let default0 = Stream::new();

@@ -7,11 +7,11 @@ use crate::{
 };
 
 thread_local! {
-    static TASK_LOCAL_DEFAULT_STREAM: RefCell<Option<Stream>> = RefCell::new(None);
+    static TASK_LOCAL_DEFAULT_STREAM: RefCell<Option<Stream>> = const { RefCell::new(None) };
 }
 
 /// Gets the task local default stream.
-/// 
+///
 /// This is NOT intended to be used directly in most cases. Instead, use the
 /// `with_default_stream` function to temporarily set a default stream for a closure.
 pub fn task_local_default_stream() -> Option<Stream> {
@@ -23,8 +23,7 @@ pub fn with_new_default_stream<F, T>(default_stream: Stream, f: F) -> T
 where
     F: FnOnce() -> T,
 {
-    let prev_stream =
-        TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| s.replace(default_stream));
+    let prev_stream = TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| s.replace(default_stream));
 
     let result = f();
 
@@ -119,10 +118,8 @@ impl AsRef<Stream> for Stream {
 
 impl Clone for Stream {
     fn clone(&self) -> Self {
-        Stream::try_from_op(|res| unsafe {
-            mlx_sys::mlx_stream_set(res, self.c_stream)
-        })
-        .expect("Failed to clone stream")
+        Stream::try_from_op(|res| unsafe { mlx_sys::mlx_stream_set(res, self.c_stream) })
+            .expect("Failed to clone stream")
     }
 }
 

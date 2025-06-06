@@ -82,13 +82,16 @@ pub fn default_device(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Prepend default stream initialization
     let default_stream_stmt = match input.map(|input| input.device) {
         Some(DeviceType::Cpu) => parse_quote! {
-            let stream = crate::StreamOrDevice::cpu();
+            let stream = crate::task_local_default_stream()
+                .unwrap_or_else(|| crate::Stream::cpu());
         },
         Some(DeviceType::Gpu) => parse_quote! {
-            let stream = crate::StreamOrDevice::gpu();
+            let stream = crate::task_local_default_stream()
+                .unwrap_or_else(|| crate::Stream::gpu());
         },
         None => parse_quote! {
-            let stream = crate::StreamOrDevice::default();
+            let stream = crate::task_local_default_stream()
+                .unwrap_or_else(|| crate::Stream::default());
         },
     };
     input_fn.block.stmts.insert(0, default_stream_stmt);

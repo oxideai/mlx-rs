@@ -1,10 +1,39 @@
-use std::ffi::CStr;
+use std::{cell::RefCell, ffi::CStr};
 
 use crate::{
     device::Device,
     error::Result,
     utils::{guard::Guarded, SUCCESS},
 };
+
+thread_local! {
+    static TASK_LOCAL_DEFAULT_STREAM: RefCell<Option<Stream>> = RefCell::new(None);
+}
+
+/// Gets the task local default stream.
+/// 
+/// This is NOT intended to be used directly in most cases. Instead, use the
+/// `with_default_stream` function to temporarily set a default stream for a closure.
+pub fn task_local_default_stream() -> Option<Stream> {
+    TASK_LOCAL_DEFAULT_STREAM.with_borrow(|s| s.clone())
+}
+
+/// Use a given default stream for the duration of the closure `f`.
+pub fn with_default_stream<F, T>(default_stream: Stream, f: F) -> T
+where
+    F: FnOnce() -> T,
+{
+    let prev_stream =
+        TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| s.replace(default_stream));
+
+    let result = f();
+
+    TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| {
+        *s = prev_stream;
+    });
+
+    result
+}
 
 /// Parameter type for all MLX operations.
 ///
@@ -85,6 +114,15 @@ pub struct Stream {
 impl AsRef<Stream> for Stream {
     fn as_ref(&self) -> &Stream {
         self
+    }
+}
+
+impl Clone for Stream {
+    fn clone(&self) -> Self {
+        Stream::try_from_op(|res| unsafe {
+            mlx_sys::mlx_stream_set(res, self.c_stream)
+        })
+        .expect("Failed to clone stream")
     }
 }
 

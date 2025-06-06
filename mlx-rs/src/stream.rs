@@ -127,22 +127,19 @@ impl Stream {
     /// Create a new stream on the default device, or return the task local
     /// default stream if present.
     pub fn task_local_or_default() -> Self {
-        task_local_default_stream()
-            .unwrap_or_else(|| Stream::new())
+        task_local_default_stream().unwrap_or_default()
     }
 
     /// Create a new stream on the default cpu device, or return the task local
     /// default stream if present.
     pub fn task_local_or_cpu() -> Self {
-        task_local_default_stream()
-            .unwrap_or_else(|| Stream::cpu())
+        task_local_default_stream().unwrap_or_else(Stream::cpu)
     }
 
     /// Create a new stream on the default gpu device, or return the task local
     /// default stream if present.
     pub fn task_local_or_gpu() -> Self {
-        task_local_default_stream()
-            .unwrap_or_else(|| Stream::gpu())
+        task_local_default_stream().unwrap_or_else(Stream::gpu)
     }
 
     /// Create a new stream on the default device. Panics if fails.

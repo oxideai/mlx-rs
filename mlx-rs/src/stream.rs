@@ -19,7 +19,7 @@ pub fn task_local_default_stream() -> Option<Stream> {
 }
 
 /// Use a given default stream for the duration of the closure `f`.
-pub fn with_default_stream<F, T>(default_stream: Stream, f: F) -> T
+pub fn with_new_default_stream<F, T>(default_stream: Stream, f: F) -> T
 where
     F: FnOnce() -> T,
 {
@@ -129,6 +129,10 @@ impl Clone for Stream {
 impl Stream {
     /// Create a new stream on the default device. Panics if fails.
     pub fn new() -> Stream {
+        if let Some(task_local) = task_local_default_stream() {
+            return task_local;
+        }
+
         unsafe {
             let mut dev = mlx_sys::mlx_device_new();
             // SAFETY: mlx_get_default_device internally never throws an error
@@ -163,6 +167,10 @@ impl Stream {
 
     /// Current default CPU stream.
     pub fn cpu() -> Self {
+        if let Some(task_local) = task_local_default_stream() {
+            return task_local;
+        }
+
         unsafe {
             let c_stream = mlx_sys::mlx_default_cpu_stream_new();
             Stream { c_stream }
@@ -171,6 +179,10 @@ impl Stream {
 
     /// Current default GPU stream.
     pub fn gpu() -> Self {
+        if let Some(task_local) = task_local_default_stream() {
+            return task_local;
+        }
+
         unsafe {
             let c_stream = mlx_sys::mlx_default_gpu_stream_new();
             Stream { c_stream }

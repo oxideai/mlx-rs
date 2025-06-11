@@ -1,10 +1,38 @@
-use std::ffi::CStr;
+use std::{cell::RefCell, ffi::CStr};
 
 use crate::{
     device::Device,
     error::Result,
     utils::{guard::Guarded, SUCCESS},
 };
+
+thread_local! {
+    static TASK_LOCAL_DEFAULT_STREAM: RefCell<Option<Stream>> = const { RefCell::new(None) };
+}
+
+/// Gets the task local default stream.
+///
+/// This is NOT intended to be used directly in most cases. Instead, use the
+/// `with_default_stream` function to temporarily set a default stream for a closure.
+pub fn task_local_default_stream() -> Option<Stream> {
+    TASK_LOCAL_DEFAULT_STREAM.with_borrow(|s| s.clone())
+}
+
+/// Use a given default stream for the duration of the closure `f`.
+pub fn with_new_default_stream<F, T>(default_stream: Stream, f: F) -> T
+where
+    F: FnOnce() -> T,
+{
+    let prev_stream = TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| s.replace(default_stream));
+
+    let result = f();
+
+    TASK_LOCAL_DEFAULT_STREAM.with_borrow_mut(|s| {
+        *s = prev_stream;
+    });
+
+    result
+}
 
 /// Parameter type for all MLX operations.
 ///
@@ -88,7 +116,32 @@ impl AsRef<Stream> for Stream {
     }
 }
 
+impl Clone for Stream {
+    fn clone(&self) -> Self {
+        Stream::try_from_op(|res| unsafe { mlx_sys::mlx_stream_set(res, self.c_stream) })
+            .expect("Failed to clone stream")
+    }
+}
+
 impl Stream {
+    /// Create a new stream on the default device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_default() -> Self {
+        task_local_default_stream().unwrap_or_default()
+    }
+
+    /// Create a new stream on the default cpu device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_cpu() -> Self {
+        task_local_default_stream().unwrap_or_else(Stream::cpu)
+    }
+
+    /// Create a new stream on the default gpu device, or return the task local
+    /// default stream if present.
+    pub fn task_local_or_gpu() -> Self {
+        task_local_default_stream().unwrap_or_else(Stream::gpu)
+    }
+
     /// Create a new stream on the default device. Panics if fails.
     pub fn new() -> Stream {
         unsafe {
@@ -188,5 +241,50 @@ impl std::fmt::Display for Stream {
 impl PartialEq for Stream {
     fn eq(&self, other: &Self) -> bool {
         unsafe { mlx_sys::mlx_stream_equal(self.c_stream, other.c_stream) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scoped_default_stream() {
+        // First set default stream to CPU
+        let cpu_device = Device::cpu();
+        Device::set_default(&cpu_device);
+        let cpu_stream = Stream::default();
+
+        let task_default_stream = Stream::gpu();
+        with_new_default_stream(task_default_stream, || {
+            let task_local_stream_0 = Stream::task_local_or_default();
+            let task_local_stream_1 = Stream::task_local_or_default();
+            assert_eq!(task_local_stream_0, task_local_stream_1);
+            assert_ne!(task_local_stream_0, cpu_stream);
+        });
+    }
+
+    #[test]
+    fn test_stream_clone() {
+        let stream = Stream::new();
+        let cloned_stream = stream.clone();
+        assert_eq!(stream, cloned_stream);
+    }
+
+    #[test]
+    fn test_cpu_gpu_stream_not_equal() {
+        let cpu_device = Device::cpu();
+        let gpu_device = Device::gpu();
+
+        // First set default stream to CPU
+        Device::set_default(&cpu_device);
+        let cpu_stream = Stream::default();
+
+        // Then set default stream to GPU
+        Device::set_default(&gpu_device);
+        let gpu_stream = Stream::default();
+
+        // Assert that CPU and GPU streams are not equal
+        assert_ne!(cpu_stream, gpu_stream);
     }
 }

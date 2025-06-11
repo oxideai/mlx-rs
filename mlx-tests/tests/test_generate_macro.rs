@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 
 use mlx_internal_macros::{default_device, generate_macro};
-use mlx_rs::{Stream, StreamOrDevice};
+use mlx_rs::Stream;
 
 // Test generate_macro for functions with no generic type arguments.
 #[generate_macro(customize(root = "$crate"))]

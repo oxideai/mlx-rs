@@ -55,7 +55,7 @@ impl std::fmt::Display for Array {
             }
             let ptr = mlx_sys::mlx_string_data(mlx_str);
             let c_str = CStr::from_ptr(ptr);
-            write!(f, "{:?}", c_str)?;
+            write!(f, "{}", c_str.to_str()?)?;
             mlx_sys::mlx_string_free(mlx_str);
             Ok(())
         }

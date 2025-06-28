@@ -22,7 +22,7 @@ pub(crate) fn expand_derive_buildable(input: DeriveInput) -> Result<proc_macro2:
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
     let struct_ident = &struct_prop.ident;
-    let builder_ident = syn::Ident::new(&format!("{}Builder", struct_ident), struct_ident.span());
+    let builder_ident = syn::Ident::new(&format!("{struct_ident}Builder"), struct_ident.span());
     let root = match struct_prop.root {
         Some(path) => path,
         None => syn::parse_quote!(::mlx_rs),

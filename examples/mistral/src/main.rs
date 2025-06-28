@@ -210,14 +210,14 @@ fn main() -> Result<()> {
             eval(&tokens)?;
             let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
             let s = tokenizer.decode(&slice, true)?;
-            print!("{}", s);
+            print!("{s}");
         }
     }
 
     eval(&tokens)?;
     let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
     let s = tokenizer.decode(&slice, true)?;
-    println!("{}", s);
+    println!("{s}");
 
     println!("------");
 

@@ -52,9 +52,9 @@ impl BuilderStructAnalyzer<'_> {
         let optional_field_tys = self.optional_fields.iter().map(|field| &field.ty);
         let optional_field_defaults = self.optional_fields.iter().map(|field| &field.default);
 
-        let doc = format!("Builder for `{}`.", struct_ident);
+        let doc = format!("Builder for `{struct_ident}`.");
 
-        let mandatory_field_doc = format!("See [`{}`] for more information.", struct_ident);
+        let mandatory_field_doc = format!("See [`{struct_ident}`] for more information.");
         let optional_field_doc =
             optional_field_idents
                 .iter()
@@ -97,7 +97,7 @@ impl BuilderStructAnalyzer<'_> {
         let optional_field_idents = self.optional_fields.iter().map(|field| &field.ident);
         let optional_field_defaults = self.optional_fields.iter().map(|field| &field.default);
 
-        let doc = format!("Creates a new [`{}`].", builder_struct_ident);
+        let doc = format!("Creates a new [`{builder_struct_ident}`].");
 
         quote! {
             impl #impl_generics #builder_struct_ident #type_generics #where_clause {
@@ -124,7 +124,7 @@ impl BuilderStructAnalyzer<'_> {
 
             let ident = &field.ident;
             let ty = &field.ty;
-            let doc = format!("Sets the value of [`{}`].", ident);
+            let doc = format!("Sets the value of [`{ident}`].");
             Some(quote! {
                 #[doc = #doc]
                 pub fn #ident(mut self, #ident: impl Into<#ty>) -> Self {
@@ -205,7 +205,7 @@ impl BuilderStructAnalyzer<'_> {
             .collect::<Vec<_>>();
         let mandatory_field_types = self.mandatory_fields.iter().map(|field| &field.ty);
 
-        let doc = format!("Creates a new instance of `{}`.", struct_ident);
+        let doc = format!("Creates a new instance of `{struct_ident}`.");
 
         // TODO: do we want to generate different code for infallible and fallible cases
         let ret = if is_default_infallible {
@@ -318,7 +318,7 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
                 Some(default) => default,
                 None => {
                     return Err(
-                        format!("Field {} is optional but has no default value", ident).into(),
+                        format!("Field {ident} is optional but has no default value").into(),
                     )
                 }
             };

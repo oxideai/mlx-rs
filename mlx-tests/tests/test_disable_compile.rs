@@ -14,7 +14,7 @@ fn test_disable_compile() {
         let z = negative!(x)?;
 
         // this will crash is compile is enabled
-        println!("{:?}", z);
+        println!("{z:?}");
 
         exp!(z)
     };

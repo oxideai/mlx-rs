@@ -88,7 +88,7 @@ fn test_sgd_converges() {
     // It sometimes doesn't converge that fast, so we take the average loss
     // across multiple trials
     let avg_loss = total_loss / NUM_TRIALS as f32;
-    assert!(avg_loss < 0.1, "avg loss: {}", avg_loss);
+    assert!(avg_loss < 0.1, "avg loss: {avg_loss}");
 }
 
 #[test]
@@ -102,7 +102,7 @@ fn test_rmsprop_converges() {
     // It sometimes doesn't converge that fast, so we take the average loss
     // across multiple trials
     let avg_loss = total_loss / NUM_TRIALS as f32;
-    assert!(avg_loss < 0.1, "avg loss: {}", avg_loss);
+    assert!(avg_loss < 0.1, "avg loss: {avg_loss}");
 }
 
 /* -------------------------------------------------------------------------- */

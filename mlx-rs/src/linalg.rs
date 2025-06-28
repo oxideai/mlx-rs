@@ -454,8 +454,7 @@ pub fn eigh_device(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array)> {
     let a = a.as_ref();
-    let uplo =
-        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
+    let uplo = CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
 
     <(Array, Array) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_linalg_eigh(
@@ -480,8 +479,7 @@ pub fn eigvalsh_device(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let a = a.as_ref();
-    let uplo =
-        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
+    let uplo = CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_eigvalsh(res, a.as_ptr(), uplo.as_ptr(), stream.as_ref().as_ptr())
     })

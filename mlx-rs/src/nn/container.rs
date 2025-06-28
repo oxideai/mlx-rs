@@ -106,7 +106,7 @@ mod tests {
             .flatten()
             .iter()
             .for_each(|(key, value)| {
-                println!("{}: {:?}", key, value);
+                println!("{key}: {value:?}");
             });
 
         let mut params = model.parameters_mut().flatten();
@@ -184,8 +184,7 @@ mod tests {
         // Check that it converges
         assert!(
             losses[0] > losses[losses.len() - 1],
-            "Not converging loss: {:?}",
-            losses
+            "Not converging loss: {losses:?}"
         );
     }
 }

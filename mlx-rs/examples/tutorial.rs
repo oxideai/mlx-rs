@@ -69,7 +69,7 @@ fn array_basics() {
     z.item::<f32>(); // implicit evaluation
 
     z = Array::ones::<f32>(&[2, 2]).unwrap();
-    println!("{}", z); // implicit evaluation
+    println!("{z}"); // implicit evaluation
 }
 
 fn automatic_differentiation() {

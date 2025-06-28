@@ -124,8 +124,8 @@ impl OptimizerState for State<(Array, Array)> {
 
     fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
         self.iter().flat_map(|(k, (first, second))| {
-            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+            let first_k: Rc<str> = Rc::from(format!("{k}.0"));
+            let second_k: Rc<str> = Rc::from(format!("{k}.1"));
 
             [(first_k, first), (second_k, second)]
         })
@@ -133,8 +133,8 @@ impl OptimizerState for State<(Array, Array)> {
 
     fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
         self.iter_mut().flat_map(|(k, (first, second))| {
-            let first_k: Rc<str> = Rc::from(format!("{}.0", k));
-            let second_k: Rc<str> = Rc::from(format!("{}.1", k));
+            let first_k: Rc<str> = Rc::from(format!("{k}.0"));
+            let second_k: Rc<str> = Rc::from(format!("{k}.1"));
 
             [(first_k, first), (second_k, second)]
         })

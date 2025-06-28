@@ -45,22 +45,22 @@ impl OptimizerState for State<AdafactorState> {
 
     fn flatten(&self) -> impl Iterator<Item = (Rc<str>, &Array)> {
         self.iter().flat_map(|(k, v)| {
-            let mut iter = vec![(Rc::from(format!("{}.step", k)), &v.step)];
+            let mut iter = vec![(Rc::from(format!("{k}.step")), &v.step)];
 
             if let Some(exp_avg_sq_row) = &v.exp_avg_sq_row {
-                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq_row")), exp_avg_sq_row));
             }
 
             if let Some(exp_avg_sq_col) = &v.exp_avg_sq_col {
-                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq_col")), exp_avg_sq_col));
             }
 
             if let Some(exp_avg_sq) = &v.exp_avg_sq {
-                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq")), exp_avg_sq));
             }
 
             if let Some(exp_avg) = &v.exp_avg {
-                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+                iter.push((Rc::from(format!("{k}.exp_avg")), exp_avg));
             }
 
             iter
@@ -69,22 +69,22 @@ impl OptimizerState for State<AdafactorState> {
 
     fn flatten_mut(&mut self) -> impl Iterator<Item = (Rc<str>, &mut Array)> {
         self.iter_mut().flat_map(|(k, v)| {
-            let mut iter = vec![(Rc::from(format!("{}.step", k)), &mut v.step)];
+            let mut iter = vec![(Rc::from(format!("{k}.step")), &mut v.step)];
 
             if let Some(exp_avg_sq_row) = &mut v.exp_avg_sq_row {
-                iter.push((Rc::from(format!("{}.exp_avg_sq_row", k)), exp_avg_sq_row));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq_row")), exp_avg_sq_row));
             }
 
             if let Some(exp_avg_sq_col) = &mut v.exp_avg_sq_col {
-                iter.push((Rc::from(format!("{}.exp_avg_sq_col", k)), exp_avg_sq_col));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq_col")), exp_avg_sq_col));
             }
 
             if let Some(exp_avg_sq) = &mut v.exp_avg_sq {
-                iter.push((Rc::from(format!("{}.exp_avg_sq", k)), exp_avg_sq));
+                iter.push((Rc::from(format!("{k}.exp_avg_sq")), exp_avg_sq));
             }
 
             if let Some(exp_avg) = &mut v.exp_avg {
-                iter.push((Rc::from(format!("{}.exp_avg", k)), exp_avg));
+                iter.push((Rc::from(format!("{k}.exp_avg")), exp_avg));
             }
 
             iter

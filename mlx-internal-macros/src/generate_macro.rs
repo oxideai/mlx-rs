@@ -200,8 +200,7 @@ fn generate_macro(
     );
 
     let macro_docs = format!(
-        "Macro generated for the function [`{}::{}`]. See the function documentation for more details.",
-        doc_mod_path, trimmed_fn_ident
+        "Macro generated for the function [`{doc_mod_path}::{trimmed_fn_ident}`]. See the function documentation for more details."
     );
 
     let generated = quote! {

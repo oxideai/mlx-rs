@@ -30,8 +30,8 @@ impl Default for Ord<'_> {
 impl std::fmt::Display for Ord<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Ord::Str(s) => write!(f, "{}", s),
-            Ord::P(p) => write!(f, "{}", p),
+            Ord::Str(s) => write!(f, "{s}"),
+            Ord::P(p) => write!(f, "{p}"),
         }
     }
 }
@@ -108,7 +108,7 @@ pub fn norm_matrix_device<'a>(
     #[optional] keep_dims: impl Into<Option<bool>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let ord = CString::new(ord).map_err(|e| Exception::custom(format!("{}", e)))?;
+    let ord = CString::new(ord).map_err(|e| Exception::custom(format!("{e}")))?;
     let keep_dims = keep_dims.into().unwrap_or(false);
 
     match axes.into_option() {
@@ -455,7 +455,7 @@ pub fn eigh_device(
 ) -> Result<(Array, Array)> {
     let a = a.as_ref();
     let uplo =
-        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
+        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
 
     <(Array, Array) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
         mlx_sys::mlx_linalg_eigh(
@@ -481,7 +481,7 @@ pub fn eigvalsh_device(
 ) -> Result<Array> {
     let a = a.as_ref();
     let uplo =
-        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{}", e)))?;
+        CString::new(uplo.unwrap_or("L")).map_err(|e| Exception::custom(format!("{e}")))?;
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_linalg_eigvalsh(res, a.as_ptr(), uplo.as_ptr(), stream.as_ref().as_ptr())
     })

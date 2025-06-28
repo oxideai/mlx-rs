@@ -289,7 +289,7 @@ pub enum CrossEntropyBuildError {
 
 impl From<CrossEntropyBuildError> for Exception {
     fn from(value: CrossEntropyBuildError) -> Self {
-        Exception::custom(format!("{}", value))
+        Exception::custom(format!("{value}"))
     }
 }
 

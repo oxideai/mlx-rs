@@ -23,7 +23,7 @@ pub(crate) fn expand_generate_builder(input: &DeriveInput) -> Result<proc_macro2
 
     let struct_ident = &struct_prop.ident;
     let builder_struct_ident =
-        syn::Ident::new(&format!("{}Builder", struct_ident), struct_ident.span());
+        syn::Ident::new(&format!("{struct_ident}Builder"), struct_ident.span());
     let root = match struct_prop.root {
         Some(path) => path,
         None => syn::parse_quote!(::mlx_rs),

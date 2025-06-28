@@ -28,7 +28,7 @@ impl<K, V> NestedValue<K, V> {
             }
             NestedValue::Map(entries) => entries
                 .into_iter()
-                .flat_map(|(key, value)| value.flatten(&format!("{}{}{}", prefix, DELIMITER, key)))
+                .flat_map(|(key, value)| value.flatten(&format!("{prefix}{DELIMITER}{key}")))
                 .collect(),
         }
     }

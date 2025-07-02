@@ -2536,13 +2536,13 @@ mod tests {
 
     #[test]
     fn test_unary_real() {
-        let array = Array::from_complex64(complex::new(0.0, 1.0));;
+        let array = Array::from_complex64(mlx_rs::complex::new(0.0, 1.0));;
         assert_eq!(real(&x).unwrap(), Array::from_f32(0.0));
     }
 
     #[test]
     fn test_unary_imag() {
-        let array = Array::from_complex64(complex::new(0.0, 1.0));;
+        let array = Array::from_complex64(mlx_rs::complex::new(0.0, 1.0));;
         assert_eq!(imag(&x).unwrap(), Array::from_f32(1.0));
     }
     

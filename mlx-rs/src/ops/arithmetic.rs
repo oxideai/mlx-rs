@@ -2536,7 +2536,7 @@ mod tests {
 
     #[test]
     fn test_unary_real_imag() {
-        let x = Array::from_complex(mlx_rs::complex::new(0.0, 1.0));
+        let x = Array::from_complex(complex64::new(0.0, 1.0));
         assert_eq!(real(&x).unwrap(), Array::from_f32(0.0));
         assert_eq!(imag(&x).unwrap(), Array::from_f32(1.0));
     }

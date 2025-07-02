@@ -652,6 +652,22 @@ impl Array {
             mlx_sys::mlx_square(res, self.as_ptr(), stream.as_ref().as_ptr())
         })
     }
+
+    /// Element-wise real part from a complex array.
+    #[default_device]
+    pub fn real_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_real(res, self.as_ptr(), stream.as_ref().as_ptr())
+        })
+    }
+
+    /// Element-wise imag part from a complex array.
+    #[default_device]
+    pub fn imag_device(&self, stream: impl AsRef<Stream>) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_imag(res, self.as_ptr(), stream.as_ref().as_ptr())
+        })
+    }
 }
 
 /// Element-wise absolute value.
@@ -1303,6 +1319,24 @@ pub fn tan_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) 
 pub fn tanh_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tanh(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
+/// Element-wise real part from a complex array.
+#[generate_macro]
+#[default_device]
+pub fn real_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_real(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
+/// Element-wise imaginary part from a complex array.
+#[generate_macro]
+#[default_device]
+pub fn imag_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_imag(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
     })
 }
 
@@ -2498,6 +2532,13 @@ mod tests {
         )
         .unwrap()
         .item::<bool>());
+    }
+
+    #[test]
+    fn test_unary_real_imag() {
+        let x = Array::from_complex(complex64::new(0.0, 1.0));
+        assert_eq!(real(&x).unwrap(), Array::from_f32(0.0));
+        assert_eq!(imag(&x).unwrap(), Array::from_f32(1.0));
     }
 
     #[test]

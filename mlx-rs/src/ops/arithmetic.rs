@@ -2540,7 +2540,7 @@ mod tests {
         assert_eq!(real(&x).unwrap(), Array::from_f32(0.0));
         assert_eq!(imag(&x).unwrap(), Array::from_f32(1.0));
     }
-    
+
     #[test]
     fn test_binary_add() {
         let x = array![1.0];

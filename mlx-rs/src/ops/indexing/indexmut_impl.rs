@@ -8,6 +8,7 @@ use crate::{
     ops::{
         broadcast_arrays_device, broadcast_to_device,
         indexing::{count_non_new_axis_operations, expand_ellipsis_operations},
+        reshape_device,
     },
     utils::{resolve_index_signed_unchecked, VectorArray},
     Array, Stream,
@@ -84,50 +85,69 @@ fn update_slice(
     let operations = expand_ellipsis_operations(ndim, operations);
 
     // If no non-None indices return the broadcasted update
-    if count_non_new_axis_operations(&operations) == 0 {
+    let non_new_axis_operation_count = count_non_new_axis_operations(&operations);
+    if non_new_axis_operation_count == 0 {
         return Ok(Some(broadcast_to_device(&update, src.shape(), &stream)?));
     }
 
     // Process entries
-    let mut update_expand_dims: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::new();
-    let mut axis = 0i32;
-    for item in operations.iter() {
+    // let mut update_expand_dims: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = SmallVec::new();
+    let mut update_reshape: SmallVec<[i32; DEFAULT_STACK_VEC_LEN]> = smallvec![0; ndim];
+    let mut axis = src.ndim() - 1;
+    let mut update_axis = update.ndim() as i32 - 1;
+
+    while axis >= non_new_axis_operation_count {
+        if update_axis >= 0 {
+            update_reshape[axis] = update.dim(update_axis);
+            update_axis -= 1;
+        } else {
+            update_reshape[axis] = 1;
+        }
+        axis -= 1;
+    }
+
+    for item in operations.iter().rev() {
         use ArrayIndexOp::*;
 
         match item {
             TakeIndex { index } => {
-                let size = src.dim(axis);
+                let size = src.dim(axis as i32);
                 let index = if index.is_negative() {
                     size + index
                 } else {
                     *index
                 };
                 // SAFETY: axis is always non-negative
-                starts[axis as usize] = index;
-                ends[axis as usize] = index + 1;
-                if ndim - (axis as usize) < update.ndim() {
-                    update_expand_dims.push(axis.saturating_sub_unsigned(ndim as u32));
-                }
+                starts[axis] = index;
+                ends[axis] = index.saturating_add(1);
 
-                axis = axis.saturating_add(1);
+                update_reshape[axis] = 1;
+                axis = axis.saturating_sub(1);
             }
-            Slice(range_index) => {
-                let size = src.dim(axis);
+            Slice(slice) => {
+                let size = src.dim(axis as i32);
                 // SAFETY: axis is always non-negative
-                starts[axis as usize] = range_index.start(size);
-                ends[axis as usize] = range_index.end(size);
-                strides[axis as usize] = range_index.stride();
-                axis = axis.saturating_add(1);
+                starts[axis] = slice.start(size);
+                ends[axis] = slice.end(size);
+                strides[axis] = slice.stride();
+
+                if update_axis >= 0 {
+                    update_reshape[axis] = update.dim(update_axis);
+                    update_axis = update_axis.saturating_sub(1);
+                } else {
+                    update_reshape[axis] = 1;
+                }
+                axis = axis.saturating_sub(1);
             }
-            ExpandDims => {}
+            ExpandDims => break,
             Ellipsis | TakeArray { indices: _ } | TakeArrayRef { indices: _ } => {
                 panic!("unexpected item in operations")
             }
         }
     }
 
-    if !update_expand_dims.is_empty() {
-        update = Cow::Owned(update.expand_dims_axes_device(&update_expand_dims, &stream)?);
+    if update.shape() != &update_reshape[..] {
+        update = Cow::Owned(reshape_device(update, &update_reshape, &stream)?);
     }
 
     Ok(Some(src.slice_update_device(
@@ -1277,7 +1297,10 @@ where
 /// The unit tests below are adapted from the Swift binding tests
 #[cfg(test)]
 mod tests {
-    use crate::{ops::indexing::*, Array};
+    use crate::{
+        ops::{indexing::*, ones, zeros},
+        Array,
+    };
 
     #[test]
     fn test_array_mutate_single_index() {
@@ -1472,5 +1495,13 @@ mod tests {
             ),
             128142
         );
+    }
+
+    #[test]
+    fn test_slice_update_with_broadcast() {
+        let mut xs = zeros::<f32>(&[4, 3, 2]).unwrap();
+        let x = ones::<f32>(&[4, 2]).unwrap();
+
+        xs.index_mut((.., 0, ..), x);
     }
 }

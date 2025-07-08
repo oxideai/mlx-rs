@@ -139,7 +139,7 @@ fn update_slice(
                 }
                 axis = axis.saturating_sub(1);
             }
-            ExpandDims => {},
+            ExpandDims => {}
             Ellipsis | TakeArray { indices: _ } | TakeArrayRef { indices: _ } => {
                 panic!("unexpected item in operations")
             }

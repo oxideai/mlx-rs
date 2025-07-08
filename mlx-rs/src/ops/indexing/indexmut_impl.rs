@@ -1503,6 +1503,10 @@ mod tests {
         let x = ones::<f32>(&[4, 2]).unwrap();
 
         let result = xs.try_index_mut((.., 0, ..), x);
-        assert!(result.is_ok(), "Failed to update slice with broadcast: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Failed to update slice with broadcast: {:?}",
+            result
+        );
     }
 }

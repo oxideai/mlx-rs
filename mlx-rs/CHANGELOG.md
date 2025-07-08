@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.25.0-alpha.1
+## 0.25.1
 
-- Update `mlx-c` to version "0.2.0-alpha" and changes function signatures to
+- Fix bug with `index_mut`
+
+## 0.25.0
+
+- Update `mlx-c` to version "0.2.0" and changes function signatures to
   match the new API
 - Update `thiserror` to version "2"
 - Fix wrong states number in `compile_with_state`

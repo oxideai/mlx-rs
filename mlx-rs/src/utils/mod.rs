@@ -256,7 +256,11 @@ where
     let payload = raw as *mut std::ffi::c_void;
 
     unsafe {
-        mlx_sys::mlx_closure_new_func_payload(Some(trampoline::<F>), payload, Some(closure_dtor::<F>))
+        mlx_sys::mlx_closure_new_func_payload(
+            Some(trampoline::<F>),
+            payload,
+            Some(closure_dtor::<F>),
+        )
     }
 }
 
@@ -315,12 +319,12 @@ where
         let arrays = match mlx_vector_array_values(vector_array) {
             Ok(arrays) => arrays,
             Err(_) => {
-                let _ = Box::into_raw(closure); // prevent premature drop 
+                let _ = Box::into_raw(closure); // prevent premature drop
                 return FAILURE;
             }
         };
         let result = closure(&arrays);
-        let _ = Box::into_raw(closure); // prevent premature drop 
+        let _ = Box::into_raw(closure); // prevent premature drop
 
         // We should probably keep using new_mlx_vector_array here instead of VectorArray
         // since we probably don't want to drop the arrays in the closure
@@ -344,13 +348,13 @@ where
         let arrays = match mlx_vector_array_values(vector_array) {
             Ok(arrays) => arrays,
             Err(e) => {
-                let _ = Box::into_raw(closure); // prevent premature drop 
+                let _ = Box::into_raw(closure); // prevent premature drop
                 set_closure_error(e);
                 return FAILURE;
             }
         };
         let result = closure(&arrays);
-        let _ = Box::into_raw(closure); // prevent premature drop 
+        let _ = Box::into_raw(closure); // prevent premature drop
 
         match result {
             Ok(result) => {
@@ -365,15 +369,16 @@ where
     }
 }
 
-extern "C" fn noop_dtor(_data: *mut std::ffi::c_void) {}
+// extern "C" fn noop_dtor(_data: *mut std::ffi::c_void) {}
 
-extern "C" fn closure_dtor<F>(payload: *mut c_void) {
-    if payload.is_null() { return; }
+extern "C" fn closure_dtor<F>(payload: *mut std::ffi::c_void) {
+    if payload.is_null() {
+        return;
+    }
     unsafe {
         drop(Box::from_raw(payload as *mut F));
     }
 }
-
 
 pub(crate) fn get_mut_or_insert_with<'a, T>(
     map: &'a mut HashMap<Rc<str>, T>,

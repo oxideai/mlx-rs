@@ -105,10 +105,10 @@ struct Generate<'a> {
 }
 
 enum GenerateState<'a> {
-    Start {
+    Prefill {
         prompt_token: &'a Array,
     },
-    Continue {
+    Decoding {
         y: Array,
         cache: Vec<Option<(Array, Array)>>,
     },
@@ -119,7 +119,7 @@ impl<'a> Generate<'a> {
         Self {
             model,
             temp,
-            state: GenerateState::Start { prompt_token },
+            state: GenerateState::Prefill { prompt_token },
         }
     }
 }
@@ -129,7 +129,7 @@ impl Iterator for Generate<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &self.state {
-            GenerateState::Start { prompt_token } => {
+            GenerateState::Prefill { prompt_token } => {
                 let initial_cache = Vec::with_capacity(0); // This won't allocate
                 let input = MistralInput {
                     inputs: prompt_token,
@@ -138,14 +138,14 @@ impl Iterator for Generate<'_> {
                 let MistralOutput { logits, cache } = tri!(self.model.forward(input));
                 let y = tri!(sample(&logits.index((.., -1, ..)), self.temp));
 
-                self.state = GenerateState::Continue {
+                self.state = GenerateState::Decoding {
                     y: y.clone(),
                     cache,
                 };
 
                 Some(Ok(y))
             }
-            GenerateState::Continue { y, cache } => {
+            GenerateState::Decoding { y, cache } => {
                 let next_token = y.index((.., NewAxis));
                 let input = MistralInput {
                     inputs: &next_token,
@@ -159,7 +159,7 @@ impl Iterator for Generate<'_> {
                 let logits = tri!(logits.squeeze_axes(&[1]));
                 let y = tri!(sample(&logits, self.temp));
 
-                self.state = GenerateState::Continue {
+                self.state = GenerateState::Decoding {
                     y: y.clone(),
                     cache: new_cache,
                 };

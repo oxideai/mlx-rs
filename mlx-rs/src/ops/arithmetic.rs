@@ -742,6 +742,17 @@ pub fn atan_device(a: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>)
     })
 }
 
+/// Element-wise inverse tangent of b/a choosing the quadrant correctly.
+#[generate_macro]
+#[default_device]
+pub fn atan2_device(a: impl AsRef<Array>, b: impl AsRef<Array>, #[optional] stream: impl AsRef<Stream>) -> Result<Array> {
+    let a = a.as_ref();
+    let b = b.as_ref();    
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_arctan2(res, a.as_ptr(), b.as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
 /// Element-wise inverse hyperbolic tangent.
 #[generate_macro]
 #[default_device]

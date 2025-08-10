@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap};
+use std::collections::HashMap;
 
 use mlx_rs::{builder::Builder, error::Exception, macros::ModuleParameters, nn};
 use serde::Deserialize;
@@ -35,23 +35,26 @@ pub fn initialize_rope(
     let rope_type = scaling_config
         .as_ref()
         .and_then(|config| {
-            config.get("type")
+            config
+                .get("type")
                 .or_else(|| config.get("rope_type"))
                 .map(FloatOrString::borrowed)
         })
         .unwrap_or(FloatOrStr::Str("default"));
 
-    if rope_type == FloatOrStr::Str("default") ||
-        rope_type == FloatOrStr::Str("linear") 
-    {
+    if rope_type == FloatOrStr::Str("default") || rope_type == FloatOrStr::Str("linear") {
         let scale = if rope_type == FloatOrStr::Str("linear") {
-            let den = match scaling_config.as_ref().and_then(|config| config.get("factor"))
+            let den = match scaling_config
+                .as_ref()
+                .and_then(|config| config.get("factor"))
                 .map(FloatOrString::borrowed)
-                .ok_or_else(|| Exception::custom(r#"key "factor" is not found in scaling config"#))? {
+                .ok_or_else(|| {
+                    Exception::custom(r#"key "factor" is not found in scaling config"#)
+                })? {
                 FloatOrStr::Float(f) => f,
-                FloatOrStr::Str(s) => s.parse::<f32>().map_err(|_| {
-                    Exception::custom(r#"key "factor" is not a valid float"#)
-                })?,
+                FloatOrStr::Str(s) => s
+                    .parse::<f32>()
+                    .map_err(|_| Exception::custom(r#"key "factor" is not a valid float"#))?,
             };
 
             1.0 / den
@@ -65,7 +68,7 @@ pub fn initialize_rope(
             .scale(scale)
             .build()
             .expect("Infallible");
-        return Ok(rope)
+        return Ok(rope);
     } else if rope_type == FloatOrStr::Str("llama3") {
         todo!()
     } else if rope_type == FloatOrStr::Str("yarn") {
@@ -74,7 +77,9 @@ pub fn initialize_rope(
         todo!()
     }
 
-    Err(Exception::custom(format!("Unsupported RoPE type {:?}", rope_type)))
+    Err(Exception::custom(format!(
+        "Unsupported RoPE type {rope_type:?}"
+    )))
 }
 
 #[derive(Debug, Clone, ModuleParameters)]

@@ -1,9 +1,8 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use mlx_rs::{
     builder::Builder,
     error::Exception,
-    fast::scaled_dot_product_attention,
     macros::{ModuleParameters, Quantizable},
     module::Module,
     nn,
@@ -13,24 +12,24 @@ use mlx_rs::{
 
 use crate::{
     cache_utils::KeyValueCache,
-    rope_utils::{initialize_rope, FloatOrString},
+    rope_utils::{initialize_rope, FloatOrString}, utils::{create_attention_mask, AttentionMask},
 };
 
 #[derive(Debug, Clone)]
 pub struct ModelArgs {
-    model_type: String,
-    hidden_size: i32,
-    num_hidden_layers: i32,
-    intermediate_size: i32,
-    num_attention_heads: i32,
-    rms_norm_eps: f32,
-    vocab_size: i32,
-    num_key_value_heads: i32,
-    max_position_embeddings: i32,
-    rope_theta: f32,
-    head_dim: i32,
-    tie_word_embeddings: bool,
-    rope_scaling: Option<HashMap<String, FloatOrString>>,
+    pub model_type: String,
+    pub hidden_size: i32,
+    pub num_hidden_layers: i32,
+    pub intermediate_size: i32,
+    pub num_attention_heads: i32,
+    pub rms_norm_eps: f32,
+    pub vocab_size: i32,
+    pub num_key_value_heads: i32,
+    pub max_position_embeddings: i32,
+    pub rope_theta: f32,
+    pub head_dim: i32,
+    pub tie_word_embeddings: bool,
+    pub rope_scaling: Option<HashMap<String, FloatOrString>>,
 }
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
@@ -100,10 +99,10 @@ impl Attention {
             n_heads,
             n_kv_heads,
             scale,
-            q_proj: MaybeQuantized::new(q_proj),
-            k_proj: MaybeQuantized::new(k_proj),
-            v_proj: MaybeQuantized::new(v_proj),
-            o_proj: MaybeQuantized::new(o_proj),
+            q_proj: MaybeQuantized::Original(q_proj),
+            k_proj: MaybeQuantized::Original(k_proj),
+            v_proj: MaybeQuantized::Original(v_proj),
+            o_proj: MaybeQuantized::Original(o_proj),
             q_norm,
             k_norm,
             rope,
@@ -123,6 +122,14 @@ impl KeyValueCache for Cache {
         keys: Array,
         values: Array,
     ) -> Result<(Array, Array), Exception> {
+        todo!()
+    }
+
+    fn offset(&self) -> i32 {
+        self.offset
+    }
+
+    fn max_size(&self) -> Option<i32> {
         todo!()
     }
 }
@@ -229,9 +236,9 @@ impl Mlp {
             .build()?;
 
         Ok(Self {
-            gate_proj: MaybeQuantized::new(gate_proj),
-            down_proj: MaybeQuantized::new(down_proj),
-            up_proj: MaybeQuantized::new(up_proj),
+            gate_proj: MaybeQuantized::Original(gate_proj),
+            down_proj: MaybeQuantized::Original(down_proj),
+            up_proj: MaybeQuantized::Original(up_proj),
         })
     }
 }
@@ -243,7 +250,7 @@ impl Module<&Array> for Mlp {
 
     fn forward(&mut self, input: &Array) -> Result<Self::Output, Self::Error> {
         let down_proj_input =
-            nn::silu(self.gate_proj.forward(input)?)? * self.up_proj.forward(input)?;
+            nn::silu(self.gate_proj.forward(input)?)?.multiply(self.up_proj.forward(input)?)?;
         self.down_proj.forward(&down_proj_input)
     }
 
@@ -251,5 +258,178 @@ impl Module<&Array> for Mlp {
         self.gate_proj.training_mode(mode);
         self.down_proj.training_mode(mode);
         self.up_proj.training_mode(mode);
+    }
+}
+
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
+pub struct TransformerBlock {
+    pub num_attention_heads: i32,
+    pub hidden_size: i32,
+
+    #[quantizable]
+    #[param]
+    pub self_attn: Attention,
+
+    #[quantizable]
+    #[param]
+    pub mlp: Mlp,
+
+    #[param]
+    pub input_layernorm: nn::RmsNorm,
+
+    #[param]
+    pub post_attention_layernorm: nn::RmsNorm,
+}
+
+impl TransformerBlock {
+    pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
+        let num_attention_heads = args.num_attention_heads;
+        let hidden_size = args.hidden_size;
+
+        let self_attn = Attention::new(args)?;
+        let mlp = Mlp::new(args.hidden_size, args.intermediate_size)?;
+        let input_layernorm = nn::RmsNormBuilder::new(args.hidden_size)
+            .eps(args.rms_norm_eps)
+            .build()?;
+        let post_attention_layernorm = nn::RmsNormBuilder::new(args.hidden_size)
+            .eps(args.rms_norm_eps)
+            .build()?;
+
+        Ok(Self {
+            num_attention_heads,
+            hidden_size,
+            self_attn,
+            mlp,
+            input_layernorm,
+            post_attention_layernorm,
+        })
+    }
+}
+
+impl Module<AttentionInput<'_>> for TransformerBlock {
+    type Output = Array;
+
+    type Error = Exception;
+
+    fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
+        let AttentionInput { x, mask, cache } = input;
+
+        let self_attn_input = AttentionInput {
+            x: &self.input_layernorm.forward(x)?,
+            mask,
+            cache,
+        };
+        let r = self.self_attn.forward(self_attn_input)?;
+        let h = x.add(r)?;
+
+        let r = self
+            .mlp
+            .forward(&self.post_attention_layernorm.forward(&h)?)?;
+        h.add(r)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.self_attn.training_mode(mode);
+        self.mlp.training_mode(mode);
+        self.input_layernorm.training_mode(mode);
+        self.post_attention_layernorm.training_mode(mode);
+    }
+}
+
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
+pub struct Qwen3Model {
+    pub vocab_size: i32,
+    pub num_hidden_layers: i32,
+
+    #[quantizable]
+    #[param]
+    pub embed_tokens: MaybeQuantized<nn::Embedding>,
+
+    #[quantizable]
+    #[param]
+    pub layers: Vec<TransformerBlock>,
+
+    #[param]
+    pub norm: nn::RmsNorm,
+}
+
+impl Qwen3Model {
+    pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
+        assert!(args.vocab_size.is_positive());
+
+        let vocab_size = args.vocab_size;
+        let num_hidden_layers = args.num_hidden_layers;
+
+        let embed_tokens = nn::Embedding::new(args.vocab_size, args.hidden_size)?;
+        let layers = (0..num_hidden_layers)
+            .map(|_| TransformerBlock::new(args))
+            .collect::<Result<Vec<_>, _>>()?;
+        let norm = nn::RmsNormBuilder::new(args.hidden_size)
+            .eps(args.rms_norm_eps)
+            .build()?;
+
+        Ok(Self {
+            vocab_size,
+            num_hidden_layers,
+            embed_tokens: MaybeQuantized::Original(embed_tokens),
+            layers,
+            norm,
+        })
+    }
+}
+
+pub struct ModelInput<'a> {
+    pub inputs: &'a Array,
+    pub mask: Option<&'a Array>,
+    pub cache: &'a mut Vec<Option<Cache>>,
+}
+
+impl Module<ModelInput<'_>> for Qwen3Model {
+    type Output = Array;
+
+    type Error = Exception;
+
+    fn forward(&mut self, input: ModelInput<'_>) -> Result<Self::Output, Self::Error> {
+        let ModelInput {
+            inputs,
+            mask,
+            cache,
+        } = input;
+
+        let mut h = self.embed_tokens.forward(inputs)?;
+
+        let mask = match mask {
+            Some(mask) => Some(mask.clone()),
+            None => match create_attention_mask(&h, cache, None)? {
+                Some(AttentionMask::Array(a)) => Some(a),
+                Some(AttentionMask::Causal) => return Err(Exception::custom("Only `Array` mask is supported")),
+                None => None
+            },
+        };
+        
+        if cache.is_empty() {
+            *cache = (0..self.layers.len())
+                .map(|_| None)
+                .collect();
+        }
+
+        for (layer, c) in self.layers.iter_mut().zip(cache.iter_mut()) {
+            let layer_input = AttentionInput {
+                x: &h,
+                mask: mask.as_ref(),
+                cache: c.as_mut(),
+            };
+            h = layer.forward(layer_input)?;
+        }
+
+        self.norm.forward(&h)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.embed_tokens.training_mode(mode);
+        for layer in &mut self.layers {
+            layer.training_mode(mode);
+        }
+        self.norm.training_mode(mode);
     }
 }

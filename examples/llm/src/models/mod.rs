@@ -1,3 +1,1 @@
-mod qwen3;
-
-pub use qwen3::*;
+pub mod qwen3;

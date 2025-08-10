@@ -161,6 +161,52 @@ impl Parameter for Param<Option<Array>> {
     }
 }
 
+impl<M> Parameter for Option<M>
+where 
+    M: ModuleParameters,
+{
+    fn count(&self) -> usize {
+        self.as_ref().map_or(0, |m| m.count())
+    }
+
+    fn freeze(&mut self, recursive: bool) {
+        if let Some(m) = self.as_mut() {
+            m.freeze(recursive);
+        }
+    }
+
+    fn unfreeze(&mut self, recursive: bool) {
+        if let Some(m) = self.as_mut() {
+            m.unfreeze(recursive);
+        }
+    }
+
+    fn is_frozen(&self) -> Option<bool> {
+        self.as_ref().and_then(|m| m.is_frozen())
+    }
+
+    fn as_nested_value(&self) -> NestedValue<Rc<str>, &Array> {
+        match self {
+            Some(m) => m.as_nested_value(),
+            None => NestedValue::Map(HashMap::with_capacity(0)),
+        }
+    }
+
+    fn as_nested_value_mut(&mut self) -> NestedValue<Rc<str>, &mut Array> {
+        match self {
+            Some(m) => m.as_nested_value_mut(),
+            None => NestedValue::Map(HashMap::with_capacity(0)),
+        }
+    }
+
+    fn as_trainable_nested_value(&self) -> Option<NestedValue<Rc<str>, &Array>> {
+        match self {
+            Some(m) => m.as_trainable_nested_value(),
+            None => None,
+        }
+    }
+}
+
 impl<T> Parameter for T
 where
     T: ModuleParameters,

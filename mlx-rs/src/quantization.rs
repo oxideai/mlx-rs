@@ -60,6 +60,26 @@ where
     }
 }
 
+impl<M> Quantizable for Option<M>
+where 
+    M: Quantizable,
+{
+    type Quantized = Option<M::Quantized>;
+
+    type QuantizationError = M::QuantizationError;
+
+    fn try_into_quantized(
+        self,
+        group_size: i32,
+        bits: i32,
+    ) -> Result<Self::Quantized, Self::QuantizationError> {
+        match self {
+            Some(m) => m.try_into_quantized(group_size, bits).map(Some),
+            None => Ok(None),
+        }
+    }
+}
+
 /// A wrapper for a quantizable module.
 #[derive(Debug, Clone)]
 pub enum MaybeQuantized<M>

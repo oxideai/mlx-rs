@@ -433,3 +433,65 @@ impl Module<ModelInput<'_>> for Qwen3Model {
         self.norm.training_mode(mode);
     }
 }
+
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
+pub struct Model {
+    pub args: ModelArgs,
+
+    #[quantizable]
+    #[param]
+    pub model: Qwen3Model,
+
+    #[quantizable]
+    #[param]
+    pub lm_head: Option<MaybeQuantized<nn::Linear>>,
+}
+
+impl Model {
+    pub fn new(args: ModelArgs) -> Result<Self, Exception> {
+        let model = Qwen3Model::new(&args)?;
+        let lm_head = if !args.tie_word_embeddings {
+            Some(nn::LinearBuilder::new(args.hidden_size, args.vocab_size)
+                .bias(false)
+                .build()?)
+                .map(MaybeQuantized::Original)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            args,
+            model,
+            lm_head,
+        })
+    }
+
+    pub fn model_type(&self) -> &str {
+        &self.args.model_type
+    }
+}
+
+impl Module<ModelInput<'_>> for Model {
+    type Output = Array;
+
+    type Error = Exception;
+
+    fn forward(&mut self, input: ModelInput<'_>) -> Result<Self::Output, Self::Error> {
+        let out = self.model.forward(input)?;
+        
+        match self.lm_head.as_mut() {
+            Some(lm_head) => lm_head.forward(&out),
+            None => match &mut self.model.embed_tokens {
+                MaybeQuantized::Original(embed_tokens) => embed_tokens.as_linear(&out),
+                MaybeQuantized::Quantized(q_embed_tokens) => q_embed_tokens.as_linear(&out),
+            }
+        }
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.model.training_mode(mode);
+        if let Some(lm_head) = &mut self.lm_head {
+            lm_head.training_mode(mode);
+        }
+    }
+}

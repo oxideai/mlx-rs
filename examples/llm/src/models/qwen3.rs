@@ -1,10 +1,20 @@
 use std::collections::HashMap;
 
 use mlx_rs::{
-    builder::Builder, error::Exception, fast::scaled_dot_product_attention, macros::{ModuleParameters, Quantizable}, module::Module, nn, quantization::MaybeQuantized, Array
+    builder::Builder,
+    error::Exception,
+    fast::scaled_dot_product_attention,
+    macros::{ModuleParameters, Quantizable},
+    module::Module,
+    nn,
+    quantization::MaybeQuantized,
+    Array,
 };
 
-use crate::{cache_utils::KeyValueCache, rope_utils::{initialize_rope, FloatOrString}};
+use crate::{
+    cache_utils::KeyValueCache,
+    rope_utils::{initialize_rope, FloatOrString},
+};
 
 #[derive(Debug, Clone)]
 pub struct ModelArgs {
@@ -25,28 +35,28 @@ pub struct ModelArgs {
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
 pub struct Attention {
-    n_heads: i32,
-    n_kv_heads: i32,
-    scale: f32,
+    pub n_heads: i32,
+    pub n_kv_heads: i32,
+    pub scale: f32,
 
     #[quantizable]
     #[param]
-    q_proj: MaybeQuantized<nn::Linear>,
+    pub q_proj: MaybeQuantized<nn::Linear>,
     #[quantizable]
     #[param]
-    k_proj: MaybeQuantized<nn::Linear>,
+    pub k_proj: MaybeQuantized<nn::Linear>,
     #[quantizable]
     #[param]
-    v_proj: MaybeQuantized<nn::Linear>,
+    pub v_proj: MaybeQuantized<nn::Linear>,
     #[quantizable]
     #[param]
-    o_proj: MaybeQuantized<nn::Linear>,
+    pub o_proj: MaybeQuantized<nn::Linear>,
     #[param]
-    q_norm: nn::RmsNorm,
+    pub q_norm: nn::RmsNorm,
     #[param]
-    k_norm: nn::RmsNorm,
+    pub k_norm: nn::RmsNorm,
     #[param]
-    rope: nn::Rope,
+    pub rope: nn::Rope,
 }
 
 impl Attention {
@@ -171,9 +181,11 @@ impl Module<AttentionInput<'_>> for Attention {
             keys = self.rope.forward(nn::RopeInput::new(&keys))?;
         }
 
-        let output = crate::utils::scaled_dot_product_attention(queries, keys, values, cache, self.scale, mask)?
-            .transpose_axes(&[0, 2, 1, 3])?
-            .reshape(&[B, L, -1])?;
+        let output = crate::utils::scaled_dot_product_attention(
+            queries, keys, values, cache, self.scale, mask,
+        )?
+        .transpose_axes(&[0, 2, 1, 3])?
+        .reshape(&[B, L, -1])?;
 
         self.o_proj.forward(&output)
     }
@@ -186,5 +198,58 @@ impl Module<AttentionInput<'_>> for Attention {
         self.q_norm.training_mode(mode);
         self.k_norm.training_mode(mode);
         <nn::Rope as Module<nn::RopeInput>>::training_mode(&mut self.rope, mode);
+    }
+}
+
+#[derive(Debug, Clone, ModuleParameters, Quantizable)]
+pub struct Mlp {
+    #[quantizable]
+    #[param]
+    pub gate_proj: MaybeQuantized<nn::Linear>,
+
+    #[quantizable]
+    #[param]
+    pub down_proj: MaybeQuantized<nn::Linear>,
+
+    #[quantizable]
+    #[param]
+    pub up_proj: MaybeQuantized<nn::Linear>,
+}
+
+impl Mlp {
+    pub fn new(dim: i32, hidden_dim: i32) -> Result<Self, Exception> {
+        let gate_proj = nn::LinearBuilder::new(dim, hidden_dim)
+            .bias(false)
+            .build()?;
+        let down_proj = nn::LinearBuilder::new(hidden_dim, dim)
+            .bias(false)
+            .build()?;
+        let up_proj = nn::LinearBuilder::new(dim, hidden_dim)
+            .bias(false)
+            .build()?;
+
+        Ok(Self {
+            gate_proj: MaybeQuantized::new(gate_proj),
+            down_proj: MaybeQuantized::new(down_proj),
+            up_proj: MaybeQuantized::new(up_proj),
+        })
+    }
+}
+
+impl Module<&Array> for Mlp {
+    type Output = Array;
+
+    type Error = Exception;
+
+    fn forward(&mut self, input: &Array) -> Result<Self::Output, Self::Error> {
+        let down_proj_input =
+            nn::silu(self.gate_proj.forward(input)?)? * self.up_proj.forward(input)?;
+        self.down_proj.forward(&down_proj_input)
+    }
+
+    fn training_mode(&mut self, mode: bool) {
+        self.gate_proj.training_mode(mode);
+        self.down_proj.training_mode(mode);
+        self.up_proj.training_mode(mode);
     }
 }

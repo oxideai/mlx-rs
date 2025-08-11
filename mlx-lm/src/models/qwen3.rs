@@ -1,21 +1,23 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::{HashMap, HashSet}, hash::Hash};
 
+use hf_hub::api::sync::ApiRepo;
 use mlx_rs::{
     builder::Builder,
     error::Exception,
     macros::{ModuleParameters, Quantizable},
-    module::Module,
+    module::{Module, ModuleParametersExt},
     nn,
     quantization::MaybeQuantized,
     Array,
 };
+use serde::Deserialize;
+use serde_json::Value;
 
 use crate::{
-    cache_utils::KeyValueCache,
-    rope_utils::{initialize_rope, FloatOrString}, utils::{create_attention_mask, AttentionMask},
+    cache_utils::KeyValueCache, error::Error, rope_utils::{initialize_rope, FloatOrString}, utils::{create_attention_mask, AttentionMask}
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ModelArgs {
     pub model_type: String,
     pub hidden_size: i32,
@@ -493,5 +495,57 @@ impl Module<ModelInput<'_>> for Model {
         if let Some(lm_head) = &mut self.lm_head {
             lm_head.training_mode(mode);
         }
+    }
+}
+
+pub fn get_qwen3_model_args(repo: &ApiRepo) -> Result<ModelArgs, Error> {
+    let model_args_filename = repo.get("params.json")?;
+    let file = std::fs::File::open(model_args_filename)?;
+    let model_args: ModelArgs = serde_json::from_reader(file)?;
+
+    Ok(model_args)
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct WeightMap {
+    metadata: HashMap<String, Value>,
+    weight_map: HashMap<String, String>,
+}
+
+pub fn load_qwen3_model(repo: &ApiRepo) -> Result<Model, Error> {
+    let model_args = get_qwen3_model_args(repo)?;
+    let mut model = Model::new(model_args)?;
+
+    let weights_index = repo.get("model.safetensors.index.json")?;
+    let json = std::fs::read_to_string(weights_index)?;
+    let weight_map: WeightMap = serde_json::from_str(&json)?;
+
+    let weight_files: HashSet<&String> = weight_map.weight_map.values().collect();
+
+    for weight_file in weight_files {
+        let weights_filename = repo.get(weight_file)?;
+        model.load_safetensors(weights_filename)?;
+    }
+
+    Ok(model)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use hf_hub::{api::sync::ApiBuilder, Repo};
+
+    #[test]
+    fn test_load_qwen3_model() {
+        let hf_cache_dir = PathBuf::from("./target/hf_cache");
+
+        let mut api_builder = ApiBuilder::new();
+        api_builder = api_builder.with_cache_dir(hf_cache_dir);
+        let api = api_builder.build().unwrap();
+
+        let model_path = "mlx-community/Qwen3-0.6B-bf16".to_string();
+        let repo = api.repo(Repo::new(model_path, hf_hub::RepoType::Model));
+        let _model = super::load_qwen3_model(&repo).unwrap();
     }
 }

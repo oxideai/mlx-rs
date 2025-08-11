@@ -21,6 +21,7 @@ members = [
     "mlx-sys",
     "mlx-rs",
     "mlx-internal-macros",
+    "mlx-lm",
     "mlx-tests",
     "examples/*",
 ]

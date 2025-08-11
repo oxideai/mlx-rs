@@ -55,7 +55,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub enum AttentionMask {
+pub(crate) enum AttentionMask {
     Array(Array),
     Causal,
 }

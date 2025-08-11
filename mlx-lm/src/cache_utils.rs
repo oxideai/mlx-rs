@@ -56,3 +56,8 @@ where
         T::update_and_fetch(self, keys, values)
     }
 }
+
+/// TODO: A generic KV Cache
+pub struct DefaultKeyValueCache {
+
+}

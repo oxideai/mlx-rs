@@ -538,7 +538,7 @@ mod tests {
 
     #[test]
     fn test_load_qwen3_model() {
-        let hf_cache_dir = PathBuf::from("./target/hf_cache");
+        let hf_cache_dir = PathBuf::from("./hf_cache");
 
         let mut api_builder = ApiBuilder::new();
         api_builder = api_builder.with_cache_dir(hf_cache_dir);

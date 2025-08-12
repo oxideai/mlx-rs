@@ -499,7 +499,7 @@ impl Module<ModelInput<'_>> for Model {
 }
 
 pub fn get_qwen3_model_args(repo: &ApiRepo) -> Result<ModelArgs, Error> {
-    let model_args_filename = repo.get("params.json")?;
+    let model_args_filename = repo.get("config.json")?;
     let file = std::fs::File::open(model_args_filename)?;
     let model_args: ModelArgs = serde_json::from_reader(file)?;
 

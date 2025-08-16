@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::{HashMap, HashSet}, hash::Hash};
+use std::collections::{HashMap, HashSet};
 
 use hf_hub::api::sync::ApiRepo;
 use mlx_rs::{
@@ -112,44 +112,23 @@ impl Attention {
     }
 }
 
-pub struct Cache {
-    pub offset: i32,
-    pub keys: Array,
-    pub values: Array,
-}
-
-impl KeyValueCache for Cache {
-    fn update_and_fetch(
-        &mut self,
-        keys: Array,
-        values: Array,
-    ) -> Result<(Array, Array), Exception> {
-        todo!()
-    }
-
-    fn offset(&self) -> i32 {
-        self.offset
-    }
-
-    fn max_size(&self) -> Option<i32> {
-        todo!()
-    }
-}
-
 // TODO: check if this input can be generic for other attention modules
-pub struct AttentionInput<'a> {
+pub struct AttentionInput<'a, C> {
     pub x: &'a Array,
     pub mask: Option<&'a Array>,
-    pub cache: Option<&'a mut Cache>,
+    pub cache: Option<&'a mut C>,
 }
 
-impl Module<AttentionInput<'_>> for Attention {
+impl<C> Module<AttentionInput<'_, C>> for Attention 
+where 
+    C: KeyValueCache,
+{
     type Output = Array;
 
     type Error = Exception;
 
     #[allow(non_snake_case)]
-    fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: AttentionInput<'_, C>) -> Result<Self::Output, Self::Error> {
         let AttentionInput { x, mask, mut cache } = input;
 
         let shape = x.shape();
@@ -176,11 +155,11 @@ impl Module<AttentionInput<'_>> for Attention {
 
         if let Some(cache) = cache.as_mut() {
             let q_input = nn::RopeInputBuilder::new(&queries)
-                .offset(cache.offset)
+                .offset(cache.offset())
                 .build()?;
             queries = self.rope.forward(q_input)?;
             let k_input = nn::RopeInputBuilder::new(&keys)
-                .offset(cache.offset)
+                .offset(cache.offset())
                 .build()?;
             keys = self.rope.forward(k_input)?;
 
@@ -308,12 +287,15 @@ impl TransformerBlock {
     }
 }
 
-impl Module<AttentionInput<'_>> for TransformerBlock {
+impl<C> Module<AttentionInput<'_, C>> for TransformerBlock
+where
+    C: KeyValueCache,
+{
     type Output = Array;
 
     type Error = Exception;
 
-    fn forward(&mut self, input: AttentionInput<'_>) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: AttentionInput<'_, C>) -> Result<Self::Output, Self::Error> {
         let AttentionInput { x, mask, cache } = input;
 
         let self_attn_input = AttentionInput {
@@ -331,7 +313,7 @@ impl Module<AttentionInput<'_>> for TransformerBlock {
     }
 
     fn training_mode(&mut self, mode: bool) {
-        self.self_attn.training_mode(mode);
+        <Attention as Module<AttentionInput<'_, C>>>::training_mode(&mut self.self_attn, mode);
         self.mlp.training_mode(mode);
         self.input_layernorm.training_mode(mode);
         self.post_attention_layernorm.training_mode(mode);
@@ -380,18 +362,21 @@ impl Qwen3Model {
     }
 }
 
-pub struct ModelInput<'a> {
+pub struct ModelInput<'a, C> {
     pub inputs: &'a Array,
     pub mask: Option<&'a Array>,
-    pub cache: &'a mut Vec<Option<Cache>>,
+    pub cache: &'a mut Vec<Option<C>>,
 }
 
-impl Module<ModelInput<'_>> for Qwen3Model {
+impl<C> Module<ModelInput<'_, C>> for Qwen3Model
+where
+    C: KeyValueCache,
+{
     type Output = Array;
 
     type Error = Exception;
 
-    fn forward(&mut self, input: ModelInput<'_>) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: ModelInput<'_, C>) -> Result<Self::Output, Self::Error> {
         let ModelInput {
             inputs,
             mask,
@@ -430,7 +415,7 @@ impl Module<ModelInput<'_>> for Qwen3Model {
     fn training_mode(&mut self, mode: bool) {
         self.embed_tokens.training_mode(mode);
         for layer in &mut self.layers {
-            layer.training_mode(mode);
+            <TransformerBlock as Module<AttentionInput<'_, C>>>::training_mode(layer, mode);
         }
         self.norm.training_mode(mode);
     }
@@ -473,12 +458,15 @@ impl Model {
     }
 }
 
-impl Module<ModelInput<'_>> for Model {
+impl<C> Module<ModelInput<'_, C>> for Model
+where
+    C: KeyValueCache,
+{
     type Output = Array;
 
     type Error = Exception;
 
-    fn forward(&mut self, input: ModelInput<'_>) -> Result<Self::Output, Self::Error> {
+    fn forward(&mut self, input: ModelInput<'_, C>) -> Result<Self::Output, Self::Error> {
         let out = self.model.forward(input)?;
         
         match self.lm_head.as_mut() {
@@ -491,7 +479,7 @@ impl Module<ModelInput<'_>> for Model {
     }
 
     fn training_mode(&mut self, mode: bool) {
-        self.model.training_mode(mode);
+        <Qwen3Model as Module<ModelInput<'_, C>>>::training_mode(&mut self.model, mode);
         if let Some(lm_head) = &mut self.lm_head {
             lm_head.training_mode(mode);
         }

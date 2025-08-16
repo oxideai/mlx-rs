@@ -1,4 +1,4 @@
-use mlx_rs::{error::Exception, Array};
+use mlx_rs::{error::Exception, ops::concatenate_axis, Array};
 
 // TODO: somehow move quantized methods to a separate trait?
 pub trait KeyValueCache {
@@ -54,6 +54,48 @@ where
         values: Array,
     ) -> Result<(Array, Array), Exception> {
         T::update_and_fetch(self, keys, values)
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ConcatKeyValueCache {
+    keys: Option<Array>,
+    values: Option<Array>,
+    offset: i32,
+}
+
+impl ConcatKeyValueCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl KeyValueCache for ConcatKeyValueCache {
+    fn offset(&self) -> i32 {
+        self.offset
+    }
+
+    fn max_size(&self) -> Option<i32> {
+        None
+    }
+
+    fn update_and_fetch(&mut self, keys: Array, values: Array)
+        -> Result<(Array, Array), Exception> {
+        match (self.keys.take(), self.values.take()) {
+            (Some(k), Some(v)) => {
+                self.keys = Some(concatenate_axis(&[k, keys], -2)?);
+                self.values = Some(concatenate_axis(&[v, values], -2)?);
+            }
+            _ => {
+                self.keys = Some(keys);
+                self.values = Some(values);
+            }
+        }
+        let shape = self.keys.as_ref().expect("Keys cannot be None").shape();
+        self.offset = shape[shape.len() - 2];
+
+        Ok((self.keys.clone().expect("Keys cannot be None"), 
+            self.values.clone().expect("Values cannot be None")))
     }
 }
 

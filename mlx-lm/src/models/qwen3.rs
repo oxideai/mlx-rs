@@ -2,13 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use hf_hub::api::sync::ApiRepo;
 use mlx_rs::{
-    builder::Builder,
-    error::Exception,
-    macros::{ModuleParameters, Quantizable},
-    module::{Module, ModuleParametersExt},
-    nn,
-    quantization::MaybeQuantized,
-    Array,
+    argmax_axis, array, builder::Builder, categorical, error::Exception, macros::{ModuleParameters, Quantizable}, module::{Module, ModuleParametersExt}, nn, ops::indexing::{IndexOp, NewAxis}, quantization::MaybeQuantized, Array
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -388,7 +382,7 @@ where
 
         let mask = match mask {
             Some(mask) => Some(mask.clone()),
-            None => match create_attention_mask(&h, cache, None)? {
+            None => match create_attention_mask(&h, cache, Some(true))? {
                 Some(AttentionMask::Array(a)) => Some(a),
                 Some(AttentionMask::Causal) => return Err(Exception::custom("Only `Array` mask is supported")),
                 None => None
@@ -524,13 +518,102 @@ pub fn load_qwen3_model(repo: &ApiRepo) -> Result<Model, Error> {
     Ok(model)
 }
 
+fn sample(logits: &Array, temp: f32) -> Result<Array, Exception> {
+    match temp {
+        0.0 => argmax_axis!(logits, -1).map_err(Into::into),
+        _ => {
+            let logits = logits.multiply(array!(1.0 / temp))?;
+            categorical!(logits).map_err(Into::into)
+        }
+    }
+}
+
+pub struct Generate<'a, C> {
+    model: &'a mut Model,
+    cache: &'a mut Vec<Option<C>>,
+    temp: f32,
+    state: GenerateState<'a>,
+}
+
+impl<'a, C> Generate<'a, C> 
+where 
+    C: KeyValueCache,
+{
+    pub fn new(model: &'a mut Model, cache: &'a mut Vec<Option<C>>, temp: f32, prompt_token: &'a Array) -> Self {
+        Self {
+            model,
+            cache,
+            temp,
+            state: GenerateState::Prefill { prompt_token },
+        }
+    }
+}
+
+pub enum GenerateState<'a> {
+    Prefill {
+        prompt_token: &'a Array,
+    },
+    Decode {
+        y: Array,
+    },
+}
+
+macro_rules! tri {
+    ($expr:expr) => {
+        match $expr {
+            Ok(val) => val,
+            Err(e) => return Some(Err(e.into())),
+        }
+    };
+}
+
+impl<'a, C> Iterator for Generate<'a, C> 
+where 
+    C: KeyValueCache,
+{
+    type Item = Result<Array, Exception>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &self.state {
+            GenerateState::Prefill { prompt_token } => {
+                let input = ModelInput {
+                    inputs: prompt_token,
+                    mask: None,
+                    cache: self.cache,
+                };
+                let logits = tri!(self.model.forward(input));
+                let y = tri!(sample(&logits.index((.., -1, ..)), self.temp));
+                self.state = GenerateState::Decode { y: y.clone() };
+
+                Some(Ok(y))
+            },
+            GenerateState::Decode { y } => {
+                let inputs = y.index((.., NewAxis));
+                let input = ModelInput {
+                    inputs: &inputs,
+                    mask: None,
+                    cache: self.cache,
+                };
+                let logits = tri!(self.model.forward(input));
+                let y = tri!(sample(&logits, self.temp));
+
+                self.state = GenerateState::Decode { y: y.clone() };
+
+                Some(Ok(y))
+            },
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use hf_hub::{api::sync::ApiBuilder, Repo};
+    use mlx_rs::{module::Module, ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array};
 
-    use crate::models::qwen3::load_qwen3_tokenizer;
+    use crate::{cache::ConcatKeyValueCache, models::qwen3::{load_qwen3_model, load_qwen3_tokenizer, ModelInput}};
 
     #[test]
     fn test_load_qwen3_model() {
@@ -558,5 +641,49 @@ mod tests {
         let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
 
         let _encoding = tokenizer.encode("Hello, world!", true).unwrap();
+    }
+
+    #[test]
+    fn test_load_and_run_qwen3_with_concat_cache() {
+        let api = ApiBuilder::new()
+            .with_cache_dir("./hf_cache".into())
+            .build()
+            .unwrap();
+
+        let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
+        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
+        let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
+
+        let mut model = load_qwen3_model(&repo).unwrap();
+
+        let encoding = tokenizer.encode("hello world", true).unwrap();
+        let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
+        let mut cache = Vec::new();
+
+        let mut tokens = Vec::new();
+        let generate = super::Generate::<ConcatKeyValueCache>::new(&mut model, &mut cache, 0.0, &prompt_tokens);
+        for (token, ntoks) in generate.zip(0..10) { 
+            let token = token.unwrap();
+            tokens.push(token.clone());
+
+            if ntoks == 0 {
+                eval(&tokens).unwrap();
+            }
+
+            if tokens.len() % 10 == 0 {
+                eval(&tokens).unwrap();
+                let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
+                let s = tokenizer.decode(&slice, true).unwrap();
+                print!("{s}");
+            }
+        }
+
+
+        eval(&tokens).unwrap();
+        let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
+        let s = tokenizer.decode(&slice, true).unwrap();
+        println!("{s}");
+
+        println!("------");
     }
 }

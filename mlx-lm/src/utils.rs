@@ -1,9 +1,7 @@
+use std::marker::PhantomData;
+
 use mlx_rs::{
-    arange,
-    error::Exception,
-    fast::ScaledDotProductAttentionMask,
-    ops::indexing::{IndexOp, NewAxis},
-    Array,
+    arange, error::Exception, fast::ScaledDotProductAttentionMask, module::Module, ops::indexing::{IndexOp, NewAxis}, Array
 };
 
 use crate::cache::KeyValueCache;
@@ -131,3 +129,4 @@ where
         Ok(None)
     }
 }
+

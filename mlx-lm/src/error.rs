@@ -16,5 +16,8 @@ pub enum Error {
     Deserialize(#[from] serde_json::Error),
 
     #[error(transparent)]
-    LoadWeights(#[from] mlx_rs::error::IoError)
+    LoadWeights(#[from] mlx_rs::error::IoError),
+
+    #[error(transparent)]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }

@@ -6,7 +6,7 @@ use mlx_rs::{
     Array,
 };
 
-use crate::cache_utils::KeyValueCache;
+use crate::cache::KeyValueCache;
 
 pub(crate) fn quantized_scaled_dot_product_attention(
     queries: Array,

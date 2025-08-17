@@ -16,7 +16,7 @@ mlx-rs.workspace = true
 # External dependencies
 serde = { version = "1", features = ["derive"] }
 anyhow = "1"
-tokenizers = "=0.21.0" # 0.21.1 uses features that went stable in 1.82 while our MSRV is 1.81
+tokenizers = { version = "=0.21.0", features = ["http"] } # 0.21.1 uses features that went stable in 1.82 while our MSRV is 1.81
 hf-hub = "=0.4.1" # 0.4.2 uses features that went stable in 1.82 while our MSRV is 1.81
 clap = { version = "4", features = ["derive"] }
 idna_adapter = "=1.2.0" # Fix idna-adapter version so that it works with rustc 1.81

@@ -9,7 +9,7 @@ use serde_json::Value;
 use tokenizers::Tokenizer;
 
 use crate::{
-    cache::KeyValueCache, error::Error, rope_utils::{initialize_rope, FloatOrString}, utils::{create_attention_mask, AttentionMask}
+    cache::KeyValueCache, error::Error, utils::{create_attention_mask, rope::{initialize_rope, FloatOrString}, AttentionMask}
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -632,12 +632,14 @@ mod tests {
     fn test_load_tokenizer() {
         let hf_cache_dir = PathBuf::from("./hf_cache");
 
-        let mut api_builder = ApiBuilder::new();
-        api_builder = api_builder.with_cache_dir(hf_cache_dir);
-        let api = api_builder.build().unwrap();
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
 
-        let model_path = "mlx-community/Qwen3-0.6B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_path, hf_hub::RepoType::Model));
+        // let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
         let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
 
         let _encoding = tokenizer.encode("Hello, world!", true).unwrap();
@@ -646,17 +648,19 @@ mod tests {
     #[test]
     fn test_load_and_run_qwen3_with_concat_cache() {
         let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string())
             .with_cache_dir("./hf_cache".into())
             .build()
             .unwrap();
 
-        let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
+        // let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
         let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
         let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
 
         let mut model = load_qwen3_model(&repo).unwrap();
 
-        let encoding = tokenizer.encode("hello world", true).unwrap();
+        let encoding = tokenizer.encode("hello", true).unwrap();
         let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);
         let mut cache = Vec::new();
 
@@ -670,14 +674,13 @@ mod tests {
                 eval(&tokens).unwrap();
             }
 
-            if tokens.len() % 10 == 0 {
+            if tokens.len() % 20 == 0 {
                 eval(&tokens).unwrap();
                 let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
                 let s = tokenizer.decode(&slice, true).unwrap();
                 print!("{s}");
             }
         }
-
 
         eval(&tokens).unwrap();
         let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();

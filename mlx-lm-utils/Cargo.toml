@@ -1,0 +1,16 @@
+[package]
+name = "mlx-lm-utils"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+documentation.workspace = true
+
+[dependencies]
+minijinja = "2"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokenizers = "0.21"

@@ -22,3 +22,4 @@ clap = { version = "4", features = ["derive"] }
 idna_adapter = "=1.2.0" # Fix idna-adapter version so that it works with rustc 1.81
 thiserror = "2"
 serde_json = "1"
+minijinja = "2"

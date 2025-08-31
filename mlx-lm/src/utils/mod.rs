@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use mlx_rs::{
-    arange, error::Exception, fast::ScaledDotProductAttentionMask, module::Module, ops::indexing::{IndexOp, NewAxis}, Array
+    arange, array, error::Exception, expand_dims, fast::ScaledDotProductAttentionMask, module::Module, ops::{expand_dims, indexing::{IndexOp, NewAxis}, quantized_matmul, reshape, softmax_axis}, Array, Dtype
 };
 
 use crate::cache::KeyValueCache;
@@ -9,22 +9,162 @@ use crate::cache::KeyValueCache;
 pub mod rope;
 pub mod tokenizer;
 
+// def quantized_scaled_dot_product_attention(
+//     queries: mx.array,
+//     q_keys: tuple[mx.array, mx.array, mx.array],
+//     q_values: tuple[mx.array, mx.array, mx.array],
+//     scale: float,
+//     mask: Optional[mx.array],
+//     group_size: int = 64,
+//     bits: int = 8,
+// ) -> mx.array:
+//     B, n_q_heads, L, D = queries.shape
+//     n_kv_heads = q_keys[0].shape[-3]
+//     n_repeats = n_q_heads // n_kv_heads
+
+//     queries *= scale
+
+//     if n_repeats > 1:
+//         queries = mx.reshape(queries, (B, n_kv_heads, n_repeats, L, D))
+//         q_keys = tree_map(lambda x: mx.expand_dims(x, axis=-3), q_keys)
+//         q_values = tree_map(lambda x: mx.expand_dims(x, axis=-3), q_values)
+
+//     scores = mx.quantized_matmul(
+//         queries, *q_keys, transpose=True, group_size=group_size, bits=bits
+//     )
+//     if mask is not None:
+//         if isinstance(mask, str):
+//             qL, kL = scores.shape[-2:]
+//             q_indices = mx.arange(kL - qL, kL)
+//             k_indices = mx.arange(kL)
+//             mask = q_indices[:, None] >= k_indices[None]
+//         if mask.dtype == mx.bool_:
+//             scores = mx.where(mask, scores, mx.finfo(scores.dtype).min)
+//         else:
+//             scores += mask
+//     scores = mx.softmax(scores, axis=-1, precise=True)
+//     out = mx.quantized_matmul(
+//         scores, *q_values, transpose=False, group_size=group_size, bits=bits
+//     )
+
+//     if n_repeats > 1:
+//         out = mx.reshape(out, (B, n_q_heads, L, D))
+
+//     return out
+
+fn index_out_of_bound_exception() -> Exception {
+    Exception::custom("index out of bound")
+}
+
+#[allow(non_snake_case)]
 pub(crate) fn quantized_scaled_dot_product_attention(
-    queries: Array,
-    keys: Array,
-    values: Array,
+    queries: &Array,
+    mut q_keys: QuantizedKeys,
+    mut q_values: QuantizedValues,
     scale: f32,
     mask: Option<&Array>,
     group_size: i32,
     bits: i32,
 ) -> Result<Array, Exception> {
-    todo!()
+    let q_shape = queries.shape();
+    let B = *q_shape.get(0).ok_or_else(index_out_of_bound_exception)?;
+    let n_q_heads = *q_shape.get(1).ok_or_else(index_out_of_bound_exception)?;
+    let L = *q_shape.get(2).ok_or_else(index_out_of_bound_exception)?;
+    let D = *q_shape.get(3).ok_or_else(index_out_of_bound_exception)?;
+
+    let q_keys_shape = q_keys.keys.shape();
+    let n_kv_heads = q_keys_shape[q_keys_shape.len()-3];
+    let n_repeats = n_q_heads / n_kv_heads;
+
+    let mut queries = queries * scale;
+
+    if n_repeats > 1 {
+        queries = reshape(&queries, &[B, n_kv_heads, n_repeats, L, D])?;
+        
+        q_keys.keys = expand_dims(q_keys.keys, -3)?;
+        q_keys.scales = expand_dims(q_keys.scales, -3)?;
+        q_keys.biases= expand_dims(q_keys.biases, -3)?;
+
+
+        q_values.values = expand_dims(q_values.values, -3)?;
+        q_values.scales = expand_dims(q_values.scales, -3)?;
+        q_values.biases = expand_dims(q_values.biases, -3)?;
+    }
+    
+    let mut scores = quantized_matmul(&queries, q_keys.keys, q_keys.scales, q_keys.biases, true, group_size, bits)?;
+
+    if let Some(mask) = mask {
+        // TODO: handle str type mask
+
+        if mask.dtype() == Dtype::Bool {
+            // scores = mlx_rs::ops::r#where(mask, scores, b)
+            todo!("need to add finfo.min equivalent to Dtype")
+        } else {
+            scores += mask;
+        }
+    }
+    scores = softmax_axis(scores, -1, true)?;
+    let mut out = quantized_matmul(scores, q_values.values, q_values.scales, q_values.biases, false, group_size, bits)?;
+
+    if n_repeats > 1 {
+        out = reshape(out, &[B, n_q_heads, L, D])?;
+    }
+
+    Ok(out)
+}
+
+// type QuantizedKeyValue = (Array, Array, Array);
+
+pub struct QuantizedKeys {
+    pub keys: Array,
+    pub scales: Array,
+    pub biases: Array,
+}
+
+pub struct QuantizedValues {
+    pub values: Array,
+    pub scales: Array,
+    pub biases: Array,
+}
+
+pub enum MaybeQuantizedKeys {
+    Original(Array),
+    Quantized(QuantizedKeys)
+}
+
+impl From<Array> for MaybeQuantizedKeys {
+    fn from(value: Array) -> Self {
+        Self::Original(value)
+    }
+}
+
+impl From<QuantizedKeys> for MaybeQuantizedKeys {
+    fn from(value: QuantizedKeys) -> Self {
+        Self::Quantized(value)
+    }
+}
+
+pub enum MaybeQuantizedValues {
+    Original(Array),
+    Quantized(QuantizedValues),
+}
+
+impl From<Array> for MaybeQuantizedValues {
+    fn from(value: Array) -> Self {
+        Self::Original(value)
+    }
+}
+
+impl From<QuantizedValues> for MaybeQuantizedValues {
+    fn from(value: QuantizedValues) -> Self {
+        Self::Quantized(value)
+    }
 }
 
 pub(crate) fn scaled_dot_product_attention<C>(
-    queries: Array,
-    keys: Array,
-    values: Array,
+    queries: &Array,
+    keys: impl Into<MaybeQuantizedKeys>,
+    values: impl Into<MaybeQuantizedValues>,
     cache: Option<C>,
     scale: f32,
     mask: Option<&Array>,
@@ -32,6 +172,9 @@ pub(crate) fn scaled_dot_product_attention<C>(
 where
     C: KeyValueCache,
 {
+    let keys = keys.into();
+    let values = values.into();
+
     if let Some(cache) = cache {
         if cache.is_quantized() {
             let group_size = cache
@@ -40,11 +183,22 @@ where
             let bits = cache
                 .bits()
                 .ok_or_else(|| Exception::custom("Cache is quantized but bits are not set"))?;
+
+            let (keys, values) = match (keys, values) {
+                (MaybeQuantizedKeys::Quantized(keys), MaybeQuantizedValues::Quantized(values)) => (keys, values),
+                _ => return Err(Exception::custom("Both keys and values must be quantized when KV cache is quantized"))
+            };
+
             return quantized_scaled_dot_product_attention(
                 queries, keys, values, scale, mask, group_size, bits,
             );
         }
     }
+
+    let (keys, values) = match (keys, values) {
+        (MaybeQuantizedKeys::Original(keys), MaybeQuantizedValues::Original(values)) => (keys, values),
+        _ => return Err(Exception::custom("Both keys and values must NOT be quantized when KV cache is NOT quantized"))
+    };
 
     mlx_rs::fast::scaled_dot_product_attention(
         queries,

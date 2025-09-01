@@ -58,7 +58,7 @@ fn index_out_of_bound_exception() -> Exception {
 
 #[allow(non_snake_case)]
 pub(crate) fn quantized_scaled_dot_product_attention(
-    queries: &Array,
+    queries: Array,
     mut q_keys: QuantizedKeys,
     mut q_values: QuantizedValues,
     scale: f32,
@@ -97,8 +97,8 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         // TODO: handle str type mask
 
         if mask.dtype() == Dtype::Bool {
-            // scores = mlx_rs::ops::r#where(mask, scores, b)
-            todo!("need to add finfo.min equivalent to Dtype")
+            let finfo_min = scores.dtype().finfo_min()?;
+            scores = mlx_rs::ops::r#where(mask, scores, Array::from_f64(finfo_min))?;
         } else {
             scores += mask;
         }
@@ -112,8 +112,6 @@ pub(crate) fn quantized_scaled_dot_product_attention(
 
     Ok(out)
 }
-
-// type QuantizedKeyValue = (Array, Array, Array);
 
 pub struct QuantizedKeys {
     pub keys: Array,
@@ -162,7 +160,7 @@ impl From<QuantizedValues> for MaybeQuantizedValues {
 }
 
 pub(crate) fn scaled_dot_product_attention<C>(
-    queries: &Array,
+    queries: Array,
     keys: impl Into<MaybeQuantizedKeys>,
     values: impl Into<MaybeQuantizedValues>,
     cache: Option<C>,

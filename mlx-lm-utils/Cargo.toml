@@ -10,7 +10,8 @@ license.workspace = true
 documentation.workspace = true
 
 [dependencies]
-minijinja = "2"
+minijinja = { version = "2", features = ["loader"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 thiserror = "2"
 tokenizers = "0.21"

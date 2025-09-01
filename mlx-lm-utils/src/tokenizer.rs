@@ -65,7 +65,7 @@
 //     set, will return a dict of tokenizer outputs instead.
 // """
 
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, fs::read_to_string, path::Path};
 
 use minijinja::{context, Environment, Template};
 use serde::{Deserialize, Serialize};
@@ -74,7 +74,7 @@ use crate::error::Error;
 
 #[derive(Serialize)]
 #[serde(untagged)]
-pub enum Content<T: Serialize=()> {
+pub enum Content<T: Serialize = ()> {
     String(String),
     Map(HashMap<String, String>),
     Typed(T),
@@ -113,6 +113,21 @@ pub struct TokenizeOptions {
     pub return_tensors: Option<String>,
     pub return_dict: Option<bool>,
     pub return_assistant_tokens_mask: Option<bool>,
+}
+
+pub fn load_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
+    serde_json::from_str::<serde_json::Value>(content).map(|value| {
+        value
+            .get("chat_template")
+            .and_then(|value| value.as_str())
+            .map(ToString::to_string)
+    })
+    .map_err(Into::into)
+}
+
+pub fn load_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Result<Option<String>> {
+    let content = read_to_string(file)?;
+    load_chat_template_from_str(&content)
 }
 
 // chat_template = self.get_chat_template(chat_template, tools)
@@ -191,7 +206,6 @@ pub struct TokenizeOptions {
 //         return out["input_ids"]
 // else:
 //     return rendered_chat
-
 
 // def render_jinja_template(
 //     conversations: list[list[dict[str, str]]],
@@ -286,7 +300,6 @@ pub struct TokenizeOptions {
 
 //     return rendered, all_generation_indices
 
-
 pub fn apply_chat_template<'a>(
     env: &'a mut Environment<'a>,
     model_template: &'a str,
@@ -311,19 +324,20 @@ pub fn apply_chat_template<'a>(
             Ok(template) => template,
             Err(_) => {
                 env.add_template(model_id, model_template)?;
-                env.get_template(model_id).expect("Newly added template must be present")
-            },
+                env.get_template(model_id)
+                    .expect("Newly added template must be present")
+            }
         },
     };
 
     // TODO: what about list of list of conversations
-    
+
     // TODO: handle tool
 
     // TODO: handle documents``
 
     // TODO: allow return_generation_indices
-    
+
     let rendered_chat = template.render(context! {
         messages => conversations,
         documents => documents,

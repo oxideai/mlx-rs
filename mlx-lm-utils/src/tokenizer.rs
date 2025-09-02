@@ -74,15 +74,21 @@ use crate::error::Error;
 
 #[derive(Serialize)]
 #[serde(untagged)]
-pub enum Content<T: Serialize = ()> {
-    String(String),
-    Map(HashMap<String, String>),
+pub enum Content<T=String> {
     Typed(T),
+    Map(HashMap<String, String>),
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    User,
+    Assistant,
 }
 
 #[derive(Serialize)]
-pub struct Conversation<T: Serialize = ()> {
-    pub role: String,
+pub struct Conversation<R=Role, T=String> {
+    pub role: R,
     pub content: Content<T>,
 }
 
@@ -103,7 +109,7 @@ pub struct ApplyChatTemplateArgs<'a> {
     pub tools: Option<Box<dyn FnOnce()>>, // TODO: how to get response?
     pub documents: Option<&'a [Documents]>,
     pub model_id: &'a str,
-    pub chat_template: Option<&'a str>,
+    pub chat_template_id: Option<&'a str>,
     pub add_generation_prompt: Option<bool>,
     pub continue_final_message: Option<bool>,
 }
@@ -115,7 +121,7 @@ pub struct TokenizeOptions {
     pub return_assistant_tokens_mask: Option<bool>,
 }
 
-pub fn load_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
+pub fn load_model_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
     serde_json::from_str::<serde_json::Value>(content).map(|value| {
         value
             .get("chat_template")
@@ -125,9 +131,9 @@ pub fn load_chat_template_from_str(content: &str) -> std::io::Result<Option<Stri
     .map_err(Into::into)
 }
 
-pub fn load_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Result<Option<String>> {
+pub fn load_model_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Result<Option<String>> {
     let content = read_to_string(file)?;
-    load_chat_template_from_str(&content)
+    load_model_chat_template_from_str(&content)
 }
 
 // chat_template = self.get_chat_template(chat_template, tools)
@@ -310,7 +316,7 @@ pub fn apply_chat_template<'a>(
         tools,
         documents,
         model_id,
-        chat_template,
+        chat_template_id,
         add_generation_prompt,
         continue_final_message,
     } = args;
@@ -318,12 +324,12 @@ pub fn apply_chat_template<'a>(
     let add_generation_prompt = add_generation_prompt.unwrap_or(false);
     let continue_final_message = continue_final_message.unwrap_or(false);
 
-    let template = match chat_template {
-        Some(chat_template) => env.get_template(&chat_template)?,
+    let template = match chat_template_id {
+        Some(chat_template_id) => env.get_template(&chat_template_id)?,
         None => match env.get_template(model_id) {
             Ok(template) => template,
             Err(_) => {
-                env.add_template(model_id, model_template)?;
+                env.add_template_owned(model_id, model_template.to_owned())?;
                 env.get_template(model_id)
                     .expect("Newly added template must be present")
             }
@@ -347,4 +353,68 @@ pub fn apply_chat_template<'a>(
     // TODO: how to remove the final_message?
 
     Ok(rendered_chat)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use hf_hub::{api::sync::ApiBuilder, Repo};
+    use minijinja::Environment;
+
+    use crate::tokenizer::{apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role};
+
+    #[test]
+    fn test_load_chat_template_from_file() {
+        let hf_cache_dir = PathBuf::from("./hf_cache");
+
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
+        let file = repo.get("tokenizer_config.json").unwrap();
+        let chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
+        assert!(!chat_template.is_empty());
+    }
+
+    #[test]
+    fn test_apply_chat_template() {
+        let hf_cache_dir = PathBuf::from("./hf_cache");
+
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+
+        let conversations = vec![
+            Conversation {
+                role: Role::User,
+                content: crate::tokenizer::Content::Typed("hello".to_string())
+            }
+        ];
+
+        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
+        let file = repo.get("tokenizer_config.json").unwrap();
+        let model_chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
+        assert!(!model_chat_template.is_empty());
+
+        let args = ApplyChatTemplateArgs {
+            conversations: &conversations,
+            tools: None,
+            documents: None,
+            model_id: &model_id,
+            chat_template_id: None,
+            add_generation_prompt: None,
+            continue_final_message: None,
+        };
+
+        let mut env = Environment::new();
+        env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
+
+        let rendered_chat = apply_chat_template(&mut env, &model_chat_template, args).unwrap();
+        println!("{:?}", rendered_chat);
+    }
 }

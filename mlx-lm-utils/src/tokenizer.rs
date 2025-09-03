@@ -65,19 +65,79 @@
 //     set, will return a dict of tokenizer outputs instead.
 // """
 
-use std::{borrow::Cow, collections::HashMap, fs::read_to_string, path::Path};
+use std::{borrow::Cow, collections::HashMap, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
 
 use minijinja::{context, Environment, Template};
 use serde::{Deserialize, Serialize};
+use tokenizers::Encoding;
 
 use crate::error::Error;
 
-#[derive(Serialize)]
-#[serde(untagged)]
-pub enum Content<T=String> {
-    Typed(T),
-    Map(HashMap<String, String>),
+/// Wrapper around [`tokenizers::Tokenizer`] and [`minijinja::Environment`]
+/// providing more utilities.
+pub struct Tokenizer<'a> {
+    inner: tokenizers::Tokenizer,
+    env: Environment<'a>,
 }
+
+impl<'a> Tokenizer<'a> {
+    pub fn from_tokenizer(tokenizer: tokenizers::Tokenizer) -> Self {
+        let mut env = Environment::new();
+        env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
+        Self { inner: tokenizer, env }
+    }
+
+    pub fn from_file(file: impl AsRef<Path>) -> tokenizers::Result<Self> {
+        tokenizers::Tokenizer::from_file(file)
+            .map(Self::from_tokenizer)
+    }
+
+    pub fn from_bytes(bytes: impl AsRef<[u8]>) -> tokenizers::Result<Self> {
+        tokenizers::Tokenizer::from_bytes(bytes)
+            .map(Self::from_tokenizer)
+    }
+
+    pub fn from_str(s: &str) -> tokenizers::Result<Self> {
+        tokenizers::Tokenizer::from_str(s)
+            .map(Self::from_tokenizer)
+    }
+
+    pub fn apply_chat_template<R, T>(
+        &'a mut self,
+        model_template: impl Into<Cow<'a, str>>,
+        args: ApplyChatTemplateArgs<'a, R, T>
+    ) -> Result<String, Error> 
+    where 
+        R: Serialize,
+        T: Serialize,
+    {
+        apply_chat_template(&mut self.env, model_template, args)
+    }
+
+    pub fn apply_chat_template_and_encode<R, T>(
+        &'a mut self,
+        model_template: impl Into<String>,
+        args: ApplyChatTemplateArgs<'a, R, T>,
+        tokenize_options: TokenizeOptions,
+    ) -> Result<Encoding, Error> {
+        todo!()
+    }
+}
+
+impl Deref for Tokenizer<'_> {
+    type Target = tokenizers::Tokenizer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DerefMut for Tokenizer<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -86,10 +146,16 @@ pub enum Role {
     Assistant,
 }
 
+#[derive(Debug, Serialize)]
+pub enum Content {
+    String(String),
+    Map(HashMap<String, String>)
+}
+
 #[derive(Serialize)]
-pub struct Conversation<R=Role, T=String> {
+pub struct Conversation<R, T> {
     pub role: R,
-    pub content: Content<T>,
+    pub content: T,
 }
 
 pub type Documents = HashMap<String, String>;
@@ -104,8 +170,8 @@ pub enum Truncation {
 }
 
 #[derive(Default)]
-pub struct ApplyChatTemplateArgs<'a> {
-    pub conversations: &'a [Conversation],
+pub struct ApplyChatTemplateArgs<'a, R=Role, T=String> {
+    pub conversations: &'a [Conversation<R, T>],
     pub tools: Option<Box<dyn FnOnce()>>, // TODO: how to get response?
     pub documents: Option<&'a [Documents]>,
     pub model_id: &'a str,
@@ -306,11 +372,15 @@ pub fn load_model_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Re
 
 //     return rendered, all_generation_indices
 
-pub fn apply_chat_template<'a>(
+pub fn apply_chat_template<'a, R, T>(
     env: &'a mut Environment<'a>,
-    model_template: &'a str,
-    args: ApplyChatTemplateArgs<'a>,
-) -> Result<String, Error> {
+    model_template: impl Into<Cow<'a, str>>,
+    args: ApplyChatTemplateArgs<'a, R, T>,
+) -> Result<String, Error> 
+where 
+    R: Serialize,
+    T: Serialize,
+{
     let ApplyChatTemplateArgs {
         conversations,
         tools,
@@ -329,7 +399,7 @@ pub fn apply_chat_template<'a>(
         None => match env.get_template(model_id) {
             Ok(template) => template,
             Err(_) => {
-                env.add_template_owned(model_id, model_template.to_owned())?;
+                env.add_template_owned(model_id, model_template)?;
                 env.get_template(model_id)
                     .expect("Newly added template must be present")
             }
@@ -392,7 +462,7 @@ mod tests {
         let conversations = vec![
             Conversation {
                 role: Role::User,
-                content: crate::tokenizer::Content::Typed("hello".to_string())
+                content: "hello",
             }
         ];
 
@@ -415,6 +485,46 @@ mod tests {
         env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
 
         let rendered_chat = apply_chat_template(&mut env, &model_chat_template, args).unwrap();
+        println!("{:?}", rendered_chat);
+    }
+
+    #[test]
+    fn test_tokenizer_apply_chat_template() {
+                let hf_cache_dir = PathBuf::from("./hf_cache");
+
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+
+        let conversations = vec![
+            Conversation {
+                role: Role::User,
+                content: "hello",
+            }
+        ];
+
+        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
+        let tokenizer_file = repo.get("tokenizer.json").unwrap();
+        let tokenizer_config_file = repo.get("tokenizer_config.json").unwrap();
+
+        let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
+
+        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file).unwrap().unwrap();
+        assert!(!model_chat_template.is_empty());
+
+        let args = ApplyChatTemplateArgs {
+            conversations: &conversations,
+            tools: None,
+            documents: None,
+            model_id: &model_id,
+            chat_template_id: None,
+            add_generation_prompt: None,
+            continue_final_message: None,
+        };
+
+        let rendered_chat = tokenizer.apply_chat_template(&model_chat_template, args).unwrap();
         println!("{:?}", rendered_chat);
     }
 }

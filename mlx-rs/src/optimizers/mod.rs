@@ -230,7 +230,7 @@ pub type MaybeClippedGrads<'a> = HashMap<Rc<str>, Cow<'a, Array>>;
 pub fn clip_grad_norm(
     gradients: &FlattenedModuleParam,
     max_norm: f32,
-) -> crate::error::Result<(MaybeClippedGrads, f32)> {
+) -> crate::error::Result<(MaybeClippedGrads<'_>, f32)> {
     let total_norm: f32 = gradients
         .values()
         .try_fold(array!(0.0), |acc, grad| acc.add(&grad.square()?.sum(None)?))?

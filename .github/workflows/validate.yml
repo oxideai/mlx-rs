@@ -5,7 +5,7 @@ on:
       - main
   pull_request:
     types: [opened, synchronize]
-    
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,11 +14,11 @@ jobs:
     runs-on: blaze/macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
       - name: Setup Xcode
-        run: sudo xcodes select 16.0
+        run: sudo xcodes select 16.4
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -32,19 +32,18 @@ jobs:
     runs-on: blaze/macos-15
     strategy:
       matrix:
-        rust: [ stable, 1.81.0 ]
         include:
           - cache: stable
             rust: stable
-          - cache: 1-81-0
-            rust: 1.81.0
+          - cache: 1-82-0
+            rust: 1.82.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
       - name: Setup Xcode
-        run: sudo xcodes select 16.0
+        run: sudo xcodes select 16.4
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:

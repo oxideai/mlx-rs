@@ -5,55 +5,42 @@ on:
       - main
   pull_request:
     types: [opened, synchronize]
-    
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  rustfmt-check:
+  checks:
     runs-on: blaze/macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
-      - name: Setup Xcode
-        run: sudo xcodes select 16.0
-      - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: sudo xcodes select 16.4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
-      - name: Run cargo fmt
-        run: cargo fmt -- --check
-      - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
+      - run: cargo --version
+      - run: cargo fmt -- --check
+      - run: cargo clippy -- -D warnings
 
   tests:
-    runs-on: blaze/macos-15
+    runs-on: blaze/${{ matrix.runner }}
     strategy:
       matrix:
-        rust: [ stable, 1.81.0 ]
-        include:
-          - cache: stable
-            rust: stable
-          - cache: 1-81-0
-            rust: 1.81.0
+        runner: [ macos-15 ]
+        rust: [ 1.82.0, stable ]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
-      - name: Setup Xcode
-        run: sudo xcodes select 16.0
-      - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: sudo xcodes select 16.4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache: false
           toolchain: ${{ matrix.rust }}
           rustflags: "" # Disable when we're ready
-      - name: Setup cache
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ runner.os }}-${{ matrix.cache }}-${{ matrix.backend }}-${{ hashFiles('**/Cargo.toml') }}
-      - name: Run tests
-        run: cargo test --all -- --test-threads=1 # MLX is not thread safe
+          key: ${{ matrix.rust }}-${{ matrix.runner }}-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo test --all -- --test-threads=1 # MLX is not thread safe

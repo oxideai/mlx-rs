@@ -95,7 +95,7 @@ where
         let argnums = argnums.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argnums);
         move |args: &Array| -> Result<Array> {
-            let args_clone = &[args.clone()];
+            let args_clone = std::slice::from_ref(args);
             let result = g(args_clone)?;
             Ok(result.into_iter().next().unwrap())
         }
@@ -115,7 +115,7 @@ where
         let argnums = argnums.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argnums);
         move |args: &Array| -> Result<Array> {
-            let args_clone = &[args.clone()];
+            let args_clone = std::slice::from_ref(args);
             let result = g(args_clone)?;
             Ok(result.into_iter().next().unwrap())
         }
@@ -173,7 +173,7 @@ where
         let argnums = argnums.into_option().unwrap_or(&[0]);
         let mut g = build_gradient(f, argnums);
         move |args: &Array| -> Result<Vec<Array>> {
-            let args_clone = &[args.clone()];
+            let args_clone = std::slice::from_ref(args);
             let result = g(args_clone)?;
             Ok(result)
         }
@@ -193,7 +193,7 @@ where
         let argnums = argnums.into_option().unwrap_or(&[0]);
         let mut g = build_fallible_gradient(f, argnums);
         move |args: &Array| -> Result<Vec<Array>> {
-            let args_clone = &[args.clone()];
+            let args_clone = std::slice::from_ref(args);
             let result = g(args_clone)?;
             Ok(result)
         }

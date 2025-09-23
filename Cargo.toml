@@ -1,5 +1,5 @@
 [workspace.package]
-# All but mlx-sys should follow the same version. mlx-sys should follow 
+# All but mlx-sys should follow the same version. mlx-sys should follow
 # the version of mlx-c.
 version = "0.25.1"
 edition = "2021"
@@ -13,15 +13,16 @@ keywords = ["mlx", "deep-learning", "machine-learning"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
 documentation = "https://oxideai.github.io/mlx-rs/mlx_rs/"
+rust-version = "1.82.0"
 
 [workspace]
 members = [
-    "mlx-macros", 
-    "mlx-sys", 
-    "mlx-rs", 
+    "mlx-macros",
+    "mlx-sys",
+    "mlx-rs",
     "mlx-internal-macros",
     "mlx-tests",
-    "examples/*", 
+    "examples/*",
 ]
 
 resolver = "2"
@@ -45,18 +46,18 @@ num_enum = "0.7"
 num-traits = "0.2"
 paste = "1"
 smallvec = "1"
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 libc = "0.2"
 parking_lot = "0.12"
 tempfile = "3"
 itertools = "0.14"
 syn = { version = "2", features = ["full"] }
 quote = "1"
-darling = "0.20"
+darling = "0.21"
 proc-macro2 = "1"
-bindgen = "0.70"
+bindgen = "0.72"
 cmake = "0.1"
 cc = "1"
-safetensors = "0.5"
+safetensors = "0.6"
 bytemuck = "1"
 memmap2 = "0.9"

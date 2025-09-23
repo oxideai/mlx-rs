@@ -17,7 +17,7 @@ pub enum FloatOrString {
 }
 
 impl FloatOrString {
-    pub fn borrowed(&self) -> FloatOrStr {
+    pub fn borrowed(&self) -> FloatOrStr<'_> {
         match self {
             FloatOrString::Float(f) => FloatOrStr::Float(*f),
             FloatOrString::String(s) => FloatOrStr::Str(s),

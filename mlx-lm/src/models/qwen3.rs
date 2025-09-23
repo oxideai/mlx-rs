@@ -619,9 +619,10 @@ mod tests {
     fn test_load_qwen3_model() {
         let hf_cache_dir = PathBuf::from("./hf_cache");
 
-        let mut api_builder = ApiBuilder::new();
-        api_builder = api_builder.with_cache_dir(hf_cache_dir);
-        let api = api_builder.build().unwrap();
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
 
         let model_path = "mlx-community/Qwen3-0.6B-bf16".to_string();
         let repo = api.repo(Repo::new(model_path, hf_hub::RepoType::Model));

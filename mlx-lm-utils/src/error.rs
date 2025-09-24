@@ -9,4 +9,7 @@ pub enum Error {
     /// ensure they are compatible.
     #[error("continue_final_message is set but the final message does not appear in the chat after applying the chat template!")]
     FinalMsgNotInChat,
+
+    #[error(transparent)]
+    Encode(#[from] tokenizers::tokenizer::Error),
 }

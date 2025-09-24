@@ -117,16 +117,18 @@ impl<'a> Tokenizer<'a> {
 
     pub fn apply_chat_template_and_encode<I, R, T>(
         &'a mut self,
-        model_template: impl Into<String>,
+        model_template: impl Into<Cow<'a, str>>,
         args: ApplyChatTemplateArgs<'a, I, R, T>,
-        tokenize_options: TokenizeOptions,
-    ) -> Result<Encoding, Error> 
+    ) -> Result<Vec<Encoding>, Error> 
     where 
         I: IntoIterator<Item = Chat<'a, R, T>> ,
         R: Serialize + 'a,
         T: Serialize + ToString + 'a,
     {
-        todo!()
+        let Self { inner, env } = self;
+
+        let rendered_chats = apply_chat_template(env, model_template, args)?;
+        inner.encode_batch(rendered_chats, false).map_err(Into::into)
     }
 }
 
@@ -224,13 +226,6 @@ where
     pub chat_template_id: Option<&'a str>,
     pub add_generation_prompt: Option<bool>,
     pub continue_final_message: Option<bool>,
-}
-
-// TODO: move `tokenize`, `return_tensors`, and `return_dict` to separate functions?
-pub struct TokenizeOptions {
-    pub return_tensors: Option<String>,
-    pub return_dict: Option<bool>,
-    pub return_assistant_tokens_mask: Option<bool>,
 }
 
 pub fn load_model_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
@@ -453,23 +448,9 @@ where
         },
     };
 
-    // TODO: what about list of list of conversations
-
     // TODO: handle tool
 
-    // TODO: handle documents``
-
     // TODO: allow return_generation_indices
-
-    // let rendered_chat = template.render(context! {
-    //     messages => conversations,
-    //     documents => documents,
-    //     add_generation_prompt => add_generation_prompt,
-    // })?;
-
-    // TODO: how to remove the final_message?
-
-    // Ok(rendered_chat)
 
     render_jinja_tempalte(
         template,
@@ -597,7 +578,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_apply_chat_template() {
-                let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("./hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -632,5 +613,44 @@ mod tests {
 
         let rendered_chat = tokenizer.apply_chat_template(&model_chat_template, args).unwrap();
         println!("{:?}", rendered_chat);
+    }
+
+    #[test]
+    fn test_tokenizer_apply_chat_template_and_encode() {
+        let hf_cache_dir = PathBuf::from("./hf_cache");
+
+        let api = ApiBuilder::new()
+            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
+            .with_cache_dir(hf_cache_dir)
+            .build().unwrap();
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+
+        let conversations = vec![
+            Conversation {
+                role: Role::User,
+                content: "hello",
+            }
+        ];
+
+        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
+        let tokenizer_file = repo.get("tokenizer.json").unwrap();
+        let tokenizer_config_file = repo.get("tokenizer_config.json").unwrap();
+
+        let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
+
+        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file).unwrap().unwrap();
+        assert!(!model_chat_template.is_empty());
+
+        let args = ApplyChatTemplateArgs {
+            conversations: [conversations.into()],
+            documents: None,
+            model_id: &model_id,
+            chat_template_id: None,
+            add_generation_prompt: None,
+            continue_final_message: None,
+        };
+
+        let encodings = tokenizer.apply_chat_template_and_encode(&model_chat_template, args).unwrap();
+        println!("{:?}", encodings.iter().map(|e| e.get_ids()).flatten());
     }
 }

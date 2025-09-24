@@ -65,7 +65,7 @@
 //     set, will return a dict of tokenizer outputs instead.
 // """
 
-use std::{borrow::Cow, collections::HashMap, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
+use std::{borrow::Cow, collections::HashMap, fmt::Display, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
 
 use minijinja::{context, Environment, Template};
 use serde::{Deserialize, Serialize};
@@ -102,24 +102,30 @@ impl<'a> Tokenizer<'a> {
             .map(Self::from_tokenizer)
     }
 
-    pub fn apply_chat_template<R, T>(
+    pub fn apply_chat_template<I, R, T>(
         &'a mut self,
         model_template: impl Into<Cow<'a, str>>,
-        args: ApplyChatTemplateArgs<'a, R, T>
-    ) -> Result<String, Error> 
+        args: ApplyChatTemplateArgs<'a, I, R, T>
+    ) -> Result<Vec<String>, Error> 
     where 
-        R: Serialize,
-        T: Serialize,
+        I: IntoIterator<Item = Chat<'a, R, T>> ,
+        R: Serialize + 'a,
+        T: Serialize + ToString + 'a,
     {
         apply_chat_template(&mut self.env, model_template, args)
     }
 
-    pub fn apply_chat_template_and_encode<R, T>(
+    pub fn apply_chat_template_and_encode<I, R, T>(
         &'a mut self,
         model_template: impl Into<String>,
-        args: ApplyChatTemplateArgs<'a, R, T>,
+        args: ApplyChatTemplateArgs<'a, I, R, T>,
         tokenize_options: TokenizeOptions,
-    ) -> Result<Encoding, Error> {
+    ) -> Result<Encoding, Error> 
+    where 
+        I: IntoIterator<Item = Chat<'a, R, T>> ,
+        R: Serialize + 'a,
+        T: Serialize + ToString + 'a,
+    {
         todo!()
     }
 }
@@ -139,26 +145,60 @@ impl DerefMut for Tokenizer<'_> {
 }
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
     User,
     Assistant,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum Content {
     String(String),
     Map(HashMap<String, String>)
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Conversation<R, T> {
     pub role: R,
     pub content: T,
 }
 
-pub type Documents = HashMap<String, String>;
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
+pub enum Chat<'a, R, T> {
+    Borrowed(&'a [Conversation<R, T>]),
+    Owned(Vec<Conversation<R, T>>),
+}
+
+impl<R, T> Deref for Chat<'_, R, T> {
+    type Target = [Conversation<R, T>];
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Chat::Borrowed(conversations) => conversations,
+            Chat::Owned(conversations) => conversations,
+        }
+    }
+}
+
+impl<R, T> From<Vec<Conversation<R, T>>> for Chat<'_, R, T> {
+    fn from(value: Vec<Conversation<R, T>>) -> Self {
+        Chat::Owned(value)
+    }
+}
+
+impl<'a, R, T> From<&'a [Conversation<R, T>]> for Chat<'a, R, T> {
+    fn from(value: &'a [Conversation<R, T>]) -> Self {
+        Chat::Borrowed(value)
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Document {
+    pub title: String,
+    pub text: String,
+}
 
 pub enum Padding {
     Longest,
@@ -170,10 +210,16 @@ pub enum Truncation {
 }
 
 #[derive(Default)]
-pub struct ApplyChatTemplateArgs<'a, R=Role, T=String> {
-    pub conversations: &'a [Conversation<R, T>],
-    pub tools: Option<Box<dyn FnOnce()>>, // TODO: how to get response?
-    pub documents: Option<&'a [Documents]>,
+pub struct ApplyChatTemplateArgs<'a, I, R=Role, T=String> 
+where 
+    I: IntoIterator<Item = Chat<'a, R, T>>,
+    R: Serialize + 'a,
+    T: Serialize + ToString + 'a,
+{
+    // pub conversations: &'a [Conversation<R, T>],
+    pub conversations: I,
+    // pub tools: Option<Box<dyn FnOnce()>>, // TODO
+    pub documents: Option<&'a [Document]>,
     pub model_id: &'a str,
     pub chat_template_id: Option<&'a str>,
     pub add_generation_prompt: Option<bool>,
@@ -372,18 +418,19 @@ pub fn load_model_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Re
 
 //     return rendered, all_generation_indices
 
-pub fn apply_chat_template<'a, R, T>(
+pub fn apply_chat_template<'a, I, R, T>(
     env: &'a mut Environment<'a>,
     model_template: impl Into<Cow<'a, str>>,
-    args: ApplyChatTemplateArgs<'a, R, T>,
-) -> Result<String, Error> 
+    args: ApplyChatTemplateArgs<'a, I, R, T>,
+) -> Result<Vec<String>, Error> 
 where 
-    R: Serialize,
-    T: Serialize,
+    I: IntoIterator<Item = Chat<'a, R, T>> ,
+    R: Serialize + 'a,
+    T: Serialize + ToString + 'a,
 {
     let ApplyChatTemplateArgs {
         conversations,
-        tools,
+        // tools,
         documents,
         model_id,
         chat_template_id,
@@ -414,15 +461,76 @@ where
 
     // TODO: allow return_generation_indices
 
-    let rendered_chat = template.render(context! {
-        messages => conversations,
-        documents => documents,
-        add_generation_prompt => add_generation_prompt,
-    })?;
+    // let rendered_chat = template.render(context! {
+    //     messages => conversations,
+    //     documents => documents,
+    //     add_generation_prompt => add_generation_prompt,
+    // })?;
 
     // TODO: how to remove the final_message?
 
-    Ok(rendered_chat)
+    // Ok(rendered_chat)
+
+    render_jinja_tempalte(
+        template,
+        conversations,
+        documents,
+        Some(add_generation_prompt),
+        Some(continue_final_message),
+    )
+}
+
+// TODO: render with assistant indices
+fn render_jinja_tempalte<'a, R, T>(
+    template: Template,
+    conversations: impl IntoIterator<Item = Chat<'a, R, T>>,
+    documents: Option<&'a [Document]>,
+    add_generation_prompt: Option<bool>,
+    continue_final_message: Option<bool>,
+) -> Result<Vec<String>, Error>
+where 
+    R: Serialize + 'a, 
+    T: Serialize + ToString + 'a,
+{
+    let add_generation_prompt = add_generation_prompt.unwrap_or(false);
+    let continue_final_message = continue_final_message.unwrap_or(false);
+
+    // TODO: what does checking for "messages" key do in the python code?
+    let mut rendered = Vec::new();
+    for chat in conversations {
+        let mut rendered_chat = template.render(context! {
+            messages => chat,
+            documents => documents,
+            add_generation_prompt => add_generation_prompt,
+        })?;
+        
+        if continue_final_message {
+            let Some(final_message) = chat.last().map(|chat| &chat.content) else {
+                continue;
+            };
+            
+            let final_message_str = final_message.to_string();
+            
+            if !rendered_chat.contains(&final_message_str.trim()) {
+                return Err(Error::FinalMsgNotInChat);
+            }
+
+            let final_msg_loc = rendered_chat.rfind(&final_message_str.trim()).unwrap();
+            let final_msg_len = final_message_str.trim_start().len();
+            rendered_chat = if rendered_chat[final_msg_loc..final_msg_loc + final_msg_len] == final_message_str {
+                // The template preserves spacing or the message doesn't have trailing spacing, so things are simple
+                // Trim everything after the final message
+                // e.g. "Hello, how are you?   " -> "Hello, how are you?"
+                rendered_chat[..final_msg_loc + final_msg_len].to_string()
+            } else {
+                // The message has trailing spacing that was trimmed, so we must be more cautious
+                rendered_chat[..final_msg_loc + final_message_str.trim().len()].to_string()
+            };
+        }
+        rendered.push(rendered_chat);
+    }
+
+    Ok(rendered)
 }
 
 #[cfg(test)]
@@ -472,8 +580,7 @@ mod tests {
         assert!(!model_chat_template.is_empty());
 
         let args = ApplyChatTemplateArgs {
-            conversations: &conversations,
-            tools: None,
+            conversations: [conversations.into()],
             documents: None,
             model_id: &model_id,
             chat_template_id: None,
@@ -515,8 +622,7 @@ mod tests {
         assert!(!model_chat_template.is_empty());
 
         let args = ApplyChatTemplateArgs {
-            conversations: &conversations,
-            tools: None,
+            conversations: [conversations.into()],
             documents: None,
             model_id: &model_id,
             chat_template_id: None,

@@ -500,8 +500,6 @@ where
             let final_msg_len = final_message_str.trim_start().len();
             rendered_chat = if rendered_chat[final_msg_loc..final_msg_loc + final_msg_len] == final_message_str {
                 // The template preserves spacing or the message doesn't have trailing spacing, so things are simple
-                // Trim everything after the final message
-                // e.g. "Hello, how are you?   " -> "Hello, how are you?"
                 rendered_chat[..final_msg_loc + final_msg_len].to_string()
             } else {
                 // The message has trailing spacing that was trimmed, so we must be more cautious

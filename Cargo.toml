@@ -22,9 +22,9 @@ members = [
     "mlx-rs",
     "mlx-internal-macros",
     "mlx-lm",
+    "mlx-lm-utils", 
     "mlx-tests",
     "examples/*", 
-    "mlx-lm-utils", 
 ]
 
 resolver = "2"
@@ -35,6 +35,7 @@ mlx-sys = { version = "=0.2.0", path = "mlx-sys" }
 mlx-macros = { version = "0.25", path = "mlx-macros" }
 mlx-internal-macros = { version = "0.25", path = "mlx-internal-macros" }
 mlx-rs = { version = "0.25.1", path = "mlx-rs" }
+mlx-lm-utils = { version = "0.0.1", path = "mlx-lm-utils" }
 
 # external dependencies
 thiserror = "2"

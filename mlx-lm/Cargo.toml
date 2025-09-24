@@ -1,6 +1,6 @@
 [package]
 name = "mlx-lm"
-version.workspace = true
+version = "0.0.1"
 edition.workspace = true
 authors.workspace = true
 repository.workspace = true
@@ -12,6 +12,7 @@ documentation.workspace = true
 [dependencies]
 # Local dependencies
 mlx-rs.workspace = true
+mlx-lm-utils.workspace = true
 
 # External dependencies
 serde = { version = "1", features = ["derive"] }

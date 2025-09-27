@@ -611,9 +611,9 @@ mod tests {
     use std::path::PathBuf;
 
     use hf_hub::{api::sync::ApiBuilder, Repo};
-    use mlx_rs::{module::Module, ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array};
+    use mlx_rs::{ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array};
 
-    use crate::{cache::ConcatKeyValueCache, models::qwen3::{load_qwen3_model, load_qwen3_tokenizer, ModelInput}};
+    use crate::{cache::ConcatKeyValueCache, models::qwen3::{load_qwen3_model, load_qwen3_tokenizer}};
 
     #[test]
     fn test_load_qwen3_model() {

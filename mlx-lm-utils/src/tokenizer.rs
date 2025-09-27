@@ -65,10 +65,10 @@
 //     set, will return a dict of tokenizer outputs instead.
 // """
 
-use std::{borrow::Cow, collections::HashMap, fmt::Display, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
+use std::{borrow::Cow, collections::HashMap, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
 
 use minijinja::{context, Environment, Template};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokenizers::Encoding;
 
 use crate::error::Error;

@@ -9,6 +9,16 @@ use crate::cache::KeyValueCache;
 pub mod rope;
 pub mod tokenizer;
 
+macro_rules! try_unwrap {
+    ($expr:expr) => {
+        match $expr {
+            core::result::Result::Ok(val) => val,
+            core::result::Result::Err(e) => return Some(Err(e.into())),
+        }
+    };
+}
+pub(crate) use try_unwrap;
+
 // def quantized_scaled_dot_product_attention(
 //     queries: mx.array,
 //     q_keys: tuple[mx.array, mx.array, mx.array],

@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 use mlx_rs::{error::Exception, module::Module, Array};
 
 use crate::{
-    cache::KeyValueCache, sampler::Sampler, utils::try_unwrap, ModelInput, ModelInputBuilder, ModelOutput
+    cache::KeyValueCache, sampler::Sampler, utils::try_unwrap, ModelInput, ModelInputBuilder,
+    ModelOutput,
 };
 
 pub(super) enum Stage<C, T> {
@@ -78,7 +79,11 @@ where
 
                 Some(Ok(y))
             }
-            Stage::Decode { y, mut cache, mut state } => {
+            Stage::Decode {
+                y,
+                mut cache,
+                mut state,
+            } => {
                 let builder = ModelInputBuilder {
                     y: &y,
                     cache: &mut cache,
@@ -97,7 +102,7 @@ where
                 };
 
                 Some(Ok(y))
-            },
+            }
             Stage::Generating => unreachable!(),
         }
     }

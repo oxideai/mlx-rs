@@ -65,7 +65,14 @@
 //     set, will return a dict of tokenizer outputs instead.
 // """
 
-use std::{borrow::Cow, collections::HashMap, fs::read_to_string, ops::{Deref, DerefMut}, path::Path, str::FromStr};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    fs::read_to_string,
+    ops::{Deref, DerefMut},
+    path::Path,
+    str::FromStr,
+};
 
 use minijinja::{context, Environment, Template};
 use serde::Serialize;
@@ -84,31 +91,31 @@ impl<'a> Tokenizer<'a> {
     pub fn from_tokenizer(tokenizer: tokenizers::Tokenizer) -> Self {
         let mut env = Environment::new();
         env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
-        Self { inner: tokenizer, env }
+        Self {
+            inner: tokenizer,
+            env,
+        }
     }
 
     pub fn from_file(file: impl AsRef<Path>) -> tokenizers::Result<Self> {
-        tokenizers::Tokenizer::from_file(file)
-            .map(Self::from_tokenizer)
+        tokenizers::Tokenizer::from_file(file).map(Self::from_tokenizer)
     }
 
     pub fn from_bytes(bytes: impl AsRef<[u8]>) -> tokenizers::Result<Self> {
-        tokenizers::Tokenizer::from_bytes(bytes)
-            .map(Self::from_tokenizer)
+        tokenizers::Tokenizer::from_bytes(bytes).map(Self::from_tokenizer)
     }
 
     pub fn from_str(s: &str) -> tokenizers::Result<Self> {
-        tokenizers::Tokenizer::from_str(s)
-            .map(Self::from_tokenizer)
+        tokenizers::Tokenizer::from_str(s).map(Self::from_tokenizer)
     }
 
     pub fn apply_chat_template<I, R, T>(
         &'a mut self,
         model_template: impl Into<Cow<'a, str>>,
-        args: ApplyChatTemplateArgs<'a, I, R, T>
-    ) -> Result<Vec<String>, Error> 
-    where 
-        I: IntoIterator<Item = Chat<'a, R, T>> ,
+        args: ApplyChatTemplateArgs<'a, I, R, T>,
+    ) -> Result<Vec<String>, Error>
+    where
+        I: IntoIterator<Item = Chat<'a, R, T>>,
         R: Serialize + 'a,
         T: Serialize + ToString + 'a,
     {
@@ -119,16 +126,18 @@ impl<'a> Tokenizer<'a> {
         &'a mut self,
         model_template: impl Into<Cow<'a, str>>,
         args: ApplyChatTemplateArgs<'a, I, R, T>,
-    ) -> Result<Vec<Encoding>, Error> 
-    where 
-        I: IntoIterator<Item = Chat<'a, R, T>> ,
+    ) -> Result<Vec<Encoding>, Error>
+    where
+        I: IntoIterator<Item = Chat<'a, R, T>>,
         R: Serialize + 'a,
         T: Serialize + ToString + 'a,
     {
         let Self { inner, env } = self;
 
         let rendered_chats = apply_chat_template(env, model_template, args)?;
-        inner.encode_batch(rendered_chats, false).map_err(Into::into)
+        inner
+            .encode_batch(rendered_chats, false)
+            .map_err(Into::into)
     }
 }
 
@@ -146,7 +155,6 @@ impl DerefMut for Tokenizer<'_> {
     }
 }
 
-
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
@@ -157,7 +165,7 @@ pub enum Role {
 #[derive(Debug, Clone, Serialize)]
 pub enum Content {
     String(String),
-    Map(HashMap<String, String>)
+    Map(HashMap<String, String>),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -212,8 +220,8 @@ pub enum Truncation {
 }
 
 #[derive(Default)]
-pub struct ApplyChatTemplateArgs<'a, I, R=Role, T=String> 
-where 
+pub struct ApplyChatTemplateArgs<'a, I, R = Role, T = String>
+where
     I: IntoIterator<Item = Chat<'a, R, T>>,
     R: Serialize + 'a,
     T: Serialize + ToString + 'a,
@@ -229,16 +237,19 @@ where
 }
 
 pub fn load_model_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
-    serde_json::from_str::<serde_json::Value>(content).map(|value| {
-        value
-            .get("chat_template")
-            .and_then(|value| value.as_str())
-            .map(ToString::to_string)
-    })
-    .map_err(Into::into)
+    serde_json::from_str::<serde_json::Value>(content)
+        .map(|value| {
+            value
+                .get("chat_template")
+                .and_then(|value| value.as_str())
+                .map(ToString::to_string)
+        })
+        .map_err(Into::into)
 }
 
-pub fn load_model_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Result<Option<String>> {
+pub fn load_model_chat_template_from_file(
+    file: impl AsRef<Path>,
+) -> std::io::Result<Option<String>> {
     let content = read_to_string(file)?;
     load_model_chat_template_from_str(&content)
 }
@@ -417,9 +428,9 @@ pub fn apply_chat_template<'a, I, R, T>(
     env: &'a mut Environment<'a>,
     model_template: impl Into<Cow<'a, str>>,
     args: ApplyChatTemplateArgs<'a, I, R, T>,
-) -> Result<Vec<String>, Error> 
-where 
-    I: IntoIterator<Item = Chat<'a, R, T>> ,
+) -> Result<Vec<String>, Error>
+where
+    I: IntoIterator<Item = Chat<'a, R, T>>,
     R: Serialize + 'a,
     T: Serialize + ToString + 'a,
 {
@@ -437,7 +448,7 @@ where
     let continue_final_message = continue_final_message.unwrap_or(false);
 
     let template = match chat_template_id {
-        Some(chat_template_id) => env.get_template(&chat_template_id)?,
+        Some(chat_template_id) => env.get_template(chat_template_id)?,
         None => match env.get_template(model_id) {
             Ok(template) => template,
             Err(_) => {
@@ -469,8 +480,8 @@ fn render_jinja_tempalte<'a, R, T>(
     add_generation_prompt: Option<bool>,
     continue_final_message: Option<bool>,
 ) -> Result<Vec<String>, Error>
-where 
-    R: Serialize + 'a, 
+where
+    R: Serialize + 'a,
     T: Serialize + ToString + 'a,
 {
     let add_generation_prompt = add_generation_prompt.unwrap_or(false);
@@ -484,21 +495,23 @@ where
             documents => documents,
             add_generation_prompt => add_generation_prompt,
         })?;
-        
+
         if continue_final_message {
             let Some(final_message) = chat.last().map(|chat| &chat.content) else {
                 continue;
             };
-            
+
             let final_message_str = final_message.to_string();
-            
-            if !rendered_chat.contains(&final_message_str.trim()) {
+
+            if !rendered_chat.contains(final_message_str.trim()) {
                 return Err(Error::FinalMsgNotInChat);
             }
 
             let final_msg_loc = rendered_chat.rfind(&final_message_str.trim()).unwrap();
             let final_msg_len = final_message_str.trim_start().len();
-            rendered_chat = if rendered_chat[final_msg_loc..final_msg_loc + final_msg_len] == final_message_str {
+            rendered_chat = if rendered_chat[final_msg_loc..final_msg_loc + final_msg_len]
+                == final_message_str
+            {
                 // The template preserves spacing or the message doesn't have trailing spacing, so things are simple
                 rendered_chat[..final_msg_loc + final_msg_len].to_string()
             } else {
@@ -519,7 +532,10 @@ mod tests {
     use hf_hub::{api::sync::ApiBuilder, Repo};
     use minijinja::Environment;
 
-    use crate::tokenizer::{apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role};
+    use crate::tokenizer::{
+        apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs,
+        Conversation, Role,
+    };
 
     #[test]
     fn test_load_chat_template_from_file() {
@@ -528,7 +544,8 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
         let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
         let file = repo.get("tokenizer_config.json").unwrap();
@@ -543,15 +560,14 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
-        let conversations = vec![
-            Conversation {
-                role: Role::User,
-                content: "hello",
-            }
-        ];
+        let conversations = vec![Conversation {
+            role: Role::User,
+            content: "hello",
+        }];
 
         let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
         let file = repo.get("tokenizer_config.json").unwrap();
@@ -581,15 +597,14 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
-        let conversations = vec![
-            Conversation {
-                role: Role::User,
-                content: "hello",
-            }
-        ];
+        let conversations = vec![Conversation {
+            role: Role::User,
+            content: "hello",
+        }];
 
         let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
         let tokenizer_file = repo.get("tokenizer.json").unwrap();
@@ -597,7 +612,9 @@ mod tests {
 
         let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
 
-        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file).unwrap().unwrap();
+        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file)
+            .unwrap()
+            .unwrap();
         assert!(!model_chat_template.is_empty());
 
         let args = ApplyChatTemplateArgs {
@@ -609,7 +626,9 @@ mod tests {
             continue_final_message: None,
         };
 
-        let rendered_chat = tokenizer.apply_chat_template(&model_chat_template, args).unwrap();
+        let rendered_chat = tokenizer
+            .apply_chat_template(&model_chat_template, args)
+            .unwrap();
         println!("{:?}", rendered_chat);
     }
 
@@ -620,15 +639,14 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
-        let conversations = vec![
-            Conversation {
-                role: Role::User,
-                content: "hello",
-            }
-        ];
+        let conversations = vec![Conversation {
+            role: Role::User,
+            content: "hello",
+        }];
 
         let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
         let tokenizer_file = repo.get("tokenizer.json").unwrap();
@@ -636,7 +654,9 @@ mod tests {
 
         let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
 
-        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file).unwrap().unwrap();
+        let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file)
+            .unwrap()
+            .unwrap();
         assert!(!model_chat_template.is_empty());
 
         let args = ApplyChatTemplateArgs {
@@ -648,7 +668,9 @@ mod tests {
             continue_final_message: None,
         };
 
-        let encodings = tokenizer.apply_chat_template_and_encode(&model_chat_template, args).unwrap();
+        let encodings = tokenizer
+            .apply_chat_template_and_encode(&model_chat_template, args)
+            .unwrap();
         println!("{:?}", encodings.iter().map(|e| e.get_ids()).flatten());
     }
 }

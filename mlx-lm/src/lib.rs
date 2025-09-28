@@ -1,9 +1,9 @@
 pub mod cache;
-pub mod models;
-pub mod utils;
 pub mod error;
 pub mod generate;
+pub mod models;
 pub mod sampler;
+pub mod utils;
 
 use mlx_rs::Array;
 
@@ -26,7 +26,7 @@ impl<'a, C> ModelInput<'a, C, Option<Array>> for qwen3::ModelInput<'a, C> {
         Self {
             inputs: y,
             mask: state.as_ref(),
-            cache
+            cache,
         }
     }
 }

@@ -61,7 +61,7 @@ where
 }
 
 impl<M> Quantizable for Option<M>
-where 
+where
     M: Quantizable,
 {
     type Quantized = Option<M::Quantized>;

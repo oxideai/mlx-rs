@@ -162,7 +162,7 @@ impl Parameter for Param<Option<Array>> {
 }
 
 impl<M> Parameter for Option<M>
-where 
+where
     M: ModuleParameters,
 {
     fn count(&self) -> usize {

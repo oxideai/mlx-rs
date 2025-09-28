@@ -3,7 +3,14 @@ use std::marker::PhantomData;
 use mlx_lm_utils::tokenizer::Tokenizer;
 use mlx_rs::{error::Exception, module::Module, Array};
 
-use crate::{cache::{ConcatKeyValueCache, KeyValueCache}, error::Error, generate::generate_token::{GenerateToken, Stage}, sampler::{DefaultSampler, Sampler}, utils::try_unwrap, ModelInput, ModelOutput};
+use crate::{
+    cache::{ConcatKeyValueCache, KeyValueCache},
+    error::Error,
+    generate::generate_token::{GenerateToken, Stage},
+    sampler::{DefaultSampler, Sampler},
+    utils::try_unwrap,
+    ModelInput, ModelOutput,
+};
 
 mod generate_token;
 
@@ -29,7 +36,6 @@ impl<'a, M, I> Generate<'a, M, I> {
         }
     }
 }
-
 
 pub struct Builder<Tok, M, I, P, S = DefaultSampler, C = ConcatKeyValueCache, T = ()> {
     pub tokenizer: Tok,
@@ -175,7 +181,12 @@ where
         };
 
         let ids = Vec::with_capacity(max_tokens);
-        Generate { tokenizer, token_generator, max_tokens, ids }
+        Generate {
+            tokenizer,
+            token_generator,
+            max_tokens,
+            ids,
+        }
     }
 }
 
@@ -184,7 +195,7 @@ pub struct Response {
     pub ids: Vec<u32>,
 }
 
-impl<'a, M, I, S, C, T> Iterator for Generate<'a, M, I, S, C, T> 
+impl<'a, M, I, S, C, T> Iterator for Generate<'a, M, I, S, C, T>
 where
     M: Module<I>,
     M::Error: Into<Exception>,
@@ -200,12 +211,12 @@ where
             let token = try_unwrap!(self.token_generator.next()?);
             let id = try_unwrap!(token.try_item());
             self.ids.push(id);
-    
+
             if self.ids.len() >= self.max_tokens {
                 let text = try_unwrap!(self.tokenizer.decode(&self.ids, true));
                 let mut ids = Vec::with_capacity(self.max_tokens);
                 std::mem::swap(&mut self.ids, &mut ids);
-                return Some(Ok(Response { text, ids }))
+                return Some(Ok(Response { text, ids }));
             }
         }
     }

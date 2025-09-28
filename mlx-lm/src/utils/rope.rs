@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use mlx_rs::{builder::Builder, error::Exception, macros::ModuleParameters, nn};
+use mlx_rs::{builder::Builder, error::Exception, nn};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,7 +30,7 @@ pub fn initialize_rope(
     base: f32, // rope_theta
     traditional: bool,
     scaling_config: &Option<HashMap<String, FloatOrString>>,
-    max_position_embeddings: i32,
+    _max_position_embeddings: i32, // TODO: implement other RoPE
 ) -> Result<nn::Rope, Exception> {
     let rope_type = scaling_config
         .as_ref()
@@ -82,9 +82,10 @@ pub fn initialize_rope(
     )))
 }
 
-#[derive(Debug, Clone, ModuleParameters)]
-pub struct Llama3Rope {
-    dims: i32,
-    max_position_embeddings: i32,
-    traditional: bool,
-}
+// // TODO
+// #[derive(Debug, Clone, ModuleParameters)]
+// pub struct Llama3Rope {
+//     dims: i32,
+//     max_position_embeddings: i32,
+//     traditional: bool,
+// }

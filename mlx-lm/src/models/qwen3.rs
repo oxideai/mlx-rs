@@ -2,14 +2,29 @@ use std::collections::{HashMap, HashSet};
 
 use hf_hub::api::sync::ApiRepo;
 use mlx_rs::{
-    argmax_axis, array, builder::Builder, categorical, error::Exception, macros::{ModuleParameters, Quantizable}, module::{Module, ModuleParametersExt}, nn, ops::indexing::{IndexOp, NewAxis}, quantization::MaybeQuantized, Array
+    argmax_axis, array,
+    builder::Builder,
+    categorical,
+    error::Exception,
+    macros::{ModuleParameters, Quantizable},
+    module::{Module, ModuleParametersExt},
+    nn,
+    ops::indexing::{IndexOp, NewAxis},
+    quantization::MaybeQuantized,
+    Array,
 };
 use serde::Deserialize;
 use serde_json::Value;
 use tokenizers::Tokenizer;
 
 use crate::{
-    cache::KeyValueCache, error::Error, utils::{create_attention_mask, rope::{initialize_rope, FloatOrString}, AttentionMask}
+    cache::KeyValueCache,
+    error::Error,
+    utils::{
+        create_attention_mask,
+        rope::{initialize_rope, FloatOrString},
+        AttentionMask,
+    },
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -114,8 +129,8 @@ pub struct AttentionInput<'a, C> {
     pub cache: Option<&'a mut C>,
 }
 
-impl<C> Module<AttentionInput<'_, C>> for Attention 
-where 
+impl<C> Module<AttentionInput<'_, C>> for Attention
+where
     C: KeyValueCache,
 {
     type Output = Array;
@@ -384,15 +399,15 @@ where
             Some(mask) => Some(mask.clone()),
             None => match create_attention_mask(&h, cache, Some(true))? {
                 Some(AttentionMask::Array(a)) => Some(a),
-                Some(AttentionMask::Causal) => return Err(Exception::custom("Only `Array` mask is supported")),
-                None => None
+                Some(AttentionMask::Causal) => {
+                    return Err(Exception::custom("Only `Array` mask is supported"))
+                }
+                None => None,
             },
         };
-        
+
         if cache.is_empty() {
-            *cache = (0..self.layers.len())
-                .map(|_| None)
-                .collect();
+            *cache = (0..self.layers.len()).map(|_| None).collect();
         }
 
         for (layer, c) in self.layers.iter_mut().zip(cache.iter_mut()) {
@@ -433,10 +448,9 @@ impl Model {
     pub fn new(args: ModelArgs) -> Result<Self, Exception> {
         let model = Qwen3Model::new(&args)?;
         let lm_head = if !args.tie_word_embeddings {
-            Some(nn::LinearBuilder::new(args.hidden_size, args.vocab_size)
-                .bias(false)
-                .build()?)
-                .map(MaybeQuantized::Original)
+            Some(MaybeQuantized::Original(nn::LinearBuilder::new(args.hidden_size, args.vocab_size)
+                    .bias(false)
+                    .build()?))
         } else {
             None
         };
@@ -463,13 +477,13 @@ where
 
     fn forward(&mut self, input: ModelInput<'_, C>) -> Result<Self::Output, Self::Error> {
         let out = self.model.forward(input)?;
-        
+
         match self.lm_head.as_mut() {
             Some(lm_head) => lm_head.forward(&out),
             None => match &mut self.model.embed_tokens {
                 MaybeQuantized::Original(embed_tokens) => embed_tokens.as_linear(&out),
                 MaybeQuantized::Quantized(q_embed_tokens) => q_embed_tokens.as_linear(&out),
-            }
+            },
         }
     }
 
@@ -535,11 +549,16 @@ pub struct Generate<'a, C> {
     state: GenerateState<'a>,
 }
 
-impl<'a, C> Generate<'a, C> 
-where 
+impl<'a, C> Generate<'a, C>
+where
     C: KeyValueCache,
 {
-    pub fn new(model: &'a mut Model, cache: &'a mut Vec<Option<C>>, temp: f32, prompt_token: &'a Array) -> Self {
+    pub fn new(
+        model: &'a mut Model,
+        cache: &'a mut Vec<Option<C>>,
+        temp: f32,
+        prompt_token: &'a Array,
+    ) -> Self {
         Self {
             model,
             cache,
@@ -550,12 +569,8 @@ where
 }
 
 pub enum GenerateState<'a> {
-    Prefill {
-        prompt_token: &'a Array,
-    },
-    Decode {
-        y: Array,
-    },
+    Prefill { prompt_token: &'a Array },
+    Decode { y: Array },
 }
 
 macro_rules! tri {
@@ -567,8 +582,8 @@ macro_rules! tri {
     };
 }
 
-impl<'a, C> Iterator for Generate<'a, C> 
-where 
+impl<'a, C> Iterator for Generate<'a, C>
+where
     C: KeyValueCache,
 {
     type Item = Result<Array, Exception>;
@@ -586,7 +601,7 @@ where
                 self.state = GenerateState::Decode { y: y.clone() };
 
                 Some(Ok(y))
-            },
+            }
             GenerateState::Decode { y } => {
                 let inputs = y.index((.., NewAxis));
                 let input = ModelInput {
@@ -600,20 +615,26 @@ where
                 self.state = GenerateState::Decode { y: y.clone() };
 
                 Some(Ok(y))
-            },
+            }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use hf_hub::{api::sync::ApiBuilder, Repo};
-    use mlx_rs::{ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array};
+    use mlx_rs::{
+        ops::indexing::{IndexOp, NewAxis},
+        transforms::eval,
+        Array,
+    };
 
-    use crate::{cache::ConcatKeyValueCache, models::qwen3::{load_qwen3_model, load_qwen3_tokenizer}};
+    use crate::{
+        cache::ConcatKeyValueCache,
+        models::qwen3::{load_qwen3_model, load_qwen3_tokenizer},
+    };
 
     #[test]
     fn test_load_qwen3_model() {
@@ -622,7 +643,8 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
 
         let model_path = "mlx-community/Qwen3-0.6B-bf16".to_string();
         let repo = api.repo(Repo::new(model_path, hf_hub::RepoType::Model));
@@ -636,7 +658,8 @@ mod tests {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
             .with_cache_dir(hf_cache_dir)
-            .build().unwrap();
+            .build()
+            .unwrap();
 
         // let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
@@ -666,8 +689,13 @@ mod tests {
         let mut cache = Vec::new();
 
         let mut tokens = Vec::new();
-        let generate = super::Generate::<ConcatKeyValueCache>::new(&mut model, &mut cache, 0.0, &prompt_tokens);
-        for (token, ntoks) in generate.zip(0..10) { 
+        let generate = super::Generate::<ConcatKeyValueCache>::new(
+            &mut model,
+            &mut cache,
+            0.0,
+            &prompt_tokens,
+        );
+        for (token, ntoks) in generate.zip(0..10) {
             let token = token.unwrap();
             tokens.push(token.clone());
 

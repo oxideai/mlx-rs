@@ -79,8 +79,11 @@ impl KeyValueCache for ConcatKeyValueCache {
         None
     }
 
-    fn update_and_fetch(&mut self, keys: Array, values: Array)
-        -> Result<(Array, Array), Exception> {
+    fn update_and_fetch(
+        &mut self,
+        keys: Array,
+        values: Array,
+    ) -> Result<(Array, Array), Exception> {
         match (self.keys.take(), self.values.take()) {
             (Some(k), Some(v)) => {
                 self.keys = Some(concatenate_axis(&[k, keys], -2)?);
@@ -94,12 +97,12 @@ impl KeyValueCache for ConcatKeyValueCache {
         let shape = self.keys.as_ref().expect("Keys cannot be None").shape();
         self.offset = shape[shape.len() - 2];
 
-        Ok((self.keys.clone().expect("Keys cannot be None"), 
-            self.values.clone().expect("Values cannot be None")))
+        Ok((
+            self.keys.clone().expect("Keys cannot be None"),
+            self.values.clone().expect("Values cannot be None"),
+        ))
     }
 }
 
 /// TODO: A generic KV Cache
-pub struct DefaultKeyValueCache {
-
-}
+pub struct DefaultKeyValueCache {}

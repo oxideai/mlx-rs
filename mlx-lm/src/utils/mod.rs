@@ -1,7 +1,13 @@
-use std::marker::PhantomData;
-
 use mlx_rs::{
-    arange, array, error::Exception, expand_dims, fast::ScaledDotProductAttentionMask, module::Module, ops::{expand_dims, indexing::{IndexOp, NewAxis}, quantized_matmul, reshape, softmax_axis}, Array, Dtype
+    arange,
+    error::Exception,
+    fast::ScaledDotProductAttentionMask,
+    ops::{
+        expand_dims,
+        indexing::{IndexOp, NewAxis},
+        quantized_matmul, reshape, softmax_axis,
+    },
+    Array, Dtype,
 };
 
 use crate::cache::KeyValueCache;
@@ -77,31 +83,38 @@ pub(crate) fn quantized_scaled_dot_product_attention(
     bits: i32,
 ) -> Result<Array, Exception> {
     let q_shape = queries.shape();
-    let B = *q_shape.get(0).ok_or_else(index_out_of_bound_exception)?;
+    let B = *q_shape.first().ok_or_else(index_out_of_bound_exception)?;
     let n_q_heads = *q_shape.get(1).ok_or_else(index_out_of_bound_exception)?;
     let L = *q_shape.get(2).ok_or_else(index_out_of_bound_exception)?;
     let D = *q_shape.get(3).ok_or_else(index_out_of_bound_exception)?;
 
     let q_keys_shape = q_keys.keys.shape();
-    let n_kv_heads = q_keys_shape[q_keys_shape.len()-3];
+    let n_kv_heads = q_keys_shape[q_keys_shape.len() - 3];
     let n_repeats = n_q_heads / n_kv_heads;
 
     let mut queries = queries * scale;
 
     if n_repeats > 1 {
         queries = reshape(&queries, &[B, n_kv_heads, n_repeats, L, D])?;
-        
+
         q_keys.keys = expand_dims(q_keys.keys, -3)?;
         q_keys.scales = expand_dims(q_keys.scales, -3)?;
-        q_keys.biases= expand_dims(q_keys.biases, -3)?;
-
+        q_keys.biases = expand_dims(q_keys.biases, -3)?;
 
         q_values.values = expand_dims(q_values.values, -3)?;
         q_values.scales = expand_dims(q_values.scales, -3)?;
         q_values.biases = expand_dims(q_values.biases, -3)?;
     }
-    
-    let mut scores = quantized_matmul(&queries, q_keys.keys, q_keys.scales, q_keys.biases, true, group_size, bits)?;
+
+    let mut scores = quantized_matmul(
+        &queries,
+        q_keys.keys,
+        q_keys.scales,
+        q_keys.biases,
+        true,
+        group_size,
+        bits,
+    )?;
 
     if let Some(mask) = mask {
         // TODO: handle str type mask
@@ -114,7 +127,15 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         }
     }
     scores = softmax_axis(scores, -1, true)?;
-    let mut out = quantized_matmul(scores, q_values.values, q_values.scales, q_values.biases, false, group_size, bits)?;
+    let mut out = quantized_matmul(
+        scores,
+        q_values.values,
+        q_values.scales,
+        q_values.biases,
+        false,
+        group_size,
+        bits,
+    )?;
 
     if n_repeats > 1 {
         out = reshape(out, &[B, n_q_heads, L, D])?;
@@ -137,7 +158,7 @@ pub struct QuantizedValues {
 
 pub enum MaybeQuantizedKeys {
     Original(Array),
-    Quantized(QuantizedKeys)
+    Quantized(QuantizedKeys),
 }
 
 impl From<Array> for MaybeQuantizedKeys {
@@ -193,8 +214,14 @@ where
                 .ok_or_else(|| Exception::custom("Cache is quantized but bits are not set"))?;
 
             let (keys, values) = match (keys, values) {
-                (MaybeQuantizedKeys::Quantized(keys), MaybeQuantizedValues::Quantized(values)) => (keys, values),
-                _ => return Err(Exception::custom("Both keys and values must be quantized when KV cache is quantized"))
+                (MaybeQuantizedKeys::Quantized(keys), MaybeQuantizedValues::Quantized(values)) => {
+                    (keys, values)
+                }
+                _ => {
+                    return Err(Exception::custom(
+                        "Both keys and values must be quantized when KV cache is quantized",
+                    ))
+                }
             };
 
             return quantized_scaled_dot_product_attention(
@@ -204,8 +231,14 @@ where
     }
 
     let (keys, values) = match (keys, values) {
-        (MaybeQuantizedKeys::Original(keys), MaybeQuantizedValues::Original(values)) => (keys, values),
-        _ => return Err(Exception::custom("Both keys and values must NOT be quantized when KV cache is NOT quantized"))
+        (MaybeQuantizedKeys::Original(keys), MaybeQuantizedValues::Original(values)) => {
+            (keys, values)
+        }
+        _ => {
+            return Err(Exception::custom(
+                "Both keys and values must NOT be quantized when KV cache is NOT quantized",
+            ))
+        }
     };
 
     mlx_rs::fast::scaled_dot_product_attention(
@@ -294,4 +327,3 @@ where
         Ok(None)
     }
 }
-

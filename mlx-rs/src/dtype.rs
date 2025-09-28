@@ -2,7 +2,7 @@ use half::{bf16, f16};
 use mlx_internal_macros::generate_test_cases;
 use strum::EnumIter;
 
-use crate::error::{Exception, InexactDtypeError};
+use crate::error::InexactDtypeError;
 
 generate_test_cases! {
     /// Array element type
@@ -95,7 +95,7 @@ impl Dtype {
             Dtype::Float32 => Ok(f32::MIN as f64),
             Dtype::Complex64 => Ok(f32::MIN as f64),
             Dtype::Bfloat16 => Ok(bf16::MIN.to_f64_const()),
-            _ => Err(InexactDtypeError(*self))
+            _ => Err(InexactDtypeError(*self)),
         }
     }
 
@@ -107,7 +107,7 @@ impl Dtype {
             Dtype::Float32 => Ok(f32::MAX as f64),
             Dtype::Complex64 => Ok(f32::MAX as f64),
             Dtype::Bfloat16 => Ok(bf16::MAX.to_f64_const()),
-            _ => Err(InexactDtypeError(*self))
+            _ => Err(InexactDtypeError(*self)),
         }
     }
 }

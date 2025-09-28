@@ -14,14 +14,14 @@ use crate::{
 
 mod generate_token;
 
-pub struct Generate<'a, M, I, S = DefaultSampler, C = ConcatKeyValueCache, T = ()> {
-    tokenizer: Tokenizer<'a>,
+pub struct Generate<M, I, S = DefaultSampler, C = ConcatKeyValueCache, T = ()> {
+    tokenizer: Tokenizer,
     token_generator: GenerateToken<M, I, S, C, T>,
     max_tokens: usize,
     ids: Vec<u32>,
 }
 
-impl<'a, M, I> Generate<'a, M, I> {
+impl Generate<(), ()> {
     pub fn builder() -> Builder<(), (), (), ()> {
         Builder {
             tokenizer: (),
@@ -52,8 +52,8 @@ pub struct Builder<Tok, M, I, P, S = DefaultSampler, C = ConcatKeyValueCache, T 
 impl<Tok, M, I, P, S, C, T> Builder<Tok, M, I, P, S, C, T> {
     pub fn tokenizer<'a>(
         self,
-        tokenizer: Tokenizer<'a>,
-    ) -> Builder<Tokenizer<'a>, M, I, P, S, C, T> {
+        tokenizer: Tokenizer,
+    ) -> Builder<Tokenizer, M, I, P, S, C, T> {
         Builder {
             tokenizer,
             model: self.model,
@@ -151,13 +151,13 @@ impl<Tok, M, I, P, S, C, T> Builder<Tok, M, I, P, S, C, T> {
     }
 }
 
-impl<'a, M, I, S, C, T> Builder<Tokenizer<'a>, M, I, Array, S, C, T>
+impl<M, I, S, C, T> Builder<Tokenizer, M, I, Array, S, C, T>
 where
     M: Module<I>,
     S: Sampler,
     C: KeyValueCache + Default,
 {
-    pub fn build(self) -> Generate<'a, M, I, S, C, T> {
+    pub fn build(self) -> Generate<M, I, S, C, T> {
         let Self {
             tokenizer,
             model,
@@ -195,7 +195,7 @@ pub struct Response {
     pub ids: Vec<u32>,
 }
 
-impl<'a, M, I, S, C, T> Iterator for Generate<'a, M, I, S, C, T>
+impl<M, I, S, C, T> Iterator for Generate<M, I, S, C, T>
 where
     M: Module<I>,
     M::Error: Into<Exception>,

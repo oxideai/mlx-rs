@@ -82,12 +82,12 @@ use crate::error::Error;
 
 /// Wrapper around [`tokenizers::Tokenizer`] and [`minijinja::Environment`]
 /// providing more utilities.
-pub struct Tokenizer<'a> {
+pub struct Tokenizer {
     inner: tokenizers::Tokenizer,
-    env: Environment<'a>,
+    env: Environment<'static>,
 }
 
-impl<'a> Tokenizer<'a> {
+impl Tokenizer {
     pub fn from_tokenizer(tokenizer: tokenizers::Tokenizer) -> Self {
         let mut env = Environment::new();
         env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
@@ -109,9 +109,9 @@ impl<'a> Tokenizer<'a> {
         tokenizers::Tokenizer::from_str(s).map(Self::from_tokenizer)
     }
 
-    pub fn apply_chat_template<I, R, T>(
+    pub fn apply_chat_template<'a, I, R, T>(
         &'a mut self,
-        model_template: impl Into<Cow<'a, str>>,
+        model_template: String,
         args: ApplyChatTemplateArgs<'a, I, R, T>,
     ) -> Result<Vec<String>, Error>
     where
@@ -122,9 +122,9 @@ impl<'a> Tokenizer<'a> {
         apply_chat_template(&mut self.env, model_template, args)
     }
 
-    pub fn apply_chat_template_and_encode<I, R, T>(
-        &'a mut self,
-        model_template: impl Into<Cow<'a, str>>,
+    pub fn apply_chat_template_and_encode<'a, I, R, T>(
+        &mut self,
+        model_template: String,
         args: ApplyChatTemplateArgs<'a, I, R, T>,
     ) -> Result<Vec<Encoding>, Error>
     where
@@ -141,7 +141,7 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-impl Deref for Tokenizer<'_> {
+impl Deref for Tokenizer {
     type Target = tokenizers::Tokenizer;
 
     fn deref(&self) -> &Self::Target {
@@ -149,7 +149,7 @@ impl Deref for Tokenizer<'_> {
     }
 }
 
-impl DerefMut for Tokenizer<'_> {
+impl DerefMut for Tokenizer {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -425,8 +425,8 @@ pub fn load_model_chat_template_from_file(
 //     return rendered, all_generation_indices
 
 pub fn apply_chat_template<'a, I, R, T>(
-    env: &'a mut Environment<'a>,
-    model_template: impl Into<Cow<'a, str>>,
+    env: &mut Environment<'static>,
+    model_template: String,
     args: ApplyChatTemplateArgs<'a, I, R, T>,
 ) -> Result<Vec<String>, Error>
 where
@@ -452,7 +452,7 @@ where
         None => match env.get_template(model_id) {
             Ok(template) => template,
             Err(_) => {
-                env.add_template_owned(model_id, model_template)?;
+                env.add_template_owned(model_id.to_owned(), model_template)?;
                 env.get_template(model_id)
                     .expect("Newly added template must be present")
             }
@@ -586,7 +586,7 @@ mod tests {
         let mut env = Environment::new();
         env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
 
-        let rendered_chat = apply_chat_template(&mut env, &model_chat_template, args).unwrap();
+        let rendered_chat = apply_chat_template(&mut env, model_chat_template, args).unwrap();
         println!("{:?}", rendered_chat);
     }
 
@@ -627,7 +627,7 @@ mod tests {
         };
 
         let rendered_chat = tokenizer
-            .apply_chat_template(&model_chat_template, args)
+            .apply_chat_template(model_chat_template, args)
             .unwrap();
         println!("{:?}", rendered_chat);
     }
@@ -669,7 +669,7 @@ mod tests {
         };
 
         let encodings = tokenizer
-            .apply_chat_template_and_encode(&model_chat_template, args)
+            .apply_chat_template_and_encode(model_chat_template, args)
             .unwrap();
         println!("{:?}", encodings.iter().map(|e| e.get_ids()).flatten());
     }

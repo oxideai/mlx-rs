@@ -638,7 +638,7 @@ mod tests {
 
     #[test]
     fn test_load_qwen3_model() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -646,14 +646,14 @@ mod tests {
             .build()
             .unwrap();
 
-        let model_path = "mlx-community/Qwen3-0.6B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_path, hf_hub::RepoType::Model));
+        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
         let _model = super::load_qwen3_model(&repo).unwrap();
     }
 
     #[test]
     fn test_load_tokenizer() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -673,7 +673,7 @@ mod tests {
     fn test_load_and_run_qwen3_with_concat_cache() {
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string())
-            .with_cache_dir("./hf_cache".into())
+            .with_cache_dir("../hf_cache".into())
             .build()
             .unwrap();
 

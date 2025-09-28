@@ -16,3 +16,5 @@ Cargo.lock
 settings.json
 **.DS_Store
 .idea
+
+hf_cache/

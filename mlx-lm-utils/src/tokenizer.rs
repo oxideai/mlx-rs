@@ -539,7 +539,7 @@ mod tests {
 
     #[test]
     fn test_load_chat_template_from_file() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -555,7 +555,7 @@ mod tests {
 
     #[test]
     fn test_apply_chat_template() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -592,7 +592,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_apply_chat_template() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
@@ -634,7 +634,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_apply_chat_template_and_encode() {
-        let hf_cache_dir = PathBuf::from("./hf_cache");
+        let hf_cache_dir = PathBuf::from("../hf_cache");
 
         let api = ApiBuilder::new()
             .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned

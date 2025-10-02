@@ -15,5 +15,4 @@ mlx-rs.workspace = true
 mlx-lm.workspace = true
 mlx-lm-utils.workspace = true
 
-hf-hub = "0.4.3"
 anyhow = "1"

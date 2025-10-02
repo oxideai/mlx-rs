@@ -66,7 +66,6 @@
 // """
 
 use std::{
-    borrow::Cow,
     collections::HashMap,
     fs::read_to_string,
     ops::{Deref, DerefMut},
@@ -527,53 +526,36 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use hf_hub::{api::sync::ApiBuilder, Repo};
     use minijinja::Environment;
+    use std::path::Path;
 
     use crate::tokenizer::{
         apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs,
         Conversation, Role,
     };
 
+    // let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
+    const CACHED_TEST_MODEL_DIR: &str = "../cache/Qwen3-4B-bf16";
+
+    // TODO: how to test this in CI? the model files might be too large
     #[test]
     fn test_load_chat_template_from_file() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
-
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
-        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-        let file = repo.get("tokenizer_config.json").unwrap();
+        let file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
         let chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
         assert!(!chat_template.is_empty());
     }
 
     #[test]
     fn test_apply_chat_template() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
+        let file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
+        let model_chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
+        assert!(!model_chat_template.is_empty());
 
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-
         let conversations = vec![Conversation {
             role: Role::User,
             content: "hello",
         }];
-
-        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
-        let file = repo.get("tokenizer_config.json").unwrap();
-        let model_chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
-        assert!(!model_chat_template.is_empty());
-
         let args = ApplyChatTemplateArgs {
             conversations: [conversations.into()],
             documents: None,
@@ -592,23 +574,15 @@ mod tests {
 
     #[test]
     fn test_tokenizer_apply_chat_template() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
+        let tokenizer_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer.json");
+        let tokenizer_config_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
 
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
         let conversations = vec![Conversation {
             role: Role::User,
             content: "hello",
         }];
-
-        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
-        let tokenizer_file = repo.get("tokenizer.json").unwrap();
-        let tokenizer_config_file = repo.get("tokenizer_config.json").unwrap();
 
         let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
 
@@ -634,24 +608,15 @@ mod tests {
 
     #[test]
     fn test_tokenizer_apply_chat_template_and_encode() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
+        let tokenizer_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer.json");
+        let tokenizer_config_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
 
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
         let conversations = vec![Conversation {
             role: Role::User,
             content: "hello",
         }];
-
-        let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
-        let tokenizer_file = repo.get("tokenizer.json").unwrap();
-        let tokenizer_config_file = repo.get("tokenizer_config.json").unwrap();
-
         let mut tokenizer = super::Tokenizer::from_file(tokenizer_file).unwrap();
 
         let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file)

@@ -1,20 +1,25 @@
-use hf_hub::{api::sync::ApiBuilder, Repo};
-use mlx_lm::{cache::ConcatKeyValueCache, generate::Generate, models::qwen3::{self, load_qwen3_model, load_qwen3_tokenizer}};
+use std::path::Path;
+
+use mlx_lm::{
+    cache::ConcatKeyValueCache,
+    generate::Generate,
+    models::qwen3::{self, load_qwen3_model, load_qwen3_tokenizer},
+};
 use mlx_lm_utils::tokenizer::{
     load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role, Tokenizer,
 };
-use mlx_rs::{array, ops::indexing::{IndexOp, NewAxis}, Array};
+use mlx_rs::{
+    array, ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array
+};
+
+const CACHED_TEST_MODEL_DIR: &str = "./cache/Qwen3-4B-bf16";
 
 fn qwen3() -> anyhow::Result<()> {
-    let api = ApiBuilder::new()
-        .with_endpoint("https://hf-mirror.com".to_string())
-        .with_cache_dir("../hf_cache".into())
-        .build()?;
+    let model_dir = Path::new(CACHED_TEST_MODEL_DIR);
 
     let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-    let repo = api.repo(Repo::new(model_id.clone(), hf_hub::RepoType::Model));
-    let tokenizer_file = repo.get("tokenizer.json")?;
-    let tokenizer_config_file = repo.get("tokenizer_config.json")?;
+    let tokenizer_file = model_dir.join("tokenizer.json");
+    let tokenizer_config_file = model_dir.join("tokenizer_config.json");
     let mut tokenizer =
         Tokenizer::from_file(tokenizer_file).map_err(|e| anyhow::anyhow!("{:?}", e))?;
     let model_chat_template = load_model_chat_template_from_file(tokenizer_config_file)?
@@ -22,7 +27,7 @@ fn qwen3() -> anyhow::Result<()> {
 
     let conversations = vec![Conversation {
         role: Role::User,
-        content: "hello",
+        content: "what's your name?",
     }];
     let args = ApplyChatTemplateArgs {
         conversations: vec![conversations.into()],
@@ -39,15 +44,37 @@ fn qwen3() -> anyhow::Result<()> {
         .flatten()
         .copied()
         .collect();
-    let tokens = Array::from(&prompt[..]).index(NewAxis);
+    let prompt_tokens = Array::from(&prompt[..]).index(NewAxis);
 
-    let model = load_qwen3_model(&repo)?;
+    let mut cache = Vec::new();
+    let mut model = load_qwen3_model(model_dir)?;
+    let generate = mlx_lm::models::qwen3::Generate::<ConcatKeyValueCache>::new(
+        &mut model, &mut cache, 0.2, &prompt_tokens,
+    );
 
-    let generate = Generate::builder()
-        .model::<_, qwen3::ModelInput<ConcatKeyValueCache>>(model)
-        .prompt(tokens)
-        .tokenizer(tokenizer)
-        .build();
+    let mut tokens = Vec::new();
+    for (token, ntoks) in generate.zip(0..256) {
+        let token = token.unwrap();
+        tokens.push(token.clone());
+
+        if ntoks == 0 {
+            eval(&tokens).unwrap();
+        }
+
+        if tokens.len() % 20 == 0 {
+            eval(&tokens).unwrap();
+            let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
+            let s = tokenizer.decode(&slice, true).unwrap();
+            print!("{s}");
+        }
+    }
+
+    eval(&tokens).unwrap();
+    let slice: Vec<u32> = tokens.drain(..).map(|t| t.item::<u32>()).collect();
+    let s = tokenizer.decode(&slice, true).unwrap();
+    println!("{s}");
+
+    println!("------");
 
     Ok(())
 }

@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, path::Path};
 
-use hf_hub::api::sync::ApiRepo;
 use mlx_rs::{
     argmax_axis, array,
     builder::Builder,
@@ -495,13 +494,13 @@ where
     }
 }
 
-pub fn load_qwen3_tokenizer(repo: &ApiRepo) -> Result<Tokenizer, Error> {
-    let file = repo.get("tokenizer.json")?;
+pub fn load_qwen3_tokenizer(model_dir: impl AsRef<Path>) -> Result<Tokenizer, Error> {
+    let file = model_dir.as_ref().join("tokenizer.json");
     Tokenizer::from_file(file).map_err(Into::into)
 }
 
-pub fn get_qwen3_model_args(repo: &ApiRepo) -> Result<ModelArgs, Error> {
-    let model_args_filename = repo.get("config.json")?;
+pub fn get_qwen3_model_args(model_dir: impl AsRef<Path>) -> Result<ModelArgs, Error> {
+    let model_args_filename = model_dir.as_ref().join("config.json");
     let file = std::fs::File::open(model_args_filename)?;
     let model_args: ModelArgs = serde_json::from_reader(file)?;
 
@@ -514,18 +513,19 @@ pub struct WeightMap {
     pub weight_map: HashMap<String, String>,
 }
 
-pub fn load_qwen3_model(repo: &ApiRepo) -> Result<Model, Error> {
-    let model_args = get_qwen3_model_args(repo)?;
+pub fn load_qwen3_model(model_dir: impl AsRef<Path>) -> Result<Model, Error> {
+    let model_dir = model_dir.as_ref();
+    let model_args = get_qwen3_model_args(model_dir)?;
     let mut model = Model::new(model_args)?;
 
-    let weights_index = repo.get("model.safetensors.index.json")?;
+    let weights_index = model_dir.join("model.safetensors.index.json");
     let json = std::fs::read_to_string(weights_index)?;
     let weight_map: WeightMap = serde_json::from_str(&json)?;
 
     let weight_files: HashSet<&String> = weight_map.weight_map.values().collect();
 
     for weight_file in weight_files {
-        let weights_filename = repo.get(weight_file)?;
+        let weights_filename = model_dir.join(weight_file);
         model.load_safetensors(weights_filename)?;
     }
 
@@ -622,9 +622,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use hf_hub::{api::sync::ApiBuilder, Repo};
     use mlx_rs::{
         ops::indexing::{IndexOp, NewAxis},
         transforms::eval,
@@ -636,53 +633,25 @@ mod tests {
         models::qwen3::{load_qwen3_model, load_qwen3_tokenizer},
     };
 
+    const CACHED_TEST_MODEL_DIR: &str = "../cache/Qwen3-4B-bf16";
+
     #[test]
     fn test_load_qwen3_model() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
-
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
-
-        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-        let _model = super::load_qwen3_model(&repo).unwrap();
+        let _model = super::load_qwen3_model(CACHED_TEST_MODEL_DIR).unwrap();
     }
 
     #[test]
     fn test_load_tokenizer() {
-        let hf_cache_dir = PathBuf::from("../hf_cache");
-
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string()) // comment out this line if your area is not banned
-            .with_cache_dir(hf_cache_dir)
-            .build()
-            .unwrap();
-
-        // let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
-        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-        let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
+        let tokenizer = load_qwen3_tokenizer(CACHED_TEST_MODEL_DIR).unwrap();
 
         let _encoding = tokenizer.encode("Hello, world!", true).unwrap();
     }
 
     #[test]
     fn test_load_and_run_qwen3_with_concat_cache() {
-        let api = ApiBuilder::new()
-            .with_endpoint("https://hf-mirror.com".to_string())
-            .with_cache_dir("../hf_cache".into())
-            .build()
-            .unwrap();
+        let tokenizer = load_qwen3_tokenizer(CACHED_TEST_MODEL_DIR).unwrap();
 
-        // let model_id = "mlx-community/Qwen3-0.6B-bf16".to_string();
-        let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-        let repo = api.repo(Repo::new(model_id, hf_hub::RepoType::Model));
-        let tokenizer = load_qwen3_tokenizer(&repo).unwrap();
-
-        let mut model = load_qwen3_model(&repo).unwrap();
+        let mut model = load_qwen3_model(CACHED_TEST_MODEL_DIR).unwrap();
 
         let encoding = tokenizer.encode("hello", true).unwrap();
         let prompt_tokens = Array::from(encoding.get_ids()).index(NewAxis);

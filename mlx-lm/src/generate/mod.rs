@@ -50,7 +50,7 @@ pub struct Builder<Tok, M, I, P, S = DefaultSampler, C = ConcatKeyValueCache, T 
 }
 
 impl<Tok, M, I, P, S, C, T> Builder<Tok, M, I, P, S, C, T> {
-    pub fn tokenizer<'a>(
+    pub fn tokenizer(
         self,
         tokenizer: Tokenizer,
     ) -> Builder<Tokenizer, M, I, P, S, C, T> {

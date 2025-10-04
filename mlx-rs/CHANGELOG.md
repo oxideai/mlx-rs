@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.2
+
+- Introduce initial support for mlx-lm
+  - impl `Parameter` trait for `Option<T>` where `T: ModuleParameters`
+  - Add `finfo_max` and `finfo_min`
+  - impl `Quantizable` for `Option<T>` where `T: Quantizable`
+
 ## 0.25.1
 
 - Fix bug with `index_mut`

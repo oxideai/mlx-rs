@@ -15,6 +15,7 @@ use crate::cache::KeyValueCache;
 pub mod rope;
 pub mod tokenizer;
 
+#[allow(unused_macros)]
 macro_rules! try_unwrap {
     ($expr:expr) => {
         match $expr {
@@ -23,7 +24,6 @@ macro_rules! try_unwrap {
         }
     };
 }
-pub(crate) use try_unwrap;
 
 // def quantized_scaled_dot_product_attention(
 //     queries: mx.array,

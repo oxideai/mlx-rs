@@ -1,14 +1,13 @@
 use std::path::Path;
 
-use mlx_lm::{
-    cache::ConcatKeyValueCache,
-    models::qwen3::load_qwen3_model,
-};
+use mlx_lm::{cache::ConcatKeyValueCache, models::qwen3::load_qwen3_model};
 use mlx_lm_utils::tokenizer::{
     load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role, Tokenizer,
 };
 use mlx_rs::{
-    ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array
+    ops::indexing::{IndexOp, NewAxis},
+    transforms::eval,
+    Array,
 };
 
 const CACHED_TEST_MODEL_DIR: &str = "./cache/Qwen3-4B-bf16";
@@ -39,8 +38,7 @@ fn qwen3() -> anyhow::Result<()> {
     let encodings = tokenizer.apply_chat_template_and_encode(model_chat_template, args)?;
     let prompt: Vec<u32> = encodings
         .iter()
-        .map(|encoding| encoding.get_ids())
-        .flatten()
+        .flat_map(|encoding| encoding.get_ids())
         .copied()
         .collect();
     let prompt_tokens = Array::from(&prompt[..]).index(NewAxis);
@@ -48,7 +46,10 @@ fn qwen3() -> anyhow::Result<()> {
     let mut cache = Vec::new();
     let mut model = load_qwen3_model(model_dir)?;
     let generate = mlx_lm::models::qwen3::Generate::<ConcatKeyValueCache>::new(
-        &mut model, &mut cache, 0.2, &prompt_tokens,
+        &mut model,
+        &mut cache,
+        0.2,
+        &prompt_tokens,
     );
 
     let mut tokens = Vec::new();

@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet}, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 use mlx_rs::{
     argmax_axis, array,
@@ -447,9 +450,11 @@ impl Model {
     pub fn new(args: ModelArgs) -> Result<Self, Exception> {
         let model = Qwen3Model::new(&args)?;
         let lm_head = if !args.tie_word_embeddings {
-            Some(MaybeQuantized::Original(nn::LinearBuilder::new(args.hidden_size, args.vocab_size)
+            Some(MaybeQuantized::Original(
+                nn::LinearBuilder::new(args.hidden_size, args.vocab_size)
                     .bias(false)
-                    .build()?))
+                    .build()?,
+            ))
         } else {
             None
         };

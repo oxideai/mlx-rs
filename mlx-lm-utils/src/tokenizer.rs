@@ -86,6 +86,14 @@ pub struct Tokenizer {
     env: Environment<'static>,
 }
 
+impl FromStr for Tokenizer {
+    type Err = tokenizers::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        tokenizers::Tokenizer::from_str(s).map(Self::from_tokenizer)
+    }
+}
+
 impl Tokenizer {
     pub fn from_tokenizer(tokenizer: tokenizers::Tokenizer) -> Self {
         let mut env = Environment::new();
@@ -102,10 +110,6 @@ impl Tokenizer {
 
     pub fn from_bytes(bytes: impl AsRef<[u8]>) -> tokenizers::Result<Self> {
         tokenizers::Tokenizer::from_bytes(bytes).map(Self::from_tokenizer)
-    }
-
-    pub fn from_str(s: &str) -> tokenizers::Result<Self> {
-        tokenizers::Tokenizer::from_str(s).map(Self::from_tokenizer)
     }
 
     pub fn apply_chat_template<'a, I, R, T>(

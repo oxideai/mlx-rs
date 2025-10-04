@@ -2,14 +2,13 @@ use std::path::Path;
 
 use mlx_lm::{
     cache::ConcatKeyValueCache,
-    generate::Generate,
-    models::qwen3::{self, load_qwen3_model, load_qwen3_tokenizer},
+    models::qwen3::load_qwen3_model,
 };
 use mlx_lm_utils::tokenizer::{
     load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role, Tokenizer,
 };
 use mlx_rs::{
-    array, ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array
+    ops::indexing::{IndexOp, NewAxis}, transforms::eval, Array
 };
 
 const CACHED_TEST_MODEL_DIR: &str = "./cache/Qwen3-4B-bf16";

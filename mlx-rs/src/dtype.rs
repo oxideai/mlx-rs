@@ -1,5 +1,8 @@
+use half::{bf16, f16};
 use mlx_internal_macros::generate_test_cases;
 use strum::EnumIter;
+
+use crate::error::InexactDtypeError;
 
 generate_test_cases! {
     /// Array element type
@@ -82,6 +85,30 @@ impl Dtype {
     /// Returns the promotion type of two data types.
     pub fn from_promoting_types(a: Dtype, b: Dtype) -> Self {
         a.promote_with(b)
+    }
+
+    /// Minimum value of the float point types. Returns `Err(_)` if the type is not
+    /// float point
+    pub fn finfo_min(&self) -> Result<f64, InexactDtypeError> {
+        match self {
+            Dtype::Float16 => Ok(f16::MIN.to_f64_const()),
+            Dtype::Float32 => Ok(f32::MIN as f64),
+            Dtype::Complex64 => Ok(f32::MIN as f64),
+            Dtype::Bfloat16 => Ok(bf16::MIN.to_f64_const()),
+            _ => Err(InexactDtypeError(*self)),
+        }
+    }
+
+    /// Maximum value of the float point types. Returns `Err(_)` if the type is not
+    /// float point
+    pub fn finfo_max(&self) -> Result<f64, InexactDtypeError> {
+        match self {
+            Dtype::Float16 => Ok(f16::MAX.to_f64_const()),
+            Dtype::Float32 => Ok(f32::MAX as f64),
+            Dtype::Complex64 => Ok(f32::MAX as f64),
+            Dtype::Bfloat16 => Ok(bf16::MAX.to_f64_const()),
+            _ => Err(InexactDtypeError(*self)),
+        }
     }
 }
 

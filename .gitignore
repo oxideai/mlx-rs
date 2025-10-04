@@ -16,3 +16,6 @@ Cargo.lock
 settings.json
 **.DS_Store
 .idea
+
+# Local cache 
+cache

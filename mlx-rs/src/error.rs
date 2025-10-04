@@ -378,6 +378,18 @@ impl From<MultiHeadAttentionBuildError> for TransformerBulidError {
     }
 }
 
+/// The dtype is not a float-point type
+#[derive(Debug, Error)]
+#[error("[finfo] dtype {:?} is not inexact", .0)]
+pub struct InexactDtypeError(pub Dtype);
+
+impl From<InexactDtypeError> for Exception {
+    #[track_caller]
+    fn from(value: InexactDtypeError) -> Self {
+        Exception::custom(value.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::array;

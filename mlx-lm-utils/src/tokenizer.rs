@@ -137,9 +137,10 @@ impl Tokenizer {
     {
         let Self { inner, env } = self;
 
+        let add_special_tokens = args.add_special_tokens.unwrap_or(false);
         let rendered_chats = apply_chat_template(env, model_template, args)?;
         inner
-            .encode_batch(rendered_chats, false)
+            .encode_batch(rendered_chats, add_special_tokens)
             .map_err(Into::into)
     }
 }
@@ -237,6 +238,7 @@ where
     pub chat_template_id: Option<&'a str>,
     pub add_generation_prompt: Option<bool>,
     pub continue_final_message: Option<bool>,
+    pub add_special_tokens: Option<bool>,
 }
 
 pub fn load_model_chat_template_from_str(content: &str) -> std::io::Result<Option<String>> {
@@ -255,6 +257,11 @@ pub fn load_model_chat_template_from_file(
 ) -> std::io::Result<Option<String>> {
     let content = read_to_string(file)?;
     load_model_chat_template_from_str(&content)
+}
+
+pub fn load_gemma_chat_template_from_file(file: impl AsRef<Path>) -> std::io::Result<String> {
+    let content = read_to_string(file)?;
+    Ok(content)
 }
 
 // chat_template = self.get_chat_template(chat_template, tools)
@@ -445,6 +452,7 @@ where
         chat_template_id,
         add_generation_prompt,
         continue_final_message,
+        add_special_tokens: _,
     } = args;
 
     let add_generation_prompt = add_generation_prompt.unwrap_or(false);
@@ -635,6 +643,7 @@ mod tests {
             chat_template_id: None,
             add_generation_prompt: None,
             continue_final_message: None,
+            add_special_tokens: Some(false),
         };
 
         let encodings = tokenizer

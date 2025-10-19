@@ -70,12 +70,15 @@ pub struct QuantizedEmbedding {
     pub bits: i32,
 
     /// Scales
+    #[param]
     pub scales: Param<Array>,
 
     /// Biases
+    #[param]
     pub biases: Param<Array>,
 
     /// Inner embedding
+    #[param]
     pub inner: Embedding,
 }
 

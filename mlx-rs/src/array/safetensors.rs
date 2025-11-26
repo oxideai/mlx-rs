@@ -85,6 +85,10 @@ impl<'a> TryFrom<&'a Array> for TensorView<'a> {
                     let data = value.as_slice::<f32>();
                     cast_slice(data)
                 },
+                Dtype::Float64 => {
+                    let data = value.as_slice::<f64>();
+                    cast_slice(data)
+                },
                 Dtype::Bfloat16 => {
                     let data = value.as_slice::<half::bf16>();
                     let bits: &[u16] = transmute(data);

@@ -50,7 +50,7 @@ use mlx_sys::mlx_closure_value_and_grad;
 use crate::{
     error::{get_and_clear_closure_error, Result},
     module::ModuleParamRef,
-    utils::{guard::Guarded, Closure, VectorArray},
+    utils::{guard::Guarded, Closure, VectorArray, SUCCESS},
     Array,
 };
 
@@ -222,6 +222,13 @@ pub(crate) struct ClosureValueAndGrad {
 impl ClosureValueAndGrad {
     pub fn as_ptr(&self) -> mlx_closure_value_and_grad {
         self.c_closure_value_and_grad
+    }
+}
+
+impl Drop for ClosureValueAndGrad {
+    fn drop(&mut self) {
+        let status = unsafe { mlx_sys::mlx_closure_value_and_grad_free(self.c_closure_value_and_grad) };
+        debug_assert_eq!(status, SUCCESS);
     }
 }
 

@@ -144,7 +144,9 @@ impl Guard<Vec<Array>> for MaybeUninitVectorArray {
         self.init_success = success;
     }
 
-    fn try_into_guarded(self) -> Result<Vec<Array>, Exception> {
+    fn try_into_guarded(mut self) -> Result<Vec<Array>, Exception> {
+        debug_assert!(self.init_success);
+        self.init_success = false; // mlx_vector_array still needs to be freed after we extracted its elements
         unsafe {
             let size = mlx_sys::mlx_vector_array_size(self.ptr);
             (0..size)

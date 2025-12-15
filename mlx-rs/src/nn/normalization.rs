@@ -80,9 +80,11 @@ pub struct InstanceNorm {
     pub eps: Array,
 
     /// An optional trainable weight
+    #[param]
     pub weight: Param<Option<Array>>,
 
     /// An optional trainable bias
+    #[param]
     pub bias: Param<Option<Array>>,
 }
 

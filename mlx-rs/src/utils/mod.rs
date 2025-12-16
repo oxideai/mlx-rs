@@ -260,7 +260,7 @@ where
             Some(trampoline::<F>),
             payload,
             Some(closure_dtor::<F>),
-        )        
+        )
     }
 }
 

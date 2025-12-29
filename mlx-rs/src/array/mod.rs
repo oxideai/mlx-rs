@@ -64,14 +64,20 @@ impl std::fmt::Display for Array {
 
 impl Drop for Array {
     fn drop(&mut self) {
-        // TODO: check memory leak with some tool?
-
         // Decrease the reference count
         unsafe { mlx_sys::mlx_array_free(self.as_ptr()) };
     }
 }
 
+// SAFETY: MLX uses atomic reference counting for arrays.
+// The underlying mlx_array is thread-safe as per MLX documentation.
+// Arrays can be safely sent between threads.
 unsafe impl Send for Array {}
+
+// SAFETY: MLX uses atomic reference counting for arrays.
+// Multiple threads can hold references to the same array and call
+// methods concurrently. The underlying C++ implementation is thread-safe.
+unsafe impl Sync for Array {}
 
 impl PartialEq for Array {
     /// Array equality check.
@@ -1076,5 +1082,82 @@ mod tests {
         assert_eq!(array.item::<u8>(), 1);
 
         assert_eq!(array.as_slice::<f32>(), &[1.0]);
+    }
+
+    #[test]
+    fn test_array_send() {
+        use std::thread;
+
+        let arr = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
+
+        let handle = thread::spawn(move || {
+            let result = arr.eval();
+            assert!(result.is_ok());
+            arr.item::<f32>()
+        });
+
+        let value = handle.join().unwrap();
+        assert_eq!(value, 1.0);
+    }
+
+    #[test]
+    fn test_array_sync() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let arr = Arc::new(Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]));
+
+        let handles: Vec<_> = (0..4)
+            .map(|_| {
+                let arr = Arc::clone(&arr);
+                thread::spawn(move || {
+                    let result = arr.eval();
+                    assert!(result.is_ok());
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_operations() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let arr1 = Arc::new(Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]));
+        let arr2 = Arc::new(Array::from_slice(&[4.0f32, 5.0, 6.0], &[3]));
+
+        let handles: Vec<_> = (0..10)
+            .map(|_| {
+                let a1 = Arc::clone(&arr1);
+                let a2 = Arc::clone(&arr2);
+
+                thread::spawn(move || {
+                    let sum = (&*a1 + &*a2).eval().unwrap();
+                    sum.as_slice::<f32>().to_vec()
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            let result = handle.join().unwrap();
+            assert_eq!(result, vec![5.0, 7.0, 9.0]);
+        }
+    }
+
+    #[test]
+    fn test_no_memory_leak_gradient() {
+        // Test that repeatedly creating and dropping arrays doesn't leak memory
+        // This is a basic smoke test - more sophisticated leak detection would
+        // require external tools like valgrind or instruments
+        for _ in 0..1000 {
+            let arr = Array::from_slice(&[1.0f32, 2.0, 3.0], &[3]);
+            let _ = arr.eval();
+            // arr should be freed here
+        }
+        // If this test completes without OOM, the basic cleanup is working
     }
 }

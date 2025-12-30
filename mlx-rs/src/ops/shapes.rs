@@ -976,6 +976,343 @@ pub fn transpose_device(
     })
 }
 
+/// Slice an array along multiple axes.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `start`: A slice of start indices for each axis.
+/// - `stop`: A slice of stop indices for each axis.
+/// - `strides`: A slice of strides for each axis. If None, defaults to 1 for all axes.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::*};
+///
+/// let a = Array::from_iter(0..12, &[3, 4]);
+/// let b = slice(&a, &[0, 1], &[2, 3], None).unwrap();
+/// // b is a[0:2, 1:3]
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn slice_device<'a>(
+    a: impl AsRef<Array>,
+    start: &[i32],
+    stop: &[i32],
+    #[optional] strides: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let default_strides: Vec<i32> = vec![1; start.len()];
+    let strides = strides.into_option().unwrap_or(&default_strides);
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_slice(
+            res,
+            a.as_ref().as_ptr(),
+            start.as_ptr(),
+            start.len(),
+            stop.as_ptr(),
+            stop.len(),
+            strides.as_ptr(),
+            strides.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Update a slice of the array with new values.
+///
+/// # Params
+///
+/// - `src`: The source array.
+/// - `update`: The array containing the new values.
+/// - `start`: A slice of start indices for each axis.
+/// - `stop`: A slice of stop indices for each axis.
+/// - `strides`: A slice of strides for each axis. If None, defaults to 1 for all axes.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::*};
+///
+/// let a = Array::zeros::<f32>(&[3, 4]).unwrap();
+/// let update = Array::ones::<f32>(&[2, 2]).unwrap();
+/// let b = slice_update(&a, &update, &[0, 0], &[2, 2], None).unwrap();
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn slice_update_device<'a>(
+    src: impl AsRef<Array>,
+    update: impl AsRef<Array>,
+    start: &[i32],
+    stop: &[i32],
+    #[optional] strides: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let default_strides: Vec<i32> = vec![1; start.len()];
+    let strides = strides.into_option().unwrap_or(&default_strides);
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_slice_update(
+            res,
+            src.as_ref().as_ptr(),
+            update.as_ref().as_ptr(),
+            start.as_ptr(),
+            start.len(),
+            stop.as_ptr(),
+            stop.len(),
+            strides.as_ptr(),
+            strides.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Reverse the order of elements along the given axes.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `axes`: The axes along which to flip. If None, flips along all axes.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::*};
+///
+/// let a = Array::from_iter(0..6, &[2, 3]);
+/// let b = flip(&a, &[0]).unwrap();  // Flip along axis 0
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn flip_device<'a>(
+    a: impl AsRef<Array>,
+    #[optional] axes: impl IntoOption<&'a [i32]>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = a.as_ref();
+    let shape = a.shape();
+    let ndim = shape.len();
+
+    // Default to all axes if not specified
+    let default_axes: Vec<i32> = (0..ndim as i32).collect();
+    let axes = axes.into_option().unwrap_or(&default_axes);
+
+    // Build slicing parameters for flip (start from end, step -1)
+    let mut start = vec![0i32; ndim];
+    let mut stop = vec![0i32; ndim];
+    let mut strides = vec![1i32; ndim];
+
+    for i in 0..ndim {
+        let dim_size = shape[i] as i32;
+        let axis_i = i as i32;
+
+        if axes.contains(&axis_i) || axes.contains(&(axis_i - ndim as i32)) {
+            // Flip this axis: start from end, go to beginning with stride -1
+            start[i] = dim_size - 1;
+            stop[i] = -dim_size - 1;
+            strides[i] = -1;
+        } else {
+            // Keep this axis as-is
+            start[i] = 0;
+            stop[i] = dim_size;
+            strides[i] = 1;
+        }
+    }
+
+    slice_device(a, &start, &stop, &strides[..], stream)
+}
+
+/// Scatter updates to an array at the given indices.
+///
+/// This operation updates the array `a` at the locations specified by `indices`
+/// with the values from `updates`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: A slice of arrays, one for each axis being indexed.
+/// - `updates`: The values to scatter into the array.
+/// - `axes`: The axes along which to scatter.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::*};
+///
+/// let a = Array::zeros::<f32>(&[4, 4]).unwrap();
+/// let indices = vec![
+///     Array::from_slice(&[0, 1, 2], &[3]),
+///     Array::from_slice(&[0, 1, 2], &[3]),
+/// ];
+/// let updates = Array::ones::<f32>(&[3]).unwrap();
+/// let b = scatter(&a, &indices, &updates, &[0, 1]).unwrap();
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn scatter_device(
+    a: impl AsRef<Array>,
+    indices: &[impl AsRef<Array>],
+    updates: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_indices = VectorArray::try_from_iter(indices.iter())?;
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter(
+            res,
+            a.as_ref().as_ptr(),
+            c_indices.as_ptr(),
+            updates.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Scatter-add updates to an array at the given indices.
+///
+/// This operation adds the `updates` values to the array `a` at the locations
+/// specified by `indices`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: A slice of arrays, one for each axis being indexed.
+/// - `updates`: The values to add.
+/// - `axes`: The axes along which to scatter.
+#[generate_macro]
+#[default_device]
+pub fn scatter_add_device(
+    a: impl AsRef<Array>,
+    indices: &[impl AsRef<Array>],
+    updates: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_indices = VectorArray::try_from_iter(indices.iter())?;
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter_add(
+            res,
+            a.as_ref().as_ptr(),
+            c_indices.as_ptr(),
+            updates.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Scatter-max updates to an array at the given indices.
+///
+/// This operation takes the maximum of the current values and `updates` at the
+/// locations specified by `indices`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: A slice of arrays, one for each axis being indexed.
+/// - `updates`: The values to compare with.
+/// - `axes`: The axes along which to scatter.
+#[generate_macro]
+#[default_device]
+pub fn scatter_max_device(
+    a: impl AsRef<Array>,
+    indices: &[impl AsRef<Array>],
+    updates: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_indices = VectorArray::try_from_iter(indices.iter())?;
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter_max(
+            res,
+            a.as_ref().as_ptr(),
+            c_indices.as_ptr(),
+            updates.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Scatter-min updates to an array at the given indices.
+///
+/// This operation takes the minimum of the current values and `updates` at the
+/// locations specified by `indices`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: A slice of arrays, one for each axis being indexed.
+/// - `updates`: The values to compare with.
+/// - `axes`: The axes along which to scatter.
+#[generate_macro]
+#[default_device]
+pub fn scatter_min_device(
+    a: impl AsRef<Array>,
+    indices: &[impl AsRef<Array>],
+    updates: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_indices = VectorArray::try_from_iter(indices.iter())?;
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter_min(
+            res,
+            a.as_ref().as_ptr(),
+            c_indices.as_ptr(),
+            updates.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
+/// Scatter-prod updates to an array at the given indices.
+///
+/// This operation multiplies the current values by `updates` at the
+/// locations specified by `indices`.
+///
+/// # Params
+///
+/// - `a`: The input array.
+/// - `indices`: A slice of arrays, one for each axis being indexed.
+/// - `updates`: The values to multiply by.
+/// - `axes`: The axes along which to scatter.
+#[generate_macro]
+#[default_device]
+pub fn scatter_prod_device(
+    a: impl AsRef<Array>,
+    indices: &[impl AsRef<Array>],
+    updates: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let c_indices = VectorArray::try_from_iter(indices.iter())?;
+
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_scatter_prod(
+            res,
+            a.as_ref().as_ptr(),
+            c_indices.as_ptr(),
+            updates.as_ref().as_ptr(),
+            axes.as_ptr(),
+            axes.len(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 // The unit tests below are adapted from
 // https://github.com/ml-explore/mlx/blob/main/tests/ops_tests.cpp
 #[cfg(test)]

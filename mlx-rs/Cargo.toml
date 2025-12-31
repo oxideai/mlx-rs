@@ -1,5 +1,5 @@
 [package]
-name = "mlx-rs"
+name = "mlx-rs-burn"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -8,7 +8,7 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 documentation.workspace = true
-description = "Unofficial rust wrapper for Apple's mlx machine learning library."
+description = "Unofficial rust wrapper for Apple's mlx machine learning library (fork with slice, scatter, flip operations for burn-mlx)"
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -19,9 +19,9 @@ targets = [
 ]
 
 [dependencies]
-mlx-sys.workspace = true
-mlx-internal-macros.workspace = true
-mlx-macros.workspace = true
+mlx-sys = { package = "mlx-sys-burn", version = "0.2.1", path = "../mlx-sys" }
+mlx-internal-macros = { package = "mlx-internal-macros-burn", version = "0.25.4", path = "../mlx-internal-macros" }
+mlx-macros = { package = "mlx-macros-burn", version = "0.25.4", path = "../mlx-macros" }
 dyn-clone.workspace = true
 half.workspace = true
 mach-sys.workspace = true

@@ -1,10 +1,10 @@
 [package]
-name = "mlx-sys"
-version = "0.2.0" # mlx-sys version should follow that of mlx-c
+name = "mlx-sys-burn"
+version = "0.2.1" # mlx-sys version should follow that of mlx-c
 authors.workspace = true
 edition.workspace = true
 
-description = "Low-level interface and binding generation for the mlx library"
+description = "Low-level interface and binding generation for the mlx library (fork with additional operations for burn-mlx)"
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true

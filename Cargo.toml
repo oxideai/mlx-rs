@@ -1,18 +1,19 @@
 [workspace.package]
 # All but mlx-sys should follow the same version. mlx-sys should follow
 # the version of mlx-c.
-version = "0.25.3"
+version = "0.25.4"
 edition = "2021"
 authors = [
+    "TuringWorks",
     "Minghua Wu <michael.wu1107@gmail.com>",
     "David Chavez <david@dcvz.io>",
 ]
 
-repository = "https://github.com/oxideai/mlx-rs"
-keywords = ["mlx", "deep-learning", "machine-learning"]
+repository = "https://github.com/TuringWorks/mlx-rs"
+keywords = ["mlx", "deep-learning", "machine-learning", "burn"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
-documentation = "https://oxideai.github.io/mlx-rs/mlx_rs/"
+documentation = "https://docs.rs/mlx-rs-burn"
 rust-version = "1.82.0"
 
 [workspace]
@@ -21,20 +22,22 @@ members = [
     "mlx-sys",
     "mlx-rs",
     "mlx-internal-macros",
+]
+exclude = [
     "mlx-lm",
-    "mlx-lm-utils", 
+    "mlx-lm-utils",
     "mlx-tests",
-    "examples/*", 
+    "examples",
 ]
 
 resolver = "2"
 
 [workspace.dependencies]
 # workspace local dependencies
-mlx-sys = { version = "=0.2.0", path = "mlx-sys" }
-mlx-macros = { version = "0.25", path = "mlx-macros" }
-mlx-internal-macros = { version = "0.25", path = "mlx-internal-macros" }
-mlx-rs = { version = "0.25", path = "mlx-rs" }
+mlx-sys-burn = { version = "=0.2.1", path = "mlx-sys" }
+mlx-macros-burn = { version = "0.25.4", path = "mlx-macros" }
+mlx-internal-macros-burn = { version = "0.25.4", path = "mlx-internal-macros" }
+mlx-rs-burn = { version = "0.25.4", path = "mlx-rs" }
 mlx-lm = { version = "0.0.1", path = "mlx-lm" }
 mlx-lm-utils = { version = "0.0.1", path = "mlx-lm-utils" }
 

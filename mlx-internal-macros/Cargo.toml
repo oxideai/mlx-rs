@@ -1,5 +1,5 @@
 [package]
-name = "mlx-internal-macros"
+name = "mlx-internal-macros-burn"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -8,7 +8,7 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 documentation.workspace = true
-description = "Internal procedural macros for mlx-rs"
+description = "Internal procedural macros for mlx-rs-burn"
 
 [lib]
 proc-macro = true

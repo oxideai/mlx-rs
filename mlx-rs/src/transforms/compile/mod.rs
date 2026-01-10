@@ -151,9 +151,11 @@ use crate::Array;
 #[allow(clippy::module_inception)]
 mod compile;
 mod compile_with_state;
+mod trainable_state;
 
 pub use compile::*;
 pub use compile_with_state::*;
+pub use trainable_state::*;
 
 /// Globally enable the compilation of functions.
 ///

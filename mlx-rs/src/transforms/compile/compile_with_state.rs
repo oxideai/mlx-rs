@@ -410,7 +410,42 @@ where
 
     // push the stateOutput into the state
     let result_plus_state_output_len = result_plus_state_output.len();
-    let suffix_start = result_plus_state_output_len - state_params_len;
+
+    // Handle state array updates and return function results.
+    //
+    // The expected layout of result_plus_state_output is:
+    //   [function_result_0, ..., function_result_n, state_0, ..., state_m]
+    //
+    // Where m = state_params_len. The suffix_start index marks where state arrays begin.
+    //
+    // However, MLX's compile optimization may prune state arrays that don't appear
+    // to change during the computation. With very large models (10M+ parameters),
+    // this can result in fewer outputs than expected.
+    //
+    // Case 1: state_params_len <= output_len (normal case)
+    //   - suffix_start = output_len - state_params_len
+    //   - Extract function results from [0..suffix_start]
+    //   - Update state from [suffix_start..output_len]
+    //
+    // Case 2: state_params_len > output_len (pruned state case)
+    //   - The compiler pruned most/all state arrays
+    //   - We cannot reliably determine which outputs are results vs state
+    //   - Return an error since we can't safely update state
+    let suffix_start = result_plus_state_output_len
+        .checked_sub(state_params_len)
+        .ok_or_else(|| {
+            Exception::custom(format!(
+                "compile_with_state: state count mismatch - expected {} state arrays in output \
+                 but only got {} total outputs. The MLX compiler has pruned state arrays that \
+                 appear unchanged during computation. For very large models (10M+ params), \
+                 consider using non-compiled training or ensure all trainable parameters are \
+                 actually being updated in the training step.",
+                state_params_len,
+                result_plus_state_output_len
+            ))
+        })?;
+
+    // Update state arrays from the suffix of the output
     for (s, new_values) in state
         .borrow_mut()
         .updatable_states_mut()
@@ -420,10 +455,10 @@ where
         update_by_replace_with_ref_to_new_array(s, new_values);
     }
 
-    let result_len = result_plus_state_output.len() - state_params_len;
+    // Return only the function results (not the state arrays)
     Ok(result_plus_state_output
         .into_iter()
-        .take(result_len)
+        .take(suffix_start)
         .collect())
 }
 

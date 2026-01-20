@@ -1,6 +1,8 @@
 pub mod cache;
+pub mod compiled_ops;
 pub mod error;
 // pub mod generate;
+pub mod metal_kernels;
 pub mod models;
 pub mod sampler;
 pub mod utils;

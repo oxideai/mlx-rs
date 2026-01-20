@@ -9,7 +9,7 @@ use mlx_rs::{
     categorical,
     error::Exception,
     macros::{ModuleParameters, Quantizable},
-    module::{Module, ModuleParametersExt},
+    module::{Module, ModuleParameters as ModuleParametersTrait, ModuleParametersExt, Param},
     nn,
     ops::indexing::{IndexOp, NewAxis},
     quantization::MaybeQuantized,
@@ -26,8 +26,21 @@ use crate::{
         create_attention_mask,
         rope::{initialize_rope, FloatOrString},
         AttentionMask,
+        SdpaMask,
     },
 };
+
+/// Quantization configuration for the model
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct QuantizationConfig {
+    #[serde(default = "default_group_size")]
+    pub group_size: i32,
+    #[serde(default = "default_bits")]
+    pub bits: i32,
+}
+
+fn default_group_size() -> i32 { 64 }
+fn default_bits() -> i32 { 4 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ModelArgs {
@@ -44,6 +57,9 @@ pub struct ModelArgs {
     pub head_dim: i32,
     pub tie_word_embeddings: bool,
     pub rope_scaling: Option<HashMap<String, FloatOrString>>,
+    /// Quantization config (present for quantized models)
+    #[serde(default)]
+    pub quantization: Option<QuantizationConfig>,
 }
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
@@ -181,8 +197,15 @@ where
             keys = self.rope.forward(nn::RopeInput::new(&keys))?;
         }
 
+        // Determine mask mode: use Causal for prefill (L > 1), None for decode (L == 1)
+        let sdpa_mask = match mask {
+            Some(m) => Some(SdpaMask::Array(m)),
+            None if L > 1 => Some(SdpaMask::Causal),
+            None => None,
+        };
+
         let output = crate::utils::scaled_dot_product_attention(
-            queries, keys, values, cache, self.scale, mask,
+            queries, keys, values, cache, self.scale, sdpa_mask,
         )?
         .transpose_axes(&[0, 2, 1, 3])?
         .reshape(&[B, L, -1])?;
@@ -382,7 +405,7 @@ pub struct ModelInput<'a, C> {
 
 impl<C> Module<ModelInput<'_, C>> for Qwen3Model
 where
-    C: KeyValueCache,
+    C: KeyValueCache + Default,
 {
     type Output = Array;
 
@@ -409,7 +432,7 @@ where
         };
 
         if cache.is_empty() {
-            *cache = (0..self.layers.len()).map(|_| None).collect();
+            *cache = (0..self.layers.len()).map(|_| Some(C::default())).collect();
         }
 
         for (layer, c) in self.layers.iter_mut().zip(cache.iter_mut()) {
@@ -473,7 +496,7 @@ impl Model {
 
 impl<C> Module<ModelInput<'_, C>> for Model
 where
-    C: KeyValueCache,
+    C: KeyValueCache + Default,
 {
     type Output = Array;
 
@@ -521,6 +544,12 @@ pub struct WeightMap {
 pub fn load_qwen3_model(model_dir: impl AsRef<Path>) -> Result<Model, Error> {
     let model_dir = model_dir.as_ref();
     let model_args = get_qwen3_model_args(model_dir)?;
+
+    // Check if this is a quantized model
+    if model_args.quantization.is_some() {
+        return load_qwen3_model_quantized(model_dir, &model_args);
+    }
+
     let mut model = Model::new(model_args)?;
 
     let weights_index = model_dir.join("model.safetensors.index.json");
@@ -531,8 +560,208 @@ pub fn load_qwen3_model(model_dir: impl AsRef<Path>) -> Result<Model, Error> {
 
     for weight_file in weight_files {
         let weights_filename = model_dir.join(weight_file);
-        model.load_safetensors(weights_filename)?;
+        model.load_safetensors(&weights_filename)?;
     }
+
+    Ok(model)
+}
+
+/// Load all weight arrays from safetensors files
+fn load_all_weights(model_dir: &Path) -> Result<HashMap<String, Array>, Error> {
+    let weights_index = model_dir.join("model.safetensors.index.json");
+    let json = std::fs::read_to_string(weights_index)?;
+    let weight_map: WeightMap = serde_json::from_str(&json)?;
+
+    let weight_files: HashSet<&String> = weight_map.weight_map.values().collect();
+
+    let mut all_weights: HashMap<String, Array> = HashMap::new();
+
+    for weight_file in weight_files {
+        let weights_filename = model_dir.join(weight_file);
+        let loaded = Array::load_safetensors(&weights_filename)?;
+        all_weights.extend(loaded);
+    }
+
+    Ok(all_weights)
+}
+
+/// Helper to get a weight array by key
+fn get_weight(weights: &HashMap<String, Array>, key: &str) -> Result<Array, Error> {
+    weights.get(key)
+        .cloned()
+        .ok_or_else(|| Error::Message(format!("Weight not found: {}", key)))
+}
+
+/// Create a QuantizedLinear from weight arrays
+fn make_quantized_linear(
+    weights: &HashMap<String, Array>,
+    prefix: &str,
+    group_size: i32,
+    bits: i32,
+) -> Result<nn::QuantizedLinear, Error> {
+    let weight = get_weight(weights, &format!("{}.weight", prefix))?;
+    let scales = get_weight(weights, &format!("{}.scales", prefix))?;
+    let biases = get_weight(weights, &format!("{}.biases", prefix))?;
+
+    // QuantizedLinear stores weights in inner.weight, but safetensors has just weight
+    // We need to construct it manually
+    let inner = nn::Linear {
+        weight: Param::new(weight),
+        bias: Param::new(None),
+    };
+
+    let mut ql = nn::QuantizedLinear {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+    ql.freeze_parameters(true);
+
+    Ok(ql)
+}
+
+/// Create a QuantizedEmbedding from weight arrays
+fn make_quantized_embedding(
+    weights: &HashMap<String, Array>,
+    prefix: &str,
+    group_size: i32,
+    bits: i32,
+) -> Result<nn::QuantizedEmbedding, Error> {
+    let weight = get_weight(weights, &format!("{}.weight", prefix))?;
+    let scales = get_weight(weights, &format!("{}.scales", prefix))?;
+    let biases = get_weight(weights, &format!("{}.biases", prefix))?;
+
+    let inner = nn::Embedding {
+        weight: Param::new(weight),
+    };
+
+    let mut qe = nn::QuantizedEmbedding {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+    qe.freeze_parameters(true);
+
+    Ok(qe)
+}
+
+/// Load a quantized Qwen3 model
+fn load_qwen3_model_quantized(model_dir: &Path, args: &ModelArgs) -> Result<Model, Error> {
+    let quant_config = args.quantization.as_ref()
+        .ok_or_else(|| Error::Message("No quantization config".to_string()))?;
+    let group_size = quant_config.group_size;
+    let bits = quant_config.bits;
+
+    // Load all weights
+    let weights = load_all_weights(model_dir)?;
+
+    // Build layers
+    let mut layers = Vec::with_capacity(args.num_hidden_layers as usize);
+
+    for i in 0..args.num_hidden_layers {
+        let layer_prefix = format!("model.layers.{}", i);
+
+        // Build attention
+        let attention = Attention {
+            n_heads: args.num_attention_heads,
+            n_kv_heads: args.num_key_value_heads,
+            scale: (args.head_dim as f32).sqrt().recip(),
+            q_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.q_proj", layer_prefix), group_size, bits
+            )?),
+            k_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.k_proj", layer_prefix), group_size, bits
+            )?),
+            v_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.v_proj", layer_prefix), group_size, bits
+            )?),
+            o_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.o_proj", layer_prefix), group_size, bits
+            )?),
+            q_norm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.self_attn.q_norm.weight", layer_prefix))?),
+                eps: args.rms_norm_eps,
+            },
+            k_norm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.self_attn.k_norm.weight", layer_prefix))?),
+                eps: args.rms_norm_eps,
+            },
+            rope: initialize_rope(
+                args.head_dim,
+                args.rope_theta,
+                false,
+                &args.rope_scaling,
+                args.max_position_embeddings,
+            )?,
+        };
+
+        // Build MLP
+        let mlp = Mlp {
+            gate_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.gate_proj", layer_prefix), group_size, bits
+            )?),
+            down_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.down_proj", layer_prefix), group_size, bits
+            )?),
+            up_proj: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.up_proj", layer_prefix), group_size, bits
+            )?),
+        };
+
+        // Build transformer block
+        let block = TransformerBlock {
+            num_attention_heads: args.num_attention_heads,
+            hidden_size: args.hidden_size,
+            self_attn: attention,
+            mlp,
+            input_layernorm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.input_layernorm.weight", layer_prefix))?),
+                eps: args.rms_norm_eps,
+            },
+            post_attention_layernorm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.post_attention_layernorm.weight", layer_prefix))?),
+                eps: args.rms_norm_eps,
+            },
+        };
+
+        layers.push(block);
+    }
+
+    // Build Qwen3Model
+    let qwen3_model = Qwen3Model {
+        vocab_size: args.vocab_size,
+        num_hidden_layers: args.num_hidden_layers,
+        embed_tokens: MaybeQuantized::Quantized(make_quantized_embedding(
+            &weights, "model.embed_tokens", group_size, bits
+        )?),
+        layers,
+        norm: nn::RmsNorm {
+            weight: Param::new(get_weight(&weights, "model.norm.weight")?),
+            eps: args.rms_norm_eps,
+        },
+    };
+
+    // Build lm_head (quantized models typically have separate lm_head)
+    let lm_head = if !args.tie_word_embeddings {
+        Some(MaybeQuantized::Quantized(make_quantized_linear(
+            &weights, "lm_head", group_size, bits
+        )?))
+    } else {
+        None
+    };
+
+    let model = Model {
+        args: args.clone(),
+        model: qwen3_model,
+        lm_head,
+    };
+
+    // Evaluate all parameters
+    model.eval()?;
 
     Ok(model)
 }
@@ -552,11 +781,15 @@ pub struct Generate<'a, C> {
     cache: &'a mut Vec<Option<C>>,
     temp: f32,
     state: GenerateState<'a>,
+    /// Prefetched next token for async pipelining
+    prefetched: Option<Array>,
+    /// Token count for periodic cache clearing
+    token_count: usize,
 }
 
 impl<'a, C> Generate<'a, C>
 where
-    C: KeyValueCache,
+    C: KeyValueCache + Default,
 {
     pub fn new(
         model: &'a mut Model,
@@ -569,7 +802,21 @@ where
             cache,
             temp,
             state: GenerateState::Prefill { prompt_token },
+            prefetched: None,
+            token_count: 0,
         }
+    }
+
+    /// Compute the next token from the given input
+    fn compute_next(&mut self, y: &Array) -> Result<Array, Exception> {
+        let inputs = y.index((.., NewAxis));
+        let input = ModelInput {
+            inputs: &inputs,
+            mask: None,
+            cache: self.cache,
+        };
+        let logits = self.model.forward(input)?;
+        sample(&logits, self.temp)
     }
 }
 
@@ -589,13 +836,16 @@ macro_rules! tri {
 
 impl<'a, C> Iterator for Generate<'a, C>
 where
-    C: KeyValueCache,
+    C: KeyValueCache + Default,
 {
     type Item = Result<Array, Exception>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        use mlx_rs::transforms::async_eval;
+
         match &self.state {
             GenerateState::Prefill { prompt_token } => {
+                // First token: process the full prompt
                 let input = ModelInput {
                     inputs: prompt_token,
                     mask: None,
@@ -603,23 +853,44 @@ where
                 };
                 let logits = tri!(self.model.forward(input));
                 let y = tri!(sample(&logits.index((.., -1, ..)), self.temp));
+
+                // Queue async evaluation
+                let _ = async_eval([&y]);
+
+                // Prefetch the next token while y evaluates
+                let next_y = tri!(self.compute_next(&y));
+
+                // Queue async eval for next token
+                let _ = async_eval([&next_y]);
+
+                // Store prefetched token and transition to decode state
+                self.prefetched = Some(next_y);
                 self.state = GenerateState::Decode { y: y.clone() };
+                self.token_count = 1;
 
                 Some(Ok(y))
             }
-            GenerateState::Decode { y } => {
-                let inputs = y.index((.., NewAxis));
-                let input = ModelInput {
-                    inputs: &inputs,
-                    mask: None,
-                    cache: self.cache,
-                };
-                let logits = tri!(self.model.forward(input));
-                let y = tri!(sample(&logits, self.temp));
+            GenerateState::Decode { y: _ } => {
+                // Use the prefetched token (already computed and being evaluated)
+                let current = self.prefetched.take()?;
 
-                self.state = GenerateState::Decode { y: y.clone() };
+                // Compute the next token while current is being used
+                let next_y = tri!(self.compute_next(&current));
 
-                Some(Ok(y))
+                // Queue async eval for the next token
+                let _ = async_eval([&next_y]);
+
+                // Store prefetched token for next iteration
+                self.prefetched = Some(next_y);
+                self.state = GenerateState::Decode { y: current.clone() };
+
+                // Periodic memory cache clearing (every 256 tokens like Python)
+                self.token_count += 1;
+                if self.token_count % 256 == 0 {
+                    unsafe { mlx_sys::mlx_clear_cache(); }
+                }
+
+                Some(Ok(current))
             }
         }
     }

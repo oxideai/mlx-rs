@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use mlx_lm::{cache::ConcatKeyValueCache, models::qwen3::load_qwen3_model};
+use mlx_rs_lm::{cache::ConcatKeyValueCache, models::qwen3::load_qwen3_model};
 use mlx_lm_utils::tokenizer::{
     load_model_chat_template_from_file, ApplyChatTemplateArgs, Conversation, Role, Tokenizer,
 };
@@ -45,7 +45,7 @@ fn qwen3() -> anyhow::Result<()> {
 
     let mut cache = Vec::new();
     let mut model = load_qwen3_model(model_dir)?;
-    let generate = mlx_lm::models::qwen3::Generate::<ConcatKeyValueCache>::new(
+    let generate = mlx_rs_lm::models::qwen3::Generate::<ConcatKeyValueCache>::new(
         &mut model,
         &mut cache,
         0.2,

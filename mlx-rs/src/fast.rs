@@ -3,8 +3,8 @@
 use std::ffi::CStr;
 
 use crate::error::Result;
+use crate::utils::IntoOption;
 use crate::utils::guard::Guarded;
-use crate::utils::{IntoOption, VectorArray};
 use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -28,7 +28,7 @@ pub fn rope_device<'a>(
         has_value: base.is_some(),
     };
     let freqs = freqs.into();
-    Array::try_from_op(|res| unsafe {
+    <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_rope(
             res,
             array.as_ref().as_ptr(),
@@ -86,18 +86,22 @@ impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a [Array] {
 }
 
 impl ScaledDotProductAttentionMask<'_> {
-    fn as_mode_and_masks(&self) -> (&'static CStr, VectorArray) {
+    fn as_mode_and_mask_ptr(&self) -> (&'static CStr, mlx_sys::mlx_array) {
         match self {
             ScaledDotProductAttentionMask::Array(mask) => (
                 DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter([mask].iter()).unwrap(),
+                mask.as_ptr(),
             ),
-            ScaledDotProductAttentionMask::Arrays(masks) => (
-                DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter(masks.iter()).unwrap(),
-            ),
+            ScaledDotProductAttentionMask::Arrays(masks) => {
+                // New API only supports a single mask array, use the first one
+                if masks.is_empty() {
+                    (DEFAULT_MASK_MODE, unsafe { mlx_sys::mlx_array_new() })
+                } else {
+                    (DEFAULT_MASK_MODE, masks[0].as_ptr())
+                }
+            },
             ScaledDotProductAttentionMask::Causal => (CAUSAL_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+                mlx_sys::mlx_array_new()
             }),
         }
     }
@@ -122,16 +126,16 @@ pub fn scaled_dot_product_attention_device<'a>(
     #[optional] mask: impl IntoOption<ScaledDotProductAttentionMask<'a>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let (mask_mode, masks) = mask.into_option().map_or_else(
+    let (mask_mode, mask_arr) = mask.into_option().map_or_else(
         || {
             (DEFAULT_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
+                mlx_sys::mlx_array_new()
             })
         },
-        |m| m.as_mode_and_masks(),
+        |m| m.as_mode_and_mask_ptr(),
     );
 
-    Array::try_from_op(|res| unsafe {
+    <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_scaled_dot_product_attention(
             res,
             queries.as_ref().as_ptr(),
@@ -139,7 +143,8 @@ pub fn scaled_dot_product_attention_device<'a>(
             values.as_ref().as_ptr(),
             scale,
             mask_mode.as_ptr(),
-            masks.as_ptr(),
+            mask_arr,
+            mlx_sys::mlx_array_new(), // sinks (not used)
             stream.as_ref().as_ptr(),
         )
     })
@@ -163,7 +168,7 @@ pub fn rms_norm_device(
     eps: f32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
+    <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_rms_norm(
             res,
             x.as_ref().as_ptr(),
@@ -196,7 +201,7 @@ pub fn layer_norm_device<'a>(
     #[named] eps: f32,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    Array::try_from_op(|res| unsafe {
+    <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_fast_layer_norm(
             res,
             x.as_ref().as_ptr(),

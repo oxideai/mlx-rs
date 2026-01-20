@@ -822,7 +822,7 @@ where
 
 pub enum GenerateState<'a> {
     Prefill { prompt_token: &'a Array },
-    Decode { y: Array },
+    Decode,  // No need to store y - it's tracked via prefetched
 }
 
 macro_rules! tri {
@@ -845,6 +845,8 @@ where
 
         match &self.state {
             GenerateState::Prefill { prompt_token } => {
+                use mlx_rs::transforms::eval;
+
                 // First token: process the full prompt
                 let input = ModelInput {
                     inputs: prompt_token,
@@ -863,14 +865,17 @@ where
                 // Queue async eval for next token
                 let _ = async_eval([&next_y]);
 
+                // Force eval of first token (like Python does)
+                let _ = eval([&y]);
+
                 // Store prefetched token and transition to decode state
                 self.prefetched = Some(next_y);
-                self.state = GenerateState::Decode { y: y.clone() };
+                self.state = GenerateState::Decode;
                 self.token_count = 1;
 
                 Some(Ok(y))
             }
-            GenerateState::Decode { y: _ } => {
+            GenerateState::Decode => {
                 // Use the prefetched token (already computed and being evaluated)
                 let current = self.prefetched.take()?;
 
@@ -882,7 +887,6 @@ where
 
                 // Store prefetched token for next iteration
                 self.prefetched = Some(next_y);
-                self.state = GenerateState::Decode { y: current.clone() };
 
                 // Periodic memory cache clearing (every 256 tokens like Python)
                 self.token_count += 1;

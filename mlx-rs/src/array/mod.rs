@@ -315,9 +315,7 @@ impl Array {
     ///
     /// _Note: This will evaluate the array._
     pub fn try_item<T: ArrayElement>(&self) -> crate::error::Result<T> {
-        self.eval()?;
-
-        // Evaluate the array, so we have content to work with in the conversion
+        // Evaluate the array so we have content to work with
         self.eval()?;
 
         // Though `mlx_array_item_<dtype>` returns a status code, it doesn't

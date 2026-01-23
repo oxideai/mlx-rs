@@ -25,6 +25,20 @@ thiserror = "2"
 serde_json = "1"
 minijinja = "2"
 hf-hub = "0.4.3"
+hound = "3.5"  # WAV file I/O
+pinyin = "0.10"  # Chinese character to pinyin conversion
+
+[features]
+default = []
+# Debug features for development - enable verbose logging for specific components
+debug-attn = []    # Debug attention computations
+debug-moe = []     # Debug MoE routing and expert selection
+debug-logits = []  # Debug logit values during generation
+debug-gqa = []     # Debug grouped query attention
+
+# =================== Examples ===================
+# Only tracked examples are listed here. Development/debug examples
+# can be run with: cargo run --example <name> (if the file exists)
 
 [[example]]
 name = "qwen3"

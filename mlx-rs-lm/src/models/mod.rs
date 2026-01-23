@@ -1,3 +1,11 @@
+pub mod bert;
 pub mod glm4;
 pub mod glm4_moe;
+pub mod hubert;
+pub mod mixtral;
+pub mod qwen2;
 pub mod qwen3;
+pub mod qwen3_moe;
+pub mod sovits;
+pub mod t2s;
+pub mod vits;

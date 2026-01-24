@@ -3,6 +3,7 @@ pub mod glm4;
 pub mod glm4_moe;
 pub mod hubert;
 pub mod mixtral;
+pub mod paraformer;
 pub mod qwen2;
 pub mod qwen3;
 pub mod qwen3_moe;

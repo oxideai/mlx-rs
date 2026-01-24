@@ -396,10 +396,10 @@ pub fn load_reference_mel(
         samples
     };
 
-    // Normalize audio
+    // Match Python normalization: if (maxx > 1): audio /= min(2, maxx)
     let max_val = samples.iter().map(|x| x.abs()).fold(0.0f32, f32::max);
     let samples: Vec<f32> = if max_val > 1.0 {
-        let scale = (2.0f32).min(max_val);
+        let scale = max_val.min(2.0);
         samples.iter().map(|x| x / scale).collect()
     } else {
         samples
@@ -409,6 +409,118 @@ pub fn load_reference_mel(
     let mel = compute_mel_spectrogram(&samples, config)?;
 
     Ok(mel)
+}
+
+// ============ FunASR/Paraformer Audio Frontend ============
+//
+// DEPRECATED: Use `crate::models::paraformer::MelFrontend` instead.
+// This module contains a legacy frontend implementation that diverges from
+// FunASR's actual preprocessing pipeline (missing 16-bit scaling, different
+// LFR padding strategy). The authoritative implementation is in paraformer.rs.
+//
+// These functions are kept for backwards compatibility but will be removed
+// in a future version.
+
+/// DEPRECATED: Use `crate::models::paraformer::ParaformerConfig` instead
+#[deprecated(note = "Use crate::models::paraformer::MelFrontend for FunASR-compatible features")]
+#[derive(Debug, Clone)]
+pub struct ParaformerAudioConfig {
+    pub sample_rate: i32,
+    pub window: String,
+    pub n_mels: i32,
+    pub frame_length_ms: i32,
+    pub frame_shift_ms: i32,
+    pub lfr_m: i32,
+    pub lfr_n: i32,
+    pub dither: f32,
+}
+
+#[allow(deprecated)]
+impl Default for ParaformerAudioConfig {
+    fn default() -> Self {
+        Self {
+            sample_rate: 16000,
+            window: "hamming".to_string(),
+            n_mels: 80,
+            frame_length_ms: 25,
+            frame_shift_ms: 10,
+            lfr_m: 7,
+            lfr_n: 6,
+            dither: 0.0,
+        }
+    }
+}
+
+/// DEPRECATED: Use `crate::models::paraformer::parse_cmvn_file` instead
+#[deprecated(note = "Use crate::models::paraformer::parse_cmvn_file for robust CMVN parsing")]
+pub struct CmvnStats {
+    pub mean: Vec<f32>,
+    pub istd: Vec<f32>,
+}
+
+#[allow(deprecated)]
+impl CmvnStats {
+    pub fn load(path: impl AsRef<std::path::Path>) -> Result<Self, std::io::Error> {
+        let content = std::fs::read_to_string(path)?;
+        let mut mean = Vec::new();
+        let mut var = Vec::new();
+        let mut in_mean = false;
+        let mut in_var = false;
+
+        for line in content.lines() {
+            let line = line.trim();
+            if line.contains("<AddShift>") { in_mean = true; in_var = false; continue; }
+            if line.contains("<Rescale>") { in_mean = false; in_var = true; continue; }
+            if line.contains("</Nnet>") { break; }
+
+            if (in_mean || in_var) && line.contains("[") {
+                if let Some(start) = line.find('[') {
+                    let after_bracket = &line[start + 1..];
+                    let end = after_bracket.find(']').unwrap_or(after_bracket.len());
+                    let values: Vec<f32> = after_bracket[..end]
+                        .split_whitespace()
+                        .filter_map(|s| s.parse::<f32>().ok())
+                        .collect();
+                    if in_mean { mean.extend(values); }
+                    else if in_var { var.extend(values); }
+                }
+            }
+        }
+
+        let mean: Vec<f32> = mean.iter().map(|x| -x).collect();
+        Ok(Self { mean, istd: var })
+    }
+
+    pub fn identity(dim: usize) -> Self {
+        Self { mean: vec![0.0; dim], istd: vec![1.0; dim] }
+    }
+}
+
+/// DEPRECATED: Use `crate::models::paraformer::MelFrontend::forward` instead
+///
+/// This function does NOT match FunASR's preprocessing:
+/// - Missing 16-bit audio scaling (x32768)
+/// - Different LFR padding strategy
+#[deprecated(note = "Use crate::models::paraformer::MelFrontend for FunASR-compatible features")]
+#[allow(deprecated)]
+pub fn extract_paraformer_features(
+    _samples: &[f32],
+    _config: &ParaformerAudioConfig,
+    _cmvn: &CmvnStats,
+) -> Result<Array, Exception> {
+    Err(Exception::from(
+        "extract_paraformer_features is deprecated. Use crate::models::paraformer::MelFrontend instead."
+    ))
+}
+
+/// DEPRECATED: Use MelFrontend from paraformer module
+#[deprecated(note = "Use crate::models::paraformer::MelFrontend for FunASR-compatible features")]
+#[allow(deprecated)]
+pub fn load_audio_for_paraformer(
+    _path: impl AsRef<std::path::Path>,
+    _cmvn: &CmvnStats,
+) -> Result<Array, Box<dyn std::error::Error>> {
+    Err("load_audio_for_paraformer is deprecated. Use crate::models::paraformer::MelFrontend instead.".into())
 }
 
 #[cfg(test)]

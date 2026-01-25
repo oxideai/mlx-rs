@@ -6,9 +6,11 @@
 //! - Grapheme-to-phoneme conversion
 //! - Language detection
 //! - BERT feature extraction for TTS
+//! - G2PW polyphonic character disambiguation
 
 pub mod bert_features;
 pub mod cmudict;
+pub mod g2pw;
 pub mod preprocessor;
 pub mod symbols;
 

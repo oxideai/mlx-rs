@@ -27,6 +27,10 @@ minijinja = "2"
 hf-hub = "0.4.3"
 hound = "3.5"  # WAV file I/O
 pinyin = "0.10"  # Chinese character to pinyin conversion
+regex = "1"  # Text normalization patterns
+rubato = "0.14"  # High-quality audio resampling (sinc interpolation)
+lingua = { version = "1.6", default-features = false, features = ["chinese", "english", "japanese", "korean"] }  # ML-based language detection
+ort = { version = "2.0.0-rc.11", default-features = false, features = ["std", "download-binaries", "tls-native"] }  # ONNX Runtime for G2PW
 
 [features]
 default = []

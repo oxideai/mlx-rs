@@ -1,0 +1,28 @@
+[package]
+name = "mistral-mlx"
+version = "0.1.0"
+edition = "2021"
+description = "Mistral LLM inference on Apple Silicon with MLX"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+mlx-rs = { path = "../mlx-rs", features = ["metal", "accelerate"] }
+mlx-sys = { path = "../mlx-sys" }
+mlx-lm-core = { path = "../mlx-lm-core" }
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokenizers = "0.21"
+
+[dev-dependencies]
+clap = { version = "4", features = ["derive"] }
+hf-hub = "0.4"
+anyhow = "1"
+
+[[example]]
+name = "generate_mistral"
+path = "examples/generate_mistral.rs"
+
+[[example]]
+name = "benchmark_mistral"
+path = "examples/benchmark_mistral.rs"

@@ -23,7 +23,17 @@ members = [
     "mlx-internal-macros",
     "mlx-rs-lm",
     "mlx-lm-utils",
+    "mlx-lm-core",
     "mlx-tests",
+    "flux-klein-mlx",
+    "zimage-mlx",
+    "funasr-mlx",
+    "qwen3-mlx",
+    "glm4-mlx",
+    "glm4-moe-mlx",
+    "mixtral-mlx",
+    "mistral-mlx",
+    "qwen-image-mlx",
     "examples/*",
 ]
 

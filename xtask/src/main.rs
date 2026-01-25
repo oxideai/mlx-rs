@@ -65,7 +65,7 @@ fn generate_bindings(root_dir: &Path) -> String {
     bindings.to_string()
 }
 
-fn print_diff(old: &str, new: &str) {
+fn print_diff(old: &str, new: &str, current_tag: &str, target_tag: &str, root_dir: &Path) {
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();
 
@@ -88,6 +88,30 @@ fn print_diff(old: &str, new: &str) {
     let additions = added.len();
     let removals = removed.len();
 
+    // Build output for both console and file
+    let mut output = String::new();
+    output.push_str(&format!(
+        "=== Bindings Diff ({} -> {}) ===\n\n",
+        current_tag, target_tag
+    ));
+    output.push_str(&format!("+{} / -{} lines changed\n\n", additions, removals));
+
+    if !removed.is_empty() {
+        output.push_str("=== Removed ===\n");
+        for line in &removed {
+            output.push_str(&format!("- {}\n", line));
+        }
+        output.push('\n');
+    }
+
+    if !added.is_empty() {
+        output.push_str("=== Added ===\n");
+        for line in &added {
+            output.push_str(&format!("+ {}\n", line));
+        }
+    }
+
+    // Print to console (with colors, truncated)
     println!(
         "\n\x1b[32m+{}\x1b[0m / \x1b[31m-{}\x1b[0m lines changed\n",
         additions, removals
@@ -113,9 +137,23 @@ fn print_diff(old: &str, new: &str) {
             println!("... and {} more added lines", added.len() - 100);
         }
     }
+
+    // Save full diff to file
+    let diff_file = root_dir.join(format!("mlx-c-diff-{}-to-{}.txt", current_tag, target_tag));
+    if let Err(e) = std::fs::write(&diff_file, &output) {
+        eprintln!("Warning: Failed to write diff file: {}", e);
+    } else {
+        println!(
+            "\n\x1b[33mFull diff saved to:\x1b[0m {}",
+            diff_file.display()
+        );
+    }
 }
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let target_tag = args.get(1).cloned();
+
     let root_dir = get_repo_root();
     let mlx_c_dir = root_dir.join("mlx-sys/src/mlx-c");
 
@@ -123,11 +161,16 @@ fn main() {
 
     let current_tag = get_current_tag(&mlx_c_dir);
     let latest_tag = get_latest_tag(&mlx_c_dir);
+    let target_tag = target_tag.unwrap_or(latest_tag.clone());
 
     println!("Current version: \x1b[32m{}\x1b[0m", current_tag);
-    println!("Latest version:  \x1b[32m{}\x1b[0m\n", latest_tag);
+    println!("Latest version:  \x1b[32m{}\x1b[0m", latest_tag);
+    if target_tag != latest_tag {
+        println!("Target version:  \x1b[32m{}\x1b[0m", target_tag);
+    }
+    println!();
 
-    if current_tag == latest_tag {
+    if current_tag == target_tag {
         println!("\x1b[32mAlready up to date!\x1b[0m");
         return;
     }
@@ -135,11 +178,11 @@ fn main() {
     println!("\x1b[33mGenerating bindings for {}...\x1b[0m", current_tag);
     let current_bindings = generate_bindings(&root_dir);
 
-    println!("\x1b[33mChecking out {}...\x1b[0m", latest_tag);
-    checkout_tag(&mlx_c_dir, &latest_tag);
+    println!("\x1b[33mChecking out {}...\x1b[0m", target_tag);
+    checkout_tag(&mlx_c_dir, &target_tag);
 
-    println!("\x1b[33mGenerating bindings for {}...\x1b[0m", latest_tag);
-    let latest_bindings = generate_bindings(&root_dir);
+    println!("\x1b[33mGenerating bindings for {}...\x1b[0m", target_tag);
+    let target_bindings = generate_bindings(&root_dir);
 
     // Restore original
     println!("\x1b[33mRestoring {}...\x1b[0m", current_tag);
@@ -147,15 +190,21 @@ fn main() {
 
     println!(
         "\n\x1b[33m=== Bindings Diff ({} -> {}) ===\x1b[0m",
-        current_tag, latest_tag
+        current_tag, target_tag
     );
 
-    if current_bindings == latest_bindings {
+    if current_bindings == target_bindings {
         println!("\n\x1b[32mNo API changes detected!\x1b[0m");
     } else {
-        print_diff(&current_bindings, &latest_bindings);
+        print_diff(
+            &current_bindings,
+            &target_bindings,
+            &current_tag,
+            &target_tag,
+            &root_dir,
+        );
     }
 
     println!("\n\x1b[33mTo update, run:\x1b[0m");
-    println!("  cd mlx-sys/src/mlx-c && git checkout {}", latest_tag);
+    println!("  cd mlx-sys/src/mlx-c && git checkout {}", target_tag);
 }

@@ -227,7 +227,8 @@ impl ClosureValueAndGrad {
 
 impl Drop for ClosureValueAndGrad {
     fn drop(&mut self) {
-        let status = unsafe { mlx_sys::mlx_closure_value_and_grad_free(self.c_closure_value_and_grad) };
+        let status =
+            unsafe { mlx_sys::mlx_closure_value_and_grad_free(self.c_closure_value_and_grad) };
         debug_assert_eq!(status, SUCCESS);
     }
 }

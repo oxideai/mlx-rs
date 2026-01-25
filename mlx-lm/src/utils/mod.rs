@@ -110,7 +110,7 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         &queries,
         q_keys.keys,
         q_keys.scales,
-        q_keys.biases,
+        &q_keys.biases,
         true,
         group_size,
         bits,
@@ -131,7 +131,7 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         scores,
         q_values.values,
         q_values.scales,
-        q_values.biases,
+        &q_values.biases,
         false,
         group_size,
         bits,
@@ -247,6 +247,7 @@ where
         values,
         scale,
         mask.map(ScaledDotProductAttentionMask::Array),
+        None,
     )
 }
 

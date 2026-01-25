@@ -485,6 +485,79 @@ pub fn eigvalsh_device(
     })
 }
 
+/// Compute the eigenvalues and eigenvectors of a square matrix.
+///
+/// This function supports arrays with at least 2 dimensions. When the input has more than two
+/// dimensions, the eigenvalues and eigenvectors are computed for each matrix in the last two
+/// dimensions.
+///
+/// Unlike [`eigh`], this function computes eigenvalues for general (not necessarily symmetric
+/// or Hermitian) matrices. The eigenvalues and eigenvectors may be complex.
+///
+/// # Params
+///
+/// - `a`: Input array. Must be a square matrix.
+///
+/// # Returns
+///
+/// A tuple `(eigenvalues, eigenvectors)` where eigenvalues has shape `(..., N)` and
+/// eigenvectors has shape `(..., N, N)`. The eigenvectors are stored as columns.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, linalg::*, StreamOrDevice};
+///
+/// let a = Array::from_slice(&[1.0f32, 1.0, 3.0, 4.0], &[2, 2]);
+/// let (eigenvalues, eigenvectors) = eig_device(&a, StreamOrDevice::cpu()).unwrap();
+/// // eigenvalues and eigenvectors are complex even for real input
+/// ```
+#[generate_macro(customize(root = "$crate::linalg"))]
+#[default_device]
+pub fn eig_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<(Array, Array)> {
+    <(Array, Array) as Guarded>::try_from_op(|(res_0, res_1)| unsafe {
+        mlx_sys::mlx_linalg_eig(res_0, res_1, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
+/// Compute the eigenvalues of a square matrix.
+///
+/// This function supports arrays with at least 2 dimensions. When the input has more than two
+/// dimensions, the eigenvalues are computed for each matrix in the last two dimensions.
+///
+/// Unlike [`eigvalsh`], this function computes eigenvalues for general (not necessarily symmetric
+/// or Hermitian) matrices. The eigenvalues may be complex.
+///
+/// # Params
+///
+/// - `a`: Input array. Must be a square matrix.
+///
+/// # Returns
+///
+/// An array of eigenvalues with shape `(..., N)`.
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, linalg::*, StreamOrDevice};
+///
+/// let a = Array::from_slice(&[1.0f32, 1.0, 3.0, 4.0], &[2, 2]);
+/// let eigenvalues = eigvals_device(&a, StreamOrDevice::cpu()).unwrap();
+/// ```
+#[generate_macro(customize(root = "$crate::linalg"))]
+#[default_device]
+pub fn eigvals_device(
+    a: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_linalg_eigvals(res, a.as_ref().as_ptr(), stream.as_ref().as_ptr())
+    })
+}
+
 /// Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 #[generate_macro(customize(root = "$crate::linalg"))]
 #[default_device]
@@ -893,5 +966,70 @@ mod tests {
         let result = solve_triangular_device(&a, &b, false, StreamOrDevice::cpu()).unwrap();
         let expected = array!([2.0f32, 3.333_333_3, 1.533_333_3]);
         assert_array_all_close!(result, expected);
+    }
+
+    // The tests below are adapted from the python unit test `test_linalg.py/test_eig`
+    #[test]
+    fn test_eig() {
+        use crate::ops::expand_dims;
+
+        // Helper to check eigenvalues and eigenvectors
+        fn check_eigs_and_vecs(a: &Array) {
+            let (eig_vals, eig_vecs) = eig_device(a, StreamOrDevice::cpu()).unwrap();
+
+            // Check A @ eig_vecs == eig_vals * eig_vecs
+            let lhs = a.matmul(&eig_vecs).unwrap();
+            // eig_vals[..., None, :] * eig_vecs - broadcast eigenvalues
+            // For a 1D eigenvalues array (n,), we need shape (1, n) to broadcast with eigenvectors (n, n)
+            // For batched eigenvalues (..., n), we need shape (..., 1, n)
+            let eig_vals_broadcast = expand_dims(&eig_vals, -2).unwrap();
+            let rhs = eig_vals_broadcast.multiply(&eig_vecs).unwrap();
+            assert!(
+                lhs.all_close(&rhs, 1e-4, 1e-4, None)
+                    .unwrap()
+                    .item::<bool>(),
+                "A @ eig_vecs should equal eig_vals * eig_vecs"
+            );
+
+            // Check eigvals returns same values
+            let eig_vals_only = eigvals_device(a, StreamOrDevice::cpu()).unwrap();
+            assert!(
+                eig_vals
+                    .all_close(&eig_vals_only, 1e-4, 1e-4, None)
+                    .unwrap()
+                    .item::<bool>(),
+                "eigvals should return same eigenvalues as eig"
+            );
+        }
+
+        // Test a simple 2x2 matrix
+        let a = array!([[1.0f32, 1.0], [3.0, 4.0]]);
+        check_eigs_and_vecs(&a);
+
+        // Test complex eigenvalues (rotation-like matrix)
+        let a = array!([[1.0f32, -1.0], [1.0, 1.0]]);
+        check_eigs_and_vecs(&a);
+
+        // Test a larger random matrix
+        crate::random::seed(1).unwrap();
+        let a = crate::random::normal::<f32>(&[5, 5], None, None, None).unwrap();
+        check_eigs_and_vecs(&a);
+
+        // Test with batched input
+        let a = crate::random::normal::<f32>(&[3, 5, 5], None, None, None).unwrap();
+        check_eigs_and_vecs(&a);
+    }
+
+    #[test]
+    fn test_eig_errors() {
+        // 1D array should fail
+        let a = array!([1.0f32, 2.0]);
+        assert!(eig_device(&a, StreamOrDevice::cpu()).is_err());
+        assert!(eigvals_device(&a, StreamOrDevice::cpu()).is_err());
+
+        // Non-square matrix should fail
+        let a = array!([[1.0f32, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+        assert!(eig_device(&a, StreamOrDevice::cpu()).is_err());
+        assert!(eigvals_device(&a, StreamOrDevice::cpu()).is_err());
     }
 }

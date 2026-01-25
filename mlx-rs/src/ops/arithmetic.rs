@@ -1071,6 +1071,54 @@ pub fn matmul_device(
     a.as_ref().matmul_device(b, stream)
 }
 
+/// Perform a segmented matrix multiplication.
+///
+/// This computes multiple matrix multiplications where each segment of the reduction
+/// dimension is multiplied independently. This is useful for operations like mixture
+/// of experts or multi-head attention where different segments use different weights.
+///
+/// # Params
+///
+/// - `a`: Input array with shape `(M, K)`
+/// - `b`: Input array with shape `(K, N)`
+/// - `segments`: Array of segment boundaries with shape `(num_segments, 2)`.
+///   Each row contains `[start, end)` indices along the K dimension.
+///
+/// # Returns
+///
+/// Array with shape `(num_segments, M, N)` where each segment contains the matrix
+/// multiplication for that segment of the K dimension.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use mlx_rs::{Array, ops::segmented_mm};
+///
+/// let a = Array::ones::<f32>(&[10, 100]).unwrap();
+/// let b = Array::ones::<f32>(&[100, 10]).unwrap();
+/// let segments = Array::from_slice(&[0u32, 50, 50, 100], &[2, 2]);
+/// let result = segmented_mm(&a, &b, &segments, None).unwrap();
+/// // result has shape [2, 10, 10]
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn segmented_mm_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    segments: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_segmented_mm(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            segments.as_ref().as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 /// Element-wise maximum.
 ///
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
@@ -2895,5 +2943,130 @@ mod tests {
         };
         eval(out_holder.iter()).unwrap();
         assert_eq!(out_holder[0].item::<f32>(), 1.0);
+    }
+
+    // The tests below are adapted from the python unit test `test_blas.py/test_segmented_mm`
+    #[test]
+    fn test_segmented_mm() {
+        use crate::ops::{indexing::*, stack_axis};
+        use crate::random;
+
+        // Reference implementation: for each segment [s1, s2], compute a[:, s1:s2] @ b[s1:s2, :]
+        fn segmented_mm_ref(a: &Array, b: &Array, segments: &Array) -> Array {
+            let segments_data: Vec<Vec<u32>> = (0..segments.shape()[0])
+                .map(|i| {
+                    let row = segments.index(i);
+                    vec![row.index(0).item::<u32>(), row.index(1).item::<u32>()]
+                })
+                .collect();
+
+            let results: Vec<Array> = segments_data
+                .iter()
+                .map(|seg| {
+                    let s1 = seg[0] as i32;
+                    let s2 = seg[1] as i32;
+                    let a_slice = a.index((.., s1..s2));
+                    let b_slice = b.index((s1..s2, ..));
+                    a_slice.matmul(&b_slice).unwrap()
+                })
+                .collect();
+
+            stack_axis(&results, 0).unwrap()
+        }
+
+        // Test shapes from Python test
+        let shapes = [(10, 10, 10), (10, 10, 100), (100, 100, 100)];
+
+        // Segment patterns from Python test
+        let all_segments: Vec<Vec<f32>> = vec![
+            vec![0.0, 0.0, 1.0],
+            vec![0.0, 0.5, 1.0],
+            (0..10).map(|r| r as f32 / 9.0).collect(),
+        ];
+
+        random::seed(42).unwrap();
+
+        for (m, n, k) in shapes {
+            for s in &all_segments {
+                // Build segments array from proportions
+                let mut segments_vec: Vec<[u32; 2]> = Vec::new();
+                for i in 0..s.len() - 1 {
+                    let s1 = ((k as f32 * s[i]) as u32).min(k as u32 - 1);
+                    let s2 = ((k as f32 * s[i + 1]) as u32).min(k as u32 - 1);
+                    segments_vec.push([s1, s2]);
+                }
+                let segments_flat: Vec<u32> = segments_vec.iter().flat_map(|x| *x).collect();
+                let segments = Array::from_slice(&segments_flat, &[segments_vec.len() as i32, 2]);
+
+                // Test a @ b
+                let a = random::normal::<f32>(&[m, k], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[k, n], None, None, None).unwrap();
+                let c1 = segmented_mm_ref(&a, &b, &segments);
+                let c2 = segmented_mm(&a, &b, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm failed for shape ({}, {}, {}) with segments {:?}",
+                    m,
+                    n,
+                    k,
+                    s
+                );
+
+                // Test a.T @ b (transposed a)
+                let a = random::normal::<f32>(&[k, m], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[k, n], None, None, None).unwrap();
+                let a_t = a.t();
+                let c1 = segmented_mm_ref(&a_t, &b, &segments);
+                let c2 = segmented_mm(&a_t, &b, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with transposed a failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+
+                // Test a @ b.T (transposed b)
+                let a = random::normal::<f32>(&[m, k], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[n, k], None, None, None).unwrap();
+                let b_t = b.t();
+                let c1 = segmented_mm_ref(&a, &b_t, &segments);
+                let c2 = segmented_mm(&a, &b_t, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with transposed b failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+
+                // Test a.T @ b.T (both transposed)
+                let a = random::normal::<f32>(&[k, m], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[n, k], None, None, None).unwrap();
+                let a_t = a.t();
+                let b_t = b.t();
+                let c1 = segmented_mm_ref(&a_t, &b_t, &segments);
+                let c2 = segmented_mm(&a_t, &b_t, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with both transposed failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_segmented_mm_batched_error() {
+        // Batched input should fail (matches Python test)
+        let a = ones::<f32>(&[2, 10, 10]).unwrap();
+        let segments = Array::from_slice(&[0u32, 5, 5, 10], &[2, 2]);
+        let result = segmented_mm(&a, &a, &segments);
+        assert!(
+            result.is_err(),
+            "segmented_mm should fail for batched input"
+        );
     }
 }

@@ -120,6 +120,7 @@ pub fn scaled_dot_product_attention_device<'a>(
     values: impl AsRef<Array>,
     scale: f32,
     #[optional] mask: impl IntoOption<ScaledDotProductAttentionMask<'a>>,
+    #[optional] sinks: impl Into<Option<&'a Array>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let (mask_mode, masks) = mask.into_option().map_or_else(
@@ -140,6 +141,10 @@ pub fn scaled_dot_product_attention_device<'a>(
             scale,
             mask_mode.as_ptr(),
             masks.as_ptr(),
+            sinks
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
             stream.as_ref().as_ptr(),
         )
     })
@@ -318,7 +323,7 @@ mod tests {
                     .as_dtype(dtype)
                     .unwrap();
 
-                let result = scaled_dot_product_attention(q, k, v, scale, None).unwrap();
+                let result = scaled_dot_product_attention(q, k, v, scale, None, None).unwrap();
                 assert_eq!(result.shape(), [B, H, seq_len, Dk]);
                 assert_eq!(result.dtype(), dtype);
             }

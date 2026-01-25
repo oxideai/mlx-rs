@@ -1,6 +1,14 @@
+use std::ffi::CStr;
+
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{error::Result, utils::guard::Guarded, Array, Stream};
+use crate::{
+    error::Result,
+    utils::{guard::Guarded, VectorArray},
+    Array, Stream,
+};
+
+const DEFAULT_MODE: &CStr = c"affine";
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -30,17 +38,30 @@ pub fn quantize_device(
     let group_size = group_size.into().unwrap_or(64);
     let bits = bits.into().unwrap_or(4);
 
-    <(Array, Array, Array) as Guarded>::try_from_op(|(res0, res1, res2)| unsafe {
+    let result = VectorArray::try_from_op(|res| unsafe {
         mlx_sys::mlx_quantize(
-            res0,
-            res1,
-            res2,
+            res,
             w.as_ref().as_ptr(),
             group_size,
             bits,
+            DEFAULT_MODE.as_ptr(),
             stream.as_ref().as_ptr(),
         )
-    })
+    })?;
+
+    let arrays: Vec<Array> = result.try_into_values()?;
+    if arrays.len() != 3 {
+        return Err(crate::error::Exception::custom(format!(
+            "Expected 3 arrays from quantize, got {}",
+            arrays.len()
+        )));
+    }
+    let mut iter = arrays.into_iter();
+    Ok((
+        iter.next().unwrap(),
+        iter.next().unwrap(),
+        iter.next().unwrap(),
+    ))
 }
 
 /// Perform the matrix multiplication with the quantized matrix `w`. The quantization uses one
@@ -49,11 +70,11 @@ pub fn quantize_device(
 #[allow(clippy::too_many_arguments)]
 #[generate_macro]
 #[default_device]
-pub fn quantized_matmul_device(
+pub fn quantized_matmul_device<'a>(
     x: impl AsRef<Array>,
     w: impl AsRef<Array>,
     scales: impl AsRef<Array>,
-    biases: impl AsRef<Array>,
+    #[optional] biases: impl Into<Option<&'a Array>>,
     #[optional] transpose: impl Into<Option<bool>>,
     #[optional] group_size: impl Into<Option<i32>>,
     #[optional] bits: impl Into<Option<i32>>,
@@ -69,10 +90,14 @@ pub fn quantized_matmul_device(
             x.as_ref().as_ptr(),
             w.as_ref().as_ptr(),
             scales.as_ref().as_ptr(),
-            biases.as_ref().as_ptr(),
+            biases
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
             transpose,
             group_size,
             bits,
+            DEFAULT_MODE.as_ptr(),
             stream.as_ref().as_ptr(),
         )
     })
@@ -85,10 +110,10 @@ pub fn quantized_matmul_device(
 /// documentation](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.dequantize.html)
 #[generate_macro]
 #[default_device]
-pub fn dequantize_device(
+pub fn dequantize_device<'a>(
     w: impl AsRef<Array>,
     scales: impl AsRef<Array>,
-    biases: impl AsRef<Array>,
+    #[optional] biases: impl Into<Option<&'a Array>>,
     #[optional] group_size: impl Into<Option<i32>>,
     #[optional] bits: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
@@ -101,9 +126,13 @@ pub fn dequantize_device(
             res,
             w.as_ref().as_ptr(),
             scales.as_ref().as_ptr(),
-            biases.as_ref().as_ptr(),
+            biases
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
             group_size,
             bits,
+            DEFAULT_MODE.as_ptr(),
             stream.as_ref().as_ptr(),
         )
     })

@@ -9,7 +9,7 @@ This document compares the performance of Rust MLX implementations against the P
 | **Qwen3-30B-A3B-4bit (MoE)** | 97.8 tok/s | 98.3 tok/s | **+0.5%** | ✅ Parity |
 | **GLM-4.5-Air-3bit (MoE)** | 42.8 tok/s | 45.3 tok/s | **+5.8%** | ✅ Rust faster |
 | **Mixtral-8x7B-4bit (MoE)** | 46.1 tok/s | 44.5 tok/s | -3.5% | ✅ Parity |
-| **Mistral-7B-4bit** | 83.5 tok/s | 74.2 tok/s | -11% | ✅ Acceptable |
+| **Mistral-7B-4bit** | 83.5 tok/s | 82.8 tok/s | **-0.8%** | ✅ Parity |
 
 **Conclusion:** Rust implementations achieve parity or better performance compared to Python mlx-lm when using proper async pipelining and pre-quantized models.
 
@@ -149,11 +149,11 @@ Python mlx-lm:
   Generation: 83.5 tok/s
   Peak memory: 4.3 GB
 
-Rust mistral (with pre-quantized model):
-  Run 1: 74.3 tok/s
-  Run 2: 74.0 tok/s
-  Run 3: 74.4 tok/s
-  Result: 74.2 tok/s
+Rust mistral-mlx (with shared mlx-lm-core):
+  Run 1: 82.7 tok/s
+  Run 2: 82.9 tok/s
+  Run 3: 82.7 tok/s
+  Result: 82.8 tok/s
 ```
 
 ## Benchmark Commands
@@ -181,7 +181,7 @@ cargo run --release -p glm4-moe-mlx --example benchmark_glm4_moe
 cargo run --release -p mlx-rs-lm --example benchmark_all_models
 
 # Mistral
-cargo run --release -p mistral -- --prompt "Your prompt" --max-tokens 100
+cargo run --release -p mistral-mlx --example benchmark_mistral
 ```
 
 ## Implementation Locations
@@ -190,8 +190,8 @@ cargo run --release -p mistral -- --prompt "Your prompt" --max-tokens 100
 |-------|---------------------|---------|
 | Qwen3 MoE | `mlx-rs-lm/src/models/qwen3_moe.rs` | `mlx-rs-lm/examples/qwen3_moe.rs` |
 | GLM-4.5 MoE | `glm4-moe-mlx/src/model.rs` | `glm4-moe-mlx/examples/benchmark_glm4_moe.rs` |
-| Mixtral | `mlx-rs-lm/src/models/mixtral.rs` | `mlx-rs-lm/examples/benchmark_all_models.rs` |
-| Mistral | `examples/mistral/src/model.rs` | `examples/mistral/src/main.rs` |
+| Mixtral | `mixtral-mlx/src/model.rs` | `mixtral-mlx/examples/generate_mixtral.rs` |
+| Mistral | `mistral-mlx/src/model.rs` | `mistral-mlx/examples/benchmark_mistral.rs` |
 | GLM-4 (dense) | `mlx-rs-lm/src/models/glm4.rs` | - |
 | Qwen3 (dense) | `mlx-rs-lm/src/models/qwen3.rs` | - |
 

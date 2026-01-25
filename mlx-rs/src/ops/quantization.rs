@@ -9,6 +9,24 @@ use crate::{
 };
 
 const DEFAULT_MODE: &CStr = c"affine";
+const DEFAULT_GROUP_SIZE: i32 = 64;
+const DEFAULT_BITS: i32 = 4;
+
+/// Helper to convert Option<i32> to mlx_optional_int
+fn optional_int(value: Option<i32>, default: i32) -> mlx_sys::mlx_optional_int {
+    mlx_sys::mlx_optional_int {
+        value: value.unwrap_or(default),
+        has_value: value.is_some(),
+    }
+}
+
+/// Helper to create a "no value" optional dtype
+fn optional_dtype_none() -> mlx_sys::mlx_optional_dtype {
+    mlx_sys::mlx_optional_dtype {
+        value: mlx_sys::mlx_dtype__MLX_FLOAT32, // default value, ignored when has_value is false
+        has_value: false,
+    }
+}
 
 /// Quantize the matrix `w` using `bits` bits per element.
 ///
@@ -35,8 +53,8 @@ pub fn quantize_device(
     #[optional] bits: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<(Array, Array, Array)> {
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
+    let group_size = optional_int(group_size.into(), DEFAULT_GROUP_SIZE);
+    let bits = optional_int(bits.into(), DEFAULT_BITS);
 
     let result = VectorArray::try_from_op(|res| unsafe {
         mlx_sys::mlx_quantize(
@@ -81,8 +99,8 @@ pub fn quantized_matmul_device<'a>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let transpose = transpose.into().unwrap_or(false);
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
+    let group_size = optional_int(group_size.into(), DEFAULT_GROUP_SIZE);
+    let bits = optional_int(bits.into(), DEFAULT_BITS);
 
     <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_quantized_matmul(
@@ -118,8 +136,8 @@ pub fn dequantize_device<'a>(
     #[optional] bits: impl Into<Option<i32>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
+    let group_size = optional_int(group_size.into(), DEFAULT_GROUP_SIZE);
+    let bits = optional_int(bits.into(), DEFAULT_BITS);
 
     <Array as Guarded>::try_from_op(|res| unsafe {
         mlx_sys::mlx_dequantize(
@@ -133,6 +151,7 @@ pub fn dequantize_device<'a>(
             group_size,
             bits,
             DEFAULT_MODE.as_ptr(),
+            optional_dtype_none(),
             stream.as_ref().as_ptr(),
         )
     })
@@ -172,8 +191,8 @@ pub fn gather_qmm_device<'b, 'lhs, 'rhs>(
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
     let transpose = transpose.into().unwrap_or(true);
-    let group_size = group_size.into().unwrap_or(64);
-    let bits = bits.into().unwrap_or(4);
+    let group_size = optional_int(group_size.into(), DEFAULT_GROUP_SIZE);
+    let bits = optional_int(bits.into(), DEFAULT_BITS);
     let sorted = sorted_indices.into().unwrap_or(false);
 
     unsafe {

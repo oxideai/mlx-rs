@@ -4,7 +4,7 @@ use std::ffi::CStr;
 
 use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::utils::{IntoOption, VectorArray};
+use crate::utils::IntoOption;
 use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -51,13 +51,10 @@ const CAUSAL_MASK_MODE: &CStr = c"causal";
 /// Mask modes for scaled dot product attention.
 #[derive(Debug)]
 pub enum ScaledDotProductAttentionMask<'a> {
-    /// Array
+    /// A single mask array
     Array(&'a Array),
 
-    /// Arrays
-    Arrays(&'a [Array]),
-
-    /// Causal
+    /// Causal masking (no explicit mask array needed)
     Causal,
 }
 
@@ -67,38 +64,19 @@ impl<'a> From<&'a Array> for ScaledDotProductAttentionMask<'a> {
     }
 }
 
-impl<'a> From<&'a [Array]> for ScaledDotProductAttentionMask<'a> {
-    fn from(masks: &'a [Array]) -> Self {
-        ScaledDotProductAttentionMask::Arrays(masks)
-    }
-}
-
 impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a Array {
     fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
         Some(ScaledDotProductAttentionMask::Array(self))
     }
 }
 
-impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a [Array] {
-    fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
-        Some(ScaledDotProductAttentionMask::Arrays(self))
-    }
-}
-
 impl ScaledDotProductAttentionMask<'_> {
-    fn as_mode_and_masks(&self) -> (&'static CStr, VectorArray) {
+    fn as_mode_and_mask(&self) -> (&'static CStr, mlx_sys::mlx_array) {
         match self {
-            ScaledDotProductAttentionMask::Array(mask) => (
-                DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter([mask].iter()).unwrap(),
-            ),
-            ScaledDotProductAttentionMask::Arrays(masks) => (
-                DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter(masks.iter()).unwrap(),
-            ),
-            ScaledDotProductAttentionMask::Causal => (CAUSAL_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
-            }),
+            ScaledDotProductAttentionMask::Array(mask) => (DEFAULT_MASK_MODE, mask.as_ptr()),
+            ScaledDotProductAttentionMask::Causal => {
+                (CAUSAL_MASK_MODE, unsafe { mlx_sys::mlx_array_new() })
+            }
         }
     }
 }
@@ -123,13 +101,9 @@ pub fn scaled_dot_product_attention_device<'a>(
     #[optional] sinks: impl Into<Option<&'a Array>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let (mask_mode, masks) = mask.into_option().map_or_else(
-        || {
-            (DEFAULT_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
-            })
-        },
-        |m| m.as_mode_and_masks(),
+    let (mask_mode, mask_arr) = mask.into_option().map_or_else(
+        || (DEFAULT_MASK_MODE, unsafe { mlx_sys::mlx_array_new() }),
+        |m| m.as_mode_and_mask(),
     );
 
     Array::try_from_op(|res| unsafe {
@@ -140,7 +114,7 @@ pub fn scaled_dot_product_attention_device<'a>(
             values.as_ref().as_ptr(),
             scale,
             mask_mode.as_ptr(),
-            masks.as_ptr(),
+            mask_arr,
             sinks
                 .into()
                 .map(|a| a.as_ptr())

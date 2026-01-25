@@ -8,6 +8,10 @@ fn build_and_link_mlx_c() {
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
 
+    // Use Xcode's clang to ensure compatibility with the macOS SDK
+    config.define("CMAKE_C_COMPILER", "/usr/bin/cc");
+    config.define("CMAKE_CXX_COMPILER", "/usr/bin/c++");
+
     #[cfg(debug_assertions)]
     {
         config.define("CMAKE_BUILD_TYPE", "Debug");
@@ -51,6 +55,13 @@ fn build_and_link_mlx_c() {
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
     }
+
+    // Link against Xcode's clang runtime for ___isPlatformVersionAtLeast symbol
+    // This is needed on macOS 26+ where the bundled LLVM runtime may be outdated
+    // See: https://github.com/conda-forge/llvmdev-feedstock/issues/244
+    println!("cargo:rustc-link-search=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin");
+    println!("cargo:rustc-link-search=/Applications/Xcode-26.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/lib/darwin");
+    println!("cargo:rustc-link-lib=static=clang_rt.osx");
 }
 
 fn main() {

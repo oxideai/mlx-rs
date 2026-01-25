@@ -531,27 +531,33 @@ where
 #[cfg(test)]
 mod tests {
     use minijinja::Environment;
-    use std::path::Path;
+    use std::path::PathBuf;
 
     use crate::tokenizer::{
         apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs,
         Conversation, Role,
     };
 
-    // let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
-    const CACHED_TEST_MODEL_DIR: &str = "../cache/Qwen3-4B-bf16";
+    /// Returns the path to test fixtures. Uses TEST_MODEL_DIR env var if set,
+    /// otherwise falls back to the fixtures bundled in the repo.
+    fn fixtures_dir() -> PathBuf {
+        std::env::var("TEST_MODEL_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/qwen3")
+            })
+    }
 
-    // TODO: how to test this in CI? the model files might be too large
     #[test]
     fn test_load_chat_template_from_file() {
-        let file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
+        let file = fixtures_dir().join("tokenizer_config.json");
         let chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
         assert!(!chat_template.is_empty());
     }
 
     #[test]
     fn test_apply_chat_template() {
-        let file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
+        let file = fixtures_dir().join("tokenizer_config.json");
         let model_chat_template = load_model_chat_template_from_file(file).unwrap().unwrap();
         assert!(!model_chat_template.is_empty());
 
@@ -577,9 +583,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires local model files (tokenizer.json is 11MB)"]
     fn test_tokenizer_apply_chat_template() {
-        let tokenizer_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer.json");
-        let tokenizer_config_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
+        let tokenizer_file = fixtures_dir().join("tokenizer.json");
+        let tokenizer_config_file = fixtures_dir().join("tokenizer_config.json");
 
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 
@@ -611,9 +618,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires local model files (tokenizer.json is 11MB)"]
     fn test_tokenizer_apply_chat_template_and_encode() {
-        let tokenizer_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer.json");
-        let tokenizer_config_file = Path::new(CACHED_TEST_MODEL_DIR).join("tokenizer_config.json");
+        let tokenizer_file = fixtures_dir().join("tokenizer.json");
+        let tokenizer_config_file = fixtures_dir().join("tokenizer_config.json");
 
         let model_id = "mlx-community/Qwen3-4B-bf16".to_string();
 

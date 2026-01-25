@@ -539,10 +539,10 @@ pub fn load_qwen3_model(model_dir: impl AsRef<Path>) -> Result<Model, Error> {
 
 pub fn sample(logits: &Array, temp: f32) -> Result<Array, Exception> {
     match temp {
-        0.0 => argmax_axis!(logits, -1).map_err(Into::into),
+        0.0 => argmax_axis!(logits, -1),
         _ => {
             let logits = logits.multiply(array!(1.0 / temp))?;
-            categorical!(logits).map_err(Into::into)
+            categorical!(logits)
         }
     }
 }
@@ -641,11 +641,13 @@ mod tests {
     const CACHED_TEST_MODEL_DIR: &str = "../cache/Qwen3-4B-bf16";
 
     #[test]
+    #[ignore = "requires local model files"]
     fn test_load_qwen3_model() {
         let _model = super::load_qwen3_model(CACHED_TEST_MODEL_DIR).unwrap();
     }
 
     #[test]
+    #[ignore = "requires local model files"]
     fn test_load_tokenizer() {
         let tokenizer = load_qwen3_tokenizer(CACHED_TEST_MODEL_DIR).unwrap();
 
@@ -653,6 +655,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires local model files"]
     fn test_load_and_run_qwen3_with_concat_cache() {
         let tokenizer = load_qwen3_tokenizer(CACHED_TEST_MODEL_DIR).unwrap();
 

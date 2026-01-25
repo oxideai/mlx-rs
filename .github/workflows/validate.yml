@@ -28,8 +28,8 @@ jobs:
     runs-on: blaze/${{ matrix.runner }}
     strategy:
       matrix:
-        runner: [ macos-15 ]
-        rust: [ 1.82.0, stable ]
+        runner: [macos-15]
+        rust: [1.83.0, stable]
     steps:
       - uses: actions/checkout@v5
         with:

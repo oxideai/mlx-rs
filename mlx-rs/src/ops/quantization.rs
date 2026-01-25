@@ -229,6 +229,65 @@ pub fn gather_qmm_device<'b, 'lhs, 'rhs>(
     }
 }
 
+/// Quantized matrix multiplication with quantization of both inputs.
+///
+/// Performs matrix multiplication where `x` is dynamically quantized and `w` is pre-quantized.
+/// This function supports `nvfp4` and `mxfp8` quantization modes.
+///
+/// Note: This function is only supported on GPU with the CUDA backend (Linux with NVIDIA GPU).
+/// It is not available on macOS.
+///
+/// # Params
+///
+/// - `x`: Input matrix to be dynamically quantized
+/// - `w`: Pre-quantized weight matrix
+/// - `w_scales`: Optional scales for the quantized weights (required if `w` is already quantized)
+/// - `group_size`: The quantization group size (default depends on mode: 16 for nvfp4, 32 for mxfp8)
+/// - `bits`: The number of bits per element (default depends on mode: 4 for nvfp4, 8 for mxfp8)
+/// - `mode`: Quantization mode - either "nvfp4" or "mxfp8" (default: "nvfp4")
+#[cfg(not(target_os = "macos"))]
+#[allow(clippy::too_many_arguments)]
+#[generate_macro]
+#[default_device]
+pub fn qqmm_device<'a>(
+    x: impl AsRef<Array>,
+    w: impl AsRef<Array>,
+    #[optional] w_scales: impl Into<Option<&'a Array>>,
+    #[optional] group_size: impl Into<Option<i32>>,
+    #[optional] bits: impl Into<Option<i32>>,
+    #[optional] mode: impl Into<Option<&'a str>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let mode_str = mode.into().unwrap_or("nvfp4");
+    let mode_cstr = std::ffi::CString::new(mode_str).expect("Invalid mode string");
+
+    // Defaults depend on mode
+    let (default_group_size, default_bits) = match mode_str {
+        "nvfp4" => (16, 4),
+        "mxfp8" => (32, 8),
+        _ => (16, 4), // fallback to nvfp4 defaults
+    };
+
+    let group_size = optional_int(group_size.into(), default_group_size);
+    let bits = optional_int(bits.into(), default_bits);
+
+    <Array as Guarded>::try_from_op(|res| unsafe {
+        mlx_sys::mlx_qqmm(
+            res,
+            x.as_ref().as_ptr(),
+            w.as_ref().as_ptr(),
+            w_scales
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            group_size,
+            bits,
+            mode_cstr.as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

@@ -45,6 +45,57 @@ pub fn rope_device<'a>(
     })
 }
 
+/// Optimized implementation of `NN.RoPE` with dynamic (array) offset.
+///
+/// This variant allows specifying the offset as an array, enabling different
+/// offsets for different positions in the input.
+///
+/// # Params
+///
+/// - `array`: Input array
+/// - `dimensions`: The feature dimensions to apply rope to
+/// - `traditional`: If true, uses the traditional rope implementation
+/// - `base`: The base used to compute angular frequency for each dimension
+/// - `scale`: The scale to apply to the positions
+/// - `offset`: An array of position offsets
+/// - `freqs`: Optional precomputed frequencies
+/// - `stream`: Stream to evaluate on
+#[allow(clippy::too_many_arguments)]
+#[generate_macro(customize(root = "$crate::fast"))]
+#[default_device]
+pub fn rope_dynamic_device<'a>(
+    #[named] array: impl AsRef<Array>,
+    #[named] dimensions: i32,
+    #[named] traditional: bool,
+    #[optional] base: impl Into<Option<f32>>,
+    #[named] scale: f32,
+    #[named] offset: impl AsRef<Array>,
+    #[optional] freqs: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let base = base.into();
+    let base = mlx_sys::mlx_optional_float {
+        value: base.unwrap_or(0.0),
+        has_value: base.is_some(),
+    };
+    let freqs = freqs.into();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rope_dynamic(
+            res,
+            array.as_ref().as_ptr(),
+            dimensions,
+            traditional,
+            base,
+            scale,
+            offset.as_ref().as_ptr(),
+            freqs
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 const DEFAULT_MASK_MODE: &CStr = c"";
 const CAUSAL_MASK_MODE: &CStr = c"causal";
 
@@ -222,6 +273,31 @@ mod tests {
             116.800_964,
             abs <= 2.336_019_3
         );
+    }
+
+    // Test adapted from Python test_fast.py/test_rope - the Python test accepts both
+    // int offset and array offset, which in C/Rust are separate functions
+    #[test]
+    fn test_rope_dynamic() {
+        crate::random::seed(71).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), [2, 8, 16]);
+        assert_eq!(a.dtype(), crate::Dtype::Float32);
+
+        // Test with array offset - should produce similar results to int offset of 3
+        let offset = crate::Array::from_int(3);
+        let result = rope_dynamic(&a, 8, false, 10000., 1.0, &offset, None).unwrap();
+        assert_eq!(result.shape(), [2, 8, 16]);
+        assert_eq!(result.dtype(), crate::Dtype::Float32);
+
+        // Compare with regular rope using int offset=3
+        let result_int_offset = rope(&a, 8, false, 10000., 1.0, 3, None).unwrap();
+        assert_eq!(result_int_offset.shape(), [2, 8, 16]);
+
+        // The results should be close
+        let diff = &result - &result_int_offset;
+        let max_diff = diff.abs().unwrap().max(None).unwrap().item::<f32>();
+        assert!(max_diff < 1e-5, "Max difference was {}", max_diff);
     }
 
     #[test]

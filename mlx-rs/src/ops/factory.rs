@@ -379,6 +379,50 @@ pub fn ones_like_device(
     ones_dtype_device(shape, dtype, stream)
 }
 
+/// An array filled with the given value, with the same shape as the input.
+///
+/// # Params
+///
+/// - `input`: Input array to take shape from
+/// - `values`: Value(s) to fill the array with
+/// - `dtype`: Optional dtype for the output array. Defaults to the dtype of the input array.
+/// - `stream`: Stream to run the operation on
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, Dtype, ops::full_like};
+///
+/// let a = Array::from_slice(&[1i32, 2, 3], &[3]);
+/// // Fill with same dtype as input
+/// let b = full_like(&a, &Array::from_f32(7.0), None).unwrap();
+/// assert_eq!(b.dtype(), Dtype::Int32);
+///
+/// // Fill with specified dtype
+/// let c = full_like(&a, &Array::from_f32(7.5), Some(Dtype::Float32)).unwrap();
+/// assert_eq!(c.dtype(), Dtype::Float32);
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn full_like_device(
+    input: impl AsRef<Array>,
+    values: impl AsRef<Array>,
+    #[optional] dtype: impl Into<Option<Dtype>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a = input.as_ref();
+    let dtype = dtype.into().unwrap_or_else(|| a.dtype());
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_full_like(
+            res,
+            a.as_ptr(),
+            values.as_ref().as_ptr(),
+            dtype.into(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 /// Similar to [`Array::ones`] but with a specified dtype.
 #[generate_macro]
 #[default_device]
@@ -751,5 +795,40 @@ mod tests {
 
         let data: &[f32] = array.as_slice();
         assert_eq!(data, &[1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0]);
+    }
+
+    // The tests below are adapted from the C++ unit test `ops_tests.cpp/test full_like`
+    #[test]
+    fn test_full_like() {
+        // Test with explicit dtype (different from input)
+        let base_int = Array::from_slice(&[1i16, 2, 3], &[3]);
+        let from_array_with_dtype =
+            full_like(&base_int, &array!(7.5f32), Some(Dtype::Float16)).unwrap();
+        assert_eq!(from_array_with_dtype.dtype(), Dtype::Float16);
+        assert_eq!(from_array_with_dtype.shape(), &[3]);
+
+        let expected_f16: Vec<f16> = vec![f16::from_f32(7.5); 3];
+        let data: Vec<f16> = from_array_with_dtype.as_slice::<f16>().to_vec();
+        assert_eq!(data, expected_f16);
+
+        // Test with default dtype (inherits from input)
+        let from_array_default_dtype = full_like(&base_int, &array!(4.0f32), None).unwrap();
+        assert_eq!(from_array_default_dtype.dtype(), Dtype::Int16);
+        let data: &[i16] = from_array_default_dtype.as_slice();
+        assert_eq!(data, &[4, 4, 4]);
+
+        // Test with explicit dtype float32
+        let from_scalar_with_dtype =
+            full_like(&base_int, &array!(3.25f32), Some(Dtype::Float32)).unwrap();
+        assert_eq!(from_scalar_with_dtype.dtype(), Dtype::Float32);
+        let data: &[f32] = from_scalar_with_dtype.as_slice();
+        assert_eq!(data, &[3.25f32, 3.25f32, 3.25f32]);
+
+        // Test with float base and int value - uses base dtype
+        let base_float = Array::from_slice(&[1.0f32, 2.0f32], &[2]);
+        let from_scalar_default_dtype = full_like(&base_float, &array!(2i32), None).unwrap();
+        assert_eq!(from_scalar_default_dtype.dtype(), Dtype::Float32);
+        let data: &[f32] = from_scalar_default_dtype.as_slice();
+        assert_eq!(data, &[2.0f32, 2.0f32]);
     }
 }

@@ -16,6 +16,7 @@ mod sort;
 pub mod indexing;
 
 pub use arithmetic::*;
+pub use conversion::*;
 pub use convolution::*;
 pub use cumulative::*;
 pub use factory::*;

@@ -329,4 +329,25 @@ mod tests {
             }
         }
     }
+
+    // Test adapted from Python test `test_fast_sdpa.py/test_sdpa_attention_sinks`
+    #[test]
+    fn test_fast_sdpa_with_sinks() {
+        let b = 2;
+        let n_q = 8;
+        let t_q = 128;
+        let t_kv = 128;
+        let d = 64;
+
+        let q = normal::<f32>(&[b, n_q, t_q, d], None, None, None).unwrap();
+        let k = normal::<f32>(&[b, n_q, t_kv, d], None, None, None).unwrap();
+        let v = normal::<f32>(&[b, n_q, t_kv, d], None, None, None).unwrap();
+        let scale = (d as f32).powf(-0.5);
+
+        // Test with sinks parameter
+        let sinks = normal::<f32>(&[n_q], None, None, None).unwrap() * 10.0;
+
+        let result = scaled_dot_product_attention(&q, &k, &v, scale, None, &sinks).unwrap();
+        assert_eq!(result.shape(), &[b, n_q, t_q, d]);
+    }
 }

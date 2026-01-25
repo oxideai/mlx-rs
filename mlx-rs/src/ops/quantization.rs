@@ -141,8 +141,8 @@ pub fn dequantize_device<'a>(
 #[cfg(test)]
 mod tests {
     use crate::{
-        ops::{dequantize, expand_dims, quantize},
-        Array,
+        ops::{dequantize, expand_dims, quantize, quantized_matmul},
+        random, Array,
     };
 
     #[test]
@@ -162,5 +162,32 @@ mod tests {
             let max_diff = ((&x - &x_hat).abs().unwrap().max(None).unwrap()).item::<f32>();
             assert!(max_diff <= 127.0 / (1 << i) as f32);
         }
+    }
+
+    // Test adapted from Python test `test_quantized.py/test_qmm`
+    #[test]
+    fn test_quantized_matmul() {
+        random::seed(0).unwrap();
+
+        let group_size = 64;
+        let bits = 4;
+        let m = 32;
+        let n = 128;
+        let k = 128;
+
+        let scale = 1.0 / (k as f32).sqrt();
+        let x = random::normal::<f32>(&[m, k], None, None, None).unwrap() * scale;
+        let w = random::normal::<f32>(&[k, n], None, None, None).unwrap() * scale;
+
+        let (w_q, scales, biases) = quantize(&w, group_size, bits).unwrap();
+        let w_hat = dequantize(&w_q, &scales, &biases, group_size, bits).unwrap();
+
+        // Test with biases
+        let y_q = quantized_matmul(&x, &w_q, &scales, &biases, false, group_size, bits).unwrap();
+        let y_hat = x.matmul(&w_hat).unwrap();
+
+        assert_eq!(y_q.shape(), y_hat.shape());
+        let max_diff = ((&y_q - &y_hat).abs().unwrap().max(None).unwrap()).item::<f32>();
+        assert!(max_diff < 1e-3, "max_diff: {}", max_diff);
     }
 }

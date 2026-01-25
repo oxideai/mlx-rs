@@ -3,29 +3,68 @@ use mlx_rs::{
     error::Exception,
     fast::{scaled_dot_product_attention, ScaledDotProductAttentionMask},
     macros::{ModuleParameters, Quantizable},
-    module::Module,
+    module::{Module, ModuleParameters as ModuleParametersTrait, Param},
     nn,
     ops::concatenate_axis,
     quantization::MaybeQuantized,
     Array,
 };
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::path::Path;
 
+/// Quantization configuration
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct QuantizationConfig {
+    #[serde(default = "default_group_size")]
+    pub group_size: i32,
+    #[serde(default = "default_bits")]
+    pub bits: i32,
+}
+
+fn default_group_size() -> i32 { 64 }
+fn default_bits() -> i32 { 4 }
+
+/// HuggingFace-style config.json format
 #[derive(Debug, Clone, Deserialize)]
 pub struct ModelArgs {
+    #[serde(alias = "hidden_size")]
     pub dim: i32,
+    #[serde(alias = "num_hidden_layers")]
     pub n_layers: i32,
+    #[serde(default = "default_head_dim")]
     pub head_dim: i32,
+    #[serde(alias = "intermediate_size")]
     pub hidden_dim: i32,
+    #[serde(alias = "num_attention_heads")]
     pub n_heads: i32,
+    #[serde(alias = "num_key_value_heads")]
     pub n_kv_heads: i32,
+    #[serde(alias = "rms_norm_eps")]
     pub norm_eps: f32,
     pub vocab_size: i32,
+    #[serde(default = "default_rope_theta")]
     pub rope_theta: Option<f32>,
+    #[serde(default)]
+    pub quantization: Option<QuantizationConfig>,
+    #[serde(default)]
+    pub tie_word_embeddings: bool,
 }
+
+fn default_head_dim() -> i32 { 128 }  // Mistral default
+fn default_rope_theta() -> Option<f32> { Some(10000.0) }
 
 impl ModelArgs {
     pub const DEFAULT_ROPE_THETA: f32 = 10000.0;
+
+    /// Compute head_dim from dim and n_heads if not specified
+    pub fn head_dim(&self) -> i32 {
+        if self.head_dim > 0 {
+            self.head_dim
+        } else {
+            self.dim / self.n_heads
+        }
+    }
 }
 
 #[derive(Debug, Clone, ModuleParameters, Quantizable)]
@@ -59,23 +98,24 @@ impl Attention {
     pub fn new(args: &ModelArgs) -> Result<Self, Exception> {
         let n_heads = args.n_heads;
         let n_kv_heads = args.n_kv_heads;
+        let head_dim = args.head_dim();
         let repeats = n_heads / n_kv_heads;
-        let scale = (args.head_dim as f32).powf(-0.5);
+        let scale = (head_dim as f32).powf(-0.5);
 
-        let wq = nn::LinearBuilder::new(args.dim, n_heads * args.head_dim)
+        let wq = nn::LinearBuilder::new(args.dim, n_heads * head_dim)
             .bias(false)
             .build()?;
-        let wk = nn::LinearBuilder::new(args.dim, n_kv_heads * args.head_dim)
+        let wk = nn::LinearBuilder::new(args.dim, n_kv_heads * head_dim)
             .bias(false)
             .build()?;
-        let wv = nn::LinearBuilder::new(args.dim, n_kv_heads * args.head_dim)
+        let wv = nn::LinearBuilder::new(args.dim, n_kv_heads * head_dim)
             .bias(false)
             .build()?;
-        let wo = nn::LinearBuilder::new(n_heads * args.head_dim, args.dim)
+        let wo = nn::LinearBuilder::new(n_heads * head_dim, args.dim)
             .bias(false)
             .build()?;
-        let rope = nn::RopeBuilder::new(args.head_dim)
-            .traditional(true)
+        let rope = nn::RopeBuilder::new(head_dim)
+            .traditional(false)  // Mistral uses non-traditional RoPE
             .base(args.rope_theta.unwrap_or(ModelArgs::DEFAULT_ROPE_THETA))
             .build()?;
 
@@ -404,4 +444,235 @@ impl Module<MistralInput<'_>> for Mistral {
         self.norm.training_mode(mode);
         self.output.training_mode(mode);
     }
+}
+
+// ============================================================================
+// Quantized model loading
+// ============================================================================
+
+fn get_weight(weights: &HashMap<String, Array>, key: &str) -> Result<Array, MistralError> {
+    weights.get(key)
+        .cloned()
+        .ok_or_else(|| MistralError::Exception(Exception::custom(format!("Weight not found: {}", key))))
+}
+
+fn get_weight_optional(weights: &HashMap<String, Array>, key: &str) -> Option<Array> {
+    weights.get(key).cloned()
+}
+
+fn make_quantized_linear(
+    weights: &HashMap<String, Array>,
+    prefix: &str,
+    group_size: i32,
+    bits: i32,
+) -> Result<nn::QuantizedLinear, MistralError> {
+    let weight = get_weight(weights, &format!("{}.weight", prefix))?;
+    let scales = get_weight(weights, &format!("{}.scales", prefix))?;
+    let biases = get_weight(weights, &format!("{}.biases", prefix))?;
+    let linear_bias = get_weight_optional(weights, &format!("{}.bias", prefix));
+
+    let inner = nn::Linear {
+        weight: Param::new(weight),
+        bias: Param::new(linear_bias),
+    };
+
+    let mut ql = nn::QuantizedLinear {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+    ql.freeze_parameters(true);
+
+    Ok(ql)
+}
+
+fn make_quantized_embedding(
+    weights: &HashMap<String, Array>,
+    prefix: &str,
+    group_size: i32,
+    bits: i32,
+) -> Result<nn::QuantizedEmbedding, MistralError> {
+    let weight = get_weight(weights, &format!("{}.weight", prefix))?;
+    let scales = get_weight(weights, &format!("{}.scales", prefix))?;
+    let biases = get_weight(weights, &format!("{}.biases", prefix))?;
+
+    let inner = nn::Embedding {
+        weight: Param::new(weight),
+    };
+
+    let mut qe = nn::QuantizedEmbedding {
+        group_size,
+        bits,
+        scales: Param::new(scales),
+        biases: Param::new(biases),
+        inner,
+    };
+    qe.freeze_parameters(true);
+
+    Ok(qe)
+}
+
+pub fn load_model_quantized(model_dir: &Path, args: &ModelArgs) -> Result<Mistral, MistralError> {
+    let quant_config = args.quantization.as_ref()
+        .ok_or_else(|| MistralError::Exception(Exception::custom("No quantization config")))?;
+    let group_size = quant_config.group_size;
+    let bits = quant_config.bits;
+
+    // Load all weights
+    let weights = load_all_weights(model_dir)?;
+
+    let head_dim = args.head_dim();
+    let n_heads = args.n_heads;
+    let n_kv_heads = args.n_kv_heads;
+
+    let mut layers = Vec::with_capacity(args.n_layers as usize);
+
+    for i in 0..args.n_layers {
+        let layer_prefix = format!("model.layers.{}", i);
+
+        // Build attention
+        let attention = Attention {
+            n_heads,
+            n_kv_heads,
+            repeats: n_heads / n_kv_heads,
+            scale: (head_dim as f32).powf(-0.5),
+            wq: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.q_proj", layer_prefix), group_size, bits
+            )?),
+            wk: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.k_proj", layer_prefix), group_size, bits
+            )?),
+            wv: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.v_proj", layer_prefix), group_size, bits
+            )?),
+            wo: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.self_attn.o_proj", layer_prefix), group_size, bits
+            )?),
+            rope: nn::RopeBuilder::new(head_dim)
+                .traditional(false)
+                .base(args.rope_theta.unwrap_or(ModelArgs::DEFAULT_ROPE_THETA))
+                .build()
+                .unwrap(),
+        };
+
+        // Build feed forward
+        let feed_forward = FeedForward {
+            w1: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.gate_proj", layer_prefix), group_size, bits
+            )?),
+            w2: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.down_proj", layer_prefix), group_size, bits
+            )?),
+            w3: MaybeQuantized::Quantized(make_quantized_linear(
+                &weights, &format!("{}.mlp.up_proj", layer_prefix), group_size, bits
+            )?),
+        };
+
+        let block = TransformerBlock {
+            n_heads,
+            dim: args.dim,
+            attention,
+            feed_forward,
+            attention_norm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.input_layernorm.weight", layer_prefix))?),
+                eps: args.norm_eps,
+            },
+            ffn_norm: nn::RmsNorm {
+                weight: Param::new(get_weight(&weights, &format!("{}.post_attention_layernorm.weight", layer_prefix))?),
+                eps: args.norm_eps,
+            },
+        };
+
+        layers.push(block);
+    }
+
+    // Embedding may or may not be quantized - check for scales
+    let tok_embeddings = if weights.contains_key("model.embed_tokens.scales") {
+        MaybeQuantized::Quantized(make_quantized_embedding(
+            &weights, "model.embed_tokens", group_size, bits
+        )?)
+    } else {
+        // Non-quantized embedding
+        let weight = get_weight(&weights, "model.embed_tokens.weight")?;
+        MaybeQuantized::Original(nn::Embedding {
+            weight: Param::new(weight),
+        })
+    };
+
+    // lm_head may or may not be quantized
+    let output = if weights.contains_key("lm_head.scales") {
+        MaybeQuantized::Quantized(make_quantized_linear(
+            &weights, "lm_head", group_size, bits
+        )?)
+    } else if args.tie_word_embeddings {
+        // Tied weights - use embedding weight as linear
+        let weight = get_weight(&weights, "model.embed_tokens.weight")?;
+        MaybeQuantized::Original(nn::Linear {
+            weight: Param::new(weight),
+            bias: Param::new(None),
+        })
+    } else {
+        let weight = get_weight(&weights, "lm_head.weight")?;
+        MaybeQuantized::Original(nn::Linear {
+            weight: Param::new(weight),
+            bias: Param::new(None),
+        })
+    };
+
+    let model = Mistral {
+        vocab_size: args.vocab_size,
+        n_layers: args.n_layers,
+        tok_embeddings,
+        layers,
+        norm: nn::RmsNorm {
+            weight: Param::new(get_weight(&weights, "model.norm.weight")?),
+            eps: args.norm_eps,
+        },
+        output,
+    };
+
+    Ok(model)
+}
+
+fn load_all_weights(model_dir: &Path) -> Result<HashMap<String, Array>, MistralError> {
+    use std::collections::HashSet;
+
+    // Try sharded weights first
+    let weights_index = model_dir.join("model.safetensors.index.json");
+    if weights_index.exists() {
+        let json = std::fs::read_to_string(&weights_index)
+            .map_err(|e| MistralError::Exception(Exception::custom(format!("Failed to read index: {}", e))))?;
+        let index: serde_json::Value = serde_json::from_str(&json)
+            .map_err(|e| MistralError::Exception(Exception::custom(format!("Failed to parse index: {}", e))))?;
+
+        let weight_map = index["weight_map"].as_object()
+            .ok_or_else(|| MistralError::Exception(Exception::custom("Invalid weight index")))?;
+
+        let weight_files: HashSet<&str> = weight_map.values()
+            .filter_map(|v| v.as_str())
+            .collect();
+
+        let mut all_weights: HashMap<String, Array> = HashMap::new();
+
+        for weight_file in weight_files {
+            let weights_filename = model_dir.join(weight_file);
+            let loaded = Array::load_safetensors(&weights_filename)
+                .map_err(|e| MistralError::Exception(Exception::custom(format!("Failed to load {}: {:?}", weight_file, e))))?;
+            all_weights.extend(loaded);
+        }
+
+        return Ok(all_weights);
+    }
+
+    // Try single file
+    let weights_file = model_dir.join("model.safetensors");
+    if weights_file.exists() {
+        let loaded = Array::load_safetensors(&weights_file)
+            .map_err(|e| MistralError::Exception(Exception::custom(format!("Failed to load weights: {:?}", e))))?;
+        return Ok(loaded);
+    }
+
+    Err(MistralError::Exception(Exception::custom("No weights file found")))
 }

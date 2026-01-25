@@ -114,6 +114,7 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         true,
         group_size,
         bits,
+        None::<&str>,
     )?;
 
     if let Some(mask) = mask {
@@ -135,6 +136,7 @@ pub(crate) fn quantized_scaled_dot_product_attention(
         false,
         group_size,
         bits,
+        None::<&str>,
     )?;
 
     if n_repeats > 1 {
@@ -190,13 +192,31 @@ impl From<QuantizedValues> for MaybeQuantizedValues {
     }
 }
 
-pub(crate) fn scaled_dot_product_attention<C>(
+/// Attention mask for scaled_dot_product_attention.
+/// Use `Causal` for prefill (multi-token input) for hardware-optimized attention.
+/// Use `Array` for explicit masks (e.g., with sliding window).
+/// Use `None` for single-token decode (no mask needed).
+#[derive(Debug, Clone)]
+pub enum SdpaMask<'a> {
+    /// Hardware-optimized causal mask (for prefill)
+    Causal,
+    /// Explicit array mask
+    Array(&'a Array),
+}
+
+impl<'a> From<&'a Array> for SdpaMask<'a> {
+    fn from(mask: &'a Array) -> Self {
+        SdpaMask::Array(mask)
+    }
+}
+
+pub(crate) fn scaled_dot_product_attention<'a, C>(
     queries: Array,
     keys: impl Into<MaybeQuantizedKeys>,
     values: impl Into<MaybeQuantizedValues>,
     cache: Option<C>,
     scale: f32,
-    mask: Option<&Array>,
+    mask: Option<SdpaMask<'a>>,
 ) -> Result<Array, Exception>
 where
     C: KeyValueCache,
@@ -224,8 +244,15 @@ where
                 }
             };
 
+            // Extract array mask if present (quantized attention doesn't support causal mode)
+            let array_mask = match &mask {
+                Some(SdpaMask::Array(m)) => Some(*m),
+                Some(SdpaMask::Causal) => None, // Quantized SDPA will handle causal internally
+                None => None,
+            };
+
             return quantized_scaled_dot_product_attention(
-                queries, keys, values, scale, mask, group_size, bits,
+                queries, keys, values, scale, array_mask, group_size, bits,
             );
         }
     }
@@ -241,12 +268,19 @@ where
         }
     };
 
+    // Convert to ScaledDotProductAttentionMask, using Causal mode for prefill
+    let sdpa_mask = match mask {
+        Some(SdpaMask::Causal) => Some(ScaledDotProductAttentionMask::Causal),
+        Some(SdpaMask::Array(m)) => Some(ScaledDotProductAttentionMask::Array(m)),
+        None => None,
+    };
+
     mlx_rs::fast::scaled_dot_product_attention(
         queries,
         keys,
         values,
         scale,
-        mask.map(ScaledDotProductAttentionMask::Array),
+        sdpa_mask,
     )
 }
 

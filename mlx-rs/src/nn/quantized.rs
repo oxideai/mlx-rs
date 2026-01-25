@@ -105,7 +105,7 @@ fn build_quantized_embedding_inner(
     group_size: i32,
     bits: i32,
 ) -> Result<QuantizedEmbedding, Exception> {
-    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits)?;
+    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits, None::<&str>)?;
 
     let inner = Embedding {
         weight: Param::new(quantized_weight),
@@ -175,6 +175,7 @@ impl QuantizedEmbedding {
             true,
             self.group_size,
             self.bits,
+            None::<&str>,
         )
     }
 }
@@ -198,7 +199,7 @@ impl Module<&Array> for QuantizedEmbedding {
         let scales = self.scales.index(&x);
         let biases = self.biases.index(&x);
 
-        let out = dequantize(&w, &scales, &biases, self.group_size, self.bits)?;
+        let out = dequantize(&w, &scales, &biases, self.group_size, self.bits, None::<&str>)?;
 
         let ret_shape = s.iter().copied().chain(once(-1)).collect::<Vec<_>>();
         out.reshape(&ret_shape)
@@ -257,7 +258,7 @@ fn build_quantized_linear_inner(
     group_size: i32,
     bits: i32,
 ) -> Result<QuantizedLinear, Exception> {
-    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits)?;
+    let (quantized_weight, scales, biases) = ops::quantize(&weight, group_size, bits, None::<&str>)?;
 
     let inner = Linear {
         weight: Param::new(quantized_weight),
@@ -373,6 +374,7 @@ impl Module<&Array> for QuantizedLinear {
             true,
             self.group_size,
             self.bits,
+            None::<&str>,
         )?;
         if let Some(bias) = &self.inner.bias.value {
             x = x.add(bias)?;

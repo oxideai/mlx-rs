@@ -1,9 +1,16 @@
+pub mod audio;
 pub mod cache;
+pub mod compiled_ops;
 pub mod error;
 // pub mod generate;
+pub mod inference;
+pub mod metal_kernels;
 pub mod models;
 pub mod sampler;
+pub mod speculative;
+pub mod text;
 pub mod utils;
+pub mod voice_clone;
 
 use mlx_rs::Array;
 

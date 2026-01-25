@@ -247,6 +247,59 @@ impl Array {
         }
     }
 
+    /// Check if the array is contiguous in memory (row-major/C-style).
+    ///
+    /// An array is contiguous if it can be accessed as a flat slice without gaps
+    /// or out-of-order elements. Operations like `index()` and `transpose_axes()`
+    /// create strided views that are NOT contiguous.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mlx_rs::Array;
+    /// use mlx_rs::ops::indexing::IndexOp;
+    ///
+    /// let arr = Array::from_slice(&[1i32, 2, 3, 4, 5, 6], &[2, 3]);
+    /// assert!(arr.is_contiguous());
+    ///
+    /// // Indexing creates a strided view
+    /// let sliced = arr.index((.., ..2));  // First 2 columns
+    /// // Note: may or may not be contiguous depending on the operation
+    /// ```
+    pub fn is_contiguous(&self) -> bool {
+        let shape = self.shape();
+        let strides = self.strides();
+        let ndim = self.ndim();
+
+        if ndim == 0 {
+            return true;
+        }
+
+        // For row-major (C-style) contiguous arrays:
+        // stride[n-1] should be 1
+        // stride[i] should be product of shape[i+1..]
+        //
+        // Example: shape [2, 3, 4]
+        // strides should be [12, 4, 1] (i.e., [3*4, 4, 1])
+
+        let mut expected_stride: usize = 1;
+        for i in (0..ndim).rev() {
+            // Handle dimensions of size 0 or 1 (stride doesn't matter)
+            if shape[i] <= 1 {
+                // For size 0 or 1 dimensions, any stride is valid
+                expected_stride *= shape[i].max(1) as usize;
+                continue;
+            }
+
+            if strides[i] != expected_stride {
+                return false;
+            }
+            expected_stride *= shape[i] as usize;
+        }
+
+        true
+    }
+
     /// The number of bytes in the array.
     pub fn nbytes(&self) -> usize {
         unsafe { mlx_sys::mlx_array_nbytes(self.as_ptr()) }
@@ -315,9 +368,7 @@ impl Array {
     ///
     /// _Note: This will evaluate the array._
     pub fn try_item<T: ArrayElement>(&self) -> crate::error::Result<T> {
-        self.eval()?;
-
-        // Evaluate the array, so we have content to work with in the conversion
+        // Evaluate the array so we have content to work with
         self.eval()?;
 
         // Though `mlx_array_item_<dtype>` returns a status code, it doesn't
@@ -368,7 +419,15 @@ impl Array {
         }
     }
 
-    /// Returns a slice of the array data returning an error if the dtype does not match the actual dtype.
+    /// Returns a slice of the array data returning an error if the dtype does not match the actual dtype
+    /// or if the array is not contiguous in memory.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The dtype does not match the requested type
+    /// - The array is not contiguous (e.g., after `index()` or `transpose_axes()`)
+    /// - The data pointer is null
     ///
     /// # Example
     ///
@@ -381,6 +440,23 @@ impl Array {
     /// let slice = array.try_as_slice::<i32>();
     /// assert_eq!(slice, Ok(&data[..]));
     /// ```
+    ///
+    /// # Non-contiguous arrays
+    ///
+    /// Operations like `index()` and `transpose_axes()` create strided views that
+    /// are not contiguous. To get a slice from such arrays, first make them contiguous:
+    ///
+    /// ```rust,ignore
+    /// // This may fail if the array is not contiguous:
+    /// let sliced = arr.index((.., 0, ..));
+    /// let data = sliced.try_as_slice::<f32>();  // May return NotContiguous error
+    ///
+    /// // Fix by reshaping to force contiguity:
+    /// let sliced = arr.index((.., 0, ..));
+    /// let n = sliced.size() as i32;
+    /// let contiguous = sliced.reshape(&[n])?.reshape(sliced.shape())?;
+    /// let data = contiguous.try_as_slice::<f32>()?;  // Now works
+    /// ```
     pub fn try_as_slice<T: ArrayElement>(&self) -> Result<&[T], AsSliceError> {
         if self.dtype() != T::DTYPE {
             return Err(AsSliceError::DtypeMismatch {
@@ -390,6 +466,11 @@ impl Array {
         }
 
         self.eval()?;
+
+        // Check contiguity AFTER eval (strides may not be valid before eval)
+        if !self.is_contiguous() {
+            return Err(AsSliceError::NotContiguous);
+        }
 
         unsafe {
             let size = self.size();

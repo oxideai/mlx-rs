@@ -8,6 +8,7 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 documentation.workspace = true
+description = "Rust implementation of mlx-lm"
 
 [dependencies]
 # Local dependencies

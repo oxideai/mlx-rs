@@ -1191,13 +1191,33 @@ pub fn english_g2p(text: &str) -> (Vec<String>, Vec<i32>) {
     let mut phonemes = Vec::new();
     let mut word2ph = Vec::new();
 
-    // Split text into words, preserving punctuation
+    // Split text into words and numbers, preserving punctuation
     let mut current_word = String::new();
+    let mut current_number = String::new();
     let mut chars = text.chars().peekable();
 
     while let Some(c) = chars.next() {
         if c.is_ascii_alphabetic() || c == '\'' {
+            // Flush any pending number
+            if !current_number.is_empty() {
+                let num_phonemes = number_to_english_phonemes(&current_number);
+                for (ph, count) in num_phonemes {
+                    phonemes.extend(ph);
+                    word2ph.push(count);
+                }
+                current_number.clear();
+            }
             current_word.push(c);
+        } else if c.is_ascii_digit() {
+            // Flush any pending word
+            if !current_word.is_empty() {
+                let word_phonemes = cmudict::word_to_phonemes(&current_word);
+                let count = word_phonemes.len() as i32;
+                phonemes.extend(word_phonemes);
+                word2ph.push(count);
+                current_word.clear();
+            }
+            current_number.push(c);
         } else {
             // Process accumulated word
             if !current_word.is_empty() {
@@ -1206,6 +1226,15 @@ pub fn english_g2p(text: &str) -> (Vec<String>, Vec<i32>) {
                 phonemes.extend(word_phonemes);
                 word2ph.push(count);
                 current_word.clear();
+            }
+            // Process accumulated number
+            if !current_number.is_empty() {
+                let num_phonemes = number_to_english_phonemes(&current_number);
+                for (ph, count) in num_phonemes {
+                    phonemes.extend(ph);
+                    word2ph.push(count);
+                }
+                current_number.clear();
             }
 
             // Handle punctuation and spaces
@@ -1228,8 +1257,115 @@ pub fn english_g2p(text: &str) -> (Vec<String>, Vec<i32>) {
         phonemes.extend(word_phonemes);
         word2ph.push(count);
     }
+    // Process final number if any
+    if !current_number.is_empty() {
+        let num_phonemes = number_to_english_phonemes(&current_number);
+        for (ph, count) in num_phonemes {
+            phonemes.extend(ph);
+            word2ph.push(count);
+        }
+    }
 
     (phonemes, word2ph)
+}
+
+/// Convert a number string to English phonemes
+/// Returns a vector of (phonemes, word2ph_count) for each word
+fn number_to_english_phonemes(num_str: &str) -> Vec<(Vec<String>, i32)> {
+    use super::cmudict;
+
+    // For years (4-digit numbers), read as two pairs: 2050 → "twenty fifty"
+    if num_str.len() == 4 {
+        if let Ok(num) = num_str.parse::<u32>() {
+            if num >= 1000 && num <= 2999 {
+                let first_two = num / 100;
+                let last_two = num % 100;
+
+                let mut result = Vec::new();
+
+                // First part (e.g., "twenty" for 2050)
+                let first_word = number_to_english_word(first_two);
+                let first_ph = cmudict::word_to_phonemes(&first_word);
+                result.push((first_ph.clone(), first_ph.len() as i32));
+
+                // Second part (e.g., "fifty" for 2050)
+                if last_two > 0 {
+                    let second_word = number_to_english_word(last_two);
+                    let second_ph = cmudict::word_to_phonemes(&second_word);
+                    result.push((second_ph.clone(), second_ph.len() as i32));
+                } else {
+                    // 2000 → "two thousand"
+                    let thousand_ph = cmudict::word_to_phonemes("hundred");
+                    result.push((thousand_ph.clone(), thousand_ph.len() as i32));
+                }
+
+                return result;
+            }
+        }
+    }
+
+    // For other numbers, convert to English words
+    if let Ok(num) = num_str.parse::<u64>() {
+        let word = number_to_english_word(num as u32);
+        let ph = cmudict::word_to_phonemes(&word);
+        return vec![(ph.clone(), ph.len() as i32)];
+    }
+
+    // Fallback: read digits individually
+    let mut result = Vec::new();
+    for c in num_str.chars() {
+        if let Some(digit) = c.to_digit(10) {
+            let word = match digit {
+                0 => "zero", 1 => "one", 2 => "two", 3 => "three", 4 => "four",
+                5 => "five", 6 => "six", 7 => "seven", 8 => "eight", 9 => "nine",
+                _ => unreachable!(),
+            };
+            let ph = cmudict::word_to_phonemes(word);
+            result.push((ph.clone(), ph.len() as i32));
+        }
+    }
+    result
+}
+
+/// Convert a number to an English word
+fn number_to_english_word(num: u32) -> String {
+    let ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+                "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+                "seventeen", "eighteen", "nineteen"];
+    let tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+    if num == 0 {
+        return "zero".to_string();
+    }
+    if num < 20 {
+        return ones[num as usize].to_string();
+    }
+    if num < 100 {
+        let t = tens[(num / 10) as usize];
+        let o = ones[(num % 10) as usize];
+        if o.is_empty() {
+            return t.to_string();
+        }
+        return format!("{} {}", t, o);
+    }
+    if num < 1000 {
+        let h = num / 100;
+        let rest = num % 100;
+        if rest == 0 {
+            return format!("{} hundred", ones[h as usize]);
+        }
+        return format!("{} hundred {}", ones[h as usize], number_to_english_word(rest));
+    }
+    if num < 1000000 {
+        let t = num / 1000;
+        let rest = num % 1000;
+        if rest == 0 {
+            return format!("{} thousand", number_to_english_word(t));
+        }
+        return format!("{} thousand {}", number_to_english_word(t), number_to_english_word(rest));
+    }
+    // For very large numbers, just read digits
+    num.to_string()
 }
 
 /// Language segment for mixed text processing
@@ -1246,12 +1382,12 @@ fn segment_by_language(text: &str) -> Vec<LangSegment> {
     let mut current_is_english: Option<bool> = None;
 
     for c in text.chars() {
-        let is_en = c.is_ascii_alphabetic();
+        let is_en = c.is_ascii_alphabetic() || c.is_ascii_digit();  // Include digits in English
         let is_zh = is_chinese_char(c);
         let is_punct = is_punctuation(c) || c.is_whitespace();
 
         if is_en {
-            // English character
+            // English character or digit
             if current_is_english == Some(false) && !current_text.is_empty() {
                 segments.push(LangSegment { text: current_text.clone(), is_english: false });
                 current_text.clear();

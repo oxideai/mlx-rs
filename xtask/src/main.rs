@@ -1,5 +1,5 @@
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn get_repo_root() -> PathBuf {
@@ -7,7 +7,7 @@ fn get_repo_root() -> PathBuf {
     PathBuf::from(manifest_dir).parent().unwrap().to_path_buf()
 }
 
-fn get_current_tag(mlx_c_dir: &PathBuf) -> String {
+fn get_current_tag(mlx_c_dir: &Path) -> String {
     let output = Command::new("git")
         .args(["describe", "--tags"])
         .current_dir(mlx_c_dir)
@@ -17,7 +17,7 @@ fn get_current_tag(mlx_c_dir: &PathBuf) -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn get_latest_tag(mlx_c_dir: &PathBuf) -> String {
+fn get_latest_tag(mlx_c_dir: &Path) -> String {
     // Fetch tags first
     Command::new("git")
         .args(["fetch", "--tags", "--quiet"])
@@ -42,7 +42,7 @@ fn get_latest_tag(mlx_c_dir: &PathBuf) -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn checkout_tag(mlx_c_dir: &PathBuf, tag: &str) {
+fn checkout_tag(mlx_c_dir: &Path, tag: &str) {
     Command::new("git")
         .args(["checkout", tag, "--quiet"])
         .current_dir(mlx_c_dir)
@@ -50,7 +50,7 @@ fn checkout_tag(mlx_c_dir: &PathBuf, tag: &str) {
         .expect("Failed to checkout tag");
 }
 
-fn generate_bindings(root_dir: &PathBuf) -> String {
+fn generate_bindings(root_dir: &Path) -> String {
     let mlx_c_dir = root_dir.join("mlx-sys/src/mlx-c");
 
     let bindings = bindgen::Builder::default()

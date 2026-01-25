@@ -502,6 +502,53 @@ impl Array {
         })
     }
 
+    /// Compute the median over the given axes.
+    ///
+    /// # Params
+    ///
+    /// - axes: axes to reduce over
+    /// - keep_dims: Whether to keep the reduced dimensions -- defaults to false if not provided
+    #[default_device]
+    pub fn median_axes_device(
+        &self,
+        axes: &[i32],
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        Array::try_from_op(|res| unsafe {
+            mlx_sys::mlx_median(
+                res,
+                self.as_ptr(),
+                axes.as_ptr(),
+                axes.len(),
+                keep_dims.into().unwrap_or(false),
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+
+    /// Similar to [`Array::median_axes`] but only reduces over a single axis.
+    #[default_device]
+    pub fn median_axis_device(
+        &self,
+        axis: i32,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        self.median_axes_device(&[axis], keep_dims, stream)
+    }
+
+    /// Compute the median over all axes.
+    #[default_device]
+    pub fn median_device(
+        &self,
+        keep_dims: impl Into<Option<bool>>,
+        stream: impl AsRef<Stream>,
+    ) -> Result<Array> {
+        let axes: Vec<i32> = (0..self.ndim() as i32).collect();
+        self.median_axes_device(&axes, keep_dims, stream)
+    }
+
     /// A `log-sum-exp` reduction over the given axes returning an error if the axes are invalid.
     ///
     /// The log-sum-exp reduction is a numerically stable version of using the individual operations.
@@ -894,6 +941,41 @@ pub fn var_device(
     array.as_ref().var_device(keep_dims, ddof, stream)
 }
 
+/// See [`Array::median_axes`]
+#[generate_macro]
+#[default_device]
+pub fn median_axes_device(
+    array: impl AsRef<Array>,
+    axes: &[i32],
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().median_axes_device(axes, keep_dims, stream)
+}
+
+/// See [`Array::median_axis`]
+#[generate_macro]
+#[default_device]
+pub fn median_axis_device(
+    array: impl AsRef<Array>,
+    axis: i32,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().median_axis_device(axis, keep_dims, stream)
+}
+
+/// See [`Array::median`]
+#[generate_macro]
+#[default_device]
+pub fn median_device(
+    array: impl AsRef<Array>,
+    #[optional] keep_dims: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    array.as_ref().median_device(keep_dims, stream)
+}
+
 /// See [`Array::logsumexp_axes`]
 #[generate_macro]
 #[default_device]
@@ -1131,5 +1213,43 @@ mod tests {
 
         let results: &[f32] = result.as_slice();
         assert_eq!(results, &[5.0, 8.0, 4.0, 9.0]);
+    }
+
+    // Tests adapted from Python test `test_ops.py/test_median`
+    #[test]
+    fn test_median() {
+        // Test basic median over all elements (odd count)
+        let x = Array::from_slice(&[0, 1, 2, 3, 4], &[5]);
+        let out = x.median(None).unwrap();
+        assert_eq!(out.shape(), &[] as &[i32]);
+        assert_eq!(out.item::<i32>(), 2);
+
+        // Test keepdims
+        let out = x.median(true).unwrap();
+        assert_eq!(out.shape(), &[1]);
+
+        // Test median with even count (should be average of two middle values)
+        let x = Array::from_slice(&[0, 1, 2, 3, 4, 5], &[6]);
+        let out = x.median(None).unwrap();
+        assert!((out.item::<f32>() - 2.5).abs() < 1e-5);
+
+        // Test median over specific axes
+        use crate::random;
+        random::seed(0).unwrap();
+        let x = random::normal::<f32>(&[5, 5, 5, 5], None, None, None).unwrap();
+
+        let out = x.median_axes(&[0, 2], true).unwrap();
+        assert_eq!(out.shape(), &[1, 5, 1, 5]);
+
+        let out = x.median_axes(&[1, 3], true).unwrap();
+        assert_eq!(out.shape(), &[5, 1, 5, 1]);
+
+        // Test single axis
+        let x = Array::from_slice(&[1, 5, 2, 4, 3, 6], &[2, 3]);
+        let out = x.median_axis(0, None).unwrap();
+        assert_eq!(out.shape(), &[3]);
+
+        let out = x.median_axis(1, None).unwrap();
+        assert_eq!(out.shape(), &[2]);
     }
 }

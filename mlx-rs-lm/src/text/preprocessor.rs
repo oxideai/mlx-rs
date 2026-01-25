@@ -1317,24 +1317,60 @@ struct LangSegment {
 }
 
 /// Segment text into Chinese and English chunks
+/// Digits are context-dependent:
+/// - In English context (after letters): treated as English (e.g., "Room 404")
+/// - Followed by Chinese units: treated as Chinese (e.g., "126.4亿斤")
 fn segment_by_language(text: &str) -> Vec<LangSegment> {
     let mut segments = Vec::new();
     let mut current_text = String::new();
     let mut current_is_english: Option<bool> = None;
 
-    for c in text.chars() {
-        let is_en = c.is_ascii_alphabetic() || c.is_ascii_digit();  // Include digits in English
+    let chars: Vec<char> = text.chars().collect();
+    let len = chars.len();
+
+    for i in 0..len {
+        let c = chars[i];
+        let is_letter = c.is_ascii_alphabetic();
+        let is_digit = c.is_ascii_digit() || c == '.';  // Include decimal point with digits
         let is_zh = is_chinese_char(c);
         let is_punct = is_punctuation(c) || c.is_whitespace();
 
-        if is_en {
-            // English character or digit
+        if is_letter {
+            // English letter - always English
             if current_is_english == Some(false) && !current_text.is_empty() {
                 segments.push(LangSegment { text: current_text.clone(), is_english: false });
                 current_text.clear();
             }
             current_text.push(c);
             current_is_english = Some(true);
+        } else if is_digit {
+            // Digit - check context by looking ahead
+            // Skip all consecutive digits/dots to find what follows
+            let mut j = i + 1;
+            while j < len && (chars[j].is_ascii_digit() || chars[j] == '.') {
+                j += 1;
+            }
+            // Check what comes after the number
+            let followed_by_chinese = j < len && is_chinese_char(chars[j]);
+            let followed_by_english = j < len && chars[j].is_ascii_alphabetic();
+
+            if followed_by_chinese && !followed_by_english {
+                // Digits followed by Chinese (e.g., "126.4亿斤") - treat as Chinese
+                if current_is_english == Some(true) && !current_text.is_empty() {
+                    segments.push(LangSegment { text: current_text.clone(), is_english: true });
+                    current_text.clear();
+                }
+                current_text.push(c);
+                current_is_english = Some(false);
+            } else {
+                // Digits in English context or standalone
+                if current_is_english == Some(false) && !current_text.is_empty() {
+                    segments.push(LangSegment { text: current_text.clone(), is_english: false });
+                    current_text.clear();
+                }
+                current_text.push(c);
+                current_is_english = Some(true);
+            }
         } else if is_zh {
             // Chinese character
             if current_is_english == Some(true) && !current_text.is_empty() {

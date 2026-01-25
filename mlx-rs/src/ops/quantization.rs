@@ -138,6 +138,78 @@ pub fn dequantize_device<'a>(
     })
 }
 
+/// Perform quantized matrix multiplication with gathered indices.
+///
+/// This combines the functionality of `gather_mm` and `quantized_matmul`, allowing
+/// matrix multiplication with quantized weights and index gathering along batch dimensions.
+///
+/// # Params
+///
+/// - `x`: Input array
+/// - `w`: Quantized weight matrix
+/// - `scales`: Quantization scales
+/// - `biases`: Optional quantization biases (required for affine mode)
+/// - `lhs_indices`: Optional indices to gather from `x`'s batch dimensions
+/// - `rhs_indices`: Optional indices to gather from `w`'s batch dimensions
+/// - `transpose`: If true, transpose the weight matrix (default: true)
+/// - `group_size`: The quantization group size (default: 64)
+/// - `bits`: The number of bits per element (default: 4)
+/// - `sorted_indices`: If true, indicates the indices are sorted (default: false)
+#[allow(clippy::too_many_arguments)]
+#[generate_macro]
+#[default_device]
+pub fn gather_qmm_device<'b, 'lhs, 'rhs>(
+    x: impl AsRef<Array>,
+    w: impl AsRef<Array>,
+    scales: impl AsRef<Array>,
+    #[optional] biases: impl Into<Option<&'b Array>>,
+    #[optional] lhs_indices: impl Into<Option<&'lhs Array>>,
+    #[optional] rhs_indices: impl Into<Option<&'rhs Array>>,
+    #[optional] transpose: impl Into<Option<bool>>,
+    #[optional] group_size: impl Into<Option<i32>>,
+    #[optional] bits: impl Into<Option<i32>>,
+    #[optional] sorted_indices: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let transpose = transpose.into().unwrap_or(true);
+    let group_size = group_size.into().unwrap_or(64);
+    let bits = bits.into().unwrap_or(4);
+    let sorted = sorted_indices.into().unwrap_or(false);
+
+    unsafe {
+        let biases_ptr = biases
+            .into()
+            .map(|a| a.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let lhs_ptr = lhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let rhs_ptr = rhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+
+        <Array as Guarded>::try_from_op(|res| {
+            mlx_sys::mlx_gather_qmm(
+                res,
+                x.as_ref().as_ptr(),
+                w.as_ref().as_ptr(),
+                scales.as_ref().as_ptr(),
+                biases_ptr,
+                lhs_ptr,
+                rhs_ptr,
+                transpose,
+                group_size,
+                bits,
+                DEFAULT_MODE.as_ptr(),
+                sorted,
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -189,5 +261,86 @@ mod tests {
         assert_eq!(y_q.shape(), y_hat.shape());
         let max_diff = ((&y_q - &y_hat).abs().unwrap().max(None).unwrap()).item::<f32>();
         assert!(max_diff < 1e-3, "max_diff: {}", max_diff);
+    }
+
+    // Test adapted from Python test `test_quantized.py/test_gather_qmm`
+    #[test]
+    fn test_gather_qmm() {
+        use crate::ops::{gather_mm, gather_qmm, swap_axes};
+
+        random::seed(0).unwrap();
+
+        let group_size = 64;
+        let bits = 4;
+
+        // Helper to quantize with transpose option
+        fn quantize_with_transpose(
+            w: &Array,
+            transpose: bool,
+            group_size: i32,
+            bits: i32,
+        ) -> (Array, Array, Array, Array) {
+            let (w_q, scales, biases) = quantize(w, group_size, bits).unwrap();
+            let mut w_hat = dequantize(&w_q, &scales, &biases, group_size, bits).unwrap();
+            if transpose {
+                w_hat = swap_axes(&w_hat, -1, -2).unwrap();
+            }
+            (w_hat, w_q, scales, biases)
+        }
+
+        // Test case 1: batch_A=(1,), lhs_indices=(0,), batch_B=(3,), rhs_indices=(2, 1)
+        let m = 32;
+        let n = 64;
+        let k = 64;
+
+        let x = random::normal::<f32>(&[1, m, k], None, None, None).unwrap();
+        let w = random::normal::<f32>(&[3, n, k], None, None, None).unwrap(); // transpose=true shape
+        let (w_hat, w_q, scales, biases) = quantize_with_transpose(&w, true, group_size, bits);
+
+        let lhs_indices = Array::from_slice(&[0u32], &[1]);
+        let rhs_indices = Array::from_slice(&[2u32, 1], &[2]);
+
+        // Compare gather_mm on dequantized weights vs gather_qmm
+        let c1 = gather_mm(&x, &w_hat, &lhs_indices, &rhs_indices, None).unwrap();
+        let c2 = gather_qmm(
+            &x,
+            &w_q,
+            &scales,
+            &biases,
+            &lhs_indices,
+            &rhs_indices,
+            true,
+            group_size,
+            bits,
+            None,
+        )
+        .unwrap();
+        assert!(
+            c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+            "gather_qmm test case 1 failed"
+        );
+
+        // Test case 2: batch_A=(5,), lhs_indices=(0, 2), batch_B=(3,), rhs_indices=(2, 1)
+        let x = random::normal::<f32>(&[5, m, k], None, None, None).unwrap();
+        let lhs_indices = Array::from_slice(&[0u32, 2], &[2]);
+
+        let c1 = gather_mm(&x, &w_hat, &lhs_indices, &rhs_indices, None).unwrap();
+        let c2 = gather_qmm(
+            &x,
+            &w_q,
+            &scales,
+            &biases,
+            &lhs_indices,
+            &rhs_indices,
+            true,
+            group_size,
+            bits,
+            None,
+        )
+        .unwrap();
+        assert!(
+            c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+            "gather_qmm test case 2 failed"
+        );
     }
 }

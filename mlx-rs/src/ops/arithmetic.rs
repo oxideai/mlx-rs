@@ -1566,6 +1566,71 @@ pub fn tensordot_axis_device(
     })
 }
 
+/// Matrix multiplication with gathered indices.
+///
+/// Perform matrix multiplication with index gathering along the batch dimensions.
+/// This is useful for operations where different batch elements should use different
+/// matrices from a pool.
+///
+/// # Params
+///
+/// - `a`: Input array
+/// - `b`: Input array
+/// - `lhs_indices`: Optional indices to gather from `a`'s batch dimensions
+/// - `rhs_indices`: Optional indices to gather from `b`'s batch dimensions
+/// - `sorted_indices`: If true, indicates the indices are sorted which can enable
+///   optimizations (default: false)
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::gather_mm};
+///
+/// let a = Array::ones::<f32>(&[5, 32, 32]).unwrap();
+/// let b = Array::ones::<f32>(&[3, 32, 32]).unwrap();
+/// let lhs_indices = Array::from_slice(&[0u32, 2], &[2]);
+/// let rhs_indices = Array::from_slice(&[2u32, 1], &[2]);
+/// let result = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+/// // result has shape [2, 32, 32]
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn gather_mm_device<'lhs, 'rhs>(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] lhs_indices: impl Into<Option<&'lhs Array>>,
+    #[optional] rhs_indices: impl Into<Option<&'rhs Array>>,
+    #[optional] sorted_indices: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
+    let sorted = sorted_indices.into().unwrap_or(false);
+
+    unsafe {
+        let lhs_ptr = lhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let rhs_ptr = rhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+
+        Array::try_from_op(|res| {
+            mlx_sys::mlx_gather_mm(
+                res,
+                a_ptr,
+                b_ptr,
+                lhs_ptr,
+                rhs_ptr,
+                sorted,
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::f32::consts::PI;
@@ -3067,6 +3132,108 @@ mod tests {
         assert!(
             result.is_err(),
             "segmented_mm should fail for batched input"
+        );
+    }
+
+    // Tests adapted from Python test `test_blas.py/test_gather_matmul`
+    #[test]
+    fn test_gather_mm() {
+        use crate::ops::indexing::take_axis;
+        use crate::random;
+
+        random::seed(0).unwrap();
+
+        // Reference implementation using take
+        fn gather_mm_ref(
+            a: &Array,
+            b: &Array,
+            lhs_indices: Option<&Array>,
+            rhs_indices: Option<&Array>,
+        ) -> Array {
+            let a = a
+                .reshape(&[-1, a.shape()[a.ndim() - 2], a.shape()[a.ndim() - 1]])
+                .unwrap();
+            let b = b
+                .reshape(&[-1, b.shape()[b.ndim() - 2], b.shape()[b.ndim() - 1]])
+                .unwrap();
+
+            let a_gathered = match lhs_indices {
+                Some(idx) => take_axis(&a, idx, 0).unwrap(),
+                None => a,
+            };
+            let b_gathered = match rhs_indices {
+                Some(idx) => take_axis(&b, idx, 0).unwrap(),
+                None => b,
+            };
+            a_gathered.matmul(&b_gathered).unwrap()
+        }
+
+        // Test case 1: batch_A=(1,), lhs_indices=(0,), batch_B=(3,), rhs_indices=(2, 1)
+        let a = random::normal::<f32>(&[1, 32, 32], None, None, None).unwrap();
+        let b = random::normal::<f32>(&[3, 32, 32], None, None, None).unwrap();
+        let lhs_indices = Array::from_slice(&[0u32], &[1]);
+        let rhs_indices = Array::from_slice(&[2u32, 1], &[2]);
+
+        let out_ref = gather_mm_ref(&a, &b, Some(&lhs_indices), Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 1 failed"
+        );
+
+        // Test case 2: batch_A=(1,), lhs_indices=None, batch_B=(3,), rhs_indices=(2, 1)
+        let out_ref = gather_mm_ref(&a, &b, None, Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, None::<&Array>, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 2 failed"
+        );
+
+        // Test case 3: batch_A=(5,), lhs_indices=(0, 2), batch_B=(3,), rhs_indices=(2, 1)
+        let a = random::normal::<f32>(&[5, 32, 32], None, None, None).unwrap();
+        let lhs_indices = Array::from_slice(&[0u32, 2], &[2]);
+
+        let out_ref = gather_mm_ref(&a, &b, Some(&lhs_indices), Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 3 failed"
+        );
+    }
+
+    // Test adapted from Python test `test_blas.py/test_gather_mm_sorted`
+    #[test]
+    fn test_gather_mm_sorted() {
+        use crate::ops::indexing::take_axis;
+        use crate::ops::sort;
+        use crate::random;
+
+        random::seed(0).unwrap();
+
+        // Reference implementation
+        fn gather_mm_ref(a: &Array, b: &Array, rhs: &Array) -> Array {
+            let b_gathered = take_axis(b, rhs, 0).unwrap();
+            a.matmul(&b_gathered).unwrap()
+        }
+
+        let a = random::normal::<f32>(&[100, 1, 100], None, None, None).unwrap();
+        let b = random::normal::<f32>(&[8, 100, 100], None, None, None).unwrap();
+        let rhs = sort(&random::randint::<_, i32>(0, 8, &[100], None).unwrap()).unwrap();
+
+        let c1 = gather_mm_ref(&a, &b, &rhs);
+        let c2 = gather_mm(&a, &b, None::<&Array>, &rhs, true).unwrap();
+        assert!(
+            c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+            "gather_mm_sorted failed"
         );
     }
 }

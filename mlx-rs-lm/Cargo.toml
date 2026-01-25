@@ -31,6 +31,7 @@ regex = "1"  # Text normalization patterns
 rubato = "0.14"  # High-quality audio resampling (sinc interpolation)
 lingua = { version = "1.6", default-features = false, features = ["chinese", "english", "japanese", "korean"] }  # ML-based language detection
 ort = { version = "2.0.0-rc.11", default-features = false, features = ["std", "download-binaries", "tls-native", "coreml"] }  # ONNX Runtime for G2PW with CoreML GPU/ANE support
+num2en = "1.0.0"  # Number to English words (like Python's inflect)
 
 [features]
 default = []

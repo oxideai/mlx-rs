@@ -1,13 +1,14 @@
 //! G2PW - Grapheme-to-Phoneme for Chinese Polyphonic Characters
 //!
-//! Uses ONNX Runtime to run the G2PW model for disambiguating polyphonic Chinese characters.
+//! Uses ONNX Runtime with CoreML (GPU/ANE) to run the G2PW model for disambiguating
+//! polyphonic Chinese characters.
 //! Based on: https://github.com/GitYCC/g2pW
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
-use ort::{inputs, session::Session, value::Tensor};
+use ort::{ep, inputs, session::Session, value::Tensor};
 use tokenizers::Tokenizer;
 
 /// Global G2PW instance (lazy initialized, wrapped in Mutex for thread-safe mutable access)
@@ -76,8 +77,21 @@ impl G2PWConverter {
         let monophonic_path = Path::new(model_dir).join("MONOPHONIC_CHARS.txt");
         let bopomofo_path = Path::new(model_dir).join("bopomofo_to_pinyin_wo_tune_dict.json");
 
-        // Load ONNX session
+        // Load ONNX session with CoreML execution provider for GPU/ANE acceleration
+        // Falls back to CPU if CoreML is not available
+        let cache_dir = Path::new(model_dir).join("coreml_cache");
+        std::fs::create_dir_all(&cache_dir).ok();
+
+        let coreml_ep = ep::CoreML::default()
+            .with_compute_units(ep::coreml::ComputeUnits::All)  // Use GPU + ANE + CPU
+            .with_model_format(ep::coreml::ModelFormat::NeuralNetwork)  // Better compatibility
+            .with_model_cache_dir(cache_dir.to_string_lossy().to_string())  // Cache compiled model
+            .build();
+
+        eprintln!("G2PW: Using CoreML execution provider (GPU/ANE accelerated)");
+
         let session = Session::builder()?
+            .with_execution_providers([coreml_ep])?
             .with_intra_threads(2)?
             .commit_from_file(&model_path)?;
 

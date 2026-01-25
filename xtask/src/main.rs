@@ -78,14 +78,9 @@ struct FunctionSig {
 fn extract_functions(bindings: &str) -> HashMap<String, FunctionSig> {
     let mut functions = HashMap::new();
     let mut current_fn: Option<(String, String)> = None;
-    let mut brace_depth = 0;
 
     for line in bindings.lines() {
         let trimmed = line.trim();
-
-        // Track brace depth to know when we're inside extern blocks
-        brace_depth += trimmed.matches('{').count();
-        brace_depth -= trimmed.matches('}').count();
 
         // Look for function declarations
         if trimmed.contains("pub fn ") {
@@ -98,7 +93,7 @@ fn extract_functions(bindings: &str) -> HashMap<String, FunctionSig> {
                     current_fn = Some((fn_name, line.to_string()));
                 }
             }
-        } else if let Some((ref name, ref mut sig)) = current_fn {
+        } else if let Some((ref _name, ref mut sig)) = current_fn {
             // Continue collecting multi-line signature
             sig.push('\n');
             sig.push_str(line);
@@ -143,9 +138,9 @@ fn extract_structs(bindings: &str) -> HashMap<String, StructDef> {
         let trimmed = line.trim();
 
         // Look for struct declarations
-        if trimmed.starts_with("pub struct ") {
-            if let Some(name_end) = trimmed[11..].find(|c: char| c == ' ' || c == '{' || c == ';') {
-                let struct_name = trimmed[11..11 + name_end].trim().to_string();
+        if let Some(after_struct) = trimmed.strip_prefix("pub struct ") {
+            if let Some(name_end) = after_struct.find([' ', '{', ';']) {
+                let struct_name = after_struct[..name_end].trim().to_string();
                 let initial_depth = if trimmed.contains('{') { 1 } else { 0 };
                 current_struct = Some((struct_name, line.to_string(), initial_depth));
 

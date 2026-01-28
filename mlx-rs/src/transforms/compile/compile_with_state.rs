@@ -6,7 +6,11 @@
 
 // TODO: there's plenty boilerplate code here but it's not clear how to reduce it
 
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    marker::PhantomData,
+    rc::Rc,
+};
 
 use crate::{
     error::Exception,
@@ -370,6 +374,7 @@ fn call_mut_with_state_inner<U>(
     shapeless: bool,
     state: Rc<RefCell<&mut U>>,
     args: &[impl AsRef<Array>],
+    num_function_outputs: Rc<Cell<Option<usize>>>,
 ) -> crate::error::Result<Vec<Array>>
 where
     U: Updatable,
@@ -403,63 +408,41 @@ where
         mlx_sys::mlx_closure_apply(res, compiled.as_ptr(), inner_inputs_vector.as_ptr())
     })?;
 
-    // number of states may change during the call
-    let state_params_len = state.borrow().updatable_states_len();
-
     let result_plus_state_output: Vec<Array> = result_vector.try_into_values()?;
 
-    // push the stateOutput into the state
-    let result_plus_state_output_len = result_plus_state_output.len();
+    // The combined output layout is: [function_outputs..., state_arrays...]
+    // We captured the function output count during tracing to know where to split.
+    let num_fn_outputs = num_function_outputs.get().ok_or_else(|| {
+        Exception::custom(
+            "compile_with_state: internal error - function output count not captured during tracing"
+        )
+    })?;
 
-    // Handle state array updates and return function results.
-    //
-    // The expected layout of result_plus_state_output is:
-    //   [function_result_0, ..., function_result_n, state_0, ..., state_m]
-    //
-    // Where m = state_params_len. The suffix_start index marks where state arrays begin.
-    //
-    // However, MLX's compile optimization may prune state arrays that don't appear
-    // to change during the computation. With very large models (10M+ parameters),
-    // this can result in fewer outputs than expected.
-    //
-    // Case 1: state_params_len <= output_len (normal case)
-    //   - suffix_start = output_len - state_params_len
-    //   - Extract function results from [0..suffix_start]
-    //   - Update state from [suffix_start..output_len]
-    //
-    // Case 2: state_params_len > output_len (pruned state case)
-    //   - The compiler pruned most/all state arrays
-    //   - We cannot reliably determine which outputs are results vs state
-    //   - Return an error since we can't safely update state
-    let suffix_start = result_plus_state_output_len
-        .checked_sub(state_params_len)
-        .ok_or_else(|| {
-            Exception::custom(format!(
-                "compile_with_state: state count mismatch - expected {} state arrays in output \
-                 but only got {} total outputs. The MLX compiler has pruned state arrays that \
-                 appear unchanged during computation. For very large models (10M+ params), \
-                 consider using non-compiled training or ensure all trainable parameters are \
-                 actually being updated in the training step.",
-                state_params_len,
-                result_plus_state_output_len
-            ))
-        })?;
+    if num_fn_outputs > result_plus_state_output.len() {
+        return Err(Exception::custom(format!(
+            "compile_with_state: invalid output count - expected {} function outputs \
+             but only got {} total outputs. This indicates an internal compilation error.",
+            num_fn_outputs,
+            result_plus_state_output.len()
+        )));
+    }
 
-    // Update state arrays from the suffix of the output
+    let function_results = &result_plus_state_output[..num_fn_outputs];
+    let state_outputs = &result_plus_state_output[num_fn_outputs..];
+
+    // Update state arrays. MLX's compiler may prune unchanged arrays from output,
+    // so zip() handles cases where fewer state arrays are returned than expected.
     for (s, new_values) in state
         .borrow_mut()
         .updatable_states_mut()
         .into_iter()
-        .zip(result_plus_state_output[suffix_start..].iter())
+        .zip(state_outputs.iter())
     {
         update_by_replace_with_ref_to_new_array(s, new_values);
     }
 
     // Return only the function results (not the state arrays)
-    Ok(result_plus_state_output
-        .into_iter()
-        .take(suffix_start)
-        .collect())
+    Ok(function_results.to_vec())
 }
 
 impl<F> CompiledState<F> {
@@ -517,6 +500,10 @@ impl<F> CompiledState<F> {
         let state = Rc::new(RefCell::new(state));
         let f = &mut self.f;
 
+        // Cell to capture the number of function outputs during tracing
+        let num_function_outputs = Rc::new(Cell::new(None));
+        let num_fn_outputs_clone = Rc::clone(&num_function_outputs);
+
         let state_clone = Rc::clone(&state);
         let inner = move |tracers: &[Array]| -> Vec<Array> {
             // put the tracers in their appropriate places:
@@ -546,6 +533,9 @@ impl<F> CompiledState<F> {
             // call the function with the tracer arguments and the state holding tracers
             let mut result = (f)(*state_clone.borrow_mut(), tracer_args);
 
+            // Capture function output count before appending state
+            num_fn_outputs_clone.set(Some(result.len()));
+
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone
                 .borrow()
@@ -571,7 +561,14 @@ impl<F> CompiledState<F> {
         };
 
         let inner_closure = Closure::new(inner);
-        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, state, args)
+        call_mut_with_state_inner(
+            inner_closure,
+            self.id,
+            self.shapeless,
+            state,
+            args,
+            num_function_outputs,
+        )
     }
 
     fn fallible_call_mut_with_state<U>(
@@ -586,6 +583,10 @@ impl<F> CompiledState<F> {
         let args_len = args.len();
         let state = Rc::new(RefCell::new(state));
         let f = &mut self.f;
+
+        // Cell to capture the number of function outputs during tracing
+        let num_function_outputs = Rc::new(Cell::new(None));
+        let num_fn_outputs_clone = Rc::clone(&num_function_outputs);
 
         let state_clone = Rc::clone(&state);
         let inner = move |tracers: &[Array]| -> Result<Vec<Array>, Exception> {
@@ -616,6 +617,9 @@ impl<F> CompiledState<F> {
             // call the function with the tracer arguments and the state holding tracers
             let mut result = (f)(*state_clone.borrow_mut(), tracer_args)?;
 
+            // Capture function output count before appending state
+            num_fn_outputs_clone.set(Some(result.len()));
+
             // recapture the state as it may have changed
             let mut state_output_tracers = state_clone
                 .borrow()
@@ -641,6 +645,13 @@ impl<F> CompiledState<F> {
         };
 
         let inner_closure = Closure::new_fallible(inner);
-        call_mut_with_state_inner(inner_closure, self.id, self.shapeless, state, args)
+        call_mut_with_state_inner(
+            inner_closure,
+            self.id,
+            self.shapeless,
+            state,
+            args,
+            num_function_outputs,
+        )
     }
 }

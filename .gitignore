@@ -17,5 +17,8 @@ settings.json
 **.DS_Store
 .idea
 
-# Local cache 
+# Local cache
 cache/
+
+# Inspiration
+inspiration/

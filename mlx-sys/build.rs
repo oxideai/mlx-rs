@@ -1,12 +1,57 @@
 extern crate cmake;
 
 use cmake::Config;
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, process::Command};
+
+/// Find the clang runtime library path dynamically using xcrun
+fn find_clang_rt_path() -> Option<String> {
+    // Use xcrun to find the active toolchain path
+    let output = Command::new("xcrun")
+        .args(["--show-sdk-platform-path"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    // Get the developer directory which contains the toolchain
+    let output = Command::new("xcode-select")
+        .args(["--print-path"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let developer_dir = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let toolchain_base = format!(
+        "{}/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang",
+        developer_dir
+    );
+
+    // Find the clang version directory (it varies by Xcode version)
+    let clang_dir = std::fs::read_dir(&toolchain_base).ok()?;
+    for entry in clang_dir.flatten() {
+        let darwin_path = entry.path().join("lib/darwin");
+        let clang_rt_lib = darwin_path.join("libclang_rt.osx.a");
+        if clang_rt_lib.exists() {
+            return Some(darwin_path.to_string_lossy().to_string());
+        }
+    }
+
+    None
+}
 
 fn build_and_link_mlx_c() {
     let mut config = Config::new("src/mlx-c");
     config.very_verbose(true);
     config.define("CMAKE_INSTALL_PREFIX", ".");
+
+    // Use Xcode's clang to ensure compatibility with the macOS SDK
+    config.define("CMAKE_C_COMPILER", "/usr/bin/cc");
+    config.define("CMAKE_CXX_COMPILER", "/usr/bin/c++");
 
     #[cfg(debug_assertions)]
     {
@@ -50,6 +95,14 @@ fn build_and_link_mlx_c() {
     #[cfg(feature = "accelerate")]
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
+    }
+
+    // Link against Xcode's clang runtime for ___isPlatformVersionAtLeast symbol
+    // This is needed on macOS 26+ where the bundled LLVM runtime may be outdated
+    // See: https://github.com/conda-forge/llvmdev-feedstock/issues/244
+    if let Some(clang_rt_path) = find_clang_rt_path() {
+        println!("cargo:rustc-link-search={}", clang_rt_path);
+        println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
 }
 

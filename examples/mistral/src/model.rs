@@ -146,7 +146,7 @@ impl Module<AttentionInput<'_>> for Attention {
             }
         }
 
-        let output = scaled_dot_product_attention(queries, &keys, &values, self.scale, mask)?;
+        let output = scaled_dot_product_attention(queries, &keys, &values, self.scale, mask, None)?;
         let output = output.transpose_axes(&[0, 2, 1, 3])?.reshape(&[B, L, -1])?;
         let output = self.wo.forward(&output)?;
 

@@ -157,9 +157,10 @@
 
 mod fftn;
 mod rfftn;
+mod shift;
 mod utils;
 
-pub use self::{fftn::*, rfftn::*};
+pub use self::{fftn::*, rfftn::*, shift::*};
 
 /* -------------------------------------------------------------------------- */
 /*                              Helper functions                              */

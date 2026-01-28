@@ -4,7 +4,7 @@ use std::ffi::CStr;
 
 use crate::error::Result;
 use crate::utils::guard::Guarded;
-use crate::utils::{IntoOption, VectorArray};
+use crate::utils::IntoOption;
 use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 
@@ -45,19 +45,67 @@ pub fn rope_device<'a>(
     })
 }
 
+/// Optimized implementation of `NN.RoPE` with dynamic (array) offset.
+///
+/// This variant allows specifying the offset as an array, enabling different
+/// offsets for different positions in the input.
+///
+/// # Params
+///
+/// - `array`: Input array
+/// - `dimensions`: The feature dimensions to apply rope to
+/// - `traditional`: If true, uses the traditional rope implementation
+/// - `base`: The base used to compute angular frequency for each dimension
+/// - `scale`: The scale to apply to the positions
+/// - `offset`: An array of position offsets
+/// - `freqs`: Optional precomputed frequencies
+/// - `stream`: Stream to evaluate on
+#[allow(clippy::too_many_arguments)]
+#[generate_macro(customize(root = "$crate::fast"))]
+#[default_device]
+pub fn rope_dynamic_device<'a>(
+    #[named] array: impl AsRef<Array>,
+    #[named] dimensions: i32,
+    #[named] traditional: bool,
+    #[optional] base: impl Into<Option<f32>>,
+    #[named] scale: f32,
+    #[named] offset: impl AsRef<Array>,
+    #[optional] freqs: impl Into<Option<&'a Array>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let base = base.into();
+    let base = mlx_sys::mlx_optional_float {
+        value: base.unwrap_or(0.0),
+        has_value: base.is_some(),
+    };
+    let freqs = freqs.into();
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_fast_rope_dynamic(
+            res,
+            array.as_ref().as_ptr(),
+            dimensions,
+            traditional,
+            base,
+            scale,
+            offset.as_ref().as_ptr(),
+            freqs
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 const DEFAULT_MASK_MODE: &CStr = c"";
 const CAUSAL_MASK_MODE: &CStr = c"causal";
 
 /// Mask modes for scaled dot product attention.
 #[derive(Debug)]
 pub enum ScaledDotProductAttentionMask<'a> {
-    /// Array
+    /// A single mask array
     Array(&'a Array),
 
-    /// Arrays
-    Arrays(&'a [Array]),
-
-    /// Causal
+    /// Causal masking (no explicit mask array needed)
     Causal,
 }
 
@@ -67,38 +115,19 @@ impl<'a> From<&'a Array> for ScaledDotProductAttentionMask<'a> {
     }
 }
 
-impl<'a> From<&'a [Array]> for ScaledDotProductAttentionMask<'a> {
-    fn from(masks: &'a [Array]) -> Self {
-        ScaledDotProductAttentionMask::Arrays(masks)
-    }
-}
-
 impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a Array {
     fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
         Some(ScaledDotProductAttentionMask::Array(self))
     }
 }
 
-impl<'a> IntoOption<ScaledDotProductAttentionMask<'a>> for &'a [Array] {
-    fn into_option(self) -> Option<ScaledDotProductAttentionMask<'a>> {
-        Some(ScaledDotProductAttentionMask::Arrays(self))
-    }
-}
-
 impl ScaledDotProductAttentionMask<'_> {
-    fn as_mode_and_masks(&self) -> (&'static CStr, VectorArray) {
+    fn as_mode_and_mask(&self) -> (&'static CStr, mlx_sys::mlx_array) {
         match self {
-            ScaledDotProductAttentionMask::Array(mask) => (
-                DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter([mask].iter()).unwrap(),
-            ),
-            ScaledDotProductAttentionMask::Arrays(masks) => (
-                DEFAULT_MASK_MODE,
-                VectorArray::try_from_iter(masks.iter()).unwrap(),
-            ),
-            ScaledDotProductAttentionMask::Causal => (CAUSAL_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
-            }),
+            ScaledDotProductAttentionMask::Array(mask) => (DEFAULT_MASK_MODE, mask.as_ptr()),
+            ScaledDotProductAttentionMask::Causal => {
+                (CAUSAL_MASK_MODE, unsafe { mlx_sys::mlx_array_new() })
+            }
         }
     }
 }
@@ -120,15 +149,12 @@ pub fn scaled_dot_product_attention_device<'a>(
     values: impl AsRef<Array>,
     scale: f32,
     #[optional] mask: impl IntoOption<ScaledDotProductAttentionMask<'a>>,
+    #[optional] sinks: impl Into<Option<&'a Array>>,
     #[optional] stream: impl AsRef<Stream>,
 ) -> Result<Array> {
-    let (mask_mode, masks) = mask.into_option().map_or_else(
-        || {
-            (DEFAULT_MASK_MODE, unsafe {
-                VectorArray::from_ptr(mlx_sys::mlx_vector_array_new())
-            })
-        },
-        |m| m.as_mode_and_masks(),
+    let (mask_mode, mask_arr) = mask.into_option().map_or_else(
+        || (DEFAULT_MASK_MODE, unsafe { mlx_sys::mlx_array_new() }),
+        |m| m.as_mode_and_mask(),
     );
 
     Array::try_from_op(|res| unsafe {
@@ -139,7 +165,11 @@ pub fn scaled_dot_product_attention_device<'a>(
             values.as_ref().as_ptr(),
             scale,
             mask_mode.as_ptr(),
-            masks.as_ptr(),
+            mask_arr,
+            sinks
+                .into()
+                .map(|a| a.as_ptr())
+                .unwrap_or(mlx_sys::mlx_array_new()),
             stream.as_ref().as_ptr(),
         )
     })
@@ -245,6 +275,31 @@ mod tests {
         );
     }
 
+    // Test adapted from Python test_fast.py/test_rope - the Python test accepts both
+    // int offset and array offset, which in C/Rust are separate functions
+    #[test]
+    fn test_rope_dynamic() {
+        crate::random::seed(71).unwrap();
+        let a = crate::random::uniform::<_, f32>(0.0, 1.0, &[2, 8, 16], None).unwrap();
+        assert_eq!(a.shape(), [2, 8, 16]);
+        assert_eq!(a.dtype(), crate::Dtype::Float32);
+
+        // Test with array offset - should produce similar results to int offset of 3
+        let offset = crate::Array::from_int(3);
+        let result = rope_dynamic(&a, 8, false, 10000., 1.0, &offset, None).unwrap();
+        assert_eq!(result.shape(), [2, 8, 16]);
+        assert_eq!(result.dtype(), crate::Dtype::Float32);
+
+        // Compare with regular rope using int offset=3
+        let result_int_offset = rope(&a, 8, false, 10000., 1.0, 3, None).unwrap();
+        assert_eq!(result_int_offset.shape(), [2, 8, 16]);
+
+        // The results should be close
+        let diff = &result - &result_int_offset;
+        let max_diff = diff.abs().unwrap().max(None).unwrap().item::<f32>();
+        assert!(max_diff < 1e-5, "Max difference was {}", max_diff);
+    }
+
     #[test]
     fn test_rms_norm() {
         crate::random::seed(103).unwrap();
@@ -318,10 +373,31 @@ mod tests {
                     .as_dtype(dtype)
                     .unwrap();
 
-                let result = scaled_dot_product_attention(q, k, v, scale, None).unwrap();
+                let result = scaled_dot_product_attention(q, k, v, scale, None, None).unwrap();
                 assert_eq!(result.shape(), [B, H, seq_len, Dk]);
                 assert_eq!(result.dtype(), dtype);
             }
         }
+    }
+
+    // Test adapted from Python test `test_fast_sdpa.py/test_sdpa_attention_sinks`
+    #[test]
+    fn test_fast_sdpa_with_sinks() {
+        let b = 2;
+        let n_q = 8;
+        let t_q = 128;
+        let t_kv = 128;
+        let d = 64;
+
+        let q = normal::<f32>(&[b, n_q, t_q, d], None, None, None).unwrap();
+        let k = normal::<f32>(&[b, n_q, t_kv, d], None, None, None).unwrap();
+        let v = normal::<f32>(&[b, n_q, t_kv, d], None, None, None).unwrap();
+        let scale = (d as f32).powf(-0.5);
+
+        // Test with sinks parameter
+        let sinks = normal::<f32>(&[n_q], None, None, None).unwrap() * 10.0;
+
+        let result = scaled_dot_product_attention(&q, &k, &v, scale, None, &sinks).unwrap();
+        assert_eq!(result.shape(), &[b, n_q, t_q, d]);
     }
 }

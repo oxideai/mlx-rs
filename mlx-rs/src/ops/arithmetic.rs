@@ -1071,6 +1071,54 @@ pub fn matmul_device(
     a.as_ref().matmul_device(b, stream)
 }
 
+/// Perform a segmented matrix multiplication.
+///
+/// This computes multiple matrix multiplications where each segment of the reduction
+/// dimension is multiplied independently. This is useful for operations like mixture
+/// of experts or multi-head attention where different segments use different weights.
+///
+/// # Params
+///
+/// - `a`: Input array with shape `(M, K)`
+/// - `b`: Input array with shape `(K, N)`
+/// - `segments`: Array of segment boundaries with shape `(num_segments, 2)`.
+///   Each row contains `[start, end)` indices along the K dimension.
+///
+/// # Returns
+///
+/// Array with shape `(num_segments, M, N)` where each segment contains the matrix
+/// multiplication for that segment of the K dimension.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use mlx_rs::{Array, ops::segmented_mm};
+///
+/// let a = Array::ones::<f32>(&[10, 100]).unwrap();
+/// let b = Array::ones::<f32>(&[100, 10]).unwrap();
+/// let segments = Array::from_slice(&[0u32, 50, 50, 100], &[2, 2]);
+/// let result = segmented_mm(&a, &b, &segments, None).unwrap();
+/// // result has shape [2, 10, 10]
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn segmented_mm_device(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    segments: impl AsRef<Array>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    Array::try_from_op(|res| unsafe {
+        mlx_sys::mlx_segmented_mm(
+            res,
+            a.as_ref().as_ptr(),
+            b.as_ref().as_ptr(),
+            segments.as_ref().as_ptr(),
+            stream.as_ref().as_ptr(),
+        )
+    })
+}
+
 /// Element-wise maximum.
 ///
 /// Take the element-wise max of two arrays with numpy-style broadcasting semantics. Either or both
@@ -1516,6 +1564,71 @@ pub fn tensordot_axis_device(
     Array::try_from_op(|res| unsafe {
         mlx_sys::mlx_tensordot_axis(res, a.as_ptr(), b.as_ptr(), axis, stream.as_ref().as_ptr())
     })
+}
+
+/// Matrix multiplication with gathered indices.
+///
+/// Perform matrix multiplication with index gathering along the batch dimensions.
+/// This is useful for operations where different batch elements should use different
+/// matrices from a pool.
+///
+/// # Params
+///
+/// - `a`: Input array
+/// - `b`: Input array
+/// - `lhs_indices`: Optional indices to gather from `a`'s batch dimensions
+/// - `rhs_indices`: Optional indices to gather from `b`'s batch dimensions
+/// - `sorted_indices`: If true, indicates the indices are sorted which can enable
+///   optimizations (default: false)
+///
+/// # Example
+///
+/// ```rust
+/// use mlx_rs::{Array, ops::gather_mm};
+///
+/// let a = Array::ones::<f32>(&[5, 32, 32]).unwrap();
+/// let b = Array::ones::<f32>(&[3, 32, 32]).unwrap();
+/// let lhs_indices = Array::from_slice(&[0u32, 2], &[2]);
+/// let rhs_indices = Array::from_slice(&[2u32, 1], &[2]);
+/// let result = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+/// // result has shape [2, 32, 32]
+/// ```
+#[generate_macro]
+#[default_device]
+pub fn gather_mm_device<'lhs, 'rhs>(
+    a: impl AsRef<Array>,
+    b: impl AsRef<Array>,
+    #[optional] lhs_indices: impl Into<Option<&'lhs Array>>,
+    #[optional] rhs_indices: impl Into<Option<&'rhs Array>>,
+    #[optional] sorted_indices: impl Into<Option<bool>>,
+    #[optional] stream: impl AsRef<Stream>,
+) -> Result<Array> {
+    let a_ptr = a.as_ref().as_ptr();
+    let b_ptr = b.as_ref().as_ptr();
+    let sorted = sorted_indices.into().unwrap_or(false);
+
+    unsafe {
+        let lhs_ptr = lhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+        let rhs_ptr = rhs_indices
+            .into()
+            .map(|i| i.as_ptr())
+            .unwrap_or(mlx_sys::mlx_array_new());
+
+        Array::try_from_op(|res| {
+            mlx_sys::mlx_gather_mm(
+                res,
+                a_ptr,
+                b_ptr,
+                lhs_ptr,
+                rhs_ptr,
+                sorted,
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
 }
 
 #[cfg(test)]
@@ -2895,5 +3008,232 @@ mod tests {
         };
         eval(out_holder.iter()).unwrap();
         assert_eq!(out_holder[0].item::<f32>(), 1.0);
+    }
+
+    // The tests below are adapted from the python unit test `test_blas.py/test_segmented_mm`
+    #[test]
+    fn test_segmented_mm() {
+        use crate::ops::{indexing::*, stack_axis};
+        use crate::random;
+
+        // Reference implementation: for each segment [s1, s2], compute a[:, s1:s2] @ b[s1:s2, :]
+        fn segmented_mm_ref(a: &Array, b: &Array, segments: &Array) -> Array {
+            let segments_data: Vec<Vec<u32>> = (0..segments.shape()[0])
+                .map(|i| {
+                    let row = segments.index(i);
+                    vec![row.index(0).item::<u32>(), row.index(1).item::<u32>()]
+                })
+                .collect();
+
+            let results: Vec<Array> = segments_data
+                .iter()
+                .map(|seg| {
+                    let s1 = seg[0] as i32;
+                    let s2 = seg[1] as i32;
+                    let a_slice = a.index((.., s1..s2));
+                    let b_slice = b.index((s1..s2, ..));
+                    a_slice.matmul(&b_slice).unwrap()
+                })
+                .collect();
+
+            stack_axis(&results, 0).unwrap()
+        }
+
+        // Test shapes from Python test
+        let shapes = [(10, 10, 10), (10, 10, 100), (100, 100, 100)];
+
+        // Segment patterns from Python test
+        let all_segments: Vec<Vec<f32>> = vec![
+            vec![0.0, 0.0, 1.0],
+            vec![0.0, 0.5, 1.0],
+            (0..10).map(|r| r as f32 / 9.0).collect(),
+        ];
+
+        random::seed(42).unwrap();
+
+        for (m, n, k) in shapes {
+            for s in &all_segments {
+                // Build segments array from proportions
+                let mut segments_vec: Vec<[u32; 2]> = Vec::new();
+                for i in 0..s.len() - 1 {
+                    let s1 = ((k as f32 * s[i]) as u32).min(k as u32 - 1);
+                    let s2 = ((k as f32 * s[i + 1]) as u32).min(k as u32 - 1);
+                    segments_vec.push([s1, s2]);
+                }
+                let segments_flat: Vec<u32> = segments_vec.iter().flat_map(|x| *x).collect();
+                let segments = Array::from_slice(&segments_flat, &[segments_vec.len() as i32, 2]);
+
+                // Test a @ b
+                let a = random::normal::<f32>(&[m, k], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[k, n], None, None, None).unwrap();
+                let c1 = segmented_mm_ref(&a, &b, &segments);
+                let c2 = segmented_mm(&a, &b, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm failed for shape ({}, {}, {}) with segments {:?}",
+                    m,
+                    n,
+                    k,
+                    s
+                );
+
+                // Test a.T @ b (transposed a)
+                let a = random::normal::<f32>(&[k, m], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[k, n], None, None, None).unwrap();
+                let a_t = a.t();
+                let c1 = segmented_mm_ref(&a_t, &b, &segments);
+                let c2 = segmented_mm(&a_t, &b, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with transposed a failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+
+                // Test a @ b.T (transposed b)
+                let a = random::normal::<f32>(&[m, k], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[n, k], None, None, None).unwrap();
+                let b_t = b.t();
+                let c1 = segmented_mm_ref(&a, &b_t, &segments);
+                let c2 = segmented_mm(&a, &b_t, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with transposed b failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+
+                // Test a.T @ b.T (both transposed)
+                let a = random::normal::<f32>(&[k, m], None, None, None).unwrap();
+                let b = random::normal::<f32>(&[n, k], None, None, None).unwrap();
+                let a_t = a.t();
+                let b_t = b.t();
+                let c1 = segmented_mm_ref(&a_t, &b_t, &segments);
+                let c2 = segmented_mm(&a_t, &b_t, &segments).unwrap();
+                assert!(
+                    c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+                    "segmented_mm with both transposed failed for shape ({}, {}, {})",
+                    m,
+                    n,
+                    k
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_segmented_mm_batched_error() {
+        // Batched input should fail (matches Python test)
+        let a = ones::<f32>(&[2, 10, 10]).unwrap();
+        let segments = Array::from_slice(&[0u32, 5, 5, 10], &[2, 2]);
+        let result = segmented_mm(&a, &a, &segments);
+        assert!(
+            result.is_err(),
+            "segmented_mm should fail for batched input"
+        );
+    }
+
+    // Tests adapted from Python test `test_blas.py/test_gather_matmul`
+    #[test]
+    fn test_gather_mm() {
+        use crate::ops::indexing::take_axis;
+        use crate::random;
+
+        random::seed(0).unwrap();
+
+        // Reference implementation using take
+        fn gather_mm_ref(
+            a: &Array,
+            b: &Array,
+            lhs_indices: Option<&Array>,
+            rhs_indices: Option<&Array>,
+        ) -> Array {
+            let a = a
+                .reshape(&[-1, a.shape()[a.ndim() - 2], a.shape()[a.ndim() - 1]])
+                .unwrap();
+            let b = b
+                .reshape(&[-1, b.shape()[b.ndim() - 2], b.shape()[b.ndim() - 1]])
+                .unwrap();
+
+            let a_gathered = match lhs_indices {
+                Some(idx) => take_axis(&a, idx, 0).unwrap(),
+                None => a,
+            };
+            let b_gathered = match rhs_indices {
+                Some(idx) => take_axis(&b, idx, 0).unwrap(),
+                None => b,
+            };
+            a_gathered.matmul(&b_gathered).unwrap()
+        }
+
+        // Test case 1: batch_A=(1,), lhs_indices=(0,), batch_B=(3,), rhs_indices=(2, 1)
+        let a = random::normal::<f32>(&[1, 32, 32], None, None, None).unwrap();
+        let b = random::normal::<f32>(&[3, 32, 32], None, None, None).unwrap();
+        let lhs_indices = Array::from_slice(&[0u32], &[1]);
+        let rhs_indices = Array::from_slice(&[2u32, 1], &[2]);
+
+        let out_ref = gather_mm_ref(&a, &b, Some(&lhs_indices), Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 1 failed"
+        );
+
+        // Test case 2: batch_A=(1,), lhs_indices=None, batch_B=(3,), rhs_indices=(2, 1)
+        let out_ref = gather_mm_ref(&a, &b, None, Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, None::<&Array>, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 2 failed"
+        );
+
+        // Test case 3: batch_A=(5,), lhs_indices=(0, 2), batch_B=(3,), rhs_indices=(2, 1)
+        let a = random::normal::<f32>(&[5, 32, 32], None, None, None).unwrap();
+        let lhs_indices = Array::from_slice(&[0u32, 2], &[2]);
+
+        let out_ref = gather_mm_ref(&a, &b, Some(&lhs_indices), Some(&rhs_indices));
+        let out_test = gather_mm(&a, &b, &lhs_indices, &rhs_indices, None).unwrap();
+        assert!(
+            out_ref
+                .all_close(&out_test, 1e-5, 1e-5, None)
+                .unwrap()
+                .item::<bool>(),
+            "gather_mm test case 3 failed"
+        );
+    }
+
+    // Test adapted from Python test `test_blas.py/test_gather_mm_sorted`
+    #[test]
+    fn test_gather_mm_sorted() {
+        use crate::ops::indexing::take_axis;
+        use crate::ops::sort;
+        use crate::random;
+
+        random::seed(0).unwrap();
+
+        // Reference implementation
+        fn gather_mm_ref(a: &Array, b: &Array, rhs: &Array) -> Array {
+            let b_gathered = take_axis(b, rhs, 0).unwrap();
+            a.matmul(&b_gathered).unwrap()
+        }
+
+        let a = random::normal::<f32>(&[100, 1, 100], None, None, None).unwrap();
+        let b = random::normal::<f32>(&[8, 100, 100], None, None, None).unwrap();
+        let rhs = sort(&random::randint::<_, i32>(0, 8, &[100], None).unwrap()).unwrap();
+
+        let c1 = gather_mm_ref(&a, &b, &rhs);
+        let c2 = gather_mm(&a, &b, None::<&Array>, &rhs, true).unwrap();
+        assert!(
+            c1.all_close(&c2, 1e-4, 1e-4, None).unwrap().item::<bool>(),
+            "gather_mm_sorted failed"
+        );
     }
 }

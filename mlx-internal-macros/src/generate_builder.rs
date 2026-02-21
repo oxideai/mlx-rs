@@ -6,8 +6,8 @@ use syn::DeriveInput;
 use crate::{
     derive_buildable::StructProperty,
     shared::{
-        parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent,
-        Result,
+        BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent, Result,
+        parse_fields_from_derive_input,
     },
 };
 

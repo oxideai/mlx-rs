@@ -4,9 +4,9 @@
 
 use std::marker::PhantomData;
 
-use crate::{error::Exception, Array};
+use crate::{Array, error::Exception};
 
-use super::{type_id_to_usize, Closure, Compiled, CompiledState, Guarded, VectorArray};
+use super::{Closure, Compiled, CompiledState, Guarded, VectorArray, type_id_to_usize};
 
 /// Returns a compiled function that produces the same output as `f`.
 ///
@@ -382,10 +382,9 @@ mod tests {
     use core::panic;
 
     use crate::{
-        array,
+        Array, array,
         error::Exception,
         ops::{multiply, ones},
-        Array,
     };
 
     use super::compile;

@@ -1,6 +1,6 @@
 use std::iter::{once, zip};
 
-use crate::{error::Exception, module::Module, ops::as_strided, Array};
+use crate::{Array, error::Exception, module::Module, ops::as_strided};
 use dyn_clone::DynClone;
 use mlx_macros::ModuleParameters;
 

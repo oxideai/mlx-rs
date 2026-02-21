@@ -586,7 +586,7 @@ pub fn triu_device(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{array, dtype::Dtype, StreamOrDevice};
+    use crate::{StreamOrDevice, array, dtype::Dtype};
     use half::f16;
 
     #[test]

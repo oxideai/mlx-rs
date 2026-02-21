@@ -4,7 +4,7 @@ use std::{
 };
 
 use mlx_rs::{
-    argmax_axis, array,
+    Array, argmax_axis, array,
     builder::Builder,
     categorical,
     error::Exception,
@@ -13,7 +13,6 @@ use mlx_rs::{
     nn,
     ops::indexing::{IndexOp, NewAxis},
     quantization::MaybeQuantized,
-    Array,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -23,9 +22,8 @@ use crate::{
     cache::KeyValueCache,
     error::Error,
     utils::{
-        create_attention_mask,
-        rope::{initialize_rope, FloatOrString},
-        AttentionMask,
+        AttentionMask, create_attention_mask,
+        rope::{FloatOrString, initialize_rope},
     },
 };
 
@@ -402,7 +400,7 @@ where
             None => match create_attention_mask(&h, cache, Some(true))? {
                 Some(AttentionMask::Array(a)) => Some(a),
                 Some(AttentionMask::Causal) => {
-                    return Err(Exception::custom("Only `Array` mask is supported"))
+                    return Err(Exception::custom("Only `Array` mask is supported"));
                 }
                 None => None,
             },
@@ -628,9 +626,9 @@ where
 #[cfg(test)]
 mod tests {
     use mlx_rs::{
+        Array,
         ops::indexing::{IndexOp, NewAxis},
         transforms::eval,
-        Array,
     };
 
     use crate::{

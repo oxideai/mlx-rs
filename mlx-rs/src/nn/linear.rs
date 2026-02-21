@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use crate::{error::Exception, quantization::Quantizable, Array};
+use crate::{Array, error::Exception, quantization::Quantizable};
 use mlx_internal_macros::{Buildable, Builder};
 
 use crate::{
@@ -215,7 +215,7 @@ impl Module<&Array> for Bilinear {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use crate::{random::uniform, Dtype};
+    use crate::{Dtype, random::uniform};
     use float_eq::assert_float_eq;
 
     use super::*;

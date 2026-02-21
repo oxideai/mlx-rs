@@ -1,10 +1,10 @@
 use crate::{
-    error::{Exception, Result},
-    utils::{guard::Guarded, Closure, IntoOption},
     Array,
+    error::{Exception, Result},
+    utils::{Closure, IntoOption, guard::Guarded},
 };
 
-use super::{value_and_gradient, ClosureValueAndGrad};
+use super::{ClosureValueAndGrad, value_and_gradient};
 
 fn build_value_and_gradient_inner<'a>(
     closure: Closure<'a>,
@@ -111,7 +111,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    use crate::{array, transforms::value_and_grad, Array};
+    use crate::{Array, array, transforms::value_and_grad};
 
     use super::*;
 

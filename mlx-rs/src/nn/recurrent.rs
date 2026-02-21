@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    array,
+    Array, Stream, array,
     error::Exception,
     module::{Module, Param},
     ops::{
@@ -10,9 +10,8 @@ use crate::{
         matmul, sigmoid, split, stack_axis, tanh, tanh_device,
     },
     random::uniform,
-    Array, Stream,
 };
-use mlx_internal_macros::{generate_builder, Buildable, Builder};
+use mlx_internal_macros::{Buildable, Builder, generate_builder};
 use mlx_macros::ModuleParameters;
 
 /// Type alias for the non-linearity function.

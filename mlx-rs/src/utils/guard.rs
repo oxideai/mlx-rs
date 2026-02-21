@@ -1,9 +1,9 @@
 use half::{bf16, f16};
 use mlx_sys::{__BindgenComplex, bfloat16_t, float16_t, mlx_array};
 
-use crate::{complex64, error::Exception, Array};
+use crate::{Array, complex64, error::Exception};
 
-use super::{VectorArray, SUCCESS};
+use super::{SUCCESS, VectorArray};
 
 type Status = i32;
 

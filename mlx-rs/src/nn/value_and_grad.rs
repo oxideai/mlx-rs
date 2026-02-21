@@ -1,6 +1,6 @@
-use crate::module::{update_parameters, ModuleParameters};
+use crate::module::{ModuleParameters, update_parameters};
 use crate::transforms::keyed_value_and_grad;
-use crate::{error::Exception, Array};
+use crate::{Array, error::Exception};
 
 use crate::module::FlattenedModuleParam;
 
@@ -148,7 +148,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::module::Module;
-    use crate::{array, error::Exception, Array};
+    use crate::{Array, array, error::Exception};
 
     use crate::nn::{self, Linear};
 

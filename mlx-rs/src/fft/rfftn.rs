@@ -1,9 +1,9 @@
 use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{
-    error::Result,
-    utils::{guard::Guarded, IntoOption},
     Array, Stream,
+    error::Result,
+    utils::{IntoOption, guard::Guarded},
 };
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
@@ -257,7 +257,7 @@ pub fn irfftn_device<'a>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{complex64, Array, Dtype};
+    use crate::{Array, Dtype, complex64};
 
     #[test]
     fn test_rfft() {

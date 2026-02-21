@@ -714,9 +714,8 @@ mod tests {
     use float_eq::assert_float_eq;
 
     use crate::{
-        array,
+        StreamOrDevice, array,
         ops::{eye, indexing::IndexOp, tril, triu},
-        StreamOrDevice,
     };
 
     use super::*;
@@ -802,10 +801,12 @@ mod tests {
 
         let result = norm_l2(&c, &[0], None).unwrap();
         let expected = Array::from_slice(&[1.41421, 2.23607, 5.0], &[3]);
-        assert!(result
-            .all_close(&expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            result
+                .all_close(&expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -814,10 +815,12 @@ mod tests {
 
         let result = norm_l2(&m, &[1, 2][..], None).unwrap();
         let expected = Array::from_slice(&[3.74166, 11.225], &[2]);
-        assert!(result
-            .all_close(&expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            result
+                .all_close(&expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -829,14 +832,16 @@ mod tests {
         let q_expected = Array::from_slice(&[-0.894427, -0.447214, -0.447214, 0.894427], &[2, 2]);
         let r_expected = Array::from_slice(&[-2.23607, -3.57771, 0.0, 0.447214], &[2, 2]);
 
-        assert!(q
-            .all_close(&q_expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
-        assert!(r
-            .all_close(&r_expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            q.all_close(&q_expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
+        assert!(
+            r.all_close(&r_expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     // The tests below are adapted from the c++ tests

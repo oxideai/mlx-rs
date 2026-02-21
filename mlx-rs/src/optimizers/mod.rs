@@ -10,11 +10,10 @@ use std::{
 };
 
 use crate::{
-    array,
+    Array, array,
     error::{IoError, UnflattenError},
     module::{FlattenedModuleParam, ModuleParameters},
     utils::Updatable,
-    Array,
 };
 
 mod adadelta;
@@ -256,7 +255,7 @@ pub fn clip_grad_norm(
 mod tests {
     use std::collections::HashMap;
 
-    use crate::{array, module::FlattenedModuleParam, Array};
+    use crate::{Array, array, module::FlattenedModuleParam};
 
     use super::clip_grad_norm;
 

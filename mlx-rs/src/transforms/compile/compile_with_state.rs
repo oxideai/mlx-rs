@@ -13,13 +13,13 @@ use std::{
 };
 
 use crate::{
-    error::Exception,
-    transforms::compile::{type_id_to_usize, CompiledState},
-    utils::Updatable,
     Array,
+    error::Exception,
+    transforms::compile::{CompiledState, type_id_to_usize},
+    utils::Updatable,
 };
 
-use super::{update_by_replace_with_ref_to_new_array, Closure, Compiled, Guarded, VectorArray};
+use super::{Closure, Compiled, Guarded, VectorArray, update_by_replace_with_ref_to_new_array};
 
 /// Similar to [`crate::transforms::compile`] but allows for functions that take
 /// a mutable reference to a state `U`.

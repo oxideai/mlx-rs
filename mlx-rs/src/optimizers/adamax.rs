@@ -1,12 +1,11 @@
 use std::{convert::Infallible, rc::Rc};
 
-use mlx_internal_macros::{generate_builder, Buildable};
+use mlx_internal_macros::{Buildable, generate_builder};
 
 use crate::{
-    array,
+    Array, array,
     ops::{abs, maximum},
-    utils::{get_mut_or_insert_with, Updatable},
-    Array,
+    utils::{Updatable, get_mut_or_insert_with},
 };
 
 use super::*;

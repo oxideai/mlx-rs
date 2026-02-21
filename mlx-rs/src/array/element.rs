@@ -1,6 +1,6 @@
 use crate::error::Result;
 use crate::sealed::Sealed;
-use crate::{complex64, Array, Dtype};
+use crate::{Array, Dtype, complex64};
 use half::{bf16, f16};
 
 /// A marker trait for array elements.

@@ -1,9 +1,9 @@
 use crate::module::{Module, Param};
 use crate::{
+    Array,
     error::Exception,
     ops::{conv_transpose1d, conv_transpose2d, conv_transpose3d, zeros},
     random::uniform,
-    Array,
 };
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;

@@ -1,5 +1,5 @@
 use mlx_rs::{
-    arange,
+    Array, Dtype, arange,
     error::Exception,
     fast::ScaledDotProductAttentionMask,
     ops::{
@@ -7,7 +7,6 @@ use mlx_rs::{
         indexing::{IndexOp, NewAxis},
         quantized_matmul, reshape, softmax_axis,
     },
-    Array, Dtype,
 };
 
 use crate::cache::KeyValueCache;
@@ -220,7 +219,7 @@ where
                 _ => {
                     return Err(Exception::custom(
                         "Both keys and values must be quantized when KV cache is quantized",
-                    ))
+                    ));
                 }
             };
 
@@ -237,7 +236,7 @@ where
         _ => {
             return Err(Exception::custom(
                 "Both keys and values must NOT be quantized when KV cache is NOT quantized",
-            ))
+            ));
         }
     };
 

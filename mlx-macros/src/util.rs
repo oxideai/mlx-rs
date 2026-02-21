@@ -29,7 +29,7 @@ pub(crate) fn filter_fields_with_attr<'a>(
             return Err(syn::Error::new_spanned(
                 fields,
                 "Struct with unnamed fields is not supported".to_string(),
-            ))
+            ));
         }
     }
 

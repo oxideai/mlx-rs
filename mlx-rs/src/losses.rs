@@ -1,15 +1,14 @@
 //! Loss functions
 
 use crate::{
-    array,
+    Array, array,
     error::{CrossEntropyBuildError, Exception},
     ops::{
         abs, clip, exp, indexing::take_along_axis, log, logaddexp, logsumexp_axes, maximum,
-        minimum, multiply, power, r#where, sqrt, square, sum_axes, sum_axis,
+        minimum, multiply, power, sqrt, square, sum_axes, sum_axis, r#where,
     },
-    Array,
 };
-use mlx_internal_macros::{generate_builder, Buildable};
+use mlx_internal_macros::{Buildable, generate_builder};
 
 #[inline]
 fn check_shape(

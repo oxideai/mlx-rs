@@ -1,5 +1,5 @@
 use mlx_rs::error::Exception;
-use mlx_rs::{ops, transforms, Array};
+use mlx_rs::{Array, ops, transforms};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {

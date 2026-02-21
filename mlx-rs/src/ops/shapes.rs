@@ -2,10 +2,10 @@ use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
 use crate::{
+    Array, Stream,
     constants::DEFAULT_STACK_VEC_LEN,
     error::Result,
-    utils::{guard::Guarded, IntoOption, VectorArray},
-    Array, Stream,
+    utils::{IntoOption, VectorArray, guard::Guarded},
 };
 
 impl Array {
@@ -980,7 +980,7 @@ pub fn transpose_device(
 // https://github.com/ml-explore/mlx/blob/main/tests/ops_tests.cpp
 #[cfg(test)]
 mod tests {
-    use crate::{array, Array, Dtype};
+    use crate::{Array, Dtype, array};
 
     use super::*;
 

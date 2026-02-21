@@ -1,9 +1,9 @@
 //! Collection of functions related to random number generation
 
 use crate::ops::indexing::TryIndexOp;
-use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
-use crate::{error::Result, Array, ArrayElement, Stream};
+use crate::utils::guard::Guarded;
+use crate::{Array, ArrayElement, Stream, error::Result};
 use mach_sys::mach_time;
 use mlx_internal_macros::{default_device, generate_macro};
 use parking_lot::Mutex;

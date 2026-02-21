@@ -48,10 +48,10 @@
 use mlx_sys::mlx_closure_value_and_grad;
 
 use crate::{
-    error::{get_and_clear_closure_error, Result},
-    module::ModuleParamRef,
-    utils::{guard::Guarded, Closure, VectorArray, SUCCESS},
     Array,
+    error::{Result, get_and_clear_closure_error},
+    module::ModuleParamRef,
+    utils::{Closure, SUCCESS, VectorArray, guard::Guarded},
 };
 
 pub mod compile;
@@ -257,9 +257,8 @@ fn value_and_gradient(
 mod tests {
 
     use crate::{
-        array,
+        Array, array,
         transforms::{jvp, vjp},
-        Array,
     };
 
     use super::*;

@@ -1,7 +1,7 @@
 use crate::error::IoError;
+use crate::utils::SUCCESS;
 use crate::utils::guard::Guarded;
 use crate::utils::io::SafeTensors;
-use crate::utils::SUCCESS;
 use crate::{Array, Stream};
 use mlx_internal_macros::default_device;
 use std::collections::HashMap;
@@ -212,10 +212,12 @@ mod tests {
         for key in loaded_keys {
             let loaded_array = loaded_arrays.get(&key).unwrap();
             let original_array = arrays.get(&key).unwrap();
-            assert!(loaded_array
-                .all_close(original_array, None, None, None)
-                .unwrap()
-                .item::<bool>());
+            assert!(
+                loaded_array
+                    .all_close(original_array, None, None, None)
+                    .unwrap()
+                    .item::<bool>()
+            );
         }
     }
 

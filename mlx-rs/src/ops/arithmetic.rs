@@ -2,9 +2,9 @@ use crate::array::Array;
 use crate::error::Result;
 use crate::sealed::Sealed;
 
+use crate::Stream;
 use crate::utils::guard::Guarded;
 use crate::utils::{IntoOption, ScalarOrArray, VectorArray};
-use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
@@ -1637,10 +1637,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        array, complex64,
+        Dtype, StreamOrDevice, array, complex64,
         ops::{all_close, arange, broadcast_to, eye, full, linspace, ones, reshape, split},
         transforms::eval,
-        Dtype, StreamOrDevice,
     };
     use float_eq::assert_float_eq;
     use pretty_assertions::assert_eq;
@@ -2285,16 +2284,20 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[2, 2, 2]).unwrap();
         let res = exp(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.exp())).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.exp(), 2.0f32.exp()], &[2, 1]);
-        assert!(all_close(exp(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(exp(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2350,16 +2353,20 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[2, 2, 2]).unwrap();
         let res = sin(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.sin())).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.sin(), 2.0f32.sin()], &[2, 1]);
-        assert!(all_close(sin(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(sin(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2393,16 +2400,20 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[2, 2, 2]).unwrap();
         let res = cos(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.cos())).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let data = Array::from_slice(&[0.0, 1.0, 2.0, 3.0], &[2, 2]);
         let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[0.0f32.cos(), 2.0f32.cos()], &[2, 1]);
-        assert!(all_close(cos(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(cos(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2424,9 +2435,11 @@ mod tests {
         let x = broadcast_to(&array!(std::f32::consts::PI / 2.0), &[2, 2, 2]).unwrap();
         let res = degrees(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(90.0)).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let angles = Array::from_slice(&[0.0, PI / 2.0, PI, 1.5 * PI], &[2, 2]);
         let x = split(&angles, 2, 1).unwrap();
@@ -2463,9 +2476,11 @@ mod tests {
         let x = broadcast_to(&array!(90.0), &[2, 2, 2]).unwrap();
         let res = radians(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(std::f32::consts::PI / 2.0)).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let angles = Array::from_slice(&[0.0, 90.0, 180.0, 270.0], &[2, 2]);
         let x = split(&angles, 2, 1).unwrap();
@@ -2494,16 +2509,20 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[2, 2, 2]).unwrap();
         let res = log(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(0.0)).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
         let x = split(&data, 2, 1).unwrap();
         let expected = Array::from_slice(&[1.0f32.ln(), 3.0f32.ln()], &[2, 1]);
-        assert!(all_close(log(&x[0]).unwrap(), &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(log(&x[0]).unwrap(), &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
     }
 
     #[test]
@@ -2559,9 +2578,11 @@ mod tests {
         let x = broadcast_to(&array!(1.0), &[2, 2, 2]).unwrap();
         let res = log1p(&x).unwrap();
         let expected = Array::full::<f32>(&[2, 2, 2], array!(1.0f32.ln_1p())).unwrap();
-        assert!(all_close(&res, &expected, None, None, None)
-            .unwrap()
-            .item::<bool>());
+        assert!(
+            all_close(&res, &expected, None, None, None)
+                .unwrap()
+                .item::<bool>()
+        );
 
         let data = Array::from_slice(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
         let x = split(&data, 2, 1).unwrap();
@@ -2608,15 +2629,17 @@ mod tests {
         assert_eq!(square(&x).unwrap().item::<i32>(), 4);
 
         let x = Array::full::<f32>(&[3, 3], array!(2.0)).unwrap();
-        assert!(all_close(
-            square(&x).unwrap(),
-            Array::full::<f32>(&[3, 3], array!(4.0)).unwrap(),
-            None,
-            None,
-            None
-        )
-        .unwrap()
-        .item::<bool>());
+        assert!(
+            all_close(
+                square(&x).unwrap(),
+                Array::full::<f32>(&[3, 3], array!(4.0)).unwrap(),
+                None,
+                None,
+                None
+            )
+            .unwrap()
+            .item::<bool>()
+        );
     }
 
     #[test]
@@ -2626,15 +2649,17 @@ mod tests {
         assert_eq!(rsqrt(&x).unwrap().item::<f32>(), 0.5);
 
         let x = Array::full::<f32>(&[3, 3], array!(9.0)).unwrap();
-        assert!(all_close(
-            sqrt(&x).unwrap(),
-            Array::full::<f32>(&[3, 3], array!(3.0)).unwrap(),
-            None,
-            None,
-            None
-        )
-        .unwrap()
-        .item::<bool>());
+        assert!(
+            all_close(
+                sqrt(&x).unwrap(),
+                Array::full::<f32>(&[3, 3], array!(3.0)).unwrap(),
+                None,
+                None,
+                None
+            )
+            .unwrap()
+            .item::<bool>()
+        );
 
         let x = array![4i32];
         assert_eq!(sqrt(&x).unwrap().item::<f32>(), 2.0);
@@ -2652,15 +2677,17 @@ mod tests {
         assert_eq!(out.item::<f32>(), 0.5);
 
         let x = Array::full::<f32>(&[3, 3], array!(2.0)).unwrap();
-        assert!(all_close(
-            reciprocal(&x).unwrap(),
-            Array::full::<f32>(&[3, 3], array!(0.5)).unwrap(),
-            None,
-            None,
-            None
-        )
-        .unwrap()
-        .item::<bool>());
+        assert!(
+            all_close(
+                reciprocal(&x).unwrap(),
+                Array::full::<f32>(&[3, 3], array!(0.5)).unwrap(),
+                None,
+                None,
+                None
+            )
+            .unwrap()
+            .item::<bool>()
+        );
     }
 
     #[test]

@@ -3,8 +3,8 @@ use quote::quote;
 use syn::{DeriveInput, Ident};
 
 use crate::shared::{
-    parse_fields_from_derive_input, BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent,
-    Result,
+    BuilderStructAnalyzer, BuilderStructProperty, PathOrIdent, Result,
+    parse_fields_from_derive_input,
 };
 
 pub(crate) fn expand_derive_builder(input: DeriveInput) -> Result<proc_macro2::TokenStream> {

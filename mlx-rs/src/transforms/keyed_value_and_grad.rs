@@ -1,12 +1,12 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    error::{Exception, Result},
-    utils::{guard::Guarded, Closure},
     Array,
+    error::{Exception, Result},
+    utils::{Closure, guard::Guarded},
 };
 
-use super::{value_and_gradient, ClosureValueAndGrad};
+use super::{ClosureValueAndGrad, value_and_gradient};
 
 /// Type alias for a hashmap of parameters.
 pub type KeyedParameters<Arr> = HashMap<Rc<str>, Arr>;
@@ -106,7 +106,7 @@ where
 mod tests {
     use std::{collections::HashMap, rc::Rc};
 
-    use crate::{array, Array};
+    use crate::{Array, array};
 
     use super::*;
 

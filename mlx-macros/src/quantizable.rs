@@ -1,7 +1,7 @@
 use darling::FromDeriveInput;
 use syn::{DeriveInput, Generics, Ident};
 
-use crate::util::{filter_fields_with_attr, FilteredFields};
+use crate::util::{FilteredFields, filter_fields_with_attr};
 
 #[derive(Debug, Clone, FromDeriveInput)]
 #[darling(attributes(quantizable))]

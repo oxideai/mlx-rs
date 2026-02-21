@@ -1,4 +1,4 @@
-use crate::{utils::ScalarOrArray, Array, StreamOrDevice};
+use crate::{Array, StreamOrDevice, utils::ScalarOrArray};
 use num_traits::Pow;
 use std::{
     iter::Product,

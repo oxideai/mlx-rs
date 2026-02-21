@@ -3,8 +3,8 @@
 use std::ffi::CStr;
 
 use crate::error::Result;
-use crate::utils::guard::Guarded;
 use crate::utils::IntoOption;
+use crate::utils::guard::Guarded;
 use crate::{Array, Stream};
 use mlx_internal_macros::{default_device, generate_macro};
 

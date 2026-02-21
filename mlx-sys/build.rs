@@ -53,6 +53,20 @@ fn build_and_link_mlx_c() {
     config.define("CMAKE_C_COMPILER", "/usr/bin/cc");
     config.define("CMAKE_CXX_COMPILER", "/usr/bin/c++");
 
+    // Set macOS deployment target for Metal/MLX compatibility
+    // Uses MACOSX_DEPLOYMENT_TARGET env var if set, otherwise defaults to 14.0
+    // This avoids linking errors with ___isPlatformVersionAtLeast
+    // See: https://github.com/ml-explore/mlx/issues/1602
+    #[cfg(target_os = "macos")]
+    {
+        let deployment_target =
+            env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "14.0".to_string());
+        config.define("CMAKE_OSX_DEPLOYMENT_TARGET", &deployment_target);
+        // Ensure environment is set for compiler-rt symbols
+        std::env::set_var("MACOSX_DEPLOYMENT_TARGET", &deployment_target);
+        println!("cargo:rerun-if-env-changed=MACOSX_DEPLOYMENT_TARGET");
+    }
+
     #[cfg(debug_assertions)]
     {
         config.define("CMAKE_BUILD_TYPE", "Debug");
@@ -95,6 +109,18 @@ fn build_and_link_mlx_c() {
     #[cfg(feature = "accelerate")]
     {
         println!("cargo:rustc-link-lib=framework=Accelerate");
+    }
+
+    // Set minimum macOS version for linker to match compiled objects
+    // Must match CMAKE_OSX_DEPLOYMENT_TARGET to avoid ___isPlatformVersionAtLeast errors
+    #[cfg(target_os = "macos")]
+    {
+        let deployment_target =
+            env::var("MACOSX_DEPLOYMENT_TARGET").unwrap_or_else(|_| "14.0".to_string());
+        println!(
+            "cargo:rustc-link-arg=-mmacosx-version-min={}",
+            deployment_target
+        );
     }
 
     // Link against Xcode's clang runtime for ___isPlatformVersionAtLeast symbol

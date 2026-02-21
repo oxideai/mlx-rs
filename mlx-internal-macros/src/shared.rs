@@ -55,16 +55,17 @@ impl BuilderStructAnalyzer<'_> {
         let doc = format!("Builder for `{struct_ident}`.");
 
         let mandatory_field_doc = format!("See [`{struct_ident}`] for more information.");
-        let optional_field_doc =
-            optional_field_idents
-                .iter()
-                .zip(optional_field_defaults)
-                .map(|(ident, default)| {
-                    format!(
+        let optional_field_doc = optional_field_idents
+            .iter()
+            .zip(optional_field_defaults)
+            .map(|(ident, default)| {
+                format!(
                     "See [`{}::{}`] for more information. Initialized with default value [`{}`].",
-                    struct_ident, ident, default.to_token_stream()
+                    struct_ident,
+                    ident,
+                    default.to_token_stream()
                 )
-                });
+            });
 
         quote! {
             #[doc = #doc]
@@ -319,7 +320,7 @@ fn parse_fields(fields: &syn::Fields) -> Result<(Vec<MandatoryField>, Vec<Option
                 None => {
                     return Err(
                         format!("Field {ident} is optional but has no default value").into(),
-                    )
+                    );
                 }
             };
 

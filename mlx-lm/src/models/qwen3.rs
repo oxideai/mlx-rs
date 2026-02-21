@@ -402,7 +402,7 @@ where
             None => match create_attention_mask(&h, cache, Some(true))? {
                 Some(AttentionMask::Array(a)) => Some(a),
                 Some(AttentionMask::Causal) => {
-                    return Err(Exception::custom("Only `Array` mask is supported"))
+                    return Err(Exception::custom("Only `Array` mask is supported"));
                 }
                 None => None,
             },

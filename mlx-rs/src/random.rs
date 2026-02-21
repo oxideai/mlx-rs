@@ -30,11 +30,14 @@ thread_local! {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust,no_run
 /// use mlx_rs::random::RandomState;
 /// use mlx_rs::transforms::compile::compile_with_state;
+/// use mlx_rs::random::categorical;
+/// use mlx_rs::Array;
 ///
-/// let mut state = RandomState::with_seed(42)?;
+/// let mut state = RandomState::with_seed(42).unwrap();
+/// let logits = Array::zeros::<f32>(&[1, 10]).unwrap();
 /// let mut compiled = compile_with_state(
 ///     |state: &mut RandomState, x: &Array| {
 ///         let key = state.next_key()?;
@@ -42,7 +45,7 @@ thread_local! {
 ///     },
 ///     None
 /// );
-/// let result = compiled(&mut state, &logits)?;
+/// let result = compiled(&mut state, &logits).unwrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct RandomState {
@@ -100,7 +103,7 @@ impl RandomState {
 
     /// Get a mutable reference to the underlying state array.
     ///
-    /// # Safety
+    /// # Note
     ///
     /// Modifying the state array directly may break the PRNG invariants.
     /// Prefer using `seed()` or `next_key()` instead.
@@ -110,6 +113,12 @@ impl RandomState {
 }
 
 impl Default for RandomState {
+    /// Creates a new `RandomState` with a time-based seed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the underlying PRNG key creation fails, which should not
+    /// occur under normal conditions.
     fn default() -> Self {
         Self::new().expect("Failed to create default RandomState")
     }
@@ -803,6 +812,49 @@ mod tests {
 
         let expected = Array::from_slice(&[16, 3, 14, 10, 17, 7, 6, 8, 12, 8], &[5, 2]);
         assert_array_eq!(result, expected, 0.01);
+    }
+
+    #[test]
+    fn test_random_state_new() {
+        let state = RandomState::new().unwrap();
+        assert_eq!(state.as_array().shape(), &[2]);
+    }
+
+    #[test]
+    fn test_random_state_with_seed_deterministic() {
+        let s1 = RandomState::with_seed(42).unwrap();
+        let s2 = RandomState::with_seed(42).unwrap();
+        assert!(s1.as_array() == s2.as_array());
+    }
+
+    #[test]
+    fn test_random_state_next_key_advances() {
+        let mut state = RandomState::with_seed(0).unwrap();
+        let k1 = state.next_key().unwrap();
+        let k2 = state.next_key().unwrap();
+        assert!(k1 != k2);
+    }
+
+    #[test]
+    fn test_random_state_from_key_roundtrip() {
+        let original = RandomState::with_seed(99).unwrap();
+        let arr = original.as_array().clone();
+        let restored = RandomState::from_key(arr);
+        assert!(original.as_array() == restored.as_array());
+    }
+
+    #[test]
+    fn test_random_state_updatable() {
+        use crate::utils::Updatable;
+        let state = RandomState::with_seed(0).unwrap();
+        assert_eq!(state.updatable_states_len(), 1);
+        assert_eq!(state.updatable_states().into_iter().count(), 1);
+    }
+
+    #[test]
+    fn test_random_state_default() {
+        let state = RandomState::default();
+        assert_eq!(state.as_array().shape(), &[2]);
     }
 
     #[test]

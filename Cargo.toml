@@ -2,7 +2,7 @@
 # All but mlx-sys should follow the same version. mlx-sys should follow
 # the version of mlx-c.
 version = "0.25.3"
-edition = "2021"
+edition = "2024"
 authors = [
     "Minghua Wu <michael.wu1107@gmail.com>",
     "David Chavez <david@dcvz.io>",

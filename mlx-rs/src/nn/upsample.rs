@@ -1,5 +1,5 @@
 use crate::{
-    Array, array,
+    array,
     error::Exception,
     macros::ModuleParameters,
     module::Module,
@@ -8,6 +8,7 @@ use crate::{
         indexing::{ArrayIndex, ArrayIndexOp, Ellipsis, IndexOp, NewAxis, TryIndexOp},
     },
     transforms::compile::compile,
+    Array,
 };
 
 use crate::utils::SingleOrVec;

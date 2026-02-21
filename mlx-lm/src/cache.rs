@@ -1,4 +1,4 @@
-use mlx_rs::{Array, error::Exception, ops::concatenate_axis};
+use mlx_rs::{error::Exception, ops::concatenate_axis, Array};
 
 // TODO: somehow move quantized methods to a separate trait?
 pub trait KeyValueCache {
@@ -21,7 +21,7 @@ pub trait KeyValueCache {
     fn max_size(&self) -> Option<i32>;
 
     fn update_and_fetch(&mut self, keys: Array, values: Array)
-    -> Result<(Array, Array), Exception>;
+        -> Result<(Array, Array), Exception>;
 }
 
 impl<T> KeyValueCache for &'_ mut T

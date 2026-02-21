@@ -404,10 +404,8 @@ mod tests {
 
         // The full error message would also contain the full path to the original c++ file,
         // so we just check for a substring
-        assert!(
-            error
-                .what()
-                .contains("Shapes (3) and (2) cannot be broadcast.")
-        )
+        assert!(error
+            .what()
+            .contains("Shapes (3) and (2) cannot be broadcast."))
     }
 }

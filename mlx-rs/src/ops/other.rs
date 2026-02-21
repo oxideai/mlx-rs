@@ -2,11 +2,11 @@ use std::ffi::CString;
 
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::utils::VectorArray;
 use crate::utils::guard::Guarded;
+use crate::utils::VectorArray;
 use crate::{
-    Array, Stream,
     error::{Exception, Result},
+    Array, Stream,
 };
 
 impl Array {
@@ -174,8 +174,9 @@ pub fn kron_device(
 #[cfg(test)]
 mod tests {
     use crate::{
-        Array, array,
+        array,
         ops::{arange, diag, einsum, reshape},
+        Array,
     };
     use pretty_assertions::assert_eq;
 

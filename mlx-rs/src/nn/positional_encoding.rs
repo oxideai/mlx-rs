@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
-    Array, Dtype, array,
+    array,
     error::Exception,
     module::{Module, Param},
     ops::{
@@ -9,8 +9,9 @@ use crate::{
         indexing::{NewAxis, TryIndexOp},
         log,
     },
+    Array, Dtype,
 };
-use mlx_internal_macros::{Buildable, Builder, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
 /// Type alias for [`RotaryPositionalEncoding`].
@@ -421,7 +422,7 @@ where
 #[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
-    use crate::{Dtype, module::Module, nn::AlibiInput, random::uniform};
+    use crate::{module::Module, nn::AlibiInput, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use crate::nn::Rope;

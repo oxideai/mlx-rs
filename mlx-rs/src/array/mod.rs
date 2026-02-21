@@ -1,16 +1,16 @@
 use crate::{
-    Stream,
     dtype::Dtype,
     error::AsSliceError,
     sealed::Sealed,
-    utils::{SUCCESS, guard::Guarded},
+    utils::{guard::Guarded, SUCCESS},
+    Stream,
 };
 use element::FromSliceElement;
 use mlx_internal_macros::default_device;
 use mlx_sys::mlx_array;
 use num_complex::Complex;
 use std::{
-    ffi::{CStr, c_void},
+    ffi::{c_void, CStr},
     iter::Sum,
 };
 

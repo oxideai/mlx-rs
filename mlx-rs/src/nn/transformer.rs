@@ -1,15 +1,16 @@
 use std::borrow::Cow;
 
 use crate::{
-    Array, ArrayElement, FromScalar, array,
+    array,
     builder::Builder,
     error::Exception,
     module::{Module, UnaryModule},
     ops::{arange, expand_dims, matmul, softmax_axis},
     quantization::MaybeQuantized,
+    Array, ArrayElement, FromScalar,
 };
 use dyn_clone::DynClone;
-use mlx_internal_macros::{Buildable, Builder, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::{ModuleParameters, Quantizable};
 use num_traits::bounds::LowerBounded;
 

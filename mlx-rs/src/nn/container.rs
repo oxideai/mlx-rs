@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::module::{Module, UnaryModule};
-use crate::{Array, error::Exception};
+use crate::{error::Exception, Array};
 use mlx_macros::ModuleParameters;
 
 /// Marker trait for items that can be used in a `Sequential` module.

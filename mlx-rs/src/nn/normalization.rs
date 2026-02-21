@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 
 use crate::{
-    Array, array,
+    array,
     error::Exception,
     module::{Module, Param},
     ops::{ones, rsqrt, zeros},
+    Array,
 };
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
@@ -620,8 +621,8 @@ impl Module<&Array> for BatchNorm {
 #[cfg(test)]
 mod tests {
     use crate::{
-        Dtype,
         ops::indexing::{Ellipsis, IndexOp},
+        Dtype,
     };
     use float_eq::assert_float_eq;
 

@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Array, nested::NestedValue};
+use crate::{nested::NestedValue, Array};
 
 use super::ModuleParameters;
 

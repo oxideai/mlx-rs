@@ -3,9 +3,9 @@ use std::ffi::CStr;
 use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{
-    Array, Stream,
     error::Result,
-    utils::{VectorArray, guard::Guarded},
+    utils::{guard::Guarded, VectorArray},
+    Array, Stream,
 };
 
 const DEFAULT_MODE: &CStr = c"affine";
@@ -291,9 +291,8 @@ pub fn qqmm_device<'a>(
 #[cfg(test)]
 mod tests {
     use crate::{
-        Array,
         ops::{dequantize, expand_dims, quantize, quantized_matmul},
-        random,
+        random, Array,
     };
 
     #[test]

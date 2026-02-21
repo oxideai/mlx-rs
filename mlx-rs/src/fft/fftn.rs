@@ -1,10 +1,10 @@
 use mlx_internal_macros::{default_device, generate_macro};
 
 use crate::{
-    Stream,
     array::Array,
     error::Result,
-    utils::{IntoOption, guard::Guarded},
+    utils::{guard::Guarded, IntoOption},
+    Stream,
 };
 
 use super::utils::{resolve_size_and_axis_unchecked, resolve_sizes_and_axes_unchecked};
@@ -214,7 +214,7 @@ pub fn ifftn_device<'a>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{Array, Dtype, complex64, fft::*};
+    use crate::{complex64, fft::*, Array, Dtype};
 
     #[test]
     fn test_fft() {

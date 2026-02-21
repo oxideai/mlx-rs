@@ -3,7 +3,7 @@ use std::{cell::RefCell, ffi::CStr};
 use crate::{
     device::Device,
     error::Result,
-    utils::{SUCCESS, guard::Guarded},
+    utils::{guard::Guarded, SUCCESS},
 };
 
 thread_local! {

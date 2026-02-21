@@ -100,7 +100,7 @@ use std::{borrow::Cow, ops::Bound, rc::Rc};
 
 use mlx_internal_macros::{default_device, generate_macro};
 
-use crate::{Array, Stream, StreamOrDevice, error::Result, utils::guard::Guarded};
+use crate::{error::Result, utils::guard::Guarded, Array, Stream, StreamOrDevice};
 
 pub(crate) mod index_impl;
 pub(crate) mod indexmut_impl;
@@ -227,7 +227,11 @@ impl RangeIndex {
         // return end < 0 ? end + size : end
 
         let end = self.end(size);
-        if end.is_negative() { end + size } else { end }
+        if end.is_negative() {
+            end + size
+        } else {
+            end
+        }
     }
 }
 
@@ -948,7 +952,7 @@ fn expand_ellipsis_operations<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Array, array, ops::reshape};
+    use crate::{array, ops::reshape, Array};
 
     // Tests adapted from C++ `ops_tests.cpp/test scatter`
     #[test]
@@ -959,11 +963,10 @@ mod tests {
         let updates = Array::ones::<f32>(&[2, 1]).unwrap();
         let out = scatter_single(&input, &indices, &updates, 0).unwrap();
         let expected = array!([1.0f32, 1.0, 0.0, 0.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -974,11 +977,10 @@ mod tests {
         let updates = Array::ones::<f32>(&[3, 1]).unwrap();
         let out = scatter_add_single(&input, &indices, &updates, 0).unwrap();
         let expected = array!([3.0f32, 1.0, 1.0, 2.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -989,11 +991,10 @@ mod tests {
         let updates = reshape(array!([1.0f32, 6.0, -2.0]), &[3, 1]).unwrap();
         let out = scatter_max_single(&input, &indices, &updates, 0).unwrap();
         let expected = array!([6.0f32, 1.0, 1.0, 1.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -1004,11 +1005,10 @@ mod tests {
         let updates = reshape(array!([1.0f32, -6.0, 2.0]), &[3, 1]).unwrap();
         let out = scatter_min_single(&input, &indices, &updates, 0).unwrap();
         let expected = array!([-6.0f32, 1.0, 1.0, 1.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -1019,11 +1019,10 @@ mod tests {
         let updates = Array::full::<f32>(&[3, 1], array!(2.0f32)).unwrap();
         let out = scatter_prod_single(&input, &indices, &updates, 0).unwrap();
         let expected = array!([4.0f32, 1.0, 1.0, 2.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -1033,11 +1032,10 @@ mod tests {
         let indices = Array::from_slice(&[1u32, 3], &[2]);
         let out = gather_single(&input, &indices, 0, &[1]).unwrap();
         let expected = array!([[1.0f32], [3.0]]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 
     #[test]
@@ -1048,10 +1046,9 @@ mod tests {
         let src = Array::from_slice(&[10.0f32, 20.0], &[2]);
         let out = masked_scatter(&input, &mask, &src).unwrap();
         let expected = array!([10.0f32, 2.0, 20.0, 4.0]);
-        assert!(
-            out.all_close(&expected, 1e-5, 1e-5, None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(out
+            .all_close(&expected, 1e-5, 1e-5, None)
+            .unwrap()
+            .item::<bool>());
     }
 }

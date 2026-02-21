@@ -1,10 +1,10 @@
 use crate::{
-    Array,
     error::{Exception, Result},
-    utils::{Closure, IntoOption, guard::Guarded},
+    utils::{guard::Guarded, Closure, IntoOption},
+    Array,
 };
 
-use super::{ClosureValueAndGrad, value_and_gradient};
+use super::{value_and_gradient, ClosureValueAndGrad};
 
 #[inline]
 fn build_gradient_inner<'a>(
@@ -230,8 +230,8 @@ where
 mod tests {
 
     use crate::{
-        Array,
         transforms::{grad, grad_with_argnums, value_and_grad, value_and_grad_with_argnums},
+        Array,
     };
 
     // The unit tests below are adapted from the mlx c++ codebase

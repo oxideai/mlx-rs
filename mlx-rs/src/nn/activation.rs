@@ -3,12 +3,13 @@ use std::f32::consts::PI;
 use crate::module::{Module, Param};
 use crate::ops::logsumexp_axis;
 use crate::{
-    Array, array,
+    array,
     error::{Exception, Result},
     ops::{abs, exp, maximum, minimum, multiply, which},
     transforms::compile::compile,
+    Array,
 };
-use mlx_internal_macros::{Buildable, Builder, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable, Builder};
 use mlx_macros::ModuleParameters;
 
 /// Applies the element-wise sigmoid logistic sigmoid.
@@ -960,7 +961,7 @@ fn compiled_hard_swish(x: &Array) -> Result<Array> {
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
 mod tests {
-    use crate::{Dtype, builder::Builder, random::uniform};
+    use crate::{builder::Builder, random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use super::*;
@@ -1252,17 +1253,16 @@ mod tests {
         let y = Celu::new().forward(&x).unwrap();
         let epsilon = array!(1e-4);
         let expected_y = array!([1.0, -0.6321, 0.0]);
-        assert!(
-            y.subtract(&expected_y)
-                .unwrap()
-                .abs()
-                .unwrap()
-                .lt(&epsilon)
-                .unwrap()
-                .all(None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None)
+            .unwrap()
+            .item::<bool>());
         assert_eq!(y.shape(), &[3]);
         assert_eq!(y.dtype(), Dtype::Float32);
 
@@ -1273,17 +1273,16 @@ mod tests {
             .forward(&x)
             .unwrap();
         let expected_y = array!([1.0, -0.6568, 0.0]);
-        assert!(
-            y.subtract(&expected_y)
-                .unwrap()
-                .abs()
-                .unwrap()
-                .lt(&epsilon)
-                .unwrap()
-                .all(None)
-                .unwrap()
-                .item::<bool>()
-        );
+        assert!(y
+            .subtract(&expected_y)
+            .unwrap()
+            .abs()
+            .unwrap()
+            .lt(&epsilon)
+            .unwrap()
+            .all(None)
+            .unwrap()
+            .item::<bool>());
         assert_eq!(y.shape(), &[3]);
         assert_eq!(y.dtype(), Dtype::Float32);
     }

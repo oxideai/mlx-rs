@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use darling::{FromDeriveInput, FromField};
-use quote::{ToTokens, quote};
+use quote::{quote, ToTokens};
 use syn::{DeriveInput, Ident, ImplGenerics, TypeGenerics, WhereClause};
 
 pub(crate) type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

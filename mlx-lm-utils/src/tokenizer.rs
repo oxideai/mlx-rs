@@ -73,7 +73,7 @@ use std::{
     str::FromStr,
 };
 
-use minijinja::{Environment, Template, context};
+use minijinja::{context, Environment, Template};
 use serde::Serialize;
 use tokenizers::Encoding;
 
@@ -534,8 +534,8 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::tokenizer::{
-        ApplyChatTemplateArgs, Conversation, Role, apply_chat_template,
-        load_model_chat_template_from_file,
+        apply_chat_template, load_model_chat_template_from_file, ApplyChatTemplateArgs,
+        Conversation, Role,
     };
 
     /// Returns the path to test fixtures. Uses TEST_MODEL_DIR env var if set,

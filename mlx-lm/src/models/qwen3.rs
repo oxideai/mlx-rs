@@ -4,7 +4,7 @@ use std::{
 };
 
 use mlx_rs::{
-    Array, argmax_axis, array,
+    argmax_axis, array,
     builder::Builder,
     categorical,
     error::Exception,
@@ -13,6 +13,7 @@ use mlx_rs::{
     nn,
     ops::indexing::{IndexOp, NewAxis},
     quantization::MaybeQuantized,
+    Array,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -22,8 +23,9 @@ use crate::{
     cache::KeyValueCache,
     error::Error,
     utils::{
-        AttentionMask, create_attention_mask,
-        rope::{FloatOrString, initialize_rope},
+        create_attention_mask,
+        rope::{initialize_rope, FloatOrString},
+        AttentionMask,
     },
 };
 
@@ -626,9 +628,9 @@ where
 #[cfg(test)]
 mod tests {
     use mlx_rs::{
-        Array,
         ops::indexing::{IndexOp, NewAxis},
         transforms::eval,
+        Array,
     };
 
     use crate::{

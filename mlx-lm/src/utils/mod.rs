@@ -1,5 +1,5 @@
 use mlx_rs::{
-    Array, Dtype, arange,
+    arange,
     error::Exception,
     fast::ScaledDotProductAttentionMask,
     ops::{
@@ -7,6 +7,7 @@ use mlx_rs::{
         indexing::{IndexOp, NewAxis},
         quantized_matmul, reshape, softmax_axis,
     },
+    Array, Dtype,
 };
 
 use crate::cache::KeyValueCache;

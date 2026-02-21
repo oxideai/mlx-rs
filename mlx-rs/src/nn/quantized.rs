@@ -1,13 +1,14 @@
 use std::iter::once;
 
 use crate::{
-    Array, array,
+    array,
     error::Exception,
     module::{Module, ModuleParameters, Param},
     ops::indexing::IndexOp,
     ops::{self, dequantize, quantized_matmul, zeros},
     quantization::Quantizable,
     random::uniform,
+    Array,
 };
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;

@@ -1,4 +1,4 @@
-use mlx_rs::{Array, argmax_axis, array, categorical, error::Exception};
+use mlx_rs::{argmax_axis, array, categorical, error::Exception, Array};
 
 pub trait Sampler {
     fn sample(&mut self, logits: &Array, temp: f32) -> Result<Array, Exception>;

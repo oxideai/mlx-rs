@@ -1,8 +1,8 @@
-use crate::Stream;
 use crate::array::Array;
 use crate::error::Result;
 use crate::utils::axes_or_default_to_all;
 use crate::utils::guard::Guarded;
+use crate::Stream;
 use mlx_internal_macros::{default_device, generate_macro};
 
 impl Array {
@@ -1043,9 +1043,7 @@ mod tests {
         let results: &[bool] = all.as_slice();
         assert_eq!(
             results,
-            &[
-                false, true, true, true, true, true, true, true, true, true, true, true
-            ]
+            &[false, true, true, true, true, true, true, true, true, true, true, true]
         );
     }
 

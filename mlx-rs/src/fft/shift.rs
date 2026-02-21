@@ -2,8 +2,8 @@ use mlx_internal_macros::{default_device, generate_macro};
 use smallvec::SmallVec;
 
 use crate::{
-    Stream, array::Array, constants::DEFAULT_STACK_VEC_LEN, error::Result, utils::IntoOption,
-    utils::guard::Guarded,
+    array::Array, constants::DEFAULT_STACK_VEC_LEN, error::Result, utils::guard::Guarded,
+    utils::IntoOption, Stream,
 };
 
 /// Resolve axes for shift operations - when None, returns all axes
@@ -191,12 +191,10 @@ mod tests {
 
         let shifted = ifftshift(&r, &[-1]).unwrap();
         let unshifted = fftshift(&shifted, &[-1]).unwrap();
-        assert!(
-            unshifted
-                .all_close(&r, 1e-5, 1e-6, None)
-                .unwrap()
-                .item::<bool>(),
-        );
+        assert!(unshifted
+            .all_close(&r, 1e-5, 1e-6, None)
+            .unwrap()
+            .item::<bool>(),);
     }
 
     #[test]
@@ -207,21 +205,17 @@ mod tests {
 
         let shifted = ifftshift(&r, None).unwrap();
         let unshifted = fftshift(&shifted, None).unwrap();
-        assert!(
-            unshifted
-                .all_close(&r, 1e-5, 1e-6, None)
-                .unwrap()
-                .item::<bool>(),
-        );
+        assert!(unshifted
+            .all_close(&r, 1e-5, 1e-6, None)
+            .unwrap()
+            .item::<bool>(),);
 
         let shifted = ifftshift(&r, &[0]).unwrap();
         let unshifted = fftshift(&shifted, &[0]).unwrap();
-        assert!(
-            unshifted
-                .all_close(&r, 1e-5, 1e-6, None)
-                .unwrap()
-                .item::<bool>(),
-        );
+        assert!(unshifted
+            .all_close(&r, 1e-5, 1e-6, None)
+            .unwrap()
+            .item::<bool>(),);
     }
 
     #[test]

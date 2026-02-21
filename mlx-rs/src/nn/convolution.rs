@@ -1,9 +1,9 @@
 use crate::module::{Module, Param};
 use crate::{
-    Array,
     error::Exception,
     ops::{conv1d, conv2d, zeros},
     random::uniform,
+    Array,
 };
 use mlx_internal_macros::{Buildable, Builder};
 use mlx_macros::ModuleParameters;
@@ -452,7 +452,7 @@ impl Module<&Array> for Conv3d {
 #[cfg(test)]
 mod tests {
     use crate::module::Module;
-    use crate::{Dtype, random::uniform};
+    use crate::{random::uniform, Dtype};
     use float_eq::assert_float_eq;
 
     use crate::nn::Conv1d;

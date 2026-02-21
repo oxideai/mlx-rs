@@ -1,14 +1,15 @@
 use std::{borrow::Cow, collections::HashMap, rc::Rc};
 
-use mlx_internal_macros::{Buildable, generate_builder};
+use mlx_internal_macros::{generate_builder, Buildable};
 
 use crate::{
-    Array, array,
+    array,
     error::AdafactorBuildError,
     ops::{
         matmul, maximum, mean, mean_axes, minimum, rsqrt, sqrt, square, zeros_dtype, zeros_like,
     },
     utils::Updatable,
+    Array,
 };
 
 use super::*;

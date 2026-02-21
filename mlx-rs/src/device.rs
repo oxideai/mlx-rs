@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::{
     error::Result,
-    utils::{SUCCESS, guard::Guarded},
+    utils::{guard::Guarded, SUCCESS},
 };
 
 ///Type of device.

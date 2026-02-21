@@ -114,7 +114,7 @@ impl SafeTensors {
                     1 => {
                         return Err(crate::error::get_and_clear_last_mlx_error()
                             .expect("A non-success status was returned, but no error was set.")
-                            .into())
+                            .into());
                     }
                     2 => break,
                     _ => unreachable!(),

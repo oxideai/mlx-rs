@@ -220,7 +220,7 @@ where
                 _ => {
                     return Err(Exception::custom(
                         "Both keys and values must be quantized when KV cache is quantized",
-                    ))
+                    ));
                 }
             };
 
@@ -237,7 +237,7 @@ where
         _ => {
             return Err(Exception::custom(
                 "Both keys and values must NOT be quantized when KV cache is NOT quantized",
-            ))
+            ));
         }
     };
 

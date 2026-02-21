@@ -2,7 +2,7 @@
 # All but mlx-sys should follow the same version. mlx-sys should follow
 # the version of mlx-c.
 version = "0.25.3"
-edition = "2024"
+edition = "2021"
 authors = [
     "Minghua Wu <michael.wu1107@gmail.com>",
     "David Chavez <david@dcvz.io>",
@@ -60,7 +60,7 @@ syn = { version = "2", features = ["full"] }
 quote = "1"
 darling = "0.21"
 proc-macro2 = "1"
-bindgen = "0.72"
+bindgen = "0.72.1"
 cmake = "0.1"
 cc = "1"
 safetensors = "0.6"

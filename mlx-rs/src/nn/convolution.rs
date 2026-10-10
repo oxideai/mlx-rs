@@ -54,12 +54,13 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
     let output_channels = builder.output_channels;
     let kernel_size = builder.kernel_size;
     let with_bias = builder.bias;
+    let groups = checked_groups(input_channels, output_channels, builder.groups)?;
 
     let scale = f32::sqrt(1.0f32 / (input_channels * kernel_size) as f32);
     let weight = uniform::<_, f32>(
         -scale,
         scale,
-        &[output_channels, kernel_size, input_channels],
+        &[output_channels, kernel_size, input_channels / groups],
         None,
     )?;
     let bias = if with_bias {
@@ -74,7 +75,7 @@ fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
         stride: builder.stride,
         padding: builder.padding,
         dilation: builder.dilation,
-        groups: builder.groups,
+        groups,
     })
 }
 
@@ -196,6 +197,7 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
     let padding = builder.padding.into();
     let stride = builder.stride.into();
     let dilation = builder.dilation.into();
+    let groups = checked_groups(input_channels, output_channels, builder.groups)?;
 
     let scale = f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1) as f32);
     let weight = uniform::<_, f32>(
@@ -205,7 +207,7 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
             output_channels,
             kernel_size.0,
             kernel_size.1,
-            input_channels,
+            input_channels / groups,
         ],
         None,
     )?;
@@ -221,7 +223,7 @@ fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
         stride,
         padding,
         dilation,
-        groups: builder.groups,
+        groups,
     })
 }
 
@@ -447,6 +449,22 @@ impl Module<&Array> for Conv3d {
     fn training_mode(&mut self, _: bool) {}
 }
 
+/// Validates `groups` for a grouped convolution: it must be positive and divide both channel
+/// counts, matching the weight shape `[C_out, ..., C_in / groups]` that MLX expects.
+fn checked_groups(
+    input_channels: i32,
+    output_channels: i32,
+    groups: i32,
+) -> Result<i32, Exception> {
+    if groups < 1 || input_channels % groups != 0 || output_channels % groups != 0 {
+        return Err(Exception::custom(format!(
+            "groups ({groups}) must be positive and divide both input channels \
+             ({input_channels}) and output channels ({output_channels})"
+        )));
+    }
+    Ok(groups)
+}
+
 // The following tests are ported from the swift bindings:
 // mlx-swift/Tests/MLXTests/IntegrationTests.swift
 #[cfg(test)]
@@ -520,5 +538,75 @@ mod tests {
             -1.117_286,
             abs <= 0.022_345_72
         );
+    }
+
+    #[test]
+    fn test_conv1d_depthwise_matches_mlx() {
+        use crate::{builder::Builder, nn::Conv1dBuilder, ops::arange};
+
+        let x = &arange::<_, f32>(None, 48, None)
+            .unwrap()
+            .reshape(&[2, 6, 4])
+            .unwrap()
+            / 10.0;
+        let w = &(&arange::<_, f32>(None, 12, None)
+            .unwrap()
+            .reshape(&[4, 3, 1])
+            .unwrap()
+            / 7.0)
+            - 0.5;
+
+        let mut conv = Conv1dBuilder::new(4, 4, 3)
+            .padding(1)
+            .groups(4)
+            .build()
+            .unwrap();
+        assert_eq!(conv.weight.shape(), &[4, 3, 1]);
+        conv.weight.value = w;
+        let y = conv.forward(&x).unwrap();
+        assert_eq!(y.shape(), &[2, 6, 4]);
+
+        // Python MLX 0.32: `mx.conv1d(x, w, padding=1, groups=4)`
+        #[rustfmt::skip]
+        let expected: [f32; 48] = [
+            -0.08571428, 0.1142857, 0.4857143, 1.028571,
+            -0.3142857, 0.2214286, 1.014286, 2.064286,
+            -0.7428572, 0.3071429, 1.614286, 3.178571,
+            -1.171429, 0.3928572, 2.214286, 4.292857,
+            -1.6, 0.4785715, 2.814286, 5.407143,
+            -1.514286, 0.02857148, 1.742857, 3.628572,
+            -1.457143, 0.8000001, 3.228571, 5.828571,
+            -2.885714, 0.7357144, 4.614286, 8.75,
+            -3.314286, 0.8214287, 5.214286, 9.864285,
+            -3.742857, 0.907143, 5.814286, 10.97857,
+            -4.171429, 0.9928573, 6.414286, 12.09286,
+            -3.571429, 0.02857158, 3.8, 7.742857,
+        ];
+        for (got, want) in y.to_vec_exact::<f32>().unwrap().iter().zip(expected) {
+            assert_float_eq!(*got, want, abs <= 1e-5 * (1.0 + want.abs()));
+        }
+    }
+
+    #[test]
+    fn test_conv2d_grouped_weight_shape() {
+        use crate::{builder::Builder, nn::Conv2dBuilder};
+
+        let mut conv = Conv2dBuilder::new(4, 8, 3).groups(2).build().unwrap();
+        assert_eq!(conv.weight.shape(), &[8, 3, 3, 2]);
+        let x = uniform::<_, f32>(0.0, 1.0, &[1, 5, 5, 4], None).unwrap();
+        assert_eq!(conv.forward(&x).unwrap().shape(), &[1, 3, 3, 8]);
+    }
+
+    #[test]
+    fn test_conv_groups_must_divide_channels() {
+        use crate::{
+            builder::Builder,
+            nn::{Conv1dBuilder, Conv2dBuilder},
+        };
+
+        assert!(Conv1dBuilder::new(6, 4, 3).groups(4).build().is_err());
+        assert!(Conv1dBuilder::new(4, 6, 3).groups(4).build().is_err());
+        assert!(Conv1dBuilder::new(4, 4, 3).groups(0).build().is_err());
+        assert!(Conv2dBuilder::new(4, 6, 3).groups(4).build().is_err());
     }
 }

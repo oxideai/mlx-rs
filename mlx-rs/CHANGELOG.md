@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Added
+
+- `fast::MetalKernel`: build and run custom Metal kernels from source (the Rust
+  counterpart of `mx.fast.metal_kernel`), with `TemplateArg`, `MetalKernelOptions`,
+  `MetalKernelOutput` and `MetalKernelApplyOptions`.
+
 ## 0.32.0
 
 This release moves to MLX 0.32.2 and reworks the public API around the design

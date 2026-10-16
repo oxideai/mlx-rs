@@ -146,6 +146,8 @@ fn build_and_link_mlx_c() {
     // build the mlx-c project
     let dst = config.build();
 
+    publish_native_sources(&dst, mlx_c_root);
+
     println!("cargo:rustc-link-search=native={}/build/lib", dst.display());
     // mlx's GGUF io depends on the vendored gguflib archive, which cmake leaves
     // in the mlx build tree instead of installing next to libmlx.
@@ -184,6 +186,42 @@ fn build_and_link_mlx_c() {
     if let Some(clang_rt_path) = find_clang_rt_path() {
         println!("cargo:rustc-link-search={}", clang_rt_path);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
+    }
+}
+
+/// Publishes, through `links = "mlx"`, where the native sources this build
+/// compiled live. A dependent build script reads them as `DEP_MLX_*`, so C++
+/// code that extends MLX (a custom primitive, for example) compiles against
+/// exactly the headers and definitions `libmlx` was built with:
+///
+/// - `DEP_MLX_INCLUDE`: the MLX source tree (its headers are `mlx/...`);
+/// - `DEP_MLX_METAL_CPP`: the metal-cpp source tree;
+/// - `DEP_MLX_MLX_C`: the mlx-c source tree;
+/// - `DEP_MLX_DEFINES`: preprocessor definitions MLX was built with;
+/// - `DEP_MLX_VERSION`: the MLX version mlx-c pins, when it can be read.
+fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
+    let deps = dst.join("build").join("_deps");
+    println!("cargo::metadata=include={}", deps.join("mlx-src").display());
+    println!(
+        "cargo::metadata=metal_cpp={}",
+        deps.join("metal_cpp-src").display()
+    );
+    let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let mlx_c = manifest.join(mlx_c_root);
+    println!("cargo::metadata=mlx_c={}", mlx_c.display());
+    println!("cargo::metadata=defines=MLX_STATIC");
+    let version = fs::read_to_string(mlx_c_root.join("CMakeLists.txt"))
+        .ok()
+        .and_then(|cmake| {
+            cmake.lines().find_map(|line| {
+                let tag = line.trim().strip_prefix("GIT_TAG v")?;
+                tag.split(|c: char| c == ')' || c.is_whitespace())
+                    .next()
+                    .map(str::to_owned)
+            })
+        });
+    if let Some(version) = version {
+        println!("cargo::metadata=version={version}");
     }
 }
 

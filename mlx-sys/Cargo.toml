@@ -23,6 +23,7 @@ default = ["accelerate", "metal"]
 
 accelerate = []
 metal = []
+metal-jit = []
 
 [dependencies]
 

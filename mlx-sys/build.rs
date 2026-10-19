@@ -133,6 +133,8 @@ fn build_and_link_mlx_c() {
     #[cfg(feature = "metal")]
     {
         config.define("MLX_BUILD_METAL", "ON");
+        #[cfg(feature = "metal-jit")]
+        config.define("MLX_METAL_JIT", "ON");
         let metallib_dir = metallib_dir(mlx_c_root);
         fs::create_dir_all(&metallib_dir).expect("Unable to create the MLX metallib directory");
         config.define("MLX_METAL_PATH", &metallib_dir);

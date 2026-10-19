@@ -25,21 +25,27 @@ passes it the locations of the native sources this build compiled:
 | Variable | Value |
 |---|---|
 | `DEP_MLX_INCLUDE` | the MLX source tree; include paths are `mlx/...` |
-| `DEP_MLX_METAL_CPP` | the metal-cpp source tree |
+| `DEP_MLX_METAL_CPP` | the metal-cpp source tree, only with the `metal` feature |
 | `DEP_MLX_MLX_C` | the mlx-c source tree |
-| `DEP_MLX_DEFINES` | preprocessor definitions MLX was built with (`MLX_STATIC`) |
+| `DEP_MLX_DEFINES` | whitespace-separated `NAME` or `NAME=VALUE` definitions MLX was built with |
 | `DEP_MLX_VERSION` | the MLX version mlx-c pins, when it can be read |
 
 C++ that extends MLX, such as a custom `mlx::core::Primitive`, must compile against the same
-headers `libmlx` was built from. A dependent can use these with the `cc` crate:
+headers `libmlx` was built from. A dependent can use these with the `cc` crate. Passing the
+directories with `-isystem` keeps warnings from MLX's own headers out of the dependent's build:
 
 ```rust
 let mut build = cc::Build::new();
 build.cpp(true).std("c++20");
 for key in ["DEP_MLX_INCLUDE", "DEP_MLX_METAL_CPP", "DEP_MLX_MLX_C"] {
-    build.include(std::env::var(key).unwrap());
+    if let Ok(dir) = std::env::var(key) {
+        build.flag("-isystem").flag(dir);
+    }
 }
 for define in std::env::var("DEP_MLX_DEFINES").unwrap().split_whitespace() {
-    build.define(define, None);
+    match define.split_once('=') {
+        Some((name, value)) => build.define(name, value),
+        None => build.define(define, None),
+    };
 }
 ```

@@ -2,13 +2,10 @@ extern crate cmake;
 
 use cmake::Config;
 use std::{
-    env,
+    env, fs,
     path::{Path, PathBuf},
     process::Command,
 };
-
-#[cfg(feature = "metal")]
-use std::fs;
 
 #[path = "src/bindgen_config.rs"]
 mod bindgen_config;
@@ -189,19 +186,11 @@ fn build_and_link_mlx_c() {
     }
 }
 
-/// Publishes, through `links = "mlx"`, where the native sources this build
-/// compiled live. A dependent build script reads them as `DEP_MLX_*`, so C++
-/// code that extends MLX (a custom primitive, for example) compiles against
-/// exactly the headers and definitions `libmlx` was built with:
-///
-/// - `DEP_MLX_INCLUDE`: the MLX source tree (its headers are `mlx/...`);
-/// - `DEP_MLX_METAL_CPP`: the metal-cpp source tree;
-/// - `DEP_MLX_MLX_C`: the mlx-c source tree;
-/// - `DEP_MLX_DEFINES`: preprocessor definitions MLX was built with;
-/// - `DEP_MLX_VERSION`: the MLX version mlx-c pins, when it can be read.
+/// Publishes the native source locations as `DEP_MLX_*`; see the README for the contract.
 fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
     let deps = dst.join("build").join("_deps");
     println!("cargo::metadata=include={}", deps.join("mlx-src").display());
+    #[cfg(feature = "metal")]
     println!(
         "cargo::metadata=metal_cpp={}",
         deps.join("metal_cpp-src").display()

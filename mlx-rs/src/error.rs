@@ -489,6 +489,42 @@ pub enum DropoutBuildError {
     InvalidProbability,
 }
 
+/// Error with building a convolution module
+#[derive(Debug, PartialEq, Error)]
+pub enum ConvBuildError {
+    /// `groups` must be positive and divide both channel counts
+    #[error(
+        "groups ({groups}) must be positive and divide both input channels ({input_channels}) \
+         and output channels ({output_channels})"
+    )]
+    InvalidGroups {
+        /// Requested number of groups
+        groups: i32,
+        /// Number of input channels
+        input_channels: i32,
+        /// Number of output channels
+        output_channels: i32,
+    },
+
+    /// MLX only supports grouped convolution in 1D and 2D
+    #[error("grouped 3D convolution is not supported (groups = {0})")]
+    GroupedConv3d(i32),
+
+    /// Exceptions
+    #[error(transparent)]
+    Exception(#[from] Exception),
+}
+
+impl From<ConvBuildError> for Exception {
+    #[track_caller]
+    fn from(value: ConvBuildError) -> Self {
+        match value {
+            ConvBuildError::Exception(exception) => exception,
+            other => Exception::custom(other.to_string()),
+        }
+    }
+}
+
 /// Error with building a MultiHeadAttention module
 #[derive(Debug, PartialEq, Error)]
 pub enum MultiHeadAttentionBuildError {

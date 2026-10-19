@@ -1,6 +1,6 @@
 use crate::module::{Module, Param};
 use crate::{
-    error::Exception,
+    error::{ConvBuildError, Exception},
     ops::{conv1d, conv2d, zeros},
     random::uniform,
     Array,
@@ -15,7 +15,7 @@ use crate::utils::{SingleOrPair, SingleOrTriple};
 #[builder(
     root = crate,
     build_with = build_conv1d,
-    err = Exception,
+    err = ConvBuildError,
 )]
 pub struct Conv1dBuilder {
     /// Number of input channels.
@@ -49,7 +49,7 @@ pub struct Conv1dBuilder {
     pub groups: i32,
 }
 
-fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, Exception> {
+fn build_conv1d(builder: Conv1dBuilder) -> Result<Conv1d, ConvBuildError> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size = builder.kernel_size;
@@ -155,7 +155,7 @@ impl Module<&Array> for Conv1d {
 #[builder(
     root = crate,
     build_with = build_conv2d,
-    err = Exception,
+    err = ConvBuildError,
 )]
 pub struct Conv2dBuilder {
     /// Number of input channels.
@@ -189,7 +189,7 @@ pub struct Conv2dBuilder {
     pub groups: i32,
 }
 
-fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, Exception> {
+fn build_conv2d(builder: Conv2dBuilder) -> Result<Conv2d, ConvBuildError> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size: (i32, i32) = builder.kernel_size.into();
@@ -304,7 +304,7 @@ impl Module<&Array> for Conv2d {
 #[builder(
     root = crate,
     build_with = build_conv3d,
-    err = Exception,
+    err = ConvBuildError,
 )]
 pub struct Conv3dBuilder {
     /// Number of input channels.
@@ -338,7 +338,7 @@ pub struct Conv3dBuilder {
     pub groups: i32,
 }
 
-fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
+fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, ConvBuildError> {
     let input_channels = builder.input_channels;
     let output_channels = builder.output_channels;
     let kernel_size: (i32, i32, i32) = builder.kernel_size.into();
@@ -346,6 +346,9 @@ fn build_conv3d(builder: Conv3dBuilder) -> Result<Conv3d, Exception> {
     let padding = builder.padding.into();
     let stride = builder.stride.into();
     let dilation = builder.dilation.into();
+    if builder.groups != 1 {
+        return Err(ConvBuildError::GroupedConv3d(builder.groups));
+    }
 
     let scale =
         f32::sqrt(1.0 / (input_channels * kernel_size.0 * kernel_size.1 * kernel_size.2) as f32);
@@ -455,12 +458,13 @@ fn checked_groups(
     input_channels: i32,
     output_channels: i32,
     groups: i32,
-) -> Result<i32, Exception> {
+) -> Result<i32, ConvBuildError> {
     if groups < 1 || input_channels % groups != 0 || output_channels % groups != 0 {
-        return Err(Exception::custom(format!(
-            "groups ({groups}) must be positive and divide both input channels \
-             ({input_channels}) and output channels ({output_channels})"
-        )));
+        return Err(ConvBuildError::InvalidGroups {
+            groups,
+            input_channels,
+            output_channels,
+        });
     }
     Ok(groups)
 }
@@ -566,7 +570,7 @@ mod tests {
         let y = conv.forward(&x).unwrap();
         assert_eq!(y.shape(), &[2, 6, 4]);
 
-        // Python MLX 0.32: `mx.conv1d(x, w, padding=1, groups=4)`
+        // Python MLX 0.32.2: `mx.conv1d(x, w, padding=1, groups=4)`
         #[rustfmt::skip]
         let expected: [f32; 48] = [
             -0.08571428, 0.1142857, 0.4857143, 1.028571,
@@ -601,12 +605,34 @@ mod tests {
     fn test_conv_groups_must_divide_channels() {
         use crate::{
             builder::Builder,
-            nn::{Conv1dBuilder, Conv2dBuilder},
+            error::ConvBuildError,
+            nn::{Conv1dBuilder, Conv2dBuilder, Conv3dBuilder},
         };
 
-        assert!(Conv1dBuilder::new(6, 4, 3).groups(4).build().is_err());
-        assert!(Conv1dBuilder::new(4, 6, 3).groups(4).build().is_err());
-        assert!(Conv1dBuilder::new(4, 4, 3).groups(0).build().is_err());
-        assert!(Conv2dBuilder::new(4, 6, 3).groups(4).build().is_err());
+        let invalid = |groups, input_channels, output_channels| ConvBuildError::InvalidGroups {
+            groups,
+            input_channels,
+            output_channels,
+        };
+        assert_eq!(
+            Conv1dBuilder::new(6, 4, 3).groups(4).build().unwrap_err(),
+            invalid(4, 6, 4)
+        );
+        assert_eq!(
+            Conv1dBuilder::new(4, 6, 3).groups(4).build().unwrap_err(),
+            invalid(4, 4, 6)
+        );
+        assert_eq!(
+            Conv1dBuilder::new(4, 4, 3).groups(0).build().unwrap_err(),
+            invalid(0, 4, 4)
+        );
+        assert_eq!(
+            Conv2dBuilder::new(4, 6, 3).groups(4).build().unwrap_err(),
+            invalid(4, 4, 6)
+        );
+        assert_eq!(
+            Conv3dBuilder::new(4, 4, 3).groups(2).build().unwrap_err(),
+            ConvBuildError::GroupedConv3d(2)
+        );
     }
 }

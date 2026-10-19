@@ -7,7 +7,7 @@ use mlx_internal_macros::generate_macro;
 /// General convolution over an input with several channels returning an error if the inputs are invalid.
 ///
 /// - Only 1d and 2d convolutions are supported at the moment
-/// - the default `groups: 1` is currently supported
+/// - `groups` must divide the input channels; the weight's last dimension is `C_in / groups`
 ///
 /// # Params
 ///
@@ -96,12 +96,12 @@ pub fn conv_general_device<'a>(
 
 /// 1D convolution over an input with several channels returning an error if the inputs are invalid.
 ///
-/// Only the default `groups=1` is currently supported.
+/// `groups` must divide `C_in` and `C_out`. Depthwise convolution uses `groups = C_in`.
 ///
 /// # Params
 ///
 /// - array: input array of shape `&[N, H, C_in]`
-/// - weight: weight array of shape `&[C_out, H, C_in]`
+/// - weight: weight array of shape `&[C_out, H, C_in / groups]`
 /// - stride: kernel stride. Default to 1 if not specified.
 /// - padding: input padding. Default to 0 if not specified.
 /// - dilation: kernel dilation. Default to 1 if not specified.
@@ -156,12 +156,12 @@ pub fn conv1d_device(
 
 /// 2D convolution over an input with several channels returning an error if the inputs are invalid.
 ///
-/// Only the default `groups=1` is currently supported.
+/// `groups` must divide `C_in` and `C_out`. Depthwise convolution uses `groups = C_in`.
 ///
 /// # Params
 ///
 /// - array: input array of shape `[N, H, W, C_in]`
-/// - weight: weight array of shape `[C_out, H, W, C_in]`
+/// - weight: weight array of shape `[C_out, H, W, C_in / groups]`
 /// - stride: kernel stride. Default to (1, 1) if not specified.
 /// - padding: input padding. Default to (0, 0) if not specified.
 /// - dilation: kernel dilation. Default to (1, 1) if not specified.
@@ -219,7 +219,7 @@ pub fn conv2d_device(
 
 /// 3D convolution over an input with several channels.
 ///
-/// Only the default `groups=1` is currently supported.
+/// MLX does not support grouped 3D convolution; `groups` must be 1.
 pub fn conv3d(
     array: impl AsRef<Array>,
     weight: impl AsRef<Array>,
@@ -276,7 +276,7 @@ pub fn conv3d_device(
 
 /// 1D transposed convolution over an input with several channels.
 ///
-/// Only the default `groups=1` is currently supported.
+/// `groups` must divide the input and output channels.
 ///
 /// # Params
 ///
@@ -351,7 +351,7 @@ pub fn conv_transpose1d_device(
 
 /// 2D transposed convolution over an input with several channels.
 ///
-/// Only the default `groups=1` is currently supported.
+/// `groups` must divide the input and output channels.
 ///
 /// The numeric parameters may be given as single values:
 ///
@@ -431,7 +431,7 @@ pub fn conv_transpose2d_device(
 
 /// 3D transposed convolution over an input with several channels.
 ///
-/// Only the default `groups=1` is currently supported.
+/// MLX does not support grouped 3D convolution; `groups` must be 1.
 ///
 /// The numeric parameters may be given as single values:
 ///

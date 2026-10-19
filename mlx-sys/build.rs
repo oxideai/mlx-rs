@@ -189,15 +189,15 @@ fn build_and_link_mlx_c() {
 /// Publishes the native source locations as `DEP_MLX_*`; see the README for the contract.
 fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
     let deps = dst.join("build").join("_deps");
-    println!("cargo::metadata=include={}", deps.join("mlx-src").display());
-    #[cfg(feature = "metal")]
-    println!(
-        "cargo::metadata=metal_cpp={}",
-        deps.join("metal_cpp-src").display()
-    );
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let mlx_c = manifest.join(mlx_c_root);
-    println!("cargo::metadata=mlx_c={}", mlx_c.display());
+    let include = [
+        Some(deps.join("mlx-src")),
+        cfg!(feature = "metal").then(|| deps.join("metal_cpp-src")),
+        Some(manifest.join(mlx_c_root)),
+    ];
+    let include = env::join_paths(include.into_iter().flatten())
+        .expect("MLX include directories must not contain the path-list separator");
+    println!("cargo::metadata=include={}", include.display());
     println!("cargo::metadata=defines=MLX_STATIC");
     let version = fs::read_to_string(mlx_c_root.join("CMakeLists.txt"))
         .ok()

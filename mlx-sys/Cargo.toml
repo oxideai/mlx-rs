@@ -10,7 +10,7 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 readme = "README.md"
-# Publishes the native source locations to dependents as DEP_MLX_* (see build.rs).
+# Publishes the MLX include path, defines and version to dependents as DEP_MLX_* (see README.md).
 links = "mlx"
 
 [package.metadata.docs.rs]

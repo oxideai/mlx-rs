@@ -734,6 +734,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "metal")]
     fn sequential_threads_use_own_default_rng_stream() {
         crate::Device::set_default(&crate::Device::gpu());
 

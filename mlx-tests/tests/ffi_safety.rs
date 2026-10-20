@@ -1,3 +1,5 @@
+#[cfg(feature = "metal")]
+use mlx_rs::Device;
 use mlx_rs::{
     fast,
     io::{GgufError, GgufFile, GgufMetadataKind},
@@ -9,13 +11,15 @@ use mlx_rs::{
         ContiguousOptions, CountNonzeroOptions, TraceOptions,
     },
     transforms::{fallible_jvp, jvp},
-    with_stream, Array, Axes, Device, Dtype, Stream,
+    with_stream, Array, Axes, Dtype, Stream,
 };
 use std::any::Any;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::process::Command;
-use std::sync::{Arc, Barrier, Mutex};
+#[cfg(feature = "metal")]
+use std::sync::Mutex;
+use std::sync::{Arc, Barrier};
 use std::thread;
 
 const PANIC_CHILD: &str = "MLX_RS_FFI_PANIC_CHILD";
@@ -658,6 +662,7 @@ fn assert_subprocess_success(test_name: &str, child_env: &str) {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 #[ignore = "historical MLX 0.30.6 shared-default reproducer; 0.32.2 is covered by stream_admission"]
 fn historical_shared_default_stream_abort_on_mlx_0_30_6() {
     const WORKERS: usize = 8;

@@ -33,7 +33,7 @@ pub fn builder(mlx_c_root: &Path, headers: &[PathBuf]) -> bindgen::Builder {
         bindgen::Builder::default()
             .rust_target("1.73.0".parse().expect("rust-version"))
             .clang_arg(format!("-I{}", mlx_c_root.display()))
-            // std defines these, and bindgen's `c_ulong` sizes trip rustc's
+            // bindgen's `c_ulong` sizes trip rustc's
             // suspicious_runtime_symbol_definitions lint (Rust 1.99+).
             .blocklist_function("malloc")
             .blocklist_function("realloc"),

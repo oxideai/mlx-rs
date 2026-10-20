@@ -186,7 +186,7 @@ fn build_and_link_mlx_c() {
     }
 }
 
-/// Publishes the native source locations as `DEP_MLX_*`; see the README for the contract.
+/// Dependents read this metadata as `DEP_MLX_*`; the README documents the contract.
 fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
     let deps = dst.join("build").join("_deps");
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());

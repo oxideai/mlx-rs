@@ -101,10 +101,14 @@ fn metallib_dir(mlx_c_root: &Path) -> PathBuf {
 
     let home =
         env::var_os("HOME").expect("HOME must be set when MLX_RS_METAL_PATH is not provided");
-    PathBuf::from(home)
-        .join(".mlx")
-        .join("lib")
-        .join(mlx_c_key(mlx_c_root))
+    // A JIT metallib holds only a few kernels; sharing the directory would break
+    // non-JIT builds of the same mlx-c.
+    let key = if cfg!(feature = "metal-jit") {
+        format!("{}-jit", mlx_c_key(mlx_c_root))
+    } else {
+        mlx_c_key(mlx_c_root)
+    };
+    PathBuf::from(home).join(".mlx").join("lib").join(key)
 }
 
 fn build_and_link_mlx_c() {

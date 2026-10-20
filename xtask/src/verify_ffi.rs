@@ -13,7 +13,7 @@ const CALIBRATION_LEAK_SITE: &str = "<malloc in mlx_map_string_to_string_iterato
 const DEFAULT_CALIBRATION_BUDGET_SECONDS: u64 = 20 * 60;
 // CI task-port acquisition can block forever instead of returning a leaks error.
 const DEFAULT_LEAKS_TIMEOUT_SECONDS: u64 = 180;
-const GUARD_MALLOC_TIMEOUT_MULTIPLIER: u32 = 3;
+const DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS: u64 = 600;
 const PROCESS_WAIT_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 #[derive(Debug, PartialEq, Eq, Serialize)]
@@ -70,7 +70,7 @@ enum TestStatus {
     Abnormal,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Verdict {
     Pass,
@@ -87,7 +87,7 @@ enum LeakStatus {
     NotApplicable,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 struct ProcessExit {
     exit_code: Option<i32>,
     signal: Option<i32>,
@@ -103,7 +103,7 @@ struct LeakCheck {
     error: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct GuardMallocCheck {
     status: Verdict,
     duration_ms: u64,
@@ -151,16 +151,53 @@ struct VerifyFfiReport {
     command: &'static str,
     leaks_timeout_seconds: u64,
     source_commit: String,
+    github_sha: Option<String>,
+    github_pr_head_sha: Option<String>,
     mlx_c_commit: String,
     source_clean: bool,
     mlx_c_clean: bool,
     environment: ReportEnvironment,
     execution_context: ExecutionContext,
     guard_malloc_requested: bool,
+    guard_malloc_timeout_seconds: u64,
+    qualification: Option<Qualification>,
     discovery: Discovery,
     binaries: Vec<BinaryReport>,
     covered_binaries: CoveredBinaries,
     verdict: Verdict,
+}
+
+#[derive(Clone, Serialize)]
+struct GuardMallocQualification {
+    clean: GuardMallocCheck,
+    use_after_free: GuardMallocCheck,
+    double_free: GuardMallocCheck,
+}
+
+impl GuardMallocQualification {
+    fn verdict(&self) -> Verdict {
+        calibration_verdict_from_statuses([
+            &self.clean.status,
+            &self.use_after_free.status,
+            &self.double_free.status,
+        ])
+    }
+}
+
+#[derive(Serialize)]
+struct Qualification {
+    source_commit: String,
+    environment_probe: Verdict,
+    deliberate_leak_detection: Verdict,
+    guard_malloc: Option<GuardMallocQualification>,
+    budget: Verdict,
+    verdict: Verdict,
+}
+
+#[derive(Clone, Copy)]
+struct Timeouts {
+    leaks: u64,
+    guard_malloc: u64,
 }
 
 #[derive(Debug)]
@@ -220,6 +257,7 @@ struct BudgetPhase {
 struct CalibrationPhases {
     environment_probe: CalibrationLeakPhase,
     deliberate_leak_detection: CalibrationLeakPhase,
+    guard_malloc: Option<GuardMallocQualification>,
     clean_gate: CleanGatePhase,
     budget: BudgetPhase,
 }
@@ -243,10 +281,14 @@ enum Options {
     Verify {
         guard_malloc: bool,
         leaks_timeout_seconds: u64,
+        guard_malloc_timeout_seconds: u64,
     },
     Calibrate {
+        guard_malloc: bool,
         budget_seconds: u64,
         leaks_timeout_seconds: u64,
+        guard_malloc_timeout_seconds: u64,
+        report_path: Option<PathBuf>,
     },
 }
 
@@ -258,6 +300,9 @@ impl Options {
         let mut leaks_timeout_seconds = DEFAULT_LEAKS_TIMEOUT_SECONDS;
         let mut budget_seen = false;
         let mut timeout_seen = false;
+        let mut guard_timeout_seen = false;
+        let mut guard_malloc_timeout_seconds = DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS;
+        let mut report_path = None;
         let mut index = 0;
         while index < args.len() {
             match args[index].as_str() {
@@ -273,25 +318,38 @@ impl Options {
                     leaks_timeout_seconds = parse_positive_seconds(args.get(index))?;
                     timeout_seen = true;
                 }
+                "--guard-malloc-timeout-seconds" if !guard_timeout_seen => {
+                    index += 1;
+                    guard_malloc_timeout_seconds = parse_positive_seconds(args.get(index))?;
+                    guard_timeout_seen = true;
+                }
+                "--report" if report_path.is_none() => {
+                    index += 1;
+                    report_path = Some(PathBuf::from(args.get(index).ok_or_else(usage)?));
+                }
                 _ => return Err(usage()),
             }
             index += 1;
         }
 
+        if guard_timeout_seen && !guard_malloc {
+            return Err(usage());
+        }
         if calibrate {
-            if guard_malloc {
-                return Err(usage());
-            }
             Ok(Self::Calibrate {
+                guard_malloc,
                 budget_seconds,
                 leaks_timeout_seconds,
+                guard_malloc_timeout_seconds,
+                report_path,
             })
-        } else if budget_seen {
+        } else if budget_seen || report_path.is_some() {
             Err(usage())
         } else {
             Ok(Self::Verify {
                 guard_malloc,
                 leaks_timeout_seconds,
+                guard_malloc_timeout_seconds,
             })
         }
     }
@@ -305,7 +363,7 @@ fn parse_positive_seconds(value: Option<&String>) -> Result<u64, String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-ffi [--guard-malloc] [--leaks-timeout-seconds N] | --calibrate [--budget-seconds N] [--leaks-timeout-seconds N]".to_owned()
+    "usage: cargo run -p xtask -- verify-ffi [--guard-malloc] [--leaks-timeout-seconds N] [--guard-malloc-timeout-seconds N] [--calibrate [--budget-seconds N] [--report PATH]]".to_owned()
 }
 
 pub(crate) fn run(root_dir: &Path, args: &[String]) -> i32 {
@@ -313,23 +371,64 @@ pub(crate) fn run(root_dir: &Path, args: &[String]) -> i32 {
         Ok(Options::Verify {
             guard_malloc,
             leaks_timeout_seconds,
+            guard_malloc_timeout_seconds,
         }) => {
-            let report = verify(root_dir, guard_malloc, leaks_timeout_seconds);
+            let report = verify(
+                root_dir,
+                guard_malloc,
+                Timeouts {
+                    leaks: leaks_timeout_seconds,
+                    guard_malloc: guard_malloc_timeout_seconds,
+                },
+            );
             write_report(&report, report.verdict == Verdict::Pass)
         }
         Ok(Options::Calibrate {
+            guard_malloc,
             budget_seconds,
             leaks_timeout_seconds,
+            guard_malloc_timeout_seconds,
+            report_path,
         }) => {
-            let report = calibrate(root_dir, budget_seconds, leaks_timeout_seconds);
+            let report = calibrate(
+                root_dir,
+                guard_malloc,
+                budget_seconds,
+                Timeouts {
+                    leaks: leaks_timeout_seconds,
+                    guard_malloc: guard_malloc_timeout_seconds,
+                },
+            );
+            if let Some(path) = report_path {
+                if let Err(error) = save_report(&path, &report.phases.clean_gate.report) {
+                    eprintln!(
+                        "failed to write admission report {}: {error}",
+                        path.display()
+                    );
+                    return write_report(&report, false);
+                }
+            }
             write_report(&report, report.verdict == Verdict::Pass)
         }
         Err(error) => {
             eprintln!("{error}");
-            let report = failed_report(root_dir, false, DEFAULT_LEAKS_TIMEOUT_SECONDS, error);
+            let report = failed_report(
+                root_dir,
+                false,
+                Timeouts {
+                    leaks: DEFAULT_LEAKS_TIMEOUT_SECONDS,
+                    guard_malloc: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
+                },
+                error,
+            );
             write_report(&report, false)
         }
     }
+}
+
+fn save_report(path: &Path, report: &VerifyFfiReport) -> Result<(), String> {
+    let file = std::fs::File::create(path).map_err(|error| error.to_string())?;
+    serde_json::to_writer_pretty(file, report).map_err(|error| error.to_string())
 }
 
 fn write_report(report: &impl Serialize, success: bool) -> i32 {
@@ -345,11 +444,17 @@ fn write_report(report: &impl Serialize, success: bool) -> i32 {
 
 fn calibrate(
     root_dir: &Path,
+    guard_malloc: bool,
     budget_seconds: u64,
-    leaks_timeout_seconds: u64,
+    timeouts: Timeouts,
 ) -> CalibrationReport {
     let total_started = Instant::now();
-    let leaks_timeout = Duration::from_secs(leaks_timeout_seconds);
+    let source_commit = git_head(root_dir);
+    let source_clean = git_clean(root_dir);
+    let mlx_c_dir = root_dir.join("mlx-sys/src/mlx-c");
+    let mlx_c_commit = git_head(&mlx_c_dir);
+    let mlx_c_clean = git_clean(&mlx_c_dir);
+    let leaks_timeout = Duration::from_secs(timeouts.leaks);
 
     // The probe child must allocate: a no-malloc process (e.g. /usr/bin/true)
     // yields no leaks summary and misreports a healthy runner as unparseable.
@@ -382,9 +487,14 @@ fn calibrate(
 
     let deliberate_leak_detection = run_deliberate_leak_calibration(root_dir, leaks_timeout);
 
+    let guard_qualification =
+        guard_malloc.then(|| qualify_guard_malloc(Duration::from_secs(timeouts.guard_malloc)));
+
     eprintln!("running clean full verify-ffi gate");
     let clean_started = Instant::now();
-    let clean_report = verify(root_dir, false, leaks_timeout_seconds);
+    let mut clean_report = verify(root_dir, guard_malloc, timeouts);
+    clean_report.source_clean &= source_clean;
+    clean_report.mlx_c_clean &= mlx_c_clean && clean_report.mlx_c_commit == mlx_c_commit;
     let clean_duration = clean_started.elapsed();
     let clean_gate = CleanGatePhase {
         status: if clean_report.verdict == Verdict::Pass {
@@ -396,26 +506,44 @@ fn calibrate(
         report: clean_report,
     };
     let budget = assess_budget(clean_duration, Duration::from_secs(budget_seconds));
-    let phases = CalibrationPhases {
+    let mut phases = CalibrationPhases {
         environment_probe,
         deliberate_leak_detection,
+        guard_malloc: guard_qualification,
         clean_gate,
         budget,
     };
-    let verdict = calibration_verdict(&phases);
+    let verdict = bind_qualification(&mut phases, &source_commit);
 
     CalibrationReport {
         schema_version: 1,
         command: "verify-ffi",
         mode: "calibration",
-        source_commit: git_head(root_dir),
+        source_commit,
         mlx_c_commit: git_head(&root_dir.join("mlx-sys/src/mlx-c")),
         budget_seconds,
-        leaks_timeout_seconds,
+        leaks_timeout_seconds: timeouts.leaks,
         phases,
         total_duration_ms: duration_ms(total_started.elapsed()),
         verdict,
     }
+}
+
+fn bind_qualification(phases: &mut CalibrationPhases, source_commit: &str) -> Verdict {
+    if phases.clean_gate.report.source_commit != source_commit {
+        phases.clean_gate.status = Verdict::Fail;
+    }
+    let verdict = calibration_verdict(phases);
+    phases.clean_gate.report.verdict = verdict.clone();
+    phases.clean_gate.report.qualification = Some(Qualification {
+        source_commit: source_commit.to_owned(),
+        environment_probe: phases.environment_probe.status.clone(),
+        deliberate_leak_detection: phases.deliberate_leak_detection.status.clone(),
+        guard_malloc: phases.guard_malloc.clone(),
+        budget: phases.budget.status.clone(),
+        verdict: verdict.clone(),
+    });
+    verdict
 }
 
 fn run_deliberate_leak_calibration(
@@ -869,7 +997,12 @@ fn assess_budget(observed: Duration, limit: Duration) -> BudgetPhase {
 }
 
 fn calibration_verdict(phases: &CalibrationPhases) -> Verdict {
+    let guard = phases
+        .guard_malloc
+        .as_ref()
+        .map_or(Verdict::Pass, GuardMallocQualification::verdict);
     calibration_verdict_from_statuses([
+        &guard,
         &phases.environment_probe.status,
         &phases.deliberate_leak_detection.status,
         &phases.clean_gate.status,
@@ -877,7 +1010,7 @@ fn calibration_verdict(phases: &CalibrationPhases) -> Verdict {
     ])
 }
 
-fn calibration_verdict_from_statuses(statuses: [&Verdict; 4]) -> Verdict {
+fn calibration_verdict_from_statuses<const N: usize>(statuses: [&Verdict; N]) -> Verdict {
     if statuses.iter().any(|status| **status == Verdict::Error) {
         Verdict::Error
     } else if statuses.iter().all(|status| **status == Verdict::Pass) {
@@ -891,15 +1024,15 @@ fn duration_ms(duration: Duration) -> u64 {
     duration.as_millis().min(u128::from(u64::MAX)) as u64
 }
 
-fn verify(root_dir: &Path, guard_malloc: bool, leaks_timeout_seconds: u64) -> VerifyFfiReport {
+fn verify(root_dir: &Path, guard_malloc: bool, timeouts: Timeouts) -> VerifyFfiReport {
     let binaries = match discover_test_binaries(root_dir) {
         Ok(binaries) => binaries,
         Err(error) => {
-            return failed_report(root_dir, guard_malloc, leaks_timeout_seconds, error);
+            return failed_report(root_dir, guard_malloc, timeouts, error);
         }
     };
-    let leaks_timeout = Duration::from_secs(leaks_timeout_seconds);
-    let guard_malloc_timeout = leaks_timeout.saturating_mul(GUARD_MALLOC_TIMEOUT_MULTIPLIER);
+    let leaks_timeout = Duration::from_secs(timeouts.leaks);
+    let guard_malloc_timeout = Duration::from_secs(timeouts.guard_malloc);
 
     let mut reports = Vec::with_capacity(binaries.len());
     let mut covered_leaks = Vec::new();
@@ -926,7 +1059,7 @@ fn verify(root_dir: &Path, guard_malloc: bool, leaks_timeout_seconds: u64) -> Ve
     report_header(
         root_dir,
         guard_malloc,
-        leaks_timeout_seconds,
+        timeouts,
         Discovery {
             status: Verdict::Pass,
             error: None,
@@ -943,7 +1076,7 @@ fn verify(root_dir: &Path, guard_malloc: bool, leaks_timeout_seconds: u64) -> Ve
 fn report_header(
     root_dir: &Path,
     guard_malloc_requested: bool,
-    leaks_timeout_seconds: u64,
+    timeouts: Timeouts,
     discovery: Discovery,
     binaries: Vec<BinaryReport>,
     covered_binaries: CoveredBinaries,
@@ -956,8 +1089,12 @@ fn report_header(
     VerifyFfiReport {
         schema_version: 1,
         command: "verify-ffi",
-        leaks_timeout_seconds,
+        leaks_timeout_seconds: timeouts.leaks,
+        guard_malloc_timeout_seconds: timeouts.guard_malloc,
+        qualification: None,
         source_commit: git_head(root_dir),
+        github_sha: nonempty_env("GITHUB_SHA"),
+        github_pr_head_sha: nonempty_env("GITHUB_PR_HEAD_SHA"),
         mlx_c_commit: git_head(&root_dir.join("mlx-sys/src/mlx-c")),
         source_clean: git_clean(root_dir),
         mlx_c_clean: git_clean(&root_dir.join("mlx-sys/src/mlx-c")),
@@ -984,6 +1121,10 @@ fn report_header(
         covered_binaries,
         verdict,
     }
+}
+
+fn nonempty_env(name: &str) -> Option<String> {
+    env::var(name).ok().filter(|value| !value.is_empty())
 }
 
 fn git_head(directory: &Path) -> String {
@@ -1163,61 +1304,132 @@ fn run_guard_malloc(binary: &TestBinary, timeout: Duration) -> (GuardMallocCheck
     command
         .arg("--test-threads=1")
         .env("DYLD_INSERT_LIBRARIES", "/usr/lib/libgmalloc.dylib");
-    let output = match capture_command(&mut command, timeout) {
+    let check = assess_guard_malloc(
+        capture_command(&mut command, timeout),
+        started.elapsed(),
+        None,
+    );
+    (check, Some(path))
+}
+
+fn assess_guard_malloc(
+    attempt: Result<CapturedCommand, CaptureFailure>,
+    duration: Duration,
+    control: Option<&str>,
+) -> GuardMallocCheck {
+    let output = match attempt {
         Ok(output) => output,
-        Err(CaptureFailure::Timeout { elapsed }) => {
-            return (
-                GuardMallocCheck {
-                    status: Verdict::Error,
-                    duration_ms: duration_ms(elapsed),
-                    process_status: None,
-                    failure: Some("guard_malloc_timeout".to_owned()),
-                    error: Some(format!(
-                        "guard malloc timed out after {} ms",
-                        duration_ms(elapsed)
-                    )),
-                },
-                Some(path),
-            );
-        }
-        Err(CaptureFailure::Io(error)) => {
-            return (
-                GuardMallocCheck {
-                    status: Verdict::Error,
-                    duration_ms: duration_ms(started.elapsed()),
-                    process_status: None,
-                    failure: None,
-                    error: Some(format!(
-                        "failed to run guard malloc pass: {}",
-                        error.message
-                    )),
-                },
-                None,
-            );
+        Err(error) => {
+            let (failure, message) = match error {
+                CaptureFailure::Timeout { elapsed } => (
+                    "guard_malloc_timeout",
+                    format!("Guard Malloc timed out after {} ms", duration_ms(elapsed)),
+                ),
+                CaptureFailure::Io(error) => ("guard_malloc_spawn_failed", error.message),
+            };
+            eprintln!("{failure}: {message}");
+            return GuardMallocCheck {
+                status: Verdict::Error,
+                duration_ms: duration_ms(duration),
+                process_status: None,
+                failure: Some(failure.into()),
+                error: Some(message),
+            };
         }
     };
-    let elapsed = started.elapsed();
-    let success = output.status.exit_code == Some(0) && output.status.signal.is_none();
+    let text = captured_output(&output);
+    let loaded = text
+        .lines()
+        .any(|line| line.starts_with("GuardMalloc[") && line.contains(": version "));
+    let reached = control.is_none_or(|name| {
+        text.lines()
+            .any(|line| line == format!("guard-malloc-control:{name}"))
+    });
+    let detected = match control {
+        Some("use_after_free") => matches!(output.status.signal, Some(10 | 11)),
+        Some("double_free") => output.status.signal == Some(6),
+        _ => output.status.exit_code == Some(0) && output.status.signal.is_none(),
+    };
+    let success = loaded && reached && detected;
+    let failure = if !loaded {
+        Some("guard_malloc_unavailable")
+    } else if !reached {
+        Some("guard_malloc_control_not_reached")
+    } else if !detected {
+        Some("guard_malloc_unexpected_exit")
+    } else {
+        None
+    };
     if !success {
-        eprintln!(
-            "guard malloc failed for {path}:\n{}",
-            captured_output(&output)
-        );
+        eprintln!("Guard Malloc check failed ({control:?}): {failure:?}\n{text}");
     }
-    (
-        GuardMallocCheck {
-            status: if success {
-                Verdict::Pass
-            } else {
-                Verdict::Fail
-            },
-            duration_ms: duration_ms(elapsed),
-            process_status: Some(process_exit_from_captured(&output.status)),
-            failure: None,
-            error: None,
+    GuardMallocCheck {
+        status: if !loaded {
+            Verdict::Error
+        } else if success {
+            Verdict::Pass
+        } else {
+            Verdict::Fail
         },
-        Some(path),
-    )
+        duration_ms: duration_ms(duration),
+        process_status: Some(process_exit_from_captured(&output.status)),
+        failure: failure.map(str::to_owned),
+        error: (!success).then_some(text),
+    }
+}
+
+fn qualify_guard_malloc(timeout: Duration) -> GuardMallocQualification {
+    let prepared = (|| -> Result<_, String> {
+        let parent = env::var_os("RUNNER_TEMP")
+            .map(PathBuf::from)
+            .unwrap_or_else(env::temp_dir);
+        let directory = tempfile::Builder::new()
+            .prefix("guard-malloc-")
+            .tempdir_in(parent)
+            .map_err(|error| error.to_string())?;
+        let source = directory.path().join("control.c");
+        let binary = directory.path().join("control");
+        std::fs::write(
+            &source,
+            include_str!("../tests/fixtures/guard-malloc-control.c"),
+        )
+        .map_err(|error| error.to_string())?;
+        let output = capture_command(
+            Command::new("cc")
+                .arg("-O0")
+                .arg(&source)
+                .arg("-o")
+                .arg(&binary),
+            timeout,
+        )
+        .map_err(|error| format!("Guard Malloc control build failed: {error:?}"))?;
+        if output.status.exit_code != Some(0) || output.status.signal.is_some() {
+            return Err(format!(
+                "Guard Malloc control build failed: {}",
+                captured_output(&output)
+            ));
+        }
+        Ok((directory, binary))
+    })();
+    let run = |name: &str| {
+        eprintln!("qualifying Guard Malloc: {name}");
+        let started = Instant::now();
+        let attempt = match &prepared {
+            Ok((_, binary)) => capture_command(
+                Command::new(binary)
+                    .arg(name)
+                    .env("DYLD_INSERT_LIBRARIES", "/usr/lib/libgmalloc.dylib"),
+                timeout,
+            ),
+            Err(error) => Err(capture_io_failure(std::io::Error::other(error.clone()))),
+        };
+        assess_guard_malloc(attempt, started.elapsed(), Some(name))
+    };
+    GuardMallocQualification {
+        clean: run("clean"),
+        use_after_free: run("use_after_free"),
+        double_free: run("double_free"),
+    }
 }
 
 fn binary_passes(report: &BinaryReport) -> bool {
@@ -1234,13 +1446,13 @@ fn binary_passes(report: &BinaryReport) -> bool {
 fn failed_report(
     root_dir: &Path,
     guard_malloc_requested: bool,
-    leaks_timeout_seconds: u64,
+    timeouts: Timeouts,
     error: String,
 ) -> VerifyFfiReport {
     report_header(
         root_dir,
         guard_malloc_requested,
-        leaks_timeout_seconds,
+        timeouts,
         Discovery {
             status: Verdict::Error,
             error: Some(error),
@@ -1702,6 +1914,7 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
         assert_eq!(
             Options::parse(&[]).unwrap(),
             Options::Verify {
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
                 guard_malloc: false,
                 leaks_timeout_seconds: DEFAULT_LEAKS_TIMEOUT_SECONDS,
             }
@@ -1709,6 +1922,7 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
         assert_eq!(
             Options::parse(&["--guard-malloc".to_owned()]).unwrap(),
             Options::Verify {
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
                 guard_malloc: true,
                 leaks_timeout_seconds: DEFAULT_LEAKS_TIMEOUT_SECONDS,
             }
@@ -1716,6 +1930,9 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
         assert_eq!(
             Options::parse(&["--calibrate".to_owned()]).unwrap(),
             Options::Calibrate {
+                guard_malloc: false,
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
+                report_path: None,
                 budget_seconds: DEFAULT_CALIBRATION_BUDGET_SECONDS,
                 leaks_timeout_seconds: DEFAULT_LEAKS_TIMEOUT_SECONDS,
             }
@@ -1728,6 +1945,9 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
             ])
             .unwrap(),
             Options::Calibrate {
+                guard_malloc: false,
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
+                report_path: None,
                 budget_seconds: 900,
                 leaks_timeout_seconds: DEFAULT_LEAKS_TIMEOUT_SECONDS,
             }
@@ -1740,6 +1960,7 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
             ])
             .unwrap(),
             Options::Verify {
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
                 guard_malloc: true,
                 leaks_timeout_seconds: 7,
             }
@@ -1754,6 +1975,9 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
             ])
             .unwrap(),
             Options::Calibrate {
+                guard_malloc: false,
+                guard_malloc_timeout_seconds: DEFAULT_GUARD_MALLOC_TIMEOUT_SECONDS,
+                report_path: None,
                 budget_seconds: 900,
                 leaks_timeout_seconds: 9,
             }
@@ -1769,6 +1993,182 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
         assert!(
             Options::parse(&["--guard-malloc".to_owned(), "--guard-malloc".to_owned()]).is_err()
         );
+    }
+
+    #[test]
+    fn guard_malloc_qualification_requires_detected_faults_and_clean_control() {
+        for (control, code, signal, banner, marker, expected) in [
+            ("clean", Some(0), None, true, true, Verdict::Pass),
+            ("use_after_free", None, Some(11), true, true, Verdict::Pass),
+            ("double_free", None, Some(6), true, true, Verdict::Pass),
+            ("use_after_free", Some(0), None, true, true, Verdict::Fail),
+            ("double_free", Some(0), None, true, true, Verdict::Fail),
+            ("clean", None, Some(11), true, true, Verdict::Fail),
+            (
+                "use_after_free",
+                None,
+                Some(11),
+                false,
+                true,
+                Verdict::Error,
+            ),
+            ("use_after_free", None, Some(11), true, false, Verdict::Fail),
+            ("double_free", Some(1), None, true, true, Verdict::Fail),
+            ("use_after_free", None, Some(9), true, true, Verdict::Fail),
+        ] {
+            let output = CapturedCommand {
+                stdout: String::new(),
+                stderr: format!(
+                    "{}{}",
+                    if banner {
+                        "GuardMalloc[probe-1]: version 1\n"
+                    } else {
+                        ""
+                    },
+                    if marker {
+                        format!("guard-malloc-control:{control}\n")
+                    } else {
+                        String::new()
+                    }
+                ),
+                status: CapturedExit {
+                    exit_code: code,
+                    signal,
+                },
+            };
+            assert_eq!(
+                assess_guard_malloc(Ok(output), Duration::ZERO, Some(control)).status,
+                expected,
+                "{control} {code:?} {signal:?} {banner} {marker}"
+            );
+        }
+    }
+
+    #[test]
+    fn guard_malloc_timeout_and_missing_tool_are_errors() {
+        for failure in [
+            CaptureFailure::Timeout {
+                elapsed: Duration::from_secs(1),
+            },
+            capture_io_failure(std::io::Error::from(std::io::ErrorKind::NotFound)),
+        ] {
+            assert_eq!(
+                assess_guard_malloc(Err(failure), Duration::ZERO, None).status,
+                Verdict::Error
+            );
+        }
+    }
+
+    #[test]
+    fn exported_report_cannot_pass_failed_qualification() {
+        let directory = tempfile::tempdir().unwrap();
+        let make_probe = || {
+            assess_environment_probe(
+                Ok(captured_command(
+                    "Process 1: 0 leaks for 0 total leaked bytes.",
+                    "",
+                    0,
+                )),
+                Duration::ZERO,
+            )
+        };
+        let good_control = || GuardMallocCheck {
+            status: Verdict::Pass,
+            duration_ms: 1,
+            process_status: None,
+            failure: None,
+            error: None,
+        };
+        let mut phases = CalibrationPhases {
+            environment_probe: make_probe(),
+            deliberate_leak_detection: make_probe(),
+            guard_malloc: Some(GuardMallocQualification {
+                clean: good_control(),
+                use_after_free: good_control(),
+                double_free: good_control(),
+            }),
+            clean_gate: CleanGatePhase {
+                status: Verdict::Pass,
+                duration_ms: 1,
+                report: failed_report(
+                    directory.path(),
+                    true,
+                    Timeouts {
+                        leaks: 1,
+                        guard_malloc: 1,
+                    },
+                    "fixture".into(),
+                ),
+            },
+            budget: assess_budget(Duration::from_secs(1), Duration::from_secs(2)),
+        };
+        phases.clean_gate.report.source_commit = "workspace".into();
+        assert_eq!(bind_qualification(&mut phases, "workspace"), Verdict::Pass);
+        phases.guard_malloc.as_mut().unwrap().use_after_free.status = Verdict::Fail;
+        assert_eq!(bind_qualification(&mut phases, "workspace"), Verdict::Fail);
+        let path = directory.path().join("admission.json");
+        save_report(&path, &phases.clean_gate.report).unwrap();
+        let report: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(report["verdict"], "fail");
+        assert_eq!(report["qualification"]["source_commit"], "workspace");
+        assert_eq!(
+            report["qualification"]["guard_malloc"]["use_after_free"]["status"],
+            "fail"
+        );
+        phases.guard_malloc.as_mut().unwrap().use_after_free.status = Verdict::Pass;
+        assert_eq!(
+            bind_qualification(&mut phases, "changed-checkout"),
+            Verdict::Fail
+        );
+    }
+
+    #[test]
+    fn calibration_accepts_guard_malloc() {
+        assert_eq!(
+            Options::parse(&[
+                "--calibrate".into(),
+                "--guard-malloc".into(),
+                "--budget-seconds".into(),
+                "3600".into(),
+                "--leaks-timeout-seconds".into(),
+                "600".into(),
+                "--guard-malloc-timeout-seconds".into(),
+                "1200".into(),
+                "--report".into(),
+                "/scratch/verify-ffi.json".into(),
+            ])
+            .unwrap(),
+            Options::Calibrate {
+                guard_malloc: true,
+                budget_seconds: 3600,
+                leaks_timeout_seconds: 600,
+                guard_malloc_timeout_seconds: 1200,
+                report_path: Some("/scratch/verify-ffi.json".into()),
+            }
+        );
+        for args in [
+            vec!["--guard-malloc-timeout-seconds", "1"],
+            vec!["--guard-malloc", "--guard-malloc-timeout-seconds", "0"],
+            vec!["--calibrate", "--report"],
+            vec!["--report", "/scratch/report.json"],
+        ] {
+            assert!(
+                Options::parse(&args.into_iter().map(str::to_owned).collect::<Vec<_>>()).is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn guard_malloc_rejects_uninstrumented_success() {
+        let binary = TestBinary {
+            package_id: "probe".into(),
+            target: "probe".into(),
+            target_kind: vec!["test".into()],
+            path: "/usr/bin/true".into(),
+        };
+        let (check, _) = run_guard_malloc(&binary, Duration::from_secs(5));
+        assert_ne!(check.status, Verdict::Pass);
     }
 
     #[test]

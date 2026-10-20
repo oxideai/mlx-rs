@@ -672,6 +672,36 @@ fn validate_ffi_report(
     if report["discovery"]["status"] != "pass" || report["verdict"] != "pass" {
         return Err("FFI report verdict is not pass".to_owned());
     }
+    let qualification = &report["qualification"];
+    require_value(
+        qualification,
+        "source_commit",
+        workspace_commit,
+        "FFI qualification",
+    )?;
+    for phase in [
+        "environment_probe",
+        "deliberate_leak_detection",
+        "budget",
+        "verdict",
+    ] {
+        if qualification[phase] != "pass" {
+            return Err(format!("FFI qualification {phase} is not pass"));
+        }
+    }
+    for control in ["clean", "use_after_free", "double_free"] {
+        if qualification["guard_malloc"][control]["status"] != "pass" {
+            return Err(format!(
+                "FFI Guard Malloc qualification {control} is not pass"
+            ));
+        }
+    }
+    if report["github_sha"]
+        .as_str()
+        .is_some_and(|sha| sha != workspace_commit)
+    {
+        return Err("FFI GitHub SHA does not match the checked-out commit".to_owned());
+    }
     let binaries = report["binaries"]
         .as_array()
         .filter(|binaries| !binaries.is_empty())
@@ -713,13 +743,8 @@ fn validate_ffi_report(
             return Err(format!("FFI report contains duplicate target {identity}"));
         }
         let leak = binary["leaks"]["status"].as_str();
-        let guard_passes = match leak {
-            Some("pass") => binary["guard_malloc"]["status"] == "pass",
-            Some("not_applicable") => {
-                binary["guard_malloc"].is_null() || binary["guard_malloc"]["status"] == "pass"
-            }
-            _ => false,
-        };
+        let guard_passes = matches!(leak, Some("pass" | "not_applicable"))
+            && binary["guard_malloc"]["status"] == "pass";
         if !guard_passes || binary["test"] != "passed" {
             return Err("FFI report contains a failed binary".to_owned());
         }
@@ -1614,6 +1639,12 @@ mod tests {
             "environment": {"architecture": "aarch64", "os": "macos", "rustc": "rustc 1.98.0"},
             "execution_context": {"trust": "local", "procedure": LOCAL_FFI_PROCEDURE},
             "guard_malloc_requested": true,
+            "qualification": {
+                "source_commit": "workspace",
+                "environment_probe": "pass", "deliberate_leak_detection": "pass",
+                "budget": "pass", "verdict": "pass",
+                "guard_malloc": {"clean": {"status": "pass"}, "use_after_free": {"status": "pass"}, "double_free": {"status": "pass"}}
+            },
             "discovery": {"status": "pass", "error": null},
             "binaries": [{
                 "binary": {"package_id": "mlx-tests", "target": "ffi_safety", "target_kind": ["test"], "path": "binary"},
@@ -2131,6 +2162,83 @@ mod tests {
     }
 
     #[test]
+    fn ffi_rejects_missing_stale_failed_or_unqualified_guard_malloc() {
+        for (pointer, value) in [
+            ("/guard_malloc_requested", json!(false)),
+            ("/source_commit", json!("stale")),
+            ("/verdict", json!("fail")),
+            ("/binaries/0/guard_malloc", Value::Null),
+            ("/binaries/0/guard_malloc/status", json!("fail")),
+            ("/qualification", Value::Null),
+            ("/qualification/source_commit", json!("stale")),
+            ("/qualification/guard_malloc/clean/status", json!("fail")),
+            (
+                "/qualification/guard_malloc/use_after_free/status",
+                json!("fail"),
+            ),
+            (
+                "/qualification/guard_malloc/double_free/status",
+                json!("error"),
+            ),
+            ("/qualification/budget", json!("fail")),
+        ] {
+            let mut report = valid_ffi();
+            if pointer == "/qualification" {
+                report["qualification"] = value;
+            } else {
+                *report.pointer_mut(pointer).unwrap() = value;
+            }
+            assert!(
+                validate_ffi_report(
+                    &report,
+                    "workspace",
+                    OLD_COMMIT,
+                    true,
+                    &valid_ffi_inventory()
+                )
+                .is_err(),
+                "accepted {pointer}"
+            );
+        }
+        assert!(validate_ffi_report(
+            &Value::Null,
+            "workspace",
+            OLD_COMMIT,
+            true,
+            &valid_ffi_inventory()
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn ffi_admits_the_merge_sha_not_the_pr_head() {
+        let mut report = valid_ffi();
+        report["github_sha"] = "workspace".into();
+        report["github_pr_head_sha"] = "pr-head".into();
+        validate_ffi_report(
+            &report,
+            "workspace",
+            OLD_COMMIT,
+            true,
+            &valid_ffi_inventory(),
+        )
+        .unwrap();
+        assert!(
+            validate_ffi_report(&report, "pr-head", OLD_COMMIT, true, &valid_ffi_inventory())
+                .is_err()
+        );
+        report["github_sha"] = "different-merge".into();
+        assert!(validate_ffi_report(
+            &report,
+            "workspace",
+            OLD_COMMIT,
+            true,
+            &valid_ffi_inventory()
+        )
+        .is_err());
+    }
+
+    #[test]
     fn ffi_requires_explicit_local_procedure_admission() {
         let error = validate_ffi_report(
             &valid_ffi(),
@@ -2166,6 +2274,22 @@ mod tests {
             &valid_ffi_inventory(),
         )
         .unwrap();
+    }
+
+    #[test]
+    fn ffi_requires_guard_malloc_even_when_leaks_is_not_applicable() {
+        let mut report = valid_ffi();
+        report["binaries"][0]["leaks"]["status"] = "not_applicable".into();
+        report["covered_binaries"]["leaks"] = json!([]);
+        report["binaries"][0]["guard_malloc"] = Value::Null;
+        assert!(validate_ffi_report(
+            &report,
+            "workspace",
+            OLD_COMMIT,
+            true,
+            &valid_ffi_inventory()
+        )
+        .is_err());
     }
 
     #[test]

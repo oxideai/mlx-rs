@@ -1,156 +1,75 @@
 # Verification roadmap
 
-Catching up to upstream MLX is gated less by missing API surface than by the fact that a green
-test run is not currently evidence. The work below builds the substrate that makes machine-
-generated catch-up work trustworthy, then does the catch-up.
-
-## Why not simply port MLX's tests
-
-MLX has 892 Python test methods (~29k lines). Translating them into Rust produces a large amount
-of code while leaving the two hard problems untouched: FFI ownership, and oracle independence.
-Upstream's tests also lean on NumPy as the oracle (`assertCmpNumpy` in `python/tests/mlx_tests.py`)
-with randomly generated inputs, so a literal port has nothing to compare against. Keep NumPy on the
-oracle side instead — see "Conformance runner" below.
+Status at `d60f3577` (#391). The 0.32.2 rebind and most verification and API work have landed;
+admission still needs stronger evidence before the next mlx-c bump (#387).
 
 ## Status
 
-- [x] **Reproducible toolchain.** `devenv.nix` provides rust, cmake, ninja and libclang. Metal
-      needs the system Xcode; see the `xcrun` shim comment in `devenv.nix` for why.
-- [x] **Tranche 1 — six FFI defects fixed**, each with a regression test demonstrated to fail
-      without its fix. Baseline moved 945 → 952 passing, 60 ignored.
-- [x] **Tranche 2 — the leak/UAF gate.** `cargo run -p xtask -- verify-ffi`, plus the three
-      carried-forward FFI items. Baseline moved 952 → 965 passing, 61 ignored.
-- [x] **Conformance runner — committed-golden CPU ops lane.** 81 oracle-verified cases across six
-      suites; qualified mutation matrix; suite moved 965 → 967 passing. The live Python worker and
-      optimizer qualification remain (phase 2). Below.
+- [x] Reproducible toolchain and FFI fixes (#362, `b7150b8c`), with regressions in
+  [ffi_safety.rs](mlx-tests/tests/ffi_safety.rs). MSRV is now 1.88.0 (#366), and CI tests
+  1.88.0 and stable; `devenv.nix` selects stable and system Xcode supplies Metal.
+- [x] Strict comparator, nine optimizer trajectories, compile-state and nonlinear grad/VJP/JVP
+  packs, including Wave 3b (#362). See [state_optimizers.rs](mlx-tests/tests/state_optimizers.rs),
+  [state_compile.rs](mlx-tests/tests/state_compile.rs), and
+  [state_transforms.rs](mlx-tests/tests/state_transforms.rs).
+- [x] Cold-cache subprocess deadline and proof of tracing, stream identity and restoration,
+  cross-thread isolation, moved/cloned arrays, and stream churn (#362), in
+  [state_compile.rs](mlx-tests/tests/state_compile.rs) and
+  [stream_admission.rs](mlx-tests/tests/stream_admission.rs).
+- [x] Dependency provenance and runtime rebind to mlx-c `c74db5307cc8ce122f48d97ef951b30578674e7f`
+  / MLX `0.32.2` (#362); mlx-rs `0.32.0` / mlx-sys `0.6.0` released in #370.
+  [bump_tuple.rs](mlx-tests/tests/bump_tuple.rs) checks the runtime and catchable eval-stage
+  singular-inverse error.
+- [x] Committed goldens, deterministic subprocess replay, and aggregate admission tooling (#362).
+  The current [corpus](conformance/corpus.json) has 260 cases in 11 suites, with Python MLX
+  0.32.2 as canonical CPU oracle; NumPy corroboration is recorded per case.
+- [x] Idiom migration across operation families, exact/cast observers, keyed `StateProjection`,
+  windows and FFT frequencies (#362); GGUF (#363); math and index updates (#364); metallib
+  distribution and path APIs (#365); memory controls, contiguous, and optional RMS norm weight
+  (#367). See [CHARTER.md](CHARTER.md#idiom-wave-delivery) and
+  [the release notes](mlx-rs/CHANGELOG.md#0320).
+- [x] mlx-lm oracle/parity gates (#376), local loading, cache, Llama and Qwen3 (#377), generation,
+  sampling and prompt-cache reuse (#380), GGUF checkpoints (#382), and Hub/CLI, real-checkpoint
+  tests and release evidence (#384, `9051034e`). Executing coverage now lives in
+  [parity.rs](mlx-lm/tests/parity.rs) and [the release record](ledger/mlx-lm-release-identity.json).
+- [x] Grouped Conv1d/Conv2d weight sizing (#388), native source metadata (#390), Rust 1.99 bindgen
+  compatibility (#392), and optional `metal-jit` (#391) have merged; see
+  [convolution.rs](mlx-rs/src/nn/convolution.rs) and [build.rs](mlx-sys/build.rs).
 
-## Known-weak coverage
-
-Recorded because none of it shows up in a test count, and all of it survives adding more tests.
-
-- `assert_array_eq!` (`mlx-rs/src/macros/assert.rs`) passes its single tolerance argument as *both*
-  `rtol` and `atol`, and never compares dtype. `test_ada_delta` asserts a mean of `-0.348442` with
-  tolerance `0.348442`, which admits roughly `[-0.818, +0.121]` — an optimizer that did nothing
-  would pass. Fixing the macro is expected to turn several currently-green tests red; that is the
-  point, and it must land as its own change so the failures are attributable.
-- Several `compile`/optimizer tests run at learning rate `0.0`, removing the state transition they
-  exist to exercise.
-- At the mlx-c `v0.5.0` pin, `compile_with_state` re-traces its Rust closure on every outer call:
-  a four-call, no-error hardware measurement observed invocation counts `1,2,3,4`, while Python
-  `mx.compile` traces once. The wrapper creates and drops an inner `Compiled` per call, and its drop
-  erases the `fun_id` cache entry, so the per-call closure overhead is real and any cached-graph
-  benefit is unverified. Evaluate the bump target's `mlx_compile_cache` object family as the fix
-  during the bump.
-- 47 doctests use `rust,ignore` and never execute: 35 in `nn/activation.rs`, 6 on the `lib.rs`
-  front page. Note that grepping for ```` ```ignore ```` misses these. Most appear to be a fence
-  copied forward rather than a deliberate choice.
-- `mlx-lm` has **zero executing tests**; all 6 are `#[ignore]` on missing model files. This is the
-  newest code in the workspace.
-- CI runs `cargo clippy -- -D warnings` without `--all-targets`, so lints in test code have never
-  been gated. There are ~40 such warnings today.
-- Measured on MLX 0.30.6 CPU: out-of-bounds gather indices return unchecked values rather than an
-  error, while eval-stage C++ exceptions such as singular-matrix inversion escape the bindings as
-  process aborts. The committed 0.32.2 replay reports singular inversion as a catchable invoke-stage
-  error; the bump runtime pass must confirm the Rust assertion.
-- `concatenate` claimed first-axis semantics in its documentation, but its binding flattens all
-  arrays. The conformance corpus found the mismatch and the documentation is fixed; the API naming
-  trap remains until the bump review.
-- Measured at 0.30.6 CPU after the error-handler fix: eight threads concurrently constructing
-  graphs and receiving invoke-stage errors is safe with per-thread delivery. The unsafe surface is
-  specifically concurrent *eval* on the shared default stream, not graph construction.
-- Measured on MLX 0.32.2 Metal: `conv3d` output is no longer row-major contiguous. Its logical
-  values remain correct when read through the stride-aware strict comparator; tests must not use
-  `as_slice` as an implicit layout assertion.
-
-## Fixed findings
-
-- The strict comparator surfaced six wrong test expectations (dtype-blind literals), initially
-  misattributed first to operation bugs and then to an observer defect. Sub-assertion-level
-  analysis located them; the operations and observer were correct.
-- Fixed: `compile_with_state` restores caller state after tracing or compiled-apply errors and before retrying.
-- Fixed: `try_as_slice` rejects non-row-contiguous views; safetensors conversion propagates that error.
-- Fixed: `AdaDelta` now defaults `rho` to Python MLX's `0.9`; `0.99` remains available explicitly.
-- The state-pack oracle's first fixtures were corrupted by Python in-place mutation aliasing (Adafactor weight decay); caught because Rust matched causal math and refused the corrupted expectation; snapshots now copy at capture.
-
-### Coverage note from the strict-comparator migration
-
-The FFT and `full` tests' literals are order-invariant (constant inputs), so they could not and
-still cannot distinguish a transposed read; asymmetric FFT cases belong in the conformance corpus
-when the FFT suite is added.
+<a id="tranche-2-leak-and-use-after-free-gate-done"></a>
 
 ## Tranche 2 — leak and use-after-free gate (done)
 
-    cargo run -p xtask -- verify-ffi                 # JSON to stdout, progress to stderr
-    cargo run -p xtask -- verify-ffi --guard-malloc  # slower use-after-free lane
+    cargo run -p xtask -- verify-ffi
+    cargo run -p xtask -- verify-ffi --guard-malloc
 
-**The gate is qualified — it has been made to fail on a real defect.** Deleting the body of
-`StringMapIterator::drop` in `mlx-rs/src/utils/io.rs` reintroduces the tranche-1 leak, and the gate
-reports for the `ffi_safety` binary:
+The gate implementation and deliberate-leak calibration landed in #362. The heading is retained
+for admission evidence links; continuous use-after-free enforcement is still open.
 
-    count 201, bytes 3232, baseline_subtracted true,
-    regression_count 200, regression_bytes 3200,
-    named_sites [{site: "<malloc in mlx_map_string_to_string_iterator_new>", count: 200, bytes: 3200}]
+For local admission, record the exact SHA and environment with both reports. Delete the body of
+`StringMapIterator::drop` in `mlx-rs/src/utils/io.rs`, confirm the iterator leak is detected, then
+restore it and require zero regressions. Requalify after parser or baseline changes.
 
-Restoring the guard returns it to zero regressions and `verdict: pass`. Re-run that procedure after
-any change to the parser or baseline logic; a gate that has never failed is not known to work.
+`leaks --atExit` reports a constant Objective-C initialization leak (32 bytes), so compare against
+the qualified baseline rather than trusting its exit code. Discover binaries through Cargo JSON;
+exclude proc-macro binaries by target kind. Guard Malloc supplies the separate use-after-free and
+double-free lane. CI calibrates leaks, but `verify(..., false, ...)` in
+[verify_ffi.rs](xtask/src/verify_ffi.rs) disables Guard Malloc during calibration.
 
-Clean-tree expectation: `verdict: pass`, exit 0, leak statuses `{pass: 18, not_applicable: 2}`,
-every binary `test: passed`.
+## Conformance runner
 
-`leaks --atExit` is the mechanism: it sees FFI-level leaks, names the responsible C function, and
-scales linearly with call count.
-
-- Every test binary reports a constant `1 leak for 32 total leaked bytes`
-  (`ROOT LEAK: <NSArray>`, from Objective-C init). Gate against that baseline.
-- **`leaks` exits non-zero whenever any leak exists, including the baseline.** The gate must
-  compare counts, not trust the exit code.
-- Pair with `libgmalloc` (`DYLD_INSERT_LIBRARIES`) for use-after-free and double-free. This covers
-  what ASan would give us: LeakSanitizer is unsupported on macOS, and `-Zsanitizer` needs nightly
-  while CI pins 1.85/stable.
-- Emit structured JSON so the verdict is machine-readable rather than a diff to read.
-- Proc-macro crates are excluded by target kind and reported `not_applicable`. Their test binaries
-  link the compiler host's dynamic libstd and cannot be spawned standalone (`no LC_RPATH's found`),
-  so `leaks` never gets a process; they also contain zero `mlx_sys` references, so there is nothing
-  for this gate to check. Filter on kind, never on crate name.
-- Discover binaries via `cargo test --no-run --message-format=json`, never by globbing
-  `target/debug/deps`. That directory accumulates stale binaries from earlier builds, including
-  ones built without the Metal backend, and running the wrong one produces confident nonsense —
-  `Cannot set gpu device without gpu backend` instead of the real Metal assertion.
-
-## Conformance runner — committed-golden CPU ops lane (done); live worker (later)
-
-    conformance/                                # oracle side: generator, corpus, qualification
     cargo test -p mlx-tests --test conformance -- --test-threads=1
 
-**The lane is qualified.** `harness_qualification` runs a 16-class mutation matrix (dtype, shape,
-output count/order, absolute and relative thresholds, NaN, infinity sign, swapped noncommutative
-operands, wrong axis, error inversion, F16/BF16 decoder calibration, endianness, empty tensors),
-each required to fail as its declared mismatch class. On its first live run the corpus caught the
-`concatenate` doc/semantics mismatch and the `try_as_slice` findings above, and generation-time
-checks caught three wrong upstream-behavior assumptions (silent OOB gather; eager error timing —
-no catchable eval-stage error exists at this pin; singular-`inv` aborting the process).
+The qualified strict comparator checks dtype, shape, output count/order, separate tolerances,
+non-finite values, and layout-sensitive observations. Regeneration uses Python 3.12.14,
+`mlx==0.32.2`, `mlx-metal==0.32.2`, and `numpy==2.2.6`, pinned in
+[requirements.lock](conformance/requirements.lock); it requires identical hashes from two runs.
 
-Regeneration: `conformance/README.md` documents the pinned-venv procedure; the generator refuses a
-mismatched environment and double-runs to identical tree hashes. Python MLX 0.30.6 is the binding
-oracle; NumPy corroborates only where generation-time agreement held (recorded per case).
-
-## Conformance design notes
-
-- Committed goldens generated by NumPy/Python MLX for required PR checks; a pinned, out-of-process
-  Python MLX worker over a pipe for broader differential testing. Do not embed Python in the test
-  process — `mlx-sys` statically links MLX and a second runtime brings its own global caches.
-- CPU is the canonical golden device. Metal compares separately; reductions, FFT, linalg and
-  quantized paths are not expected to be bitwise equal across the two.
-- Qualify the harness with deliberate faults — wrong axis, swapped operands, wrong dtype, a no-op
-  optimizer — before trusting a single green result from it.
-- Sandboxed agent builds must never reuse the shared `target/` with modified feature flags. Three
-  corruption incidents on 2026-08-28 produced the Metal JIT symptom
-  `unknown type name 'bfloat16_t'`; use a scratch `CARGO_TARGET_DIR`.
-- Multiple full MLX debug builds fill the disk; prune stale `target/` directories.
+[replay_target.py](conformance/target/replay_target.py) implements deterministic subprocess replay
+with an exact-version handshake. Its committed reports preserve the historical 0.30.6-to-0.32.2
+comparison. Scheduled randomized exploration, deadlines, shrinking, and case promotion remain open.
 
 ### Anti-self-oracle rules
-
-These exist to stop generated tests from asserting whatever the implementation currently does.
 
 1. The corpus generator must never link or execute `mlx-rs`.
 2. Every expected value carries provenance: a NumPy expression, a pinned Python MLX version, an
@@ -159,230 +78,96 @@ These exist to stop generated tests from asserting whatever the implementation c
    commit. Oracle changes are reviewed on their own.
 4. Tolerances come from a central registry. Widening one is an oracle change.
 
-## Open items carried from tranche 1
-
-- **The threading contract is undocumented, and `--test-threads=1` is load-bearing.** Running
-  `mlx-rs`'s lib tests with default parallelism aborts with SIGABRT:
-
-      -[AGXG13GFamilyCommandBuffer tryCoalescingPreviousComputeCommandEncoderWithConfig:...]:1090:
-      failed assertion `A command encoder is already encoding to this command buffer'
-
-  That is the Metal driver catching two threads encoding to one command buffer, because MLX
-  v0.30.6 has no per-thread stream concept at all — it exposes only `default_stream`,
-  `set_default_stream` and `new_stream`. Upstream main added the entire model afterwards
-  (`new_thread_unsafe_stream`, `new_thread_local_stream`, `clear_streams`, and a `default_stream`
-  documented as per-thread), so this is not fixable at our pin.
-
-  Note the abort comes from concurrent *operations* on a shared stream, not from moving an `Array`
-  across threads. So `unsafe impl Send for Array` is defensible under the contract *arrays may move
-  between threads; MLX operations must be externally serialised*.
-
-  **Resolved in tranche 2:** that contract is now stated at crate level in `lib.rs` and beside the
-  `unsafe impl` in `array/mod.rs`, and
-  `ffi_safety.rs::concurrent_gpu_operations_abort_without_thread_local_streams` reproduces the
-  abort under `#[ignore]`. Verified to produce the Metal assertion above, not some other failure.
-  The mlx-c bump can relax the contract once thread-local streams are available.
-
-  A second, independent race exists by inspection and is *not* what aborts here: `mlx-rs`
-  registers the error handler from a thread-local `Once` (`error.rs:229`) into mlx-c's file-static
-  globals (`mlx-c/mlx/c/error.cpp:17`), so each thread races on an unsynchronised `shared_ptr`
-  assignment.
-- `mlx-sys` is versioned `0.2.0` while its own manifest says it follows mlx-c, which is pinned at
-  `v0.5.0`. Either enforce that policy or replace it with an explicit version-tuple policy.
+Python stays out of the Rust process because both runtimes carry global caches. CPU is canonical;
+Metal comparisons are separate. Use a scratch `CARGO_TARGET_DIR` for different feature sets.
 
 ## Bump admission contract
 
-The admitted dependency change is one immutable tuple to another:
+The delivered bump moved from mlx-c `a1290d221f92bd020af805b7d14207eee4ec973b` / MLX `0.30.6`
+to `c74db5307cc8ce122f48d97ef951b30578674e7f` / MLX `0.32.2` in #362. The eight admission
+requirements remain:
 
-- **Old tuple:** mlx-c commit `a1290d221f92bd020af805b7d14207eee4ec973b`, tagged `v0.5.0`,
-  building MLX `v0.30.6`.
-- **Target tuple:** mlx-c commit `c74db5307cc8ce122f48d97ef951b30578674e7f`, observed at
-  `origin/main` on 2026-08-28, building MLX `v0.32.2` through its CMake pin. mlx-c tag `v0.6.0`
-  builds MLX `0.31.1` and is not the target. Resolve the nested MLX pin again when the bump starts
-  and reject a mismatch; never substitute `main`, `latest`, or a newer tag for the recorded commit.
-- **Old-version oracle:** arm64 Python `3.12.14`, `mlx==0.30.6`, `mlx-metal==0.30.6`, and
-  `numpy==2.2.6`, pinned by hashes in `conformance/requirements.lock`.
-
-The bump must not begin until all eight admission items exist. Public API admitted after the bump
-also follows the idiom-wave rules in [CHARTER.md](CHARTER.md):
-
-1. Exact target commit/version tuple and checked-in playbook.
-2. Enforced oracle boundary, digest integrity, and staged-case process.
-3. Known error-registration race eliminated and concurrent behavior tested.
-4. Exact-SHA qualified FFI leak verdict, either in CI or through an explicitly lower-trust
-   recorded admission procedure.
-   **Status: done at CI strength: run 33277976712's ffi-gate job passed all four calibration phases on a blaze runner (deliberate leak detected on the runner itself); calibration JSON retained as a run artifact. Per-child leaks/guard-malloc timeouts convert runner incapability into a named verdict rather than a hang.**
-5. Strict tensor comparator and removal or reclassification of `lr=0` false claims.
-6. Minimal target ABI-delta ledger, Rust public-API baseline, and supported feature matrix.
-   **Status: complete** — the classified target delta, stable syn-based Rust API baseline, supported build matrix, and qualified `verify-ledger` gate are present.
-   The baseline also gates the post-bump idiom wave defined by [CHARTER.md](CHARTER.md).
-7. Qualified stateful optimizer, compile, and transform packs.
+1. An immutable target tuple and checked-in playbook.
+2. Oracle boundary, digest integrity, and staged-case enforcement.
+3. Error-registration safety and concurrent regressions.
+4. Exact-SHA qualified leak and Guard Malloc verdicts, in CI or an explicitly lower-trust local
+   admission record.
+5. Strict tensor comparison and meaningful nonzero optimizer/compile transitions.
+6. Classified C/ABI delta, compiled feature-qualified Rust API coverage, linked exports, and
+   evidence that supported configurations built and ran.
+7. Qualified optimizer, compile-state, and transform packs.
 8. Deterministic replay against the exact target Python MLX version.
 
-Ledger evidence is typed. `conf:` identifies committed-golden or differential semantic cases;
-`ffi:` identifies ABI, ownership, lifetime, callback, or leak evidence; `state:` identifies full
-state trajectories, identity, pruning, retry, or error-atomicity evidence; `thread:` identifies
-concurrency, stream, serialization, or error-handler evidence; and `api:` identifies a Rust public
-path, public-surface baseline, feature/build result, or API contract check. A ledger entry can cite
-more than one class. A conformance case alone is not sufficient evidence for an ownership or
-threading claim.
+The source-based ledger, header/bindgen fingerprints, declared feature matrix, and aggregate
+`verify-bump` command exist. They do not establish compiled API coverage, linked-library exports,
+or matrix execution; leak calibration alone does not establish the required Guard Malloc lane.
+The presence of the tooling is not evidence that the whole admission playbook passed.
 
-A waiver applies to one named check or ledger entry. It records the exact scope, failure or missing
-capability, risk, compensating evidence, owner, reviewer approval, and an expiry date or milestone
-no later than the next dependency bump. Waivers do not change the immutable target and do not turn
-an unclassified delta into a classified one. Missing, blanket, unreviewed, or expired waivers fail
-admission. The aggregate bump verdict lists every active waiver.
+Ledger evidence stays typed: `conf:` for semantic cases, `ffi:` for ABI/ownership/lifetime evidence,
+`state:` for trajectories and atomicity, `thread:` for concurrency, and `api:` for public paths and
+build contracts. Semantic cases alone cannot prove ownership or threading safety.
 
-Not required before the bump are a full Python parity ledger, broad randomized differential
-testing, expanded mlx-lm coverage, all doctests, all-target clippy cleanup, or ASan.
+Each waiver names one check or entry, its missing capability, risk, compensating evidence, owner,
+reviewer approval, and expiry no later than the next bump. Missing, blanket, unreviewed, or expired
+waivers fail admission; every active waiver appears in the aggregate verdict.
 
-## Execution waves
+### Repeatable `mlx-c` bump playbook
 
-The eight admission items above are the bump gate. Work in the same wave can proceed independently
-except for the listed shared-file constraints; a non-admission item does not become a bump gate
-merely because it shares a wave with one. These waves establish bump evidence; the later idiom wave
-is governed by [CHARTER.md](CHARTER.md).
+Freeze the old and target commits and nested MLX version before generating the isolated header,
+bindgen, ABI-type, and linked-export comparison. Classify every delta, update provenance together,
+and verify the linked runtime. Build CPU debug/release and default Metal/Accelerate canaries,
+including mlx-c examples and an upstream MLX C++ test subset.
 
-| Wave | Work | Done criteria | Parallelism and serialization |
-|---:|---|---|---|
-| 0 | Freeze target and admission contract | Exact old and target SHAs, nested MLX versions, oracle environment, waiver policy, evidence classes, minimum gate, and this 13-step playbook are checked in. | Completes before target-ledger generation or target replay. |
-| 1 | Enforce the oracle boundary; remove the error-handler race and qualify FFI reporting on an exact SHA; begin canonical ABI fingerprinting; add one mlx-lm sentinel. | Protected oracle/schema/comparator/qualification code is separated from implementation adapters; staged cases work; mixed oracle/implementation changes and digest tampering fail; process-global error registration and a concurrent regression replace the race; clean and deliberate-leak calibration qualifies an environment-rich `verify-ffi` JSON report in CI or records the lower-trust fallback; old and target canonical fingerprints can be generated; one tiny offline prefill/decode/cache sentinel has independent expectations. Parser diagnostic correction and duplicate-run reduction are folded into this FFI work only where needed, and any such change requalifies the gate. | One integration owner edits `.github/workflows/validate.yml`. Do not assign concurrent edits to the conformance monolith or generator. The mlx-lm sentinel is independent and is not itself an admission item. |
-| 2 | Migrate to the strict tensor comparator; complete target-delta classifications and the Rust public-API baseline. | Comparisons qualify separate `rtol`/`atol`, dtype, shape, NaN, infinity, and boundary behavior; tensor `PartialEq` assertions are audited; optimizer/compile correctness no longer rests on `lr=0` or scalar summaries; canonical function and ABI-type fingerprints produce a zero-unclassified target delta with typed evidence; wrapped entries resolve to real Rust paths; public-API and supported-feature baselines exist; synthetic add/remove/signature/type/evidence mutations fail the ledger. The baseline is the gate for the [charter's idiom wave](CHARTER.md#charter-rules). | The comparator contract settles before Wave 3 packs. Serialize changes to `xtask/src/main.rs`; Wave 2 consumes Wave 1 fingerprints. |
-| 3 | Add stateful optimizer, compile-state, and transform packs. | Full parameter and optimizer-slot tensors match independent expectations for two or three nonzero updates; compile-state cases cover frozen, nested, changed/unchanged/pruned state, repeated and fallible calls, duplicate-retry prevention, and error atomicity; nonlinear multi-input/output grad, VJP, and JVP values are checked; the named no-op/stuck-counter/reordered-state/frozen-mutation/output-split/duplicate-retry fault matrix fails as expected. | Put packs in new focused test files. Do not have pack owners append concurrently to `mlx-tests/tests/conformance.rs`. |
-| 4 | Add deterministic target-version replay and aggregate bump admission. | The worker rejects any handshake other than Python MLX `0.32.2`; named corpus and state cases produce structured, reproducible old-versus-target verdicts with reset/isolation checks; legitimate semantic changes retain separate reviewed baselines; the aggregate verdict consumes the Wave 1-4 reports, verifies the recorded tuple and fingerprints, lists waivers, and fails on any unmet admission item. | Wait for the case schema and Wave 3 state recipes to stabilize. One owner integrates the aggregate command in `xtask/src/main.rs`. |
-| 5 | Add scheduled seeded differential breadth and deferred hygiene. | Scheduled cases record reproducible seeds, timeouts and crashes, minimize failures, and promote accepted cases into the committed corpus; genuine Rust doctests compile while formulas remain text; all-target clippy is clean or no-new-warning gated; optional ASan work proceeds only after a spike demonstrates findings distinct from the qualified leak/Guard Malloc gate. | Broad worker changes and wide documentation or lint churn come last. One owner coordinates any workflow changes. |
+Run qualified leak and Guard Malloc lanes, old semantic baselines before changing oracle authority,
+exact-target replay, affected high-risk packs, public-surface gates, and the supported workspace
+matrix. Include MSRV/stable, threading cases, genuine doctests, and offline model smoke tests.
+Aggregate exact-SHA, environment-bound reports and waivers into one verdict; never regenerate away
+a semantic regression. New public cohorts land separately with mapping, independent expectations,
+ownership and applicable thread/state evidence, and documentation under the
+[charter](CHARTER.md#charter-rules).
 
-Wave 2 done criteria:
+## Remaining work
 
-- [x] Comparisons qualify separate tolerances, dtype, shape, non-finite values, and boundary behavior; tensor equality and optimizer/compile false claims are audited.
-- [x] Canonical fingerprints produce a zero-unclassified target delta with typed, resolvable evidence and real Rust paths for wrapped entries.
-- [x] Rust public-API and supported-feature baselines exist, and synthetic add, remove, signature, evidence, and unclassified mutations fail the ledger gate.
+Step 1, reconciling this roadmap and the signed charter, is complete here. Step 2 is required
+before #387; step 3 follows in the order below.
 
-Wave 3 progress:
+1. Step 2: enforce compiled, feature-qualified API coverage, including generated builders and cfg
+   availability, and run `verify-ledger` in CI; the current source inventory omits both ([api_baseline.rs](xtask/src/api_baseline.rs), [validate.yml](.github/workflows/validate.yml)). Size: medium.
+2. Step 2: fingerprint linked-library exports and compare them with the planned ABI; generation
+   currently reads only header-derived bindgen output ([fingerprint.rs](xtask/src/fingerprint.rs)). Size: medium.
+3. Step 2: require build/test reports for CPU debug/release and default Metal/Accelerate, plus
+   dependency canaries and `metal-jit` configuration checks; admission currently counts two declared
+   builds, and CI tests default debug features on MSRV/stable ([verify_bump.rs](xtask/src/verify_bump.rs), [validate.yml](.github/workflows/validate.yml), [supported-feature-matrix.json](ledger/supported-feature-matrix.json)). The CPU-only
+   build cannot be produced yet: the workspace `mlx-sys` dependency keeps its default features, so
+   `--no-default-features` on `mlx-rs` still builds Metal ([Cargo.toml](Cargo.toml)). Size: medium.
+4. Step 2: enforce and qualify Guard Malloc continuously so CI supplies the exact-SHA report already
+   required by bump admission; calibration currently disables it ([verify_ffi.rs](xtask/src/verify_ffi.rs), [verify_bump.rs](xtask/src/verify_bump.rs)). Size: medium.
+5. Step 3: clear test-code lint failures and gate `--all-targets`, triage the 47 ignored doctests into
+   compiling examples or text, and deprecate or redesign the dtype-blind, coupled-tolerance
+   `assert_array_eq!` ([validate.yml](.github/workflows/validate.yml), [linalg.rs](mlx-rs/src/linalg.rs), [activation.rs](mlx-rs/src/nn/activation.rs), [assert.rs](mlx-rs/src/macros/assert.rs)). Size: small each.
+6. Step 3: add independent asymmetric FFT and `full` goldens; FFT currently checks DC and round trips,
+   while `full` expectations are constant ([fftn.rs](mlx-rs/src/fft/fftn.rs), [factory.rs](mlx-rs/src/ops/factory.rs), [corpus.json](conformance/corpus.json)). Size: medium.
+7. Step 3: finish the observer and canonical-home contracts; `try_as_slice` still evaluates
+   implicitly, and method/free-function duplicates remain ([array/mod.rs](mlx-rs/src/array/mod.rs), [shapes.rs](mlx-rs/src/ops/shapes.rs), [charter rules](CHARTER.md#charter-rules)). Size: large.
+8. Step 3: add scheduled seeded differential exploration with subprocess deadlines, failure
+   shrinking, and reviewed promotion into the corpus ([replay_target.py](conformance/target/replay_target.py), [validate.yml](.github/workflows/validate.yml)). Size: large.
 
-- [x] Wave 3a: all nine optimizers have independent three-step parameter/slot oracles, exact flattened-state key-set checks, frozen-parameter coverage, eager/compiled consistency sentinels, and the no-op/stuck-counter/reordered-state/frozen-mutation/wrong-step qualification matrix.
-- [ ] Wave 3b: complete compile-state behavior (nested, changed/unchanged/pruned, repeated/fallible calls, duplicate-retry prevention, and error atomicity) and nonlinear grad/VJP/JVP transform values plus the remaining output-split and duplicate-retry mutations.
+## Deferred and cut work
 
-The shared-file conflict list is `mlx-tests/tests/conformance.rs`, `conformance/generate.py`,
-`.github/workflows/validate.yml`, and `xtask/src/main.rs`. Give each shared file one integration
-owner at a time.
-
-### Deferred and cut work
-
-- **Defer `left_shift` and `right_shift` until the pinned MLX defines invalid counts.** Probes show
-  I32 counts wrapping modulo the width, U8 counts truncating, and negative counts producing garbage.
-  Both backends use C++ shifts with undefined behavior, while Rust cannot validate lazy array counts
-  without a hidden evaluation.
-- **Defer the full Python API ledger until module catch-up begins.** The bump needs the exact
-  target delta, not a universal taxonomy.
-- **Cut a full historical C-to-Rust mapping.** Classifying only the old-to-target delta preserves
-  the pre-bump evidence at lower review cost.
-- **Cut the requirement to execute all 47 ignored doctests.** Wave 5 compiles genuine examples and
-  marks mathematical pseudocode as text.
-- **Defer broad all-target clippy cleanup to Wave 5.** It is hygiene rather than semantic
-  admission evidence.
-- **Defer broad randomized differential work to Wave 5.** Deterministic state packs and exact
-  target replay provide lower-triage admission evidence first.
-- **Cut mlx-lm expansion beyond one sentinel.** A tiny offline model is the upper-layer canary;
-  architectures, large tokenizers, remote models, and generation modes are outside bump admission.
-- **Cut full ASan/MLX C++ instrumentation from admission.** LeakSanitizer is unavailable on this
-  arm64 macOS host and the qualified `leaks` plus Guard Malloc lanes already cover the current
-  gate; Wave 5 requires a distinct-findings spike before further investment.
-- **Cut standalone parser and single-run optimization projects.** Fold the known
-  `parse_root_leak` diagnostic error and redundant binary executions into Wave 1 FFI CI work only
-  where diagnostics or runtime require them, then requalify `verify-ffi`.
-
-## Repeatable `mlx-c` bump playbook
-
-### Charter deltas
-
-- [x] Retain each `Compiled` value's originating compile-cache handle and use that exact handle for
-  erase; resolve the caller's current cache separately for each `clear_cache()` call
-  ([CHARTER.md](CHARTER.md#concrete-0322-rebind-decisions)).
-- [x] Make `Compiled` structurally `!Send + !Sync` for this tuple
-  ([CHARTER.md](CHARTER.md#charter-rules)).
-- [x] Preserve monotonic `fun_id` allocation, including fresh IDs for clones, and consume erase status
-  without panicking in `Drop` ([CHARTER.md](CHARTER.md#charter-rules)).
-- [x] Delete the unconditional compile-with-state retry; one call performs one attempted state
-  transition, whether it succeeds or fails ([CHARTER.md](CHARTER.md#charter-rules)).
-- [ ] Exercise the nested cold-cache deadlock shape in a subprocess with a hard deadline and proof that
-  the cold trace ran; do not add a process-global lock without target evidence
-  ([CHARTER.md](CHARTER.md#charter-rules)).
-- [x] At bump time, fail closed on compiled-state count, key-layout, and optional-presence mismatches;
-  do not truncate positional updates ([CHARTER.md](CHARTER.md#charter-rules)).
-- [ ] Expand stream admission to explicit identity/pass-through, nested stream and device restoration
-  after success and panic, cross-thread isolation, CPU and Metal per-thread defaults, moved and
-  cloned arrays, and stream create/free churn ([CHARTER.md](CHARTER.md#charter-rules)).
-
-1. [ ] **Resolve the immutable target tuple.** Start from the old and target commits recorded in the
-   admission contract. Re-read the target mlx-c CMake pin and require MLX `v0.32.2`; record runtime
-   `mlx_version`, Xcode, arm64 architecture, Rust toolchain, and supported feature set. Never target
-   “latest”.
-2. [x] **Generate the bump plan in isolated worktrees.** Produce normalized public-header AST,
-   bindgen signature, ABI-relevant type, and exported-symbol fingerprints for both commits without
-   changing the working submodule. Wave 1 delivers canonical fingerprint generation; Wave 2
-   qualifies the classified delta.
-3. [x] **Classify every target API and ABI change.** Mark every added, removed, or changed entry as
-   wrapped, deferred, intentionally unexposed, removed, or blocked. Record the Rust path, risk or
-   ownership class, and typed evidence IDs for affected entries. Every new `new/free` handle family
-   needs an ownership entry. The Wave 2 ledger must report zero unclassified entries.
-4. [ ] **Update provenance coherently.** Update the submodule commit and every recorded version tuple
-   together. Either enforce the statement that `mlx-sys` follows mlx-c versioning or replace it
-   with an explicit tuple policy; do not leave the existing `mlx-sys 0.2.0` versus mlx-c `v0.5.0`
-   ambiguity in place.
-5. [ ] **Verify generated and linked surfaces.** Require header, bindgen, ABI-type, and exported-symbol
-   fingerprints to match the plan; no removed symbol may remain referenced. Runtime `mlx_version`
-   must report `0.32.2`. This consumes the Wave 2 ledger and Wave 4 target handshake.
-6. [ ] **Build dependency canaries.** Build CPU debug, CPU release, and the supported default
-   Metal/Accelerate configuration. Run mlx-c examples and an appropriate upstream MLX C++ test
-   subset to distinguish dependency breakage from Rust breakage. Add a sanitized build only if its
-   lane has been qualified.
-7. [ ] **Run the qualified FFI safety gate.** Run `cargo run -p xtask -- verify-ffi` for leak and test
-   status, plus `--guard-malloc` for the required use-after-free/double-free check. Consume the
-   exact-SHA, environment-bound Wave 1 report; callback, error, clone, drop, and concurrent-error
-   cases must be green, with no unexpected leak above the qualified baseline.
-8. [ ] **Run old semantic baselines first.** Replay the committed-golden conformance lane before
-   changing oracle authority. Classify failures as candidate upstream changes; do not regenerate
-   them away in the bump change.
-9. [ ] **Run target differential and target baselines.** Use the Wave 4 out-of-process worker with an
-   exact Python MLX `0.32.2` handshake. CPU is canonical; bounded Metal comparison is separate.
-   Preserve reviewed old and target baselines where MLX legitimately changed semantics.
-10. [ ] **Run the high-risk packs.** Run dtype comparison/classification, shape and index properties,
-    retained fuzz regressions, gradients, eager/compiled multi-step state, frozen and pruned state,
-    all optimizer state, expanded stream admission, and supported quantized/model smoke cases.
-    Wave 3 delivers the required optimizer, compile-state, and transform packs; any wider pack is
-    required only when its ledger surface is affected. Compiled-state and stream cases enforce the
-    bump-time subset of the [charter](CHARTER.md#charter-rules).
-11. [x] **Run parity and public-surface gates.** Require zero unclassified target C/ABI delta and zero
-    unexplained Rust public-API drift. Every newly exposed Rust API needs an ownership disposition
-    and appropriate typed evidence. Full Python parity remains deferred, but any Python-qualified
-    surface changed by the bump must be classified. Post-bump admission must also satisfy the
-    [charter's idiom-wave rules](CHARTER.md#charter-rules).
-12. [ ] **Run the supported workspace matrix.** Run declared MSRV and stable configurations,
-    debug/release where relevant, the single-thread legacy suite, explicit supported-thread tests,
-    genuine doctests, and the one tiny deterministic local mlx-lm decode. Do not use Hub, network,
-    or user-cache fixtures.
-13. [ ] **Aggregate one verdict.** The Wave 4 aggregate command consumes all structured reports and
-    exits nonzero unless every admission check passes. It verifies the submodule commit, nested MLX
-    version, generated fingerprints, evidence links, report environment and expiry of every
-    waiver against the recorded tuple.
-
-A dependency-only bump is complete when supported behavior has no unclassified regression and
-every new upstream entity is classified. Full catch-up is complete only when the designated
-deferred semantic set reaches zero. Each new Rust API lands vertically under the
-[charter](CHARTER.md), with its parity mapping, independently sourced cases, ownership
-classification, required golden or differential result, applicable property or gradient evidence,
-and public documentation.
-
-The first post-bump vertical cohort is delivered: the four window functions and the two FFT
-frequency constructors have canonical Rust paths, checked integer conversion, public examples,
-NumPy-corroborated MLX 0.32.2 signal cases, and wrapped ledger dispositions.
-
-## Idiom wave
-
-- [x] **Round 1 — foundations and FFT pilot.** Canonical thread-local execution scopes, shared
-      `Axes`, the concrete default-options pattern, and deprecated forwarding plumbing are in
-      place. FFT is migrated end-to-end: unsuffixed functions are canonical, `_device` twins and
-      generated operation macros are deprecated shims, n-dimensional length/axis options validate
-      together, and the API baseline and ledger point at the canonical paths. This pattern is
-      frozen for later family rounds.
+- Shift APIs remain blocked on defined invalid-count semantics at a future pin; recheck during the
+  next bump, without implicitly evaluating lazy counts. Investigation size: small; evidence is
+  [the C wrappers](mlx-sys/src/mlx-c/mlx/c/ops.cpp).
+- The [C-delta ledger](ledger/target-delta-classification.json) has 18 deferred entries: distributed,
+  diagnostics, fast cross-entropy/gather-QQMM, and the deliberately unexposed unsafe stream.
+  Distributed needs a use case and multi-process ownership evidence; diagnostics need a consumer;
+  fast model ops need model, dtype, gradient, and quantization evidence; the unsafe stream needs a
+  provable safe ownership contract. These are not unconditional debt.
+- The [mlx-lm ledger](ledger/mlx-lm-parity.json) has 198 deferrals with explicit triggers, including
+  batching, adapters, and quantized/persisted caches. Expand only an approved cohort with its
+  ownership and parity evidence; the delivered model wave creates no universal parity obligation.
+- Full Python parity and historical C-to-Rust mapping remain cut; a designated module cohort can
+  justify a scoped ledger. Internal FFT normalization and intentionally omitted convenience APIs
+  retain their [charter dispositions](CHARTER.md#disposition-of-the-81-initially-deferred-ledger-entries).
+- Executing mathematical pseudocode as Rust is cut. Full ASan instrumentation needs a spike showing
+  findings distinct from leaks/Guard Malloc; parser or run-count work needs a demonstrated diagnostic
+  or runtime problem and must requalify the FFI gate.

@@ -5,6 +5,11 @@ publish = false
 version.workspace = true
 authors.workspace = true
 
+[features]
+default = ["accelerate", "metal"]
+accelerate = ["mlx-rs/accelerate", "mlx-sys/accelerate"]
+metal = ["mlx-rs/metal", "mlx-sys/metal"]
+
 [dependencies]
 
 [dev-dependencies]

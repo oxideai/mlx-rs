@@ -1755,6 +1755,27 @@ pub(super) fn committed_corpus() {
             let safe =
                 SafeTensors::deserialize(&loaded_suite.bytes).expect("preflight decoded fixture");
             for case in &loaded_suite.suite.cases {
+                #[cfg(not(feature = "metal"))]
+                if case.rust_call == "linalg.det.gpu"
+                    || case.args.iter().any(|arg| {
+                        matches!(
+                            arg,
+                            Arg::Execution {
+                                target: ExecutionTarget::ExplicitGpu,
+                                ..
+                            }
+                        )
+                    })
+                {
+                    use std::io::Write;
+                    writeln!(
+                        std::io::stderr().lock(),
+                        "conformance: {} not run (GPU execution requires Metal)",
+                        case.id
+                    )
+                    .expect("report unavailable execution target");
+                    continue;
+                }
                 failures.extend(run_case(case, &safe, &loaded.corpus.tolerance_policies));
             }
         }

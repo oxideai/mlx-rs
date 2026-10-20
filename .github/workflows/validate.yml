@@ -77,3 +77,19 @@ jobs:
         with:
           key: ${{ matrix.rust }}-${{ matrix.runner }}-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
       - run: cargo test --all -- --test-threads=1 # MLX is not thread safe
+
+  tests-cpu-only:
+    runs-on: blaze/macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          toolchain: stable
+          rustflags: ""
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: cpu-only-stable-macos-latest-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
+      - run: cargo test -p mlx-rs -p mlx-tests --no-default-features --features accelerate -- --test-threads=1

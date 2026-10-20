@@ -1,10 +1,13 @@
+#[cfg(feature = "metal")]
 use std::{
     panic::{catch_unwind, AssertUnwindSafe},
     sync::{Arc, Barrier},
     thread,
 };
 
-use mlx_rs::{array, thread_local_default_stream, with_stream, Array, Stream};
+#[cfg(feature = "metal")]
+use mlx_rs::{array, Array};
+use mlx_rs::{thread_local_default_stream, with_stream, Stream};
 
 #[test]
 fn scoped_stream_is_identity_preserving_and_passes_through_results() {
@@ -19,6 +22,7 @@ fn scoped_stream_is_identity_preserving_and_passes_through_results() {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 fn nested_cpu_and_metal_scopes_restore_after_success_and_panic() {
     let cpu = Stream::cpu();
     let metal = Stream::gpu();
@@ -40,6 +44,7 @@ fn nested_cpu_and_metal_scopes_restore_after_success_and_panic() {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 fn scoped_defaults_are_isolated_across_threads() {
     let barrier = Arc::new(Barrier::new(2));
     let handles = [false, true].map(|metal| {
@@ -60,6 +65,7 @@ fn scoped_defaults_are_isolated_across_threads() {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 fn cpu_and_metal_defaults_evaluate_on_separate_threads() {
     let barrier = Arc::new(Barrier::new(2));
     let handles = [false, true].map(|metal| {
@@ -82,6 +88,7 @@ fn cpu_and_metal_defaults_evaluate_on_separate_threads() {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 fn moved_and_independently_cloned_arrays_use_thread_defaults() {
     let moved = array!([1.0_f32, 2.0, 3.0]);
     let moved = thread::spawn(move || {
@@ -122,6 +129,7 @@ fn moved_and_independently_cloned_arrays_use_thread_defaults() {
 }
 
 #[test]
+#[cfg(feature = "metal")]
 fn stream_handles_survive_repeated_create_clone_and_free() {
     for _ in 0..1_000 {
         let cpu = Stream::cpu();

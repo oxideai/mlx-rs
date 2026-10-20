@@ -338,6 +338,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "metal")]
     fn test_scoped_default_stream() {
         // First set default stream to CPU
         let cpu_device = Device::cpu();
@@ -378,6 +379,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "metal")]
     fn test_cpu_gpu_stream_not_equal() {
         let cpu_device = Device::cpu();
         let gpu_device = Device::gpu();

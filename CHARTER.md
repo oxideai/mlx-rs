@@ -115,7 +115,7 @@ APIs and 75 were initially deferred. The table covers those 75 plus six changed 
     mapping, independent oracle cases, ownership/leak evidence, and thread/state evidence where
     applicable. Before the idiom wave, the API gate must use the compiled, feature-qualified
     surface so generated builders and cfg availability are no longer invisible, consistent with
-    the roadmap's vertical-admission rule.
+    the [verification contract's vertical-admission rule](VERIFICATION.md#repeatable-mlx-c-bump-playbook).
 
 ## Idiom-wave delivery
 

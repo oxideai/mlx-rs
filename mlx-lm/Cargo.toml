@@ -18,7 +18,7 @@ hf-hub = ["dep:hf-hub", "dep:sha2"]
 oracle-hooks = []
 
 [dependencies]
-mlx-rs.workspace = true
+mlx-rs = { workspace = true, default-features = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror.workspace = true

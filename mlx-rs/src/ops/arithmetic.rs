@@ -2710,8 +2710,12 @@ mod tests {
 
         let c = a.power(&b).unwrap();
 
-        let c_data: &[f32] = c.as_slice();
-        assert_eq!(c_data, &[1.0, 8.0, 81.0]);
+        assert_array_eq(
+            &c,
+            array!([1.0, 8.0, 81.0]),
+            tolerances::MLX_DEFAULT.rtol,
+            tolerances::MLX_DEFAULT.atol,
+        );
 
         // check a and b are not modified
         let a_data: &[f32] = a.as_slice();
@@ -2939,8 +2943,12 @@ mod tests {
         let a = Array::from_slice(&[1.0, 2.0, 3.0], &[3]);
         let b = a.log1p().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[0.6931472, 1.0986123, 1.3862944]);
+        assert_array_eq(
+            &b,
+            array!([0.6931472, 1.0986123, 1.3862944]),
+            tolerances::MLX_DEFAULT.rtol,
+            tolerances::MLX_DEFAULT.atol,
+        );
 
         // check a is not modified
         let a_data: &[f32] = a.as_slice();

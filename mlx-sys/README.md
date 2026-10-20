@@ -17,6 +17,16 @@ Set `MLX_RS_METAL_PATH` to use a different directory verbatim as CMake's `MLX_ME
 When this override is set, the build does not read or write `HOME`, which supports sandboxed and
 Nix builds.
 
+The `metal-jit` feature builds MLX with `MLX_METAL_JIT`: the metallib shrinks from about 136 MB
+to 1.5 MB at this pin, and most kernels compile from source the first time they are used.
+MLX caches compiled libraries only within a process. The system Metal shader cache can speed
+up later runs, but previously unused kernels still compile when first needed.
+Results can differ from the precompiled kernels in the last bits.
+
+JIT builds keep their metallib in `~/.mlx/lib/<mlx-c-key>-jit/`, so they don't overwrite the full
+library that normal builds use. `MLX_RS_METAL_PATH` is used as given, without the `-jit` suffix,
+so if you set it, point JIT and non-JIT builds at different directories.
+
 ## Build metadata for dependents
 
 `mlx-sys` declares `links = "mlx"`, so Cargo runs a dependent's build script after this one and

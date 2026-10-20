@@ -1,9 +1,8 @@
 # mlx-rs API design charter
 
 This charter governs the mlx-c `c74db5307cc8ce122f48d97ef951b30578674e7f` / MLX `0.32.2`
-target tuple. The target adds 81 ABI entries: six support existing cumulative and median APIs,
-while 75 were deferred at bump time. The 81-entry disposition table below covers those 75
-additions plus six changed, currently unwrapped entries.
+tuple, delivered in #362. It added 81 ABI entries: six supported existing cumulative and median
+APIs and 75 were initially deferred. The table covers those 75 plus six changed entries.
 
 ## Charter rules
 
@@ -116,11 +115,12 @@ additions plus six changed, currently unwrapped entries.
     mapping, independent oracle cases, ownership/leak evidence, and thread/state evidence where
     applicable. Before the idiom wave, the API gate must use the compiled, feature-qualified
     surface so generated builders and cfg availability are no longer invisible, consistent with
-    the roadmap's vertical-admission rule.
+    the [verification contract's vertical-admission rule](VERIFICATION.md#repeatable-mlx-c-bump-playbook).
 
 ## Idiom-wave delivery
 
-Round 1 was delivered on 2026-08-30. The shared pattern is frozen for later rounds:
+The FFT pilot and later operation-family rounds, exact/cast observers, and keyed `StateProjection`
+landed in #362. The shared pattern is frozen for later rounds:
 
 - `with_stream(&Stream, f)` and `with_device(Device, f)` are the canonical synchronous,
   thread-local, nestable, panic-safe selection scopes. One explicit operation uses a scope whose
@@ -137,8 +137,7 @@ Round 1 was delivered on 2026-08-30. The shared pattern is frozen for later roun
 
 ## Concrete 0.32.2 rebind decisions
 
-The 23 changed entries already backing Rust APIs, plus six added axis symbols needed by them, are
-compatibility work:
+The 23 changed entries backing Rust APIs and six added axis symbols were rebound in #362:
 
 | Family | Required bump behavior |
 |---|---|
@@ -149,28 +148,28 @@ compatibility work:
 | Fast scaled-dot-product attention | Pass `force_fused = false`, the target Python default, and add a case that distinguishes heuristic and forced behavior. |
 | Compile clear/erase | Retain the originating cache handle with `Compiled` and pass that exact handle to erase; resolve the caller's current cache on each `clear_cache()` call; consume all statuses and define clone, drop, and thread affinity. |
 
-The six changed-but-unwrapped entries—distributed group handle, init, availability, and split; base
-`logcumsumexp`; and base `trace`—are rebound in `mlx-sys` but remain high-level deferred.
+The four changed distributed entries remain high-level deferred. The other two, base
+`logcumsumexp` and `trace`, were delivered as complete families in #364.
 
 ## Disposition of the 81 initially deferred ledger entries
 
-The counts below total 75 added-deferred and six changed-deferred at bump time:
+These historical counts total 75 added-deferred and six changed-deferred; delivery status is current:
 
 | Family | Added | Changed | Charter disposition |
 |---|---:|---:|---|
-| `compile_cache` handle/type/new/free/detail | 6 | 0 | **Bump-time internal.** One private RAII cache associated with `Compiled`; no six-item public mirror. |
-| `mlx_fft_norm` enum/type artifacts | 3 | 0 | **Bump-time internal.** Use `Backward` for compatibility; a public `FftNorm` waits for the FFT options cohort. |
-| Bartlett, Blackman, Hamming, Hanning windows | 4 | 0 | **Delivered first post-bump cohort.** `ops::windows::{bartlett, blackman, hamming, hann}(usize)`, with checked conversion, no stream argument, twin, or macro. |
-| `fftfreq`, `rfftfreq` | 2 | 0 | **Delivered first post-bump cohort.** `fft::{fftfreq, rfftfreq}(usize, f64)` with odd/even and negative-frequency oracle cases. |
-| GGUF I/O and handle artifacts | 19 | 0 | **Separate feature cohort.** Collapse to an RAII `GgufFile` and typed `GgufMetadata`; status 2 maps to absence and status 3 to wrong metadata type, not `Exception` or panic. |
-| Slice-update add/max/min/prod | 4 | 0 | **Idiom-wave indexing cohort.** One index-update operation with `UpdateMode::{Replace, Add, Min, Max, Product}`, shared by slice and advanced indexing. |
-| General array/math additions | 16 | 0 | **Deferred semantic cohorts.** Includes `count_nonzero`, `diff`, `flip`, det/slogdet, linspace endpoint, xor, searchsorted, trunc, unstack, and vecdot; base/axis/axes C overloads collapse into one Rust concept. |
+| `compile_cache` handle/type/new/free/detail | 6 | 0 | **Delivered internally in #362.** One private RAII cache associated with `Compiled`; no six-item public mirror. |
+| `mlx_fft_norm` enum/type artifacts | 3 | 0 | **Internal since #362.** Use `Backward` for compatibility; a public `FftNorm` waits for the FFT options cohort. |
+| Bartlett, Blackman, Hamming, Hanning windows | 4 | 0 | **Delivered in #362.** `ops::windows::{bartlett, blackman, hamming, hann}(usize)`, with checked conversion, no stream argument, twin, or macro. |
+| `fftfreq`, `rfftfreq` | 2 | 0 | **Delivered in #362.** `fft::{fftfreq, rfftfreq}(usize, f64)` with odd/even and negative-frequency oracle cases. |
+| GGUF I/O and handle artifacts | 19 | 0 | **Delivered in #363.** Collapse to an RAII `GgufFile` and typed `GgufMetadata`; status 2 maps to absence and status 3 to wrong metadata type, not `Exception` or panic. |
+| Slice-update add/max/min/prod | 4 | 0 | **Delivered in #364.** One index-update operation with `UpdateMode::{Replace, Add, Min, Max, Product}`, shared by slice and advanced indexing. |
+| General array/math additions | 16 | 0 | **Delivered in #364.** Includes `count_nonzero`, `diff`, `flip`, det/slogdet, linspace endpoint, xor, searchsorted, trunc, unstack, and vecdot; base/axis/axes C overloads collapse into one Rust concept. |
 | Fast cross-entropy and gather-QQMM | 2 | 0 | **Demand-gated.** Require a model-level use case plus dtype, gradient, and quantization evidence. |
-| `logcumsumexp_axis` and `trace_axes` | 2 | 2 | **Deferred as complete families.** Design each base/axes API once rather than exposing only the newly added half. |
+| `logcumsumexp_axis` and `trace_axes` | 2 | 2 | **Delivered in #364.** Design each base/axes API once rather than exposing only the newly added half. |
 | `ones_like_dtype`, `zeros_like_dtype` | 2 | 0 | **Intentionally unexposed.** Existing shape-plus-dtype factories express the same Rust capability. |
 | `positive` | 1 | 0 | **Intentionally unexposed.** It is semantic identity and Rust has no unary-plus trait worth emulating as a function. |
 | Node namer, DOT export, graph printing | 9 | 0 | **Demand-gated diagnostic cohort.** If admitted, expose Rust writers/path APIs and one ownership abstraction, never raw `FILE*` or seven handle operations. |
-| Metallib path get/set | 2 | 0 | **Blocked.** The process-global lifecycle and initialization constraints need a stable contract before a safe API. |
+| Metallib path get/set | 2 | 0 | **Delivered in #365.** `metal::{metallib_path, set_metallib_path}`; the setter documents that it changes process-global state for every thread that initializes Metal afterwards. |
 | Distributed group new/free plus changed family | 2 | 4 | **Deferred as a subsystem.** Requires RAII ownership, backend availability, multi-process evidence, and consistent error semantics. |
 | `mlx_stream_new_thread_unsafe` | 1 | 0 | **Intentionally unexposed.** This is a globally registered unsynchronized stream, not a thread-local-stream constructor. |
 | **Total** | **75** | **6** | |

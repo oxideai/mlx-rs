@@ -59,7 +59,7 @@ Fixed
 Verification
 
 Every op above is checked against pinned Python MLX fixtures, an FFI leak gate runs
-in CI, and `ROADMAP.md` tracks what is still deferred. See `CHARTER.md` for the
+in CI, and the ledger records deferrals. See `CHARTER.md` for the
 design rules and `conformance/README.md` for the oracle setup.
 
 ## 0.25.3

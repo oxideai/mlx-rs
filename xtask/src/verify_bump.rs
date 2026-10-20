@@ -10,7 +10,7 @@ const OLD_COMMIT: &str = "a1290d221f92bd020af805b7d14207eee4ec973b";
 const TARGET_COMMIT: &str = "c74db5307cc8ce122f48d97ef951b30578674e7f";
 const OLD_MLX: &str = "0.30.6";
 const TARGET_MLX: &str = "0.32.2";
-const LOCAL_FFI_PROCEDURE: &str = "ROADMAP.md#tranche-2-leak-and-use-after-free-gate-done";
+const LOCAL_FFI_PROCEDURE: &str = "VERIFICATION.md#ffi-leak-and-use-after-free-gate";
 const ALLOWED_REPLAY_VERDICTS: &[&str] = &[
     "identical",
     "value_changed",

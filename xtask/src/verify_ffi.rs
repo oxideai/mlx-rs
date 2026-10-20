@@ -975,7 +975,7 @@ fn report_header(
                     github_run.expect("GitHub Actions context checked above")
                 )
             } else {
-                "ROADMAP.md#tranche-2-leak-and-use-after-free-gate-done".to_owned()
+                "VERIFICATION.md#ffi-leak-and-use-after-free-gate".to_owned()
             },
         },
         guard_malloc_requested,

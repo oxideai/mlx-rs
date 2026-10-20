@@ -18,9 +18,9 @@ When this override is set, the build does not read or write `HOME`, which suppor
 Nix builds.
 
 The `metal-jit` feature builds MLX with `MLX_METAL_JIT`: the metallib shrinks from about 136 MB
-to 1.5 MB at this pin, and most kernels compile from source the first time they are used. macOS
-keeps the compiled shaders across runs, so the cost lands mostly on the first run: the `mlx-rs`
-lib tests took 27 s instead of 5 s the first time, and the same as a normal build afterwards.
+to 1.5 MB at this pin, and most kernels compile from source the first time they are used.
+MLX caches compiled libraries only within a process. The system Metal shader cache can speed
+up later runs, but previously unused kernels still compile when first needed.
 Results can differ from the precompiled kernels in the last bits.
 
 JIT builds keep their metallib in `~/.mlx/lib/<mlx-c-key>-jit/`, so they don't overwrite the full

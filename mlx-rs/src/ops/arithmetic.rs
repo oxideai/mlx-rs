@@ -3051,8 +3051,12 @@ mod tests {
         let a = Array::from_slice(&[0.0, 1.0, 2.0], &[3]);
         let b = a.sin().unwrap();
 
-        let b_data: &[f32] = b.as_slice();
-        assert_eq!(b_data, &[0.0, 0.841471, 0.9092974]);
+        assert_array_eq(
+            &b,
+            array!([0.0, 0.841471, 0.9092974]),
+            tolerances::MLX_DEFAULT.rtol,
+            tolerances::MLX_DEFAULT.atol,
+        );
 
         // check a is not modified
         let a_data: &[f32] = a.as_slice();

@@ -2,13 +2,10 @@ extern crate cmake;
 
 use cmake::Config;
 use std::{
-    env,
+    env, fs,
     path::{Path, PathBuf},
     process::Command,
 };
-
-#[cfg(feature = "metal")]
-use std::fs;
 
 #[path = "src/bindgen_config.rs"]
 mod bindgen_config;
@@ -152,6 +149,8 @@ fn build_and_link_mlx_c() {
     // build the mlx-c project
     let dst = config.build();
 
+    publish_native_sources(&dst, mlx_c_root);
+
     println!("cargo:rustc-link-search=native={}/build/lib", dst.display());
     // mlx's GGUF io depends on the vendored gguflib archive, which cmake leaves
     // in the mlx build tree instead of installing next to libmlx.
@@ -190,6 +189,34 @@ fn build_and_link_mlx_c() {
     if let Some(clang_rt_path) = find_clang_rt_path() {
         println!("cargo:rustc-link-search={}", clang_rt_path);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
+    }
+}
+
+/// Dependents read this metadata as `DEP_MLX_*`; the README documents the contract.
+fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
+    let deps = dst.join("build").join("_deps");
+    let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let include = [
+        Some(deps.join("mlx-src")),
+        cfg!(feature = "metal").then(|| deps.join("metal_cpp-src")),
+        Some(manifest.join(mlx_c_root)),
+    ];
+    let include = env::join_paths(include.into_iter().flatten())
+        .expect("MLX include directories must not contain the path-list separator");
+    println!("cargo::metadata=include={}", include.display());
+    println!("cargo::metadata=defines=MLX_STATIC");
+    let version = fs::read_to_string(mlx_c_root.join("CMakeLists.txt"))
+        .ok()
+        .and_then(|cmake| {
+            cmake.lines().find_map(|line| {
+                let tag = line.trim().strip_prefix("GIT_TAG v")?;
+                tag.split(|c: char| c == ')' || c.is_whitespace())
+                    .next()
+                    .map(str::to_owned)
+            })
+        });
+    if let Some(version) = version {
+        println!("cargo::metadata=version={version}");
     }
 }
 

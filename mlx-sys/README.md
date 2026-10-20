@@ -21,6 +21,37 @@ The `metal-jit` feature builds MLX with `MLX_METAL_JIT`: the metallib shrinks fr
 to 1.5 MB at this pin, and most kernels compile from source the first time they are used. macOS
 keeps the compiled shaders across runs, so the cost lands mostly on the first run: the `mlx-rs`
 lib tests took 27 s instead of 5 s the first time, and the same as a normal build afterwards.
-Results can differ from the precompiled kernels in the last bits. JIT builds use
-`~/.mlx/lib/<mlx-c-key>-jit/`; with `MLX_RS_METAL_PATH`, give JIT and non-JIT builds different
-directories.
+Results can differ from the precompiled kernels in the last bits.
+
+JIT builds keep their metallib in `~/.mlx/lib/<mlx-c-key>-jit/`, so they don't overwrite the full
+library that normal builds use. `MLX_RS_METAL_PATH` is used as given, without the `-jit` suffix,
+so if you set it, point JIT and non-JIT builds at different directories.
+
+## Build metadata for dependents
+
+`mlx-sys` declares `links = "mlx"`, so Cargo runs a dependent's build script after this one and
+passes it the locations of the native sources this build compiled:
+
+| Variable | Value |
+|---|---|
+| `DEP_MLX_INCLUDE` | every directory the include path needs, as a path list: the MLX source tree (`mlx/...`), metal-cpp with the `metal` feature, and mlx-c (`mlx/c/...`) |
+| `DEP_MLX_DEFINES` | whitespace-separated `NAME` or `NAME=VALUE` definitions MLX was built with |
+| `DEP_MLX_VERSION` | the MLX version mlx-c pins, when it can be read |
+
+C++ that extends MLX, such as a custom `mlx::core::Primitive`, must compile against the same
+headers `libmlx` was built from. A dependent can use these with the `cc` crate. Passing the
+directories with `-isystem` keeps warnings from MLX's own headers out of the dependent's build:
+
+```rust
+let mut build = cc::Build::new();
+build.cpp(true).std("c++20");
+for dir in std::env::split_paths(&std::env::var_os("DEP_MLX_INCLUDE").unwrap()) {
+    build.flag("-isystem").flag(dir);
+}
+for define in std::env::var("DEP_MLX_DEFINES").unwrap().split_whitespace() {
+    match define.split_once('=') {
+        Some((name, value)) => build.define(name, value),
+        None => build.define(define, None),
+    };
+}
+```

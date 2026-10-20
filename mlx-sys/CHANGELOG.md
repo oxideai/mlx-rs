@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased
+
+- Declare `links = "mlx"` and publish the MLX include path (MLX, metal-cpp and
+  mlx-c), the MLX defines and the pinned MLX version as `DEP_MLX_*`, so
+  dependent build scripts can compile C++ against the exact MLX this crate built
+
 ## 0.6.0
 
 - Update the pinned native tuple to mlx-c `c74db530` and MLX `0.32.2`

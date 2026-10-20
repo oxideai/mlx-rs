@@ -10,6 +10,8 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 readme = "README.md"
+# Exposes build-script metadata to dependents as DEP_MLX_* (see README.md).
+links = "mlx"
 
 [package.metadata.docs.rs]
 targets = [

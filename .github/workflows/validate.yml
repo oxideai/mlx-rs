@@ -4,7 +4,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,12 +35,14 @@ jobs:
         if: github.event_name == 'pull_request'
       - run: cargo run -p xtask -- verify-ledger
 
-  # Proves the leak gate works on THIS runner before trusting it: leaks can
-  # attach, a deliberate leak is detected, the clean 21-binary gate passes in
-  # budget. A runner that denies task ports fails loudly here instead of
-  # producing a silently green gate.
   ffi-gate:
     runs-on: blaze/macos-latest
+    timeout-minutes: 90
+    env:
+      CARGO_TARGET_DIR: ${{ runner.temp }}/guard-malloc/target
+      MLX_RS_METAL_PATH: ${{ runner.temp }}/guard-malloc/metallib
+      TMPDIR: ${{ runner.temp }}
+      GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,15 +51,31 @@ jobs:
         with:
           cache: false
           rustflags: ""
+      - name: Locate build cache
+        id: ffi-cache
+        run: echo "target=$(python3 -c 'import os; print(os.path.relpath(os.environ["CARGO_TARGET_DIR"]))')" >> "$GITHUB_OUTPUT"
       - uses: Swatinem/rust-cache@v2
         with:
           key: ffi-gate-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
-      - run: cargo run -p xtask -- verify-ffi --calibrate --budget-seconds 1200 | tee verify-ffi-calibration.json
+          workspaces: . -> ${{ steps.ffi-cache.outputs.target }}
+          cache-directories: ${{ runner.temp }}/guard-malloc/metallib
+      - name: Qualify leaks and Guard Malloc
+        timeout-minutes: 75
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ffi-gate"
+          cargo run -p xtask -- verify-ffi --calibrate --guard-malloc \
+            --budget-seconds 3600 --leaks-timeout-seconds 600 \
+            --guard-malloc-timeout-seconds 1200 \
+            --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
+            2> >(tee "$RUNNER_TEMP/ffi-gate/stderr.log" >&2) \
+            | tee "$RUNNER_TEMP/ffi-gate/calibration.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: verify-ffi-calibration
-          path: verify-ffi-calibration.json
+          path: ${{ runner.temp }}/ffi-gate/
 
   tests:
     runs-on: blaze/${{ matrix.runner }}

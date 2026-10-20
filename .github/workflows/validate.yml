@@ -33,6 +33,7 @@ jobs:
         if: github.event_name != 'pull_request'
       - run: cargo run -p xtask -- verify-oracle-boundary --base ${{ github.event.pull_request.base.sha }}
         if: github.event_name == 'pull_request'
+      - run: cargo run -p xtask -- verify-ledger
 
   # Proves the leak gate works on THIS runner before trusting it: leaks can
   # attach, a deliberate leak is detected, the clean 21-binary gate passes in

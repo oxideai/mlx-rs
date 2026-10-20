@@ -5,15 +5,32 @@
     cargo run -p xtask -- verify-ffi
     cargo run -p xtask -- verify-ffi --guard-malloc
 
-For local admission, record the exact SHA and environment with both reports. Delete the body of
-`StringMapIterator::drop` in `mlx-rs/src/utils/io.rs`, confirm the iterator leak is detected, then
-restore it and require zero regressions. Requalify after parser or baseline changes.
+For admission, run the qualified combined gate from a clean checkout and put its artifacts outside
+that checkout:
+
+    mkdir -p "$RUNNER_TEMP/ffi-gate"
+    cargo run -p xtask -- verify-ffi --calibrate --guard-malloc \
+      --budget-seconds 3600 --leaks-timeout-seconds 600 \
+      --guard-malloc-timeout-seconds 1200 \
+      --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
+      > "$RUNNER_TEMP/ffi-gate/calibration.json"
+
+Locally, use a scratch directory in place of `$RUNNER_TEMP/ffi-gate`. Pass `verify-ffi.json` to
+`verify-bump --ffi-report`; local evidence also requires `--allow-local-ffi`. The calibration JSON
+on stdout contains the detailed controls. Requalify after parser or baseline changes.
 
 `leaks --atExit` reports a constant Objective-C initialization leak (32 bytes), so compare against
 the qualified baseline rather than trusting its exit code. Discover binaries through Cargo JSON;
 exclude proc-macro binaries by target kind. Guard Malloc supplies the separate use-after-free and
-double-free lane. CI calibrates leaks, but `verify(..., false, ...)` in
-[verify_ffi.rs](xtask/src/verify_ffi.rs) disables Guard Malloc during calibration.
+double-free lane. Calibration must detect a deliberate iterator leak, use-after-free, and double-free,
+and pass clean controls before its combined inventory report can qualify admission. Each Guard Malloc
+process must show that libgmalloc loaded; unavailable instrumentation and timeouts fail the gate.
+
+CI runs this gate on every PR and push to main, uploading reports and logs even on failure. Reports
+cover `source_commit`, the checked-out commit (the merge commit on PRs). They also record `github_sha`
+and `github_pr_head_sha` when available; the PR head is context, not the admitted commit. The clean
+gate has a 60-minute budget, each leak subprocess a 10-minute timeout, and each Guard Malloc
+subprocess a 20-minute timeout. The calibration step has a 75-minute timeout including builds.
 
 ## Conformance runner
 

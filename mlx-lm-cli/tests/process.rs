@@ -69,6 +69,60 @@ fn failure(output: &Output, code: i32, diagnostic: &str) {
     );
 }
 
+fn clean_stderr(output: &Output) {
+    let guard_malloc = std::env::var("DYLD_INSERT_LIBRARIES")
+        .is_ok_and(|libraries| libraries.contains("libgmalloc"));
+    assert!(stderr_is_clean(&output.stderr, guard_malloc), "{output:?}");
+}
+
+fn stderr_is_clean(stderr: &[u8], guard_malloc: bool) -> bool {
+    if stderr.is_empty() {
+        return true;
+    }
+    if !guard_malloc {
+        return false;
+    }
+    String::from_utf8_lossy(stderr).lines().all(|line| {
+        let Some((pid, message)) = line
+            .strip_prefix("GuardMalloc[mlx-lm-")
+            .and_then(|line| line.split_once("]: "))
+        else {
+            return false;
+        };
+        if pid.is_empty() || !pid.bytes().all(|byte| byte.is_ascii_digit()) {
+            return false;
+        }
+        matches!(
+            message,
+            "Allocations will be placed on 16 byte boundaries."
+                | " - Some buffer overruns may not be noticed."
+                | " - Applications using vector instructions (e.g., SSE) should work."
+        ) || message.strip_prefix("version ").is_some_and(|version| {
+            version
+                .split('.')
+                .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+        })
+    })
+}
+
+#[test]
+fn guard_malloc_banner_does_not_hide_cli_or_allocator_errors() {
+    let banner = b"GuardMalloc[mlx-lm-123]: Allocations will be placed on 16 byte boundaries.\nGuardMalloc[mlx-lm-123]:  - Some buffer overruns may not be noticed.\nGuardMalloc[mlx-lm-123]:  - Applications using vector instructions (e.g., SSE) should work.\nGuardMalloc[mlx-lm-123]: version 064573.1.1\n";
+    assert!(stderr_is_clean(b"", false));
+    assert!(stderr_is_clean(banner, true));
+    assert!(!stderr_is_clean(banner, false));
+    for diagnostic in [
+        "GuardMalloc[mlx-lm-123]: attempted free of pointer 0x1 that was not claimed by any registered malloc zone\n",
+        "GuardMalloc[mlx-lm-123]: version unknown\n",
+        "GuardMalloc[mlx-lm-123]: version ...\n",
+        "model load failed\n", "\n",
+    ] {
+        let mut stderr = banner.to_vec();
+        stderr.extend_from_slice(diagnostic.as_bytes());
+        assert!(!stderr_is_clean(&stderr, true));
+    }
+}
+
 fn public_records(name: &str) -> Vec<Value> {
     let mut model = Model::from_dir(fixture(name)).unwrap();
     let mut options = GenerationOptions::default();
@@ -111,7 +165,7 @@ fn local_llama_jsonl_generation() {
         .output()
         .unwrap();
     success(&output);
-    assert!(output.stderr.is_empty(), "{output:?}");
+    clean_stderr(&output);
     assert!(output.stdout.ends_with(b"\n"));
     let records: Vec<Value> = String::from_utf8(output.stdout)
         .unwrap()
@@ -145,7 +199,7 @@ fn local_qwen3_quantized_info() {
         .output()
         .unwrap();
     success(&output);
-    assert!(output.stderr.is_empty());
+    clean_stderr(&output);
     let actual: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(actual.as_object().unwrap().len(), 4);
     assert_eq!(actual["version"], 1);
@@ -188,7 +242,7 @@ fn sharded_load() {
         .output()
         .unwrap();
     success(&output);
-    assert!(output.stderr.is_empty());
+    clean_stderr(&output);
     let records: Vec<Value> = String::from_utf8(output.stdout)
         .unwrap()
         .lines()
@@ -354,7 +408,7 @@ fn early_broken_pipe() {
         assert!(!stderr.contains("output failed"));
         assert!(!stderr.contains("Broken pipe"));
         if format == "jsonl" {
-            assert!(stderr.is_empty());
+            clean_stderr(&output);
         }
     }
 }

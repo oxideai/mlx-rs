@@ -2161,14 +2161,10 @@ ROOT LEAK: <NSArray: 0x600000008000> [32]
 
     #[test]
     fn guard_malloc_rejects_uninstrumented_success() {
-        let binary = TestBinary {
-            package_id: "probe".into(),
-            target: "probe".into(),
-            target_kind: vec!["test".into()],
-            path: "/usr/bin/true".into(),
-        };
-        let (check, _) = run_guard_malloc(&binary, Duration::from_secs(5));
-        assert_ne!(check.status, Verdict::Pass);
+        let output = captured_command("test result: ok. 1 passed; 0 failed", "", 0);
+        let check = assess_guard_malloc(Ok(output), Duration::ZERO, None);
+        assert_eq!(check.status, Verdict::Error);
+        assert_eq!(check.failure.as_deref(), Some("guard_malloc_unavailable"));
     }
 
     #[test]

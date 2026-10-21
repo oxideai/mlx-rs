@@ -144,7 +144,8 @@
         "mlx-tests::doctest::mlx_tests",
         "mlx-tests::lib::mlx_tests",
         "mlx-tests::test::ci_leak_calibration",
-        "mlx-tests::test::common"
+        "mlx-tests::test::common",
+        "mlx-tests::test::test_quantizable"
       ],
       "resolved_features": {
         "mlx-rs": [
@@ -182,8 +183,8 @@
         "MLX_METAL_JIT": "OFF"
       },
       "allow_empty": [
+        "mlx-internal-macros::doctest::mlx_internal_macros",
         "mlx-internal-macros::lib::mlx_internal_macros",
-        "mlx-lm::doctest::mlx_lm",
         "mlx-macros::doctest::mlx_macros",
         "mlx-macros::lib::mlx_macros",
         "mlx-sys::doctest::mlx_sys",
@@ -191,7 +192,8 @@
         "mlx-tests::doctest::mlx_tests",
         "mlx-tests::lib::mlx_tests",
         "mlx-tests::test::ci_leak_calibration",
-        "mlx-tests::test::common"
+        "mlx-tests::test::common",
+        "mlx-tests::test::test_quantizable"
       ],
       "resolved_features": {
         "mlx-rs": [
@@ -235,8 +237,8 @@
         "MLX_METAL_JIT": "OFF"
       },
       "allow_empty": [
+        "mlx-internal-macros::doctest::mlx_internal_macros",
         "mlx-internal-macros::lib::mlx_internal_macros",
-        "mlx-lm::doctest::mlx_lm",
         "mlx-macros::doctest::mlx_macros",
         "mlx-macros::lib::mlx_macros",
         "mlx-sys::doctest::mlx_sys",
@@ -244,7 +246,8 @@
         "mlx-tests::doctest::mlx_tests",
         "mlx-tests::lib::mlx_tests",
         "mlx-tests::test::ci_leak_calibration",
-        "mlx-tests::test::common"
+        "mlx-tests::test::common",
+        "mlx-tests::test::test_quantizable"
       ],
       "resolved_features": {
         "mlx-rs": [

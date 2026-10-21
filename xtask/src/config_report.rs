@@ -226,6 +226,7 @@ fn inventory(
 
 fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
     let mut runs: Vec<Value> = Vec::new();
+    let mut groups = Vec::new();
     for line in log.lines().map(str::trim) {
         if serde_json::from_str::<Value>(line)
             .ok()
@@ -253,8 +254,22 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
             None
         };
         if let Some(id) = heading {
-            runs.push(json!({"id": id, "passed": 0, "failed": 0, "ignored": 0, "filtered_out": 0, "not_run": false, "summaries": 0, "outcome": "incomplete"}));
+            runs.push(json!({"id": id, "passed": 0, "failed": 0, "ignored": 0, "filtered_out": 0, "not_run": false, "summaries": 0, "outcome": "incomplete", "nested_summaries": []}));
+            groups.clear();
             continue;
+        }
+        if let Some(count) = line
+            .strip_prefix("running ")
+            .and_then(|s| s.strip_suffix(" tests").or_else(|| s.strip_suffix(" test")))
+        {
+            let count: u64 = count.parse().map_err(|_| "invalid announced test count")?;
+            if groups.is_empty() {
+                let run = runs.last_mut().ok_or("test group outside a run")?;
+                if run["outcome"] != "fail" {
+                    run["outcome"] = "incomplete".into();
+                }
+            }
+            groups.push(count);
         }
         if line.contains("NOT RUN") {
             let run = runs.last_mut().ok_or("NOT RUN outside a test run")?;
@@ -268,6 +283,7 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
             if !["ok", "FAILED"].contains(&status) {
                 return Err("unrecognized test summary status".into());
             }
+            let mut parsed = json!({"outcome": if status == "ok" { "pass" } else { "fail" }});
             for (field, suffix) in [
                 ("passed", " passed"),
                 ("failed", " failed"),
@@ -280,7 +296,25 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
                     .ok_or("missing test count")?
                     .parse()
                     .map_err(|_| "invalid test count")?;
-                run[field] = (run[field].as_u64().unwrap() + n).into();
+                parsed[field] = n.into();
+            }
+            if let Some(announced) = groups.pop() {
+                parsed["announced_tests"] = announced.into();
+                if announced
+                    != parsed["passed"].as_u64().unwrap()
+                        + parsed["failed"].as_u64().unwrap()
+                        + parsed["ignored"].as_u64().unwrap()
+                {
+                    return Err("test counts disagree with announced group size".into());
+                }
+            }
+            if !groups.is_empty() {
+                run["nested_summaries"].as_array_mut().unwrap().push(parsed);
+                continue;
+            }
+            for field in ["passed", "failed", "ignored", "filtered_out"] {
+                run[field] =
+                    (run[field].as_u64().unwrap() + parsed[field].as_u64().unwrap()).into();
             }
             run["summaries"] = (run["summaries"].as_u64().unwrap() + 1).into();
             if run["outcome"] != "fail" {

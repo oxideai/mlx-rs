@@ -79,8 +79,10 @@ Reports bind the clean checkout SHA, mlx-c commit, nested MLX version, Cargo.loc
 CMake cache settings, exact argument vector, and each binary/doctest's counts and outcome.
 `github_sha` and `github_pr_head_sha` are context; only `source_commit` is admitted. Missing runs,
 incomplete summaries, filtered tests, `NOT RUN`, and unexpected zero-test runs fail qualification.
-The ledger's `allow_empty` lists intentionally empty harnesses, the ignored leak calibration
-probe, and documentation targets without tests. Ignored individual tests remain visible in counts.
+The ledger's `allow_empty` lists intentionally empty and compile-only harnesses, the ignored leak
+calibration probe, and documentation targets without runnable tests. Ignored individual tests remain
+visible in counts. Nested harness summaries are recorded separately from the enclosing binary
+so a filtered child regression probe does not inflate its parent's counts.
 
 Pass one `--config-report <file>` per required configuration to `verify-bump`. It rejects missing,
 duplicate, stale, failed or skipped evidence and configuration mismatches. To run only this admission

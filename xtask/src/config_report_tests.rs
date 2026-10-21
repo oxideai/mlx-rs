@@ -273,3 +273,19 @@ fn detects_json_not_run_diagnostic() {
     let runs = parse_runs("Doc-tests demo\n{\"status\":\"NOT RUN\"}\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0s").unwrap();
     assert_eq!(runs[0]["not_run"], true);
 }
+
+#[test]
+fn nested_harness_summary_does_not_inflate_parent_counts() {
+    let log = "Running tests/state_compile.rs (/tmp/state)\nrunning 15 tests\ntest nested ...\nrunning 1 test\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0s\nok\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0s";
+    let runs = parse_runs(log).unwrap();
+    assert_eq!(runs[0]["passed"], 15);
+    assert_eq!(runs[0]["filtered_out"], 0);
+    assert_eq!(runs[0]["nested_summaries"][0]["passed"], 1);
+}
+
+#[test]
+fn incomplete_second_doctest_group_cannot_pass() {
+    let log = "Doc-tests demo\nrunning 1 test\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0s\nrunning 1 test";
+    let runs = parse_runs(log).unwrap();
+    assert_eq!(runs[0]["outcome"], "incomplete");
+}

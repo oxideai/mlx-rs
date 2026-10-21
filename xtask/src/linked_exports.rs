@@ -43,11 +43,87 @@ fn validate_symbols(planned: &BTreeSet<String>, found: &BTreeSet<String>) -> Res
     let missing: Vec<_> = planned.difference(found).collect();
     let unexpected: Vec<_> = found.difference(planned).collect();
     if !missing.is_empty() || !unexpected.is_empty() {
-        return Err(format!(
-            "missing: {missing:?}; unexpected (no exceptions): {unexpected:?}"
-        ));
+        return Err(format!("missing: {missing:?}; unexpected: {unexpected:?}"));
     }
     Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExportException {
+    symbol: String,
+    archive: String,
+    metal_only: bool,
+    reason: String,
+}
+
+fn unexpected_exports(
+    planned: &BTreeSet<String>,
+    archives: &[Value],
+    exceptions: &Value,
+    metal: bool,
+) -> Result<Vec<Value>, String> {
+    let exceptions: Vec<ExportException> =
+        serde_json::from_value(exceptions.clone()).map_err(|e| e.to_string())?;
+    let mut keys = BTreeSet::new();
+    for exception in &exceptions {
+        if exception.symbol.is_empty()
+            || !exception
+                .symbol
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'_')
+            || !native_link::LIBRARIES
+                .lines()
+                .map(|name| format!("lib{name}.a"))
+                .any(|name| name == exception.archive)
+            || exception.reason.trim().is_empty()
+            || exception.reason.lines().count() != 1
+            || !keys.insert((&exception.symbol, &exception.archive))
+        {
+            return Err("invalid or duplicate native export exception".into());
+        }
+    }
+    let mut used = BTreeSet::new();
+    let mut unexpected = Vec::new();
+    for archive in archives {
+        let path = archive["path"].as_str().ok_or("missing archive path")?;
+        let name = Path::new(path).file_name().and_then(|s| s.to_str());
+        let found = symbol_set(&archive["c_symbols"])?;
+        let mut symbols = Vec::new();
+        for symbol in found.difference(planned) {
+            if let Some((index, _)) = exceptions.iter().enumerate().find(|(_, exception)| {
+                exception.symbol == *symbol
+                    && Some(exception.archive.as_str()) == name
+                    && (!exception.metal_only || metal)
+            }) {
+                used.insert(index);
+            } else if exceptions
+                .iter()
+                .any(|exception| exception.symbol == *symbol)
+            {
+                return Err(format!(
+                    "native export exception outside scope: {path}: {symbol}"
+                ));
+            } else {
+                symbols.push(symbol);
+            }
+        }
+        unexpected.push(json!({"archive": path, "symbols": symbols}));
+    }
+    for (index, exception) in exceptions.iter().enumerate() {
+        if (!exception.metal_only || metal) && !used.contains(&index) {
+            return Err(format!(
+                "stale native export exception: {}: {}",
+                exception.archive, exception.symbol
+            ));
+        }
+    }
+    Ok(unexpected)
+}
+
+fn read_exceptions(root: &Path) -> Result<Value, String> {
+    serde_json::from_str(&read(&root.join("ledger/native-export-exceptions.json"))?)
+        .map_err(|e| e.to_string())
 }
 
 fn validate_archive(path: &Path, expected: &str) -> Result<(), String> {
@@ -232,10 +308,14 @@ fn collect(root: &Path, build: &Path) -> Result<Value, String> {
         Ok(value) => value,
         Err(error) => json!({"verdict": "fail", "error": error}),
     };
-    let unexpected: Vec<_> = archives.iter().map(|a| {
-        let symbols = symbol_set(&a["c_symbols"]).unwrap();
-        json!({"archive": a["path"], "symbols": symbols.difference(&planned).collect::<Vec<_>>()})
-    }).collect();
+    let exceptions = read_exceptions(root)?;
+    let unexpected = unexpected_exports(
+        &planned,
+        &archives,
+        &exceptions,
+        configuration["MLX_BUILD_METAL"] == "ON",
+    )
+    .or_else(|_| unexpected_exports(&planned, &archives, &json!([]), false))?;
     let mut report = json!({"schema_version": 1, "identity": identity, "dirty": dirty, "build_directory": build,
         "configuration": configuration, "build_provenance": provenance, "archives": archives, "planned": planned,
         "planned_count": planned.len(), "found_count": found.len(),
@@ -250,12 +330,7 @@ fn collect(root: &Path, build: &Path) -> Result<Value, String> {
 }
 
 pub(crate) fn validate(root: &Path, report: &Value) -> Result<(), String> {
-    let exceptions: Value =
-        serde_json::from_str(&read(&root.join("ledger/native-export-exceptions.json"))?)
-            .map_err(|e| e.to_string())?;
-    if exceptions != json!([]) {
-        return Err("native export exceptions require an approved admission policy".into());
-    }
+    let exceptions = read_exceptions(root)?;
     if report["schema_version"] != 1 || report["identity"] != crate::config_report::identity(root)?
     {
         return Err("stale linked-export identity".into());
@@ -304,7 +379,23 @@ pub(crate) fn validate(root: &Path, report: &Value) -> Result<(), String> {
         Path::new(canary["path"].as_str().ok_or("missing canary path")?),
         canary["sha256"].as_str().ok_or("missing canary hash")?,
     )?;
-    validate_symbols(&planned, &found)?;
+    let unexpected = unexpected_exports(
+        &planned,
+        archives,
+        &exceptions,
+        report["configuration"]["MLX_BUILD_METAL"] == "ON",
+    )?;
+    let mut unexcepted = found
+        .intersection(&planned)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    for archive in &unexpected {
+        unexcepted.extend(symbol_set(&archive["symbols"])?);
+    }
+    validate_symbols(&planned, &unexcepted)?;
+    if report["unexpected"] != json!(unexpected) {
+        return Err("unexpected export inventory mismatch".into());
+    }
     if report["dirty"] != false
         || !output(
             Command::new("git")
@@ -532,6 +623,88 @@ mod tests {
 
     fn symbols(names: &[&str]) -> BTreeSet<String> {
         names.iter().map(|name| (*name).to_owned()).collect()
+    }
+
+    fn exception_fixture() -> (Vec<Value>, Value) {
+        (
+            vec![json!({"path": "/build/libmlx.a", "c_symbols": ["mlx_add", "helper"]})],
+            json!([{"symbol": "helper", "archive": "libmlx.a", "metal_only": true,
+                "reason": "Compiler helper emitted by the Metal backend."}]),
+        )
+    }
+
+    #[test]
+    fn accepts_exact_exception_in_scope() {
+        let (archives, exceptions) = exception_fixture();
+        let result =
+            unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, true).unwrap();
+        assert_eq!(
+            result,
+            vec![json!({"archive": "/build/libmlx.a", "symbols": []})]
+        );
+    }
+
+    #[test]
+    fn rejects_stale_exception() {
+        let (mut archives, exceptions) = exception_fixture();
+        archives[0]["c_symbols"] = json!(["mlx_add"]);
+        assert!(
+            unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, true)
+                .unwrap_err()
+                .contains("stale")
+        );
+    }
+
+    #[test]
+    fn rejects_exception_in_wrong_archive_even_when_used_in_scope() {
+        let (mut archives, exceptions) = exception_fixture();
+        archives.push(json!({"path": "/build/libmlxc.a", "c_symbols": ["helper"]}));
+        assert!(
+            unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, true)
+                .unwrap_err()
+                .contains("scope")
+        );
+    }
+
+    #[test]
+    fn rejects_metal_exception_in_cpu_configuration() {
+        let (archives, exceptions) = exception_fixture();
+        assert!(
+            unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, false)
+                .unwrap_err()
+                .contains("scope")
+        );
+    }
+
+    #[test]
+    fn inactive_metal_exception_is_not_stale_on_cpu() {
+        let (mut archives, exceptions) = exception_fixture();
+        archives[0]["c_symbols"] = json!(["mlx_add"]);
+        assert!(unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, false).is_ok());
+    }
+
+    #[test]
+    fn exception_does_not_hide_another_export() {
+        let (mut archives, exceptions) = exception_fixture();
+        archives[0]["c_symbols"] = json!(["mlx_add", "helper", "helper_extra"]);
+        let result =
+            unexpected_exports(&symbols(&["mlx_add"]), &archives, &exceptions, true).unwrap();
+        assert_eq!(result[0]["symbols"], json!(["helper_extra"]));
+    }
+
+    #[test]
+    fn rejects_exception_patterns_and_missing_reasons() {
+        let (archives, exceptions) = exception_fixture();
+        for (field, value) in [
+            ("symbol", json!("helper*")),
+            ("archive", json!("lib*.a")),
+            ("reason", json!(" ")),
+            ("metal_only", Value::Null),
+        ] {
+            let mut invalid = exceptions.clone();
+            invalid[0][field] = value;
+            assert!(unexpected_exports(&symbols(&["mlx_add"]), &archives, &invalid, true).is_err());
+        }
     }
 
     #[test]

@@ -261,8 +261,11 @@ once. C++ Itanium-mangled symbols are counted separately; every other defined ex
 including weak symbols and data, is conservatively treated as a C export. This inventories archive
 members, including members a particular consumer may not pull into its executable.
 
-`ledger/native-export-exceptions.json` is empty. Missing planned symbols and every unexpected C
-export fail admission. Reports retain the full unexpected list grouped by archive even on failure;
+`ledger/native-export-exceptions.json` records reviewed exact-name exceptions for gguflib, compiler
+helpers, and metal-cpp data globals. Each entry names its defining archive, a one-line reason, and
+whether it applies only when `MLX_BUILD_METAL=ON`. Missing planned symbols, unlisted exports,
+exceptions used outside their archive or configuration, and unused exceptions in an applicable
+configuration fail admission. Reports retain unexpected symbols grouped by archive even on failure;
 adding exceptions requires a reviewed policy change, not automatic baseline regeneration.
 Header/type fingerprints remain necessary because a matching symbol name does not prove its type.
 
@@ -303,8 +306,8 @@ must agree with the default and JIT Rust builds. The `checks` job also inspects 
 archives discovered from clippy's JSON build-script output, reusing that job's native build. It
 uploads the export report and Cargo artifact inventory on failure too. The measured local addition
 was 20 seconds including rebuilding xtask, below the three-minute budget; no native rebuild or
-new routine job is added. With the exception list empty, current unexpected exports make this
-check and bump admission fail until the maintainer resolves each export.
+new routine job is added. Any export outside the reviewed exception scopes fails this
+check and bump admission.
 
 Run qualified leak and Guard Malloc lanes, old semantic baselines before changing oracle authority,
 exact-target replay, affected high-risk packs and public-surface gates. Aggregate exact-SHA,

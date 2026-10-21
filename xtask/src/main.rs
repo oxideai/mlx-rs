@@ -6,6 +6,7 @@ use std::process::Command;
 mod api_baseline;
 #[path = "../../mlx-sys/src/bindgen_config.rs"]
 mod bindgen_config;
+mod bump_evidence;
 mod config_report;
 mod fingerprint;
 mod source_api;

@@ -1,0 +1,101 @@
+name: bump-admission
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - mlx-sys/src/mlx-c
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bump-evidence:
+    runs-on: blaze/macos-latest
+    timeout-minutes: 180
+    env:
+      MLX_RS_BUMP_RUN: '1'
+      GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - name: Set isolated output paths
+        run: |
+          {
+            echo "BUMP_ROOT=$RUNNER_TEMP/bump-canaries"
+            echo "MLX_LM_REAL_CHECKPOINTS=$RUNNER_TEMP/bump-canaries/reports/checkpoints/real-checkpoints.json"
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/bump-canaries/xtask"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/bump-canaries/metallib/xtask"
+          } >> "$GITHUB_ENV"
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          rustflags: ''
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12.14
+      - uses: actions/cache/restore@v4
+        id: checkpoints-cache
+        with:
+          path: ${{ runner.temp }}/bump-canaries/checkpoints
+          key: bump-checkpoints-${{ hashFiles('conformance/mlx-lm/bump-oracle.json') }}
+      - name: Qualify native result parsing
+        run: python3 -B -m unittest discover -s xtask -p 'test_*.py'
+      - name: Download and verify pinned checkpoints
+        run: python3 -B xtask/provision_checkpoints.py --cache "$BUMP_ROOT/checkpoints" --output "$BUMP_ROOT/reports/checkpoints"
+      - uses: actions/cache/save@v4
+        if: steps.checkpoints-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ runner.temp }}/bump-canaries/checkpoints
+          key: bump-checkpoints-${{ hashFiles('conformance/mlx-lm/bump-oracle.json') }}
+      - name: Execute stable configurations
+        shell: bash
+        run: |
+          status=0
+          for config in macos-arm64-default macos-arm64-metal-jit macos-arm64-cpu-only macos-arm64-cpu-only-release; do
+            export CARGO_TARGET_DIR="$BUMP_ROOT/targets/$config"
+            export MLX_RS_METAL_PATH="$BUMP_ROOT/metallib/$config"
+            cargo run -p xtask -- config-report "$config" --report "$BUMP_ROOT/reports/$config.json" || status=1
+          done
+          exit "$status"
+      - name: Execute native canaries
+        if: ${{ !cancelled() }}
+        run: python3 -B xtask/native_canaries.py --build-root "$BUMP_ROOT/native" --reports "$BUMP_ROOT/reports/native"
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        if: ${{ !cancelled() }}
+        with:
+          toolchain: 1.88.0
+          cache: false
+          rustflags: ''
+      - name: Execute MSRV with checkpoints
+        if: ${{ !cancelled() }}
+        run: |
+          export CARGO_TARGET_DIR="$BUMP_ROOT/targets/macos-arm64-default-msrv"
+          export MLX_RS_METAL_PATH="$BUMP_ROOT/metallib/macos-arm64-default-msrv"
+          cargo run -p xtask -- config-report macos-arm64-default-msrv --report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json"
+      - name: Verify exact-SHA bump evidence
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          cargo run -p xtask -- config-report --verify "$BUMP_ROOT/reports/"macos-arm64-*.json
+          args=()
+          for report in "$BUMP_ROOT/reports/"macos-arm64-*.json; do
+            args+=(--config-report "$report")
+          done
+          for report in "$BUMP_ROOT/reports/native/"*.json; do
+            args+=(--native-report "$report")
+          done
+          cargo run -p xtask -- verify-bump --bump-evidence-only "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bump-evidence
+          path: ${{ runner.temp }}/bump-canaries/reports/
+      - name: Remove build directories
+        if: always()
+        run: rm -rf "$BUMP_ROOT/native" "$BUMP_ROOT/targets" "$BUMP_ROOT/metallib" "$BUMP_ROOT/xtask"

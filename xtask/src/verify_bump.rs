@@ -27,6 +27,7 @@ const CHECK_IDS: &[&str] = &[
     "ledger",
     "fingerprints",
     "feature_matrix",
+    "bump_canaries",
     "state",
     "replay",
     "sentinel",
@@ -111,6 +112,7 @@ struct Options {
     boundary_base: Option<String>,
     ffi_report: Option<PathBuf>,
     config_reports: Vec<PathBuf>,
+    native_reports: Vec<PathBuf>,
     suite_source: SuiteSource,
     replay_report: PathBuf,
     waivers: PathBuf,
@@ -122,6 +124,7 @@ impl Options {
         let mut mode = None;
         let mut ffi_report = None;
         let mut config_reports = Vec::new();
+        let mut native_reports = Vec::new();
         let mut boundary_base = None;
         let mut suite_source = None;
         let mut replay_report = repo_root.join("conformance/target/replay-report.json");
@@ -135,6 +138,10 @@ impl Options {
                 "--ffi-report" if ffi_report.is_none() => {
                     index += 1;
                     ffi_report = Some(PathBuf::from(args.get(index).ok_or_else(usage)?));
+                }
+                "--native-report" => {
+                    index += 1;
+                    native_reports.push(PathBuf::from(args.get(index).ok_or_else(usage)?));
                 }
                 "--config-report" => {
                     index += 1;
@@ -171,6 +178,7 @@ impl Options {
             boundary_base,
             ffi_report,
             config_reports,
+            native_reports,
             suite_source: suite_source.ok_or_else(usage)?,
             replay_report,
             waivers,
@@ -180,10 +188,38 @@ impl Options {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] (--suite-results <file>|--rerun-suites) [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
+    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] [--native-report <file> ...] (--suite-results <file>|--rerun-suites) [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
 }
 
 pub(crate) fn run(repo_root: &Path, args: &[String]) -> i32 {
+    if args.first().map(String::as_str) == Some("--bump-evidence-only") {
+        let mut configs = Vec::new();
+        let mut native = Vec::new();
+        for pair in args[1..].chunks(2) {
+            if pair.len() != 2 {
+                eprintln!("missing report path");
+                return 1;
+            }
+            match pair[0].as_str() {
+                "--config-report" => configs.push(resolve_path(repo_root, Path::new(&pair[1]))),
+                "--native-report" => native.push(resolve_path(repo_root, Path::new(&pair[1]))),
+                _ => {
+                    eprintln!("unknown evidence argument");
+                    return 1;
+                }
+            }
+        }
+        return match crate::bump_evidence::validate(repo_root, &configs, &native) {
+            Ok(report) => {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                0
+            }
+            Err(error) => {
+                eprintln!("bump evidence: {error}");
+                1
+            }
+        };
+    }
     let report = match Options::parse(repo_root, args) {
         Ok(options) => aggregate(repo_root, &options),
         Err(error) => json!({
@@ -340,6 +376,10 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
                     crate::config_report::validate_reports(repo_root, &paths, &configs)
                 }),
         ),
+        check(6, "bump_canaries", "native canaries and real checkpoints",
+            crate::bump_evidence::validate(repo_root,
+                &options.config_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>(),
+                &options.native_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>())),
         check(
             7,
             "state",
@@ -1609,6 +1649,7 @@ fn synthetic_checks(ffi: Option<Value>, suites: Option<Value>, replay_passes: bo
         check(6, "ledger", "ledger", pass()),
         check(6, "fingerprints", "fingerprints", pass()),
         check(6, "feature_matrix", "feature matrix", pass()),
+        check(6, "bump_canaries", "bump canaries", pass()),
         check(
             7,
             "state",

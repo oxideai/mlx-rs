@@ -567,7 +567,9 @@ fn real_checkpoints() -> Result<()> {
         println!("NOT RUN: local real-checkpoint manifest not supplied");
         return Ok(());
     };
-    refuse_ci()?;
+    if std::env::var("MLX_RS_BUMP_RUN").as_deref() != Ok("1") {
+        refuse_ci()?;
+    }
     run_matrix(&read_manifest(Path::new(&path))?)
 }
 

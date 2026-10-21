@@ -56,6 +56,47 @@ with an exact-version handshake. Its committed reports compare MLX 0.30.6 with 0
 Python stays out of the Rust process because both runtimes carry global caches. CPU is canonical;
 Metal comparisons are separate. Use a scratch `CARGO_TARGET_DIR` for different feature sets.
 
+## Executed configuration reports
+
+The required entries in `ledger/supported-feature-matrix.json` identify the existing default
+stable/MSRV and CPU-only stable lanes, including package selection, Rust profile, toolchain,
+resolved backend features and native CMake settings. Run each configuration with its own
+`CARGO_TARGET_DIR` and put reports outside the checkout:
+
+    cargo run -p xtask -- config-report macos-arm64-default \
+      --report "$RUNNER_TEMP/config-reports/macos-arm64-default.json"
+    cargo run -p xtask -- config-report macos-arm64-cpu-only \
+      --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
+
+Use the selected toolchain for the entire invocation; `macos-arm64-default-msrv` requires Rust
+1.88.0. Locally, substitute a scratch directory for `$RUNNER_TEMP`. The wrapper executes the
+ledger's Cargo test command once, including doctests, with serial tests and captured test output.
+It preserves Cargo's exit status and writes a JSON report plus a sibling `.log` file. A zero exit
+status does not qualify evidence: inspect `verdict`, or use the admission validator.
+
+Reports bind the clean checkout SHA, mlx-c commit, nested MLX version, Cargo.lock SHA-256,
+`rustc --version --verbose`, macOS/SDK versions, resolved features, Rust profile, effective
+CMake cache settings, exact argument vector, and each binary/doctest's counts and outcome.
+`github_sha` and `github_pr_head_sha` are context; only `source_commit` is admitted. Missing runs,
+incomplete summaries, filtered tests, `NOT RUN`, and unexpected zero-test runs fail qualification.
+The ledger's `allow_empty` lists intentionally empty and compile-only harnesses, the ignored leak
+calibration probe, and documentation targets without runnable tests. Ignored individual tests remain
+visible in counts. Nested harness summaries are recorded separately from the enclosing binary
+so a filtered child regression probe does not inflate its parent's counts.
+
+Pass one `--config-report <file>` per required configuration to `verify-bump`. It rejects missing,
+duplicate, stale, failed or skipped evidence and configuration mismatches. To run only this admission
+check against the current checkout:
+
+    cargo run -p xtask -- config-report --verify "$RUNNER_TEMP/config-reports/"*.json
+
+CI uploads these reports and logs even when tests fail. The current default workspace includes
+`mlx-lm`'s local-only `real_checkpoints` test: without its manifest it prints `NOT RUN`, so default
+reports cannot qualify admission even when Cargo succeeds. This report exposes that execution gap;
+it does not supply checkpoint fixtures or add a CI checkpoint lane. CPU release, Metal JIT and
+native dependency canaries remain separate additions. Add a ledger entry and a CI invocation for
+each new configuration; admission discovers required entries without a fixed configuration count.
+
 ## Bump admission contract
 
 Every mlx-c bump must meet these eight admission requirements:
@@ -71,9 +112,10 @@ Every mlx-c bump must meet these eight admission requirements:
 7. Qualified optimizer, compile-state, and transform packs.
 8. Deterministic replay against the exact target Python MLX version.
 
-The source-based ledger, header/bindgen fingerprints, declared feature matrix, and aggregate
-`verify-bump` command exist. They do not establish compiled API coverage, linked-library exports,
-or matrix execution; leak calibration alone does not establish the required Guard Malloc lane.
+The source-based ledger, header/bindgen fingerprints, executed configuration reports, and aggregate
+`verify-bump` command exist. Configuration admission requires passing reports for every required
+ledger entry at the admitted SHA. These reports do not establish compiled API coverage or
+linked-library exports; leak calibration alone does not establish the required Guard Malloc lane.
 The presence of the tooling is not evidence that the whole admission playbook passed.
 
 Ledger evidence stays typed: `conf:` for semantic cases, `ffi:` for ABI/ownership/lifetime evidence,

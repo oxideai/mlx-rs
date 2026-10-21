@@ -8,6 +8,7 @@ mod api_baseline;
 mod bindgen_config;
 mod config_report;
 mod fingerprint;
+mod source_api;
 mod verify_bump;
 mod verify_ffi;
 mod verify_ledger;

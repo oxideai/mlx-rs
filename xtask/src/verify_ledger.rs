@@ -76,7 +76,7 @@ fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {
     let delta = crate::fingerprint::delta_value(&paths.old, &paths.new)?;
     let classification = read_json(&paths.classification)?;
     let api_baseline = read_json(&paths.api_baseline)?;
-    let source_api_baseline = serde_json::to_value(crate::api_baseline::generate(
+    let source_api_baseline = serde_json::to_value(crate::source_api::generate(
         &repo_root.join("mlx-rs"),
         "mlx_rs",
     )?)

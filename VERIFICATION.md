@@ -140,20 +140,32 @@ provenance against compiled spans.
 It does not discover or admit inventory entries. A generated flag means the declaration was
 emitted by a macro, derive, or compiler, rather than a matching declaration at its source span.
 
+Blanket implementations and their members are omitted. Auto-trait implementations, including
+thread traits, and implementations derived for mlx-rs types remain tracked.
+
 Public `#[doc(hidden)]` items remain included. Their flags come from their attributes and a
 comparison of public item identities with a second rustdoc run without hidden items, which also
 covers hidden re-exports without confusing a hidden field with its visible containing type.
 Every extraction qualifies the adapter with compiled builder, derive, re-export, hidden-public,
 and cfg fixtures. Five separately compiled omission controls (including an external derive
-re-export) and 24 incorrect-field controls must fail. Stable consumer probes compile the fixture
-in both configurations. Run just these controls with `api-baseline --qualify`.
+re-export), two compiled Send/Sync change controls, and 24 incorrect-field controls must fail.
+Stable consumer probes compile the fixture in both configurations. Run just these controls with
+`api-baseline --qualify`.
 
 `verify-ledger` regenerates the compiled inventory and rejects baseline drift before checking
 wrapped paths, behavioral renames, admission paths, symbol mappings, and `api:path:` evidence.
 An unqualified reference claims every API feature set. An object's `api_feature_sets` list
 narrows that claim for its references and descendants; unknown, empty, or duplicate sets fail.
-Metal-only references explicitly claim `default` and `safetensors`. The separate `mlx-lm` parity
-check still uses `xtask/src/source_api.rs`; it is not compiled API evidence for `mlx-rs`.
+Metal-only references explicitly claim `default` and `safetensors`. A `wrapped` entry with no
+supported configuration can cite `unsupported_cfg` as
+`api:cfg:<source-file>#<function>#not(target_os = "macos")`, repeat that citation in `evidence`,
+and supply a one-line `rationale`. This classification currently accepts only the canonical
+`mlx_rs::ops::qqmm` path and its `mlx-rs/src/ops/quantization.rs` citation. It requires a macOS
+inventory target, checks that the named public function carries the exact cfg, and rejects a
+path present in any supported feature set. It does not admit that wrapper to the supported surface.
+
+The separate `mlx-lm` parity check still uses `xtask/src/source_api.rs`; it is not compiled API
+evidence for `mlx-rs`.
 
 Regenerate with `api-baseline --out ledger/rust-api-baseline.json` and review the diff. CI runs
 extraction, its qualification controls, `--check`, and ledger verification in the existing

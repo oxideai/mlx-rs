@@ -1,0 +1,277 @@
+use serde_json::{json, Value};
+use std::collections::BTreeSet;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+pub(crate) fn hash(path: &Path) -> Result<String, String> {
+    let out = Command::new("shasum")
+        .args(["-a", "256"])
+        .arg(path)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !out.status.success() {
+        return Err(format!("cannot hash {}", path.display()));
+    }
+    String::from_utf8_lossy(&out.stdout)
+        .split_whitespace()
+        .next()
+        .map(str::to_owned)
+        .ok_or("missing hash".into())
+}
+
+fn read(path: &Path) -> Result<Value, String> {
+    serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+}
+
+fn cases(oracle: &Value) -> Vec<String> {
+    oracle["results"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .flat_map(|name| [format!("{name}/cpu"), format!("{name}/metal")])
+        .collect()
+}
+
+pub(crate) fn checkpoint_evidence(root: &Path, log: &str) -> Result<Value, String> {
+    let Some(path) = std::env::var_os("MLX_LM_REAL_CHECKPOINTS") else {
+        return Ok(Value::Null);
+    };
+    let path = PathBuf::from(path);
+    let manifest = read(&path)?;
+    let report_path = manifest["expected_report"]["path"]
+        .as_str()
+        .ok_or("missing oracle path")?;
+    let mut report = read(Path::new(report_path))?;
+    if manifest["expected_report"]["sha256"] != hash(Path::new(report_path))? {
+        return Err("checkpoint oracle hash mismatch".into());
+    }
+    for key in [
+        "schema_version",
+        "entries",
+        "cases",
+        "devices",
+        "python_environment",
+    ] {
+        if manifest[key] != report["contract"][key] {
+            return Err("checkpoint contract mismatch".into());
+        }
+    }
+    for (name, entry) in report["contract"]["entries"]
+        .as_object_mut()
+        .ok_or("missing entries")?
+    {
+        entry["local_directory"] = name.clone().into();
+    }
+    let oracle_path = root.join("conformance/mlx-lm/bump-oracle.json");
+    let oracle = read(&oracle_path)?;
+    if report != oracle {
+        return Err("checkpoint expectations differ from frozen oracle".into());
+    }
+    let cases = cases(&oracle);
+    for case in &cases {
+        if log
+            .lines()
+            .filter(|line| line.contains(&format!("PASS: {case}:")))
+            .count()
+            != 1
+        {
+            return Err(format!("missing or duplicate checkpoint execution: {case}"));
+        }
+    }
+    Ok(
+        json!({"oracle_sha256": hash(&oracle_path)?, "manifest_sha256": hash(&path)?, "cases": cases}),
+    )
+}
+
+fn validate_native(
+    report: &Value,
+    identity: &Value,
+    config: &Value,
+    plan: &Value,
+) -> Result<(), String> {
+    for key in [
+        "source_commit",
+        "mlx_c_commit",
+        "nested_mlx_version",
+        "cargo_lock_sha256",
+    ] {
+        if report[key] != identity[key] || report[key].as_str().is_none_or(str::is_empty) {
+            return Err(format!("native: stale or missing {key}"));
+        }
+    }
+    if report["schema_version"] != 1
+        || report["dirty"] != false
+        || report["verdict"] != "pass"
+        || report["configuration"] != *config
+    {
+        return Err("native: failed, dirty or mismatched configuration".into());
+    }
+    for field in ["mlx_commit", "compiler", "cmake", "macos", "sdk"] {
+        if report[field].as_str().is_none_or(str::is_empty) {
+            return Err(format!("native: missing {field}"));
+        }
+    }
+    for (key, value) in [
+        ("CMAKE_BUILD_TYPE", &config["profile"]),
+        ("MLX_BUILD_METAL", &config["metal"]),
+        ("MLX_BUILD_ACCELERATE", &config["accelerate"]),
+        ("MLX_METAL_JIT", &json!("OFF")),
+        ("MLX_C_BUILD_EXAMPLES", &json!("ON")),
+    ] {
+        if report["native"][key] != *value {
+            return Err(format!("native: wrong {key}"));
+        }
+    }
+    let mut expected = BTreeSet::new();
+    for key in ["examples", "tests"]
+        .into_iter()
+        .chain(if config["metal"] == "ON" {
+            vec!["metal_examples", "metal_tests"]
+        } else {
+            vec![]
+        })
+    {
+        for id in plan[key].as_array().ok_or("invalid canary plan")? {
+            expected.insert(id.as_str().ok_or("invalid canary id")?);
+        }
+    }
+    let mut seen = BTreeSet::new();
+    for run in report["runs"].as_array().ok_or("native: missing runs")? {
+        let id = run["id"].as_str().ok_or("native: missing id")?;
+        if !seen.insert(id)
+            || run["exit_code"] != 0
+            || run["passed"] != 1
+            || (id.starts_with("test ") && run["assertions"].as_u64().unwrap_or(0) == 0)
+        {
+            return Err("native: duplicate, failed or empty run".into());
+        }
+    }
+    if seen != expected {
+        return Err("native: missing or unexpected canary".into());
+    }
+    let commands = report["commands"]
+        .as_array()
+        .ok_or("native: missing commands")?;
+    if commands.len() != seen.len() + 2 || commands.iter().any(|c| c["exit_code"] != 0) {
+        return Err("native: incomplete or failed commands".into());
+    }
+    Ok(())
+}
+
+pub(crate) fn validate(
+    root: &Path,
+    config_paths: &[PathBuf],
+    native_paths: &[PathBuf],
+) -> Result<Value, String> {
+    let matrix = read(&root.join("ledger/supported-feature-matrix.json"))?;
+    let configs: Vec<_> = crate::config_report::configurations(&matrix)?
+        .into_iter()
+        .filter(|c| ["macos-arm64-default", "macos-arm64-metal-jit"].contains(&c.id.as_str()))
+        .collect();
+    let mut selected = Vec::new();
+    let oracle = read(&root.join("conformance/mlx-lm/bump-oracle.json"))?;
+    let oracle_hash = hash(&root.join("conformance/mlx-lm/bump-oracle.json"))?;
+    let mut mlx_commit = None;
+    for path in config_paths {
+        let report = read(path)?;
+        if !configs.iter().any(|c| report["configuration_id"] == c.id) {
+            continue;
+        }
+        validate_checkpoints(&report, &oracle_hash, &cases(&oracle))?;
+        if let Some(commit) = &mlx_commit {
+            if commit != &report["native"]["mlx_commit"] {
+                return Err("configurations built different MLX commits".into());
+            }
+        }
+        mlx_commit = Some(report["native"]["mlx_commit"].clone());
+        selected.push(path.clone());
+    }
+    crate::config_report::validate_reports(root, &selected, &configs)?;
+    let identity = crate::config_report::identity(root)?;
+    let plan = read(&root.join("xtask/native-canaries/plan.json"))?;
+    let mut seen = BTreeSet::new();
+    for path in native_paths {
+        let report = read(path)?;
+        let id = report["configuration_id"]
+            .as_str()
+            .ok_or("native: missing configuration id")?;
+        if !seen.insert(id.to_owned()) {
+            return Err("duplicate native configuration".into());
+        }
+        let config = plan["configurations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["id"] == id)
+            .ok_or("unknown native configuration")?;
+        validate_native(&report, &identity, config, &plan)?;
+        if Some(&report["mlx_commit"]) != mlx_commit.as_ref() {
+            return Err("native and Rust builds used different MLX commits".into());
+        }
+    }
+    if seen.len() != plan["configurations"].as_array().unwrap().len() {
+        return Err("missing required native configuration".into());
+    }
+    Ok(
+        json!({"verdict": "pass", "source_commit": identity["source_commit"], "native_configurations": seen, "checkpoint_oracle_sha256": oracle_hash}),
+    )
+}
+
+fn validate_checkpoints(report: &Value, oracle_hash: &str, cases: &[String]) -> Result<(), String> {
+    if report["checkpoints"]["oracle_sha256"] != oracle_hash
+        || report["checkpoints"]["cases"] != json!(cases)
+        || report["checkpoints"]["manifest_sha256"]
+            .as_str()
+            .is_none_or(|s| s.len() != 64)
+    {
+        return Err("missing, skipped or unpinned real-checkpoint evidence".into());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_missing_skipped_or_changed_checkpoints() {
+        let cases = vec!["model/cpu".to_owned(), "model/metal".to_owned()];
+        let good = json!({"checkpoints": {"oracle_sha256": "pin", "manifest_sha256": "a".repeat(64), "cases": cases}});
+        assert!(validate_checkpoints(&good, "pin", &cases).is_ok());
+        for bad in [
+            Value::Null,
+            json!({"checkpoints": {"oracle_sha256": "pin", "cases": []}}),
+            good.clone(),
+        ] {
+            assert!(validate_checkpoints(&bad, "other-pin", &cases).is_err());
+        }
+    }
+
+    #[test]
+    fn rejects_stale_failed_missing_duplicate_and_empty_native_runs() {
+        let identity = json!({"source_commit": "sha", "mlx_c_commit": "c", "nested_mlx_version": "v", "cargo_lock_sha256": "lock"});
+        let config = json!({"id": "cpu", "profile": "Debug", "metal": "OFF", "accelerate": "OFF"});
+        let plan = json!({"examples": ["example"], "tests": ["test grad"]});
+        let mut good = identity.clone();
+        for (key, value) in json!({"schema_version": 1, "dirty": false, "verdict": "pass", "configuration": config, "mlx_commit": "mlx", "compiler": "clang", "cmake": "cmake", "macos": "mac", "sdk": "sdk", "native": {"CMAKE_BUILD_TYPE": "Debug", "MLX_BUILD_METAL": "OFF", "MLX_BUILD_ACCELERATE": "OFF", "MLX_METAL_JIT": "OFF", "MLX_C_BUILD_EXAMPLES": "ON"}, "runs": [{"id": "example", "exit_code": 0, "passed": 1}, {"id": "test grad", "exit_code": 0, "passed": 1, "assertions": 3}], "commands": [{"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}]}).as_object().unwrap() { good[key] = value.clone(); }
+        assert!(validate_native(&good, &identity, &config, &plan).is_ok());
+        for (pointer, value) in [
+            ("/source_commit", json!("stale")),
+            ("/verdict", json!("fail")),
+            ("/dirty", json!(true)),
+            ("/runs", json!([])),
+            ("/runs/1/id", json!("example")),
+            ("/runs/1/assertions", json!(0)),
+            ("/runs/1/exit_code", json!(1)),
+            ("/native/MLX_BUILD_METAL", json!("ON")),
+        ] {
+            let mut bad = good.clone();
+            *bad.pointer_mut(pointer).unwrap() = value;
+            assert!(
+                validate_native(&bad, &identity, &config, &plan).is_err(),
+                "{pointer}"
+            );
+        }
+    }
+}

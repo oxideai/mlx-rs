@@ -676,6 +676,9 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     report["exit_code"] = code.into();
     let collected = (|| {
         let log = fs::read_to_string(&log_path).map_err(|e| e.to_string())?;
+        if c.packages.is_empty() {
+            report["checkpoints"] = crate::bump_evidence::checkpoint_evidence(root, &log)?;
+        }
         let evidence = build_evidence(&log, &meta)?;
         report["resolved_features"] = evidence.features;
         report["rust_profiles"] = evidence.rust_profiles;

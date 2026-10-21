@@ -1,11 +1,11 @@
 //! Fast implementations of commonly used multi-op functions.
 
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 
-use crate::error::Result;
+use crate::error::{Exception, Result};
 use crate::utils::guard::Guarded;
-use crate::utils::IntoOption;
-use crate::{Array, Stream};
+use crate::utils::{IntoOption, SUCCESS};
+use crate::{Array, Dtype, Stream};
 use mlx_internal_macros::generate_macro;
 
 /// Optimized implementation of `NN.RoPE`.
@@ -331,6 +331,316 @@ pub fn layer_norm_device<'a>(
     crate::with_stream(stream.as_ref(), || layer_norm(x, weight, bias, eps))
 }
 
+/// A compile-time template parameter for a [`MetalKernel`].
+///
+/// Each argument is emitted as a template parameter of the generated `[[kernel]]` function, so
+/// the kernel source can refer to it by name (for example `T`, `N` or `USE_BIAS`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TemplateArg {
+    /// A type parameter, emitted as the matching Metal type (for example `float`).
+    Dtype(Dtype),
+    /// An `int` parameter.
+    Int(i32),
+    /// A `bool` parameter.
+    Bool(bool),
+}
+
+/// Construction options for [`MetalKernel::new`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetalKernelOptions {
+    /// Metal source placed before the generated kernel, such as helper functions or includes.
+    pub header: String,
+    /// Copy inputs to row-contiguous layout before the kernel runs. Disable only when the source
+    /// indexes inputs through their `_strides` (for example with `elem_to_loc`).
+    pub ensure_row_contiguous: bool,
+    /// Declare outputs as `device atomic<T>*` so the kernel can use Metal atomics on them.
+    pub atomic_outputs: bool,
+}
+
+impl Default for MetalKernelOptions {
+    fn default() -> Self {
+        Self {
+            header: String::new(),
+            ensure_row_contiguous: true,
+            atomic_outputs: false,
+        }
+    }
+}
+
+/// The shape and dtype of one [`MetalKernel`] output.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetalKernelOutput {
+    /// Output shape.
+    pub shape: Vec<i32>,
+    /// Output element type.
+    pub dtype: Dtype,
+}
+
+/// Independent per-call options for [`MetalKernel::apply`].
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct MetalKernelApplyOptions {
+    /// Template parameters, in declaration order.
+    pub template_args: Vec<(String, TemplateArg)>,
+    /// Fill every output with this value before the kernel runs. When absent, outputs start
+    /// uninitialized and the kernel must write every element.
+    pub init_value: Option<f32>,
+    /// Print the generated Metal source when the kernel is built.
+    pub verbose: bool,
+}
+
+/// A custom Metal kernel, compiled from source on first use and cached by MLX.
+///
+/// The kernel body is written against the names given at construction: each input `a` is a
+/// `const device T* a` (plus `a_shape`, `a_strides` and `a_ndim` when the source mentions them),
+/// each output is a `device T*`, and Metal attributes such as `thread_position_in_grid` are
+/// declared automatically when referenced.
+///
+/// Kernels only run on the GPU. [`MetalKernel::apply`] uses the ambient stream (see
+/// [`crate::with_stream`]) and fails if that stream is not on the GPU or MLX was built without
+/// Metal.
+///
+/// ```rust
+/// use mlx_rs::{fast::{MetalKernel, MetalKernelApplyOptions, MetalKernelOptions, MetalKernelOutput}, Array, Dtype};
+///
+/// let kernel = MetalKernel::new(
+///     "double",
+///     &["a"],
+///     &["out"],
+///     "uint i = thread_position_in_grid.x; out[i] = 2 * a[i];",
+///     MetalKernelOptions::default(),
+/// )?;
+/// let a = Array::from_slice(&[1.0_f32, 2.0, 3.0, 4.0], &[4]);
+/// let out = kernel.apply(
+///     &[&a],
+///     &[MetalKernelOutput { shape: vec![4], dtype: Dtype::Float32 }],
+///     (4, 1, 1),
+///     (4, 1, 1),
+///     MetalKernelApplyOptions::default(),
+/// )?;
+/// assert_eq!(out[0].as_slice::<f32>(), &[2.0, 4.0, 6.0, 8.0]);
+/// # Ok::<(), mlx_rs::error::Exception>(())
+/// ```
+pub struct MetalKernel {
+    raw: mlx_sys::mlx_fast_metal_kernel,
+}
+
+impl MetalKernel {
+    /// Builds a kernel from its name, input and output names, and Metal body `source`.
+    ///
+    /// At least one output name is required. Compilation is deferred to the first
+    /// [`apply`](Self::apply), so source errors surface there.
+    pub fn new(
+        name: &str,
+        input_names: &[&str],
+        output_names: &[&str],
+        source: &str,
+        options: MetalKernelOptions,
+    ) -> Result<Self> {
+        crate::error::INIT_ERR_HANDLER.call_once(crate::error::setup_mlx_error_handler);
+        let name = c_string(name)?;
+        let source = c_string(source)?;
+        let header = c_string(&options.header)?;
+        let input_names = StringVector::new(input_names)?;
+        let output_names = StringVector::new(output_names)?;
+        let raw = unsafe {
+            mlx_sys::mlx_fast_metal_kernel_new(
+                name.as_ptr(),
+                input_names.raw,
+                output_names.raw,
+                source.as_ptr(),
+                header.as_ptr(),
+                options.ensure_row_contiguous,
+                options.atomic_outputs,
+            )
+        };
+        if raw.ctx.is_null() {
+            return Err(crate::error::exception_from_status(
+                SUCCESS + 1,
+                "creating a Metal kernel",
+            ));
+        }
+        Ok(Self { raw })
+    }
+
+    /// Runs the kernel over `grid` threads in groups of `thread_group`, returning one array per
+    /// entry of `outputs`.
+    ///
+    /// `inputs` and `outputs` must match the counts given at construction. Like other
+    /// operations the result is lazy; the kernel compiles and runs when the outputs are
+    /// evaluated.
+    pub fn apply(
+        &self,
+        inputs: &[impl AsRef<Array>],
+        outputs: &[MetalKernelOutput],
+        grid: (i32, i32, i32),
+        thread_group: (i32, i32, i32),
+        options: MetalKernelApplyOptions,
+    ) -> Result<Vec<Array>> {
+        crate::error::INIT_ERR_HANDLER.call_once(crate::error::setup_mlx_error_handler);
+        let config = KernelConfig::new()?;
+        for output in outputs {
+            config.check(
+                unsafe {
+                    mlx_sys::mlx_fast_metal_kernel_config_add_output_arg(
+                        config.raw,
+                        output.shape.as_ptr(),
+                        output.shape.len(),
+                        output.dtype.into(),
+                    )
+                },
+                "adding a Metal kernel output",
+            )?;
+        }
+        config.check(
+            unsafe {
+                mlx_sys::mlx_fast_metal_kernel_config_set_grid(config.raw, grid.0, grid.1, grid.2)
+            },
+            "setting the Metal kernel grid",
+        )?;
+        config.check(
+            unsafe {
+                mlx_sys::mlx_fast_metal_kernel_config_set_thread_group(
+                    config.raw,
+                    thread_group.0,
+                    thread_group.1,
+                    thread_group.2,
+                )
+            },
+            "setting the Metal kernel thread group",
+        )?;
+        for (name, arg) in &options.template_args {
+            let name = c_string(name)?;
+            let status = unsafe {
+                match *arg {
+                    TemplateArg::Dtype(dtype) => {
+                        mlx_sys::mlx_fast_metal_kernel_config_add_template_arg_dtype(
+                            config.raw,
+                            name.as_ptr(),
+                            dtype.into(),
+                        )
+                    }
+                    TemplateArg::Int(value) => {
+                        mlx_sys::mlx_fast_metal_kernel_config_add_template_arg_int(
+                            config.raw,
+                            name.as_ptr(),
+                            value,
+                        )
+                    }
+                    TemplateArg::Bool(value) => {
+                        mlx_sys::mlx_fast_metal_kernel_config_add_template_arg_bool(
+                            config.raw,
+                            name.as_ptr(),
+                            value,
+                        )
+                    }
+                }
+            };
+            config.check(status, "adding a Metal kernel template argument")?;
+        }
+        if let Some(value) = options.init_value {
+            config.check(
+                unsafe { mlx_sys::mlx_fast_metal_kernel_config_set_init_value(config.raw, value) },
+                "setting the Metal kernel init value",
+            )?;
+        }
+        config.check(
+            unsafe {
+                mlx_sys::mlx_fast_metal_kernel_config_set_verbose(config.raw, options.verbose)
+            },
+            "setting Metal kernel verbosity",
+        )?;
+
+        let inputs = crate::utils::VectorArray::try_from_iter(inputs.iter())?;
+        let stream = Stream::thread_local_or_default();
+        Vec::<Array>::try_from_op(|res| unsafe {
+            mlx_sys::mlx_fast_metal_kernel_apply(
+                res,
+                self.raw,
+                inputs.as_ptr(),
+                config.raw,
+                stream.as_ref().as_ptr(),
+            )
+        })
+    }
+}
+
+impl Drop for MetalKernel {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_fast_metal_kernel_free(self.raw) };
+    }
+}
+
+impl std::fmt::Debug for MetalKernel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MetalKernel").finish_non_exhaustive()
+    }
+}
+
+struct KernelConfig {
+    raw: mlx_sys::mlx_fast_metal_kernel_config,
+}
+
+impl KernelConfig {
+    fn new() -> Result<Self> {
+        let raw = unsafe { mlx_sys::mlx_fast_metal_kernel_config_new() };
+        if raw.ctx.is_null() {
+            return Err(crate::error::exception_from_status(
+                SUCCESS + 1,
+                "creating a Metal kernel config",
+            ));
+        }
+        Ok(Self { raw })
+    }
+
+    fn check(&self, status: i32, operation: &str) -> Result<()> {
+        if status == SUCCESS {
+            Ok(())
+        } else {
+            Err(crate::error::exception_from_status(status, operation))
+        }
+    }
+}
+
+impl Drop for KernelConfig {
+    fn drop(&mut self) {
+        unsafe { mlx_sys::mlx_fast_metal_kernel_config_free(self.raw) };
+    }
+}
+
+struct StringVector {
+    raw: mlx_sys::mlx_vector_string,
+}
+
+impl StringVector {
+    fn new(values: &[&str]) -> Result<Self> {
+        let owned = values
+            .iter()
+            .map(|value| c_string(value))
+            .collect::<Result<Vec<_>>>()?;
+        let mut pointers: Vec<_> = owned.iter().map(|value| value.as_ptr()).collect();
+        // mlx-c copies each string into the vector, so `owned` only needs to outlive this call.
+        let raw =
+            unsafe { mlx_sys::mlx_vector_string_new_data(pointers.as_mut_ptr(), pointers.len()) };
+        if raw.ctx.is_null() {
+            return Err(crate::error::exception_from_status(
+                SUCCESS + 1,
+                "creating an MLX string vector",
+            ));
+        }
+        Ok(Self { raw })
+    }
+}
+
+impl Drop for StringVector {
+    fn drop(&mut self) {
+        let _ = unsafe { mlx_sys::mlx_vector_string_free(self.raw) };
+    }
+}
+
+fn c_string(value: &str) -> Result<CString> {
+    CString::new(value).map_err(|error| Exception::custom(error.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -492,5 +802,129 @@ mod tests {
 
         let result = scaled_dot_product_attention(&q, &k, &v, scale, None, &sinks).unwrap();
         assert_eq!(result.shape(), &[b, n_q, t_q, d]);
+    }
+
+    #[cfg(feature = "metal")]
+    #[test]
+    fn test_metal_kernel_template_args_and_shapes() {
+        let kernel = MetalKernel::new(
+            "scale_shift",
+            &["a", "b"],
+            &["out1", "out2"],
+            "uint elem = thread_position_in_grid.x;
+             T v = a[elem] * T(SCALE);
+             out1[elem] = SHIFT ? v + b[0] : v;
+             out2[elem] = a_shape[0];",
+            MetalKernelOptions::default(),
+        )
+        .unwrap();
+        let a = &crate::ops::arange::<_, f32>(None, 8, None).unwrap() / 4.0;
+        let b = Array::from_slice(&[0.5_f32], &[1]);
+        let outputs = crate::with_device(crate::Device::gpu(), || {
+            kernel.apply(
+                &[&a, &b],
+                &[
+                    MetalKernelOutput {
+                        shape: vec![8],
+                        dtype: Dtype::Float32,
+                    },
+                    MetalKernelOutput {
+                        shape: vec![8],
+                        dtype: Dtype::Int32,
+                    },
+                ],
+                (8, 1, 1),
+                (4, 1, 1),
+                MetalKernelApplyOptions {
+                    template_args: vec![
+                        ("T".into(), TemplateArg::Dtype(Dtype::Float32)),
+                        ("SCALE".into(), TemplateArg::Int(3)),
+                        ("SHIFT".into(), TemplateArg::Bool(true)),
+                    ],
+                    ..Default::default()
+                },
+            )
+        })
+        .unwrap();
+
+        // Python MLX 0.32: same kernel through `mx.fast.metal_kernel`.
+        assert_eq!(
+            outputs[0].to_vec_exact::<f32>().unwrap(),
+            [0.5, 1.25, 2.0, 2.75, 3.5, 4.25, 5.0, 5.75]
+        );
+        assert_eq!(outputs[1].to_vec_exact::<i32>().unwrap(), [8; 8]);
+    }
+
+    #[cfg(feature = "metal")]
+    #[test]
+    fn test_metal_kernel_init_value_fills_unwritten_outputs() {
+        let kernel = MetalKernel::new(
+            "touch_half",
+            &["a"],
+            &["out"],
+            "uint e = thread_position_in_grid.x; if (e < 2) out[e] = a[e];",
+            MetalKernelOptions::default(),
+        )
+        .unwrap();
+        let a = Array::from_slice(&[0.0_f32, 0.25, 0.5, 0.75], &[4]);
+        let out = crate::with_device(crate::Device::gpu(), || {
+            kernel.apply(
+                &[&a],
+                &[MetalKernelOutput {
+                    shape: vec![4],
+                    dtype: Dtype::Float32,
+                }],
+                (4, 1, 1),
+                (4, 1, 1),
+                MetalKernelApplyOptions {
+                    init_value: Some(-1.0),
+                    ..Default::default()
+                },
+            )
+        })
+        .unwrap();
+        assert_eq!(
+            out[0].to_vec_exact::<f32>().unwrap(),
+            [0.0, 0.25, -1.0, -1.0]
+        );
+    }
+
+    #[test]
+    fn test_metal_kernel_rejects_invalid_arguments() {
+        let error = MetalKernel::new("none", &["a"], &[], "", MetalKernelOptions::default())
+            .expect_err("a kernel needs at least one output");
+        assert!(error.what().contains("at least one output"));
+        assert!(MetalKernel::new("nul", &["a\0"], &["out"], "", Default::default()).is_err());
+
+        let kernel = MetalKernel::new(
+            "copy",
+            &["a"],
+            &["out"],
+            "out[0] = a[0];",
+            Default::default(),
+        )
+        .unwrap();
+        let output = [MetalKernelOutput {
+            shape: vec![1],
+            dtype: Dtype::Float32,
+        }];
+        let a = Array::from_slice(&[1.0_f32], &[1]);
+        let no_inputs: [&Array; 0] = [];
+        let error = kernel
+            .apply(
+                &no_inputs,
+                &output,
+                (1, 1, 1),
+                (1, 1, 1),
+                Default::default(),
+            )
+            .expect_err("input count must match construction");
+        assert!(error.what().contains("`inputs`"));
+
+        let error = crate::with_device(crate::Device::cpu(), || {
+            kernel.apply(&[&a], &output, (1, 1, 1), (1, 1, 1), Default::default())
+        })
+        .expect_err("custom Metal kernels only run on the GPU");
+        assert!(error.what().contains("[metal_kernel]"));
     }
 }

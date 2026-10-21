@@ -361,6 +361,42 @@ fn rms_norm_absence_handles_are_freed_after_each_call() {
 }
 
 #[test]
+fn metal_kernel_handles_are_released_on_every_path() {
+    let output = [fast::MetalKernelOutput {
+        shape: vec![4],
+        dtype: Dtype::Float32,
+    }];
+    let input = Array::from_slice(&[1.0_f32, 2.0, 3.0, 4.0], &[4]);
+    for _ in 0..200 {
+        assert!(fast::MetalKernel::new("none", &["a"], &[], "", Default::default()).is_err());
+
+        let kernel = fast::MetalKernel::new(
+            "ffi_copy",
+            &["a"],
+            &["out"],
+            "uint i = thread_position_in_grid.x; out[i] = a[i];",
+            Default::default(),
+        )
+        .unwrap();
+        let options = fast::MetalKernelApplyOptions {
+            template_args: vec![("N".into(), fast::TemplateArg::Int(4))],
+            init_value: Some(0.0),
+            ..Default::default()
+        };
+        let result = with_stream(&Stream::gpu(), || {
+            kernel.apply(&[&input], &output, (4, 1, 1), (4, 1, 1), options.clone())
+        })
+        .unwrap();
+        result[0].eval().unwrap();
+
+        let no_inputs: [&Array; 0] = [];
+        assert!(kernel
+            .apply(&no_inputs, &output, (4, 1, 1), (4, 1, 1), options)
+            .is_err());
+    }
+}
+
+#[test]
 fn static_and_advanced_index_updates_release_outputs_on_every_path() {
     let modes = [
         UpdateMode::Replace,

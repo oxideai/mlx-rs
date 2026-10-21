@@ -112,6 +112,32 @@
         "verification": "cargo run -p xtask -- verify-lm-parity",
         "fixture_runtime": "mlx-lm/tests/parity.rs: committed_fixture_layout_and_policies and prototype_llama_base_prefill_cache_and_greedy_parity; each prints NOT RUN on stderr when conformance/mlx-lm/fixtures is absent"
       }
+    },
+    {
+      "feature": "metal-kernel",
+      "canonical_path": "mlx_rs::fast::MetalKernel",
+      "symbols": {
+        "mlx_fast_metal_kernel_apply": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_add_output_arg": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_add_template_arg_bool": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_add_template_arg_dtype": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_add_template_arg_int": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_free": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_new": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_set_grid": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_set_init_value": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_set_thread_group": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_config_set_verbose": "mlx_rs::fast::MetalKernel::apply",
+        "mlx_fast_metal_kernel_free": "mlx_rs::fast::MetalKernel",
+        "mlx_fast_metal_kernel_new": "mlx_rs::fast::MetalKernel::new"
+      },
+      "evidence": {
+        "api": "mlx-rs/src/fast.rs",
+        "test": "mlx-rs/src/fast.rs#test_metal_kernel_template_args_and_shapes",
+        "oracle": "Python MLX 0.32 mx.fast.metal_kernel outputs recorded in mlx-rs/src/fast.rs tests",
+        "leaks": "mlx-tests/tests/ffi_safety.rs",
+        "guard_malloc": "mlx-tests/tests/ffi_safety.rs"
+      }
     }
   ],
   "builds": [

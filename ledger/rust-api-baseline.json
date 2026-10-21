@@ -3018,9 +3018,44 @@
       "signature": "pub mod fast"
     },
     {
+      "kind": "struct",
+      "path": "mlx_rs::fast::MetalKernel",
+      "signature": "# [doc = \" A custom Metal kernel, compiled from source on first use and cached by MLX.\"] # [doc = \"\"] # [doc = \" The kernel body is written against the names given at construction: each input `a` is a\"] # [doc = \" `const device T* a` (plus `a_shape`, `a_strides` and `a_ndim` when the source mentions them),\"] # [doc = \" each output is a `device T*`, and Metal attributes such as `thread_position_in_grid` are\"] # [doc = \" declared automatically when referenced.\"] # [doc = \"\"] # [doc = \" Kernels only run on the GPU. [`MetalKernel::apply`] uses the ambient stream (see\"] # [doc = \" [`crate::with_stream`]) and fails if that stream is not on the GPU or MLX was built without\"] # [doc = \" Metal.\"] # [doc = \"\"] # [doc = \" ```rust\"] # [doc = \" use mlx_rs::{fast::{MetalKernel, MetalKernelApplyOptions, MetalKernelOptions, MetalKernelOutput}, Array, Dtype};\"] # [doc = \"\"] # [doc = \" let kernel = MetalKernel::new(\"] # [doc = \"     \\\"double\\\",\"] # [doc = \"     &[\\\"a\\\"],\"] # [doc = \"     &[\\\"out\\\"],\"] # [doc = \"     \\\"uint i = thread_position_in_grid.x; out[i] = 2 * a[i];\\\",\"] # [doc = \"     MetalKernelOptions::default(),\"] # [doc = \" )?;\"] # [doc = \" let a = Array::from_slice(&[1.0_f32, 2.0, 3.0, 4.0], &[4]);\"] # [doc = \" let out = kernel.apply(\"] # [doc = \"     &[&a],\"] # [doc = \"     &[MetalKernelOutput { shape: vec![4], dtype: Dtype::Float32 }],\"] # [doc = \"     (4, 1, 1),\"] # [doc = \"     (4, 1, 1),\"] # [doc = \"     MetalKernelApplyOptions::default(),\"] # [doc = \" )?;\"] # [doc = \" assert_eq!(out[0].as_slice::<f32>(), &[2.0, 4.0, 6.0, 8.0]);\"] # [doc = \" # Ok::<(), mlx_rs::error::Exception>(())\"] # [doc = \" ```\"] pub struct MetalKernel { raw : mlx_sys :: mlx_fast_metal_kernel , }"
+    },
+    {
+      "kind": "method",
+      "path": "mlx_rs::fast::MetalKernel::apply",
+      "signature": "pub fn apply (& self , inputs : & [impl AsRef < Array >] , outputs : & [MetalKernelOutput] , grid : (i32 , i32 , i32) , thread_group : (i32 , i32 , i32) , options : MetalKernelApplyOptions ,) -> Result < Vec < Array > >"
+    },
+    {
+      "kind": "method",
+      "path": "mlx_rs::fast::MetalKernel::new",
+      "signature": "pub fn new (name : & str , input_names : & [& str] , output_names : & [& str] , source : & str , options : MetalKernelOptions ,) -> Result < Self >"
+    },
+    {
+      "kind": "struct",
+      "path": "mlx_rs::fast::MetalKernelApplyOptions",
+      "signature": "# [doc = \" Independent per-call options for [`MetalKernel::apply`].\"] # [derive (Debug , Clone , Default , PartialEq)] pub struct MetalKernelApplyOptions { # [doc = \" Template parameters, in declaration order.\"] pub template_args : Vec < (String , TemplateArg) > , # [doc = \" Fill every output with this value before the kernel runs. When absent, outputs start\"] # [doc = \" uninitialized and the kernel must write every element.\"] pub init_value : Option < f32 > , # [doc = \" Print the generated Metal source when the kernel is built.\"] pub verbose : bool , }"
+    },
+    {
+      "kind": "struct",
+      "path": "mlx_rs::fast::MetalKernelOptions",
+      "signature": "# [doc = \" Construction options for [`MetalKernel::new`].\"] # [derive (Debug , Clone , PartialEq , Eq)] pub struct MetalKernelOptions { # [doc = \" Metal source placed before the generated kernel, such as helper functions or includes.\"] pub header : String , # [doc = \" Copy inputs to row-contiguous layout before the kernel runs. Disable only when the source\"] # [doc = \" indexes inputs through their `_strides` (for example with `elem_to_loc`).\"] pub ensure_row_contiguous : bool , # [doc = \" Declare outputs as `device atomic<T>*` so the kernel can use Metal atomics on them.\"] pub atomic_outputs : bool , }"
+    },
+    {
+      "kind": "struct",
+      "path": "mlx_rs::fast::MetalKernelOutput",
+      "signature": "# [doc = \" The shape and dtype of one [`MetalKernel`] output.\"] # [derive (Debug , Clone , PartialEq , Eq)] pub struct MetalKernelOutput { # [doc = \" Output shape.\"] pub shape : Vec < i32 > , # [doc = \" Output element type.\"] pub dtype : Dtype , }"
+    },
+    {
       "kind": "enum",
       "path": "mlx_rs::fast::ScaledDotProductAttentionMask",
       "signature": "# [doc = \" Mask modes for scaled dot product attention.\"] # [derive (Debug)] pub enum ScaledDotProductAttentionMask < 'a > { # [doc = \" A single mask array\"] Array (& 'a Array) , # [doc = \" Causal masking (no explicit mask array needed)\"] Causal , }"
+    },
+    {
+      "kind": "enum",
+      "path": "mlx_rs::fast::TemplateArg",
+      "signature": "# [doc = \" A compile-time template parameter for a [`MetalKernel`].\"] # [doc = \"\"] # [doc = \" Each argument is emitted as a template parameter of the generated `[[kernel]]` function, so\"] # [doc = \" the kernel source can refer to it by name (for example `T`, `N` or `USE_BIAS`).\"] # [derive (Debug , Clone , Copy , PartialEq , Eq)] pub enum TemplateArg { # [doc = \" A type parameter, emitted as the matching Metal type (for example `float`).\"] Dtype (Dtype) , # [doc = \" An `int` parameter.\"] Int (i32) , # [doc = \" A `bool` parameter.\"] Bool (bool) , }"
     },
     {
       "kind": "function",

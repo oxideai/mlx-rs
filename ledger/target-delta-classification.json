@@ -1896,9 +1896,11 @@
         "signature": "fn(* mut mlx_array,mlx_array,mlx_array,mlx_array,mlx_optional_int,mlx_optional_int,* const :: std :: os :: raw :: c_char,mlx_array,mlx_array,mlx_stream)->:: std :: os :: raw :: c_int"
       },
       "disposition": "wrapped",
-      "rust_path": "mlx_rs::ops::qqmm_device",
+      "rust_path": "mlx_rs::ops::qqmm",
+      "unsupported_cfg": "api:cfg:mlx-rs/src/ops/quantization.rs#qqmm#not(target_os = \"macos\")",
+      "rationale": "wrapped only on non-macOS targets, so it is outside the supported macOS surface",
       "evidence": [
-        "api:path:mlx_rs::ops::qqmm_device"
+        "api:cfg:mlx-rs/src/ops/quantization.rs#qqmm#not(target_os = \"macos\")"
       ],
       "old_pin_affected": false,
       "bump_impact": "signature update: pass the new optional global_scale_x and global_scale_w arrays; semantic review: preserve mode-specific defaults"

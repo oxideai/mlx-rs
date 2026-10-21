@@ -186,7 +186,7 @@ fn verify_documents(
         }
         if disposition == "wrapped" {
             let rust_path = required_nonempty(classified, "rust_path")?;
-            if !api_paths.contains(rust_path) {
+            if classified.get("unsupported_cfg").is_none() && !api_paths.contains(rust_path) {
                 return Err(format!(
                     "wrapped path {rust_path} is absent from API baseline"
                 ));
@@ -383,7 +383,13 @@ fn validate_api_references(document: &Value, inventory: &Value) -> Result<(), St
         .map(|set| required_nonempty(set, "id").map(str::to_owned))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let availability = api_availability(inventory, &supported)?;
-    visit_api_references(document, &supported, &supported, &availability)
+    visit_api_references(
+        document,
+        &supported,
+        &supported,
+        &availability,
+        inventory["target"].as_str().unwrap_or(""),
+    )
 }
 
 fn api_availability(
@@ -458,24 +464,31 @@ fn visit_api_references(
     inherited: &BTreeSet<String>,
     supported: &BTreeSet<String>,
     availability: &BTreeMap<String, BTreeSet<String>>,
+    target: &str,
 ) -> Result<(), String> {
     match value {
         Value::Object(object) => {
+            if object.contains_key("unsupported_cfg") {
+                validate_unsupported_cfg(value, availability, target)?;
+            }
             let claims = if object.contains_key("api_feature_sets") {
                 reference_sets(value, "api_feature_sets", supported)?
             } else {
                 inherited.clone()
             };
             for (field, child) in object {
+                if field == "rust_path" && object.contains_key("unsupported_cfg") {
+                    continue;
+                }
                 if matches!(field.as_str(), "rust_path" | "canonical_path" | "symbols") {
                     check_path_values(child, &claims, availability)?;
                 }
-                visit_api_references(child, &claims, supported, availability)?;
+                visit_api_references(child, &claims, supported, availability, target)?;
             }
         }
         Value::Array(values) => {
             for child in values {
-                visit_api_references(child, inherited, supported, availability)?;
+                visit_api_references(child, inherited, supported, availability, target)?;
             }
         }
         Value::String(text) => {
@@ -484,6 +497,32 @@ fn visit_api_references(
             }
         }
         _ => {}
+    }
+    Ok(())
+}
+
+fn validate_unsupported_cfg(
+    value: &Value,
+    availability: &BTreeMap<String, BTreeSet<String>>,
+    target: &str,
+) -> Result<(), String> {
+    let path = required_nonempty(value, "rust_path")?;
+    let citation = required_nonempty(value, "unsupported_cfg")?;
+    required_one_line(value, "rationale")?;
+    if value["disposition"] != "wrapped"
+        || !target.ends_with("-apple-darwin")
+        || path != "mlx_rs::ops::qqmm"
+        || citation != "api:cfg:mlx-rs/src/ops/quantization.rs#qqmm#not(target_os = \"macos\")"
+        || !value["evidence"]
+            .as_array()
+            .is_some_and(|ids| ids.iter().any(|id| id == citation))
+    {
+        return Err(format!("unsupported_cfg for {path} requires the canonical qqmm cfg citation, wrapped disposition, and a supported macOS target"));
+    }
+    if availability.get(path).is_some_and(|sets| !sets.is_empty()) {
+        return Err(format!(
+            "unsupported_cfg path {path} appears in supported configurations"
+        ));
     }
     Ok(())
 }
@@ -637,6 +676,9 @@ fn evidence_exists(
     if let Some(case_id) = id.strip_prefix("conf:") {
         return conf_ids.contains(case_id);
     }
+    if let Some(reference) = id.strip_prefix("api:cfg:") {
+        return cfg_evidence_exists(repo_root, reference);
+    }
     if let Some(path) = id.strip_prefix("api:path:") {
         return api_paths.contains(path);
     }
@@ -656,6 +698,39 @@ fn evidence_exists(
         }
     }
     false
+}
+
+fn cfg_evidence_exists(repo_root: &Path, reference: &str) -> bool {
+    let mut parts = reference.split('#');
+    let (Some(path), Some(name), Some(predicate), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return false;
+    };
+    if predicate != "not(target_os = \"macos\")" {
+        return false;
+    }
+    let Some(path) = safe_repo_path(repo_root, path) else {
+        return false;
+    };
+    let Ok(source) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(file) = syn::parse_file(&source) else {
+        return false;
+    };
+    let expected: syn::Meta = syn::parse_quote!(cfg(not(target_os = "macos")));
+    file.items.iter().any(|item| match item {
+        Item::Fn(function) => {
+            function.sig.ident == name
+                && matches!(function.vis, syn::Visibility::Public(_))
+                && function.attrs.iter().any(|attr| {
+                    quote::ToTokens::to_token_stream(&attr.meta).to_string()
+                        == quote::ToTokens::to_token_stream(&expected).to_string()
+                })
+        }
+        _ => false,
+    })
 }
 
 fn test_exists(repo_root: &Path, reference: &str) -> bool {
@@ -762,6 +837,94 @@ mod tests {
 
     fn verify_fixture(fixture: &Value) -> Result<(), String> {
         super::verify_fixture(fixture, &valid_evidence())
+    }
+
+    #[test]
+    fn unsupported_wrapper_requires_cfg_evidence_and_absence_from_every_set() {
+        let mut fixture = fixture();
+        let entry = &mut fixture["classification"]["entries"][3];
+        entry["disposition"] = "wrapped".into();
+        entry["rust_path"] = "mlx_rs::ops::qqmm".into();
+        entry["rationale"] = "only available outside supported macOS targets".into();
+        let citation = "api:cfg:mlx-rs/src/ops/quantization.rs#qqmm#not(target_os = \"macos\")";
+        entry["unsupported_cfg"] = citation.into();
+        entry["evidence"] = serde_json::json!([citation]);
+        fixture["api_baseline"]["target"] = "aarch64-apple-darwin".into();
+        let mut evidence = valid_evidence();
+        evidence.insert(citation.into());
+        super::verify_fixture(&fixture, &evidence).unwrap();
+
+        let mut missing = fixture.clone();
+        missing["classification"]["entries"][3]["evidence"] = serde_json::json!([]);
+        assert!(super::verify_fixture(&missing, &evidence).is_err());
+        assert!(super::verify_fixture(&fixture, &valid_evidence()).is_err());
+        let mut plain = fixture.clone();
+        plain["classification"]["entries"][3]
+            .as_object_mut()
+            .unwrap()
+            .remove("unsupported_cfg");
+        assert!(super::verify_fixture(&plain, &evidence)
+            .unwrap_err()
+            .contains("mlx_rs::ops::qqmm"));
+        for set in ["default", "cpu-only"] {
+            let mut present = fixture.clone();
+            present["api_baseline"]["entries"]
+                .as_array_mut()
+                .unwrap()
+                .push(serde_json::json!({
+                    "path": "mlx_rs::ops::qqmm", "feature_sets": [set]
+                }));
+            assert!(super::verify_fixture(&present, &evidence)
+                .unwrap_err()
+                .contains("appears in supported"));
+        }
+        for (field, value) in [
+            ("rust_path", "mlx_rs::wrong::qqmm"),
+            (
+                "unsupported_cfg",
+                "api:cfg:demo/src/lib.rs#another#not(target_os = \"macos\")",
+            ),
+            (
+                "unsupported_cfg",
+                "api:cfg:demo/src/lib.rs#changed#feature = \"other\"",
+            ),
+            ("disposition", "deferred"),
+            ("rationale", ""),
+        ] {
+            let mut invalid = fixture.clone();
+            invalid["classification"]["entries"][3][field] = value.into();
+            assert!(super::verify_fixture(&invalid, &evidence).is_err());
+        }
+        fixture["api_baseline"]["target"] = "x86_64-unknown-linux-gnu".into();
+        assert!(super::verify_fixture(&fixture, &evidence).is_err());
+    }
+
+    #[test]
+    fn cfg_evidence_checks_the_named_public_function_attribute() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("lib.rs");
+        let reference = "lib.rs#qqmm#not(target_os = \"macos\")";
+        for (source, expected) in [
+            ("#[cfg(not(target_os = \"macos\"))] pub fn qqmm() {}", true),
+            ("#[cfg(target_os = \"macos\")] pub fn qqmm() {}", false),
+            (
+                "#[cfg(not(target_os = \"macos\"))] pub fn other() {}",
+                false,
+            ),
+            ("#[cfg(not(target_os = \"macos\"))] fn qqmm() {}", false),
+            ("pub fn qqmm() {}", false),
+        ] {
+            std::fs::write(&path, source).unwrap();
+            assert_eq!(
+                super::cfg_evidence_exists(root.path(), reference),
+                expected,
+                "{source}"
+            );
+        }
+        assert!(!super::cfg_evidence_exists(
+            root.path(),
+            "../lib.rs#qqmm#not(target_os = \"macos\")"
+        ));
     }
 
     #[test]

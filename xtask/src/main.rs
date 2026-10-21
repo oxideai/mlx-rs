@@ -6,6 +6,7 @@ use std::process::Command;
 mod api_baseline;
 #[path = "../../mlx-sys/src/bindgen_config.rs"]
 mod bindgen_config;
+mod config_report;
 mod fingerprint;
 mod verify_bump;
 mod verify_ffi;
@@ -489,6 +490,9 @@ fn main() {
         .is_some_and(|arg| arg == "verify-oracle-boundary")
     {
         std::process::exit(verify_oracle_boundary::run(&get_repo_root(), &args[2..]));
+    }
+    if args.get(1).is_some_and(|arg| arg == "config-report") {
+        std::process::exit(config_report::run(&get_repo_root(), &args[2..]));
     }
     let target_tag = args.get(1).cloned();
 

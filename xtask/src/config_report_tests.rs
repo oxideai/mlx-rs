@@ -289,3 +289,55 @@ fn incomplete_second_doctest_group_cannot_pass() {
     let runs = parse_runs(log).unwrap();
     assert_eq!(runs[0]["outcome"], "incomplete");
 }
+
+#[test]
+fn captured_workspace_output_preserves_target_counts() {
+    let runs = parse_runs(include_str!("../tests/fixtures/configuration-output.txt")).unwrap();
+    assert_eq!(runs.len(), 40);
+    let xtask = runs
+        .iter()
+        .find(|r| r["id"].as_str().unwrap().contains("/xtask-"))
+        .unwrap();
+    assert_eq!(xtask["passed"], 117);
+    assert_eq!(xtask["summaries"], 1);
+    assert_eq!(runs.iter().filter(|r| r["not_run"] == true).count(), 1);
+    let state = runs
+        .iter()
+        .find(|r| r["id"].as_str().unwrap().contains("/state_compile-"))
+        .unwrap();
+    assert_eq!(state["passed"], 15);
+    assert_eq!(state["filtered_out"], 0);
+    assert!(runs.iter().all(|r| r["outcome"] == "pass"));
+}
+
+#[test]
+fn empty_allowlist_matches_captured_workspace_execution() {
+    let runs = parse_runs(include_str!("../tests/fixtures/configuration-output.txt")).unwrap();
+    let empty: BTreeSet<String> = runs
+        .iter()
+        .filter(|r| r["passed"] == 0)
+        .map(|r| {
+            let id = r["id"].as_str().unwrap();
+            if let Some(name) = id.strip_prefix("doc:") {
+                format!("{}::doctest::{name}", name.replace('_', "-"))
+            } else {
+                let file = Path::new(id).file_name().unwrap().to_str().unwrap();
+                let name = file.rsplit_once('-').unwrap().0;
+                if name.starts_with("mlx_") {
+                    format!("{}::lib::{name}", name.replace('_', "-"))
+                } else {
+                    format!("mlx-tests::test::{name}")
+                }
+            }
+        })
+        .collect();
+    let (configs, _, _) = fixture();
+    let config = configs
+        .iter()
+        .find(|c| c.id == "macos-arm64-default")
+        .unwrap();
+    assert_eq!(
+        config.allow_empty.iter().cloned().collect::<BTreeSet<_>>(),
+        empty
+    );
+}

@@ -276,6 +276,9 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
             run["not_run"] = true.into();
         }
         if let Some(summary) = line.strip_prefix("test result: ") {
+            if !summary.contains("; finished in ") {
+                continue;
+            }
             let run = runs.last_mut().ok_or("test summary outside a run")?;
             let (status, counts) = summary
                 .split_once(". ")
@@ -708,8 +711,9 @@ mod tests {
     }
 
     #[test]
-    fn rejects_unrecognized_summary() {
-        assert!(parse_runs("Doc-tests demo\ntest result: unexpected").is_err());
+    fn unrecognized_summary_cannot_complete_run() {
+        let runs = parse_runs("Doc-tests demo\ntest result: unexpected").unwrap();
+        assert_eq!(runs[0]["outcome"], "incomplete");
     }
 }
 

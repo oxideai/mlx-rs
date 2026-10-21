@@ -252,8 +252,9 @@ with nonzero passing assertions. Reports retain commands, compiler/SDK, effectiv
 case counts, build/run timings and source identities; XML and logs are uploaded on failure too.
 
 Each native build also runs `linked-exports`. CMake resolves the archive targets named in
-`mlx-sys/native-libraries.txt`, the same list consumed by `mlx-sys/build.rs`; the checker includes
-the compiler-runtime archive selected by mlx-sys when available. These are the native builds'
+`mlx-sys/native-libraries.txt`, the same list consumed by `mlx-sys/build.rs`. JACCL is included only
+when CMake produces its archive; native builds select it when the `jaccl` target exists. The checker
+includes the compiler-runtime archive selected by mlx-sys when available. These are the native builds'
 artifacts, not Cargo's separately compiled bytes. Reports under `native/exports/` record exact paths,
 SHA-256 hashes, CMake configuration, the planned functions from the existing header/bindgen parser,
 and defined external symbols in each archive's arm64 slice. Mach-O's leading underscore is removed

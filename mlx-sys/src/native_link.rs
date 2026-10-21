@@ -1,6 +1,12 @@
-use std::process::Command;
+use std::{path::Path, process::Command};
 
 pub const LIBRARIES: &str = include_str!("../native-libraries.txt");
+
+pub fn libraries(build: &Path) -> impl Iterator<Item = &'static str> + '_ {
+    LIBRARIES
+        .lines()
+        .filter(|&name| name != "jaccl" || build.join("jaccl/libjaccl.a").is_file())
+}
 
 pub fn find_clang_rt_path() -> Option<String> {
     let output = Command::new("xcrun")

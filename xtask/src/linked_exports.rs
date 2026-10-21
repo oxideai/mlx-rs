@@ -172,8 +172,7 @@ fn archive_paths(build: &Path) -> Result<Vec<PathBuf>, String> {
         .lines()
         .map(PathBuf::from)
         .collect();
-    let expected: Vec<_> = native_link::LIBRARIES
-        .lines()
+    let expected: Vec<_> = native_link::libraries(build)
         .map(|name| format!("lib{name}.a"))
         .collect();
     if paths.len() != expected.len()
@@ -538,7 +537,7 @@ fn cargo_build(root: &Path, messages: &Path) -> Result<PathBuf, String> {
         .iter()
         .filter_map(|l| l.as_str()?.strip_prefix("static="))
         .collect();
-    let mut expected: Vec<_> = native_link::LIBRARIES.lines().collect();
+    let mut expected: Vec<_> = native_link::libraries(&build).collect();
     if native_link::find_clang_rt_path().is_some() {
         expected.push("clang_rt.osx");
     }
@@ -562,7 +561,7 @@ fn cargo_build(root: &Path, messages: &Path) -> Result<PathBuf, String> {
     }
     let manifest = archives
         .iter()
-        .take(native_link::LIBRARIES.lines().count())
+        .take(native_link::libraries(&build).count())
         .map(|p| format!("{}\n", p.display()))
         .collect::<String>();
     fs::write(build.join("linked-archives.txt"), manifest).map_err(|e| e.to_string())?;
@@ -705,6 +704,36 @@ mod tests {
             invalid[0][field] = value;
             assert!(unexpected_exports(&symbols(&["mlx_add"]), &archives, &invalid, true).is_err());
         }
+    }
+
+    #[test]
+    fn requires_jaccl_archive_only_when_built() {
+        let build = tempfile::tempdir().unwrap();
+        let mut manifest = String::new();
+        for name in ["mlx", "mlxc", "gguflib"] {
+            let archive = build.path().join(format!("lib{name}.a"));
+            fs::write(&archive, b"archive").unwrap();
+            manifest.push_str(&format!("{}\n", archive.display()));
+        }
+        let manifest_path = build.path().join("linked-archives.txt");
+        fs::write(&manifest_path, &manifest).unwrap();
+        assert!(archive_paths(build.path()).is_ok());
+
+        let jaccl = build.path().join("jaccl/libjaccl.a");
+        fs::create_dir(jaccl.parent().unwrap()).unwrap();
+        fs::write(&jaccl, b"archive").unwrap();
+        assert!(archive_paths(build.path())
+            .unwrap_err()
+            .contains("link contract"));
+
+        manifest.push_str(&format!("{}\n", jaccl.display()));
+        fs::write(&manifest_path, manifest).unwrap();
+        assert!(archive_paths(build.path()).unwrap().contains(&jaccl));
+
+        fs::remove_file(jaccl).unwrap();
+        assert!(archive_paths(build.path())
+            .unwrap_err()
+            .contains("link contract"));
     }
 
     #[test]

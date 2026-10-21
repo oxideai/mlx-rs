@@ -120,7 +120,13 @@ fn build_and_link_mlx_c() {
         "cargo:rustc-link-search=native={}/build/_deps/mlx-build/mlx/io",
         dst.display()
     );
-    for library in native_link::LIBRARIES.lines() {
+    for library in native_link::libraries(&dst.join("build")) {
+        if library == "jaccl" {
+            println!(
+                "cargo:rustc-link-search=native={}/build/jaccl",
+                dst.display()
+            );
+        }
         println!("cargo:rustc-link-lib=static={library}");
     }
 

@@ -33,7 +33,14 @@ jobs:
         if: github.event_name != 'pull_request'
       - run: cargo run -p xtask -- verify-oracle-boundary --base ${{ github.event.pull_request.base.sha }}
         if: github.event_name == 'pull_request'
-      - run: cargo run -p xtask -- verify-ledger
+      - name: Check compiled public API and ledger
+        env:
+          MLX_RS_API_TARGET_DIR: ${{ runner.temp }}/api-inventory
+          MLX_RS_METAL_PATH: ${{ runner.temp }}/api-inventory/metallib
+        run: |
+          rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
+          cargo run -p xtask -- api-baseline --check ledger/rust-api-baseline.json
+          cargo run -p xtask -- verify-ledger
 
   ffi-gate:
     runs-on: blaze/macos-latest

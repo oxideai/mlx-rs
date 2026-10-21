@@ -61,7 +61,7 @@ fn verify(repo_root: &Path, args: &[String]) -> Result<usize, String> {
     }
     let discovered: Value = serde_json::from_slice(&output.stdout)
         .map_err(|e| format!("invalid extractor output: {e}"))?;
-    let api = serde_json::to_value(crate::api_baseline::generate(
+    let api = serde_json::to_value(crate::source_api::generate(
         &repo_root.join("mlx-lm"),
         "mlx_lm",
     )?)

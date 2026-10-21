@@ -17,9 +17,13 @@ Run these checks as well as the tests for your change:
 cargo fmt -- --check
 cargo clippy -- -D warnings
 cargo run -p xtask -- verify-oracle-boundary --base main
+rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
 cargo run -p xtask -- verify-ledger
 cargo run -p xtask -- api-baseline --check ledger/rust-api-baseline.json
 ```
+
+Only API extraction uses the pinned nightly. Set `MLX_RS_API_TARGET_DIR` and
+`MLX_RS_METAL_PATH` to scratch directories for its native builds and metallibs.
 
 When touching FFI ownership, also run `cargo run -p xtask -- verify-ffi`.
 

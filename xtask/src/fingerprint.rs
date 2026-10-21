@@ -317,6 +317,28 @@ fn delta_usage() -> String {
     "usage: cargo run -p xtask -- fingerprint-delta --old <file> --new <file>".to_owned()
 }
 
+pub(crate) fn planned_exports(root: &Path) -> Result<(Vec<String>, BTreeSet<String>), String> {
+    let native = root.join("mlx-sys/src/mlx-c");
+    let paths = bindgen_config::discover_headers(&native).map_err(|e| e.to_string())?;
+    let bindings = bindgen_config::builder(&native, &paths)
+        .generate()
+        .map_err(|e| e.to_string())?
+        .to_string();
+    let headers = paths
+        .iter()
+        .map(|p| bindgen_config::relative_header(&native, p))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    let symbols = parse_entries(&bindings)?
+        .into_iter()
+        .filter_map(|entry| match entry {
+            Entry::Function { name, .. } => Some(name),
+            _ => None,
+        })
+        .collect();
+    Ok((headers, symbols))
+}
+
 fn generate(repo_root: &Path, reference: &str) -> Result<Fingerprint, String> {
     let repository = repo_root.join("mlx-sys/src/mlx-c");
     let worktree = GitWorktree::create(&repository, reference)?;

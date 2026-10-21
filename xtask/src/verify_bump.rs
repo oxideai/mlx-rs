@@ -376,7 +376,7 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
                     crate::config_report::validate_reports(repo_root, &paths, &configs)
                 }),
         ),
-        check(6, "bump_canaries", "native canaries and real checkpoints",
+        check(6, "bump_canaries", "linked exports, native canaries and real checkpoints",
             crate::bump_evidence::validate(repo_root,
                 &options.config_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>(),
                 &options.native_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>())),

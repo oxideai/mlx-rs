@@ -98,6 +98,14 @@ def run(build_root, reports):
                 if report["native"]["MLX_BUILD_ACCELERATE"] != config["accelerate"]:
                     raise ValueError("compiled Accelerate backend differs from plan")
                 report["array_compile_command"] = array_compile
+                exports_path = reports / "exports" / (config["id"] + ".json")
+                exports_path.parent.mkdir(exist_ok=True)
+                export_command = ["cargo", "run", "-p", "xtask", "--", "linked-exports",
+                                  "--build", str(build), "--report", str(exports_path)]
+                export_result = subprocess.run(export_command, cwd=ROOT, stdout=log, stderr=log)
+                report["linked_exports"] = json.loads(exports_path.read_text())
+                report["linked_exports"]["command"] = export_command
+                report["linked_exports"]["exit_code"] = export_result.returncode
                 shutil.copyfile(ROOT / "conformance/fixtures/fast.safetensors", build / "arrays.safetensors")
                 metal = config["metal"] == "ON"
                 for example in plan["examples"] + (plan["metal_examples"] if metal else []):
@@ -117,6 +125,8 @@ def run(build_root, reports):
                     raise ValueError("dirty checkout")
                 if output("git", "rev-parse", "HEAD") != identity["source_commit"]:
                     raise ValueError("source changed during run")
+                if report["linked_exports"]["exit_code"]:
+                    raise ValueError("linked export admission failed; see exports report")
                 report["verdict"] = "pass"
             except Exception as error:
                 report["error"] = str(error)

@@ -9,6 +9,7 @@ mod bindgen_config;
 mod bump_evidence;
 mod config_report;
 mod fingerprint;
+mod linked_exports;
 mod source_api;
 mod verify_bump;
 mod verify_ffi;
@@ -495,6 +496,9 @@ fn main() {
     }
     if args.get(1).is_some_and(|arg| arg == "config-report") {
         std::process::exit(config_report::run(&get_repo_root(), &args[2..]));
+    }
+    if args.get(1).is_some_and(|arg| arg == "linked-exports") {
+        std::process::exit(linked_exports::run(&get_repo_root(), &args[2..]));
     }
     let target_tag = args.get(1).cloned();
 

@@ -24,7 +24,7 @@ jobs:
           components: rustfmt, clippy
       - run: cargo --version
       - run: cargo fmt -- --check
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --message-format=json-render-diagnostics -- -D warnings > "$RUNNER_TEMP/clippy-artifacts.json"
       # Oracle trust boundary: implementation changes may not alter goldens,
       # policies, or comparator logic in the same change set (VERIFICATION.md,
       # "Anti-self-oracle rules"). Working-tree integrity always; range check
@@ -41,6 +41,17 @@ jobs:
           rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
           cargo run -p xtask -- api-baseline --check ledger/rust-api-baseline.json
           cargo run -p xtask -- verify-ledger
+
+      - name: Check current linked exports
+        if: ${{ !cancelled() }}
+        run: cargo run -p xtask -- linked-exports --cargo-output "$RUNNER_TEMP/clippy-artifacts.json" --report "$RUNNER_TEMP/current-exports.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-linked-exports
+          path: |
+            ${{ runner.temp }}/current-exports.json
+            ${{ runner.temp }}/clippy-artifacts.json
 
   ffi-gate:
     runs-on: blaze/macos-latest

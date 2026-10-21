@@ -66,6 +66,14 @@ pub(crate) fn configurations(matrix: &Value) -> Result<Vec<Configuration>, Strin
                 },
             ),
             (
+                "MLX_METAL_JIT",
+                if c.features.iter().any(|f| f == "metal-jit") {
+                    "ON"
+                } else {
+                    "OFF"
+                },
+            ),
+            (
                 "CMAKE_BUILD_TYPE",
                 if c.profile == "debug" {
                     "Debug"
@@ -328,10 +336,14 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
     Ok(runs)
 }
 
-fn build_evidence(
-    log: &str,
-    metadata: &Value,
-) -> Result<(Value, Value, BTreeMap<String, String>), String> {
+struct BuildEvidence {
+    features: Value,
+    rust_profiles: Value,
+    native: Value,
+    binaries: BTreeMap<String, String>,
+}
+
+fn build_evidence(log: &str, metadata: &Value) -> Result<BuildEvidence, String> {
     let packages: BTreeMap<_, _> = metadata["packages"]
         .as_array()
         .ok_or("missing packages")?
@@ -339,6 +351,7 @@ fn build_evidence(
         .map(|p| (p["id"].as_str().unwrap(), p["name"].as_str().unwrap()))
         .collect();
     let mut features = serde_json::Map::new();
+    let mut rust_profiles = serde_json::Map::new();
     let mut native = serde_json::Map::new();
     let mut binaries = BTreeMap::new();
     for line in log.lines() {
@@ -354,6 +367,15 @@ fn build_evidence(
         if message["reason"] == "compiler-artifact"
             && message["target"]["kind"][0] != "custom-build"
         {
+            let profile = json!({
+                "opt_level": message["profile"]["opt_level"],
+                "debug_assertions": message["profile"]["debug_assertions"],
+            });
+            if let Some(previous) = rust_profiles.insert((*name).into(), profile.clone()) {
+                if previous != profile {
+                    return Err(format!("multiple Rust profiles for {name}"));
+                }
+            }
             if let Some(previous) = features.insert((*name).into(), message["features"].clone()) {
                 if previous != message["features"] {
                     return Err(format!("multiple feature resolutions for {name}"));
@@ -414,7 +436,12 @@ fn build_evidence(
             );
         }
     }
-    Ok((features.into(), native.into(), binaries))
+    Ok(BuildEvidence {
+        features: features.into(),
+        rust_profiles: rust_profiles.into(),
+        native: native.into(),
+        binaries,
+    })
 }
 
 fn validate_report(
@@ -466,6 +493,12 @@ fn validate_report(
     for (name, features) in &c.resolved_features {
         if report["resolved_features"][name] != json!(features) {
             return Err(fail(&format!("resolved features mismatch for {name}")));
+        }
+        let profile = &report["rust_profiles"][name];
+        if profile["opt_level"] != if c.profile == "release" { "3" } else { "0" }
+            || profile["debug_assertions"] != (c.profile == "debug")
+        {
+            return Err(fail(&format!("compiled Rust profile mismatch for {name}")));
         }
     }
     if report["native"]["mlx_version"] != identity["nested_mlx_version"]
@@ -627,6 +660,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     let log_path = path.with_extension("log");
     let log = fs::File::create(&log_path).map_err(|e| e.to_string())?;
     eprintln!("{}; output: {}", command.join(" "), log_path.display());
+    let started = std::time::Instant::now();
     let status = Command::new(&command[0])
         .args(&command[1..])
         .current_dir(root)
@@ -634,6 +668,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
         .stderr(Stdio::from(log))
         .status()
         .map_err(|e| e.to_string())?;
+    report["elapsed_seconds"] = started.elapsed().as_secs_f64().into();
     use std::os::unix::process::ExitStatusExt;
     let code = status
         .code()
@@ -641,9 +676,10 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     report["exit_code"] = code.into();
     let collected = (|| {
         let log = fs::read_to_string(&log_path).map_err(|e| e.to_string())?;
-        let (features, native, binaries) = build_evidence(&log, &meta)?;
-        report["resolved_features"] = features;
-        report["native"] = native;
+        let evidence = build_evidence(&log, &meta)?;
+        report["resolved_features"] = evidence.features;
+        report["rust_profiles"] = evidence.rust_profiles;
+        report["native"] = evidence.native;
         let mut runs = parse_runs(&log)?;
         let expected = inventory(&meta, c, &report["resolved_features"])?;
         for run in &mut runs {
@@ -655,7 +691,8 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
                     .cloned()
                     .ok_or_else(|| format!("unknown doctest {doc}"))?
             } else {
-                binaries
+                evidence
+                    .binaries
                     .get(id)
                     .cloned()
                     .ok_or_else(|| format!("unknown test executable {id}"))?

@@ -123,6 +123,20 @@ jobs:
         with:
           name: config-report-${{ matrix.configuration }}
           path: ${{ runner.temp }}/config-reports/
+      - name: Set macos-arm64-metal-jit output paths
+        if: ${{ !cancelled() && matrix.rust == 'stable' }}
+        run: |
+          {
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/macos-arm64-metal-jit"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/macos-arm64-metal-jit"
+          } >> "$GITHUB_ENV"
+      - run: cargo run -p xtask -- config-report macos-arm64-metal-jit --report "$RUNNER_TEMP/config-reports/macos-arm64-metal-jit.json"
+        if: ${{ !cancelled() && matrix.rust == 'stable' }}
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.rust == 'stable'
+        with:
+          name: config-report-macos-arm64-metal-jit
+          path: ${{ runner.temp }}/config-reports/macos-arm64-metal-jit.*
 
   tests-cpu-only:
     runs-on: blaze/macos-latest
@@ -156,3 +170,17 @@ jobs:
         with:
           name: config-report-macos-arm64-cpu-only
           path: ${{ runner.temp }}/config-reports/
+      - name: Set macos-arm64-cpu-only-release output paths
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/macos-arm64-cpu-only-release"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/macos-arm64-cpu-only-release"
+          } >> "$GITHUB_ENV"
+      - run: cargo run --release -p xtask -- config-report macos-arm64-cpu-only-release --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only-release.json"
+        if: ${{ !cancelled() }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: config-report-macos-arm64-cpu-only-release
+          path: ${{ runner.temp }}/config-reports/macos-arm64-cpu-only-release.*

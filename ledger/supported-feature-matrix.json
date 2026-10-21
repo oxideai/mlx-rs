@@ -264,6 +264,106 @@
           "metal"
         ]
       }
+    },
+    {
+      "id": "macos-arm64-cpu-only-release",
+      "target_triple": "aarch64-apple-darwin",
+      "default_features": false,
+      "features": [
+        "accelerate"
+      ],
+      "verification": [
+        "build",
+        "test"
+      ],
+      "purpose": "CPU-only Accelerate configuration with the release profile",
+      "required": true,
+      "profile": "release",
+      "toolchain": "stable",
+      "packages": [
+        "mlx-rs",
+        "mlx-tests"
+      ],
+      "native": {
+        "MLX_BUILD_METAL": "OFF",
+        "MLX_BUILD_ACCELERATE": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "MLX_METAL_JIT": "OFF"
+      },
+      "allow_empty": [
+        "mlx-tests::doctest::mlx_tests",
+        "mlx-tests::lib::mlx_tests",
+        "mlx-tests::test::ci_leak_calibration",
+        "mlx-tests::test::common",
+        "mlx-tests::test::test_quantizable"
+      ],
+      "resolved_features": {
+        "mlx-rs": [
+          "accelerate"
+        ],
+        "mlx-sys": [
+          "accelerate"
+        ],
+        "mlx-tests": [
+          "accelerate"
+        ]
+      }
+    },
+    {
+      "id": "macos-arm64-metal-jit",
+      "target_triple": "aarch64-apple-darwin",
+      "default_features": true,
+      "features": [
+        "accelerate",
+        "metal",
+        "metal-jit"
+      ],
+      "verification": [
+        "build",
+        "test"
+      ],
+      "purpose": "Default macOS arm64 configuration with Metal JIT compilation",
+      "required": true,
+      "profile": "debug",
+      "toolchain": "stable",
+      "packages": [],
+      "native": {
+        "MLX_BUILD_METAL": "ON",
+        "MLX_BUILD_ACCELERATE": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MLX_METAL_JIT": "ON"
+      },
+      "allow_empty": [
+        "mlx-internal-macros::doctest::mlx_internal_macros",
+        "mlx-internal-macros::lib::mlx_internal_macros",
+        "mlx-macros::doctest::mlx_macros",
+        "mlx-macros::lib::mlx_macros",
+        "mlx-sys::doctest::mlx_sys",
+        "mlx-tests::doctest::mlx_tests",
+        "mlx-tests::lib::mlx_tests",
+        "mlx-tests::test::ci_leak_calibration",
+        "mlx-tests::test::common",
+        "mlx-tests::test::test_quantizable"
+      ],
+      "resolved_features": {
+        "mlx-rs": [
+          "accelerate",
+          "default",
+          "metal",
+          "metal-jit"
+        ],
+        "mlx-sys": [
+          "accelerate",
+          "default",
+          "metal",
+          "metal-jit"
+        ],
+        "mlx-tests": [
+          "accelerate",
+          "default",
+          "metal"
+        ]
+      }
     }
   ]
 }

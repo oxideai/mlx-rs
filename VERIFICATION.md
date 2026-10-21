@@ -58,25 +58,32 @@ Metal comparisons are separate. Use a scratch `CARGO_TARGET_DIR` for different f
 
 ## Executed configuration reports
 
-The required entries in `ledger/supported-feature-matrix.json` identify the existing default
-stable/MSRV and CPU-only stable lanes, including package selection, Rust profile, toolchain,
-resolved backend features and native CMake settings. Run each configuration with its own
+The required entries in `ledger/supported-feature-matrix.json` identify the default stable/MSRV,
+CPU-only stable debug/release and Metal JIT stable debug lanes, including package selection,
+Rust profile, toolchain, resolved backend features and native CMake settings. Run each configuration with its own
 `CARGO_TARGET_DIR` and put reports outside the checkout:
 
     cargo run -p xtask -- config-report macos-arm64-default \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-default.json"
     cargo run -p xtask -- config-report macos-arm64-cpu-only \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
+    cargo run -p xtask -- config-report macos-arm64-cpu-only-release \
+      --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only-release.json"
+    cargo run -p xtask -- config-report macos-arm64-metal-jit \
+      --report "$RUNNER_TEMP/config-reports/macos-arm64-metal-jit.json"
 
 Use the selected toolchain for the entire invocation; `macos-arm64-default-msrv` requires Rust
-1.88.0. Locally, substitute a scratch directory for `$RUNNER_TEMP`. The wrapper executes the
-ledger's Cargo test command once, including doctests, with serial tests and captured test output.
+1.88.0. Give each configuration a separate `MLX_RS_METAL_PATH` as well; JIT and non-JIT
+metallibs must not share a directory. Locally, substitute a scratch directory for `$RUNNER_TEMP`.
+The wrapper executes the ledger's Cargo test command once, including doctests, with serial tests
+and captured test output.
 It preserves Cargo's exit status and writes a JSON report plus a sibling `.log` file. A zero exit
 status does not qualify evidence: inspect `verdict`, or use the admission validator.
 
 Reports bind the clean checkout SHA, mlx-c commit, nested MLX version, Cargo.lock SHA-256,
-`rustc --version --verbose`, macOS/SDK versions, resolved features, Rust profile, effective
-CMake cache settings, exact argument vector, and each binary/doctest's counts and outcome.
+`rustc --version --verbose`, macOS/SDK versions, resolved features, Rust profile and compiled
+optimization/debug-assertion settings, effective CMake cache settings (including build type and `MLX_METAL_JIT`), exact argument vector,
+build-plus-test wall time, and each binary/doctest's counts and outcome.
 `github_sha` and `github_pr_head_sha` are context; only `source_commit` is admitted. Missing runs,
 incomplete summaries, filtered tests, `NOT RUN`, and unexpected zero-test runs fail qualification.
 The ledger's `allow_empty` lists intentionally empty and compile-only harnesses, the ignored leak
@@ -92,10 +99,9 @@ check against the current checkout:
 
 CI uploads these reports and logs even when tests fail. The current default workspace includes
 `mlx-lm`'s local-only `real_checkpoints` test: without its manifest it prints `NOT RUN`, so default
-reports cannot qualify admission even when Cargo succeeds. This report exposes that execution gap;
-it does not supply checkpoint fixtures or add a CI checkpoint lane. CPU release, Metal JIT and
-native dependency canaries remain separate additions. Add a ledger entry and a CI invocation for
-each new configuration; admission discovers required entries without a fixed configuration count.
+and Metal JIT reports cannot qualify admission even when Cargo succeeds. This report exposes that
+execution gap; it does not supply checkpoint fixtures or add a CI checkpoint lane. Native dependency
+canaries remain a separate addition. Add a ledger entry and a CI invocation for each new configuration; admission discovers required entries without a fixed configuration count.
 
 ## Bump admission contract
 

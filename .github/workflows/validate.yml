@@ -84,14 +84,29 @@ jobs:
 
   tests:
     runs-on: blaze/${{ matrix.runner }}
+    env:
+      GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     strategy:
       matrix:
         runner: [macos-latest]
         rust: [1.88.0, stable]
+        include:
+          - rust: 1.88.0
+            configuration: macos-arm64-default-msrv
+          - rust: stable
+            configuration: macos-arm64-default
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
+      - name: Set configuration output paths
+        id: config-cache
+        run: |
+          {
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/${{ matrix.configuration }}"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/${{ matrix.configuration }}"
+          } >> "$GITHUB_ENV"
+          echo "target=$(python3 -c 'import os; print(os.path.relpath(os.environ["RUNNER_TEMP"] + "/config-targets/${{ matrix.configuration }}"))')" >> "$GITHUB_OUTPUT"
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache: false
@@ -100,14 +115,31 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.rust }}-${{ matrix.runner }}-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
-      - run: cargo test --all -- --test-threads=1 # MLX is not thread safe
+          workspaces: . -> ${{ steps.config-cache.outputs.target }}
+          cache-directories: ${{ env.MLX_RS_METAL_PATH }}
+      - run: cargo run -p xtask -- config-report ${{ matrix.configuration }} --report "$RUNNER_TEMP/config-reports/${{ matrix.configuration }}.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: config-report-${{ matrix.configuration }}
+          path: ${{ runner.temp }}/config-reports/
 
   tests-cpu-only:
     runs-on: blaze/macos-latest
+    env:
+      GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
+      - name: Set configuration output paths
+        id: config-cache
+        run: |
+          {
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/macos-arm64-cpu-only"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/macos-arm64-cpu-only"
+          } >> "$GITHUB_ENV"
+          echo "target=$(python3 -c 'import os; print(os.path.relpath(os.environ["RUNNER_TEMP"] + "/config-targets/macos-arm64-cpu-only"))')" >> "$GITHUB_OUTPUT"
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache: false
@@ -116,4 +148,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: cpu-only-stable-macos-latest-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
-      - run: cargo test -p mlx-rs -p mlx-tests --no-default-features --features accelerate -- --test-threads=1
+          workspaces: . -> ${{ steps.config-cache.outputs.target }}
+          cache-directories: ${{ env.MLX_RS_METAL_PATH }}
+      - run: cargo run -p xtask -- config-report macos-arm64-cpu-only --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: config-report-macos-arm64-cpu-only
+          path: ${{ runner.temp }}/config-reports/

@@ -23,6 +23,20 @@ fn fixture() -> (Vec<Configuration>, Vec<Value>, Value) {
         }).as_object().unwrap().clone());
                 r["native"]["mlx_version"] = "0.32.2".into();
                 r["native"]["mlx_commit"] = "nested-commit".into();
+                r["rust_profiles"] = c
+                    .resolved_features
+                    .keys()
+                    .map(|name| {
+                        (
+                            name.clone(),
+                            json!({
+                                "opt_level": if c.profile == "release" { "3" } else { "0" },
+                                "debug_assertions": c.profile == "debug",
+                            }),
+                        )
+                    })
+                    .collect::<serde_json::Map<_, _>>()
+                    .into();
                 r
             })
             .collect();
@@ -59,6 +73,73 @@ fn rejects_missing_report() {
     assert!(check(&configs, &reports, &identity)
         .unwrap_err()
         .contains("missing required"));
+}
+
+#[test]
+fn rejects_missing_release_or_jit_report() {
+    for id in ["macos-arm64-cpu-only-release", "macos-arm64-metal-jit"] {
+        let (configs, mut reports, identity) = fixture();
+        reports.retain(|r| r["configuration_id"] != id);
+        assert_eq!(
+            check(&configs, &reports, &identity).unwrap_err(),
+            format!("missing required configuration report {id}")
+        );
+    }
+}
+
+#[test]
+fn rejects_non_jit_cache_for_jit_report() {
+    let (configs, mut reports, identity) = fixture();
+    let report = reports
+        .iter_mut()
+        .find(|r| r["configuration_id"] == "macos-arm64-metal-jit")
+        .unwrap();
+    report["native"]["MLX_METAL_JIT"] = "OFF".into();
+    assert!(check(&configs, &reports, &identity)
+        .unwrap_err()
+        .contains("native setting mismatch: MLX_METAL_JIT"));
+}
+
+#[test]
+fn rejects_release_report_built_in_debug() {
+    for field in ["profile", "rust_profiles", "native"] {
+        let (configs, mut reports, identity) = fixture();
+        let debug = reports
+            .iter()
+            .find(|r| r["configuration_id"] == "macos-arm64-cpu-only")
+            .unwrap()[field]
+            .clone();
+        let report = reports
+            .iter_mut()
+            .find(|r| r["configuration_id"] == "macos-arm64-cpu-only-release")
+            .unwrap();
+        report[field] = debug;
+        let expected = match field {
+            "profile" => "command, profile, target or toolchain mismatch",
+            "rust_profiles" => "compiled Rust profile mismatch",
+            _ => "native setting mismatch: CMAKE_BUILD_TYPE",
+        };
+        assert!(check(&configs, &reports, &identity)
+            .unwrap_err()
+            .contains(expected));
+    }
+}
+
+#[test]
+fn captures_compiled_rust_profile() {
+    let metadata = json!({"packages": [{"id": "mlx-rs-id", "name": "mlx-rs"}]});
+    let artifact = json!({
+        "reason": "compiler-artifact", "package_id": "mlx-rs-id",
+        "target": {"kind": ["lib"], "name": "mlx_rs"},
+        "features": ["accelerate"],
+        "profile": {"opt_level": "3", "debug_assertions": false},
+    });
+    let evidence = build_evidence(&artifact.to_string(), &metadata).unwrap();
+    assert_eq!(evidence.rust_profiles["mlx-rs"], artifact["profile"]);
+    let mut debug = artifact.clone();
+    debug["profile"]["opt_level"] = "0".into();
+    debug["profile"]["debug_assertions"] = true.into();
+    assert!(build_evidence(&format!("{artifact}\n{debug}"), &metadata).is_err());
 }
 
 #[test]

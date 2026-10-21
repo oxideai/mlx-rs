@@ -36,12 +36,23 @@ jobs:
         with:
           cache: false
           rustflags: ''
-      - uses: actions/cache@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12.14
+      - uses: actions/cache/restore@v4
+        id: checkpoints-cache
         with:
           path: ${{ runner.temp }}/bump-canaries/checkpoints
           key: bump-checkpoints-${{ hashFiles('conformance/mlx-lm/bump-oracle.json') }}
+      - name: Qualify native result parsing
+        run: python3 -B -m unittest discover -s xtask -p 'test_*.py'
       - name: Download and verify pinned checkpoints
         run: python3 -B xtask/provision_checkpoints.py --cache "$BUMP_ROOT/checkpoints" --output "$BUMP_ROOT/reports/checkpoints"
+      - uses: actions/cache/save@v4
+        if: steps.checkpoints-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ runner.temp }}/bump-canaries/checkpoints
+          key: bump-checkpoints-${{ hashFiles('conformance/mlx-lm/bump-oracle.json') }}
       - name: Execute stable configurations
         shell: bash
         run: |

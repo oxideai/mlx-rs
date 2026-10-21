@@ -168,10 +168,12 @@ still means `NOT RUN`. Default and JIT reports also bind the frozen oracle diges
 case/device executions. A changed expectation, missing case or failed comparison blocks admission.
 
 Run `python3 -B xtask/native_canaries.py --build-root "$BUMP_ROOT/native" --reports
-"$BUMP_ROOT/reports/native"` with a fresh build directory. This separate CMake project builds the
+"$BUMP_ROOT/reports/native"` with an isolated build directory. Reuse is allowed only for a clean nested source at the same tag. This separate CMake project builds the
 checked-out mlx-c and its pinned nested MLX tag, records the resolved MLX commit, and adds upstream's
 own test target despite mlx-c disabling it. It does not modify upstream sources or Cargo's builds.
-The three native configurations are CPU debug, CPU release, and Metal/Accelerate release with JIT off.
+The three native configurations are CPU/Accelerate debug, CPU/Accelerate release, and
+Metal/Accelerate release with JIT off. Upstream enables Accelerate when its framework is found, even
+if the cache says `MLX_BUILD_ACCELERATE=OFF`; native evidence checks the compiled definition.
 `xtask/native-canaries/plan.json` names the canaries: all eleven C examples built, with seven CPU-capable examples run in every configuration
 and the gradient, closure, export and Metal-kernel examples run on Metal; eleven C++ cases covering shared arrays, lazy evaluation, device
 and stream placement, gradients/VJP and compilation across streams; and Metal matmul, reduction and

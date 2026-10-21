@@ -190,9 +190,29 @@ pub(crate) fn validate(
     crate::config_report::validate_reports(root, &selected, &configs)?;
     let identity = crate::config_report::identity(root)?;
     let plan = read(&root.join("xtask/native-canaries/plan.json"))?;
+    let reports = native_paths
+        .iter()
+        .map(|path| read(path))
+        .collect::<Result<Vec<_>, _>>()?;
+    let seen = validate_native_set(
+        &reports,
+        &identity,
+        &plan,
+        mlx_commit.as_ref().ok_or("missing Rust MLX commit")?,
+    )?;
+    Ok(
+        json!({"verdict": "pass", "source_commit": identity["source_commit"], "native_configurations": seen, "checkpoint_oracle_sha256": oracle_hash}),
+    )
+}
+
+fn validate_native_set(
+    reports: &[Value],
+    identity: &Value,
+    plan: &Value,
+    mlx_commit: &Value,
+) -> Result<BTreeSet<String>, String> {
     let mut seen = BTreeSet::new();
-    for path in native_paths {
-        let report = read(path)?;
+    for report in reports {
         let id = report["configuration_id"]
             .as_str()
             .ok_or("native: missing configuration id")?;
@@ -205,17 +225,15 @@ pub(crate) fn validate(
             .iter()
             .find(|c| c["id"] == id)
             .ok_or("unknown native configuration")?;
-        validate_native(&report, &identity, config, &plan)?;
-        if Some(&report["mlx_commit"]) != mlx_commit.as_ref() {
+        validate_native(report, identity, config, plan)?;
+        if &report["mlx_commit"] != mlx_commit {
             return Err("native and Rust builds used different MLX commits".into());
         }
     }
     if seen.len() != plan["configurations"].as_array().unwrap().len() {
         return Err("missing required native configuration".into());
     }
-    Ok(
-        json!({"verdict": "pass", "source_commit": identity["source_commit"], "native_configurations": seen, "checkpoint_oracle_sha256": oracle_hash}),
-    )
+    Ok(seen)
 }
 
 fn validate_checkpoints(report: &Value, oracle_hash: &str, cases: &[String]) -> Result<(), String> {
@@ -242,10 +260,16 @@ mod tests {
         for bad in [
             Value::Null,
             json!({"checkpoints": {"oracle_sha256": "pin", "cases": []}}),
-            good.clone(),
         ] {
-            assert!(validate_checkpoints(&bad, "other-pin", &cases).is_err());
+            assert!(validate_checkpoints(&bad, "pin", &cases).is_err());
         }
+        assert!(validate_checkpoints(&good, "other-pin", &cases).is_err());
+        let mut missing_case = good.clone();
+        missing_case["checkpoints"]["cases"]
+            .as_array_mut()
+            .unwrap()
+            .pop();
+        assert!(validate_checkpoints(&missing_case, "pin", &cases).is_err());
     }
 
     #[test]
@@ -256,6 +280,23 @@ mod tests {
         let mut good = identity.clone();
         for (key, value) in json!({"schema_version": 1, "dirty": false, "verdict": "pass", "configuration": config, "mlx_commit": "mlx", "compiler": "clang", "cmake": "cmake", "macos": "mac", "sdk": "sdk", "native": {"CMAKE_BUILD_TYPE": "Debug", "MLX_BUILD_METAL": "OFF", "MLX_BUILD_ACCELERATE": "OFF", "MLX_METAL_JIT": "OFF", "MLX_C_BUILD_EXAMPLES": "ON"}, "runs": [{"id": "example", "exit_code": 0, "passed": 1}, {"id": "test grad", "exit_code": 0, "passed": 1, "assertions": 3}], "commands": [{"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}]}).as_object().unwrap() { good[key] = value.clone(); }
         assert!(validate_native(&good, &identity, &config, &plan).is_ok());
+        good["configuration_id"] = "cpu".into();
+        let mut set_plan = plan.clone();
+        set_plan["configurations"] = json!([config]);
+        assert!(validate_native_set(&[good.clone()], &identity, &set_plan, &json!("mlx")).is_ok());
+        for reports in [vec![], vec![good.clone(), good.clone()]] {
+            assert!(validate_native_set(&reports, &identity, &set_plan, &json!("mlx")).is_err());
+        }
+        assert!(validate_native_set(
+            &[good.clone()],
+            &identity,
+            &set_plan,
+            &json!("different-mlx")
+        )
+        .is_err());
+        let mut unknown = good.clone();
+        unknown["configuration_id"] = "unknown".into();
+        assert!(validate_native_set(&[unknown], &identity, &set_plan, &json!("mlx")).is_err());
         for (pointer, value) in [
             ("/source_commit", json!("stale")),
             ("/verdict", json!("fail")),

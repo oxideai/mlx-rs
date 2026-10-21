@@ -4,13 +4,13 @@
       "id": "native-cpu-debug",
       "profile": "Debug",
       "metal": "OFF",
-      "accelerate": "OFF"
+      "accelerate": "ON"
     },
     {
       "id": "native-cpu-release",
       "profile": "Release",
       "metal": "OFF",
-      "accelerate": "OFF"
+      "accelerate": "ON"
     },
     {
       "id": "native-metal",

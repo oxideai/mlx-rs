@@ -19,6 +19,19 @@ def output(*args, cwd=ROOT):
     return subprocess.check_output(args, cwd=cwd, text=True).strip()
 
 
+def case_assertions(result, test):
+    cases = [case for case in result.findall(".//TestCase") if case.get("skipped") != "true"]
+    counts = result.find("OverallResultsTestCases")
+    assertions = result.find("OverallResultsAsserts")
+    if (len(cases) != 1 or cases[0].get("name") != test
+            or counts is None or counts.get("successes") != "1"
+            or counts.get("failures") != "0" or assertions is None
+            or int(assertions.get("successes", "0")) == 0
+            or assertions.get("failures") != "0"):
+        raise ValueError(f"missing, skipped or failed C++ case: {test}")
+    return int(assertions.get("successes"))
+
+
 def run(build_root, reports):
     plan = json.loads((ROOT / "xtask/native-canaries/plan.json").read_text())
     native = ROOT / "mlx-sys/src/mlx-c"
@@ -31,16 +44,19 @@ def run(build_root, reports):
     reports.mkdir(parents=True, exist_ok=True)
     build_root.mkdir(parents=True, exist_ok=True)
     source = build_root / "mlx-source"
-    if source.exists():
-        raise ValueError(f"native build must start empty: {source}")
-    subprocess.run(["git", "clone", "--depth", "1", "--branch", f"v{version}",
-                    "https://github.com/ml-explore/mlx.git", str(source)], check=True)
+    if not source.exists():
+        subprocess.run(["git", "clone", "--depth", "1", "--branch", f"v{version}",
+                        "https://github.com/ml-explore/mlx.git", str(source)], check=True)
+    if (output("git", "describe", "--tags", "--exact-match", cwd=source) != f"v{version}"
+            or output("git", "status", "--porcelain", cwd=source)):
+        raise ValueError("native MLX source must be clean at the pinned tag")
     mlx_commit = output("git", "rev-parse", "HEAD", cwd=source)
     failed = False
     for config in plan["configurations"]:
         started = time.monotonic()
         build = build_root / config["id"]
-        build.mkdir()
+        build.mkdir(exist_ok=True)
+        (build / "metallib").mkdir(exist_ok=True)
         report = {**identity, "schema_version": 1, "configuration_id": config["id"],
                   "dirty": dirty, "mlx_commit": mlx_commit, "configuration": config,
                   "macos": output("sw_vers", "-productVersion"),
@@ -74,29 +90,30 @@ def run(build_root, reports):
                 report["build_seconds"] = time.monotonic() - started
                 report["native"] = dict(re.findall(r"^([^/#:\n]+):[^=\n]+=(.*)$",
                                                       (build / "CMakeCache.txt").read_text(), re.M))
-                shutil.copyfile(ROOT / "conformance/fixtures/arithmetic.safetensors", build / "arrays.safetensors")
+                compile_commands = json.loads((build / "compile_commands.json").read_text())
+                array_compile = next(c["command"] for c in compile_commands
+                                     if c["file"] == str(source / "mlx/array.cpp"))
+                report["native"]["MLX_BUILD_ACCELERATE"] = (
+                    "ON" if "-DMLX_USE_ACCELERATE" in array_compile else "OFF")
+                if report["native"]["MLX_BUILD_ACCELERATE"] != config["accelerate"]:
+                    raise ValueError("compiled Accelerate backend differs from plan")
+                report["array_compile_command"] = array_compile
+                shutil.copyfile(ROOT / "conformance/fixtures/fast.safetensors", build / "arrays.safetensors")
                 metal = config["metal"] == "ON"
                 for example in plan["examples"] + (plan["metal_examples"] if metal else []):
                     record = execute([str(build / "mlxc/examples" / example)])
                     report["runs"].append({**record, "id": example, "passed": 1})
                 for index, test in enumerate(plan["tests"] + (plan["metal_tests"] if metal else [])):
                     xml = reports / f'{config["id"]}-{index}.xml'
+                    xml.unlink(missing_ok=True)
                     record = execute([str(build / "upstream-tests/tests"), f"--test-case={test}",
                                       "--case-sensitive=true", "--reporters=xml", f"--out={xml}"],
                                      env={**os.environ, "DEVICE": "gpu" if metal else "cpu"})
                     result = ET.parse(xml).getroot()
-                    cases = result.findall(".//TestCase")
-                    counts = result.find("OverallResultsTestCases")
-                    assertions = result.find("OverallResultsAsserts")
-                    if (len(cases) != 1 or cases[0].get("name") != test
-                            or counts is None or counts.get("successes") != "1"
-                            or counts.get("failures") != "0" or assertions is None
-                            or int(assertions.get("successes", "0")) == 0
-                            or assertions.get("failures") != "0"):
-                        raise ValueError(f"missing, skipped or failed C++ case: {test}")
                     report["runs"].append({**record, "id": test, "passed": 1,
-                                           "assertions": int(assertions.get("successes"))})
-                if output("git", "status", "--porcelain", "--untracked-files=normal"):
+                                           "assertions": case_assertions(result, test)})
+                if (output("git", "status", "--porcelain", "--untracked-files=normal")
+                        or output("git", "status", "--porcelain", cwd=source)):
                     raise ValueError("dirty checkout")
                 if output("git", "rev-parse", "HEAD") != identity["source_commit"]:
                     raise ValueError("source changed during run")

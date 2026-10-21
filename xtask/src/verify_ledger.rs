@@ -76,11 +76,8 @@ fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {
     let delta = crate::fingerprint::delta_value(&paths.old, &paths.new)?;
     let classification = read_json(&paths.classification)?;
     let api_baseline = read_json(&paths.api_baseline)?;
-    let source_api_baseline = serde_json::to_value(crate::source_api::generate(
-        &repo_root.join("mlx-rs"),
-        "mlx_rs",
-    )?)
-    .map_err(|error| format!("failed to serialize source API baseline: {error}"))?;
+    let compiled_api_baseline = serde_json::to_value(crate::api_baseline::generate(repo_root)?)
+        .map_err(|error| format!("failed to serialize compiled API baseline: {error}"))?;
     let feature_matrix = read_json(&paths.feature_matrix)?;
     let conf_ids = conformance_ids(&paths.corpus)?;
     let api_paths = api_paths(&api_baseline)?;
@@ -88,7 +85,7 @@ fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {
         &delta,
         &classification,
         &api_baseline,
-        &source_api_baseline,
+        &compiled_api_baseline,
         &feature_matrix,
         |id| evidence_exists(repo_root, id, &conf_ids, &api_paths, paths),
     )?;
@@ -114,18 +111,21 @@ fn verify_documents(
     delta: &Value,
     classification: &Value,
     api_baseline: &Value,
-    source_api_baseline: &Value,
+    compiled_api_baseline: &Value,
     feature_matrix: &Value,
     mut evidence_exists: impl FnMut(&str) -> bool,
 ) -> Result<Verification, String> {
     require_schema(delta, "delta")?;
     require_schema(classification, "classification")?;
-    require_schema(api_baseline, "API baseline")?;
-    require_schema(source_api_baseline, "source API baseline")?;
-    require_schema(feature_matrix, "feature matrix")?;
-    if api_baseline != source_api_baseline {
-        return Err("committed API baseline does not match Rust source".to_owned());
+    if api_baseline["schema_version"] != 2 || compiled_api_baseline["schema_version"] != 2 {
+        return Err("API baseline requires compiled schema version 2".into());
     }
+    require_schema(feature_matrix, "feature matrix")?;
+    if api_baseline != compiled_api_baseline {
+        return Err("committed API baseline does not match compiled inventory".to_owned());
+    }
+    validate_api_references(classification, api_baseline)?;
+    validate_api_references(feature_matrix, api_baseline)?;
     let api_paths = api_paths(api_baseline)?;
     let behavioral_renames = validate_behavioral_renames(classification, &api_paths)?;
     let supported_builds = validate_feature_matrix(feature_matrix)?;
@@ -374,18 +374,176 @@ fn required_one_line<'a>(value: &'a Value, field: &str) -> Result<&'a str, Strin
     }
 }
 
-fn api_paths(api_baseline: &Value) -> Result<BTreeSet<String>, String> {
-    api_baseline["entries"]
+fn validate_api_references(document: &Value, inventory: &Value) -> Result<(), String> {
+    let supported = inventory["feature_sets"]
         .as_array()
-        .ok_or("API baseline entries must be an array")?
+        .filter(|sets| !sets.is_empty())
+        .ok_or("compiled inventory has no feature sets")?
         .iter()
-        .map(|entry| {
-            entry["path"]
-                .as_str()
-                .map(str::to_owned)
-                .ok_or("API baseline path must be a string".to_owned())
-        })
-        .collect()
+        .map(|set| required_nonempty(set, "id").map(str::to_owned))
+        .collect::<Result<BTreeSet<_>, _>>()?;
+    let availability = api_availability(inventory, &supported)?;
+    visit_api_references(document, &supported, &supported, &availability)
+}
+
+fn api_availability(
+    inventory: &Value,
+    supported: &BTreeSet<String>,
+) -> Result<BTreeMap<String, BTreeSet<String>>, String> {
+    let mut availability: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for entry in inventory["entries"]
+        .as_array()
+        .ok_or("inventory has no entries")?
+    {
+        let path = required_nonempty(entry, "path")?;
+        let sets = reference_sets(entry, "feature_sets", supported)?;
+        availability.entry(path.into()).or_default().extend(sets);
+    }
+    let aliases: Vec<_> = inventory["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|entry| entry["alias_target"].as_str().map(|target| (entry, target)))
+        .collect();
+    for _ in 0..aliases.len() {
+        let mut additions: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        for (entry, target) in &aliases {
+            let alias = required_nonempty(entry, "path")?;
+            let sets = reference_sets(entry, "feature_sets", supported)?;
+            let prefix = format!("{target}::");
+            for (path, target_sets) in &availability {
+                if let Some(member) = path.strip_prefix(&prefix) {
+                    additions
+                        .entry(format!("{alias}::{member}"))
+                        .or_default()
+                        .extend(sets.intersection(target_sets).cloned());
+                }
+            }
+        }
+        let mut changed = false;
+        for (path, sets) in additions {
+            let existing = availability.entry(path).or_default();
+            let before = existing.len();
+            existing.extend(sets);
+            changed |= before != existing.len();
+        }
+        if !changed {
+            break;
+        }
+    }
+    Ok(availability)
+}
+
+fn reference_sets(
+    value: &Value,
+    field: &str,
+    supported: &BTreeSet<String>,
+) -> Result<BTreeSet<String>, String> {
+    let sets = value[field]
+        .as_array()
+        .filter(|sets| !sets.is_empty())
+        .ok_or_else(|| format!("{field} must be a nonempty array"))?;
+    let mut result = BTreeSet::new();
+    for set in sets {
+        let id = set.as_str().ok_or("API feature set must be a string")?;
+        if !supported.contains(id) || !result.insert(id.to_owned()) {
+            return Err(format!("unknown or duplicate API feature set {id}"));
+        }
+    }
+    Ok(result)
+}
+
+fn visit_api_references(
+    value: &Value,
+    inherited: &BTreeSet<String>,
+    supported: &BTreeSet<String>,
+    availability: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<(), String> {
+    match value {
+        Value::Object(object) => {
+            let claims = if object.contains_key("api_feature_sets") {
+                reference_sets(value, "api_feature_sets", supported)?
+            } else {
+                inherited.clone()
+            };
+            for (field, child) in object {
+                if matches!(field.as_str(), "rust_path" | "canonical_path" | "symbols") {
+                    check_path_values(child, &claims, availability)?;
+                }
+                visit_api_references(child, &claims, supported, availability)?;
+            }
+        }
+        Value::Array(values) => {
+            for child in values {
+                visit_api_references(child, inherited, supported, availability)?;
+            }
+        }
+        Value::String(text) => {
+            if let Some(path) = text.strip_prefix("api:path:") {
+                check_available(path, inherited, availability)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn check_path_values(
+    value: &Value,
+    claims: &BTreeSet<String>,
+    availability: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<(), String> {
+    match value {
+        Value::String(text) => {
+            for path in text.split(" and ") {
+                check_available(path, claims, availability)?;
+            }
+        }
+        Value::Object(values) => {
+            for child in values.values() {
+                check_path_values(child, claims, availability)?;
+            }
+        }
+        Value::Array(values) => {
+            for child in values {
+                check_path_values(child, claims, availability)?;
+            }
+        }
+        _ => return Err("Rust path reference must be text or a collection of paths".into()),
+    }
+    Ok(())
+}
+
+fn check_available(
+    path: &str,
+    claims: &BTreeSet<String>,
+    availability: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<(), String> {
+    for set in claims {
+        if !availability
+            .get(path)
+            .is_some_and(|sets| sets.contains(set))
+        {
+            return Err(format!(
+                "Rust path {path} is absent from compiled inventory for {set}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn api_paths(inventory: &Value) -> Result<BTreeSet<String>, String> {
+    let supported = inventory["feature_sets"]
+        .as_array()
+        .ok_or("inventory has no feature sets")?
+        .iter()
+        .map(|set| required_nonempty(set, "id").map(str::to_owned))
+        .collect::<Result<BTreeSet<_>, _>>()?;
+    Ok(api_availability(inventory, &supported)?
+        .into_iter()
+        .filter(|(_, sets)| !sets.is_empty())
+        .map(|(path, _)| path)
+        .collect())
 }
 
 fn validate_feature_matrix(matrix: &Value) -> Result<usize, String> {
@@ -565,20 +723,20 @@ fn safe_repo_path(repo_root: &Path, relative: &str) -> Option<PathBuf> {
 
 #[cfg(test)]
 fn verify_fixture(fixture: &Value, valid_evidence: &BTreeSet<String>) -> Result<(), String> {
-    verify_fixture_with_source(fixture, &fixture["api_baseline"], valid_evidence)
+    verify_fixture_with_compiled(fixture, &fixture["api_baseline"], valid_evidence)
 }
 
 #[cfg(test)]
-fn verify_fixture_with_source(
+fn verify_fixture_with_compiled(
     fixture: &Value,
-    source_api_baseline: &Value,
+    compiled_api_baseline: &Value,
     valid_evidence: &BTreeSet<String>,
 ) -> Result<(), String> {
     verify_documents(
         &fixture["delta"],
         &fixture["classification"],
         &fixture["api_baseline"],
-        source_api_baseline,
+        compiled_api_baseline,
         &fixture["feature_matrix"],
         |id| valid_evidence.contains(id),
     )
@@ -587,6 +745,7 @@ fn verify_fixture_with_source(
 
 #[cfg(test)]
 mod tests {
+    use super::{api_paths, validate_api_references};
     use serde_json::Value;
     use std::collections::BTreeSet;
 
@@ -606,15 +765,78 @@ mod tests {
     }
 
     #[test]
+    fn local_alias_members_require_alias_and_target_availability() {
+        let inventory = serde_json::json!({
+            "feature_sets": [{"id":"default"}, {"id":"cpu-only"}],
+            "entries": [
+                {"path":"crate::Alias", "alias_target":"crate::Original", "feature_sets":["default"]},
+                {"path":"crate::Original::method", "feature_sets":["default","cpu-only"]}
+            ]
+        });
+        let reference =
+            serde_json::json!({"rust_path":"crate::Alias::method", "api_feature_sets":["default"]});
+        assert!(validate_api_references(&reference, &inventory).is_ok());
+        assert!(api_paths(&inventory)
+            .unwrap()
+            .contains("crate::Alias::method"));
+        let reference = serde_json::json!({"rust_path":"crate::Alias::method"});
+        assert!(validate_api_references(&reference, &inventory)
+            .unwrap_err()
+            .contains("cpu-only"));
+        let reference = serde_json::json!({"rust_path":"crate::Alias::missing", "api_feature_sets":["default"]});
+        assert!(validate_api_references(&reference, &inventory).is_err());
+    }
+
+    #[test]
     fn qualification_rejects_a_stale_api_signature() {
         let mut fixture = fixture();
         let source_api = fixture["api_baseline"].clone();
         fixture["api_baseline"]["entries"][0]["signature"] = "pub fn added()->i64".into();
         assert!(
-            super::verify_fixture_with_source(&fixture, &source_api, &valid_evidence())
+            super::verify_fixture_with_compiled(&fixture, &source_api, &valid_evidence())
                 .unwrap_err()
-                .contains("does not match Rust source")
+                .contains("does not match compiled inventory")
         );
+    }
+
+    #[test]
+    fn qualification_rejects_a_path_missing_from_a_claimed_feature_set() {
+        let mut fixture = fixture();
+        fixture["api_baseline"]["feature_sets"] = serde_json::json!([
+            {"id": "default"}, {"id": "cpu-only"}
+        ]);
+        fixture["api_baseline"]["entries"][0]["feature_sets"] = serde_json::json!(["default"]);
+        assert!(verify_fixture(&fixture).unwrap_err().contains("cpu-only"));
+    }
+
+    #[test]
+    fn qualification_accepts_explicit_availability_and_rejects_unknown_sets() {
+        let mut fixture = fixture();
+        fixture["api_baseline"]["entries"][0]["feature_sets"] = serde_json::json!(["default"]);
+        fixture["classification"]["api_feature_sets"] = serde_json::json!(["default"]);
+        verify_fixture(&fixture).unwrap();
+        fixture["classification"]["api_feature_sets"] = serde_json::json!(["typo"]);
+        assert!(verify_fixture(&fixture).unwrap_err().contains("unknown"));
+    }
+
+    #[test]
+    fn qualification_checks_admission_symbols_and_path_evidence() {
+        let mut fixture = fixture();
+        fixture["feature_matrix"]["admissions"] = serde_json::json!([{
+            "canonical_path": "demo::added", "symbols": {"mlx_added": "demo::missing"}
+        }]);
+        assert!(verify_fixture(&fixture)
+            .unwrap_err()
+            .contains("demo::missing"));
+        fixture["feature_matrix"]["admissions"][0]["symbols"]["mlx_added"] = "demo::added".into();
+        verify_fixture(&fixture).unwrap();
+        fixture["feature_matrix"]["admissions"][0]["symbols"]["mlx_added"] = "missing".into();
+        assert!(verify_fixture(&fixture).unwrap_err().contains("missing"));
+        fixture["feature_matrix"]["admissions"][0]["symbols"]["mlx_added"] = "demo::added".into();
+        fixture["classification"]["entries"][0]["evidence"][0] = "api:path:demo::missing".into();
+        assert!(verify_fixture(&fixture)
+            .unwrap_err()
+            .contains("demo::missing"));
     }
 
     #[test]
@@ -632,9 +854,9 @@ mod tests {
         fixture["classification"]["entries"][0]["rust_path"] = "demo::missing".into();
         fixture["classification"]["entries"][0]["evidence"][0] = "api:path:demo::missing".into();
         assert!(
-            super::verify_fixture_with_source(&fixture, &source_api, &valid_evidence())
+            super::verify_fixture_with_compiled(&fixture, &source_api, &valid_evidence())
                 .unwrap_err()
-                .contains("does not match Rust source")
+                .contains("does not match compiled inventory")
         );
     }
 
@@ -696,7 +918,7 @@ mod tests {
         fixture["classification"]["behavioral_renames"][0]["rust_path"] = "demo::missing".into();
         assert!(verify_fixture(&fixture)
             .unwrap_err()
-            .contains("absent from API baseline"));
+            .contains("absent from compiled inventory"));
     }
 
     #[test]
@@ -738,7 +960,7 @@ mod tests {
     #[test]
     fn qualification_rejects_a_broken_evidence_id() {
         let mut fixture = fixture();
-        fixture["classification"]["entries"][0]["evidence"][0] = "api:path:demo::missing".into();
+        fixture["classification"]["entries"][0]["evidence"][0] = "conf:missing".into();
         assert!(verify_fixture(&fixture)
             .unwrap_err()
             .contains("unresolved evidence"));

@@ -811,6 +811,7 @@
       },
       "disposition": "wrapped",
       "rust_path": "mlx_rs::metal::metallib_path",
+      "api_feature_sets": ["default", "safetensors"],
       "evidence": [
         "api:test:mlx-rs/src/metal.rs#metallib_path_is_non_empty"
       ]
@@ -826,6 +827,7 @@
       },
       "disposition": "wrapped",
       "rust_path": "mlx_rs::metal::set_metallib_path",
+      "api_feature_sets": ["default", "safetensors"],
       "evidence": [
         "api:test:mlx-rs/src/metal.rs#metallib_path_roundtrips"
       ]

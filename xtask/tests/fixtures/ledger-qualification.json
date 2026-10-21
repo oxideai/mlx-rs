@@ -134,7 +134,7 @@
     ]
   },
   "api_baseline": {
-    "schema_version": 1,
+    "schema_version": 2,
     "crate_name": "demo",
     "source_root": "demo/src/lib.rs",
     "limitations": [],
@@ -142,7 +142,19 @@
       {
         "kind": "function",
         "path": "demo::added",
-        "signature": "pub fn added()->i32"
+        "signature": "pub fn added()->i32",
+        "feature_sets": [
+          "cpu-only",
+          "default"
+        ]
+      }
+    ],
+    "feature_sets": [
+      {
+        "id": "default"
+      },
+      {
+        "id": "cpu-only"
       }
     ]
   },

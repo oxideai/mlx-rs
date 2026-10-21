@@ -48,7 +48,11 @@
         "api": "mlx-rs/src/metal.rs",
         "distribution": "mlx-sys/build.rs",
         "test": "mlx-rs/src/metal.rs#metallib_path_roundtrips"
-      }
+      },
+      "api_feature_sets": [
+        "default",
+        "safetensors"
+      ]
     },
     {
       "feature": "memory-control",
@@ -89,8 +93,7 @@
       "feature": "slice-update",
       "canonical_path": "mlx_rs::ops::indexing::TryIndexUpdateOp",
       "symbols": {
-        "mlx_slice_update": "wrapped by UpdateMode::Replace through the canonical functional index-update path",
-        "mlx_slice_update_dynamic": "deferred because runtime start arrays provide replacement-only semantics and do not compose with Rust ArrayIndex slice syntax or the five-mode family"
+        "mlx_slice_update": "mlx_rs::ops::indexing::TryIndexUpdateOp::try_index_update and mlx_rs::ops::indexing::UpdateMode::Replace"
       },
       "evidence": {
         "conformance": "conformance/suites/indexing.json",
@@ -98,11 +101,13 @@
         "leaks": "mlx-tests/tests/ffi_safety.rs",
         "guard_malloc": "mlx-tests/tests/ffi_safety.rs",
         "qualification": "conformance/qualification.json"
+      },
+      "deferred_symbols": {
+        "mlx_slice_update_dynamic": "deferred because runtime start arrays provide replacement-only semantics and do not compose with Rust ArrayIndex slice syntax or the five-mode family"
       }
     },
     {
       "feature": "mlx-lm-oracle-gate",
-      "canonical_path": "mlx-lm/tests/parity.rs",
       "status": "tranche-1-gate-only",
       "evidence": {
         "contract": "conformance/mlx-lm/SCHEMA.md",
@@ -111,7 +116,8 @@
         "ledger": "ledger/mlx-lm-parity.json",
         "verification": "cargo run -p xtask -- verify-lm-parity",
         "fixture_runtime": "mlx-lm/tests/parity.rs: committed_fixture_layout_and_policies and prototype_llama_base_prefill_cache_and_greedy_parity; each prints NOT RUN on stderr when conformance/mlx-lm/fixtures is absent"
-      }
+      },
+      "test_path": "mlx-lm/tests/parity.rs"
     }
   ],
   "builds": [

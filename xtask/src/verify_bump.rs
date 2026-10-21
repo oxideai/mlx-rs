@@ -110,6 +110,7 @@ struct Options {
     mode: Mode,
     boundary_base: Option<String>,
     ffi_report: Option<PathBuf>,
+    config_reports: Vec<PathBuf>,
     suite_source: SuiteSource,
     replay_report: PathBuf,
     waivers: PathBuf,
@@ -120,6 +121,7 @@ impl Options {
     fn parse(repo_root: &Path, args: &[String]) -> Result<Self, String> {
         let mut mode = None;
         let mut ffi_report = None;
+        let mut config_reports = Vec::new();
         let mut boundary_base = None;
         let mut suite_source = None;
         let mut replay_report = repo_root.join("conformance/target/replay-report.json");
@@ -133,6 +135,10 @@ impl Options {
                 "--ffi-report" if ffi_report.is_none() => {
                     index += 1;
                     ffi_report = Some(PathBuf::from(args.get(index).ok_or_else(usage)?));
+                }
+                "--config-report" => {
+                    index += 1;
+                    config_reports.push(PathBuf::from(args.get(index).ok_or_else(usage)?));
                 }
                 "--boundary-base" if boundary_base.is_none() => {
                     index += 1;
@@ -164,6 +170,7 @@ impl Options {
             mode: mode.ok_or_else(usage)?,
             boundary_base,
             ffi_report,
+            config_reports,
             suite_source: suite_source.ok_or_else(usage)?,
             replay_report,
             waivers,
@@ -173,7 +180,7 @@ impl Options {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] (--suite-results <file>|--rerun-suites) [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
+    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] (--suite-results <file>|--rerun-suites) [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
 }
 
 pub(crate) fn run(repo_root: &Path, args: &[String]) -> i32 {
@@ -326,13 +333,12 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
             6,
             "feature_matrix",
             "supported feature matrix",
-            ledger.and_then(|report| {
-                if report["supported_builds"].as_u64() == Some(2) {
-                    Ok(json!({"supported_builds": 2}))
-                } else {
-                    Err("verify-ledger did not validate two supported builds".to_owned())
-                }
-            }),
+            read_json(&repo_root.join("ledger/supported-feature-matrix.json"))
+                .and_then(|matrix| crate::config_report::configurations(&matrix))
+                .and_then(|configs| {
+                    let paths = options.config_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>();
+                    crate::config_report::validate_reports(repo_root, &paths, &configs)
+                }),
         ),
         check(
             7,

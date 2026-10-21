@@ -433,27 +433,7 @@ fn validate_feature_matrix(matrix: &Value) -> Result<usize, String> {
             }
         }
     }
-    let expected = [
-        ("macos-arm64-cpu-only", false, &["accelerate"][..]),
-        ("macos-arm64-default", true, &["accelerate", "metal"][..]),
-    ];
-    if builds.len() != expected.len() {
-        return Err("feature matrix must contain exactly the two required builds".to_owned());
-    }
-    for (id, default_features, features) in expected {
-        let Some(build) = builds.iter().find(|build| build["id"] == id) else {
-            return Err(format!("feature matrix is missing required build {id}"));
-        };
-        if build["target_triple"] != "aarch64-apple-darwin"
-            || build["default_features"] != default_features
-            || build["features"] != json!(features)
-            || build["verification"] != json!(["build", "test"])
-        {
-            return Err(format!(
-                "feature matrix required build {id} has the wrong configuration"
-            ));
-        }
-    }
+    crate::config_report::configurations(matrix)?;
     Ok(builds.len())
 }
 
@@ -675,15 +655,13 @@ mod tests {
     }
 
     #[test]
-    fn qualification_rejects_a_missing_supported_build() {
+    fn qualification_rejects_missing_configuration_metadata() {
         let mut fixture = fixture();
-        fixture["feature_matrix"]["builds"]
-            .as_array_mut()
+        fixture["feature_matrix"]["builds"][0]
+            .as_object_mut()
             .unwrap()
-            .remove(0);
-        assert!(verify_fixture(&fixture)
-            .unwrap_err()
-            .contains("required builds"));
+            .remove("profile");
+        assert!(verify_fixture(&fixture).unwrap_err().contains("profile"));
     }
 
     #[test]

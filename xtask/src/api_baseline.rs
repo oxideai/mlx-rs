@@ -358,6 +358,7 @@ fn expand_macro_reexports(path: &Path, dependencies: &Path, hidden: bool) -> Res
 
 fn public_api(path: &Path) -> Result<public_api::PublicApi, String> {
     let api = public_api::Builder::from_rustdoc_json(path)
+        .omit_blanket_impls(true)
         .build()
         .map_err(|e| format!("{}: {e}", path.display()))?;
     if let Some(id) = api.missing_item_ids().next() {
@@ -820,6 +821,23 @@ fn fixture(
 }
 
 fn check_fixture(entries: &[ApiEntry], extra: bool) -> Result<(), String> {
+    if entries.iter().any(|e| {
+        e.signature.contains("core::borrow::Borrow")
+            || e.signature.contains("core::any::Any")
+            || e.signature.contains("alloc::borrow::ToOwned")
+            || e.signature.contains("core::convert::From<T> for T")
+    }) {
+        return Err("qualification retained blanket impls".into());
+    }
+    for (name, trait_name) in [("SendProbe", "Send"), ("SyncProbe", "Sync")] {
+        let signature = format!("impl core::marker::{trait_name} for fixture::{name}");
+        if !entries
+            .iter()
+            .any(|e| e.signature == signature && e.generated)
+        {
+            return Err(format!("qualification changed auto trait: {signature}"));
+        }
+    }
     if !entries.iter().any(|e| {
         e.path == "fixture::WidgetAlias" && e.alias_target.as_deref() == Some("fixture::Widget")
     }) {
@@ -1058,6 +1076,8 @@ fn qualify(repo: &Path, target: &Path) -> Result<(), String> {
         "omit_hidden",
         "omit_gated",
         "omit_external",
+        "change_send",
+        "change_sync",
     ] {
         let mutated = fixture(repo, target, true, Some(omit))?;
         if check_fixture(&mutated, true).is_ok() {

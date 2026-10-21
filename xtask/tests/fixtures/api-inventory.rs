@@ -65,3 +65,13 @@ pub mod hidden_name {
 #[derive(Clone)]
 pub struct Generic<T>(pub T);
 pub type SpecializedAlias<'a> = Generic<&'a mut Widget>;
+
+pub struct SendProbe {
+    #[cfg(change_send)]
+    _marker: std::rc::Rc<()>,
+}
+
+pub struct SyncProbe {
+    #[cfg(change_sync)]
+    _marker: std::cell::Cell<()>,
+}

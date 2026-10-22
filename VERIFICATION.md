@@ -254,8 +254,13 @@ case counts, build/run timings and source identities; XML and logs are uploaded 
 Each native build also runs `linked-exports`. CMake resolves the archive targets named in
 `mlx-sys/native-libraries.txt`, the same list consumed by `mlx-sys/build.rs`. JACCL is included only
 when CMake produces its archive; native builds select it when the `jaccl` target exists. The checker
-includes the compiler-runtime archive selected by mlx-sys when available. These are the native builds'
-artifacts, not Cargo's separately compiled bytes. Reports under `native/exports/` record exact paths,
+fingerprints only the archives built from the pinned sources: libmlx, libmlxc, libgguflib, and
+libjaccl when built. The compiler runtime comes from the Xcode toolchain resolved by mlx-sys's
+`find_clang_rt_path`, independently of the native build manifest. That producer lookup, rather than
+an archive-name prefix or location inside the build tree, identifies the toolchain archive.
+Reports record its path and SHA-256 in `toolchain_archives` without enumerating or comparing its
+symbols; the canary still links it. These are the native builds' artifacts, not Cargo's separately
+compiled bytes. Reports under `native/exports/` record exact paths,
 SHA-256 hashes, CMake configuration, the planned functions from the existing header/bindgen parser,
 and defined external symbols in each archive's arm64 slice. Mach-O's leading underscore is removed
 once. C++ Itanium-mangled symbols are counted separately; every other defined external symbol,
@@ -266,7 +271,8 @@ members, including members a particular consumer may not pull into its executabl
 helpers, and metal-cpp data globals. Each entry names its defining archive, a one-line reason, and
 whether it applies only when `MLX_BUILD_METAL=ON`. Missing planned symbols, unlisted exports,
 exceptions used outside their archive or configuration, and unused exceptions in an applicable
-configuration fail admission. Reports retain unexpected symbols grouped by archive even on failure;
+configuration fail admission. An exception for an optional archive applies only when that archive
+is built. Reports retain unexpected symbols grouped by archive even on failure;
 adding exceptions requires a reviewed policy change, not automatic baseline regeneration.
 Header/type fingerprints remain necessary because a matching symbol name does not prove its type.
 

@@ -111,7 +111,13 @@ fn unexpected_exports(
         unexpected.push(json!({"archive": path, "symbols": symbols}));
     }
     for (index, exception) in exceptions.iter().enumerate() {
-        if (!exception.metal_only || metal) && !used.contains(&index) {
+        let archive_present = archives.iter().any(|archive| {
+            archive["path"].as_str().is_some_and(|path| {
+                Path::new(path).file_name().and_then(|name| name.to_str())
+                    == Some(exception.archive.as_str())
+            })
+        });
+        if archive_present && (!exception.metal_only || metal) && !used.contains(&index) {
             return Err(format!(
                 "stale native export exception: {}: {}",
                 exception.archive, exception.symbol
@@ -196,11 +202,21 @@ fn archive_paths(build: &Path) -> Result<Vec<PathBuf>, String> {
             ));
         }
     }
-    let mut paths = paths;
-    if let Some(runtime) = native_link::find_clang_rt_path() {
-        paths.push(Path::new(&runtime).join("libclang_rt.osx.a"));
-    }
     Ok(paths)
+}
+
+fn toolchain_paths() -> Vec<PathBuf> {
+    native_link::find_clang_rt_path()
+        .map(|runtime| Path::new(&runtime).join("libclang_rt.osx.a"))
+        .into_iter()
+        .collect()
+}
+
+fn toolchain_archives(paths: &[PathBuf]) -> Result<Vec<Value>, String> {
+    paths
+        .iter()
+        .map(|path| Ok(json!({"path": path, "sha256": crate::bump_evidence::hash(path)?})))
+        .collect()
 }
 
 fn canary(
@@ -295,13 +311,16 @@ fn collect(root: &Path, build: &Path) -> Result<Value, String> {
         .into_iter()
         .flatten()
         .collect::<BTreeSet<_>>();
+    let toolchain_paths = toolchain_paths();
+    let toolchain_archives = toolchain_archives(&toolchain_paths)?;
+    let linked_paths = paths.into_iter().chain(toolchain_paths).collect::<Vec<_>>();
     let configuration = configuration(build)?;
     let provenance = build_provenance(root, build)?;
     let canary = match canary(
         root,
         build,
         &planned,
-        &paths,
+        &linked_paths,
         configuration["MLX_BUILD_METAL"] == "ON",
     ) {
         Ok(value) => value,
@@ -317,6 +336,7 @@ fn collect(root: &Path, build: &Path) -> Result<Value, String> {
     .or_else(|_| unexpected_exports(&planned, &archives, &json!([]), false))?;
     let mut report = json!({"schema_version": 1, "identity": identity, "dirty": dirty, "build_directory": build,
         "configuration": configuration, "build_provenance": provenance, "archives": archives, "planned": planned,
+        "toolchain_archives": toolchain_archives,
         "planned_count": planned.len(), "found_count": found.len(),
         "missing": planned.difference(&found).collect::<Vec<_>>(), "unexpected": unexpected,
         "canary": canary, "elapsed_seconds": started.elapsed().as_secs_f64(), "verdict": "fail"});
@@ -346,6 +366,9 @@ pub(crate) fn validate(root: &Path, report: &Value) -> Result<(), String> {
     validate_configuration(build, &report["configuration"])?;
     if build_provenance(root, build)? != report["build_provenance"] {
         return Err("stale native build provenance".into());
+    }
+    if report["toolchain_archives"] != json!(toolchain_archives(&toolchain_paths())?) {
+        return Err("toolchain archive provenance mismatch".into());
     }
     let paths = archive_paths(build)?;
     let archives = report["archives"].as_array().ok_or("missing archives")?;
@@ -704,6 +727,34 @@ mod tests {
             invalid[0][field] = value;
             assert!(unexpected_exports(&symbols(&["mlx_add"]), &archives, &invalid, true).is_err());
         }
+    }
+
+    #[test]
+    fn jaccl_exception_applies_only_when_archive_is_built() {
+        let exceptions = json!([{"symbol": "__clang_call_terminate", "archive": "libjaccl.a",
+            "metal_only": false, "reason": "Compiler-generated exception termination helper in C++ archive members."}]);
+        let planned = symbols(&["mlx_add"]);
+        let mut archives = vec![json!({"path": "/build/libmlx.a", "c_symbols": ["mlx_add"]})];
+        assert!(unexpected_exports(&planned, &archives, &exceptions, false).is_ok());
+        archives
+            .push(json!({"path": "/build/libjaccl.a", "c_symbols": ["__clang_call_terminate"]}));
+        assert!(unexpected_exports(&planned, &archives, &exceptions, false).is_ok());
+        archives[1]["c_symbols"] = json!([]);
+        assert!(unexpected_exports(&planned, &archives, &exceptions, false)
+            .unwrap_err()
+            .contains("stale"));
+    }
+
+    #[test]
+    fn toolchain_provenance_hashes_without_scanning_symbols() {
+        let archive = tempfile::NamedTempFile::new().unwrap();
+        fs::write(archive.path(), b"not a symbol archive").unwrap();
+        let paths = vec![archive.path().to_owned()];
+        let original = toolchain_archives(&paths).unwrap();
+        assert_eq!(original[0].as_object().unwrap().len(), 2);
+        assert_eq!(original[0]["path"], json!(archive.path()));
+        fs::write(archive.path(), b"changed runtime").unwrap();
+        assert_ne!(original, toolchain_archives(&paths).unwrap());
     }
 
     #[test]

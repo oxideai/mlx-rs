@@ -849,7 +849,6 @@ fn validate_replay_document(base: &Path, report: &Value, strict: bool) -> Result
     for (field, expected) in [
         ("python", "3.12.14"),
         ("architecture", "arm64"),
-        ("venv", "conformance/.venv-target"),
         ("mlx", TARGET_MLX),
         ("mlx_metal", TARGET_MLX),
         ("numpy", "2.2.6"),
@@ -862,6 +861,7 @@ fn validate_replay_document(base: &Path, report: &Value, strict: bool) -> Result
             ));
         }
     }
+    required_case_field(handshake, "handshake", "venv")?;
     let suites = report["payload"]["suites"]
         .as_array()
         .ok_or("target replay suites must be an array")?;
@@ -1106,9 +1106,7 @@ fn validate_strict_replay(
             required_case_field(case, id, "input_sha256")?;
             case["input_refs"]
                 .as_array()
-                .filter(|refs| {
-                    !refs.is_empty() && refs.iter().all(|reference| reference.as_str().is_some())
-                })
+                .filter(|refs| refs.iter().all(|reference| reference.as_str().is_some()))
                 .ok_or_else(|| format!("target replay suite {id} has invalid input_refs"))?;
             if case["verdict"] == "value_changed" && !case.get("max_error").is_some() {
                 return Err(format!(
@@ -1155,12 +1153,24 @@ fn validate_strict_replay(
             expected_paths.insert(format!("conformance/{entry}"));
         }
     }
+    if let Some(fixtures) = corpus.get("gguf_fixtures") {
+        for path in fixtures
+            .as_object()
+            .ok_or("corpus gguf_fixtures must be an object")?
+            .keys()
+        {
+            expected_paths.insert(format!("conformance/{path}"));
+        }
+    }
     if expected_paths != sources.keys().cloned().collect() {
         return Err(
             "target replay source_artifacts set does not match committed inputs".to_owned(),
         );
     }
-    let historical_source_commit = if provenance_matches["post_migration"].is_empty() {
+    let historical_source_commit = if provenance_matches["post_migration"]
+        .iter()
+        .all(|suite| matches!(suite.as_str(), "probe_oob_take" | "probe_singular_inv"))
+    {
         None
     } else {
         let replay_report = base.join("replay-report.json");
@@ -1727,7 +1737,7 @@ mod tests {
     fn replay_tree() -> (tempfile::TempDir, Value) {
         let root = tempfile::tempdir().unwrap();
         let handshake = json!({
-            "python": "3.12.14", "architecture": "arm64", "venv": "conformance/.venv-target",
+            "python": "3.12.14", "architecture": "arm64", "venv": "/scratch/replay/venv",
             "mlx": TARGET_MLX, "mlx_metal": TARGET_MLX, "numpy": "2.2.6",
             "mlx_runtime": TARGET_MLX, "device": "cpu"
         });
@@ -2036,6 +2046,12 @@ mod tests {
     }
 
     #[test]
+    fn replay_accepts_pinned_environment_in_scratch_venv() {
+        let (root, report) = replay_tree();
+        validate_replay_document(root.path(), &report, false).unwrap();
+    }
+
+    #[test]
     fn replay_rejects_payload_tampering() {
         let (root, mut report) = replay_tree();
         report["payload"]["handshake"]["mlx_runtime"] = "0.32.1".into();
@@ -2168,6 +2184,92 @@ mod tests {
                 ]
             })
         );
+    }
+
+    #[test]
+    fn fresh_replay_keeps_current_sources_with_historical_probes() {
+        let (root, mut report) = replay_provenance_tree();
+        let (corpus, manifest) = replay_provenance_documents(true);
+        write_replay_fixture_json(root.path(), "conformance/corpus.json", &corpus);
+        write_replay_fixture_json(root.path(), "conformance/state/manifest.json", &manifest);
+        for path in ["conformance/corpus.json", "conformance/state/manifest.json"] {
+            report["payload"]["source_artifacts"][path] =
+                json!(hash_file(&root.path().join(path)).unwrap());
+        }
+        for suite in ["state", "transforms"] {
+            let path = format!("conformance/target/target-expectations/{suite}.json");
+            let mut shard = read_json(&root.path().join(&path)).unwrap();
+            shard["old_environment"] = manifest["provenance"]["environment"].clone();
+            write_replay_fixture_json(root.path(), &path, &shard);
+        }
+        run_replay_fixture_git(root.path(), &["add", "conformance"]);
+        run_replay_fixture_git(
+            root.path(),
+            &["commit", "--quiet", "-m", "test: replay current corpus"],
+        );
+        let seen = BTreeSet::from([
+            "state",
+            "transforms",
+            "probe_oob_take",
+            "probe_singular_inv",
+        ]);
+
+        validate_strict_replay(&root.path().join("conformance/target"), &report, &seen).unwrap();
+    }
+
+    #[test]
+    fn strict_replay_accepts_cases_without_tensor_inputs() {
+        let (root, report) = replay_provenance_tree();
+        let path = "conformance/target/target-expectations/state.json";
+        let mut shard = read_json(&root.path().join(path)).unwrap();
+        shard["cases"][0]["input_refs"] = json!([]);
+        write_replay_fixture_json(root.path(), path, &shard);
+        let seen = BTreeSet::from([
+            "state",
+            "transforms",
+            "probe_oob_take",
+            "probe_singular_inv",
+        ]);
+
+        validate_strict_replay(&root.path().join("conformance/target"), &report, &seen).unwrap();
+    }
+
+    #[test]
+    fn strict_replay_binds_gguf_sources() {
+        let (root, mut report) = replay_provenance_tree();
+        let path = "conformance/fixtures/gguf/basic.gguf";
+        write_replay_fixture_file(root.path(), path, b"GGUF fixture");
+        let mut corpus = read_json(&root.path().join("conformance/corpus.json")).unwrap();
+        corpus["gguf_fixtures"] = json!({"fixtures/gguf/basic.gguf": {
+            "sha256": hash_file(&root.path().join(path)).unwrap()
+        }});
+        write_replay_fixture_json(root.path(), "conformance/corpus.json", &corpus);
+        for path in [path, "conformance/corpus.json"] {
+            report["payload"]["source_artifacts"][path] =
+                json!(hash_file(&root.path().join(path)).unwrap());
+        }
+        run_replay_fixture_git(root.path(), &["add", "conformance"]);
+        run_replay_fixture_git(
+            root.path(),
+            &["commit", "--quiet", "-m", "test: add GGUF fixture"],
+        );
+        let seen = BTreeSet::from([
+            "state",
+            "transforms",
+            "probe_oob_take",
+            "probe_singular_inv",
+        ]);
+        let replay_root = root.path().join("conformance/target");
+
+        validate_strict_replay(&replay_root, &report, &seen).unwrap();
+        fs::write(root.path().join(path), b"tampered GGUF fixture").unwrap();
+        run_replay_fixture_git(root.path(), &["add", path]);
+        run_replay_fixture_git(
+            root.path(),
+            &["commit", "--quiet", "-m", "test: tamper with GGUF fixture"],
+        );
+        let error = validate_strict_replay(&replay_root, &report, &seen).unwrap_err();
+        assert!(error.contains("digest mismatch"), "{error}");
     }
 
     #[test]

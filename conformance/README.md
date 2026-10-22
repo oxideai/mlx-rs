@@ -30,10 +30,41 @@ fixtures; there is no bless or update-goldens path.
 The generator encodes fixture shards with its in-repo safetensors writer, so MLX I/O is not part
 of either fixture path. The Rust runner cross-validates that encoding through its safetensors crate.
 
-MLX 0.30.6 validates shape, broadcast, reshape, and axis errors eagerly, so no catchable
-`eval_only` operation error is available at this pin. Inverting a singular matrix does fail during
-evaluation, but its C++ exception aborts the Python process; an `eval_only` case returns with the
-next mlx-c version bump.
+The historical singular-inverse probe records a process abort on MLX 0.30.6. On CPU,
+MLX 0.32.2 raises a catchable `RuntimeError` during evaluation. The replay preserves that
+`error_behavior_changed` result against the historical reference. Running this probe on the
+default GPU instead would only observe an unsupported-operation `ValueError` at invocation.
+
+## Exact-target replay
+
+Replay discovers every suite in `corpus.json`, then runs the state trajectories, transforms,
+and two historical probes in separate subprocesses. It calls the generator's ops recipes with
+their recorded execution targets, including recipes with no outputs. The GGUF worker loads the
+committed GGUF inputs, shares the generator's result encoding, and exercises metadata, dequantization,
+save rejection and save/load recipes through Python MLX. Duplicate-key insertion errors in
+`gguf.020` are generator literal contracts, recorded separately from Python execution evidence:
+Python dictionaries cannot exercise the Rust insertion API.
+
+To keep the pinned environment and both replay runs outside the checkout:
+
+```sh
+export REPLAY_ROOT="$HOME/hub/scratch/replay-runner"
+mkdir -p "$REPLAY_ROOT"
+python3.12 -m venv "$REPLAY_ROOT/venv"
+"$REPLAY_ROOT/venv/bin/python" -m pip install --require-hashes -r conformance/requirements.lock
+TMPDIR="$REPLAY_ROOT" "$REPLAY_ROOT/venv/bin/python" -B conformance/target/replay_target.py \
+  --venv "$REPLAY_ROOT/venv" --output-dir "$REPLAY_ROOT/reports/replay"
+TMPDIR="$REPLAY_ROOT" "$REPLAY_ROOT/venv/bin/python" -B -m unittest discover \
+  -s conformance/target -p 'test_*.py'
+python3 -B -m unittest discover -s xtask -p 'test_*.py'
+```
+
+The report hashes both complete runs and rejects nondeterminism. Its case verdicts compare against
+the committed corpus using the existing tolerance policies; the historical probes retain their
+0.30.6 reference environment. `--output-dir` leaves the historical committed replay reports intact.
+Replacing an existing report requires `--update`. The replay tests include pinned-environment
+worker regressions. The cheap suite-coverage check runs in the existing xtask Python test
+discovery, including the bump workflow, without MLX or NumPy; it adds no CI gate.
 
 ## Oracle separation
 

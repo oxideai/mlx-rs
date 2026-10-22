@@ -43,8 +43,8 @@ struct Paths {
 
 fn parse_args(repo_root: &Path, args: &[String]) -> Result<Paths, String> {
     let mut paths = Paths {
-        old: repo_root.join("ledger/mlx-c-a1290d221f92bd020af805b7d14207eee4ec973b.json"),
-        new: repo_root.join("ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f.json"),
+        old: repo_root.join("ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f.json"),
+        new: repo_root.join("ledger/mlx-c-a341b4925024b88b2c593468f16e12f5e17315da.json"),
         classification: repo_root.join("ledger/target-delta-classification.json"),
         api_baseline: repo_root.join("ledger/rust-api-baseline.json"),
         feature_matrix: repo_root.join("ledger/supported-feature-matrix.json"),

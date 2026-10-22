@@ -211,6 +211,12 @@
   },
   {
     "symbol": "__clang_call_terminate",
+    "archive": "libjaccl.a",
+    "metal_only": false,
+    "reason": "Compiler-generated exception termination helper in C++ archive members."
+  },
+  {
+    "symbol": "__clang_call_terminate",
     "archive": "libmlx.a",
     "metal_only": false,
     "reason": "Compiler-generated exception termination helper in C++ archive members."

@@ -26,7 +26,13 @@ double-free lane. Calibration must detect a deliberate iterator leak, use-after-
 and pass clean controls before its combined inventory report can qualify admission. Each Guard Malloc
 process must show that libgmalloc loaded; unavailable instrumentation and timeouts fail the gate.
 
-CI runs this gate on every PR and push to main, uploading reports and logs even on failure. Reports
+CI runs the calibrated leak gate on every PR, proving that leaks can attach and detect the deliberate
+leak. Pushes to main also run Guard Malloc. For PRs changing the `mlx-sys/src/mlx-c` gitlink and
+`workflow_dispatch`, `bump-admission.yml` runs the full qualified leaks + Guard Malloc gate in a
+separate job alongside bump evidence. Each gate logs its mode and reason and uploads
+`verify-ffi-calibration` reports and logs even on failure. Use the bump-admission artifact for
+bump PR admission; the leak-only validation report does not satisfy `verify-bump`, which still
+requires qualified Guard Malloc evidence for the admitted SHA. Reports
 cover `source_commit`, the checked-out commit (the merge commit on PRs). They also record `github_sha`
 and `github_pr_head_sha` when available; the PR head is context, not the admitted commit. The clean
 gate has a 60-minute budget, each leak subprocess a 10-minute timeout, and each Guard Malloc
@@ -207,7 +213,7 @@ waivers fail admission; every active waiver appears in the aggregate verdict.
 and on `workflow_dispatch`, on `blaze/macos-latest`. A PR run admits the checked-out merge SHA;
 a dispatch admits the selected ref's SHA. Native canaries and checkpoint downloads run only in this
 workflow. Its focused evidence verdict supplements the aggregate admission contract, including the
-separate qualified FFI gate; it is not a claim that all eight requirements passed.
+qualified FFI gate in the same workflow; it is not a claim that all eight requirements passed.
 
 Freeze the old and target commits and nested MLX version before generating the isolated header,
 bindgen, ABI-type, and linked-export comparison. Classify every delta, update provenance together,

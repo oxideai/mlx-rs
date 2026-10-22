@@ -14,6 +14,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ffi-gate:
+    runs-on: blaze/macos-latest
+    timeout-minutes: 90
+    env:
+      GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - name: Use the runner temp dir for build output
+        run: |
+          {
+            echo "CARGO_TARGET_DIR=$RUNNER_TEMP/guard-malloc/target"
+            echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/guard-malloc/metallib"
+            echo "TMPDIR=$RUNNER_TEMP"
+          } >> "$GITHUB_ENV"
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          rustflags: ""
+      - name: Locate build cache
+        id: ffi-cache
+        run: echo "target=$(python3 -c 'import os; print(os.path.relpath(os.environ["CARGO_TARGET_DIR"]))')" >> "$GITHUB_OUTPUT"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ffi-gate-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
+          workspaces: . -> ${{ steps.ffi-cache.outputs.target }}
+          cache-directories: ${{ runner.temp }}/guard-malloc/metallib
+      - name: Qualify leaks and Guard Malloc
+        timeout-minutes: 75
+        shell: bash
+        run: |
+          set -o pipefail
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            echo "FFI mode: qualified leaks + Guard Malloc (manual bump admission)."
+          else
+            echo "FFI mode: qualified leaks + Guard Malloc (PR changes mlx-sys/src/mlx-c)."
+          fi
+          mkdir -p "$RUNNER_TEMP/ffi-gate"
+          cargo run -p xtask -- verify-ffi --calibrate --guard-malloc \
+            --budget-seconds 3600 --leaks-timeout-seconds 600 \
+            --guard-malloc-timeout-seconds 1200 \
+            --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
+            2> >(tee "$RUNNER_TEMP/ffi-gate/stderr.log" >&2) \
+            | tee "$RUNNER_TEMP/ffi-gate/calibration.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-ffi-calibration
+          path: ${{ runner.temp }}/ffi-gate/
+
   bump-evidence:
     runs-on: blaze/macos-latest
     timeout-minutes: 180

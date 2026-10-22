@@ -187,10 +187,10 @@ Every mlx-c bump must meet these eight admission requirements:
 7. Qualified optimizer, compile-state, and transform packs.
 8. Deterministic replay against the exact target Python MLX version.
 
-The compiled feature-qualified API inventory, ledger, header/bindgen fingerprints, executed configuration reports, and aggregate
+The compiled feature-qualified API inventory, ledger, header/bindgen and linked-archive fingerprints, executed configuration reports, and aggregate
 `verify-bump` command exist. Configuration admission requires passing reports for every required
-ledger entry at the admitted SHA. Configuration reports do not establish linked-library exports;
-leak calibration alone does not establish the required Guard Malloc lane.
+ledger entry at the admitted SHA. Native export reports bind archive bytes and retained-symbol link/version canaries to the planned C functions.
+Leak calibration alone does not establish the required Guard Malloc lane.
 The presence of the tooling is not evidence that the whole admission playbook passed.
 
 Ledger evidence stays typed: `conf:` for semantic cases, `ffi:` for ABI/ownership/lifetime evidence,
@@ -251,6 +251,51 @@ library without running the entire upstream suite. Each named C++ case must exec
 with nonzero passing assertions. Reports retain commands, compiler/SDK, effective CMake settings,
 case counts, build/run timings and source identities; XML and logs are uploaded on failure too.
 
+Each native build also runs `linked-exports`. CMake resolves the archive targets named in
+`mlx-sys/native-libraries.txt`, the same list consumed by `mlx-sys/build.rs`. JACCL is included only
+when CMake produces its archive; native builds select it when the `jaccl` target exists. The checker
+fingerprints only the archives built from the pinned sources: libmlx, libmlxc, libgguflib, and
+libjaccl when built. The compiler runtime comes from the Xcode toolchain resolved by mlx-sys's
+`find_clang_rt_path`, independently of the native build manifest. That producer lookup, rather than
+an archive-name prefix or location inside the build tree, identifies the toolchain archive.
+Reports record its path and SHA-256 in `toolchain_archives` without enumerating or comparing its
+symbols; the canary still links it. These are the native builds' artifacts, not Cargo's separately
+compiled bytes. Reports under `native/exports/` record exact paths,
+SHA-256 hashes, CMake configuration, the planned functions from the existing header/bindgen parser,
+and defined external symbols in each archive's arm64 slice. Mach-O's leading underscore is removed
+once. C++ Itanium-mangled symbols are counted separately; every other defined external symbol,
+including weak symbols and data, is conservatively treated as a C export. This inventories archive
+members, including members a particular consumer may not pull into its executable.
+
+`ledger/native-export-exceptions.json` records reviewed exact-name exceptions for gguflib, compiler
+helpers, and metal-cpp data globals. Each entry names its defining archive, a one-line reason, and
+whether it applies only when `MLX_BUILD_METAL=ON`. Missing planned symbols, unlisted exports,
+exceptions used outside their archive or configuration, and unused exceptions in an applicable
+configuration fail admission. An exception for an optional archive applies only when that archive
+is built. Reports retain unexpected symbols grouped by archive even on failure;
+adding exceptions requires a reviewed policy change, not automatic baseline regeneration.
+Header/type fingerprints remain necessary because a matching symbol name does not prove its type.
+
+The generated C++ canary includes the same headers, retains a volatile reference to every planned
+function, checks the object's undefined symbols, and links those exact archives. Its runtime smoke
+check calls both `mlx_version` through mlx-c and `mlx::core::version` and requires the pinned MLX
+version from both. mlx-c has no separate runtime version string: its C version API returns MLX's
+version. The mlx-c identity is its source commit. Link and smoke results are retained separately
+from the export verdict, and unexpected exports do not skip the native test cases.
+
+To inspect an existing native build, or Cargo's actual build-script link resolution:
+
+    cargo run -p xtask -- linked-exports --build "$BUMP_ROOT/native/native-cpu-debug" \
+      --report "$BUMP_ROOT/reports/exports.json"
+    cargo check -p mlx-sys --message-format=json > "$BUMP_ROOT/reports/cargo-artifacts.json"
+    cargo run -p xtask -- linked-exports --cargo-output "$BUMP_ROOT/reports/cargo-artifacts.json" \
+      --report "$BUMP_ROOT/reports/cargo-exports.json"
+
+`linked-exports --verify <report>` rehashes and rescans the archives and checks the current planned
+symbols, CMake configuration/source provenance, and canary binary hash. Archives must remain inside
+the selected build directory; compiler-runtime archives are resolved separately. Run admission before deleting build directories; retained reports
+are a review record, not evidence that can be revalidated after their archives are gone.
+
 The workflow runs stable configurations serially, then native canaries and MSRV with the same
 checkpoint manifest. It validates all five configuration reports and runs the focused check:
 
@@ -264,7 +309,12 @@ checkpoint manifest. It validates all five configuration reports and runs the fo
 Aggregate `verify-bump --pre` / `--admit` also require those native reports via repeated
 `--native-report` flags, alongside all required `--config-report` and qualified FFI evidence.
 Missing, duplicate, stale, dirty, failed or empty native evidence fails; the resolved MLX commit
-must agree with the default and JIT Rust builds. Ordinary PR validation has no new requirement.
+must agree with the default and JIT Rust builds. The `checks` job also inspects the current Cargo
+archives discovered from clippy's JSON build-script output, reusing that job's native build. It
+uploads the export report and Cargo artifact inventory on failure too. The measured local addition
+was 20 seconds including rebuilding xtask, below the three-minute budget; no native rebuild or
+new routine job is added. Any export outside the reviewed exception scopes fails this
+check and bump admission.
 
 Run qualified leak and Guard Malloc lanes, old semantic baselines before changing oracle authority,
 exact-target replay, affected high-risk packs and public-surface gates. Aggregate exact-SHA,

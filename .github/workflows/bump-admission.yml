@@ -63,7 +63,7 @@ jobs:
             cargo run -p xtask -- config-report "$config" --report "$BUMP_ROOT/reports/$config.json" || status=1
           done
           exit "$status"
-      - name: Execute native canaries
+      - name: Execute native canaries and fingerprint linked exports
         if: ${{ !cancelled() }}
         run: python3 -B xtask/native_canaries.py --build-root "$BUMP_ROOT/native" --reports "$BUMP_ROOT/reports/native"
       - uses: actions-rust-lang/setup-rust-toolchain@v1

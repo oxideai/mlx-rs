@@ -123,6 +123,22 @@ fn validate_native(
             return Err(format!("native: wrong {key}"));
         }
     }
+    if report["linked_exports"]["build_provenance"]["mlx_commit"] != report["mlx_commit"] {
+        return Err("linked exports: different MLX build source".into());
+    }
+    if report["linked_exports"]["verdict"] != "pass" || report["linked_exports"]["exit_code"] != 0 {
+        return Err("linked exports: failed execution".into());
+    }
+    for key in [
+        "CMAKE_BUILD_TYPE",
+        "MLX_BUILD_METAL",
+        "MLX_BUILD_ACCELERATE",
+        "MLX_METAL_JIT",
+    ] {
+        if report["linked_exports"]["configuration"][key] != report["native"][key] {
+            return Err(format!("linked exports: mismatched {key}"));
+        }
+    }
     let mut expected = BTreeSet::new();
     for key in ["examples", "tests"]
         .into_iter()
@@ -194,14 +210,30 @@ pub(crate) fn validate(
         .iter()
         .map(|path| read(path))
         .collect::<Result<Vec<_>, _>>()?;
+    for report in &reports {
+        crate::linked_exports::validate(root, &report["linked_exports"])?;
+    }
     let seen = validate_native_set(
         &reports,
         &identity,
         &plan,
         mlx_commit.as_ref().ok_or("missing Rust MLX commit")?,
     )?;
+    let exports: Vec<_> = reports
+        .iter()
+        .map(|report| {
+            json!({
+                "configuration_id": report["configuration_id"],
+                "planned_count": report["linked_exports"]["planned_count"],
+                "found_count": report["linked_exports"]["found_count"],
+                "archives": report["linked_exports"]["archives"].as_array().unwrap().iter()
+                    .map(|archive| json!({"path": archive["path"], "sha256": archive["sha256"]}))
+                    .collect::<Vec<_>>()
+            })
+        })
+        .collect();
     Ok(
-        json!({"verdict": "pass", "source_commit": identity["source_commit"], "native_configurations": seen, "checkpoint_oracle_sha256": oracle_hash}),
+        json!({"verdict": "pass", "source_commit": identity["source_commit"], "native_configurations": seen, "linked_exports": exports, "checkpoint_oracle_sha256": oracle_hash}),
     )
 }
 
@@ -279,6 +311,7 @@ mod tests {
         let plan = json!({"examples": ["example"], "tests": ["test grad"]});
         let mut good = identity.clone();
         for (key, value) in json!({"schema_version": 1, "dirty": false, "verdict": "pass", "configuration": config, "mlx_commit": "mlx", "compiler": "clang", "cmake": "cmake", "macos": "mac", "sdk": "sdk", "native": {"CMAKE_BUILD_TYPE": "Debug", "MLX_BUILD_METAL": "OFF", "MLX_BUILD_ACCELERATE": "OFF", "MLX_METAL_JIT": "OFF", "MLX_C_BUILD_EXAMPLES": "ON"}, "runs": [{"id": "example", "exit_code": 0, "passed": 1}, {"id": "test grad", "exit_code": 0, "passed": 1, "assertions": 3}], "commands": [{"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}, {"exit_code": 0}]}).as_object().unwrap() { good[key] = value.clone(); }
+        good["linked_exports"] = json!({"verdict": "pass", "exit_code": 0, "configuration": good["native"], "build_provenance": {"mlx_commit": "mlx"}});
         assert!(validate_native(&good, &identity, &config, &plan).is_ok());
         good["configuration_id"] = "cpu".into();
         let mut set_plan = plan.clone();
@@ -298,6 +331,7 @@ mod tests {
         unknown["configuration_id"] = "unknown".into();
         assert!(validate_native_set(&[unknown], &identity, &set_plan, &json!("mlx")).is_err());
         for (pointer, value) in [
+            ("/linked_exports", Value::Null),
             ("/source_commit", json!("stale")),
             ("/verdict", json!("fail")),
             ("/dirty", json!(true)),

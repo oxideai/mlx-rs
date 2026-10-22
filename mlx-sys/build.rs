@@ -10,46 +10,8 @@ use std::{
 #[path = "src/bindgen_config.rs"]
 mod bindgen_config;
 
-/// Find the clang runtime library path dynamically using xcrun
-fn find_clang_rt_path() -> Option<String> {
-    // Use xcrun to find the active toolchain path
-    let output = Command::new("xcrun")
-        .args(["--show-sdk-platform-path"])
-        .output()
-        .ok()?;
-
-    if !output.status.success() {
-        return None;
-    }
-
-    // Get the developer directory which contains the toolchain
-    let output = Command::new("xcode-select")
-        .args(["--print-path"])
-        .output()
-        .ok()?;
-
-    if !output.status.success() {
-        return None;
-    }
-
-    let developer_dir = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let toolchain_base = format!(
-        "{}/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang",
-        developer_dir
-    );
-
-    // Find the clang version directory (it varies by Xcode version)
-    let clang_dir = std::fs::read_dir(&toolchain_base).ok()?;
-    for entry in clang_dir.flatten() {
-        let darwin_path = entry.path().join("lib/darwin");
-        let clang_rt_lib = darwin_path.join("libclang_rt.osx.a");
-        if clang_rt_lib.exists() {
-            return Some(darwin_path.to_string_lossy().to_string());
-        }
-    }
-
-    None
-}
+#[path = "src/native_link.rs"]
+mod native_link;
 
 #[cfg(feature = "metal")]
 fn mlx_c_key(mlx_c_root: &Path) -> String {
@@ -158,9 +120,15 @@ fn build_and_link_mlx_c() {
         "cargo:rustc-link-search=native={}/build/_deps/mlx-build/mlx/io",
         dst.display()
     );
-    println!("cargo:rustc-link-lib=static=mlx");
-    println!("cargo:rustc-link-lib=static=mlxc");
-    println!("cargo:rustc-link-lib=static=gguflib");
+    for library in native_link::libraries(&dst.join("build")) {
+        if library == "jaccl" {
+            println!(
+                "cargo:rustc-link-search=native={}/build/jaccl",
+                dst.display()
+            );
+        }
+        println!("cargo:rustc-link-lib=static={library}");
+    }
 
     println!("cargo:rustc-link-lib=c++");
     println!("cargo:rustc-link-lib=dylib=objc");
@@ -186,7 +154,7 @@ fn build_and_link_mlx_c() {
     // Link against Xcode's clang runtime for ___isPlatformVersionAtLeast symbol
     // This is needed on macOS 26+ where the bundled LLVM runtime may be outdated
     // See: https://github.com/conda-forge/llvmdev-feedstock/issues/244
-    if let Some(clang_rt_path) = find_clang_rt_path() {
+    if let Some(clang_rt_path) = native_link::find_clang_rt_path() {
         println!("cargo:rustc-link-search={}", clang_rt_path);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
@@ -222,6 +190,8 @@ fn publish_native_sources(dst: &Path, mlx_c_root: &Path) {
 
 fn main() {
     println!("cargo:rerun-if-env-changed=MLX_RS_METAL_PATH");
+    println!("cargo:rerun-if-changed=native-libraries.txt");
+    println!("cargo:rerun-if-changed=src/native_link.rs");
     build_and_link_mlx_c();
 
     let mlx_c_root = PathBuf::from("src/mlx-c");

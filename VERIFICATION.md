@@ -222,6 +222,13 @@ Freeze the old and target commits and nested MLX version before generating the i
 bindgen, ABI-type, and linked-export comparison. Classify every delta, update provenance together,
 and verify the linked runtime.
 
+The active comparison is mlx-c `c74db5307cc8ce122f48d97ef951b30578674e7f` to
+`a341b4925024b88b2c593468f16e12f5e17315da`; both pin MLX `v0.32.2`.
+`verify-bump --pre` checks the old checkout; after moving the submodule, use `--admit`
+with the old-tuple boundary base and `--allow-local-ffi` for local evidence.
+The prior delta classification is retained in
+`ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f-classification.json`.
+
 `python3 -B xtask/provision_checkpoints.py --cache "$BUMP_ROOT/checkpoints" --output
 "$BUMP_ROOT/reports/checkpoints"` downloads 6,199,630,244 bytes across six checkpoints and two
 tokenizer directories. `conformance/mlx-lm/bump-oracle.json` pins every repository revision and

@@ -1,6 +1,6 @@
 [package]
 name = "mlx-sys"
-version = "0.6.0" # Follows the pinned mlx-c release (v0.6.0-7-gc74db53, MLX 0.32.2).
+version = "0.6.0"
 authors.workspace = true
 edition.workspace = true
 

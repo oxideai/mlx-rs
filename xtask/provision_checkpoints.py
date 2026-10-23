@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the pinned bump fixtures and relocate the frozen Python oracle."""
+"""Download the pinned bump fixtures and generate the independent runner Python oracle."""
 
 import argparse
 import copy
@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "conformance/mlx-lm"))
 from real_checkpoints import read_manifest, sha256, verify_entry
 
 
-def provision(cache, output):
+def provision(cache, output, python):
     started = time.monotonic()
     oracle = ROOT / "conformance/mlx-lm/bump-oracle.json"
     report = json.loads(oracle.read_text())
@@ -40,12 +40,16 @@ def provision(cache, output):
         print(f'{name}: {entry["bytes"]} bytes, revision {entry["revision"]}', flush=True)
     output.mkdir(parents=True, exist_ok=True)
     report_path = output / "python-real-report.json"
-    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+
     manifest = copy.deepcopy(report["contract"])
-    manifest["expected_report"] = {"path": str(report_path), "sha256": sha256(report_path)}
+    manifest["expected_report"] = {"path": str(report_path), "sha256": None}
     manifest_path = output / "real-checkpoints.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     read_manifest(manifest_path)
+    subprocess.run([str(python), "-B", str(ROOT / "conformance/mlx-lm/live_oracle.py"),
+                    "--manifest", str(manifest_path), "--output", str(report_path)], check=True)
+    manifest["expected_report"]["sha256"] = sha256(report_path)
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     receipt = {"downloaded_bytes": downloaded, "elapsed_seconds": time.monotonic() - started,
                "oracle_sha256": sha256(oracle), "entries": manifest["entries"]}
     (output / "checkpoint-download.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -56,5 +60,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--python", type=Path, required=True)
     args = parser.parse_args()
-    provision(args.cache.resolve(), args.output.resolve())
+    provision(args.cache.resolve(), args.output.resolve(), args.python.absolute())

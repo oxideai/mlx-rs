@@ -284,7 +284,7 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
         Err(error) => Err(error.clone()),
     };
     let ffi = match (&options.ffi_report, workspace_commit.as_deref()) {
-        (Some(path), Ok(commit)) => crate::verify_ffi::discovered_target_ids(repo_root)
+        (Some(path), Ok(commit)) => crate::verify_ffi::workspace_target_ids(repo_root)
             .and_then(|inventory| {
                 read_json(&resolve_path(repo_root, path)).and_then(|report| {
                     validate_ffi_report(
@@ -803,7 +803,7 @@ fn validate_ffi_report(
         return Err("FFI report does not cover the ffi_safety target".to_owned());
     }
     if &inventory != expected_inventory {
-        return Err("FFI report binary inventory does not match fresh cargo discovery".to_owned());
+        return Err("FFI report binary inventory does not match workspace metadata".to_owned());
     }
     let recorded_leaks = string_set(&report["covered_binaries"]["leaks"], "FFI leak coverage")?;
     let recorded_guard = string_set(

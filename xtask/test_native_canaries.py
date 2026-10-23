@@ -1,10 +1,27 @@
+import tempfile
+from pathlib import Path
 import unittest
 import xml.etree.ElementTree as ET
 
-from native_canaries import case_assertions
+from native_canaries import case_assertions, retain_admission_files
 
 
 class NativeResults(unittest.TestCase):
+    def test_cleanup_retains_exact_admission_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build = Path(directory)
+            keep = ["CMakeCache.txt", "linked-archives.txt", "lib/libmlx.a", "canary"]
+            discard = ["obj/array.o", "upstream-tests/tests", "metallib/mlx.metallib"]
+            for name in keep + discard:
+                path = build / name
+                path.parent.mkdir(exist_ok=True)
+                path.write_text(name)
+            report = {"linked_exports": {"archives": [{"path": str(build / "lib/libmlx.a")}],
+                                         "canary": {"path": str(build / "canary")}}}
+            retain_admission_files(build, report)
+            self.assertEqual(sorted(str(p.relative_to(build)) for p in build.rglob("*") if p.is_file()), sorted(keep))
+            self.assertFalse((build / "obj").exists())
+
     def result(self):
         return ET.fromstring('''<doctest><TestSuite>
           <TestCase name="other" skipped="true"/>

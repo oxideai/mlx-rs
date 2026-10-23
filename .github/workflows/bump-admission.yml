@@ -83,7 +83,6 @@ jobs:
           mkdir -p "$RUNNER_TEMP/bump-canaries/reports"
           {
             echo "BUMP_ROOT=$RUNNER_TEMP/bump-canaries"
-            echo "MLX_LM_REAL_CHECKPOINTS=$RUNNER_TEMP/bump-canaries/reports/checkpoints/real-checkpoints.json"
             echo "CARGO_TARGET_DIR=$RUNNER_TEMP/bump-canaries/xtask"
             echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/bump-canaries/metallib/xtask"
             echo "MLX_RS_API_TARGET_DIR=$RUNNER_TEMP/bump-canaries/api-inventory"
@@ -119,7 +118,9 @@ jobs:
           "$BUMP_PYTHON" -B -m unittest discover -s xtask -p 'test_*.py'
       - name: Download checkpoints and generate the live Python oracle
         run: |
+          df -h "$BUMP_ROOT"
           "$BUMP_PYTHON" -B xtask/provision_checkpoints.py --python "$BUMP_PYTHON" --cache "$BUMP_ROOT/checkpoints" --output "$BUMP_ROOT/reports/checkpoints"
+          df -h "$BUMP_ROOT"
       - uses: actions/cache/save@v4
         if: steps.checkpoints-cache.outputs.cache-hit != 'true'
         with:
@@ -132,7 +133,16 @@ jobs:
           for config in macos-arm64-default macos-arm64-metal-jit macos-arm64-cpu-only macos-arm64-cpu-only-release; do
             export CARGO_TARGET_DIR="$BUMP_ROOT/targets/$config"
             export MLX_RS_METAL_PATH="$BUMP_ROOT/metallib/$config"
+            df -h "$BUMP_ROOT"
+            if [[ "$config" == macos-arm64-default ]]; then
+              export MLX_LM_REAL_CHECKPOINTS="$BUMP_ROOT/reports/checkpoints/real-checkpoints.json"
+            else
+              unset MLX_LM_REAL_CHECKPOINTS
+            fi
             cargo run -p xtask -- config-report "$config" --report "$BUMP_ROOT/reports/$config.json" || status=1
+            du -sh "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH" || true
+            rm -rf "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH"
+            df -h "$BUMP_ROOT"
           done
           exit "$status"
       - name: Execute native canaries and fingerprint linked exports
@@ -146,12 +156,18 @@ jobs:
           components: rustfmt
           cache: false
           rustflags: ''
-      - name: Execute MSRV with checkpoints
+      - name: Execute MSRV without checkpoints
         if: ${{ !cancelled() }}
         run: |
           export CARGO_TARGET_DIR="$BUMP_ROOT/targets/macos-arm64-default-msrv"
           export MLX_RS_METAL_PATH="$BUMP_ROOT/metallib/macos-arm64-default-msrv"
-          cargo run -p xtask -- config-report macos-arm64-default-msrv --report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json"
+          df -h "$BUMP_ROOT"
+          status=0
+          cargo run -p xtask -- config-report macos-arm64-default-msrv --report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json" || status=$?
+          du -sh "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH" || true
+          rm -rf "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH"
+          df -h "$BUMP_ROOT"
+          exit "$status"
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         if: ${{ !cancelled() }}
         with:
@@ -171,6 +187,7 @@ jobs:
           import pathlib
           import subprocess
 
+          subprocess.run(["df", "-h", os.environ["BUMP_ROOT"]], check=True)
           root = pathlib.Path.cwd()
           reports = pathlib.Path(os.environ["BUMP_ROOT"]) / "reports"
           reports.mkdir(parents=True, exist_ok=True)
@@ -199,6 +216,7 @@ jobs:
           passed = all(suite["verdict"] == "pass" for suite in report["suites"])
           report["verdict"] = "pass" if passed else "fail"
           (reports / "suite-results.json").write_text(json.dumps(report, indent=2) + "\n")
+          subprocess.run(["df", "-h", os.environ["BUMP_ROOT"]], check=True)
           raise SystemExit(0 if passed else 1)
       - name: Install the recorded ABI fingerprint compiler
         id: fingerprint-toolchain
@@ -226,19 +244,29 @@ jobs:
               raise SystemExit(f"ABI fingerprint compiler mismatch: {actual} != {expected}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               output.write(f"toolchain={toolchain}\n")
+      - name: Prepare the compiled API evidence for admission
+        id: api-evidence
+        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' }}
+        env:
+          RUSTUP_TOOLCHAIN: ${{ steps.fingerprint-toolchain.outputs.toolchain }}
+        run: |
+          df -h "$BUMP_ROOT"
+          cargo run -p xtask -- verify-ledger > "$BUMP_ROOT/reports/ledger.json" 2> "$BUMP_ROOT/reports/ledger.log"
+          df -h "$BUMP_ROOT"
       - uses: actions/download-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: verify-ffi-calibration
           path: ${{ runner.temp }}/bump-canaries/reports/ffi
       - name: Admit the exact checkout SHA
-        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' && steps.api-evidence.outcome == 'success' }}
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           RUSTUP_TOOLCHAIN: ${{ steps.fingerprint-toolchain.outputs.toolchain }}
         run: |
           set -o pipefail
+          df -h "$BUMP_ROOT"
           boundary_base="$PR_BASE_SHA"
           if [[ -z "$boundary_base" ]]; then
             bump_commit=$(git log -1 --format=%H -- mlx-sys/src/mlx-c)
@@ -256,6 +284,7 @@ jobs:
             --suite-results "$BUMP_ROOT/reports/suite-results.json" "${args[@]}" \
             2> >(tee "$BUMP_ROOT/reports/admission.stderr.log" >&2) \
             | tee "$BUMP_ROOT/reports/admission.json"
+          df -h "$BUMP_ROOT"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

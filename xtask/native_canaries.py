@@ -32,6 +32,22 @@ def case_assertions(result, test):
     return int(assertions.get("successes"))
 
 
+def retain_admission_files(build, report):
+    exports = report.get("linked_exports", {})
+    keep = {build / "CMakeCache.txt", build / "linked-archives.txt"}
+    keep.update(Path(archive["path"]) for archive in exports.get("archives", []))
+    if exports.get("canary", {}).get("path"):
+        keep.add(Path(exports["canary"]["path"]))
+    for directory, _, files in os.walk(build, topdown=False):
+        directory = Path(directory)
+        for name in files:
+            path = directory / name
+            if path not in keep:
+                path.unlink()
+        if directory != build and not any(directory.iterdir()):
+            directory.rmdir()
+
+
 def run(build_root, reports):
     plan = json.loads((ROOT / "xtask/native-canaries/plan.json").read_text())
     native = ROOT / "mlx-sys/src/mlx-c"
@@ -53,6 +69,7 @@ def run(build_root, reports):
     mlx_commit = output("git", "rev-parse", "HEAD", cwd=source)
     failed = False
     for config in plan["configurations"]:
+        subprocess.run(["df", "-h", str(build_root)], check=True)
         started = time.monotonic()
         build = build_root / config["id"]
         build.mkdir(exist_ok=True)
@@ -133,6 +150,11 @@ def run(build_root, reports):
                 failed = True
         report["elapsed_seconds"] = time.monotonic() - started
         (reports / (config["id"] + ".json")).write_text(json.dumps(report, indent=2) + "\n")
+        retain_admission_files(build, report)
+        if report["verdict"] == "pass":
+            subprocess.run(["cargo", "run", "-p", "xtask", "--", "linked-exports", "--verify",
+                            str(exports_path)], cwd=ROOT, check=True)
+        subprocess.run(["df", "-h", str(build_root)], check=True)
         print(f'{config["id"]}: {report["verdict"]}, {report["elapsed_seconds"]:.1f}s', flush=True)
     return int(failed)
 

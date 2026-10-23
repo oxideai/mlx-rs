@@ -1102,7 +1102,11 @@ fn validate_strict_replay(
             .as_array()
             .ok_or("target replay shard cases must be an array")?
         {
-            required_case_field(case, id, "recipe")?;
+            if id == "gguf" && case["recipe"].is_object() {
+                required_case_field(&case["recipe"], id, "kind")?;
+            } else {
+                required_case_field(case, id, "recipe")?;
+            }
             required_case_field(case, id, "input_sha256")?;
             case["input_refs"]
                 .as_array()
@@ -1579,9 +1583,101 @@ fn replay_introduction_commit(repo_root: &Path, path: &str) -> Result<String, St
 }
 
 fn hash_json(value: &Value) -> Result<String, String> {
-    let bytes = serde_json::to_vec(value)
-        .map_err(|error| format!("failed to serialize JSON for hashing: {error}"))?;
-    hash_bytes(&bytes)
+    hash_bytes(&canonical_json(value)?)
+}
+
+fn canonical_json(value: &Value) -> Result<Vec<u8>, String> {
+    fn encode(value: &Value, output: &mut String) -> Result<(), String> {
+        use std::fmt::Write;
+
+        match value {
+            Value::String(value) => {
+                for character in serde_json::to_string(value).unwrap().chars() {
+                    if character >= '\u{7f}' {
+                        for unit in character.encode_utf16(&mut [0; 2]) {
+                            write!(output, "\\u{unit:04x}").unwrap();
+                        }
+                    } else {
+                        output.push(character);
+                    }
+                }
+            }
+            Value::Number(number) => {
+                let text = number.to_string();
+                if text.contains(['.', 'e', 'E']) {
+                    let value = number.as_f64().ok_or("non-finite canonical JSON number")?;
+                    output.push_str(&python_float(value));
+                } else {
+                    output.push_str(if text == "-0" { "0" } else { &text });
+                }
+            }
+            Value::Array(values) => {
+                output.push('[');
+                for (index, value) in values.iter().enumerate() {
+                    if index > 0 {
+                        output.push(',');
+                    }
+                    encode(value, output)?;
+                }
+                output.push(']');
+            }
+            Value::Object(values) => {
+                output.push('{');
+                for (index, (key, value)) in
+                    values.iter().collect::<BTreeMap<_, _>>().iter().enumerate()
+                {
+                    if index > 0 {
+                        output.push(',');
+                    }
+                    encode(&Value::String((*key).clone()), output)?;
+                    output.push(':');
+                    encode(value, output)?;
+                }
+                output.push('}');
+            }
+            Value::Bool(true) => output.push_str("true"),
+            Value::Bool(false) => output.push_str("false"),
+            Value::Null => output.push_str("null"),
+        }
+        Ok(())
+    }
+
+    let mut output = String::new();
+    encode(value, &mut output)?;
+    Ok(output.into_bytes())
+}
+
+fn python_float(value: f64) -> String {
+    // Python uses shortest ties-to-even digits, but different exponent formatting.
+    let shortest = serde_json::Number::from_f64(value).unwrap().to_string();
+    if value == 0.0 {
+        return shortest;
+    }
+    let (mantissa, exponent) = shortest.split_once('e').unwrap_or((&shortest, "0"));
+    let sign = if value.is_sign_negative() { "-" } else { "" };
+    let mantissa = mantissa.trim_start_matches('-');
+    let point = mantissa.find('.').unwrap_or(mantissa.len());
+    let digits = mantissa.replace('.', "");
+    let leading_zeros = digits.len() - digits.trim_start_matches('0').len();
+    let exponent = exponent.parse::<i32>().unwrap() + point as i32 - leading_zeros as i32 - 1;
+    let digits = digits.trim_start_matches('0').trim_end_matches('0');
+    if !(-4..16).contains(&exponent) {
+        let (first, rest) = digits.split_at(1);
+        let dot = if rest.is_empty() { "" } else { "." };
+        return format!("{sign}{first}{dot}{rest}e{exponent:+03}");
+    }
+    let point = exponent + 1;
+    if point <= 0 {
+        format!("{sign}0.{}{digits}", "0".repeat((-point) as usize))
+    } else if point as usize >= digits.len() {
+        format!(
+            "{sign}{digits}{}.0",
+            "0".repeat(point as usize - digits.len())
+        )
+    } else {
+        let (integer, fraction) = digits.split_at(point as usize);
+        format!("{sign}{integer}.{fraction}")
+    }
 }
 
 fn hash_bytes(bytes: &[u8]) -> Result<String, String> {
@@ -2009,6 +2105,78 @@ mod tests {
             hash_json(&value).unwrap(),
             "sha256:9c374238cded86c892911a96b5afb7dc5dedca833e58969d0a6a55be4326c10c"
         );
+    }
+
+    fn python_canonical(expression: &str) -> Vec<u8> {
+        let output = Command::new("python3")
+            .args([
+                "-c",
+                &format!(
+                    "import json, math, random, struct, sys\nvalue = {expression}\nsys.stdout.buffer.write(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())"
+                ),
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        output.stdout
+    }
+
+    fn assert_python_canonical(expression: &str) {
+        let expected = python_canonical(expression);
+        let value: Value = serde_json::from_slice(&expected).unwrap();
+        assert_eq!(canonical_json(&value).unwrap(), expected);
+    }
+
+    #[test]
+    fn canonical_json_matches_python_ascii() {
+        assert_python_canonical(
+            r#"{'z': [1, True, None], 'a': {'controls': ''.join(map(chr, range(128))), 'slash': '/\\\"'}}"#,
+        );
+    }
+
+    #[test]
+    fn canonical_json_matches_python_bmp() {
+        assert_python_canonical(
+            r#"{'é': 'árvíztűrő tükörfúrógép', 'a': '\u0080\u2028\u2029\uffff', '中': '日本語'}"#,
+        );
+    }
+
+    #[test]
+    fn canonical_json_matches_python_astral() {
+        assert_python_canonical(r#"{'\U0001f600': '🎵𐀀\U0010ffff', '\ue000': ['雪', '🚀']}"#);
+    }
+
+    #[test]
+    fn canonical_json_matches_python_numbers() {
+        assert_python_canonical("[0, -1, 2**63, 2**64, -(2**100), 0.0, -0.0, 1.0, 1e-4, 1e-5, 1e15, 1e16, 1e20, 1e23, 1.2345678901234567, 5e-324, sys.float_info.max, 1.0000000000000002, 781366138262913.25]");
+    }
+
+    #[test]
+    fn canonical_json_matches_python_float_roundtrips() {
+        assert_python_canonical("[v for r in [random.Random(341)] for _ in range(4096) for v in [struct.unpack('!d', r.getrandbits(64).to_bytes(8, 'big'))[0]] if math.isfinite(v)]");
+    }
+
+    #[test]
+    fn canonical_json_matches_python_float_boundaries() {
+        assert_python_canonical("[v for exponent in range(-1074, 1024) for value in [2.0**exponent] for v in [value, math.nextafter(value, -math.inf), math.nextafter(value, math.inf)] if math.isfinite(v)]");
+    }
+
+    #[test]
+    fn canonical_json_normalizes_number_spellings() {
+        let source = "[-0, -0.0, 1e0, 100e-2, 1.2300, 1e-400, -1e-400, 0e0]";
+        let expected = python_canonical(&format!("json.loads('{source}')"));
+        let value: Value = serde_json::from_str(source).unwrap();
+        assert_eq!(canonical_json(&value).unwrap(), expected);
+    }
+
+    #[test]
+    fn committed_replay_passes_admission() {
+        let base = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../conformance/target")
+            .canonicalize()
+            .unwrap();
+        let report = read_json(&base.join("replay-report.json")).unwrap();
+        validate_replay_document(&base, &report, true).unwrap();
     }
 
     #[test]

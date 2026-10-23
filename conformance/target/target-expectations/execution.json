@@ -201,9 +201,9 @@
   ],
   "old_environment": {
     "architecture": "arm64",
-    "mlx_metal_package": "0.30.6",
-    "mlx_package": "0.30.6",
-    "mlx_runtime": "0.30.6",
+    "mlx_metal_package": "0.32.2",
+    "mlx_package": "0.32.2",
+    "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14"
   },
@@ -217,6 +217,6 @@
     "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14",
-    "venv": "conformance/.venv-target"
+    "venv": "/Users/ci/hub/scratch/bump-a341b49/canonical-replay/venv"
   }
 }

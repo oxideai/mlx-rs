@@ -394,13 +394,104 @@
         "status": "success"
       },
       "verdict": "identical"
+    },
+    {
+      "id": "shapes.015",
+      "input_refs": [
+        "shapes.015.input.0"
+      ],
+      "input_sha256": "sha256:3021ae2046b68eb8c13109517c4cdb908404f8aa47f95fe7795735f7d9dc326d",
+      "recipe": "contiguous",
+      "seed_hex": "33edefea7f0a46eaf5787c650bb1ed4c",
+      "target": {
+        "outputs": [
+          {
+            "data_hex": "00000080000020c03412c07f000000000000803f0000a040",
+            "dtype": "F32",
+            "shape": [
+              3,
+              2
+            ]
+          }
+        ],
+        "status": "success"
+      },
+      "verdict": "identical"
+    },
+    {
+      "id": "shapes.016",
+      "input_refs": [
+        "shapes.016.input.0"
+      ],
+      "input_sha256": "sha256:d8f0e06fd8077af3d8acaf5591aeb487e0aa6240e871b824687fd360cc877745",
+      "recipe": "contiguous",
+      "seed_hex": "3e4fc51ebf7e03d5f609a44b4eb17c0a",
+      "target": {
+        "outputs": [
+          {
+            "data_hex": "000000803412c07f0000803f",
+            "dtype": "F32",
+            "shape": [
+              3
+            ]
+          }
+        ],
+        "status": "success"
+      },
+      "verdict": "identical"
+    },
+    {
+      "id": "shapes.017",
+      "input_refs": [
+        "shapes.017.input.0"
+      ],
+      "input_sha256": "sha256:d67bf8b12f5756507a57dee1056bef55fd7c5e87bc7a8a963709008ec3d27709",
+      "recipe": "contiguous",
+      "seed_hex": "168d5ab347a4e2301752f780e69f356a",
+      "target": {
+        "outputs": [
+          {
+            "data_hex": "000000803412c07f0000803f000000803412c07f0000803f",
+            "dtype": "F32",
+            "shape": [
+              2,
+              3
+            ]
+          }
+        ],
+        "status": "success"
+      },
+      "verdict": "identical"
+    },
+    {
+      "id": "shapes.018",
+      "input_refs": [
+        "shapes.018.input.0"
+      ],
+      "input_sha256": "sha256:ff31f18d6c5ee1c6438c1a9d34bcad1463ba22868237f093c2858ce8021252eb",
+      "recipe": "contiguous",
+      "seed_hex": "82659522557fe8f828efb5985bd036e4",
+      "target": {
+        "outputs": [
+          {
+            "data_hex": "00000080000020c03412c07f000000000000803f0000a040",
+            "dtype": "F32",
+            "shape": [
+              3,
+              2
+            ]
+          }
+        ],
+        "status": "success"
+      },
+      "verdict": "identical"
     }
   ],
   "old_environment": {
     "architecture": "arm64",
-    "mlx_metal_package": "0.30.6",
-    "mlx_package": "0.30.6",
-    "mlx_runtime": "0.30.6",
+    "mlx_metal_package": "0.32.2",
+    "mlx_package": "0.32.2",
+    "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14"
   },
@@ -414,6 +505,6 @@
     "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14",
-    "venv": "conformance/.venv-target"
+    "venv": "/Users/ci/hub/scratch/bump-a341b49/canonical-replay/venv"
   }
 }

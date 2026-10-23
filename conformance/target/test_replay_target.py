@@ -1,9 +1,11 @@
 import copy
 import json
 import signal
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -119,6 +121,12 @@ class ReplayIntegrityTests(unittest.TestCase):
 
         self.assertNotEqual(replay_target.payload_sha256(tampered), digest)
 
+    def test_source_artifacts_include_gguf_inputs(self):
+        corpus = json.loads((replay_target.CONFORMANCE / "corpus.json").read_text())
+        sources = replay_target.source_artifacts(corpus)
+        for path, fixture in corpus["gguf_fixtures"].items():
+            self.assertEqual(sources.get(f"conformance/{path}"), fixture["sha256"])
+
     def test_aborted_suite_preserves_completed_cases_and_fills_remaining(self):
         completed = [{"id": "errors.001", "verdict": "identical"}]
 
@@ -178,6 +186,53 @@ class ReplayIntegrityTests(unittest.TestCase):
                     replay_target.REPORT,
                     replay_target.EXPECTATIONS,
                 ) = original
+
+
+class ReplayWorkerTests(unittest.TestCase):
+    def replay(self, kind, suite=None):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "suite.json"
+            with patch.object(replay_target, "VENV", Path(sys.prefix)):
+                replay_target.run_worker(kind, suite, output)
+            return json.loads(output.read_text())["cases"]
+
+    def test_math_replays_empty_output_cases(self):
+        cases = self.replay("ops", "math")
+        suite = json.loads((replay_target.CONFORMANCE / "suites/math.json").read_text())
+        self.assertEqual([case["id"] for case in cases], [case["id"] for case in suite["cases"]])
+        self.assertTrue(all(case["verdict"] == "identical" for case in cases))
+        self.assertTrue(any(case["target"].get("outputs") == [] for case in cases))
+
+    def test_gguf_replays_every_recipe(self):
+        cases = self.replay("gguf", "gguf")
+        suite = json.loads((replay_target.CONFORMANCE / "suites/gguf.json").read_text())
+        self.assertEqual([case["id"] for case in cases], [case["id"] for case in suite["cases"]])
+        self.assertEqual({case["verdict"] for case in cases}, {"identical"})
+
+    def test_gguf_load_failure_reports_error_behavior_change(self):
+        import mlx.core as mx
+
+        load = mx.load
+
+        def changed_load(path, **kwargs):
+            if Path(path).name == "basic.gguf":
+                raise RuntimeError("load regression")
+            return load(path, **kwargs)
+
+        with patch.object(mx, "load", side_effect=changed_load):
+            cases = self.replay("gguf", "gguf")
+        changed = [case for case in cases if case["id"] in {"gguf.001", "gguf.018", "gguf.019"}]
+        self.assertEqual({case["verdict"] for case in changed}, {"error_behavior_changed"})
+
+    def test_singular_inverse_reaches_cpu_evaluation(self):
+        case, = self.replay("probe_singular_inv")
+        self.assertEqual(case["target"], {
+            "status": "error",
+            "stage": "eval",
+            "exception": {"module": "builtins", "type": "RuntimeError"},
+        })
+        self.assertEqual(case["old_behavior"], "process_abort")
+        self.assertEqual(case["verdict"], "error_behavior_changed")
 
 
 if __name__ == "__main__":

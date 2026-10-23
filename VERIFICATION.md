@@ -48,7 +48,10 @@ non-finite values, and layout-sensitive observations. Regeneration uses Python 3
 [requirements.lock](conformance/requirements.lock); it requires identical hashes from two runs.
 
 [replay_target.py](conformance/target/replay_target.py) implements deterministic subprocess replay
-with an exact-version handshake. Its committed reports compare MLX 0.30.6 with 0.32.2.
+with an exact-version handshake. It discovers all corpus suites and also runs state, transforms,
+and the historical probes. Its committed reports compare MLX 0.30.6 with 0.32.2;
+[scratch replay](conformance/README.md#exact-target-replay) compares the current corpus without
+replacing those reports.
 
 ### Anti-self-oracle rules
 

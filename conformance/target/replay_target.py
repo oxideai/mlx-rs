@@ -424,7 +424,7 @@ def check_environment():
     return mx, {
         "python": platform.python_version(),
         "architecture": platform.machine(),
-        "venv": "conformance/.venv-target",
+        "venv": str(VENV),
         **versions,
         "mlx_runtime": runtime,
         "device": "cpu",
@@ -508,14 +508,14 @@ def run_ops_worker(suite_name, output):
                         case["recipe"],
                         arrays,
                         extra,
-                        execution["target"] == "explicit_cpu",
+                        execution["target"],
                     ),
                     mx,
                 )
                 old = old_behavior(case["expected"], tensors)
                 policy_name = (
                     case["expected"]["outputs"][0]["policy"]
-                    if case["expected"]["status"] == "success"
+                    if case["expected"].get("outputs")
                     else None
                 )
                 comparison = compare_behavior(
@@ -553,6 +553,199 @@ def refs_in(value):
         for child in value:
             refs.extend(refs_in(child))
     return refs
+
+
+def gguf_save_rejections(recipe, mx, recipes, directory):
+    metadata = recipe["kind"] == "metadata_rejects"
+    dtypes = recipes.dtype_objects(mx)
+    accepted = {}
+    for dtype in recipe["accepted"]:
+        value = mx.ones((1,), dtype=dtypes[dtype])
+        if metadata:
+            accepted[f"scalar.{dtype}"] = value.reshape(())
+        accepted[f"vector.{dtype}"] = value
+    path = str(directory / "accepted.gguf")
+    mx.save_gguf(path, {} if metadata else accepted, accepted if metadata else {})
+    arrays, values = mx.load(path, return_metadata=True, stream=mx.cpu)
+    loaded = values if metadata else arrays
+    if sorted(loaded) != sorted(accepted):
+        raise RuntimeError("GGUF accepted dtype keys changed")
+    for key, value in accepted.items():
+        result = compare_outputs(
+            [value_from_mx(value, mx)], [value_from_mx(loaded[key], mx)],
+            {"kind": "exact_numeric"},
+        )
+        if result["verdict"] != "identical":
+            raise RuntimeError(f"GGUF accepted dtype round trip failed: {key}: {result}")
+    rejected = [mx.ones((1,), dtype=dtypes[dtype]) for dtype in recipe["dtypes"]]
+    rejected.extend(mx.ones((1,) * rank, dtype=mx.int32) for rank in recipe.get("ranks", []))
+    if recipe.get("empty"):
+        rejected.append(mx.array([], dtype=mx.int32))
+    variants = []
+    observations = []
+    for value in rejected:
+        try:
+            mx.save_gguf(
+                str(directory / "rejected.gguf"),
+                {} if metadata else {"value": value},
+                {"value": value} if metadata else {},
+            )
+        except (RuntimeError, ValueError) as error:
+            message = str(error)
+            if not metadata and "is not supported" in message:
+                variant = "unsupported_tensor_dtype"
+            elif metadata and "not support for metadata" in message:
+                variant = "unsupported_metadata_array_dtype"
+            elif metadata and "more than one dimension" in message:
+                variant = "invalid_metadata_array_rank"
+            elif metadata and "empty arrays" in message:
+                variant = "empty_metadata_array"
+            else:
+                raise
+            variants.append(variant)
+            observations.append({
+                "dtype": dtype_name(value), "shape": list(value.shape),
+                "exception": type(error).__name__, "diagnostic": message,
+            })
+        else:
+            raise RuntimeError("GGUF rejected input unexpectedly saved")
+    expected = {"status": "error"}
+    if metadata:
+        expected["variants"] = list(dict.fromkeys(variants))
+    else:
+        expected["variant"] = variants[0]
+    return expected, {"accepted": sorted(loaded), "rejections": observations}
+
+
+def gguf_recipe(case, mx, recipes, directory):
+    recipe = case["recipe"]
+    kind = recipe["kind"]
+    fixtures = {}
+    evidence = {}
+    if kind in ("tensor_rejects", "metadata_rejects"):
+        observed, evidence = gguf_save_rejections(recipe, mx, recipes, directory)
+        return observed, fixtures, evidence
+    if kind == "construct_save":
+        rows, columns = recipe["non_contiguous_shape"]
+        key = recipe["same_spelling"]
+        arrays = {key: mx.arange(rows * columns, dtype=mx.float32).reshape(rows, columns).T}
+        metadata = {key: recipe["metadata_value"]}
+        path = directory / recipe["path"]
+        mx.save_gguf(str(path), arrays, metadata)
+    else:
+        path = CONFORMANCE / recipe["path"]
+    if not path.is_file():
+        return {"status": "error", "variant": "not_file"}, fixtures, evidence
+    kwargs = {"stream": mx.cpu} if recipe.get("execution") == "explicit_cpu" else {}
+    try:
+        arrays, metadata = mx.load(str(path), return_metadata=True, **kwargs)
+    except (RuntimeError, ValueError) as error:
+        return {"status": "error", "variant": "exception"}, fixtures, {
+            "exception": type(error).__name__,
+        }
+    if kind == "absence":
+        return {
+            "status": "success",
+            "array_absent": recipe["array_key"] not in arrays,
+            "metadata_absent": recipe["metadata_key"] not in metadata,
+        }, fixtures, evidence
+    if kind == "wrong_kind":
+        value = metadata[recipe["key"]]
+        actual = "string" if isinstance(value, str) else "strings" if isinstance(value, list) else "array"
+        observed = {"status": "success"} if actual == recipe["requested"] else {
+            "status": "error", "variant": "wrong_metadata_kind",
+            "expected_kind": recipe["requested"], "actual_kind": actual,
+        }
+        return observed, fixtures, evidence
+    if kind not in ("load", "construct_save"):
+        raise ValueError(f"unknown GGUF recipe {kind}")
+    observed = recipes.gguf_load_case(
+        case["id"], path.name, arrays, metadata, fixtures,
+    )["expected"]
+    if "dequantize" in recipe:
+        value = mx.dequantize(
+            arrays["quantized.weight"], arrays["quantized.scales"],
+            arrays["quantized.biases"], **recipe["dequantize"],
+        )
+        mx.eval(value)
+        observed["dequantized"] = recipes.gguf_expected_array(
+            fixtures, case["id"], "dequantized", value, "low_precision_float",
+        )
+    if kind == "construct_save":
+        # Python dictionaries cannot exercise the Rust insertion API's duplicate errors.
+        literals = {
+            "duplicate_array_variant": "array_key_already_exists",
+            "duplicate_metadata_variant": "metadata_key_already_exists",
+        }
+        observed.update(literals)
+        evidence["literal_contracts"] = literals
+        evidence["literal_source"] = "conformance/generate.py:generate_gguf"
+    return observed, fixtures, evidence
+
+
+def gguf_outputs(observed, tensor_value):
+    outputs = []
+    policies = []
+
+    def encode(value):
+        if isinstance(value, list):
+            return [encode(item) for item in value]
+        if isinstance(value, dict):
+            if "ref" in value:
+                outputs.append(tensor_value(value))
+                policies.append(value["policy"])
+                return {"key": value["key"], "output": len(outputs)}
+            return {key: encode(item) for key, item in value.items()}
+        return value
+
+    import numpy as np
+
+    structure = np.frombuffer(canonical_json(encode(observed)), dtype=np.uint8)
+    return [TensorValue("U8", list(structure.shape), structure), *outputs], ["exact_numeric", *policies]
+
+
+def run_gguf_worker(output):
+    mx, _ = check_environment()
+    mx.set_default_device(mx.cpu)
+    corpus = json.loads((CONFORMANCE / "corpus.json").read_text())
+    suite = json.loads((CONFORMANCE / "suites/gguf.json").read_text())
+    tensors = read_safetensors(CONFORMANCE / suite["fixture"])
+    recipes = load_module("conformance_generate", CONFORMANCE / "generate.py")
+    cases = []
+    with tempfile.TemporaryDirectory(prefix="gguf-replay-", dir=output.parent) as scratch:
+        for case in suite["cases"]:
+            observed, generated, evidence = gguf_recipe(case, mx, recipes, Path(scratch))
+            old, policies = gguf_outputs(
+                case["expected"], lambda value: value_from_fixture(value["ref"], value, tensors),
+            )
+            target, _ = gguf_outputs(
+                observed, lambda value: value_from_mx(generated[value["ref"]], mx),
+            )
+            comparison = compare_behavior(
+                {"status": case["expected"]["status"], "exception": case["expected"], "outputs": old[:1]},
+                {"status": observed["status"], "exception": observed, "outputs": target[:1]},
+                {"kind": "exact_numeric"},
+            )
+            if comparison["verdict"] == "identical":
+                for left, right, policy in zip(old[1:], target[1:], policies[1:]):
+                    comparison = compare_outputs([left], [right], corpus["tolerance_policies"][policy])
+                    if comparison["verdict"] != "identical":
+                        break
+            recipe_path = case["recipe"].get("path")
+            if recipe_path and case["recipe"]["kind"] != "construct_save":
+                path = CONFORMANCE / recipe_path
+            else:
+                path = None
+            cases.append({
+                "id": case["id"], "recipe": case["recipe"], "seed_hex": None,
+                "input_refs": [recipe_path] if path else [],
+                "input_sha256": file_sha256(path) if path and path.is_file() else payload_sha256(case["recipe"]),
+                "target": {"status": observed["status"], "observation": observed,
+                           "outputs": [value.to_json() for value in target]},
+                "evidence": evidence,
+                **comparison,
+            })
+            atomic_json(output, {"schema_version": 1, "suite": "gguf", "cases": cases})
 
 
 def state_inputs(module, manifest, tensors):
@@ -739,6 +932,7 @@ def run_transforms_worker(output):
 
 def run_oob_probe(output):
     mx, _ = check_environment()
+    mx.set_default_device(mx.cpu)
     tensors = read_safetensors(CONFORMANCE / "fixtures/errors.safetensors")
     data = raw_to_mx(tensors["errors.003.input.0"], mx)
     indices = raw_to_mx(tensors["errors.003.input.1"], mx)
@@ -765,6 +959,7 @@ def run_oob_probe(output):
 
 def run_singular_probe(output):
     mx, _ = check_environment()
+    mx.set_default_device(mx.cpu)
     tensors = read_safetensors(CONFORMANCE / "fixtures/dtypes.safetensors")
     zero = raw_to_mx(tensors["dtypes.012.input.1"], mx)
     matrix = mx.broadcast_to(zero, (2, 2))
@@ -803,26 +998,30 @@ def worker_case_ids(suite):
     return [case["id"] for case in document["cases"]]
 
 
+WORKERS = {
+    "ops": run_ops_worker,
+    "gguf": run_gguf_worker,
+    "state": run_state_worker,
+    "transforms": run_transforms_worker,
+    "probe_oob_take": run_oob_probe,
+    "probe_singular_inv": run_singular_probe,
+}
+
+
 def run_worker(kind, suite, output):
     if kind == "handshake":
         _, handshake = check_environment()
         atomic_json(output, handshake)
     elif kind == "ops":
-        run_ops_worker(suite, output)
-    elif kind == "state":
-        run_state_worker(output)
-    elif kind == "transforms":
-        run_transforms_worker(output)
-    elif kind == "probe_oob_take":
-        run_oob_probe(output)
-    elif kind == "probe_singular_inv":
-        run_singular_probe(output)
+        WORKERS[kind](suite, output)
+    elif kind in WORKERS:
+        WORKERS[kind](output)
     else:
         raise SystemExit(f"unknown worker kind {kind}")
 
 
 def run_subprocess(python, kind, output, suite=None):
-    command = [str(python), str(Path(__file__).resolve()), "--worker", kind, "--output", str(output)]
+    command = [str(python), "-B", str(Path(__file__).resolve()), "--venv", str(VENV), "--worker", kind, "--output", str(output)]
     if suite:
         command.extend(["--suite", suite])
     return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
@@ -842,7 +1041,22 @@ def source_artifacts(corpus):
         paths.append(Path("conformance") / suite_path)
     for fixture_path in corpus["fixture_shards"]:
         paths.append(Path("conformance") / fixture_path)
+    for fixture_path in corpus.get("gguf_fixtures", {}):
+        paths.append(Path("conformance") / fixture_path)
     return {path.as_posix(): file_sha256(REPO_ROOT / path) for path in sorted(paths)}
+
+
+def suite_specs(corpus):
+    suites = [Path(path).stem for path in corpus["suites"]]
+    return [
+        (suite, "gguf" if suite == "gguf" else "ops", suite)
+        for suite in suites
+    ] + [
+        ("state", "state", None),
+        ("transforms", "transforms", None),
+        ("probe_oob_take", "probe_oob_take", None),
+        ("probe_singular_inv", "probe_singular_inv", None),
+    ]
 
 
 def run_once(python, directory):
@@ -854,18 +1068,9 @@ def run_once(python, directory):
     handshake = json.loads(handshake_path.read_text())
     corpus = json.loads((CONFORMANCE / "corpus.json").read_text())
     ops = [Path(path).stem for path in corpus["suites"]]
-    suite_specs = [(suite, "ops", suite) for suite in ops]
-    suite_specs.extend(
-        [
-            ("state", "state", None),
-            ("transforms", "transforms", None),
-            ("probe_oob_take", "probe_oob_take", None),
-            ("probe_singular_inv", "probe_singular_inv", None),
-        ]
-    )
     shards = {}
     summaries = []
-    for suite, kind, argument in suite_specs:
+    for suite, kind, argument in suite_specs(corpus):
         output = directory / f"{suite}.json"
         result = run_subprocess(python, kind, output, argument)
         partial = (
@@ -889,6 +1094,13 @@ def run_once(python, directory):
             "target_environment": handshake,
             "cases": partial["cases"],
         }
+        if suite in PROBE_SUITES:
+            shard["old_environment"] = {
+                **corpus["environment"],
+                "mlx_package": "0.30.6",
+                "mlx_metal_package": "0.30.6",
+                "mlx_runtime": "0.30.6",
+            }
         shard_digest = document_sha256(shard)
         counts = Counter(case["verdict"] for case in shard["cases"])
         verdict = "fail" if counts["recipe_failed"] else "pass"
@@ -939,7 +1151,7 @@ def ensure_venv():
 
 
 def publish_report(payload, shards, first_hash, second_hash, update):
-    staged = Path(tempfile.mkdtemp(prefix="mlx-target-publish-", dir=TARGET))
+    staged = Path(tempfile.mkdtemp(prefix="mlx-target-publish-", dir=REPORT.parent))
     try:
         staged_expectations = staged / "target-expectations"
         staged_expectations.mkdir()
@@ -990,20 +1202,27 @@ def publish_report(payload, shards, first_hash, second_hash, update):
 
 
 def main():
+    global VENV, REPORT, EXPECTATIONS
     parser = argparse.ArgumentParser()
     parser.add_argument("--worker")
     parser.add_argument("--suite")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--venv", type=Path, default=VENV)
+    parser.add_argument("--output-dir", type=Path, default=TARGET)
     parser.add_argument("--update", action="store_true")
     args = parser.parse_args()
+    VENV = args.venv.resolve()
+    REPORT = args.output_dir.resolve() / "replay-report.json"
+    EXPECTATIONS = REPORT.parent / "target-expectations"
     if args.worker:
         if args.output is None:
             parser.error("--worker requires --output")
         run_worker(args.worker, args.suite, args.output)
         return
     python = ensure_venv()
-    first_dir = Path(tempfile.mkdtemp(prefix="mlx-target-first-"))
-    second_dir = Path(tempfile.mkdtemp(prefix="mlx-target-second-"))
+    REPORT.parent.mkdir(parents=True, exist_ok=True)
+    first_dir = Path(tempfile.mkdtemp(prefix="mlx-target-first-", dir=REPORT.parent))
+    second_dir = Path(tempfile.mkdtemp(prefix="mlx-target-second-", dir=REPORT.parent))
     try:
         first_payload, first_shards = run_once(python, first_dir)
         second_payload, second_shards = run_once(python, second_dir)

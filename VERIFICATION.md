@@ -215,8 +215,8 @@ waivers fail admission; every active waiver appears in the aggregate verdict.
 `.github/workflows/bump-admission.yml` runs on PRs changing the `mlx-sys/src/mlx-c` gitlink
 and on `workflow_dispatch`, on `blaze/macos-latest`. A PR run admits the checked-out merge SHA;
 a dispatch admits the selected ref's SHA. Native canaries and checkpoint downloads run only in this
-workflow. Its focused evidence verdict supplements the aggregate admission contract, including the
-qualified FFI gate in the same workflow; it is not a claim that all eight requirements passed.
+workflow. It runs the qualified FFI gate, collects exact-SHA evidence, and ends verification with
+the aggregate `verify-bump --admit` verdict for all eight admission requirements.
 
 Freeze the old and target commits and nested MLX version before generating the isolated header,
 bindgen, ABI-type, and linked-export comparison. Classify every delta, update provenance together,
@@ -305,8 +305,16 @@ symbols, CMake configuration/source provenance, and canary binary hash. Archives
 the selected build directory; compiler-runtime archives are resolved separately. Run admission before deleting build directories; retained reports
 are a review record, not evidence that can be revalidated after their archives are gone.
 
-The workflow runs stable configurations serially, then native canaries and MSRV with the same
-checkpoint manifest. It validates all five configuration reports and runs the focused check:
+After the FFI job finishes, the evidence job runs stable configurations serially, then native
+canaries and MSRV with the same checkpoint manifest. It restores stable Rust, installs the pinned
+API extraction nightly, and records conformance, optimizer, compile-state and transform suite
+results and logs. The final aggregate consumes those reports and the FFI job's report, validates
+the committed replay, rebuilds both ABI fingerprints, and checks the compiled API and ledger.
+Native archives remain available until this verdict completes. All reports and logs upload even
+on failure. PRs use the PR base as the oracle boundary; dispatches use the parent of the latest
+submodule change, which must record the old tuple.
+
+To check just configuration, native and checkpoint evidence locally:
 
     cargo run -p xtask -- verify-bump --bump-evidence-only \
       --config-report "$BUMP_ROOT/reports/macos-arm64-default.json" \
@@ -330,7 +338,8 @@ exact-target replay, affected high-risk packs and public-surface gates. Aggregat
 environment-bound reports and waivers into one verdict; never regenerate away a semantic regression.
 Keep checkpoint caches and reports outside the checkout. Delete isolated native, Cargo and metallib
 build directories after collecting evidence. Reports record measured times; the workflow has a
-180-minute limit to accommodate cold builds and three CPU/Metal checkpoint passes.
+240-minute evidence-job limit to accommodate cold builds, three CPU/Metal checkpoint passes,
+semantic/state suites, and aggregate API and fingerprint verification.
 
 New public APIs land vertically, as their own change under the [charter](CHARTER.md#charter-rules):
 parity mapping, independently sourced cases with a golden or differential result, ownership

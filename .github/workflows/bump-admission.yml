@@ -69,7 +69,7 @@ jobs:
     needs: ffi-gate
     if: ${{ !cancelled() }}
     runs-on: blaze/macos-latest
-    timeout-minutes: 240
+    timeout-minutes: 360
     env:
       MLX_RS_BUMP_RUN: '1'
       GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -199,16 +199,43 @@ jobs:
           report["verdict"] = "pass" if passed else "fail"
           (reports / "suite-results.json").write_text(json.dumps(report, indent=2) + "\n")
           raise SystemExit(0 if passed else 1)
+      - name: Install the recorded ABI fingerprint compiler
+        id: fingerprint-toolchain
+        if: ${{ !cancelled() && steps.python.outcome == 'success' }}
+        shell: python3 -B {0}
+        run: |
+          import json
+          import os
+          import pathlib
+          import subprocess
+
+          ledger = pathlib.Path("ledger")
+          classification = json.loads((ledger / "target-delta-classification.json").read_text())
+          versions = {
+              json.loads((ledger / f"mlx-c-{classification[key]}.json").read_text())["tool_versions"]["rustc"]
+              for key in ["old_source_commit", "target_source_commit"]
+          }
+          if len(versions) != 1:
+              raise SystemExit("ABI fingerprints require different Rust toolchains")
+          expected = versions.pop()
+          toolchain = expected.split()[1]
+          subprocess.run(["rustup", "toolchain", "install", toolchain, "--profile", "minimal", "--component", "rustfmt"], check=True)
+          actual = subprocess.check_output(["rustup", "run", toolchain, "rustc", "--version"], text=True).strip()
+          if actual != expected:
+              raise SystemExit(f"ABI fingerprint compiler mismatch: {actual} != {expected}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"toolchain={toolchain}\n")
       - uses: actions/download-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: verify-ffi-calibration
           path: ${{ runner.temp }}/bump-canaries/reports/ffi
       - name: Admit the exact checkout SHA
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' }}
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          RUSTUP_TOOLCHAIN: ${{ steps.fingerprint-toolchain.outputs.toolchain }}
         run: |
           set -o pipefail
           boundary_base="$PR_BASE_SHA"

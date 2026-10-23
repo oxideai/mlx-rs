@@ -315,7 +315,9 @@ are a review record, not evidence that can be revalidated after their archives a
 After the FFI job finishes, the evidence job runs stable configurations serially, then native
 canaries and MSRV with the same checkpoint manifest. It restores stable Rust, installs the pinned
 API extraction nightly, and records conformance, optimizer, compile-state and transform suite
-results and logs. The final aggregate consumes those reports and the FFI job's report, validates
+results and logs. The final aggregate uses the Rust compiler version recorded in both committed
+ABI fingerprints; the job installs its rustfmt component and verifies the full compiler version
+before admission. It consumes those reports and the FFI job's report, validates
 the committed replay, rebuilds both ABI fingerprints, and checks the compiled API and ledger.
 Native archives remain available until this verdict completes. All reports and logs upload even
 on failure. PRs use the PR base as the oracle boundary; dispatches use the parent of the latest

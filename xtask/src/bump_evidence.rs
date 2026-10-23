@@ -244,7 +244,7 @@ pub(crate) fn validate(
     let matrix = read(&root.join("ledger/supported-feature-matrix.json"))?;
     let configs: Vec<_> = crate::config_report::configurations(&matrix)?
         .into_iter()
-        .filter(|c| ["macos-arm64-default", "macos-arm64-metal-jit"].contains(&c.id.as_str()))
+        .filter(|c| c.required)
         .collect();
     let mut selected = Vec::new();
     let oracle = read(&root.join("conformance/mlx-lm/bump-oracle.json"))?;
@@ -255,12 +255,20 @@ pub(crate) fn validate(
         if !configs.iter().any(|c| report["configuration_id"] == c.id) {
             continue;
         }
-        validate_checkpoints(&report, &oracle_hash, &cases(&oracle))?;
-        let manifest = report["checkpoints"]["manifest_path"]
-            .as_str()
-            .ok_or("missing live manifest")?;
-        if collect_checkpoint_evidence(root, Path::new(manifest), None)? != report["checkpoints"] {
-            return Err("live checkpoint evidence changed after execution".into());
+        let config = configs
+            .iter()
+            .find(|c| report["configuration_id"] == c.id)
+            .unwrap();
+        if config.checkpoints_required {
+            validate_checkpoints(&report, &oracle_hash, &cases(&oracle))?;
+            let manifest = report["checkpoints"]["manifest_path"]
+                .as_str()
+                .ok_or("missing live manifest")?;
+            if collect_checkpoint_evidence(root, Path::new(manifest), None)?
+                != report["checkpoints"]
+            {
+                return Err("live checkpoint evidence changed after execution".into());
+            }
         }
         if let Some(commit) = &mlx_commit {
             if commit != &report["native"]["mlx_commit"] {

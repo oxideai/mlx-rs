@@ -13,13 +13,14 @@ fn fixture() -> (Vec<Configuration>, Vec<Value>, Value) {
                 let mut r = identity.clone();
                 r.as_object_mut().unwrap().extend(json!({
             "schema_version": 1, "configuration_id": c.id, "dirty": false,
+            "checkpoints_required": c.checkpoints_required,
             "profile": c.profile, "toolchain": c.toolchain,
             "target_triple": c.target_triple, "command": test_command(c),
             "rustc": if c.toolchain == "stable" { "rustc 1.98.0" } else { "rustc 1.88.0" },
             "macos": "26.0", "sdk": "26.0", "resolved_features": c.resolved_features,
             "native": c.native, "verdict": "pass", "exit_code": 0,
             "tests": [{"id": "demo::lib::demo", "passed": 2, "failed": 0, "ignored": 0,
-                "filtered_out": 0, "summaries": 1, "not_run": false, "outcome": "pass"}]
+                "filtered_out": 0, "summaries": 1, "not_run": false, "not_run_reasons": [], "excluded_by_configuration": false, "outcome": "pass"}]
         }).as_object().unwrap().clone());
                 r["native"]["mlx_version"] = "0.32.2".into();
                 r["native"]["mlx_commit"] = "nested-commit".into();
@@ -421,4 +422,45 @@ fn empty_allowlist_matches_captured_workspace_execution() {
         config.allow_empty.iter().cloned().collect::<BTreeSet<_>>(),
         empty
     );
+}
+
+#[test]
+fn only_manifest_absent_checkpoints_can_be_excluded_by_configuration() {
+    let (configs, reports, identity) = fixture();
+    for (c, mut report) in configs.iter().zip(reports) {
+        let id = "mlx-lm::test::real_checkpoints";
+        let expected = BTreeSet::from([id.to_owned()]);
+        let run = &mut report["tests"][0];
+        run["id"] = id.into();
+        run["not_run"] = true.into();
+        run["not_run_reasons"] = json!(["NOT RUN: local real-checkpoint manifest not supplied"]);
+        run["excluded_by_configuration"] = (!c.checkpoints_required).into();
+        assert_eq!(
+            validate_report(c, &report, &identity, &expected).is_ok(),
+            !c.checkpoints_required
+        );
+        for (field, value) in [
+            ("not_run_reasons", json!(["NOT RUN: other fixture absent"])),
+            (
+                "not_run_reasons",
+                json!([
+                    "NOT RUN: local real-checkpoint manifest not supplied",
+                    "NOT RUN: another test"
+                ]),
+            ),
+            ("id", json!("mlx-lm::test::parity")),
+            ("outcome", json!("incomplete")),
+            ("filtered_out", json!(1)),
+            ("failed", json!(1)),
+            ("passed", json!(0)),
+        ] {
+            let mut bad = report.clone();
+            bad["tests"][0][field] = value;
+            assert!(
+                validate_report(c, &bad, &identity, &expected).is_err(),
+                "{}: {field}",
+                c.id
+            );
+        }
+    }
 }

@@ -236,31 +236,100 @@ pub fn run_delta(args: &[String]) -> i32 {
     }
 }
 
-pub(crate) fn delta_value(old: &Path, new: &Path) -> Result<serde_json::Value, String> {
-    let old = read_fingerprint(old)?;
-    let new = read_fingerprint(new)?;
-    serde_json::to_value(build_delta(&old, &new))
-        .map_err(|error| format!("failed to serialize delta: {error}"))
-}
-
-pub(crate) fn verify_committed(
+pub(crate) fn generate_delta(
     repo_root: &Path,
-    reference: &str,
-    committed_path: &Path,
-) -> Result<serde_json::Value, String> {
-    let actual = generate(repo_root, reference)?;
-    let committed = read_fingerprint(committed_path)?;
-    if actual != committed {
+    old: &str,
+    new: &str,
+) -> Result<(serde_json::Value, serde_json::Value), String> {
+    for reference in [old, new] {
+        if reference.len() != 40 || !reference.bytes().all(|c| c.is_ascii_hexdigit()) {
+            return Err(format!(
+                "ABI inventory requires an immutable commit: {reference}"
+            ));
+        }
+    }
+    let current = run_git(&repo_root.join("mlx-sys/src/mlx-c"), ["rev-parse", "HEAD"])?;
+    if current != old && current != new {
         return Err(format!(
-            "generated fingerprint for {reference} does not match {}",
-            committed_path.display()
+            "current mlx-c pin {current} is outside the classified tuple"
         ));
     }
-    Ok(serde_json::json!({
-        "source_commit": actual.content.source_commit,
-        "overall_digest": actual.overall_digest,
-        "artifact": committed_path
-    }))
+    let started = std::time::Instant::now();
+    let output = std::env::var_os("MLX_RS_ABI_OUTPUT_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| repo_root.join("target/abi-inventory"));
+    fs::create_dir_all(&output).map_err(|e| e.to_string())?;
+    let versions = recorded_tool_versions(repo_root)?;
+    let toolchain = versions
+        .rustc
+        .split_whitespace()
+        .nth(1)
+        .ok_or("invalid ABI rustc version")?;
+    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+    let mut inventories = Vec::new();
+    let mut artifacts = Vec::new();
+    for reference in [old, new] {
+        let path = output.join(format!("mlx-c-{reference}.json"));
+        command_output(
+            Command::new("rustup")
+                .args(["run", toolchain])
+                .arg(&executable)
+                .args(["fingerprint", "--ref", reference, "--out"])
+                .arg(&path)
+                .current_dir(repo_root),
+            "ABI extraction with the recorded toolchain (install it with rustfmt)",
+        )?;
+        let inventory = read_fingerprint(&path)?;
+        if inventory.content.tool_versions != versions
+            || inventory.content.source_commit != reference
+        {
+            return Err(format!("ABI extraction identity mismatch for {reference}"));
+        }
+        inventories.push(inventory);
+        artifacts.push(path);
+    }
+    let delta = serde_json::to_value(build_delta(&inventories[0], &inventories[1]))
+        .map_err(|e| e.to_string())?;
+    let delta_path = output.join("delta.json");
+    fs::write(
+        &delta_path,
+        format!("{}\n", serde_json::to_string_pretty(&delta).unwrap()),
+    )
+    .map_err(|e| e.to_string())?;
+    let seconds = started.elapsed().as_secs_f64();
+    eprintln!("fingerprint: generated both ABI inventories and delta in {seconds:.2}s");
+    Ok((
+        delta,
+        serde_json::json!({
+            "old_source_commit": old,
+            "target_source_commit": new,
+            "old": artifacts[0],
+            "new": artifacts[1],
+            "delta": delta_path,
+            "tool_versions": versions,
+            "generation_seconds": seconds,
+        }),
+    ))
+}
+
+fn recorded_tool_versions(repo_root: &Path) -> Result<ToolVersions, String> {
+    let path = repo_root.join("ledger/abi-toolchain.json");
+    serde_json::from_slice(&fs::read(&path).map_err(|e| e.to_string())?)
+        .map_err(|e| format!("invalid {}: {e}", path.display()))
+}
+
+fn recorded_rustfmt(repo_root: &Path) -> Result<PathBuf, String> {
+    let versions = recorded_tool_versions(repo_root)?;
+    let toolchain = versions
+        .rustc
+        .split_whitespace()
+        .nth(1)
+        .ok_or("invalid ABI rustc version")?;
+    command_output(
+        Command::new("rustup").args(["which", "--toolchain", toolchain, "rustfmt"]),
+        "recorded ABI rustfmt (install the pinned toolchain with rustfmt)",
+    )
+    .map(PathBuf::from)
 }
 
 fn parse_fingerprint_args(args: &[String]) -> Result<(String, Option<PathBuf>), String> {
@@ -319,16 +388,7 @@ fn delta_usage() -> String {
 
 pub(crate) fn planned_exports(root: &Path) -> Result<(Vec<String>, BTreeSet<String>), String> {
     let native = root.join("mlx-sys/src/mlx-c");
-    let paths = bindgen_config::discover_headers(&native).map_err(|e| e.to_string())?;
-    let bindings = bindgen_config::builder(&native, &paths)
-        .generate()
-        .map_err(|e| e.to_string())?
-        .to_string();
-    let headers = paths
-        .iter()
-        .map(|p| bindgen_config::relative_header(&native, p))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+    let (headers, bindings) = extract_headers(&native, None)?;
     let symbols = parse_entries(&bindings)?
         .into_iter()
         .filter_map(|entry| match entry {
@@ -339,21 +399,45 @@ pub(crate) fn planned_exports(root: &Path) -> Result<(Vec<String>, BTreeSet<Stri
     Ok((headers, symbols))
 }
 
+fn extract_headers(root: &Path, rustfmt: Option<PathBuf>) -> Result<(Vec<String>, String), String> {
+    let header_paths = bindgen_config::discover_headers(root)
+        .map_err(|error| format!("failed to discover headers: {error}"))?;
+    let headers = header_paths
+        .iter()
+        .map(|header| bindgen_config::relative_header(root, header))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("failed to record headers: {error}"))?;
+    let mut builder = bindgen_config::builder(root, &header_paths);
+    if let Some(rustfmt) = rustfmt {
+        builder = builder.with_rustfmt(rustfmt);
+    }
+    let bindings = builder
+        .generate()
+        .map_err(|error| format!("bindgen failed: {error}"))?
+        .to_string();
+    Ok((headers, bindings))
+}
+
+fn qualify_extractor(repo_root: &Path) -> Result<(), String> {
+    let root = repo_root.join("xtask/tests/fixtures/abi-extractor");
+    let (headers, bindings) = extract_headers(&root, Some(recorded_rustfmt(repo_root)?))?;
+    let actual = serde_json::json!({"headers": headers, "entries": parse_entries(&bindings)?});
+    let expected: serde_json::Value = serde_json::from_str(include_str!(
+        "../tests/fixtures/abi-extractor/expected.json"
+    ))
+    .map_err(|e| e.to_string())?;
+    if actual != expected {
+        return Err("ABI extractor does not match the C header fixture".into());
+    }
+    Ok(())
+}
+
 fn generate(repo_root: &Path, reference: &str) -> Result<Fingerprint, String> {
     let repository = repo_root.join("mlx-sys/src/mlx-c");
     let worktree = GitWorktree::create(&repository, reference)?;
     let source_commit = run_git(&worktree.path, ["rev-parse", "HEAD"])?;
-    let header_paths = bindgen_config::discover_headers(&worktree.path)
-        .map_err(|error| format!("failed to discover headers: {error}"))?;
-    let headers = header_paths
-        .iter()
-        .map(|header| bindgen_config::relative_header(&worktree.path, header))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("failed to record headers: {error}"))?;
-    let bindings = bindgen_config::builder(&worktree.path, &header_paths)
-        .generate()
-        .map_err(|error| format!("bindgen failed: {error}"))?
-        .to_string();
+    qualify_extractor(repo_root)?;
+    let (headers, bindings) = extract_headers(&worktree.path, Some(recorded_rustfmt(repo_root)?))?;
     let bindgen = bindings
         .lines()
         .next()
@@ -362,9 +446,16 @@ fn generate(repo_root: &Path, reference: &str) -> Result<Fingerprint, String> {
         .ok_or("bindgen output did not contain its version")?
         .to_owned();
     let rustc = command_output(Command::new("rustc").arg("--version"), "rustc --version")?;
+    let tool_versions = ToolVersions { bindgen, rustc };
+    let expected = recorded_tool_versions(repo_root)?;
+    if tool_versions != expected {
+        return Err(format!(
+            "ABI extractor toolchain mismatch: {tool_versions:?}, expected {expected:?}"
+        ));
+    }
     let content = FingerprintContent {
         schema_version: SCHEMA_VERSION,
-        tool_versions: ToolVersions { bindgen, rustc },
+        tool_versions,
         source_commit,
         headers,
         entries: parse_entries(&bindings)?,
@@ -780,6 +871,11 @@ mod tests {
             content,
             overall_digest: "test".to_owned(),
         }
+    }
+
+    #[test]
+    fn header_extractor_matches_fixture() {
+        qualify_extractor(&crate::get_repo_root()).unwrap();
     }
 
     #[test]

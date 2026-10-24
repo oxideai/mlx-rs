@@ -306,18 +306,13 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
             .and_then(|_| crate::verify_oracle_boundary::verify_value(repo_root, &boundary_args)),
         (Mode::Pre, _) => crate::verify_oracle_boundary::verify_value(repo_root, &boundary_args),
     };
-    let fingerprint = match &tuple {
-        Ok(_) => [OLD_COMMIT, TARGET_COMMIT]
-            .into_iter()
-            .map(|reference| {
-                let path = repo_root.join(format!("ledger/mlx-c-{reference}.json"));
-                crate::fingerprint::verify_committed(repo_root, reference, &path)
-                    .map(|report| (reference, report))
-            })
-            .collect::<Result<BTreeMap<_, _>, _>>()
-            .map(|reports| json!(reports)),
-        Err(error) => Err(error.clone()),
-    };
+    let fingerprint = tuple.as_ref().map_err(Clone::clone).and_then(|_| {
+        let abi = &ledger.as_ref().map_err(Clone::clone)?["abi"];
+        if abi["old_source_commit"] != OLD_COMMIT || abi["target_source_commit"] != TARGET_COMMIT {
+            return Err("ABI classification does not match the admission tuple".into());
+        }
+        Ok(abi.clone())
+    });
     let ffi = match (&options.ffi_report, workspace_commit.as_deref()) {
         (Some(path), Ok(commit)) => crate::verify_ffi::workspace_target_ids(repo_root)
             .and_then(|inventory| {

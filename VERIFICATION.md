@@ -251,6 +251,36 @@ with the old-tuple boundary base and `--allow-local-ffi` for local evidence.
 The prior delta classification is retained in
 `ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f-classification.json`.
 
+`ledger/abi-toolchain.json` pins the full Rust compiler identity and bindgen version.
+Install that compiler with rustfmt before running the ledger gate:
+
+    rustup toolchain install "$(python3 -c 'import json; print(json.load(open("ledger/abi-toolchain.json"))["rustc"].split()[1])')" --profile minimal --component rustfmt
+    export MLX_RS_ABI_OUTPUT_DIR="$BUMP_ROOT/reports/abi"
+    cargo xtask verify-ledger
+
+`verify-ledger` regenerates both immutable commits from the active classification with that
+same toolchain, checks the current pin belongs to the tuple, and validates every delta entry
+against its human classification. Missing, extra or mismatched classifications fail. Unchanged
+entities inherited from the old pin do not require new classifications. The generator rejects
+compiler or bindgen version drift. Rust selection is confined to extraction subprocesses;
+product and xtask checks continue to use the selected stable toolchain.
+
+Inventories and `delta.json` are generated artifacts, retained under `MLX_RS_ABI_OUTPUT_DIR`
+(default `target/abi-inventory`). Ordinary CI uploads them as `current-abi-inventory`; bump
+runs include them in `bump-evidence`. The generation time is logged separately from API
+extraction. `fingerprint --ref <commit> --out <path>` and `fingerprint-delta --old <file>
+--new <file>` remain available for inspection; run the generator under the recorded Rust
+compiler. For a new bump, freeze the old/target commits in the classification and admission
+tuple, generate both inventories, and classify the resulting delta. Keep the toolchain pin
+and classifications in Git; review a toolchain change with regenerated evidence for both sides.
+
+Every ABI extraction checks `xtask/tests/fixtures/abi-extractor`, a small C header set with
+independent expected entries for functions, typedefs, structs, unions, enums, callbacks,
+function-pointer fields, constants and owned handles. The same fixture runs in xtask tests
+using the recorded rustfmt, which must be installed even when testing on a newer stable Rust.
+An extractor that drops an entity on both sides cannot silently erase that class of delta.
+The linked-symbol check remains separate: header inventory cannot prove linked exports.
+
 `python3 -B xtask/provision_checkpoints.py --cache "$BUMP_ROOT/checkpoints" --output
 "$BUMP_ROOT/reports/checkpoints"` downloads 6,199,630,244 bytes across six checkpoints and two
 tokenizer directories. `conformance/mlx-lm/bump-oracle.json` pins every repository revision and
@@ -351,10 +381,11 @@ directory is removed after its report and log are written. Free disk is logged b
 API extraction nightly, and uses the qualified default configuration's conformance, optimizer,
 compile-state and transform executions for semantic/state admission. These suites do not run a
 second time. Local `--suite-results` and `--rerun-suites` remain optional overrides for semantic/state
-evidence; configuration reports are still required. The final aggregate uses the Rust compiler
-version recorded in both committed ABI fingerprints; the job installs its rustfmt component and verifies the full compiler version
-before admission. It consumes those reports and the FFI job's report, validates
-the committed replay, rebuilds both ABI fingerprints, and checks the compiled API and ledger.
+evidence; configuration reports are still required. ABI extraction uses the compiler recorded in
+`ledger/abi-toolchain.json`; the job installs its rustfmt component and verifies the full compiler
+version before admission. It consumes those reports and the FFI job's report, validates
+the committed replay and checks the compiled API and ledger. Ledger verification generates both ABI
+inventories and their delta once for the aggregate verdict.
 FFI inventory validation uses Cargo metadata with resolved features and workspace membership;
 it never runs Cargo test discovery or rebuilds MLX. Aggregate admission calls `verify-ledger`
 once to extract and qualify the API inventory, compare the baseline, and check ledger references.

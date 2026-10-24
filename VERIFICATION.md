@@ -136,7 +136,8 @@ Install the extraction toolchain without changing the active toolchain:
 host and uses the pinned compiler and rustdoc explicitly. Use `MLX_RS_API_TARGET_DIR` for scratch
 builds and per-configuration JSON files, and `MLX_RS_METAL_PATH` for scratch metallibs. The default
 build directory is `target/api-inventory`. Nightly targets are separate from stable targets.
-Each feature set has its own Cargo target directory, including `safetensors` variants.
+Feature sets with identical `mlx-sys` features share a Cargo target directory: CPU-only,
+Metal, and Metal JIT each have one directory, shared with their `safetensors` variant.
 
 The scope is `mlx-rs`. The four API feature sets are `default`, `cpu-only`
 (`--no-default-features --features accelerate`), `safetensors` (default plus `safetensors`),

@@ -783,6 +783,29 @@ mod tests {
     }
 
     #[test]
+    fn header_extractor_matches_fixture() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/abi-extractor");
+        let paths = bindgen_config::discover_headers(&root).unwrap();
+        let headers = paths
+            .iter()
+            .map(|path| bindgen_config::relative_header(&root, path).unwrap())
+            .collect::<Vec<_>>();
+        let bindings = bindgen_config::builder(&root, &paths)
+            .generate()
+            .unwrap()
+            .to_string();
+        let actual = serde_json::json!({
+            "headers": headers,
+            "entries": parse_entries(&bindings).unwrap(),
+        });
+        let expected: serde_json::Value = serde_json::from_str(include_str!(
+            "../tests/fixtures/abi-extractor/expected.json"
+        ))
+        .unwrap();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
     fn signature_canonicalization_ignores_formatting_noise() {
         let compact = r#"
             extern "C" { pub fn mlx_add(x:*const mlx_array,y:mlx_array)->::std::os::raw::c_int; }

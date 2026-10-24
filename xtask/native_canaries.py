@@ -117,7 +117,7 @@ def run(build_root, reports):
                 report["array_compile_command"] = array_compile
                 exports_path = reports / "exports" / (config["id"] + ".json")
                 exports_path.parent.mkdir(exist_ok=True)
-                export_command = ["cargo", "run", "-p", "xtask", "--", "linked-exports",
+                export_command = ["cargo", "xtask", "linked-exports",
                                   "--build", str(build), "--report", str(exports_path)]
                 export_result = subprocess.run(export_command, cwd=ROOT, stdout=log, stderr=log)
                 report["linked_exports"] = json.loads(exports_path.read_text())
@@ -152,7 +152,7 @@ def run(build_root, reports):
         (reports / (config["id"] + ".json")).write_text(json.dumps(report, indent=2) + "\n")
         retain_admission_files(build, report)
         if report["verdict"] == "pass":
-            subprocess.run(["cargo", "run", "-p", "xtask", "--", "linked-exports", "--verify",
+            subprocess.run(["cargo", "xtask", "linked-exports", "--verify",
                             str(exports_path)], cwd=ROOT, check=True)
         subprocess.run(["df", "-h", str(build_root)], check=True)
         print(f'{config["id"]}: {report["verdict"]}, {report["elapsed_seconds"]:.1f}s', flush=True)

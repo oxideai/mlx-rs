@@ -31,6 +31,9 @@
   scripts.validate.exec = ''
     set -e
     echo "=== fmt ==="
+    cargo fmt --manifest-path xtask/Cargo.toml -- --check
+    cargo clippy --manifest-path xtask/Cargo.toml -- -D warnings
+    cargo test --manifest-path xtask/Cargo.toml
     cargo fmt -- --check
     echo "=== clippy ==="
     cargo clippy -- -D warnings
@@ -42,6 +45,9 @@
 
   scripts.validate-fast.exec = ''
     set -e
+    cargo fmt --manifest-path xtask/Cargo.toml -- --check
+    cargo clippy --manifest-path xtask/Cargo.toml -- -D warnings
+    cargo test --manifest-path xtask/Cargo.toml
     cargo fmt -- --check
     cargo clippy -- -D warnings
     # Skip doctests: they dominate wall clock (196s of a ~220s run).
@@ -103,6 +109,6 @@ SHIM
     echo "  validate        fmt + clippy + full test suite (matches CI)" >&2
     echo "  validate-fast   the same without doctests" >&2
     echo "  cargo build --workspace       builds mlx-c + MLX (slow the first time)" >&2
-    echo "  cargo run -p xtask [tag]      diff mlx-c bindings against a newer tag" >&2
+    echo "  cargo xtask <command>         runs repository verification tools" >&2
   '';
 }

@@ -449,6 +449,20 @@ fn build_evidence(log: &str, metadata: &Value) -> Result<BuildEvidence, String> 
     })
 }
 
+fn execution_configuration(c: &Configuration, bump_run: bool) -> Configuration {
+    let mut c = c.clone();
+    c.checkpoints_required &= bump_run;
+    c
+}
+
+fn report_exit_code(code: i32, report: &Value) -> i32 {
+    if code == 0 && report["verdict"] != "pass" {
+        1
+    } else {
+        code
+    }
+}
+
 fn checkpoint_excluded(c: &Configuration, run: &Value) -> bool {
     !c.checkpoints_required
         && run["id"] == "mlx-lm::test::real_checkpoints"
@@ -634,6 +648,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
         .iter()
         .find(|c| c.id == args[0])
         .ok_or("unknown configuration id")?;
+    let c = &execution_configuration(c, std::env::var("MLX_RS_BUMP_RUN").as_deref() == Ok("1"));
     let path = PathBuf::from(&args[2]);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -739,17 +754,13 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
         report["verdict"] = "fail".into();
         report["error"] = error.into();
     }
-    if let Err(error) = fs::write(&path, serde_json::to_vec_pretty(&report).unwrap()) {
-        eprintln!(
-            "failed to write {}: {error}; preserving cargo exit {code}",
-            path.display()
-        );
-    }
+    fs::write(&path, serde_json::to_vec_pretty(&report).unwrap())
+        .map_err(|error| format!("failed to write {}: {error}", path.display()))?;
     eprintln!(
         "configuration {}: {}; cargo exit {code}",
         c.id, report["verdict"]
     );
-    Ok(code)
+    Ok(report_exit_code(code, &report))
 }
 
 #[cfg(test)]

@@ -172,7 +172,8 @@
       "default_features": true,
       "features": [
         "accelerate",
-        "metal"
+        "metal",
+        "mlx-lm/oracle-hooks"
       ],
       "verification": [
         "build",
@@ -216,6 +217,10 @@
           "accelerate",
           "default",
           "metal"
+        ],
+        "mlx-lm": [
+          "default",
+          "oracle-hooks"
         ]
       },
       "checkpoints_required": true

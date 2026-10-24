@@ -178,46 +178,6 @@ jobs:
       - name: Install the API extraction toolchain
         if: ${{ !cancelled() }}
         run: rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
-      - name: Record semantic and state suites
-        if: ${{ !cancelled() && steps.python.outcome == 'success' }}
-        shell: python3 -B {0}
-        run: |
-          import json
-          import os
-          import pathlib
-          import subprocess
-
-          subprocess.run(["df", "-h", os.environ["BUMP_ROOT"]], check=True)
-          root = pathlib.Path.cwd()
-          reports = pathlib.Path(os.environ["BUMP_ROOT"]) / "reports"
-          reports.mkdir(parents=True, exist_ok=True)
-
-          def git(directory, *args):
-              return subprocess.check_output(["git", "-C", str(directory), *args], text=True).strip()
-
-          report = {
-              "schema_version": 1,
-              "source_commit": git(root, "rev-parse", "HEAD"),
-              "mlx_c_commit": git(root / "mlx-sys/src/mlx-c", "rev-parse", "HEAD"),
-              "suites": [],
-          }
-          for suite in ["conformance", "state_optimizers", "state_compile", "state_transforms"]:
-              command = ["cargo", "test", "-p", "mlx-tests", "--test", suite, "--", "--test-threads=1"]
-              with (reports / (suite + ".log")).open("w") as log:
-                  result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT)
-              report["suites"].append({
-                  "id": suite,
-                  "command": command,
-                  "exit_code": result.returncode,
-                  "verdict": "pass" if result.returncode == 0 else "fail",
-              })
-          report["source_clean"] = not git(root, "status", "--porcelain", "--untracked-files=normal")
-          report["mlx_c_clean"] = not git(root / "mlx-sys/src/mlx-c", "status", "--porcelain", "--untracked-files=normal")
-          passed = all(suite["verdict"] == "pass" for suite in report["suites"])
-          report["verdict"] = "pass" if passed else "fail"
-          (reports / "suite-results.json").write_text(json.dumps(report, indent=2) + "\n")
-          subprocess.run(["df", "-h", os.environ["BUMP_ROOT"]], check=True)
-          raise SystemExit(0 if passed else 1)
       - name: Install the recorded ABI fingerprint compiler
         id: fingerprint-toolchain
         if: ${{ !cancelled() && steps.python.outcome == 'success' }}
@@ -244,22 +204,13 @@ jobs:
               raise SystemExit(f"ABI fingerprint compiler mismatch: {actual} != {expected}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               output.write(f"toolchain={toolchain}\n")
-      - name: Prepare the compiled API evidence for admission
-        id: api-evidence
-        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' }}
-        env:
-          RUSTUP_TOOLCHAIN: ${{ steps.fingerprint-toolchain.outputs.toolchain }}
-        run: |
-          df -h "$BUMP_ROOT"
-          cargo run -p xtask -- verify-ledger > "$BUMP_ROOT/reports/ledger.json" 2> "$BUMP_ROOT/reports/ledger.log"
-          df -h "$BUMP_ROOT"
       - uses: actions/download-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: verify-ffi-calibration
           path: ${{ runner.temp }}/bump-canaries/reports/ffi
       - name: Admit the exact checkout SHA
-        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' && steps.api-evidence.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.fingerprint-toolchain.outcome == 'success' }}
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -281,7 +232,7 @@ jobs:
           done
           cargo run -p xtask -- verify-bump --admit --boundary-base "$boundary_base" \
             --ffi-report "$BUMP_ROOT/reports/ffi/verify-ffi.json" \
-            --suite-results "$BUMP_ROOT/reports/suite-results.json" "${args[@]}" \
+            "${args[@]}" \
             2> >(tee "$BUMP_ROOT/reports/admission.stderr.log" >&2) \
             | tee "$BUMP_ROOT/reports/admission.json"
           df -h "$BUMP_ROOT"

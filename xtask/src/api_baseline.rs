@@ -220,13 +220,7 @@ pub(crate) fn generate(repo: &Path) -> Result<ApiBaseline, String> {
 }
 
 fn extract_crate(repo: &Path, target: &Path, set: &FeatureSet) -> Result<Vec<ApiEntry>, String> {
-    let build_dir = target.join(if set.features.iter().any(|f| f == "metal-jit") {
-        "metal-jit"
-    } else if set.default_features {
-        "default"
-    } else {
-        "cpu-only"
-    });
+    let build_dir = target.join(&set.id);
     let json_path = build_dir.join("doc/mlx_rs.json");
     let hidden_path = build_dir.join("hidden.json");
     for hidden in [true, false] {

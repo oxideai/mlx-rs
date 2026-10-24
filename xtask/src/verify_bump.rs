@@ -113,7 +113,7 @@ struct Options {
     ffi_report: Option<PathBuf>,
     config_reports: Vec<PathBuf>,
     native_reports: Vec<PathBuf>,
-    suite_source: SuiteSource,
+    suite_source: Option<SuiteSource>,
     replay_report: PathBuf,
     waivers: PathBuf,
     allow_local_ffi: bool,
@@ -179,7 +179,7 @@ impl Options {
             ffi_report,
             config_reports,
             native_reports,
-            suite_source: suite_source.ok_or_else(usage)?,
+            suite_source,
             replay_report,
             waivers,
             allow_local_ffi,
@@ -188,7 +188,7 @@ impl Options {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] [--native-report <file> ...] (--suite-results <file>|--rerun-suites) [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
+    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] [--native-report <file> ...] [--suite-results <file>|--rerun-suites] [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
 }
 
 pub(crate) fn run(repo_root: &Path, args: &[String]) -> i32 {
@@ -243,17 +243,52 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
         Mode::Pre => OLD_COMMIT,
         Mode::Admit => TARGET_COMMIT,
     };
+    let config_paths = options
+        .config_reports
+        .iter()
+        .map(|p| resolve_path(repo_root, p))
+        .collect::<Vec<_>>();
+    let configurations = read_json(&repo_root.join("ledger/supported-feature-matrix.json"))
+        .and_then(|matrix| crate::config_report::configurations(&matrix))
+        .and_then(|configs| {
+            crate::config_report::validate_reports(repo_root, &config_paths, &configs)
+        });
+    let default_configuration = configurations.as_ref().map_err(Clone::clone).and_then(|_| {
+        config_paths
+            .iter()
+            .map(|path| read_json(path))
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .find(|report| report["configuration_id"] == "macos-arm64-default")
+            .ok_or_else(|| "missing default configuration report".to_owned())
+    });
     let suites = match (&options.suite_source, workspace_commit.as_deref()) {
-        (SuiteSource::File(path), Ok(commit)) => read_json(&resolve_path(repo_root, path))
+        (Some(SuiteSource::File(path)), Ok(commit)) => read_json(&resolve_path(repo_root, path))
             .and_then(|report| {
                 validate_suite_results(&report, commit, expected_mlx_c)?;
                 Ok(report)
             })
             .map_err(|error| format!("suite results: {error}")),
-        (SuiteSource::Rerun, Ok(commit)) => {
+        (Some(SuiteSource::Rerun), Ok(commit)) => {
             let report = rerun_suites(repo_root, commit, expected_mlx_c);
             validate_suite_results(&report, commit, expected_mlx_c).map(|_| report)
         }
+        (None, Ok(_)) => default_configuration
+            .as_ref()
+            .map_err(Clone::clone)
+            .and_then(|report| {
+                let suites = REQUIRED_SUITES
+                    .iter()
+                    .map(|suite| {
+                        let run = require_configuration_test(
+                            report,
+                            &format!("mlx-tests::test::{}", suite.id),
+                        )?;
+                        Ok(json!({"id": suite.id, "verdict": "pass", "execution": run}))
+                    })
+                    .collect::<Result<Vec<Value>, String>>()?;
+                Ok(json!({"suites": suites, "configuration_id": report["configuration_id"]}))
+            }),
         (_, Err(error)) => Err(error.clone()),
     };
     let ledger = crate::verify_ledger::verify_value(repo_root, &[]);
@@ -369,12 +404,7 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
             6,
             "feature_matrix",
             "supported feature matrix",
-            read_json(&repo_root.join("ledger/supported-feature-matrix.json"))
-                .and_then(|matrix| crate::config_report::configurations(&matrix))
-                .and_then(|configs| {
-                    let paths = options.config_reports.iter().map(|p| resolve_path(repo_root, p)).collect::<Vec<_>>();
-                    crate::config_report::validate_reports(repo_root, &paths, &configs)
-                }),
+            configurations,
         ),
         check(6, "bump_canaries", "linked exports, native canaries and real checkpoints",
             crate::bump_evidence::validate(repo_root,
@@ -395,8 +425,8 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
         check(
             0,
             "sentinel",
-            "mlx-lm sentinel presence",
-            validate_sentinel(repo_root),
+            "mlx-lm parity and sentinel execution",
+            default_configuration.as_ref().map_err(Clone::clone).and_then(|report| validate_sentinel(repo_root, report)),
         ),
         check(
             0,
@@ -1363,7 +1393,29 @@ fn ledger_waiver_scopes(repo_root: &Path) -> Result<BTreeSet<String>, String> {
         .collect()
 }
 
-fn validate_sentinel(repo_root: &Path) -> Result<Value, String> {
+fn require_configuration_test(report: &Value, id: &str) -> Result<Value, String> {
+    let run = report["tests"]
+        .as_array()
+        .and_then(|runs| runs.iter().find(|run| run["id"] == id))
+        .ok_or_else(|| format!("missing configuration test {id}"))?;
+    if run["outcome"] != "pass"
+        || run["passed"].as_u64().unwrap_or(0) == 0
+        || run["failed"] != 0
+        || run["ignored"] != 0
+        || run["filtered_out"] != 0
+        || run["not_run"] != false
+        || run["summaries"] != 1
+    {
+        return Err(format!(
+            "configuration test {id} did not execute completely"
+        ));
+    }
+    Ok(run.clone())
+}
+
+fn validate_sentinel(repo_root: &Path, report: &Value) -> Result<Value, String> {
+    let parity = require_configuration_test(report, "mlx-lm::test::parity")?;
+    let sentinel = require_configuration_test(report, "mlx-lm::test::sentinel")?;
     let root = repo_root.join("conformance/sentinel/fixtures/tiny-llama");
     let expectations = read_json(&root.join("expectations.json"))?;
     require_schema(&expectations, "sentinel expectations")?;
@@ -1386,12 +1438,10 @@ fn validate_sentinel(repo_root: &Path) -> Result<Value, String> {
             return Err(format!("sentinel artifact {name} digest mismatch"));
         }
     }
-    if expectations["qualification"]["comparator_rejects"] != true
-        || !repo_root.join("mlx-lm/tests/sentinel.rs").is_file()
-    {
-        return Err("sentinel qualification or executing test is missing".to_owned());
+    if expectations["qualification"]["comparator_rejects"] != true {
+        return Err("sentinel comparator qualification is missing".to_owned());
     }
-    Ok(json!({"fixture": "tiny-llama", "qualification": "present"}))
+    Ok(json!({"fixture": "tiny-llama", "parity": parity, "sentinel": sentinel}))
 }
 
 fn verify_race_regression(repo_root: &Path) -> Result<Value, String> {
@@ -2813,5 +2863,81 @@ mod tests {
             .unwrap()
             .iter()
             .any(|item| item.as_str().unwrap().contains(TARGET_COMMIT)));
+    }
+
+    #[test]
+    fn sentinel_fixtures_do_not_replace_execution() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let mut report = json!({"tests": []});
+        for id in ["mlx-lm::test::parity", "mlx-lm::test::sentinel"] {
+            assert!(validate_sentinel(root, &report).is_err());
+            report["tests"].as_array_mut().unwrap().push(json!({
+                "id": id, "outcome": "pass", "passed": 2, "failed": 0, "ignored": 0,
+                "filtered_out": 0, "not_run": false, "summaries": 1
+            }));
+        }
+        validate_sentinel(root, &report).unwrap();
+        report["tests"].as_array_mut().unwrap().remove(0);
+        assert!(validate_sentinel(root, &report).is_err());
+    }
+
+    #[test]
+    fn admission_defaults_to_configuration_suites_and_preserves_overrides() {
+        let parse = |args: &[&str]| {
+            Options::parse(
+                Path::new("."),
+                &args.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
+            )
+        };
+        assert!(parse(&["--admit"]).unwrap().suite_source.is_none());
+        assert!(matches!(
+            parse(&["--admit", "--rerun-suites"]).unwrap().suite_source,
+            Some(SuiteSource::Rerun)
+        ));
+        assert!(matches!(
+            parse(&["--admit", "--suite-results", "suites.json"])
+                .unwrap()
+                .suite_source,
+            Some(SuiteSource::File(_))
+        ));
+        assert!(parse(&[
+            "--admit",
+            "--rerun-suites",
+            "--suite-results",
+            "suites.json"
+        ])
+        .is_err());
+    }
+
+    #[test]
+    fn execution_evidence_rejects_missing_skipped_or_failed_harnesses() {
+        for id in [
+            "mlx-lm::test::parity",
+            "mlx-lm::test::sentinel",
+            "mlx-tests::test::conformance",
+            "mlx-tests::test::state_optimizers",
+            "mlx-tests::test::state_compile",
+            "mlx-tests::test::state_transforms",
+        ] {
+            let report = json!({"tests": [{"id": id, "outcome": "pass", "passed": 2, "failed": 0, "ignored": 0, "filtered_out": 0, "not_run": false, "summaries": 1}]});
+            require_configuration_test(&report, id).unwrap();
+            assert!(require_configuration_test(&json!({"tests": []}), id).is_err());
+            for (field, value) in [
+                ("passed", json!(0)),
+                ("failed", json!(1)),
+                ("ignored", json!(1)),
+                ("filtered_out", json!(1)),
+                ("not_run", json!(true)),
+                ("summaries", json!(0)),
+                ("outcome", json!("fail")),
+            ] {
+                let mut bad = report.clone();
+                bad["tests"][0][field] = value;
+                assert!(
+                    require_configuration_test(&bad, id).is_err(),
+                    "{id}: {field}"
+                );
+            }
+        }
     }
 }

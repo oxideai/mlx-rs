@@ -497,3 +497,47 @@ fn qualification_failure_overrides_successful_cargo_exit() {
     assert_eq!(report_exit_code(0, &json!({"verdict": "pass"})), 0);
     assert_eq!(report_exit_code(101, &json!({"verdict": "fail"})), 101);
 }
+
+#[test]
+fn identity_creates_product_lockfile_once() {
+    let repo = tempfile::tempdir().unwrap();
+    let root = repo.path();
+    fs::write(
+        root.join("Cargo.toml"),
+        "[package]\nname = \"product\"\nversion = \"0.1.0\"\nedition = \"2021\"\n[lib]\npath = \"lib.rs\"\n[workspace]\n",
+    )
+    .unwrap();
+    fs::write(root.join("lib.rs"), "").unwrap();
+    let native = root.join("mlx-sys/src/mlx-c");
+    fs::create_dir_all(&native).unwrap();
+    fs::write(native.join("CMakeLists.txt"), "GIT_TAG v0.32.2)\n").unwrap();
+    output(root, &["git", "init", "-q"]).unwrap();
+    output(
+        root,
+        &[
+            "git",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "--allow-empty",
+            "-qm",
+            "fixture",
+        ],
+    )
+    .unwrap();
+    let lock_path = root.join("Cargo.lock");
+    assert!(!lock_path.exists());
+    let first = identity(root).unwrap();
+    let lock = fs::read_to_string(&lock_path).unwrap();
+    assert!(lock.contains("name = \"product\""));
+    assert!(!lock.contains("name = \"xtask\""));
+    let retained = format!("{lock}\n# retained resolution\n");
+    fs::write(&lock_path, &retained).unwrap();
+    let second = identity(root).unwrap();
+    assert_ne!(first["cargo_lock_sha256"], second["cargo_lock_sha256"]);
+    assert_eq!(fs::read_to_string(lock_path).unwrap(), retained);
+}

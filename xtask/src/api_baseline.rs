@@ -1116,8 +1116,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         if !args.is_empty() && (args.len() != 2 || !matches!(args[0].as_str(), "--out" | "--check"))
         {
             return Err(
-                "usage: cargo run -p xtask -- api-baseline [--out PATH | --check PATH | --qualify]"
-                    .into(),
+                "usage: cargo xtask api-baseline [--out PATH | --check PATH | --qualify]".into(),
             );
         }
         let baseline = generate(repo)?;

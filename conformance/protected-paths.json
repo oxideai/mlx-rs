@@ -9,10 +9,8 @@
     "conformance/mlx-lm/**",
     "mlx-lm/tests/parity.rs",
     "mlx-lm/tests/parity/**",
-    "xtask/src/verify_lm_parity.rs",
     "conformance/qualify_gguf_save.py",
     "conformance/qualification/gguf-save.json",
-    "ledger/mlx-lm-parity.json",
     "xtask/src/verify_lm_features.rs"
   ],
   "implementation_paths": [

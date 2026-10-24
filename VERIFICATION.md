@@ -1,15 +1,23 @@
 # Verification
 
+`cargo xtask <command>` is the root alias for
+`cargo run --manifest-path xtask/Cargo.toml -- <command>`. Tooling has its own
+workspace and lockfile, so its dependency features cannot unify with product
+crates. Its subprocesses run in the product workspace. CI checks xtask with
+explicit `cargo fmt`, `cargo clippy`, and `cargo test` commands using
+`--manifest-path xtask/Cargo.toml`; root `--workspace` commands cover only product
+crates. The FFI inventory likewise contains only product test binaries.
+
 ## FFI leak and use-after-free gate
 
-    cargo run -p xtask -- verify-ffi
-    cargo run -p xtask -- verify-ffi --guard-malloc
+    cargo xtask verify-ffi
+    cargo xtask verify-ffi --guard-malloc
 
 For admission, run the qualified combined gate from a clean checkout and put its artifacts outside
 that checkout:
 
     mkdir -p "$RUNNER_TEMP/ffi-gate"
-    cargo run -p xtask -- verify-ffi --calibrate --guard-malloc \
+    cargo xtask verify-ffi --calibrate --guard-malloc \
       --budget-seconds 3600 --leaks-timeout-seconds 600 \
       --guard-malloc-timeout-seconds 1200 \
       --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
@@ -72,13 +80,13 @@ CPU-only stable debug/release and Metal JIT stable debug lanes, including packag
 Rust profile, toolchain, resolved backend features and native CMake settings. Run each configuration with its own
 `CARGO_TARGET_DIR` and put reports outside the checkout:
 
-    cargo run -p xtask -- config-report macos-arm64-default \
+    cargo xtask config-report macos-arm64-default \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-default.json"
-    cargo run -p xtask -- config-report macos-arm64-cpu-only \
+    cargo xtask config-report macos-arm64-cpu-only \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
-    cargo run -p xtask -- config-report macos-arm64-cpu-only-release \
+    cargo xtask config-report macos-arm64-cpu-only-release \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only-release.json"
-    cargo run -p xtask -- config-report macos-arm64-metal-jit \
+    cargo xtask config-report macos-arm64-metal-jit \
       --report "$RUNNER_TEMP/config-reports/macos-arm64-metal-jit.json"
 
 Use the selected toolchain for the entire invocation; `macos-arm64-default-msrv` requires Rust
@@ -110,7 +118,7 @@ Pass one `--config-report <file>` per required configuration to `verify-bump`. I
 duplicate, stale, failed or skipped evidence and configuration mismatches. To run only this admission
 check against the current checkout:
 
-    cargo run -p xtask -- config-report --verify "$RUNNER_TEMP/config-reports/"*.json
+    cargo xtask config-report --verify "$RUNNER_TEMP/config-reports/"*.json
 
 CI uploads these reports and logs even when tests fail. Ordinary PR runs do not download
 checkpoints and their workspace reports explicitly exclude the manifest-absent `NOT RUN`. Bump runs
@@ -129,7 +137,7 @@ Fixture presence and digests alone do not establish sentinel execution.
 Install the extraction toolchain without changing the active toolchain:
 
     rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
-    cargo run -p xtask -- verify-ledger
+    cargo xtask verify-ledger
 
 `xtask/api-nightly.txt` pins nightly for rustdoc JSON extraction only. `xtask` builds on stable;
 `public-api = 0.50.0` normalizes JSON schema 55. Extraction requires an `aarch64-apple-darwin`
@@ -185,8 +193,9 @@ and supply a one-line `rationale`. This classification currently accepts only th
 inventory target, checks that the named public function carries the exact cfg, and rejects a
 path present in any supported feature set. It does not admit that wrapper to the supported surface.
 
-The separate `mlx-lm` parity check still uses `xtask/src/source_api.rs`; it is not compiled API
-evidence for `mlx-rs`.
+The mlx-lm [support decisions](mlx-lm/SUPPORT.md) describe its supported subset.
+Its executed model parity tests and external feature consumers remain separate
+from compiled API evidence for `mlx-rs`.
 
 Regenerate with `api-baseline --out ledger/rust-api-baseline.json` and review the diff. CI runs
 extraction, its qualification controls, baseline comparison, and ledger verification once through
@@ -323,10 +332,10 @@ from the export verdict, and unexpected exports do not skip the native test case
 
 To inspect an existing native build, or Cargo's actual build-script link resolution:
 
-    cargo run -p xtask -- linked-exports --build "$BUMP_ROOT/native/native-cpu-debug" \
+    cargo xtask linked-exports --build "$BUMP_ROOT/native/native-cpu-debug" \
       --report "$BUMP_ROOT/reports/exports.json"
     cargo check -p mlx-sys --message-format=json > "$BUMP_ROOT/reports/cargo-artifacts.json"
-    cargo run -p xtask -- linked-exports --cargo-output "$BUMP_ROOT/reports/cargo-artifacts.json" \
+    cargo xtask linked-exports --cargo-output "$BUMP_ROOT/reports/cargo-artifacts.json" \
       --report "$BUMP_ROOT/reports/cargo-exports.json"
 
 `linked-exports --verify <report>` rehashes and rescans the archives and checks the current planned
@@ -355,7 +364,7 @@ submodule change, which must record the old tuple.
 
 To check just configuration, native and checkpoint evidence locally:
 
-    cargo run -p xtask -- verify-bump --bump-evidence-only \
+    cargo xtask verify-bump --bump-evidence-only \
       --config-report "$BUMP_ROOT/reports/macos-arm64-default.json" \
       --config-report "$BUMP_ROOT/reports/macos-arm64-metal-jit.json" \
       --config-report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json" \

@@ -23,15 +23,20 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo --version
+      - name: Check xtask workspace
+        run: |
+          cargo fmt --manifest-path xtask/Cargo.toml -- --check
+          cargo clippy --manifest-path xtask/Cargo.toml -- -D warnings
+          cargo test --manifest-path xtask/Cargo.toml
       - run: cargo fmt -- --check
       - run: cargo clippy --message-format=json-render-diagnostics -- -D warnings > "$RUNNER_TEMP/clippy-artifacts.json"
       # Oracle trust boundary: implementation changes may not alter goldens,
       # policies, or comparator logic in the same change set (VERIFICATION.md,
       # "Anti-self-oracle rules"). Working-tree integrity always; range check
       # on PRs.
-      - run: cargo run -p xtask -- verify-oracle-boundary
+      - run: cargo xtask verify-oracle-boundary
         if: github.event_name != 'pull_request'
-      - run: cargo run -p xtask -- verify-oracle-boundary --base ${{ github.event.pull_request.base.sha }}
+      - run: cargo xtask verify-oracle-boundary --base ${{ github.event.pull_request.base.sha }}
         if: github.event_name == 'pull_request'
       - name: Check compiled public API and ledger
         env:
@@ -39,11 +44,11 @@ jobs:
           MLX_RS_METAL_PATH: ${{ runner.temp }}/api-inventory/metallib
         run: |
           rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
-          cargo run -p xtask -- verify-ledger
+          cargo xtask verify-ledger
 
       - name: Check current linked exports
         if: ${{ !cancelled() }}
-        run: cargo run -p xtask -- linked-exports --cargo-output "$RUNNER_TEMP/clippy-artifacts.json" --report "$RUNNER_TEMP/current-exports.json"
+        run: cargo xtask linked-exports --cargo-output "$RUNNER_TEMP/clippy-artifacts.json" --report "$RUNNER_TEMP/current-exports.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -94,7 +99,7 @@ jobs:
             echo "FFI mode: qualified leaks (PR validation; bump-admission runs Guard Malloc for mlx-c bumps)."
           fi
           mkdir -p "$RUNNER_TEMP/ffi-gate"
-          cargo run -p xtask -- verify-ffi --calibrate "${args[@]}" \
+          cargo xtask verify-ffi --calibrate "${args[@]}" \
             --budget-seconds 3600 --leaks-timeout-seconds 600 \
             --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
             2> >(tee "$RUNNER_TEMP/ffi-gate/stderr.log" >&2) \
@@ -140,7 +145,7 @@ jobs:
           key: ${{ matrix.rust }}-${{ matrix.runner }}-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
           workspaces: . -> ${{ steps.config-cache.outputs.target }}
           cache-directories: ${{ env.MLX_RS_METAL_PATH }}
-      - run: cargo run -p xtask -- config-report ${{ matrix.configuration }} --report "$RUNNER_TEMP/config-reports/${{ matrix.configuration }}.json"
+      - run: cargo xtask config-report ${{ matrix.configuration }} --report "$RUNNER_TEMP/config-reports/${{ matrix.configuration }}.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -153,7 +158,7 @@ jobs:
             echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/macos-arm64-metal-jit"
             echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/macos-arm64-metal-jit"
           } >> "$GITHUB_ENV"
-      - run: cargo run -p xtask -- config-report macos-arm64-metal-jit --report "$RUNNER_TEMP/config-reports/macos-arm64-metal-jit.json"
+      - run: cargo xtask config-report macos-arm64-metal-jit --report "$RUNNER_TEMP/config-reports/macos-arm64-metal-jit.json"
         if: ${{ !cancelled() && matrix.rust == 'stable' }}
       - uses: actions/upload-artifact@v4
         if: always() && matrix.rust == 'stable'
@@ -187,7 +192,7 @@ jobs:
           key: cpu-only-stable-macos-latest-${{ hashFiles('Cargo.toml', '*/Cargo.toml') }}
           workspaces: . -> ${{ steps.config-cache.outputs.target }}
           cache-directories: ${{ env.MLX_RS_METAL_PATH }}
-      - run: cargo run -p xtask -- config-report macos-arm64-cpu-only --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
+      - run: cargo xtask config-report macos-arm64-cpu-only --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -200,7 +205,7 @@ jobs:
             echo "CARGO_TARGET_DIR=$RUNNER_TEMP/config-targets/macos-arm64-cpu-only-release"
             echo "MLX_RS_METAL_PATH=$RUNNER_TEMP/config-metallib/macos-arm64-cpu-only-release"
           } >> "$GITHUB_ENV"
-      - run: cargo run --release -p xtask -- config-report macos-arm64-cpu-only-release --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only-release.json"
+      - run: cargo xtask config-report macos-arm64-cpu-only-release --report "$RUNNER_TEMP/config-reports/macos-arm64-cpu-only-release.json"
         if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@v4
         if: always()

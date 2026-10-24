@@ -41,10 +41,9 @@ mlx-lm 0.31.3 supplies the architecture and generation oracle and a Llama-family
 
 The [conformance schema](../conformance/mlx-lm/SCHEMA.md),
 [GGUF bridge](../conformance/mlx-lm/GGUF_BRIDGE.md) and
-[compatibility ledger](../ledger/mlx-lm-parity.json) distinguish these evidence
-sources. The ledger's original `NOT RUN` real-compatibility fields are historical;
-the [release identity](../ledger/mlx-lm-release-identity.json) records the later
-host reports without changing the protected ledger.
+[support decisions](SUPPORT.md) distinguish these evidence sources.
+[SKELETON.md](SKELETON.md#evidence-and-report-locations) records historical host
+results; current bump admission requires fresh executed configuration reports.
 
 ## GGUF tokenizer pairing
 
@@ -139,8 +138,9 @@ Measured on the same machine and weights with Metal, Qwen3-0.6B-4bit, a
 upstream Python's **125.5 tokens/s**: a **3.3× gap**. The gap is under investigation
 in its own throughput tranche. Reports are
 `/Users/ci/hub/scratch/mlx-lm/t4/bench/c-baseline-metal.json` and
-`/Users/ci/hub/scratch/mlx-lm/t4/bench/c-ablation-metal.json`; their identities are
-recorded in the [release record](../ledger/mlx-lm-release-identity.json).
+`/Users/ci/hub/scratch/mlx-lm/t4/bench/c-ablation-metal.json`. The retained
+[decision](SUPPORT.md#deferred-work-and-release-decisions) keeps this investigation
+separate from supported generation behavior.
 
 Ruling C is closed as “gap attributed elsewhere; no pipeline”. The no-lookahead
 ablation measured 103.0 tokens/s and explained 9.6% of the excess time per token.
@@ -159,8 +159,7 @@ These capabilities require a separate approved design and qualification:
 - Structured tool/document chat messages, XTC, logit bias and custom sampling callables.
 
 See the [completed-wave status](SKELETON.md) for tranche deliveries, report
-locations and the distinction between host qualification and this freeze's
-sandbox checks.
+locations and the limits of historical host qualification.
 
 ## Credits and license
 

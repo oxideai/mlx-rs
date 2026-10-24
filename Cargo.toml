@@ -22,9 +22,9 @@ members = [
     "mlx-lm",
     "mlx-lm-cli",
     "mlx-tests",
-    "xtask",
 ]
 
+exclude = ["xtask"]
 resolver = "2"
 
 [workspace.dependencies]

@@ -53,7 +53,7 @@ jobs:
             echo "FFI mode: qualified leaks + Guard Malloc (PR changes mlx-sys/src/mlx-c)."
           fi
           mkdir -p "$RUNNER_TEMP/ffi-gate"
-          cargo run -p xtask -- verify-ffi --calibrate --guard-malloc \
+          cargo xtask verify-ffi --calibrate --guard-malloc \
             --budget-seconds 3600 --leaks-timeout-seconds 600 \
             --guard-malloc-timeout-seconds 1200 \
             --report "$RUNNER_TEMP/ffi-gate/verify-ffi.json" \
@@ -139,7 +139,7 @@ jobs:
             else
               unset MLX_LM_REAL_CHECKPOINTS
             fi
-            cargo run -p xtask -- config-report "$config" --report "$BUMP_ROOT/reports/$config.json" || status=1
+            cargo xtask config-report "$config" --report "$BUMP_ROOT/reports/$config.json" || status=1
             du -sh "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH" || true
             rm -rf "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH"
             df -h "$BUMP_ROOT"
@@ -163,7 +163,7 @@ jobs:
           export MLX_RS_METAL_PATH="$BUMP_ROOT/metallib/macos-arm64-default-msrv"
           df -h "$BUMP_ROOT"
           status=0
-          cargo run -p xtask -- config-report macos-arm64-default-msrv --report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json" || status=$?
+          cargo xtask config-report macos-arm64-default-msrv --report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json" || status=$?
           du -sh "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH" || true
           rm -rf "$CARGO_TARGET_DIR" "$MLX_RS_METAL_PATH"
           df -h "$BUMP_ROOT"
@@ -230,7 +230,7 @@ jobs:
           for report in "$BUMP_ROOT/reports/native/"*.json; do
             args+=(--native-report "$report")
           done
-          cargo run -p xtask -- verify-bump --admit --boundary-base "$boundary_base" \
+          cargo xtask verify-bump --admit --boundary-base "$boundary_base" \
             --ffi-report "$BUMP_ROOT/reports/ffi/verify-ffi.json" \
             "${args[@]}" \
             2> >(tee "$BUMP_ROOT/reports/admission.stderr.log" >&2) \

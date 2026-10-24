@@ -5,7 +5,18 @@ Run tools directly once inside it. Build with `cargo build --workspace`.
 Run tests with `cargo test --workspace -- --test-threads=1`: MLX's global state
 is not safe for parallel tests.
 
-The devenv script `validate` runs fmt, clippy, and the full workspace test suite.
+`xtask/` is a separate Cargo workspace with its own committed lockfile.
+Run tools from the repo root with `cargo xtask <command>`; the alias selects
+`xtask/Cargo.toml`, and subprocesses operate on the product workspace.
+Root workspace commands exclude tooling, so check it explicitly:
+
+```sh
+cargo fmt --manifest-path xtask/Cargo.toml -- --check
+cargo clippy --manifest-path xtask/Cargo.toml -- -D warnings
+cargo test --manifest-path xtask/Cargo.toml
+```
+
+The devenv script `validate` runs fmt, clippy, and tests for both workspaces.
 `validate-fast` runs the same checks without doctests.
 CI uses the latest stable Rust, so new lints can appear there before they appear locally.
 
@@ -16,16 +27,16 @@ Run these checks as well as the tests for your change:
 ```sh
 cargo fmt -- --check
 cargo clippy -- -D warnings
-cargo run -p xtask -- verify-oracle-boundary --base main
+cargo xtask verify-oracle-boundary --base main
 rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
-cargo run -p xtask -- verify-ledger
-cargo run -p xtask -- api-baseline --check ledger/rust-api-baseline.json
+cargo xtask verify-ledger
+cargo xtask api-baseline --check ledger/rust-api-baseline.json
 ```
 
 Only API extraction uses the pinned nightly. Set `MLX_RS_API_TARGET_DIR` and
 `MLX_RS_METAL_PATH` to scratch directories for its native builds and metallibs.
 
-When touching FFI ownership, also run `cargo run -p xtask -- verify-ffi`.
+When touching FFI ownership, also run `cargo xtask verify-ffi`.
 
 ## Rules for every change
 

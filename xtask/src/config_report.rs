@@ -133,6 +133,9 @@ fn output(root: &Path, command: &[&str]) -> Result<String, String> {
 }
 
 pub(crate) fn identity(root: &Path) -> Result<Value, String> {
+    if !root.join("Cargo.lock").exists() {
+        output(root, &["cargo", "generate-lockfile"])?;
+    }
     let native = root.join("mlx-sys/src/mlx-c");
     let cmake = fs::read_to_string(native.join("CMakeLists.txt")).map_err(|e| e.to_string())?;
     let version = cmake

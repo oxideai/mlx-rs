@@ -186,7 +186,7 @@ fn parse_args(args: &[String]) -> (Option<String>, Vec<String>) {
         [flag, base] if flag == "--base" && !base.is_empty() => (Some(base.clone()), Vec::new()),
         _ => (
             None,
-            vec!["usage: cargo run -p xtask -- verify-oracle-boundary [--base <ref>]".into()],
+            vec!["usage: cargo xtask verify-oracle-boundary [--base <ref>]".into()],
         ),
     }
 }

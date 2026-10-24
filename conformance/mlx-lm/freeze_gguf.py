@@ -63,12 +63,6 @@ def main():
     manifest["gguf_oracle"] = {"status": "python_numpy_qualified", "fixtures": NAMES,
                                "provenance": read_json(ROOT / "fixtures" / NAMES[0] / "expectations.json")["provenance"]}
     write_json(ROOT / "manifest.json", manifest)
-    ledger_path = ROOT.parents[1] / "ledger/mlx-lm-parity.json"
-    ledger = read_json(ledger_path)
-    ledger["gguf_qualification"]["tiny_fixtures"] = "python_numpy_qualified"
-    ledger["gguf_qualification"]["python_numpy"] = "qualified; fixed f32-v1, gguf-f16-v1 and gguf-affine-v1 before Rust"
-    ledger["gguf_qualification"]["core_container_conversion"] = "Converted slots match independent raw-block NumPy derivation bit for bit; NumPy dequantization rounds affine multiply and addition in F16"
-    write_json(ledger_path, ledger)
     print("Python/NumPy GGUF corpus frozen; Rust CPU/Metal parity still requires the runtime implementation")
 
 

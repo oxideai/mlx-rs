@@ -188,7 +188,7 @@ impl Options {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] [--native-report <file> ...] [--suite-results <file>|--rerun-suites] [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
+    "usage: cargo xtask verify-bump (--pre|--admit) [--boundary-base <ref>] [--ffi-report <file>] [--config-report <file> ...] [--native-report <file> ...] [--suite-results <file>|--rerun-suites] [--replay-report <file>] [--waivers <file>] [--allow-local-ffi]".to_owned()
 }
 
 pub(crate) fn run(repo_root: &Path, args: &[String]) -> i32 {

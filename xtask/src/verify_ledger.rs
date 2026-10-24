@@ -69,7 +69,7 @@ fn parse_args(repo_root: &Path, args: &[String]) -> Result<Paths, String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-ledger [--old <file>] [--new <file>] [--classification <file>] [--api-baseline <file>] [--feature-matrix <file>] [--corpus <file>]".to_owned()
+    "usage: cargo xtask verify-ledger [--old <file>] [--new <file>] [--classification <file>] [--api-baseline <file>] [--feature-matrix <file>] [--corpus <file>]".to_owned()
 }
 
 fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {

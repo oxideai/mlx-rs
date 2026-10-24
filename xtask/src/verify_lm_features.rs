@@ -320,7 +320,7 @@ fn diagnostics(output: &std::process::Output) -> Vec<String> {
 
 pub fn run(root: &Path, args: &[String]) -> i32 {
     if !args.is_empty() {
-        eprintln!("usage: cargo run -p xtask -- verify-lm-features");
+        eprintln!("usage: cargo xtask verify-lm-features");
         return 2;
     }
     match verify(root) {

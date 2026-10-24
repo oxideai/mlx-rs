@@ -310,11 +310,11 @@ fn parse_delta_args(args: &[String]) -> Result<(PathBuf, PathBuf), String> {
 }
 
 fn fingerprint_usage() -> String {
-    "usage: cargo run -p xtask -- fingerprint --ref <commit> [--out <path>]".to_owned()
+    "usage: cargo xtask fingerprint --ref <commit> [--out <path>]".to_owned()
 }
 
 fn delta_usage() -> String {
-    "usage: cargo run -p xtask -- fingerprint-delta --old <file> --new <file>".to_owned()
+    "usage: cargo xtask fingerprint-delta --old <file> --new <file>".to_owned()
 }
 
 pub(crate) fn planned_exports(root: &Path) -> Result<(Vec<String>, BTreeSet<String>), String> {

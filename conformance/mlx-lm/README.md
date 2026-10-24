@@ -142,13 +142,12 @@ conformance/.venv-mlx-lm/bin/python -B conformance/mlx-lm/text_reference.py --ch
 conformance/.venv-mlx-lm/bin/python -B conformance/mlx-lm/numpy_reference/run.py
 conformance/.venv-mlx-lm/bin/python -B conformance/mlx-lm/coordinate.py
 cargo test -p mlx-lm --features oracle-hooks --test parity -- --test-threads=1
-cargo run -p xtask -- verify-lm-parity
-cargo run -p xtask -- verify-oracle-boundary --base 919622fd56fddf0268b5db22c88a2618a0bc2a1a
+cargo xtask verify-oracle-boundary --base 919622fd56fddf0268b5db22c88a2618a0bc2a1a
 ```
 
-`api-baseline` extracts only the compiled mlx-rs API. The historical
-`ledger/mlx-lm-api-baseline.json` has no supported regeneration or check command.
-`verify-lm-parity` checks the mlx-lm source mapping; it is not compiled API evidence.
+`api-baseline` extracts only the compiled mlx-rs API. The mlx-lm
+[support decisions](../../mlx-lm/SUPPORT.md) define its supported subset;
+executed parity tests and external feature consumers provide its verification.
 
 The Python-side tests for the text reference and the generator contract run
 under the pinned interpreter without extra packages:
@@ -223,8 +222,8 @@ Pure generation, comparator qualification and source/corpus checking:
 ```sh
 conformance/.venv-mlx-lm/bin/python -B -m unittest discover -s conformance/mlx-lm -p 'test_*.py'
 python3 -B conformance/mlx-lm/generate_contracts.py --check --qualify
-cargo test --offline -p xtask verify_lm_features
-cargo run --offline -p xtask -- verify-lm-features
+cargo test --offline --manifest-path xtask/Cargo.toml verify_lm_features
+cargo --offline xtask verify-lm-features
 ```
 
 Capture and freeze only these additions on the pinned MLX host:

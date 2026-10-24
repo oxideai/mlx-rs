@@ -354,7 +354,7 @@ fn parse_positive_seconds(value: Option<&String>) -> Result<u64, String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run -p xtask -- verify-ffi [--guard-malloc] [--leaks-timeout-seconds N] [--guard-malloc-timeout-seconds N] [--calibrate [--budget-seconds N] [--report PATH]]".to_owned()
+    "usage: cargo xtask verify-ffi [--guard-malloc] [--leaks-timeout-seconds N] [--guard-malloc-timeout-seconds N] [--calibrate [--budget-seconds N] [--report PATH]]".to_owned()
 }
 
 pub(crate) fn run(root_dir: &Path, args: &[String]) -> i32 {

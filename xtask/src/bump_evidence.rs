@@ -25,11 +25,17 @@ fn read(path: &Path) -> Result<Value, String> {
 }
 
 fn cases(oracle: &Value) -> Vec<String> {
-    oracle["results"]
+    oracle["contract"]["cases"]
         .as_object()
         .unwrap()
         .keys()
-        .flat_map(|name| [format!("{name}/cpu"), format!("{name}/metal")])
+        .flat_map(|name| {
+            oracle["contract"]["devices"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(move |device| format!("{name}/{}", device.as_str().unwrap()))
+        })
         .collect()
 }
 
@@ -73,21 +79,20 @@ fn collect_checkpoint_evidence(
     let oracle_path = root.join("conformance/mlx-lm/bump-oracle.json");
     let oracle = read(&oracle_path)?;
     validate_live_oracle(&report, &oracle)?;
-    let comparison_path = Path::new(report_path).with_file_name("live-oracle-comparison.json");
-    let comparison = read(&comparison_path)?;
+    let receipt_path = Path::new(report_path).with_file_name("live-oracle-generation.json");
+    let receipt = read(&receipt_path)?;
     for (key, file) in [
         ("generator_sha256", "live_oracle.py"),
         ("oracle_generator_sha256", "real_checkpoints.py"),
         ("requirements_sha256", "requirements.lock"),
         ("committed_sha256", "bump-oracle.json"),
     ] {
-        if comparison[key] != hash(&root.join("conformance/mlx-lm").join(file))? {
+        if receipt[key] != hash(&root.join("conformance/mlx-lm").join(file))? {
             return Err(format!("live oracle provenance mismatch: {key}"));
         }
     }
-    if comparison["python_version"] != "3.12.14"
-        || comparison["live_sha256"] != manifest["expected_report"]["sha256"]
-        || comparison["results_equal"] != (report["results"] == oracle["results"])
+    if receipt["python_version"] != "3.12.14"
+        || receipt["live_sha256"] != manifest["expected_report"]["sha256"]
     {
         return Err("live oracle generation receipt mismatch".into());
     }
@@ -103,7 +108,7 @@ fn collect_checkpoint_evidence(
         }
     }
     Ok(
-        json!({"oracle_sha256": hash(&oracle_path)?, "manifest_path": path, "manifest_sha256": hash(path)?, "live_sha256": manifest["expected_report"]["sha256"], "comparison": comparison, "cases": cases}),
+        json!({"oracle_sha256": hash(&oracle_path)?, "manifest_path": path, "manifest_sha256": hash(path)?, "live_sha256": manifest["expected_report"]["sha256"], "generation": receipt, "cases": cases}),
     )
 }
 
@@ -114,7 +119,7 @@ fn validate_live_oracle(report: &Value, oracle: &Value) -> Result<(), String> {
         || report["results"]
             .as_object()
             .map(|r| r.keys().collect::<Vec<_>>())
-            != oracle["results"]
+            != oracle["contract"]["cases"]
                 .as_object()
                 .map(|r| r.keys().collect::<Vec<_>>())
     {
@@ -360,17 +365,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn live_oracle_accepts_hardware_variance_but_preserves_contract() {
+    fn live_oracle_requires_complete_results_for_the_input_contract() {
         let oracle: Value =
             serde_json::from_str(include_str!("../../conformance/mlx-lm/bump-oracle.json"))
                 .unwrap();
         let mut live = oracle.clone();
-        live["results"]["qwen3-06b-4bit"]["cpu"]["greedy_ids"][0] = json!(123);
+        for name in oracle["contract"]["cases"].as_object().unwrap().keys() {
+            for device in ["cpu", "metal"] {
+                live["results"][name][device] = json!({
+                    "completed": true,
+                    "greedy_ids": vec![123; 32],
+                    "greedy_steps": vec![json!({"top1_id": 123}); 32],
+                });
+            }
+        }
         assert!(validate_live_oracle(&live, &oracle).is_ok());
         for pointer in [
             "/contract/cases",
             "/contract/entries",
+            "/contract/devices",
+            "/schema_version",
             "/environment",
+            "/results",
+            "/results/qwen3-06b-4bit/cpu/completed",
+            "/results/qwen3-06b-4bit/cpu/greedy_ids",
             "/results/qwen3-06b-4bit/cpu/greedy_steps",
             "/results/qwen3-06b-4bit/metal",
         ] {
@@ -378,6 +396,19 @@ mod tests {
             *bad.pointer_mut(pointer).unwrap() = Value::Null;
             assert!(validate_live_oracle(&bad, &oracle).is_err(), "{pointer}");
         }
+        let mut missing = live.clone();
+        missing["results"]
+            .as_object_mut()
+            .unwrap()
+            .remove("qwen3-06b-4bit");
+        assert!(validate_live_oracle(&missing, &oracle).is_err());
+        let mut extra = live.clone();
+        extra["results"]["extra"] = live["results"]["qwen3-06b-4bit"].clone();
+        assert!(validate_live_oracle(&extra, &oracle).is_err());
+        let mut extra_device = live.clone();
+        extra_device["results"]["qwen3-06b-4bit"]["extra"] =
+            live["results"]["qwen3-06b-4bit"]["cpu"].clone();
+        assert!(validate_live_oracle(&extra_device, &oracle).is_err());
     }
 
     #[test]

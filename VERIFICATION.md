@@ -261,16 +261,11 @@ the committed contract. Pass `--python "$BUMP_PYTHON"`, pointing at a uv-managed
 virtualenv installed with `uv pip sync --require-hashes conformance/mlx-lm/requirements.lock`.
 It runs `conformance/mlx-lm/live_oracle.py` in a separate Python process using MLX 0.32.2 and
 mlx-lm 0.31.3. The generator never imports or runs mlx-rs. The live report supplies expectations;
-`live-oracle-comparison.json` records per-case differences from committed results, hardware,
-macOS, runtime and generator/lock hashes. Committed results remain provenance, not a requirement
-that runner values match another machine's output.
-
-The frozen report comes from the independent MLX 0.32.2 / mlx-lm 0.31.3 host run recorded in
-`mlx-lm/SKELETON.md`; the original report's SHA-256 is
-`a90e92d9a676b50040ddd097395ae4c53695687422f2df0a8080cc3380cd14fa`.
-Only `contract.entries.*.local_directory` was normalized for portability. Token IDs, logits,
-configuration, provenance and existing Metal tie rules are unchanged. Updating these expectations
-is an oracle change and must remain separate from implementation changes.
+`live-oracle-generation.json` records the Python version and generator, lock, contract and
+live-report hashes. The committed oracle contains only the input contract and environment pins:
+case/device inventory, prompts and prompt IDs, generation parameters, checkpoint revisions and
+file hashes, and tokenizer entries. Numerical expectations are generated on the runner.
+Contract and oracle-generator changes must remain separate from implementation changes.
 
 Set `MLX_LM_REAL_CHECKPOINTS="$BUMP_ROOT/reports/checkpoints/real-checkpoints.json"` and
 `MLX_RS_BUMP_RUN=1`, then run `config-report` for the default configuration. Run the other four required configurations
@@ -280,8 +275,7 @@ harness in CI; the benchmark and Python regeneration harness remain local-only. 
 hashes all files and the independent report and executes all six cases on CPU and Metal. No manifest
 still means `NOT RUN`. The default report binds the live manifest and report hashes, generation receipt, committed contract
 digest and all twelve case/device executions. Admission rereads these retained files. A changed
-contract, environment, report, missing case or failed Rust/Python comparison blocks admission;
-live Python differences from the committed results are diagnostic.
+contract, environment, report, missing case or failed Rust/Python comparison blocks admission.
 
 Run `python3 -B xtask/native_canaries.py --build-root "$BUMP_ROOT/native" --reports
 "$BUMP_ROOT/reports/native"` with an isolated build directory. Reuse is allowed only for a clean nested source at the same tag. This separate CMake project builds the

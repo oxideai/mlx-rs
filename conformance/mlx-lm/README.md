@@ -520,3 +520,14 @@ The local release runs remain unexecuted until the launcher records the Python
 matrix, Rust matrix, baseline, unmodified Metal user path, and any required
 ablation/profile evidence. Compilation and pure checks do not qualify real model
 parity or performance.
+
+## Bump checkpoint contract
+
+`bump-oracle.json` retains the case/device inventory, prompts and prompt IDs,
+generation parameters, pinned checkpoint revisions and file hashes, tokenizer
+entries, and oracle environment pins. It contains no numerical results.
+`xtask/provision_checkpoints.py` verifies cached inputs and runs `live_oracle.py`
+with the pinned Python environment to generate expectations on the runner.
+Rust compares all six checkpoint cases on CPU and Metal against that live report.
+See [the bump playbook](../../VERIFICATION.md#repeatable-mlx-c-bump-playbook)
+for provisioning and execution commands.

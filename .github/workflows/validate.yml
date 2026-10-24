@@ -23,6 +23,9 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo --version
+      - name: Install the ABI extraction toolchain
+        run: |
+          rustup toolchain install "$(python3 -c 'import json; print(json.load(open("ledger/abi-toolchain.json"))["rustc"].split()[1])')" --profile minimal --component rustfmt
       - name: Check xtask workspace
         run: |
           cargo fmt --manifest-path xtask/Cargo.toml -- --check
@@ -40,11 +43,18 @@ jobs:
         if: github.event_name == 'pull_request'
       - name: Check compiled public API and ledger
         env:
+          MLX_RS_ABI_OUTPUT_DIR: ${{ runner.temp }}/abi-inventory
           MLX_RS_API_TARGET_DIR: ${{ runner.temp }}/api-inventory
           MLX_RS_METAL_PATH: ${{ runner.temp }}/api-inventory/metallib
         run: |
           rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
           cargo xtask verify-ledger
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: current-abi-inventory
+          path: ${{ runner.temp }}/abi-inventory/
 
       - name: Check current linked exports
         if: ${{ !cancelled() }}

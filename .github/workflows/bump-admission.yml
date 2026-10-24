@@ -184,26 +184,15 @@ jobs:
         shell: python3 -B {0}
         run: |
           import json
-          import os
           import pathlib
           import subprocess
 
-          ledger = pathlib.Path("ledger")
-          classification = json.loads((ledger / "target-delta-classification.json").read_text())
-          versions = {
-              json.loads((ledger / f"mlx-c-{classification[key]}.json").read_text())["tool_versions"]["rustc"]
-              for key in ["old_source_commit", "target_source_commit"]
-          }
-          if len(versions) != 1:
-              raise SystemExit("ABI fingerprints require different Rust toolchains")
-          expected = versions.pop()
+          expected = json.loads(pathlib.Path("ledger/abi-toolchain.json").read_text())["rustc"]
           toolchain = expected.split()[1]
           subprocess.run(["rustup", "toolchain", "install", toolchain, "--profile", "minimal", "--component", "rustfmt"], check=True)
           actual = subprocess.check_output(["rustup", "run", toolchain, "rustc", "--version"], text=True).strip()
           if actual != expected:
               raise SystemExit(f"ABI fingerprint compiler mismatch: {actual} != {expected}")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"toolchain={toolchain}\n")
       - uses: actions/download-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -214,7 +203,7 @@ jobs:
         shell: bash
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          RUSTUP_TOOLCHAIN: ${{ steps.fingerprint-toolchain.outputs.toolchain }}
+          MLX_RS_ABI_OUTPUT_DIR: ${{ runner.temp }}/bump-canaries/reports/abi
         run: |
           set -o pipefail
           df -h "$BUMP_ROOT"

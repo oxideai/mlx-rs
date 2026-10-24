@@ -33,8 +33,6 @@ pub(crate) fn verify_value(repo_root: &Path, args: &[String]) -> Result<Value, S
 }
 
 struct Paths {
-    old: PathBuf,
-    new: PathBuf,
     classification: PathBuf,
     api_baseline: PathBuf,
     feature_matrix: PathBuf,
@@ -43,8 +41,6 @@ struct Paths {
 
 fn parse_args(repo_root: &Path, args: &[String]) -> Result<Paths, String> {
     let mut paths = Paths {
-        old: repo_root.join("ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f.json"),
-        new: repo_root.join("ledger/mlx-c-a341b4925024b88b2c593468f16e12f5e17315da.json"),
         classification: repo_root.join("ledger/target-delta-classification.json"),
         api_baseline: repo_root.join("ledger/rust-api-baseline.json"),
         feature_matrix: repo_root.join("ledger/supported-feature-matrix.json"),
@@ -53,8 +49,6 @@ fn parse_args(repo_root: &Path, args: &[String]) -> Result<Paths, String> {
     let mut index = 0;
     while index < args.len() {
         let target = match args[index].as_str() {
-            "--old" => &mut paths.old,
-            "--new" => &mut paths.new,
             "--classification" => &mut paths.classification,
             "--api-baseline" => &mut paths.api_baseline,
             "--feature-matrix" => &mut paths.feature_matrix,
@@ -69,12 +63,16 @@ fn parse_args(repo_root: &Path, args: &[String]) -> Result<Paths, String> {
 }
 
 fn usage() -> String {
-    "usage: cargo xtask verify-ledger [--old <file>] [--new <file>] [--classification <file>] [--api-baseline <file>] [--feature-matrix <file>] [--corpus <file>]".to_owned()
+    "usage: cargo xtask verify-ledger [--classification <file>] [--api-baseline <file>] [--feature-matrix <file>] [--corpus <file>]".to_owned()
 }
 
 fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {
-    let delta = crate::fingerprint::delta_value(&paths.old, &paths.new)?;
     let classification = read_json(&paths.classification)?;
+    let (delta, abi) = crate::fingerprint::generate_delta(
+        repo_root,
+        required_string(&classification, "old_source_commit")?,
+        required_string(&classification, "target_source_commit")?,
+    )?;
     let api_baseline = read_json(&paths.api_baseline)?;
     let compiled_api_baseline = serde_json::to_value(crate::api_baseline::generate(repo_root)?)
         .map_err(|error| format!("failed to serialize compiled API baseline: {error}"))?;
@@ -93,6 +91,7 @@ fn verify_files(repo_root: &Path, paths: &Paths) -> Result<Value, String> {
         "schema_version": SCHEMA_VERSION,
         "verdict": "pass",
         "delta_counts": delta["counts"],
+        "abi": abi,
         "classified_entries": result.classified,
         "behavioral_renames": result.behavioral_renames,
         "dispositions": result.dispositions,
@@ -1225,8 +1224,6 @@ mod tests {
         )
         .unwrap();
         let paths = super::Paths {
-            old: root.path().join("old.json"),
-            new: root.path().join("new.json"),
             classification: root.path().join("classification.json"),
             api_baseline: root.path().join("api.json"),
             feature_matrix: root.path().join("features.json"),

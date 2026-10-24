@@ -12,9 +12,9 @@
       "target": {
         "exception": {
           "module": "builtins",
-          "type": "ValueError"
+          "type": "RuntimeError"
         },
-        "stage": "invoke",
+        "stage": "eval",
         "status": "error"
       },
       "target_behavior": "error",
@@ -39,6 +39,6 @@
     "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14",
-    "venv": "conformance/.venv-target"
+    "venv": "/Users/ci/hub/scratch/bump-a341b49/canonical-replay/venv"
   }
 }

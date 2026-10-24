@@ -9,6 +9,7 @@ use std::process::{Command, Stdio};
 pub(crate) struct Configuration {
     pub id: String,
     pub required: bool,
+    pub checkpoints_required: bool,
     target_triple: String,
     default_features: bool,
     features: Vec<String>,
@@ -262,7 +263,7 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
             None
         };
         if let Some(id) = heading {
-            runs.push(json!({"id": id, "passed": 0, "failed": 0, "ignored": 0, "filtered_out": 0, "not_run": false, "summaries": 0, "outcome": "incomplete", "nested_summaries": []}));
+            runs.push(json!({"id": id, "passed": 0, "failed": 0, "ignored": 0, "filtered_out": 0, "not_run": false, "not_run_reasons": [], "excluded_by_configuration": false, "summaries": 0, "outcome": "incomplete", "nested_summaries": []}));
             groups.clear();
             continue;
         }
@@ -282,6 +283,10 @@ fn parse_runs(log: &str) -> Result<Vec<Value>, String> {
         if line.contains("NOT RUN") {
             let run = runs.last_mut().ok_or("NOT RUN outside a test run")?;
             run["not_run"] = true.into();
+            run["not_run_reasons"]
+                .as_array_mut()
+                .unwrap()
+                .push(line[line.find("NOT RUN").unwrap()..].into());
         }
         if let Some(summary) = line.strip_prefix("test result: ") {
             if !summary.contains("; finished in ") {
@@ -444,6 +449,13 @@ fn build_evidence(log: &str, metadata: &Value) -> Result<BuildEvidence, String> 
     })
 }
 
+fn checkpoint_excluded(c: &Configuration, run: &Value) -> bool {
+    !c.checkpoints_required
+        && run["id"] == "mlx-lm::test::real_checkpoints"
+        && run["not_run"] == true
+        && run["not_run_reasons"] == json!(["NOT RUN: local real-checkpoint manifest not supplied"])
+}
+
 fn validate_report(
     c: &Configuration,
     report: &Value,
@@ -470,7 +482,8 @@ fn validate_report(
     if report["exit_code"] != 0 || report["verdict"] != "pass" {
         return Err(fail("failed or skipped execution"));
     }
-    if report["profile"] != c.profile
+    if report["checkpoints_required"] != c.checkpoints_required
+        || report["profile"] != c.profile
         || report["toolchain"] != c.toolchain
         || report["target_triple"] != c.target_triple
         || report["command"] != json!(test_command(c))
@@ -523,7 +536,8 @@ fn validate_report(
             return Err(fail("duplicate test run"));
         }
         if run["outcome"] != "pass"
-            || run["not_run"] != false
+            || run["excluded_by_configuration"] != checkpoint_excluded(c, run)
+            || (run["not_run"] != false && !checkpoint_excluded(c, run))
             || run["failed"] != 0
             || run["filtered_out"] != 0
             || run["summaries"].as_u64().unwrap_or(0) == 0
@@ -645,6 +659,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     report["rustc"] = output(root, &["rustc", "--version", "--verbose"])?.into();
     report["macos"] = output(root, &["sw_vers", "-productVersion"])?.into();
     report["sdk"] = output(root, &["xcrun", "--sdk", "macosx", "--show-sdk-version"])?.into();
+    report["checkpoints_required"] = c.checkpoints_required.into();
     report["profile"] = c.profile.clone().into();
     report["toolchain"] = c.toolchain.clone().into();
     report["target_triple"] = c.target_triple.clone().into();
@@ -661,7 +676,11 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     let log = fs::File::create(&log_path).map_err(|e| e.to_string())?;
     eprintln!("{}; output: {}", command.join(" "), log_path.display());
     let started = std::time::Instant::now();
-    let status = Command::new(&command[0])
+    let mut process = Command::new(&command[0]);
+    if !c.checkpoints_required {
+        process.env_remove("MLX_LM_REAL_CHECKPOINTS");
+    }
+    let status = process
         .args(&command[1..])
         .current_dir(root)
         .stdout(Stdio::from(log.try_clone().map_err(|e| e.to_string())?))
@@ -676,7 +695,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
     report["exit_code"] = code.into();
     let collected = (|| {
         let log = fs::read_to_string(&log_path).map_err(|e| e.to_string())?;
-        if c.packages.is_empty() {
+        if c.checkpoints_required {
             report["checkpoints"] = crate::bump_evidence::checkpoint_evidence(root, &log)?;
         }
         let evidence = build_evidence(&log, &meta)?;
@@ -701,6 +720,7 @@ fn execute(root: &Path, args: &[String]) -> Result<i32, String> {
                     .ok_or_else(|| format!("unknown test executable {id}"))?
             };
             run["id"] = id.into();
+            run["excluded_by_configuration"] = checkpoint_excluded(c, run).into();
         }
         report["tests"] = json!(runs);
         if identity != self::identity(root)?

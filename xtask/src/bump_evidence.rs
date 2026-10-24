@@ -37,8 +37,15 @@ pub(crate) fn checkpoint_evidence(root: &Path, log: &str) -> Result<Value, Strin
     let Some(path) = std::env::var_os("MLX_LM_REAL_CHECKPOINTS") else {
         return Ok(Value::Null);
     };
-    let path = PathBuf::from(path);
-    let manifest = read(&path)?;
+    collect_checkpoint_evidence(root, &PathBuf::from(path), Some(log))
+}
+
+fn collect_checkpoint_evidence(
+    root: &Path,
+    path: &Path,
+    log: Option<&str>,
+) -> Result<Value, String> {
+    let manifest = read(path)?;
     let report_path = manifest["expected_report"]["path"]
         .as_str()
         .ok_or("missing oracle path")?;
@@ -65,23 +72,77 @@ pub(crate) fn checkpoint_evidence(root: &Path, log: &str) -> Result<Value, Strin
     }
     let oracle_path = root.join("conformance/mlx-lm/bump-oracle.json");
     let oracle = read(&oracle_path)?;
-    if report != oracle {
-        return Err("checkpoint expectations differ from frozen oracle".into());
+    validate_live_oracle(&report, &oracle)?;
+    let comparison_path = Path::new(report_path).with_file_name("live-oracle-comparison.json");
+    let comparison = read(&comparison_path)?;
+    for (key, file) in [
+        ("generator_sha256", "live_oracle.py"),
+        ("oracle_generator_sha256", "real_checkpoints.py"),
+        ("requirements_sha256", "requirements.lock"),
+        ("committed_sha256", "bump-oracle.json"),
+    ] {
+        if comparison[key] != hash(&root.join("conformance/mlx-lm").join(file))? {
+            return Err(format!("live oracle provenance mismatch: {key}"));
+        }
+    }
+    if comparison["python_version"] != "3.12.14"
+        || comparison["live_sha256"] != manifest["expected_report"]["sha256"]
+        || comparison["results_equal"] != (report["results"] == oracle["results"])
+    {
+        return Err("live oracle generation receipt mismatch".into());
     }
     let cases = cases(&oracle);
     for case in &cases {
-        if log
-            .lines()
-            .filter(|line| line.contains(&format!("PASS: {case}:")))
-            .count()
-            != 1
-        {
+        if log.is_some_and(|log| {
+            log.lines()
+                .filter(|line| line.contains(&format!("PASS: {case}:")))
+                .count()
+                != 1
+        }) {
             return Err(format!("missing or duplicate checkpoint execution: {case}"));
         }
     }
     Ok(
-        json!({"oracle_sha256": hash(&oracle_path)?, "manifest_sha256": hash(&path)?, "cases": cases}),
+        json!({"oracle_sha256": hash(&oracle_path)?, "manifest_path": path, "manifest_sha256": hash(path)?, "live_sha256": manifest["expected_report"]["sha256"], "comparison": comparison, "cases": cases}),
     )
+}
+
+fn validate_live_oracle(report: &Value, oracle: &Value) -> Result<(), String> {
+    if report["schema_version"] != oracle["schema_version"]
+        || report["contract"] != oracle["contract"]
+        || report["environment"] != oracle["environment"]
+        || report["results"]
+            .as_object()
+            .map(|r| r.keys().collect::<Vec<_>>())
+            != oracle["results"]
+                .as_object()
+                .map(|r| r.keys().collect::<Vec<_>>())
+    {
+        return Err("live oracle contract or environment mismatch".into());
+    }
+    for devices in report["results"]
+        .as_object()
+        .ok_or("missing live results")?
+        .values()
+    {
+        if devices
+            .as_object()
+            .map(|d| d.keys().map(String::as_str).collect::<Vec<_>>())
+            != Some(vec!["cpu", "metal"])
+        {
+            return Err("live oracle device inventory mismatch".into());
+        }
+        for device in ["cpu", "metal"] {
+            let result = &devices[device];
+            if result["completed"] != true
+                || result["greedy_ids"].as_array().map(Vec::len) != Some(32)
+                || result["greedy_steps"].as_array().map(Vec::len) != Some(32)
+            {
+                return Err("incomplete live oracle case".into());
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_native(
@@ -183,7 +244,7 @@ pub(crate) fn validate(
     let matrix = read(&root.join("ledger/supported-feature-matrix.json"))?;
     let configs: Vec<_> = crate::config_report::configurations(&matrix)?
         .into_iter()
-        .filter(|c| ["macos-arm64-default", "macos-arm64-metal-jit"].contains(&c.id.as_str()))
+        .filter(|c| c.required)
         .collect();
     let mut selected = Vec::new();
     let oracle = read(&root.join("conformance/mlx-lm/bump-oracle.json"))?;
@@ -194,7 +255,21 @@ pub(crate) fn validate(
         if !configs.iter().any(|c| report["configuration_id"] == c.id) {
             continue;
         }
-        validate_checkpoints(&report, &oracle_hash, &cases(&oracle))?;
+        let config = configs
+            .iter()
+            .find(|c| report["configuration_id"] == c.id)
+            .unwrap();
+        if config.checkpoints_required {
+            validate_checkpoints(&report, &oracle_hash, &cases(&oracle))?;
+            let manifest = report["checkpoints"]["manifest_path"]
+                .as_str()
+                .ok_or("missing live manifest")?;
+            if collect_checkpoint_evidence(root, Path::new(manifest), None)?
+                != report["checkpoints"]
+            {
+                return Err("live checkpoint evidence changed after execution".into());
+            }
+        }
         if let Some(commit) = &mlx_commit {
             if commit != &report["native"]["mlx_commit"] {
                 return Err("configurations built different MLX commits".into());
@@ -283,6 +358,27 @@ fn validate_checkpoints(report: &Value, oracle_hash: &str, cases: &[String]) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn live_oracle_accepts_hardware_variance_but_preserves_contract() {
+        let oracle: Value =
+            serde_json::from_str(include_str!("../../conformance/mlx-lm/bump-oracle.json"))
+                .unwrap();
+        let mut live = oracle.clone();
+        live["results"]["qwen3-06b-4bit"]["cpu"]["greedy_ids"][0] = json!(123);
+        assert!(validate_live_oracle(&live, &oracle).is_ok());
+        for pointer in [
+            "/contract/cases",
+            "/contract/entries",
+            "/environment",
+            "/results/qwen3-06b-4bit/cpu/greedy_steps",
+            "/results/qwen3-06b-4bit/metal",
+        ] {
+            let mut bad = live.clone();
+            *bad.pointer_mut(pointer).unwrap() = Value::Null;
+            assert!(validate_live_oracle(&bad, &oracle).is_err(), "{pointer}");
+        }
+    }
 
     #[test]
     fn rejects_missing_skipped_or_changed_checkpoints() {

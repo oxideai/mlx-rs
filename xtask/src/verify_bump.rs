@@ -6,9 +6,9 @@ use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 
-const OLD_COMMIT: &str = "a1290d221f92bd020af805b7d14207eee4ec973b";
-const TARGET_COMMIT: &str = "c74db5307cc8ce122f48d97ef951b30578674e7f";
-const OLD_MLX: &str = "0.30.6";
+const OLD_COMMIT: &str = "c74db5307cc8ce122f48d97ef951b30578674e7f";
+const TARGET_COMMIT: &str = "a341b4925024b88b2c593468f16e12f5e17315da";
+const OLD_MLX: &str = "0.32.2";
 const TARGET_MLX: &str = "0.32.2";
 const LOCAL_FFI_PROCEDURE: &str = "VERIFICATION.md#ffi-leak-and-use-after-free-gate";
 const ALLOWED_REPLAY_VERDICTS: &[&str] = &[
@@ -284,7 +284,7 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
         Err(error) => Err(error.clone()),
     };
     let ffi = match (&options.ffi_report, workspace_commit.as_deref()) {
-        (Some(path), Ok(commit)) => crate::verify_ffi::discovered_target_ids(repo_root)
+        (Some(path), Ok(commit)) => crate::verify_ffi::workspace_target_ids(repo_root)
             .and_then(|inventory| {
                 read_json(&resolve_path(repo_root, path)).and_then(|report| {
                     validate_ffi_report(
@@ -318,7 +318,7 @@ fn aggregate(repo_root: &Path, options: &Options) -> Value {
         require_tracked_unchanged(repo_root, &replay_report)
     };
     let replay = replay_path
-        .and_then(|_| read_json(&replay_report))
+        .and_then(|_| fs::read_to_string(&replay_report).map_err(|e| e.to_string()))
         .and_then(|report| {
             let parent = replay_report
                 .parent()
@@ -803,7 +803,7 @@ fn validate_ffi_report(
         return Err("FFI report does not cover the ffi_safety target".to_owned());
     }
     if &inventory != expected_inventory {
-        return Err("FFI report binary inventory does not match fresh cargo discovery".to_owned());
+        return Err("FFI report binary inventory does not match workspace metadata".to_owned());
     }
     let recorded_leaks = string_set(&report["covered_binaries"]["leaks"], "FFI leak coverage")?;
     let recorded_guard = string_set(
@@ -835,10 +835,15 @@ fn validate_ffi_report(
     Ok(json!({"trust": trust, "binaries": binaries.len()}))
 }
 
-fn validate_replay_document(base: &Path, report: &Value, strict: bool) -> Result<Value, String> {
-    require_schema(report, "target replay report")?;
-    require_value(report, "command", "target-replay", "target replay report")?;
-    if report["payload_sha256"] != hash_json(&report["payload"])? {
+fn validate_replay_document(base: &Path, source: &str, strict: bool) -> Result<Value, String> {
+    let report: Value = serde_json::from_str(source).map_err(|e| e.to_string())?;
+    let fields = JsonText::new(source)?.object()?;
+    let payload = fields
+        .get("payload")
+        .ok_or("target replay report has no payload")?;
+    require_schema(&report, "target replay report")?;
+    require_value(&report, "command", "target-replay", "target replay report")?;
+    if report["payload_sha256"] != hash_bytes(payload.as_bytes())? {
         return Err("target replay payload_sha256 does not match payload".to_owned());
     }
     let double = &report["double_run"];
@@ -894,8 +899,9 @@ fn validate_replay_document(base: &Path, report: &Value, strict: bool) -> Result
                 "target expectation shard {relative} digest mismatch"
             ));
         }
-        let shard = read_json(&path)?;
-        replay_shards.insert(id.to_owned(), shard.clone());
+        let source = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        let shard: Value = serde_json::from_str(&source).map_err(|e| e.to_string())?;
+        replay_shards.insert(id.to_owned(), JsonText::new(&source)?.value()?);
         if shard["schema_version"] != 1 || shard["suite"] != id {
             return Err(format!(
                 "target expectation shard {relative} identity mismatch"
@@ -945,15 +951,18 @@ fn validate_replay_document(base: &Path, report: &Value, strict: bool) -> Result
     if report["verdict"] != "pass" {
         return Err("target replay report verdict is not pass".to_owned());
     }
-    let reconstructed = hash_json(&json!({
-        "payload": report["payload"],
-        "shards": replay_shards
-    }))?;
+    let reconstructed = hash_bytes(
+        encode_object(&BTreeMap::from([
+            ("payload".to_owned(), payload.clone()),
+            ("shards".to_owned(), encode_object(&replay_shards)),
+        ]))
+        .as_bytes(),
+    )?;
     if double["first_run_sha256"] != reconstructed || double["second_run_sha256"] != reconstructed {
         return Err("target replay double-run hash does not match payload and shards".to_owned());
     }
     let committed_provenance = strict
-        .then(|| validate_strict_replay(base, report, &seen))
+        .then(|| validate_strict_replay(base, &report, &seen))
         .transpose()?;
     Ok(json!({
         "payload_sha256": report["payload_sha256"],
@@ -1102,7 +1111,11 @@ fn validate_strict_replay(
             .as_array()
             .ok_or("target replay shard cases must be an array")?
         {
-            required_case_field(case, id, "recipe")?;
+            if id == "gguf" && case["recipe"].is_object() {
+                required_case_field(&case["recipe"], id, "kind")?;
+            } else {
+                required_case_field(case, id, "recipe")?;
+            }
             required_case_field(case, id, "input_sha256")?;
             case["input_refs"]
                 .as_array()
@@ -1578,10 +1591,150 @@ fn replay_introduction_commit(repo_root: &Path, path: &str) -> Result<String, St
         .ok_or_else(|| format!("target replay report {path} has no introduction commit"))
 }
 
+#[cfg(test)]
 fn hash_json(value: &Value) -> Result<String, String> {
-    let bytes = serde_json::to_vec(value)
-        .map_err(|error| format!("failed to serialize JSON for hashing: {error}"))?;
-    hash_bytes(&bytes)
+    hash_bytes(&canonical_json(&value.to_string())?)
+}
+
+#[cfg(test)]
+fn canonical_json(source: &str) -> Result<Vec<u8>, String> {
+    let mut parser = JsonText::new(source)?;
+    Ok(parser.value()?.into_bytes())
+}
+
+struct JsonText<'a>(&'a str);
+
+impl<'a> JsonText<'a> {
+    fn new(source: &'a str) -> Result<Self, String> {
+        // Validate syntax without rounding numbers through serde_json::Value.
+        serde_json::from_str::<serde::de::IgnoredAny>(source).map_err(|e| e.to_string())?;
+        Ok(Self(source.trim_start()))
+    }
+
+    fn consume(&mut self) -> u8 {
+        let byte = self.0.as_bytes()[0];
+        self.0 = self.0[1..].trim_start();
+        byte
+    }
+
+    fn string(&mut self) -> Result<String, String> {
+        let mut stream = serde_json::Deserializer::from_str(self.0).into_iter::<String>();
+        let value = stream.next().unwrap().map_err(|e| e.to_string())?;
+        self.0 = self.0[stream.byte_offset()..].trim_start();
+        Ok(value)
+    }
+
+    fn object(&mut self) -> Result<BTreeMap<String, String>, String> {
+        if self.consume() != b'{' {
+            return Err("expected JSON object".to_owned());
+        }
+        let mut fields = BTreeMap::new();
+        while !self.0.starts_with('}') {
+            let key = self.string()?;
+            self.consume();
+            fields.insert(key, self.value()?);
+            if !self.0.starts_with(',') {
+                break;
+            }
+            self.consume();
+        }
+        self.consume();
+        Ok(fields)
+    }
+
+    fn value(&mut self) -> Result<String, String> {
+        match self.0.as_bytes()[0] {
+            b'"' => Ok(canonical_string(&self.string()?)),
+            b'{' => Ok(encode_object(&self.object()?)),
+            b'[' => {
+                self.consume();
+                let mut values = Vec::new();
+                while !self.0.starts_with(']') {
+                    values.push(self.value()?);
+                    if !self.0.starts_with(',') {
+                        break;
+                    }
+                    self.consume();
+                }
+                self.consume();
+                Ok(format!("[{}]", values.join(",")))
+            }
+            _ => {
+                let end = self
+                    .0
+                    .find(|c: char| c.is_ascii_whitespace() || ",]}".contains(c))
+                    .unwrap_or(self.0.len());
+                let token = &self.0[..end];
+                self.0 = self.0[end..].trim_start();
+                if token.contains(['.', 'e', 'E']) && !matches!(token, "true" | "false") {
+                    let value = token.parse::<f64>().map_err(|e| e.to_string())?;
+                    if !value.is_finite() {
+                        return Err("non-finite canonical JSON number".to_owned());
+                    }
+                    Ok(python_float(value))
+                } else {
+                    Ok(if token == "-0" { "0" } else { token }.to_owned())
+                }
+            }
+        }
+    }
+}
+
+fn canonical_string(value: &str) -> String {
+    use std::fmt::Write;
+
+    let mut output = String::new();
+    for character in serde_json::to_string(value).unwrap().chars() {
+        if character >= '\u{7f}' {
+            for unit in character.encode_utf16(&mut [0; 2]) {
+                write!(output, "\\u{unit:04x}").unwrap();
+            }
+        } else {
+            output.push(character);
+        }
+    }
+    output
+}
+
+fn encode_object(fields: &BTreeMap<String, String>) -> String {
+    let fields = fields
+        .iter()
+        .map(|(key, value)| format!("{}:{value}", canonical_string(key)))
+        .collect::<Vec<_>>();
+    format!("{{{}}}", fields.join(","))
+}
+
+fn python_float(value: f64) -> String {
+    // Python uses shortest ties-to-even digits, but different exponent formatting.
+    let shortest = serde_json::Number::from_f64(value).unwrap().to_string();
+    if value == 0.0 {
+        return shortest;
+    }
+    let (mantissa, exponent) = shortest.split_once('e').unwrap_or((&shortest, "0"));
+    let sign = if value.is_sign_negative() { "-" } else { "" };
+    let mantissa = mantissa.trim_start_matches('-');
+    let point = mantissa.find('.').unwrap_or(mantissa.len());
+    let digits = mantissa.replace('.', "");
+    let leading_zeros = digits.len() - digits.trim_start_matches('0').len();
+    let exponent = exponent.parse::<i32>().unwrap() + point as i32 - leading_zeros as i32 - 1;
+    let digits = digits.trim_start_matches('0').trim_end_matches('0');
+    if !(-4..16).contains(&exponent) {
+        let (first, rest) = digits.split_at(1);
+        let dot = if rest.is_empty() { "" } else { "." };
+        return format!("{sign}{first}{dot}{rest}e{exponent:+03}");
+    }
+    let point = exponent + 1;
+    if point <= 0 {
+        format!("{sign}0.{}{digits}", "0".repeat((-point) as usize))
+    } else if point as usize >= digits.len() {
+        format!(
+            "{sign}{digits}{}.0",
+            "0".repeat(point as usize - digits.len())
+        )
+    } else {
+        let (integer, fraction) = digits.split_at(point as usize);
+        format!("{sign}{integer}.{fraction}")
+    }
 }
 
 fn hash_bytes(bytes: &[u8]) -> Result<String, String> {
@@ -2002,6 +2155,19 @@ mod tests {
     }
 
     #[test]
+    fn json_numbers_deserialize_through_untagged_values() {
+        #[derive(serde::Deserialize)]
+        #[serde(untagged)]
+        enum Scalar {
+            Float(f64),
+            Text(String),
+        }
+        let values: Vec<Scalar> = serde_json::from_str(r#"[1.25, "nan"]"#).unwrap();
+        assert!(matches!(values[0], Scalar::Float(value) if value == 1.25));
+        assert!(matches!(&values[1], Scalar::Text(value) if value == "nan"));
+    }
+
+    #[test]
     fn json_hash_matches_python_canonical_encoding() {
         let value = json!({"z": [1, true, null], "a": {"mlx": "0.32.2", "count": 2}});
 
@@ -2009,6 +2175,79 @@ mod tests {
             hash_json(&value).unwrap(),
             "sha256:9c374238cded86c892911a96b5afb7dc5dedca833e58969d0a6a55be4326c10c"
         );
+    }
+
+    fn python_canonical(expression: &str) -> Vec<u8> {
+        let output = Command::new("python3")
+            .args([
+                "-c",
+                &format!(
+                    "import json, math, random, struct, sys\nvalue = {expression}\nsys.stdout.buffer.write(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())"
+                ),
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{:?}", output);
+        output.stdout
+    }
+
+    fn assert_python_canonical(expression: &str) {
+        let expected = python_canonical(expression);
+        assert_eq!(
+            canonical_json(std::str::from_utf8(&expected).unwrap()).unwrap(),
+            expected
+        );
+    }
+
+    #[test]
+    fn canonical_json_matches_python_ascii() {
+        assert_python_canonical(
+            r#"{'z': [1, True, None], 'a': {'controls': ''.join(map(chr, range(128))), 'slash': '/\\\"'}}"#,
+        );
+    }
+
+    #[test]
+    fn canonical_json_matches_python_bmp() {
+        assert_python_canonical(
+            r#"{'é': 'árvíztűrő tükörfúrógép', 'a': '\u0080\u2028\u2029\uffff', '中': '日本語'}"#,
+        );
+    }
+
+    #[test]
+    fn canonical_json_matches_python_astral() {
+        assert_python_canonical(r#"{'\U0001f600': '🎵𐀀\U0010ffff', '\ue000': ['雪', '🚀']}"#);
+    }
+
+    #[test]
+    fn canonical_json_matches_python_numbers() {
+        assert_python_canonical("[0, -1, 2**63, 2**64, -(2**100), 0.0, -0.0, 1.0, 1e-4, 1e-5, 1e15, 1e16, 1e20, 1e23, 1.2345678901234567, 5e-324, sys.float_info.max, 1.0000000000000002, 781366138262913.25]");
+    }
+
+    #[test]
+    fn canonical_json_matches_python_float_roundtrips() {
+        assert_python_canonical("[v for r in [random.Random(341)] for _ in range(4096) for v in [struct.unpack('!d', r.getrandbits(64).to_bytes(8, 'big'))[0]] if math.isfinite(v)]");
+    }
+
+    #[test]
+    fn canonical_json_matches_python_float_boundaries() {
+        assert_python_canonical("[v for exponent in range(-1074, 1024) for value in [2.0**exponent] for v in [value, math.nextafter(value, -math.inf), math.nextafter(value, math.inf)] if math.isfinite(v)]");
+    }
+
+    #[test]
+    fn canonical_json_normalizes_number_spellings() {
+        let source = "[-0, -0.0, 1e0, 100e-2, 1.2300, 1e-400, -1e-400, 0e0]";
+        let expected = python_canonical(&format!("json.loads('{source}')"));
+        assert_eq!(canonical_json(source).unwrap(), expected);
+    }
+
+    #[test]
+    fn committed_replay_passes_admission() {
+        let base = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../conformance/target")
+            .canonicalize()
+            .unwrap();
+        let report = fs::read_to_string(base.join("replay-report.json")).unwrap();
+        validate_replay_document(&base, &report, true).unwrap();
     }
 
     #[test]
@@ -2048,7 +2287,7 @@ mod tests {
     #[test]
     fn replay_accepts_pinned_environment_in_scratch_venv() {
         let (root, report) = replay_tree();
-        validate_replay_document(root.path(), &report, false).unwrap();
+        validate_replay_document(root.path(), &report.to_string(), false).unwrap();
     }
 
     #[test]
@@ -2056,7 +2295,7 @@ mod tests {
         let (root, mut report) = replay_tree();
         report["payload"]["handshake"]["mlx_runtime"] = "0.32.1".into();
 
-        let error = validate_replay_document(root.path(), &report, false).unwrap_err();
+        let error = validate_replay_document(root.path(), &report.to_string(), false).unwrap_err();
 
         assert!(error.contains("payload_sha256"));
     }
@@ -2066,7 +2305,7 @@ mod tests {
         let (root, report) = replay_tree();
         std::fs::remove_file(root.path().join("arithmetic.json")).unwrap();
 
-        let error = validate_replay_document(root.path(), &report, false).unwrap_err();
+        let error = validate_replay_document(root.path(), &report.to_string(), false).unwrap_err();
 
         assert!(error.contains("missing target expectation shard"));
     }
@@ -2093,7 +2332,7 @@ mod tests {
         report["double_run"]["first_run_sha256"] = double_digest.clone().into();
         report["double_run"]["second_run_sha256"] = double_digest.into();
 
-        let error = validate_replay_document(root.path(), &report, false).unwrap_err();
+        let error = validate_replay_document(root.path(), &report.to_string(), false).unwrap_err();
 
         assert!(error.contains("recipe_failed"));
     }
@@ -2104,7 +2343,7 @@ mod tests {
         report["double_run"]["first_run_sha256"] = "sha256:forged".into();
         report["double_run"]["second_run_sha256"] = "sha256:forged".into();
 
-        let error = validate_replay_document(root.path(), &report, false).unwrap_err();
+        let error = validate_replay_document(root.path(), &report.to_string(), false).unwrap_err();
 
         assert!(error.contains("double-run hash"));
     }
@@ -2153,7 +2392,7 @@ mod tests {
         let (root, report) = replay_provenance_tree();
         let replay_root = root.path().join("conformance/target");
 
-        let evidence = validate_replay_document(&replay_root, &report, true).unwrap();
+        let evidence = validate_replay_document(&replay_root, &report.to_string(), true).unwrap();
         assert_eq!(
             evidence["committed_provenance"],
             json!({
@@ -2173,7 +2412,7 @@ mod tests {
             &["commit", "--quiet", "-m", "test: migrate provenance"],
         );
 
-        let evidence = validate_replay_document(&replay_root, &report, true).unwrap();
+        let evidence = validate_replay_document(&replay_root, &report.to_string(), true).unwrap();
 
         assert_eq!(
             evidence["committed_provenance"],

@@ -237,7 +237,6 @@
         "arithmetic.011.input.1"
       ],
       "input_sha256": "sha256:802b2ec1f680206647393693407a913819e1903b2c481badbe543fd8949e7497",
-      "max_error": 4.0,
       "recipe": "divmod",
       "seed_hex": "931be1e93242deea6a9bcac1dd7f86e1",
       "target": {
@@ -259,7 +258,7 @@
         ],
         "status": "success"
       },
-      "verdict": "value_changed"
+      "verdict": "identical"
     },
     {
       "id": "arithmetic.012",
@@ -560,9 +559,9 @@
   ],
   "old_environment": {
     "architecture": "arm64",
-    "mlx_metal_package": "0.30.6",
-    "mlx_package": "0.30.6",
-    "mlx_runtime": "0.30.6",
+    "mlx_metal_package": "0.32.2",
+    "mlx_package": "0.32.2",
+    "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14"
   },
@@ -576,6 +575,6 @@
     "mlx_runtime": "0.32.2",
     "numpy": "2.2.6",
     "python": "3.12.14",
-    "venv": "conformance/.venv-target"
+    "venv": "/Users/ci/hub/scratch/bump-a341b49/canonical-replay/venv"
   }
 }

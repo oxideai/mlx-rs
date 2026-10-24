@@ -95,6 +95,10 @@ optimization/debug-assertion settings, effective CMake cache settings (including
 build-plus-test wall time, and each binary/doctest's counts and outcome.
 `github_sha` and `github_pr_head_sha` are context; only `source_commit` is admitted. Missing runs,
 incomplete summaries, filtered tests, `NOT RUN`, and unexpected zero-test runs fail qualification.
+Each build declares `checkpoints_required`. Only the default configuration requires checkpoint
+inference. For the other configurations, the exact manifest-absent `real_checkpoints` message
+remains visible with `not_run: true` and `excluded_by_configuration: true`; every other `NOT RUN`
+still fails. The wrapper removes the checkpoint manifest from those configurations' environments.
 The ledger's `allow_empty` lists intentionally empty and compile-only harnesses, the ignored leak
 calibration probe, and documentation targets without runnable tests. Ignored individual tests remain
 visible in counts. Nested harness summaries are recorded separately from the enclosing binary
@@ -215,12 +219,19 @@ waivers fail admission; every active waiver appears in the aggregate verdict.
 `.github/workflows/bump-admission.yml` runs on PRs changing the `mlx-sys/src/mlx-c` gitlink
 and on `workflow_dispatch`, on `blaze/macos-latest`. A PR run admits the checked-out merge SHA;
 a dispatch admits the selected ref's SHA. Native canaries and checkpoint downloads run only in this
-workflow. Its focused evidence verdict supplements the aggregate admission contract, including the
-qualified FFI gate in the same workflow; it is not a claim that all eight requirements passed.
+workflow. It runs the qualified FFI gate, collects exact-SHA evidence, and ends verification with
+the aggregate `verify-bump --admit` verdict for all eight admission requirements.
 
 Freeze the old and target commits and nested MLX version before generating the isolated header,
 bindgen, ABI-type, and linked-export comparison. Classify every delta, update provenance together,
 and verify the linked runtime.
+
+The active comparison is mlx-c `c74db5307cc8ce122f48d97ef951b30578674e7f` to
+`a341b4925024b88b2c593468f16e12f5e17315da`; both pin MLX `v0.32.2`.
+`verify-bump --pre` checks the old checkout; after moving the submodule, use `--admit`
+with the old-tuple boundary base and `--allow-local-ffi` for local evidence.
+The prior delta classification is retained in
+`ledger/mlx-c-c74db5307cc8ce122f48d97ef951b30578674e7f-classification.json`.
 
 `python3 -B xtask/provision_checkpoints.py --cache "$BUMP_ROOT/checkpoints" --output
 "$BUMP_ROOT/reports/checkpoints"` downloads 6,199,630,244 bytes across six checkpoints and two
@@ -228,7 +239,13 @@ tokenizer directories. `conformance/mlx-lm/bump-oracle.json` pins every reposito
 file SHA-256. The cache key hashes that file, and every restored file is rehashed before use.
 Downloads use immutable revision URLs and temporary files; mismatches fail before installation.
 The provisioner reuses `real_checkpoints.py`'s manifest validation and relocates only local paths in
-the frozen Python report. It never generates expected tokens from Rust.
+the committed contract. Pass `--python "$BUMP_PYTHON"`, pointing at a uv-managed Python 3.12.14
+virtualenv installed with `uv pip sync --require-hashes conformance/mlx-lm/requirements.lock`.
+It runs `conformance/mlx-lm/live_oracle.py` in a separate Python process using MLX 0.32.2 and
+mlx-lm 0.31.3. The generator never imports or runs mlx-rs. The live report supplies expectations;
+`live-oracle-comparison.json` records per-case differences from committed results, hardware,
+macOS, runtime and generator/lock hashes. Committed results remain provenance, not a requirement
+that runner values match another machine's output.
 
 The frozen report comes from the independent MLX 0.32.2 / mlx-lm 0.31.3 host run recorded in
 `mlx-lm/SKELETON.md`; the original report's SHA-256 is
@@ -238,12 +255,15 @@ configuration, provenance and existing Metal tie rules are unchanged. Updating t
 is an oracle change and must remain separate from implementation changes.
 
 Set `MLX_LM_REAL_CHECKPOINTS="$BUMP_ROOT/reports/checkpoints/real-checkpoints.json"` and
-`MLX_RS_BUMP_RUN=1`, then run `config-report` for the five required configurations with separate
+`MLX_RS_BUMP_RUN=1`, then run `config-report` for the default configuration. Run the other four required configurations
+without `MLX_LM_REAL_CHECKPOINTS`, with separate
 `CARGO_TARGET_DIR` and `MLX_RS_METAL_PATH` directories. The bump flag permits the Rust checkpoint
 harness in CI; the benchmark and Python regeneration harness remain local-only. The Rust test still
 hashes all files and the independent report and executes all six cases on CPU and Metal. No manifest
-still means `NOT RUN`. Default and JIT reports also bind the frozen oracle digest and all twelve
-case/device executions. A changed expectation, missing case or failed comparison blocks admission.
+still means `NOT RUN`. The default report binds the live manifest and report hashes, generation receipt, committed contract
+digest and all twelve case/device executions. Admission rereads these retained files. A changed
+contract, environment, report, missing case or failed Rust/Python comparison blocks admission;
+live Python differences from the committed results are diagnostic.
 
 Run `python3 -B xtask/native_canaries.py --build-root "$BUMP_ROOT/native" --reports
 "$BUMP_ROOT/reports/native"` with an isolated build directory. Reuse is allowed only for a clean nested source at the same tag. This separate CMake project builds the
@@ -302,15 +322,34 @@ To inspect an existing native build, or Cargo's actual build-script link resolut
 
 `linked-exports --verify <report>` rehashes and rescans the archives and checks the current planned
 symbols, CMake configuration/source provenance, and canary binary hash. Archives must remain inside
-the selected build directory; compiler-runtime archives are resolved separately. Run admission before deleting build directories; retained reports
-are a review record, not evidence that can be revalidated after their archives are gone.
+the selected build directory; compiler-runtime archives are resolved separately. After each native configuration, the runner removes objects, executables and metallibs except the
+archives and link/version canary required by admission. It keeps their exact paths, CMake cache,
+archive manifest and shared clean MLX source until aggregate validation, and revalidates exports
+after pruning. Reports alone cannot replace those bytes.
 
-The workflow runs stable configurations serially, then native canaries and MSRV with the same
-checkpoint manifest. It validates all five configuration reports and runs the focused check:
+After the FFI job finishes, the evidence job runs stable configurations serially, then native
+canaries and MSRV without checkpoint inference. Each Cargo configuration directory and metallib
+directory is removed after its report and log are written. Free disk is logged between heavy steps. It restores stable Rust, installs the pinned
+API extraction nightly, and records conformance, optimizer, compile-state and transform suite
+results and logs. The final aggregate uses the Rust compiler version recorded in both committed
+ABI fingerprints; the job installs its rustfmt component and verifies the full compiler version
+before admission. It consumes those reports and the FFI job's report, validates
+the committed replay, rebuilds both ABI fingerprints, and checks the compiled API and ledger.
+FFI inventory validation uses Cargo metadata with resolved features and workspace membership;
+it never runs Cargo test discovery or rebuilds MLX. A separate `verify-ledger` step prepares the
+nightly API builds before admission and retains that single API target directory for aggregate
+revalidation. Native archives remain available until this verdict completes. All reports and logs upload even
+on failure. PRs use the PR base as the oracle boundary; dispatches use the parent of the latest
+submodule change, which must record the old tuple.
+
+To check just configuration, native and checkpoint evidence locally:
 
     cargo run -p xtask -- verify-bump --bump-evidence-only \
       --config-report "$BUMP_ROOT/reports/macos-arm64-default.json" \
       --config-report "$BUMP_ROOT/reports/macos-arm64-metal-jit.json" \
+      --config-report "$BUMP_ROOT/reports/macos-arm64-default-msrv.json" \
+      --config-report "$BUMP_ROOT/reports/macos-arm64-cpu-only.json" \
+      --config-report "$BUMP_ROOT/reports/macos-arm64-cpu-only-release.json" \
       --native-report "$BUMP_ROOT/reports/native/native-cpu-debug.json" \
       --native-report "$BUMP_ROOT/reports/native/native-cpu-release.json" \
       --native-report "$BUMP_ROOT/reports/native/native-metal.json"
@@ -330,7 +369,8 @@ exact-target replay, affected high-risk packs and public-surface gates. Aggregat
 environment-bound reports and waivers into one verdict; never regenerate away a semantic regression.
 Keep checkpoint caches and reports outside the checkout. Delete isolated native, Cargo and metallib
 build directories after collecting evidence. Reports record measured times; the workflow has a
-180-minute limit to accommodate cold builds and three CPU/Metal checkpoint passes.
+360-minute evidence-job limit to accommodate cold builds, live Python and one Rust CPU/Metal checkpoint pass,
+semantic/state suites, and aggregate API and fingerprint verification.
 
 New public APIs land vertically, as their own change under the [charter](CHARTER.md#charter-rules):
 parity mapping, independently sourced cases with a golden or differential result, ownership

@@ -45,15 +45,6 @@ impl TestBinary {
     fn leaks_applicable(&self) -> bool {
         !self.target_kind.iter().any(|kind| kind == "proc-macro")
     }
-
-    fn identity(&self) -> String {
-        format!(
-            "{}|{}|{}",
-            stable_package_id(&self.package_id),
-            self.target,
-            self.target_kind.join(",")
-        )
-    }
 }
 
 pub(crate) fn stable_package_id(package_id: &str) -> &str {
@@ -1178,13 +1169,75 @@ fn discover_test_binaries(root_dir: &Path) -> Result<Vec<TestBinary>, String> {
     Ok(binaries)
 }
 
-pub(crate) fn discovered_target_ids(root_dir: &Path) -> Result<Vec<String>, String> {
-    discover_test_binaries(root_dir).map(|binaries| {
-        binaries
-            .into_iter()
-            .map(|binary| binary.identity())
-            .collect()
-    })
+pub(crate) fn workspace_target_ids(root_dir: &Path) -> Result<Vec<String>, String> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--locked", "--format-version=1"])
+        .current_dir(root_dir)
+        .output()
+        .map_err(|error| error.to_string())?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).into_owned());
+    }
+    let metadata = serde_json::from_slice(&output.stdout).map_err(|error| error.to_string())?;
+    metadata_target_ids(&metadata)
+}
+
+fn metadata_target_ids(metadata: &serde_json::Value) -> Result<Vec<String>, String> {
+    let members = metadata["workspace_members"]
+        .as_array()
+        .ok_or("missing workspace members")?;
+    let nodes = metadata["resolve"]["nodes"]
+        .as_array()
+        .ok_or("missing resolved features")?;
+    let mut ids = Vec::new();
+    for package in metadata["packages"].as_array().ok_or("missing packages")? {
+        if !members.contains(&package["id"]) {
+            continue;
+        }
+        let features = &nodes
+            .iter()
+            .find(|node| node["id"] == package["id"])
+            .ok_or("missing workspace feature resolution")?["features"];
+        for target in package["targets"].as_array().ok_or("missing targets")? {
+            let kinds = target["kind"].as_array().ok_or("missing target kind")?;
+            if target["test"] != true
+                || !kinds.iter().any(|kind| {
+                    ["lib", "proc-macro", "bin", "test"]
+                        .iter()
+                        .any(|expected| kind == expected)
+                })
+            {
+                continue;
+            }
+            if target["required-features"]
+                .as_array()
+                .is_some_and(|required| {
+                    required.iter().any(|feature| {
+                        !features
+                            .as_array()
+                            .is_some_and(|enabled| enabled.contains(feature))
+                    })
+                })
+            {
+                continue;
+            }
+            ids.push(format!(
+                "{}|{}|{}",
+                stable_package_id(package["id"].as_str().ok_or("missing package id")?),
+                target["name"].as_str().ok_or("missing target name")?,
+                kinds
+                    .iter()
+                    .map(|kind| kind.as_str().ok_or("invalid target kind"))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .join(",")
+            ));
+        }
+    }
+    ids.sort();
+    if ids.is_empty() {
+        return Err("empty workspace test inventory".into());
+    }
+    Ok(ids)
 }
 
 fn run_tests(binary: &TestBinary) -> TestStatus {
@@ -1677,6 +1730,31 @@ mod tests {
             test,
             guard_malloc: None,
         }
+    }
+
+    #[test]
+    fn metadata_inventory_respects_members_features_and_target_kinds() {
+        let metadata = serde_json::json!({
+            "workspace_members": ["path+file:///repo/demo#demo@1.0"],
+            "resolve": {"nodes": [{"id": "path+file:///repo/demo#demo@1.0", "features": ["enabled"]}]},
+            "packages": [
+                {"id": "dependency", "targets": [{"name": "dependency", "kind": ["lib"], "test": true}]},
+                {"id": "path+file:///repo/demo#demo@1.0", "targets": [
+                    {"name": "demo", "kind": ["proc-macro"], "test": true},
+                    {"name": "included", "kind": ["test"], "test": true, "required-features": ["enabled"]},
+                    {"name": "excluded", "kind": ["test"], "test": true, "required-features": ["disabled"]},
+                    {"name": "example", "kind": ["example"], "test": false},
+                    {"name": "build", "kind": ["custom-build"], "test": false}
+                ]}
+            ]
+        });
+        assert_eq!(
+            metadata_target_ids(&metadata).unwrap(),
+            ["demo@1.0|demo|proc-macro", "demo@1.0|included|test"]
+        );
+        let mut missing = metadata;
+        missing["resolve"] = serde_json::Value::Null;
+        assert!(metadata_target_ids(&missing).is_err());
     }
 
     #[test]

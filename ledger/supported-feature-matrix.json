@@ -163,7 +163,8 @@
         "mlx-tests": [
           "accelerate"
         ]
-      }
+      },
+      "checkpoints_required": false
     },
     {
       "id": "macos-arm64-default",
@@ -216,7 +217,8 @@
           "default",
           "metal"
         ]
-      }
+      },
+      "checkpoints_required": true
     },
     {
       "id": "macos-arm64-default-msrv",
@@ -269,7 +271,8 @@
           "default",
           "metal"
         ]
-      }
+      },
+      "checkpoints_required": false
     },
     {
       "id": "macos-arm64-cpu-only-release",
@@ -313,7 +316,8 @@
         "mlx-tests": [
           "accelerate"
         ]
-      }
+      },
+      "checkpoints_required": false
     },
     {
       "id": "macos-arm64-metal-jit",
@@ -369,7 +373,8 @@
           "default",
           "metal"
         ]
-      }
+      },
+      "checkpoints_required": false
     }
   ]
 }

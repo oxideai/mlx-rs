@@ -138,9 +138,8 @@
 //! sampling callables.
 //!
 //! The repository's `mlx-lm/README.md` contains the capability table and credits;
-//! `mlx-lm/SKELETON.md` records completed tranches. Evidence and report hashes are
-//! in `ledger/mlx-lm-release-identity.json`, separate from the protected parity
-//! ledger's historical run-status fields.
+//! `mlx-lm/SKELETON.md` records completed tranches and historical host evidence.
+//! `mlx-lm/SUPPORT.md` retains support limits and release decisions.
 #![deny(missing_docs)]
 
 mod arch;

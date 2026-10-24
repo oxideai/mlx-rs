@@ -94,5 +94,5 @@ The [library README](../mlx-lm/README.md) records source profiles, ownership,
 errors, demand-gated capabilities and measured throughput: 38.2 tokens/s against
 upstream's 125.5 on the same machine and weights (Metal, Qwen3-0.6B-4bit,
 256 greedy tokens), a 3.3× gap under investigation in its own tranche. Report
-paths and hashes are in the [release identity](../ledger/mlx-lm-release-identity.json),
-which also distinguishes this freeze's checks from earlier host runs.
+paths are in the [completed-wave record](../mlx-lm/SKELETON.md), and
+[SUPPORT.md](../mlx-lm/SUPPORT.md) retains the release and performance decisions.

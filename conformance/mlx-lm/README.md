@@ -143,14 +143,12 @@ conformance/.venv-mlx-lm/bin/python -B conformance/mlx-lm/numpy_reference/run.py
 conformance/.venv-mlx-lm/bin/python -B conformance/mlx-lm/coordinate.py
 cargo test -p mlx-lm --features oracle-hooks --test parity -- --test-threads=1
 cargo run -p xtask -- verify-lm-parity
-cargo run -p xtask -- api-baseline --crate mlx-lm --check ledger/mlx-lm-api-baseline.json
 cargo run -p xtask -- verify-oracle-boundary --base 919622fd56fddf0268b5db22c88a2618a0bc2a1a
 ```
 
-`api-baseline` defaults to mlx-rs. Select mlx-lm with `--crate mlx-lm`, write
-with `--out PATH`, or compare bytes with `--check PATH`. Check mode never
-rewrites the baseline and rejects drift. The core baseline is independent of
-the mlx-lm one.
+`api-baseline` extracts only the compiled mlx-rs API. The historical
+`ledger/mlx-lm-api-baseline.json` has no supported regeneration or check command.
+`verify-lm-parity` checks the mlx-lm source mapping; it is not compiled API evidence.
 
 The Python-side tests for the text reference and the generator contract run
 under the pinned interpreter without extra packages:

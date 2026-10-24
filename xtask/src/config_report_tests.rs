@@ -464,3 +464,36 @@ fn only_manifest_absent_checkpoints_can_be_excluded_by_configuration() {
         }
     }
 }
+
+#[test]
+fn ordinary_default_excludes_only_absent_checkpoints_but_admission_requires_them() {
+    let (configs, reports, identity) = fixture();
+    let index = configs
+        .iter()
+        .position(|c| c.id == "macos-arm64-default")
+        .unwrap();
+    let c = &configs[index];
+    let mut report = reports[index].clone();
+    let ordinary = execution_configuration(c, false);
+    assert!(!ordinary.checkpoints_required);
+    assert!(execution_configuration(c, true).checkpoints_required);
+    report["checkpoints_required"] = false.into();
+    let id = "mlx-lm::test::real_checkpoints";
+    report["tests"][0]["id"] = id.into();
+    report["tests"][0]["not_run"] = true.into();
+    report["tests"][0]["not_run_reasons"] =
+        json!(["NOT RUN: local real-checkpoint manifest not supplied"]);
+    report["tests"][0]["excluded_by_configuration"] = true.into();
+    let expected = BTreeSet::from([id.to_owned()]);
+    validate_report(&ordinary, &report, &identity, &expected).unwrap();
+    assert!(validate_report(c, &report, &identity, &expected).is_err());
+    report["tests"][0]["not_run_reasons"] = json!(["NOT RUN: another reason"]);
+    assert!(validate_report(&ordinary, &report, &identity, &expected).is_err());
+}
+
+#[test]
+fn qualification_failure_overrides_successful_cargo_exit() {
+    assert_eq!(report_exit_code(0, &json!({"verdict": "fail"})), 1);
+    assert_eq!(report_exit_code(0, &json!({"verdict": "pass"})), 0);
+    assert_eq!(report_exit_code(101, &json!({"verdict": "fail"})), 101);
+}

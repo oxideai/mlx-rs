@@ -86,8 +86,8 @@ Use the selected toolchain for the entire invocation; `macos-arm64-default-msrv`
 metallibs must not share a directory. Locally, substitute a scratch directory for `$RUNNER_TEMP`.
 The wrapper executes the ledger's Cargo test command once, including doctests, with serial tests
 and captured test output.
-It preserves Cargo's exit status and writes a JSON report plus a sibling `.log` file. A zero exit
-status does not qualify evidence: inspect `verdict`, or use the admission validator.
+It writes a JSON report plus a sibling `.log` file and exits nonzero if Cargo fails,
+qualification fails, or the report cannot be written. A zero exit status means qualified execution.
 
 Reports bind the clean checkout SHA, mlx-c commit, nested MLX version, Cargo.lock SHA-256,
 `rustc --version --verbose`, macOS/SDK versions, resolved features, Rust profile and compiled
@@ -95,9 +95,11 @@ optimization/debug-assertion settings, effective CMake cache settings (including
 build-plus-test wall time, and each binary/doctest's counts and outcome.
 `github_sha` and `github_pr_head_sha` are context; only `source_commit` is admitted. Missing runs,
 incomplete summaries, filtered tests, `NOT RUN`, and unexpected zero-test runs fail qualification.
-Each build declares `checkpoints_required`. Only the default configuration requires checkpoint
-inference. For the other configurations, the exact manifest-absent `real_checkpoints` message
-remains visible with `not_run: true` and `excluded_by_configuration: true`; every other `NOT RUN`
+Each build declares `checkpoints_required` for bump admission. Only the default configuration
+requires checkpoint inference, and only when `MLX_RS_BUMP_RUN=1`. Ordinary runs record
+`checkpoints_required: false`; admission still requires the ledger's bump setting and rejects
+those ordinary default reports. Where checkpoints are not required, the exact manifest-absent
+`real_checkpoints` message remains visible with `not_run: true` and `excluded_by_configuration: true`; every other `NOT RUN`
 still fails. The wrapper removes the checkpoint manifest from those configurations' environments.
 The ledger's `allow_empty` lists intentionally empty and compile-only harnesses, the ignored leak
 calibration probe, and documentation targets without runnable tests. Ignored individual tests remain
@@ -111,25 +113,31 @@ check against the current checkout:
     cargo run -p xtask -- config-report --verify "$RUNNER_TEMP/config-reports/"*.json
 
 CI uploads these reports and logs even when tests fail. Ordinary PR runs do not download
-checkpoints and their workspace reports retain `NOT RUN` when the manifest is absent. Bump runs
+checkpoints and their workspace reports explicitly exclude the manifest-absent `NOT RUN`. Bump runs
 supply the pinned fixtures and independent Python expectations described below. Add a ledger entry
 and a CI invocation for each new configuration; admission discovers required entries without a
 fixed configuration count.
+
+The stable default configuration enables `mlx-lm/oracle-hooks`, running the committed model
+parity and sentinel fixtures in the existing workspace test job. This reuses its native build;
+MSRV and JIT do not repeat these suites. Bump admission requires both harnesses to have passed
+with nonzero tests and no ignored, filtered, or `NOT RUN` tests in the qualified default report.
+Fixture presence and digests alone do not establish sentinel execution.
 
 ## Compiled public API inventory
 
 Install the extraction toolchain without changing the active toolchain:
 
     rustup toolchain install "$(cat xtask/api-nightly.txt)" --profile minimal
-    cargo run -p xtask -- api-baseline --check ledger/rust-api-baseline.json
     cargo run -p xtask -- verify-ledger
 
 `xtask/api-nightly.txt` pins nightly for rustdoc JSON extraction only. `xtask` builds on stable;
 `public-api = 0.50.0` normalizes JSON schema 55. Extraction requires an `aarch64-apple-darwin`
 host and uses the pinned compiler and rustdoc explicitly. Use `MLX_RS_API_TARGET_DIR` for scratch
 builds and per-configuration JSON files, and `MLX_RS_METAL_PATH` for scratch metallibs. The default
-build directory is `target/api-inventory`. Nightly targets are separate from stable targets;
-CPU and Metal builds are separate, while adding `safetensors` reuses its backend's dependencies.
+build directory is `target/api-inventory`. Nightly targets are separate from stable targets.
+Feature sets with identical `mlx-sys` features share a Cargo target directory: CPU-only,
+Metal, and Metal JIT each have one directory, shared with their `safetensors` variant.
 
 The scope is `mlx-rs`. The four API feature sets are `default`, `cpu-only`
 (`--no-default-features --features accelerate`), `safetensors` (default plus `safetensors`),
@@ -181,8 +189,9 @@ The separate `mlx-lm` parity check still uses `xtask/src/source_api.rs`; it is n
 evidence for `mlx-rs`.
 
 Regenerate with `api-baseline --out ledger/rust-api-baseline.json` and review the diff. CI runs
-extraction, its qualification controls, `--check`, and ledger verification in the existing
-`checks` job. A baseline match establishes compiled surface coverage, not semantic correctness
+extraction, its qualification controls, baseline comparison, and ledger verification once through
+`verify-ledger` in the existing `checks` job. Running `api-baseline --check` separately repeats
+extraction. A baseline match establishes compiled surface coverage, not semantic correctness
 or linked-library exports.
 
 ## Bump admission contract
@@ -330,15 +339,17 @@ after pruning. Reports alone cannot replace those bytes.
 After the FFI job finishes, the evidence job runs stable configurations serially, then native
 canaries and MSRV without checkpoint inference. Each Cargo configuration directory and metallib
 directory is removed after its report and log are written. Free disk is logged between heavy steps. It restores stable Rust, installs the pinned
-API extraction nightly, and records conformance, optimizer, compile-state and transform suite
-results and logs. The final aggregate uses the Rust compiler version recorded in both committed
-ABI fingerprints; the job installs its rustfmt component and verifies the full compiler version
+API extraction nightly, and uses the qualified default configuration's conformance, optimizer,
+compile-state and transform executions for semantic/state admission. These suites do not run a
+second time. Local `--suite-results` and `--rerun-suites` remain optional overrides for semantic/state
+evidence; configuration reports are still required. The final aggregate uses the Rust compiler
+version recorded in both committed ABI fingerprints; the job installs its rustfmt component and verifies the full compiler version
 before admission. It consumes those reports and the FFI job's report, validates
 the committed replay, rebuilds both ABI fingerprints, and checks the compiled API and ledger.
 FFI inventory validation uses Cargo metadata with resolved features and workspace membership;
-it never runs Cargo test discovery or rebuilds MLX. A separate `verify-ledger` step prepares the
-nightly API builds before admission and retains that single API target directory for aggregate
-revalidation. Native archives remain available until this verdict completes. All reports and logs upload even
+it never runs Cargo test discovery or rebuilds MLX. Aggregate admission calls `verify-ledger`
+once to extract and qualify the API inventory, compare the baseline, and check ledger references.
+Native archives remain available until this verdict completes. All reports and logs upload even
 on failure. PRs use the PR base as the oracle boundary; dispatches use the parent of the latest
 submodule change, which must record the old tuple.
 
@@ -370,7 +381,7 @@ environment-bound reports and waivers into one verdict; never regenerate away a 
 Keep checkpoint caches and reports outside the checkout. Delete isolated native, Cargo and metallib
 build directories after collecting evidence. Reports record measured times; the workflow has a
 360-minute evidence-job limit to accommodate cold builds, live Python and one Rust CPU/Metal checkpoint pass,
-semantic/state suites, and aggregate API and fingerprint verification.
+and aggregate API and fingerprint verification.
 
 New public APIs land vertically, as their own change under the [charter](CHARTER.md#charter-rules):
 parity mapping, independently sourced cases with a golden or differential result, ownership
